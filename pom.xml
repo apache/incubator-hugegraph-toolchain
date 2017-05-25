@@ -10,6 +10,13 @@
     <name>hugegraph-client</name>
     <url>http://maven.apache.org</url>
 
+    <distributionManagement>
+        <repository>
+            <id>admin</id>
+            <url>http://10.103.169.46:8081/repository/hugegraph-repostiory/</url>
+        </repository>
+    </distributionManagement>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <compiler.source>1.8</compiler.source>

@@ -47,9 +47,14 @@ public class GraphManager {
 
     public Edge addEdge(Vertex source, String label, Vertex target,
                         Object... properties) {
+        return this.addEdge(source.id(), label, target.id(), properties);
+    }
+
+    public Edge addEdge(String sourceId, String label, String targetId,
+                        Object... properties) {
         Edge edge = new Edge(label);
-        edge.source(source.id());
-        edge.target(target.id());
+        edge.source(sourceId);
+        edge.target(targetId);
         this.attachProperties(edge, properties);
         return this.edgeApi.create(edge);
     }

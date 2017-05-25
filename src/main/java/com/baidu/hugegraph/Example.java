@@ -85,11 +85,11 @@ public class Example {
         josh.addEdge("created", lop, "date", "20091111");
         peter.addEdge("created", lop, "date", "20170324");
 
-//        GremlinManager gremlin = hugeClient.gremlin();
-//        String result = gremlin.gremlin("g.V()")
-//                .language("gremlin-groovy").execute();
-//
-//        System.out.println(result);
+        GremlinManager gremlin = hugeClient.gremlin();
+        String result = gremlin.gremlin("g.V()")
+                .language("gremlin-groovy").execute();
+
+        System.out.println(result);
 
     }
 
