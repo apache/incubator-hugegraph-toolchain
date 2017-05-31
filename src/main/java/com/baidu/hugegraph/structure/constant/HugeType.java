@@ -13,7 +13,9 @@ public enum HugeType {
     EDGE(120, "edges"),
 
     // gremlin
-    GREMLIN(201, "gremlin");
+    GREMLIN(201, "gremlin"),
+
+    GRAPHS(220, "graphs");
 
     private int code;
     private String name = null;
