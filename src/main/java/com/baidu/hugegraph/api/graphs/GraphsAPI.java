@@ -6,6 +6,7 @@ import java.util.Map;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
+import com.baidu.hugegraph.exception.ClientException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 
 /**
@@ -23,12 +24,20 @@ public class GraphsAPI extends API {
     }
 
     public Map<String, String> get(String name) {
-        RestResult result = this.client.get(path(), name);
-        return result.readObject(Map.class);
+        try {
+            RestResult result = this.client.get(path(), name);
+            return result.readObject(Map.class);
+        } catch (ClientException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     public List<String> list() {
-        RestResult result = this.client.get(path());
-        return result.readList(type(), String.class);
+        try {
+            RestResult result = this.client.get(path());
+            return result.readList(type(), String.class);
+        } catch (ClientException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 }

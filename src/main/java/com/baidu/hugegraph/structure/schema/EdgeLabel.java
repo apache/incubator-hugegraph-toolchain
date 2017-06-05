@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Created by liningrui on 2017/5/11.
  */
-public class EdgeLabel extends SchemaElement {
+public class EdgeLabel extends Indexable {
 
     @JsonProperty
     private Frequency frequency;
@@ -23,8 +23,6 @@ public class EdgeLabel extends SchemaElement {
     private Set<EdgeLink> links;
     @JsonProperty
     private Set<String> sortKeys;
-    @JsonProperty
-    private Set<String> indexNames;
 
     @JsonCreator
     public EdgeLabel(@JsonProperty("name") String name) {
@@ -32,7 +30,6 @@ public class EdgeLabel extends SchemaElement {
         this.frequency = Frequency.SINGLE;
         this.links = new HashSet<>();
         this.sortKeys = new HashSet<>();
-        this.indexNames = new HashSet<>();
     }
 
     @Override
@@ -134,6 +131,11 @@ public class EdgeLabel extends SchemaElement {
 
         public Builder multiTimes() {
             this.edgeLabel.frequency = Frequency.MULTIPLE;
+            return this;
+        }
+
+        public Builder ifNotExist() {
+            this.edgeLabel.checkExits = false;
             return this;
         }
     }

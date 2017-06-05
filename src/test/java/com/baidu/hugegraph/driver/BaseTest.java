@@ -31,4 +31,7 @@ public class BaseTest {
         return new HugeClient(BASE_URL, GRAPH);
     }
 
+//    public GraphManager graph() {
+//        return client.graph();
+//    }
 }

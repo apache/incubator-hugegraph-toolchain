@@ -8,7 +8,7 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        PropertyKeyTest.class
+        SchemaTest.class
 })
 public class DriverTestSuite {
 }

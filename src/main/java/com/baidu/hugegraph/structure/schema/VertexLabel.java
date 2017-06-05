@@ -13,18 +13,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Created by liningrui on 2017/5/11.
  */
-public class VertexLabel extends SchemaElement {
+public class VertexLabel extends Indexable {
 
     @JsonProperty
     private Set<String> primaryKeys;
-    @JsonProperty
-    protected Set<String> indexNames;
 
     @JsonCreator
     public VertexLabel(@JsonProperty("name") String name) {
         super(name);
         this.primaryKeys = new HashSet<>();
-        this.indexNames = new HashSet<>();
     }
 
     @Override
@@ -38,15 +35,6 @@ public class VertexLabel extends SchemaElement {
 
     public VertexLabel primaryKeys(String... primaryKeys) {
         this.primaryKeys.addAll(Arrays.asList(primaryKeys));
-        return this;
-    }
-
-    public Set<String> indexNames() {
-        return this.indexNames;
-    }
-
-    public VertexLabel indexNames(String... indexNames) {
-        this.indexNames.addAll(Arrays.asList(indexNames));
         return this;
     }
 
@@ -87,6 +75,11 @@ public class VertexLabel extends SchemaElement {
 
         public Builder primaryKeys(String... primaryKeys) {
             this.vertexLabel.primaryKeys.addAll(Arrays.asList(primaryKeys));
+            return this;
+        }
+
+        public Builder ifNotExist() {
+            this.vertexLabel.checkExits = false;
             return this;
         }
     }

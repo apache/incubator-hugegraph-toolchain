@@ -1,8 +1,34 @@
 package com.baidu.hugegraph.exception;
 
-public class ClientException extends RuntimeException {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    private static final long serialVersionUID = -8711375282196157058L;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ClientException extends IllegalArgumentException {
+
+    @JsonProperty
+    private String exception;
+    @JsonProperty
+    private String message;
+    @JsonProperty
+    private String cause;
+
+    public String exception() {
+        return exception;
+    }
+
+    public String message() {
+        return message;
+    }
+
+    public String cause() {
+        return cause;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
 
     public ClientException(String message) {
         super(message);

@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.exception.StructureException;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties({"id", "properties"})
 public class IndexLabel extends SchemaElement {
 
+    private Indexable element;
     @JsonProperty
     private HugeType baseType;
     @JsonProperty
@@ -100,6 +101,7 @@ public class IndexLabel extends SchemaElement {
         public IndexLabel create() {
             this.updateSchemaIndexName();
             this.manager.addIndexLabel(this.indexLabel);
+            this.indexLabel.element.indexNames(this.indexLabel.name);
             return this.indexLabel;
         }
 
@@ -119,21 +121,22 @@ public class IndexLabel extends SchemaElement {
                     this.manager.addEdgeLabel(edgeLabel);
                     break;
                 case PROPERTY_KEY:
-                    break;
                 default:
-                    throw new ClientException(String.format(
+                    throw new AssertionError(String.format(
                             "Can not update index name of schema type: %s",
                             baseType));
             }
         }
 
         public Builder on(VertexLabel vertexLabel) {
+            this.indexLabel.element = vertexLabel;
             this.indexLabel.baseType = HugeType.VERTEX_LABEL;
             this.indexLabel.baseValue = vertexLabel.name();
             return this;
         }
 
         public Builder on(EdgeLabel edgeLabel) {
+            this.indexLabel.element = edgeLabel;
             this.indexLabel.baseType = HugeType.EDGE_LABEL;
             this.indexLabel.baseValue = edgeLabel.name();
             return this;
@@ -151,6 +154,11 @@ public class IndexLabel extends SchemaElement {
 
         public Builder search() {
             this.indexLabel.indexType = IndexType.SEARCH;
+            return this;
+        }
+
+        public Builder ifNotExist() {
+            this.indexLabel.checkExits = false;
             return this;
         }
     }

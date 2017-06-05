@@ -22,8 +22,8 @@ public abstract class SchemaElement extends Element {
 
     public SchemaElement(String name) {
         this.name = name;
-        this.properties = new HashSet<String>();
-        this.checkExits = false;
+        this.properties = new HashSet<>();
+        this.checkExits = true;
     }
 
     public String name() {

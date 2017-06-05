@@ -6,7 +6,7 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.exception.SerializeException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +44,7 @@ public class RestResult {
         try {
             obj = mapper.readValue(this.content, clazz);
         } catch (Exception e) {
-            throw new ClientException(String.format(
+            throw new SerializeException(String.format(
                     "Failed to deserialize %s", this.content), e);
         }
         return obj;
@@ -57,7 +57,7 @@ public class RestResult {
             JsonNode root = mapper.readTree(this.content);
             JsonNode element = root.get(key);
             if (element == null) {
-                throw new ClientException(String.format(
+                throw new SerializeException(String.format(
                         "Can not find value of the key: %s in json.", key));
             }
             JavaType type = mapper.getTypeFactory()
@@ -65,7 +65,7 @@ public class RestResult {
             objList = mapper.readValue(element.toString(), type);
 
         } catch (IOException e) {
-            throw new ClientException(String.format(
+            throw new SerializeException(String.format(
                     "Failed to deserialize %s", this.content), e);
         }
         return objList;
@@ -79,11 +79,4 @@ public class RestResult {
                 this.content);
     }
 
-    private void checkStatus(Response response, Response.Status status) {
-        if (response.getStatus() != status.getStatusCode()) {
-            throw new ClientException(String.format("Faild to request "
-                    + "hugegraph server, beacuse %s .)", response.readEntity
-                    (String.class)));
-        }
-    }
 }

@@ -144,5 +144,10 @@ public class PropertyKey extends SchemaElement {
             this.propertyKey.cardinality = Cardinality.SET;
             return this;
         }
+
+        public Builder ifNotExist() {
+            this.propertyKey.checkExits = false;
+            return this;
+        }
     }
 }
