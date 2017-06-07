@@ -51,6 +51,7 @@ public class Example {
 
         EdgeLabel knows = schema.makeEdgeLabel("knows")
                 .link("person", "person")
+                .properties("date")
                 .ifNotExist()
                 .create();
 

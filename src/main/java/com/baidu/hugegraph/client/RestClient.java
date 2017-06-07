@@ -38,7 +38,7 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    // get
+    // list
     public RestResult get(String path) throws ClientException {
         Response response = this.target.path(path).request().get();
         if (!checkStatus(response, Response.Status.OK)) {
@@ -47,7 +47,7 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    // list
+    // get
     public RestResult get(String path, String id) throws ClientException {
         Response response = this.target.path(path).path(id).request().get();
         if (!checkStatus(response, Response.Status.OK)) {
