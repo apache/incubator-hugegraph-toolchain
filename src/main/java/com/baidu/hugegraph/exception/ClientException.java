@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientException extends IllegalArgumentException {
 
+    private int status;
     @JsonProperty
     private String exception;
     @JsonProperty
@@ -36,5 +37,13 @@ public class ClientException extends IllegalArgumentException {
 
     public ClientException(String msg, Throwable cause) {
         super(msg, cause);
+    }
+
+    public void status(int status) {
+        this.status = status;
+    }
+
+    public int status() {
+        return status;
     }
 }

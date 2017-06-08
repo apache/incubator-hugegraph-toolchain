@@ -1,5 +1,7 @@
 package com.baidu.hugegraph.client;
 
+import java.util.Arrays;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -31,37 +33,28 @@ public class RestClient {
         Response response = this.target.path(path)
                 .request().post(Entity.json(object));
         // If check status failed, throw client exception.
-        if (!checkStatus(response, Response.Status.CREATED) &&
-            !checkStatus(response, Response.Status.OK)) {
-            throw response.readEntity(ClientException.class);
-        }
+        checkStatus(response, Response.Status.CREATED, Response.Status.OK);
         return new RestResult(response);
     }
 
     // list
     public RestResult get(String path) throws ClientException {
         Response response = this.target.path(path).request().get();
-        if (!checkStatus(response, Response.Status.OK)) {
-            throw response.readEntity(ClientException.class);
-        }
+        checkStatus(response, Response.Status.OK);
         return new RestResult(response);
     }
 
     // get
     public RestResult get(String path, String id) throws ClientException {
         Response response = this.target.path(path).path(id).request().get();
-        if (!checkStatus(response, Response.Status.OK)) {
-            throw response.readEntity(ClientException.class);
-        }
+        checkStatus(response, Response.Status.OK);
         return new RestResult(response);
     }
 
     // remove
     public RestResult delete(String path, String id) throws ClientException {
         Response response = this.target.path(path).path(id).request().delete();
-        if (!checkStatus(response, Response.Status.NO_CONTENT)) {
-            throw response.readEntity(ClientException.class);
-        }
+        checkStatus(response, Response.Status.NO_CONTENT);
         return new RestResult(response);
     }
 
@@ -69,7 +62,11 @@ public class RestClient {
         this.client.close();
     }
 
-    private boolean checkStatus(Response response, Response.Status status) {
-        return response.getStatus() == status.getStatusCode();
+    private void checkStatus(Response response, Response.Status... statuses) {
+        if (!Arrays.asList(statuses).contains(response.getStatusInfo())) {
+            ClientException exception = response.readEntity(ClientException.class);
+            exception.status(response.getStatus());
+            throw exception;
+        }
     }
 }

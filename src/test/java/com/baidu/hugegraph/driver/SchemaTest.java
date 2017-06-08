@@ -3,6 +3,7 @@ package com.baidu.hugegraph.driver;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.ClientException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.constant.EdgeLink;
 import com.baidu.hugegraph.structure.constant.Frequency;
@@ -83,7 +84,7 @@ public class SchemaTest extends BaseTest{
         initProperties();
         SchemaManager schema = client().schema();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             schema.makeVertexLabel("person")
                     .properties("name", "age", "city")
                     .create();
@@ -95,7 +96,7 @@ public class SchemaTest extends BaseTest{
         initProperties();
         SchemaManager schema = client().schema();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             schema.makeVertexLabel("person").create();
         });
     }
@@ -105,7 +106,7 @@ public class SchemaTest extends BaseTest{
         initProperties();
         SchemaManager schema = client().schema();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             schema.makeVertexLabel("person").properties("sex").create();
         });
     }
@@ -120,7 +121,7 @@ public class SchemaTest extends BaseTest{
                 .primaryKeys("name")
                 .create();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             client().graph().addVertex(T.label, "person", "name", "Baby",
                     "city", "Hongkong", "age", 3, "sex", "male");
         });
@@ -158,7 +159,7 @@ public class SchemaTest extends BaseTest{
                 .primaryKeys("name")
                 .create();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             client().graph().addVertex(T.label, "person", "name", "Baby",
                     "city", 2, "age", 3);
         });
@@ -269,7 +270,7 @@ public class SchemaTest extends BaseTest{
         schema.makeVertexLabel("author").properties("id", "name")
                 .primaryKeys("id").create();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             EdgeLabel look = schema.makeEdgeLabel("look").multiTimes()
                     .properties("time")
                     .sortKeys("time")
@@ -288,7 +289,7 @@ public class SchemaTest extends BaseTest{
         schema.makeVertexLabel("author").properties("id", "name")
                 .primaryKeys("id").create();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             schema.makeEdgeLabel("look").properties("date-time")
                     .link("author", "book")
                     .link("person", "book")
@@ -307,7 +308,7 @@ public class SchemaTest extends BaseTest{
         schema.makeVertexLabel("author").properties("id", "name")
                 .primaryKeys("id").create();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             schema.makeEdgeLabel("look").multiTimes().properties("time")
                     .link("reviewer", "book")
                     .link("person", "book")
@@ -327,7 +328,7 @@ public class SchemaTest extends BaseTest{
         schema.makeVertexLabel("author").properties("id", "name")
                 .primaryKeys("id").create();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             schema.makeEdgeLabel("look").multiTimes().properties("date")
                     .link("author", "book")
                     .link("person", "book")
@@ -346,7 +347,7 @@ public class SchemaTest extends BaseTest{
         schema.makeVertexLabel("author").properties("id", "name")
                 .primaryKeys("id").create();
 
-        Utils.assertThrows(IllegalArgumentException.class, () -> {
+        Utils.assertThrows(ClientException.class, () -> {
             schema.makeEdgeLabel("look").multiTimes().properties("date")
                     .link("author", "book")
                     .link("person", "book")
