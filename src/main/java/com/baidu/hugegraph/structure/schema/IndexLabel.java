@@ -99,33 +99,9 @@ public class IndexLabel extends SchemaElement {
         }
 
         public IndexLabel create() {
-            this.updateSchemaIndexName();
             this.manager.addIndexLabel(this.indexLabel);
             this.indexLabel.element.indexNames(this.indexLabel.name);
             return this.indexLabel;
-        }
-
-        public void updateSchemaIndexName() {
-            HugeType baseType = this.indexLabel.baseType();
-            String baseValue = this.indexLabel.baseValue();
-            switch (baseType) {
-                case VERTEX_LABEL:
-                    VertexLabel vertexLabel = this.manager.getVertexLabel
-                            (baseValue);
-                    vertexLabel.indexNames(this.indexLabel.name());
-                    this.manager.addVertexLabel(vertexLabel);
-                    break;
-                case EDGE_LABEL:
-                    EdgeLabel edgeLabel = this.manager.getEdgeLabel(baseValue);
-                    edgeLabel.indexNames(this.indexLabel.name());
-                    this.manager.addEdgeLabel(edgeLabel);
-                    break;
-                case PROPERTY_KEY:
-                default:
-                    throw new AssertionError(String.format(
-                            "Can not update index name of schema type: %s",
-                            baseType));
-            }
         }
 
         public Builder on(VertexLabel vertexLabel) {
