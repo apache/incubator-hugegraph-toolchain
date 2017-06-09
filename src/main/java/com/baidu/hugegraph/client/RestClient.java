@@ -64,7 +64,14 @@ public class RestClient {
 
     private void checkStatus(Response response, Response.Status... statuses) {
         if (!Arrays.asList(statuses).contains(response.getStatusInfo())) {
-            ClientException exception = response.readEntity(ClientException.class);
+            RestResult rs = new RestResult(response);
+            ClientException exception = null;
+            try {
+                exception = rs.readObject(ClientException.class);
+            } catch (Exception e) {
+                // ignore e
+                exception = new ClientException(rs.content());
+            }
             exception.status(response.getStatus());
             throw exception;
         }

@@ -1,9 +1,7 @@
 package com.baidu.hugegraph.exception;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientException extends IllegalArgumentException {
 
     private int status;
@@ -32,11 +30,13 @@ public class ClientException extends IllegalArgumentException {
     }
 
     public ClientException(String message) {
-        super(message);
+        super("");
+        this.message = message;
     }
 
-    public ClientException(String msg, Throwable cause) {
-        super(msg, cause);
+    public ClientException(String message, Throwable cause) {
+        super("", cause);
+        this.message = message;
     }
 
     public void status(int status) {
