@@ -34,11 +34,17 @@ public class GraphManager {
     }
 
     public Vertex getVertex(String vertexId) {
-        return this.vertexApi.get(vertexId);
+        Vertex vertex = this.vertexApi.get(vertexId);
+        vertex.manager(this);
+        return vertex;
     }
 
     public List<Vertex> getVertices() {
-        return this.vertexApi.list();
+        List<Vertex> vertices = this.vertexApi.list();
+        for (Vertex vertex : vertices) {
+            vertex.manager(this);
+        }
+        return vertices;
     }
 
     public void removeVertex(String vertexId) {
