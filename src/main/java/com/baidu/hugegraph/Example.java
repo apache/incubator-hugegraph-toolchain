@@ -31,6 +31,10 @@ public class Example {
                 .ifNotExist()
                 .create();
 
+        schema.makeVertexLabel("person")
+                .properties("price")
+                .append();
+
         VertexLabel software = schema.makeVertexLabel("software")
                 .properties("name", "lang", "price")
                 .primaryKeys("name")
@@ -54,6 +58,11 @@ public class Example {
                 .properties("date")
                 .ifNotExist()
                 .create();
+
+        schema.makeEdgeLabel("knows")
+                .link("software", "person")
+                .properties("price")
+                .append();
 
         EdgeLabel created = schema.makeEdgeLabel("created")
                 .link("person", "software")

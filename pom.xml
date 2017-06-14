@@ -10,6 +10,7 @@
     <name>hugegraph-client</name>
     <url>http://maven.apache.org</url>
 
+
     <distributionManagement>
         <snapshotRepository>
             <id>Baidu_Local_Snapshots</id>

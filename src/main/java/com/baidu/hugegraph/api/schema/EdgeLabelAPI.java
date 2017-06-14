@@ -25,6 +25,10 @@ public class EdgeLabelAPI extends SchemaAPI {
         this.client.post(path(), edgeLabel);
     }
 
+    public void append(EdgeLabel edgeLabel) {
+        this.client.put(path(), edgeLabel);
+    }
+
     public EdgeLabel get(String name) {
         RestResult result = this.client.get(path(), name);
         return result.readObject(EdgeLabel.class);

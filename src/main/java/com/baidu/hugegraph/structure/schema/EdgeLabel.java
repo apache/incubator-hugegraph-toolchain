@@ -104,6 +104,10 @@ public class EdgeLabel extends Indexable {
             return this.edgeLabel;
         }
 
+        public void append() {
+            this.manager.appendEdgeLabel(this.edgeLabel);
+        }
+
         public Builder properties(String... properties) {
             this.edgeLabel.properties.addAll(Arrays.asList(properties));
             return this;

@@ -68,6 +68,10 @@ public class VertexLabel extends Indexable {
             return this.vertexLabel;
         }
 
+        public void append() {
+            this.manager.appendVertexLabel(this.vertexLabel);
+        }
+
         public Builder properties(String... properties) {
             this.vertexLabel.properties.addAll(Arrays.asList(properties));
             return this;

@@ -66,6 +66,10 @@ public class SchemaManager {
         this.vertexLabelApi.create(vertexLabel);
     }
 
+    public void appendVertexLabel(VertexLabel vertexLabel) {
+        this.vertexLabelApi.append(vertexLabel);
+    }
+
     public VertexLabel getVertexLabel(String name) {
         return this.vertexLabelApi.get(name);
     }
@@ -80,6 +84,10 @@ public class SchemaManager {
 
     public void addEdgeLabel(EdgeLabel edgeLabel) {
         this.edgeLabelAPI.create(edgeLabel);
+    }
+
+    public void appendEdgeLabel(EdgeLabel edgeLabel) {
+        this.edgeLabelAPI.append(edgeLabel);
     }
 
     public EdgeLabel getEdgeLabel(String name) {

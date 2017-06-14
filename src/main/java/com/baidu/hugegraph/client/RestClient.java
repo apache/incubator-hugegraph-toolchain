@@ -37,6 +37,14 @@ public class RestClient {
         return new RestResult(response);
     }
 
+    public RestResult put(String path, Object object) throws ClientException {
+        Response response = this.target.path(path)
+                .request().put(Entity.json(object));
+        // If check status failed, throw client exception.
+        checkStatus(response, Response.Status.OK);
+        return new RestResult(response);
+    }
+
     // list
     public RestResult get(String path) throws ClientException {
         Response response = this.target.path(path).request().get();

@@ -25,6 +25,10 @@ public class VertexLabelAPI extends SchemaAPI {
         this.client.post(path(), vertexLabel);
     }
 
+    public void append(VertexLabel vertexLabel) {
+        this.client.put(path(), vertexLabel);
+    }
+
     public VertexLabel get(String name) {
         RestResult result = this.client.get(path(), name);
         return result.readObject(VertexLabel.class);
