@@ -1,1 +1,1 @@
-BUILD_SUBMITTER -x -m baidu/xbu-data/hugegraph-client -c "cd baidu/xbu-data/hugegraph-client && mkdir output && cp BCLOUD ./output/" -u ./
+BUILD_SUBMITTER -x -e CENTOS6U3 -m baidu/xbu-data/hugegraph-client -c "cd baidu/xbu-data/hugegraph-client && sh build.sh" -u ./
