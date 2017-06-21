@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Created by liningrui on 2017/5/23.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class GraphElement extends Element {
+public abstract class GraphElement extends Element {
 
     @JsonProperty
     protected String id;
@@ -25,6 +25,10 @@ public class GraphElement extends Element {
         return this.id;
     }
 
+    public void id(String id) {
+        this.id = id;
+    }
+
     public String label() {
         return this.label;
     }
@@ -33,9 +37,7 @@ public class GraphElement extends Element {
         return type;
     }
 
-    public void property(String key, Object value) {
-        this.properties.put(key, value);
-    }
+    public abstract GraphElement property(String key, Object value);
 
     public Map<String, Object> properties() {
         return properties;

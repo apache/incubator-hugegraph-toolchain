@@ -5,12 +5,11 @@ import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.T;
-import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 
-public class Example {
+public class SingleExample {
 
     public static void main(String[] args) {
         // If connect failed will throw a exception.
@@ -88,10 +87,10 @@ public class Example {
         System.out.println(schema.getEdgeLabels());
         System.out.println(schema.getIndexLabels());
 
-//        schema.removePropertyKey("name");
-//        schema.removeVertexLabel("person");
-//        schema.removeEdgeLabel("knows");
-//        schema.removeIndexLabel("createdByDate");
+        //        schema.removePropertyKey("name");
+        //        schema.removeVertexLabel("person");
+        //        schema.removeEdgeLabel("knows");
+        //        schema.removeIndexLabel("createdByDate");
 
         GraphManager graph = hugeClient.graph();
 
@@ -108,11 +107,6 @@ public class Example {
         Vertex peter = graph.addVertex(T.label, "person",
                 "name", "peter", "age", 35);
 
-        Edge knows1 = marko.addEdge("knows", vadas);
-        System.out.println(knows1);
-        Edge knows2 = marko.addEdge("knows", josh);
-        System.out.println(knows2);
-
         marko.addEdge("knows", vadas, "date", "20160110");
         marko.addEdge("knows", josh, "date", "20130220");
         marko.addEdge("created", lop, "date", "20171210");
@@ -125,7 +119,6 @@ public class Example {
                 .language("gremlin-groovy").execute();
 
         System.out.println(result);
-
     }
 
 }

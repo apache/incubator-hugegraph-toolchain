@@ -71,6 +71,21 @@ public class RestResult {
         return objList;
     }
 
+    public <T> List<T> readList(Class<T> clazz) {
+        List<T> objList;
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JavaType type = mapper.getTypeFactory()
+                    .constructParametricType(List.class, clazz);
+            objList = mapper.readValue(this.content, type);
+
+        } catch (IOException e) {
+            throw new SerializeException(String.format(
+                    "Failed to deserialize %s", this.content), e);
+        }
+        return objList;
+    }
+
     @Override
     public String toString() {
         return String.format("{status=%s, headers=%s, content=%s",

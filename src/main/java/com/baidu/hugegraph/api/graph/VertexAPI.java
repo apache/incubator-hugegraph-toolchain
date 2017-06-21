@@ -26,6 +26,11 @@ public class VertexAPI extends GraphAPI {
         return result.readObject(Vertex.class);
     }
 
+    public List<String> create(List<Vertex> vertices) {
+        RestResult result = this.client.post(batchPath(), vertices);
+        return result.readList(String.class);
+    }
+
     public Vertex get(String name) {
         RestResult result = this.client.get(path(), name);
         return result.readObject(Vertex.class);

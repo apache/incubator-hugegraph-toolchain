@@ -35,6 +35,12 @@ public class Edge extends GraphElement {
         this.source = source;
     }
 
+    public Edge source(Vertex source) {
+        this.source = source.id();
+        this.sourceLabel = source.label();
+        return this;
+    }
+
     @JsonProperty("target")
     public String target() {
         return this.target;
@@ -43,6 +49,12 @@ public class Edge extends GraphElement {
     @JsonProperty("inV")
     public void target(String target) {
         this.target = target;
+    }
+
+    public Edge target(Vertex target) {
+        this.target = target.id();
+        this.targetLabel = target.label();
+        return this;
     }
 
     public String sourceLabel() {
@@ -59,6 +71,12 @@ public class Edge extends GraphElement {
 
     public void targetLabel(String targetLabel) {
         this.targetLabel = targetLabel;
+    }
+
+    @Override
+    public Edge property(String key, Object value) {
+        this.properties.put(key, value);
+        return this;
     }
 
     @Override

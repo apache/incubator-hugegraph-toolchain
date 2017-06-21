@@ -39,6 +39,15 @@ public class GraphManager {
         return vertex;
     }
 
+    public List<Vertex> addVertices(List<Vertex> vertices) {
+        List<String> ids = this.vertexApi.create(vertices);
+        assert vertices.size() == ids.size();
+        for (int i = 0; i < vertices.size(); i++) {
+            vertices.get(i).id(ids.get(i));
+        }
+        return vertices;
+    }
+
     public List<Vertex> getVertices() {
         List<Vertex> vertices = this.vertexApi.list();
         for (Vertex vertex : vertices) {
@@ -67,6 +76,15 @@ public class GraphManager {
 
     public Edge getEdge(String edgeId) {
         return this.edgeApi.get(edgeId);
+    }
+
+    public List<Edge> addEdges(List<Edge> edges) {
+        List<String> ids = this.edgeApi.create(edges);
+        assert edges.size() == ids.size();
+        for (int i = 0; i < edges.size(); i++) {
+            edges.get(i).id(ids.get(i));
+        }
+        return edges;
     }
 
     public List<Edge> getEdges() {

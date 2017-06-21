@@ -26,6 +26,11 @@ public class EdgeAPI extends GraphAPI {
         return result.readObject(Edge.class);
     }
 
+    public List<String> create(List<Edge> edges) {
+        RestResult result = this.client.post(batchPath(), edges);
+        return result.readList(String.class);
+    }
+
     public Edge get(String name) {
         RestResult result = this.client.get(path(), name);
         return result.readObject(Edge.class);

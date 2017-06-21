@@ -10,10 +10,17 @@ public abstract class GraphAPI extends API {
 
     private static final String PATH = "graphs/%s/graph/%s";
 
+    private String batchPath;
+
     public GraphAPI(RestClient client, String graph) {
         super(client);
         this.path(String.format(PATH, graph, type()));
+        this.batchPath = String.format("%s/%s", this.path, "batch");
     }
 
     public abstract String type();
+
+    public String batchPath() {
+        return this.batchPath;
+    }
 }

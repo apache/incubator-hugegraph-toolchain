@@ -39,6 +39,12 @@ public class Vertex extends GraphElement {
     }
 
     @Override
+    public Vertex property(String key, Object value) {
+        this.properties.put(key, value);
+        return this;
+    }
+
+    @Override
     public String toString() {
         return String.format("{label=%s, properties=%s}",
                 this.label,
