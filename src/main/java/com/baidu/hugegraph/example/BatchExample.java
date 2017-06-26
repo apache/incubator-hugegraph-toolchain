@@ -1,4 +1,4 @@
-package com.baidu.hugegraph;
+package com.baidu.hugegraph.example;
 
 import java.util.LinkedList;
 import java.util.List;

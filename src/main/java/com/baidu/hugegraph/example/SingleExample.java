@@ -1,4 +1,4 @@
-package com.baidu.hugegraph;
+package com.baidu.hugegraph.example;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
