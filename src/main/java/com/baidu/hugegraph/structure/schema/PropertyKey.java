@@ -146,7 +146,7 @@ public class PropertyKey extends SchemaElement {
         }
 
         public Builder ifNotExist() {
-            this.propertyKey.checkExits = false;
+            this.propertyKey.checkExist = false;
             return this;
         }
     }

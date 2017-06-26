@@ -6,7 +6,6 @@ import java.util.Map;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
-import com.baidu.hugegraph.exception.ClientException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 
 /**

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.baidu.hugegraph.driver.GremlinManager;
+import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
@@ -27,15 +28,15 @@ public class GremlinRequest {
 
     public static class Builder {
         private GremlinRequest request;
-        private GremlinManager executor;
+        private GremlinManager manager;
 
         public Builder(String gremlin, GremlinManager executor) {
             this.request = new GremlinRequest(gremlin);
-            this.executor = executor;
+            this.manager = executor;
         }
 
-        public String execute() {
-            return this.executor.execute(this.request);
+        public ResultSet execute() {
+            return this.manager.execute(this.request);
         }
 
         public Builder binding(String key, String value) {

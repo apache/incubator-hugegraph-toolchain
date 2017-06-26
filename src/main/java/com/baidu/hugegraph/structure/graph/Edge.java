@@ -5,7 +5,6 @@ import java.util.HashMap;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
 
 /**
  * Created by liningrui on 2017/5/11.
@@ -81,10 +80,13 @@ public class Edge extends GraphElement {
 
     @Override
     public String toString() {
-        return String.format("{source=%s, target=%s, label=%s, properties=%s}",
-                this.source,
-                this.target,
-                this.label,
-                this.properties);
+        return String.format("{id=%s, "
+                        + "source=%s, sourceLabel=%s, "
+                        + "target=%s, targetLabel=%s, "
+                        + "label=%s, properties=%s}",
+                this.id,
+                this.source, this.sourceLabel,
+                this.target, this.targetLabel,
+                this.label, this.properties);
     }
 }

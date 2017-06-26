@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -83,7 +82,7 @@ public class VertexLabel extends Indexable {
         }
 
         public Builder ifNotExist() {
-            this.vertexLabel.checkExits = false;
+            this.vertexLabel.checkExist = false;
             return this;
         }
     }

@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.EdgeLink;
 import com.baidu.hugegraph.structure.constant.Frequency;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -139,7 +138,7 @@ public class EdgeLabel extends Indexable {
         }
 
         public Builder ifNotExist() {
-            this.edgeLabel.checkExits = false;
+            this.edgeLabel.checkExist = false;
             return this;
         }
     }

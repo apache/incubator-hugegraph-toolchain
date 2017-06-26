@@ -3,7 +3,6 @@ package com.baidu.hugegraph.structure;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -17,13 +16,13 @@ public abstract class SchemaElement extends Element {
     protected String name;
     @JsonProperty
     protected Set<String> properties;
-    @JsonIgnore
-    protected boolean checkExits;
+    @JsonProperty
+    protected boolean checkExist;
 
     public SchemaElement(String name) {
         this.name = name;
         this.properties = new HashSet<>();
-        this.checkExits = true;
+        this.checkExist = true;
     }
 
     public String name() {
@@ -35,7 +34,7 @@ public abstract class SchemaElement extends Element {
     }
 
     public boolean checkExits() {
-        return this.checkExits;
+        return this.checkExist;
     }
 
 }

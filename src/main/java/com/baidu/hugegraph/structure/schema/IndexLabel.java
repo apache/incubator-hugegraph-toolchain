@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.exception.StructureException;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
@@ -134,7 +133,7 @@ public class IndexLabel extends SchemaElement {
         }
 
         public Builder ifNotExist() {
-            this.indexLabel.checkExits = false;
+            this.indexLabel.checkExist = false;
             return this;
         }
     }

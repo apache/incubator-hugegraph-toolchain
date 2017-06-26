@@ -1,11 +1,19 @@
 package com.baidu.hugegraph.example;
 
+import java.util.Iterator;
+import java.util.List;
+
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.T;
+import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.gremlin.Result;
+import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 
@@ -115,10 +123,29 @@ public class SingleExample {
         peter.addEdge("created", lop, "date", "20170324");
 
         GremlinManager gremlin = hugeClient.gremlin();
-        String result = gremlin.gremlin("g.V()")
-                .language("gremlin-groovy").execute();
 
-        System.out.println(result);
+        System.out.println("==== Vertex ====");
+        ResultSet resultSet = gremlin.gremlin("g.V().outE().path()").execute();
+        Iterator<Result> results = resultSet.iterator();
+        results.forEachRemaining(result -> {
+            System.out.println(result.getObject().getClass());
+            Object object = result.getObject();
+            if (object instanceof Vertex) {
+                System.out.println(((Vertex) object).id());
+            } else if (object instanceof Edge) {
+                System.out.println(((Edge) object).id());
+            } else if (object instanceof Path) {
+                List<GraphElement> elements = ((Path) object).objects();
+                elements.stream().forEach(element -> {
+                    System.out.println(element.getClass());
+                    System.out.println(element);
+                });
+            } else {
+                System.out.println(object);
+            }
+        });
+
+
     }
 
 }

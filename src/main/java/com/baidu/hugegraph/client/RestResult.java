@@ -63,7 +63,6 @@ public class RestResult {
             JavaType type = mapper.getTypeFactory()
                     .constructParametricType(List.class, clazz);
             objList = mapper.readValue(element.toString(), type);
-
         } catch (IOException e) {
             throw new SerializeException(String.format(
                     "Failed to deserialize %s", this.content), e);
@@ -78,7 +77,6 @@ public class RestResult {
             JavaType type = mapper.getTypeFactory()
                     .constructParametricType(List.class, clazz);
             objList = mapper.readValue(this.content, type);
-
         } catch (IOException e) {
             throw new SerializeException(String.format(
                     "Failed to deserialize %s", this.content), e);
@@ -93,5 +91,4 @@ public class RestResult {
                 this.headers,
                 this.content);
     }
-
 }
