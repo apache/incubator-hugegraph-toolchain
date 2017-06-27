@@ -5,6 +5,7 @@ import java.util.List;
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.exception.ClientException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -22,6 +23,17 @@ public class GraphManager {
         RestClient client = new RestClient(url);
         this.vertexApi = new VertexAPI(client, graph);
         this.edgeApi = new EdgeAPI(client, graph);
+    }
+
+    public Vertex addVertex(Vertex vertex) {
+        if (vertex.id() != null) {
+            // TODO: Need to perform exception.
+            throw new ClientException(String.format("Not allowed "
+                    + "to custom id for vertex: '%s'", vertex));
+        }
+        vertex = this.vertexApi.create(vertex);
+        vertex.manager(this);
+        return vertex;
     }
 
     public Vertex addVertex(Object... keyValues) {
@@ -58,6 +70,14 @@ public class GraphManager {
 
     public void removeVertex(String vertexId) {
         this.vertexApi.delete(vertexId);
+    }
+
+    public Edge addEdge(Edge edge) {
+        if (edge.id() != null) {
+            throw new ClientException(String.format("Not allowed "
+                    + "to custom id for edge: '%s'", edge));
+        }
+        return this.edgeApi.create(edge);
     }
 
     public Edge addEdge(Vertex source, String label, Vertex target,

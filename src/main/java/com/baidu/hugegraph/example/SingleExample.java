@@ -115,12 +115,21 @@ public class SingleExample {
         Vertex peter = graph.addVertex(T.label, "person",
                 "name", "peter", "age", 35);
 
+        // Use addVeretx(vertex) method directly
+        Vertex linary = new Vertex("person").property("name", "linary")
+                .property("age", 25);
+        linary = graph.addVertex(linary);
+
         marko.addEdge("knows", vadas, "date", "20160110");
         marko.addEdge("knows", josh, "date", "20130220");
         marko.addEdge("created", lop, "date", "20171210");
         josh.addEdge("created", ripple, "date", "20171210");
         josh.addEdge("created", lop, "date", "20091111");
         peter.addEdge("created", lop, "date", "20170324");
+
+        Edge linaryKnowMarko = new Edge("knows").source(linary).target(marko)
+                .property("date", "20170624");
+        linaryKnowMarko = graph.addEdge(linaryKnowMarko);
 
         GremlinManager gremlin = hugeClient.gremlin();
 
