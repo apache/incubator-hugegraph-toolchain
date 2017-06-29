@@ -136,7 +136,7 @@ public class BatchExample {
         edges.add(joshCreateLop);
         edges.add(peterCreateLop);
 
-        edges = graph.addEdges(edges);
+        edges = graph.addEdges(edges, false);
         edges.forEach(edge -> System.out.println(edge));
 
     }

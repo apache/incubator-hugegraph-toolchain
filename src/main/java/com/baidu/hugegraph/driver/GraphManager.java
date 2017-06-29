@@ -99,7 +99,11 @@ public class GraphManager {
     }
 
     public List<Edge> addEdges(List<Edge> edges) {
-        List<String> ids = this.edgeApi.create(edges);
+        return this.addEdges(edges, true);
+    }
+
+    public List<Edge> addEdges(List<Edge> edges, boolean checkVertex) {
+        List<String> ids = this.edgeApi.create(edges, checkVertex);
         assert edges.size() == ids.size();
         for (int i = 0; i < edges.size(); i++) {
             edges.get(i).id(ids.get(i));

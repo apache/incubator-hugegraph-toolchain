@@ -6,6 +6,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Created by liningrui on 2017/5/23.
@@ -26,8 +27,9 @@ public class EdgeAPI extends GraphAPI {
         return result.readObject(Edge.class);
     }
 
-    public List<String> create(List<Edge> edges) {
-        RestResult result = this.client.post(batchPath(), edges);
+    public List<String> create(List<Edge> edges, boolean checkVertex) {
+        RestResult result = this.client.post(batchPath(), edges,
+                ImmutableMap.of("checkVertex", checkVertex));
         return result.readList(String.class);
     }
 

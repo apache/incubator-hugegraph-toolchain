@@ -1,6 +1,7 @@
 package com.baidu.hugegraph.client;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -31,6 +32,22 @@ public class RestClient {
     // post
     public RestResult post(String path, Object object) throws ClientException {
         Response response = this.target.path(path)
+                .request().post(Entity.json(object));
+        // If check status failed, throw client exception.
+        checkStatus(response, Response.Status.CREATED, Response.Status.OK);
+        return new RestResult(response);
+    }
+
+    // post
+    public RestResult post(String path, Object object,
+                           Map<String, Object> params)
+            throws ClientException {
+
+        WebTarget target = this.target;
+        for (Map.Entry<String, Object> param : params.entrySet()) {
+            target = target.queryParam(param.getKey(), param.getValue());
+        }
+        Response response = target.path(path)
                 .request().post(Entity.json(object));
         // If check status failed, throw client exception.
         checkStatus(response, Response.Status.CREATED, Response.Status.OK);
