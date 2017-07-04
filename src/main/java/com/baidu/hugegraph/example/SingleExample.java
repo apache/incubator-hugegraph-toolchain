@@ -120,6 +120,8 @@ public class SingleExample {
                 .property("age", 25);
         linary = graph.addVertex(linary);
 
+        System.out.println(graph.getEdges(3).size());
+
         marko.addEdge("knows", vadas, "date", "20160110");
         marko.addEdge("knows", josh, "date", "20130220");
         marko.addEdge("created", lop, "date", "20171210");

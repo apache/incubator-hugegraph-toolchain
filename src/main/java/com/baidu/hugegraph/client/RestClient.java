@@ -40,9 +40,7 @@ public class RestClient {
 
     // post
     public RestResult post(String path, Object object,
-                           Map<String, Object> params)
-            throws ClientException {
-
+                           Map<String, Object> params) throws ClientException {
         WebTarget target = this.target;
         for (Map.Entry<String, Object> param : params.entrySet()) {
             target = target.queryParam(param.getKey(), param.getValue());
@@ -65,6 +63,17 @@ public class RestClient {
     // list
     public RestResult get(String path) throws ClientException {
         Response response = this.target.path(path).request().get();
+        checkStatus(response, Response.Status.OK);
+        return new RestResult(response);
+    }
+
+    public RestResult get(String path, Map<String, Object> params)
+            throws ClientException {
+        WebTarget target = this.target;
+        for (Map.Entry<String, Object> param : params.entrySet()) {
+            target = target.queryParam(param.getKey(), param.getValue());
+        }
+        Response response = target.path(path).request().get();
         checkStatus(response, Response.Status.OK);
         return new RestResult(response);
     }

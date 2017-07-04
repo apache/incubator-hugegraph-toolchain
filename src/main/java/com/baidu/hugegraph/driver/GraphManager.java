@@ -61,7 +61,11 @@ public class GraphManager {
     }
 
     public List<Vertex> getVertices() {
-        List<Vertex> vertices = this.vertexApi.list();
+        return this.getVertices(-1);
+    }
+
+    public List<Vertex> getVertices(int limit) {
+        List<Vertex> vertices = this.vertexApi.list(limit);
         for (Vertex vertex : vertices) {
             vertex.manager(this);
         }
@@ -112,7 +116,11 @@ public class GraphManager {
     }
 
     public List<Edge> getEdges() {
-        return this.edgeApi.list();
+        return this.getEdges(-1);
+    }
+
+    public List<Edge> getEdges(int limit) {
+        return this.edgeApi.list(limit);
     }
 
     public void removeEdge(String edgeId) {

@@ -6,6 +6,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Created by liningrui on 2017/5/23.
@@ -36,8 +37,9 @@ public class VertexAPI extends GraphAPI {
         return result.readObject(Vertex.class);
     }
 
-    public List<Vertex> list() {
-        RestResult result = this.client.get(path());
+    public List<Vertex> list(int limit) {
+        RestResult result = this.client.get(path(),
+                ImmutableMap.of("limit", limit));
         return result.readList(type(), Vertex.class);
     }
 

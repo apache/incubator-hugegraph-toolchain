@@ -38,8 +38,9 @@ public class EdgeAPI extends GraphAPI {
         return result.readObject(Edge.class);
     }
 
-    public List<Edge> list() {
-        RestResult result = this.client.get(path());
+    public List<Edge> list(int limit) {
+        RestResult result = this.client.get(path(),
+                ImmutableMap.of("limit", limit));
         return result.readList(type(), Edge.class);
     }
 
