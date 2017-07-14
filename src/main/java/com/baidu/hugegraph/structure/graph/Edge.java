@@ -22,6 +22,7 @@ public class Edge extends GraphElement {
     public Edge(@JsonProperty("label") String label) {
         this.label = label;
         this.properties = new HashMap<>();
+        this.type = "edge";
     }
 
     @JsonProperty("source")

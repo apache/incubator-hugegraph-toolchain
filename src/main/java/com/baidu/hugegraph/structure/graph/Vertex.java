@@ -20,6 +20,7 @@ public class Vertex extends GraphElement {
     public Vertex(@JsonProperty("label") String label) {
         this.label = label;
         this.properties = new HashMap<>();
+        this.type = "vertex";
     }
 
     public Edge addEdge(String label, Vertex vertex, Object... properties) {
