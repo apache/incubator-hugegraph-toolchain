@@ -9,6 +9,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
+import org.glassfish.jersey.message.GZipEncoder;
+
 import com.baidu.hugegraph.exception.ClientException;
 
 /**
@@ -21,6 +23,7 @@ public class RestClient {
 
     public RestClient(String url) {
         this.client = ClientBuilder.newClient();
+        this.client.register(GZipEncoder.class);
         this.target = this.client.target(url);
     }
 
