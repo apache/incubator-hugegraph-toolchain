@@ -1,5 +1,7 @@
 package com.baidu.hugegraph.example;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,10 +18,11 @@ import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SingleExample {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         // If connect failed will throw a exception.
         HugeClient hugeClient = HugeClient.open("http://localhost:8080",
                 "hugegraph");
@@ -120,7 +123,7 @@ public class SingleExample {
                 .property("age", 25);
         linary = graph.addVertex(linary);
 
-        System.out.println(graph.getEdges(3).size());
+//        System.out.println(graph.getEdges(3).size());
 
         marko.addEdge("knows", vadas, "date", "20160110");
         marko.addEdge("knows", josh, "date", "20130220");
@@ -133,8 +136,22 @@ public class SingleExample {
                 .property("date", "20170624");
         linaryKnowMarko = graph.addEdge(linaryKnowMarko);
 
-        GremlinManager gremlin = hugeClient.gremlin();
 
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Serialize vertex to file and deserialize from it.
+        File vertexFile = new File("vertex.json");
+        mapper.writeValue(vertexFile, linary);
+        Vertex linary1 = mapper.readValue(vertexFile, Vertex.class);
+        System.out.println(linary1);
+        //Serialize vertex to file and deserialize from it.
+        File edgeFile = new File("edge.json");
+        mapper.writeValue(edgeFile, linaryKnowMarko);
+        Edge linaryKnowMarko1 = mapper.readValue(edgeFile, Edge.class);
+        System.out.println(linaryKnowMarko1);
+
+
+        GremlinManager gremlin = hugeClient.gremlin();
         System.out.println("==== Vertex ====");
         ResultSet resultSet = gremlin.gremlin("g.V().outE().path()").execute();
         Iterator<Result> results = resultSet.iterator();
