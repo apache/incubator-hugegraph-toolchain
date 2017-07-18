@@ -10,6 +10,8 @@ public abstract class GraphAPI extends API {
 
     private static final String PATH = "graphs/%s/graph/%s";
 
+    protected static final String BATCH_ENCODING = "gzip";
+
     private String batchPath;
 
     public GraphAPI(RestClient client, String graph) {

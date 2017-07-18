@@ -2,6 +2,8 @@ package com.baidu.hugegraph.api.graph;
 
 import java.util.List;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -28,7 +30,9 @@ public class EdgeAPI extends GraphAPI {
     }
 
     public List<String> create(List<Edge> edges, boolean checkVertex) {
-        RestResult result = this.client.post(batchPath(), edges,
+        MultivaluedHashMap headers = new MultivaluedHashMap();
+        headers.putSingle("Content-Encoding", this.BATCH_ENCODING);
+        RestResult result = this.client.post(batchPath(), edges, headers,
                 ImmutableMap.of("checkVertex", checkVertex));
         return result.readList(String.class);
     }
