@@ -16,7 +16,7 @@ public class HugeClient {
         this.graphs.getGraph(graph);
         this.schema = new SchemaManager(url, graph);
         this.graph = new GraphManager(url, graph);
-        this.gremlin = new GremlinManager(url);
+        this.gremlin = new GremlinManager(url, graph);
     }
 
     public static HugeClient open(String url, String name) {
