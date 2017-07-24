@@ -1,8 +1,8 @@
 package com.baidu.hugegraph.structure.schema;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -15,12 +15,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class VertexLabel extends Indexable {
 
     @JsonProperty
-    private Set<String> primaryKeys;
+    private List<String> primaryKeys;
 
     @JsonCreator
     public VertexLabel(@JsonProperty("name") String name) {
         super(name);
-        this.primaryKeys = new HashSet<>();
+        this.primaryKeys = new ArrayList<>();
     }
 
     @Override
@@ -28,12 +28,16 @@ public class VertexLabel extends Indexable {
         return HugeType.VERTEX_LABEL.string();
     }
 
-    public Set<String> primaryKeys() {
+    public List<String> primaryKeys() {
         return this.primaryKeys;
     }
 
     public VertexLabel primaryKeys(String... primaryKeys) {
-        this.primaryKeys.addAll(Arrays.asList(primaryKeys));
+        for (String primaryKey : primaryKeys) {
+            if (!this.primaryKeys.contains(primaryKey)) {
+                this.primaryKeys.add(primaryKey);
+            }
+        }
         return this;
     }
 

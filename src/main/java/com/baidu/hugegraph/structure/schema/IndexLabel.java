@@ -1,8 +1,7 @@
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.SchemaElement;
@@ -26,13 +25,13 @@ public class IndexLabel extends SchemaElement {
     @JsonProperty
     private IndexType indexType;
     @JsonProperty
-    private Set<String> fields;
+    private List<String> fields;
 
     @JsonCreator
     public IndexLabel(@JsonProperty("name") String name) {
         super(name);
         this.indexType = IndexType.SECONDARY;
-        this.fields = new HashSet<String>();
+        this.fields = new ArrayList<>();
     }
 
     @Override
@@ -67,11 +66,11 @@ public class IndexLabel extends SchemaElement {
         return this;
     }
 
-    public Set<String> indexFields() {
+    public List<String> indexFields() {
         return fields;
     }
 
-    public IndexLabel indexFields(Set<String> fields) {
+    public IndexLabel indexFields(List<String> fields) {
         this.fields = fields;
         return this;
     }
@@ -118,7 +117,11 @@ public class IndexLabel extends SchemaElement {
         }
 
         public Builder by(String... indexFields) {
-            this.indexLabel.fields.addAll(Arrays.asList(indexFields));
+            for (String field : indexFields) {
+                if (!this.indexLabel.fields.contains(field)) {
+                    this.indexLabel.fields.add(field);
+                }
+            }
             return this;
         }
 

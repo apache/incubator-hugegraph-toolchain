@@ -1,7 +1,9 @@
 package com.baidu.hugegraph.structure.schema;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.baidu.hugegraph.driver.SchemaManager;
@@ -21,14 +23,14 @@ public class EdgeLabel extends Indexable {
     @JsonProperty
     private Set<EdgeLink> links;
     @JsonProperty
-    private Set<String> sortKeys;
+    private List<String> sortKeys;
 
     @JsonCreator
     public EdgeLabel(@JsonProperty("name") String name) {
         super(name);
         this.frequency = Frequency.SINGLE;
         this.links = new HashSet<>();
-        this.sortKeys = new HashSet<>();
+        this.sortKeys = new ArrayList<>();
     }
 
     @Override
@@ -54,12 +56,16 @@ public class EdgeLabel extends Indexable {
         return this;
     }
 
-    public Set<String> sortKeys() {
+    public List<String> sortKeys() {
         return this.sortKeys;
     }
 
     public EdgeLabel sortKeys(String... sortKeys) {
-        this.sortKeys.addAll(Arrays.asList(sortKeys));
+        for (String sortKey : sortKeys) {
+            if (!this.sortKeys.contains(sortKey)) {
+                this.sortKeys.add(sortKey);
+            }
+        }
         return this;
     }
 
