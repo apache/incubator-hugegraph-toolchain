@@ -24,16 +24,16 @@ public class Graph {
     private List<HugeEdge> hugeEdges;
 
     public Graph(GraphManager graph) {
-        logger.debug("Loding Graph...");
+        logger.debug("Loading Graph...");
 
         List<Vertex> vertices = graph.getVertices();
-        logger.debug("Loded vertices: {}", vertices.size());
+        logger.debug("Loaded vertices: {}", vertices.size());
 
         List<Edge> edges = graph.getEdges();
-        logger.debug("Loded edges: {}", edges.size());
+        logger.debug("Loaded edges: {}", edges.size());
 
         this.mergeEdges2Vertices(vertices, edges);
-        logger.debug("Loded Graph");
+        logger.debug("Loaded Graph");
     }
 
     public Graph(List<Vertex> vertices, List<Edge> edges) {
