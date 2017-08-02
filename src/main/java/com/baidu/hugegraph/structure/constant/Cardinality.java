@@ -44,5 +44,4 @@ public enum Cardinality {
     public String string() {
         return this.name;
     }
-
 }

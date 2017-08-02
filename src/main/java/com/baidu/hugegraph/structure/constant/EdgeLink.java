@@ -21,7 +21,6 @@ package com.baidu.hugegraph.structure.constant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class EdgeLink {
 
     @JsonProperty
@@ -63,8 +62,8 @@ public class EdgeLink {
         }
 
         EdgeLink other = (EdgeLink) obj;
-        if (this.source().equals(other.source())
-                && this.target().equals(other.target())) {
+        if (this.source().equals(other.source()) &&
+            this.target().equals(other.target())) {
             return true;
         } else {
             return false;
@@ -75,5 +74,4 @@ public class EdgeLink {
     public int hashCode() {
         return this.source().hashCode() ^ this.target().hashCode();
     }
-
 }

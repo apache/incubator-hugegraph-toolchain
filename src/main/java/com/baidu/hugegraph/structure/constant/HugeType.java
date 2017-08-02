@@ -21,17 +21,17 @@ package com.baidu.hugegraph.structure.constant;
 
 public enum HugeType {
 
-    // schema
+    // Schema
     VERTEX_LABEL(1, "vertexlabels"),
     EDGE_LABEL(2, "edgelabels"),
     PROPERTY_KEY(3, "propertykeys"),
     INDEX_LABEL(4, "indexlabels"),
 
-    // data
+    // Data
     VERTEX(101, "vertices"),
     EDGE(120, "edges"),
 
-    // gremlin
+    // Gremlin
     GREMLIN(201, "gremlin"),
 
     GRAPHS(220, "graphs");
