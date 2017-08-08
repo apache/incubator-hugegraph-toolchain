@@ -19,18 +19,27 @@
 
 package com.baidu.hugegraph.driver;
 
+import com.baidu.hugegraph.util.VersionUtil;
+import com.baidu.hugegraph.version.ClientVersion;
 
 public class HugeClient {
 
+    static {
+        ClientVersion.check();
+    }
+
+    private VersionManager version;
     private GraphsManager graphs;
     private SchemaManager schema;
     private GraphManager graph;
     private GremlinManager gremlin;
 
     public HugeClient(String url, String graph) {
+        // Check hugegraph-server api version
+        this.version = new VersionManager(url);
+        this.checkServerApiVersion();
+
         this.graphs = new GraphsManager(url);
-        // Just check url + graph wheather to connect.
-        this.graphs.getGraph(graph);
         this.schema = new SchemaManager(url, graph);
         this.graph = new GraphManager(url, graph);
         this.gremlin = new GremlinManager(url, graph);
@@ -38,6 +47,12 @@ public class HugeClient {
 
     public static HugeClient open(String url, String name) {
         return new HugeClient(url, name);
+    }
+
+    private void checkServerApiVersion() {
+        VersionUtil.Version apiVersion = VersionUtil.Version.of(
+                                         this.version.getApiVersion());
+        VersionUtil.check(apiVersion, "0.3", "0.4", "hugegraph-api");
     }
 
     public SchemaManager schema() {
