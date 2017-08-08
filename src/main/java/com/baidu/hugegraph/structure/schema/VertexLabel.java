@@ -65,12 +65,10 @@ public class VertexLabel extends Indexable {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, primaryKeys=%s, "
-                        + "indexNames=%s, properties=%s}",
-                this.name,
-                this.primaryKeys,
-                this.indexNames,
-                this.properties);
+        return String.format("{name=%s, primaryKeys=%s, " +
+                             "indexNames=%s, properties=%s}",
+                             this.name, this.primaryKeys,
+                             this.indexNames, this.properties);
     }
 
     public static class Builder {
@@ -93,12 +91,12 @@ public class VertexLabel extends Indexable {
         }
 
         public Builder properties(String... properties) {
-            this.vertexLabel.properties.addAll(Arrays.asList(properties));
+            this.vertexLabel.properties(properties);
             return this;
         }
 
-        public Builder primaryKeys(String... primaryKeys) {
-            this.vertexLabel.primaryKeys.addAll(Arrays.asList(primaryKeys));
+        public Builder primaryKeys(String... keys) {
+            this.vertexLabel.primaryKeys(keys);
             return this;
         }
 

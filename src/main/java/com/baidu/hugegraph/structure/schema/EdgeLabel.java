@@ -21,14 +21,13 @@ package com.baidu.hugegraph.structure.schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.structure.constant.EdgeLink;
 import com.baidu.hugegraph.structure.constant.Frequency;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -38,7 +37,9 @@ public class EdgeLabel extends Indexable {
     @JsonProperty
     private Frequency frequency;
     @JsonProperty
-    private Set<EdgeLink> links;
+    private String sourceLabel;
+    @JsonProperty
+    private String targetLabel;
     @JsonProperty
     private List<String> sortKeys;
 
@@ -46,7 +47,6 @@ public class EdgeLabel extends Indexable {
     public EdgeLabel(@JsonProperty("name") String name) {
         super(name);
         this.frequency = Frequency.SINGLE;
-        this.links = new HashSet<>();
         this.sortKeys = new ArrayList<>();
     }
 
@@ -64,12 +64,27 @@ public class EdgeLabel extends Indexable {
         return this;
     }
 
-    public Set<EdgeLink> links() {
-        return this.links;
+    public String sourceLabel() {
+        return this.sourceLabel;
     }
 
-    public EdgeLabel links(Set<EdgeLink> links) {
-        this.links = links;
+    public EdgeLabel sourceLabel(String label) {
+        E.checkArgument(this.sourceLabel == null,
+                        "Not allowed to set source label multi times " +
+                        "of edge label '%s'", this.name);
+        this.sourceLabel = label;
+        return this;
+    }
+
+    public String targetLabel() {
+        return this.targetLabel;
+    }
+
+    public EdgeLabel targetLabel(String label) {
+        E.checkArgument(this.targetLabel == null,
+                        "Not allowed to set target label multi times " +
+                        "of edge label '%s'", this.name);
+        this.targetLabel = label;
         return this;
     }
 
@@ -102,13 +117,10 @@ public class EdgeLabel extends Indexable {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, links=%s, sortKeys=%s, "
-                        + "indexNames=%s, properties=%s}",
-                this.name,
-                this.links,
-                this.sortKeys,
-                this.indexNames,
-                this.properties);
+        return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
+                             "sortKeys=%s, indexNames=%s, properties=%s}",
+                             this.name, this.sourceLabel, this.targetLabel,
+                             this.sortKeys, this.indexNames, this.properties);
     }
 
     public static class Builder {
@@ -131,22 +143,18 @@ public class EdgeLabel extends Indexable {
         }
 
         public Builder properties(String... properties) {
-            this.edgeLabel.properties.addAll(Arrays.asList(properties));
+            this.edgeLabel.properties(properties);
             return this;
         }
 
-        public Builder sortKeys(String... sortKeys) {
-            this.edgeLabel.sortKeys.addAll(Arrays.asList(sortKeys));
+        public Builder sortKeys(String... keys) {
+            this.edgeLabel.sortKeys(keys);
             return this;
         }
 
-        public Builder indexNames(String... indexNames) {
-            this.edgeLabel.indexNames.addAll(Arrays.asList(indexNames));
-            return this;
-        }
-
-        public Builder link(String src, String tgt) {
-            this.edgeLabel.links.add(EdgeLink.of(src, tgt));
+        public Builder link(String sourceLabel, String targetLabel) {
+            this.edgeLabel.sourceLabel(sourceLabel);
+            this.edgeLabel.targetLabel(targetLabel);
             return this;
         }
 

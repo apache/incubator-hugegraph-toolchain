@@ -47,19 +47,19 @@ public class SchemaManager {
         this.indexLabelAPI = new IndexLabelAPI(client, graph);
     }
 
-    public PropertyKey.Builder makePropertyKey(String name) {
+    public PropertyKey.Builder propertyKey(String name) {
         return new PropertyKey.Builder(name, this);
     }
 
-    public VertexLabel.Builder makeVertexLabel(String name) {
+    public VertexLabel.Builder vertexLabel(String name) {
         return new VertexLabel.Builder(name, this);
     }
 
-    public EdgeLabel.Builder makeEdgeLabel(String name) {
+    public EdgeLabel.Builder edgeLabel(String name) {
         return new EdgeLabel.Builder(name, this);
     }
 
-    public IndexLabel.Builder makeIndexLabel(String name) {
+    public IndexLabel.Builder indexLabel(String name) {
         return new IndexLabel.Builder(name, this);
     }
 
