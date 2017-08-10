@@ -25,6 +25,8 @@ import java.util.List;
 
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.structure.constant.IdStrategy;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -32,17 +34,32 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class VertexLabel extends Indexable {
 
     @JsonProperty
+    private IdStrategy idStrategy;
+    @JsonProperty
     private List<String> primaryKeys;
 
     @JsonCreator
     public VertexLabel(@JsonProperty("name") String name) {
         super(name);
+        this.idStrategy = IdStrategy.DAFAULT;
         this.primaryKeys = new ArrayList<>();
     }
 
     @Override
     public String type() {
         return HugeType.VERTEX_LABEL.string();
+    }
+
+    public IdStrategy idStrategy() {
+        return this.idStrategy;
+    }
+
+    public void idStrategy(IdStrategy idStrategy) {
+        E.checkArgument(this.idStrategy == IdStrategy.DAFAULT ||
+                        this.idStrategy == idStrategy,
+                        "Not allowed to change id strategy for " +
+                        "vertex label '%s'", this.name);
+        this.idStrategy = idStrategy;
     }
 
     public List<String> primaryKeys() {
@@ -88,6 +105,21 @@ public class VertexLabel extends Indexable {
 
         public void append() {
             this.manager.appendVertexLabel(this.vertexLabel);
+        }
+
+        public Builder useAutomaticId() {
+            this.vertexLabel.idStrategy(IdStrategy.AUTOMATIC);
+            return this;
+        }
+
+        public Builder useCustomizeId() {
+            this.vertexLabel.idStrategy(IdStrategy.CUSTOMIZE);
+            return this;
+        }
+
+        public Builder usePrimaryKeyId() {
+            this.vertexLabel.idStrategy(IdStrategy.PRIMARY_KEY);
+            return this;
         }
 
         public Builder properties(String... properties) {

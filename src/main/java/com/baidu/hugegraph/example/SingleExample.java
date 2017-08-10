@@ -55,8 +55,9 @@ public class SingleExample {
         schema.propertyKey("price").asInt().ifNotExist().create();
 
         VertexLabel person = schema.vertexLabel("person")
+                .useAutomaticId()
                 .properties("name", "age")
-                .primaryKeys("name")
+//                .primaryKeys("name")
                 .ifNotExist()
                 .create();
 
@@ -65,8 +66,9 @@ public class SingleExample {
                 .append();
 
         VertexLabel software = schema.vertexLabel("software")
+                .useCustomizeId()
                 .properties("name", "lang", "price")
-                .primaryKeys("name")
+//                .primaryKeys("name")
                 .ifNotExist()
                 .create();
 
@@ -123,11 +125,11 @@ public class SingleExample {
                 "name", "marko", "age", 29);
         Vertex vadas = graph.addVertex(T.label, "person",
                 "name", "vadas", "age", 27);
-        Vertex lop = graph.addVertex(T.label, "software",
+        Vertex lop = graph.addVertex(T.label, "software", T.id, "software-lop",
                 "name", "lop", "lang", "java", "price", 328);
         Vertex josh = graph.addVertex(T.label, "person",
                 "name", "josh", "age", 32);
-        Vertex ripple = graph.addVertex(T.label, "software",
+        Vertex ripple = graph.addVertex(T.label, "software", T.id, "123456",
                 "name", "ripple", "lang", "java", "price", 199);
         Vertex peter = graph.addVertex(T.label, "person",
                 "name", "peter", "age", 35);

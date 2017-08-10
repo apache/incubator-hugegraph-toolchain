@@ -19,9 +19,30 @@
 
 package com.baidu.hugegraph.structure.constant;
 
+public enum IdStrategy {
 
-public class T {
+    DAFAULT(0, "default"),
 
-    public static String id = "id";
-    public static String label = "label";
+    AUTOMATIC(1, "automatic"),
+
+    CUSTOMIZE(2, "customize"),
+
+    PRIMARY_KEY(3, "primary_key");
+
+    private byte code = 0;
+    private String name = null;
+
+    private IdStrategy(int code, String name) {
+        assert code < 256;
+        this.code = (byte) code;
+        this.name = name;
+    }
+
+    public byte code() {
+        return this.code;
+    }
+
+    public String string() {
+        return this.name;
+    }
 }

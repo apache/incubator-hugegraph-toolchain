@@ -29,7 +29,7 @@ import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
-
+import com.baidu.hugegraph.util.E;
 
 public class GraphManager {
 
@@ -43,19 +43,15 @@ public class GraphManager {
     }
 
     public Vertex addVertex(Vertex vertex) {
-        if (vertex.id() != null) {
-            // TODO: Need to perform exception.
-            throw new ClientException(String.format("Not allowed "
-                    + "to custom id for vertex: '%s'", vertex));
-        }
         vertex = this.vertexApi.create(vertex);
         vertex.manager(this);
         return vertex;
     }
 
     public Vertex addVertex(Object... keyValues) {
-        String label = getLabelValue(keyValues);
+        String label = this.getValue(T.label, keyValues);
         Vertex vertex = new Vertex(label);
+        vertex.id(this.getValue(T.id, keyValues));
         this.attachProperties(vertex, keyValues);
         vertex = this.vertexApi.create(vertex);
         vertex.manager(this);
@@ -144,25 +140,30 @@ public class GraphManager {
         this.edgeApi.delete(edgeId);
     }
 
-    private String getLabelValue(Object... keyValues) {
-        String labelValue = null;
+    private String getValue(String key, Object... keyValues) {
+        E.checkArgument((keyValues.length & 0x01) == 0,
+                        "The number of parameters must be even");
+        String value = null;
         for (int i = 0; i < keyValues.length; i = i + 2) {
-            if (keyValues[i].equals(T.label)) {
+            if (keyValues[i].equals(key)) {
                 if (!(keyValues[i + 1] instanceof String)) {
                     throw new IllegalArgumentException(String.format(
-                            "Expected a string value as the vertex label " +
-                            "argument, but got: %s", labelValue));
+                              "Expected a string value as the vertex label " +
+                              "argument, but got: %s", keyValues[i + 1]));
                 }
-                labelValue = (String) keyValues[i + 1];
+                value = (String) keyValues[i + 1];
                 break;
             }
         }
-        return labelValue;
+        return value;
     }
 
     public void attachProperties(GraphElement element, Object... properties) {
+        E.checkArgument((properties.length & 0x01) == 0,
+                        "The number of properties must be even");
         for (int i = 0; i < properties.length; i = i + 2) {
-            if (!properties[i].equals(T.label)) {
+            if (!properties[i].equals(T.id) &&
+                !properties[i].equals(T.label)) {
                 element.property((String) properties[i], properties[i + 1]);
             }
         }
