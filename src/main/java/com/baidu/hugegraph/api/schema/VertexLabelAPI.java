@@ -25,7 +25,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-
+import com.google.common.collect.ImmutableMap;
 
 public class VertexLabelAPI extends SchemaAPI {
 
@@ -43,7 +43,13 @@ public class VertexLabelAPI extends SchemaAPI {
     }
 
     public void append(VertexLabel vertexLabel) {
-        this.client.put(path(), vertexLabel);
+        this.client.put(path(), vertexLabel,
+                        ImmutableMap.of("action", "append"));
+    }
+
+    public void eliminate(VertexLabel vertexLabel) {
+        this.client.put(path(), vertexLabel,
+                        ImmutableMap.of("action", "eliminate"));
     }
 
     public VertexLabel get(String name) {

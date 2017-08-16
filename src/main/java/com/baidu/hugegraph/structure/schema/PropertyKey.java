@@ -97,6 +97,10 @@ public class PropertyKey extends SchemaElement {
             return this.propertyKey;
         }
 
+        public void remove() {
+            this.manager.removePropertyKey(this.propertyKey.name);
+        }
+
         public Builder asText() {
             this.propertyKey.dataType = DataType.TEXT;
             return this;

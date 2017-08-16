@@ -107,6 +107,14 @@ public class VertexLabel extends Indexable {
             this.manager.appendVertexLabel(this.vertexLabel);
         }
 
+        public void eliminate() {
+            this.manager.eliminateVertexLabel(this.vertexLabel);
+        }
+
+        public void remove() {
+            this.manager.removeVertexLabel(this.vertexLabel.name);
+        }
+
         public Builder useAutomaticId() {
             this.vertexLabel.idStrategy(IdStrategy.AUTOMATIC);
             return this;

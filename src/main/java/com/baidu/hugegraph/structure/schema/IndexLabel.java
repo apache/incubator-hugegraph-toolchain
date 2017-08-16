@@ -34,7 +34,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties({"id", "properties"})
 public class IndexLabel extends SchemaElement {
 
-    private Indexable element;
     @JsonProperty
     private HugeType baseType;
     @JsonProperty
@@ -115,21 +114,22 @@ public class IndexLabel extends SchemaElement {
 
         public IndexLabel create() {
             this.manager.addIndexLabel(this.indexLabel);
-            this.indexLabel.element.indexNames(this.indexLabel.name);
             return this.indexLabel;
         }
 
-        public Builder on(VertexLabel vertexLabel) {
-            this.indexLabel.element = vertexLabel;
+        public void remove() {
+            this.manager.removeIndexLabel(this.indexLabel.name);
+        }
+
+        public Builder onV(String baseValue) {
             this.indexLabel.baseType = HugeType.VERTEX_LABEL;
-            this.indexLabel.baseValue = vertexLabel.name();
+            this.indexLabel.baseValue = baseValue;
             return this;
         }
 
-        public Builder on(EdgeLabel edgeLabel) {
-            this.indexLabel.element = edgeLabel;
+        public Builder onE(String baseValue) {
             this.indexLabel.baseType = HugeType.EDGE_LABEL;
-            this.indexLabel.baseValue = edgeLabel.name();
+            this.indexLabel.baseValue = baseValue;
             return this;
         }
 

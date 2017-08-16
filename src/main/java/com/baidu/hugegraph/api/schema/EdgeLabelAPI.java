@@ -20,12 +20,13 @@
 package com.baidu.hugegraph.api.schema;
 
 import java.util.List;
+import java.util.Map;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
-
+import com.google.common.collect.ImmutableMap;
 
 public class EdgeLabelAPI extends SchemaAPI {
 
@@ -43,7 +44,14 @@ public class EdgeLabelAPI extends SchemaAPI {
     }
 
     public void append(EdgeLabel edgeLabel) {
-        this.client.put(path(), edgeLabel);
+        final Map<String, Object> params = ImmutableMap.of("action", "append");
+        this.client.put(path(), edgeLabel, params);
+    }
+
+    public void eliminate(EdgeLabel edgeLabel) {
+        final Map<String, Object> params = ImmutableMap.of("action",
+                                                           "eliminate");
+        this.client.put(path(), edgeLabel, params);
     }
 
     public EdgeLabel get(String name) {

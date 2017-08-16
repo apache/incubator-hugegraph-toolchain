@@ -62,13 +62,13 @@ public class BatchExample {
                 .create();
 
         schema.indexLabel("personByName")
-                .on(person).by("name")
+                .onV("person").by("name")
                 .secondary()
                 .ifNotExist()
                 .create();
 
         schema.indexLabel("softwareByPrice")
-                .on(software).by("price")
+                .onV("software").by("price")
                 .search()
                 .ifNotExist()
                 .create();
@@ -86,7 +86,7 @@ public class BatchExample {
                 .create();
 
         schema.indexLabel("createdByDate")
-                .on(created).by("date")
+                .onE("created").by("date")
                 .secondary()
                 .ifNotExist()
                 .create();

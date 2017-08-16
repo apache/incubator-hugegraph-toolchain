@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.example;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -37,7 +36,6 @@ import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SingleExample {
 
@@ -61,9 +59,7 @@ public class SingleExample {
                 .ifNotExist()
                 .create();
 
-        schema.vertexLabel("person")
-                .properties("price")
-                .append();
+        schema.vertexLabel("person").properties("price").append();
 
         VertexLabel software = schema.vertexLabel("software")
                 .useCustomizeId()
@@ -73,13 +69,13 @@ public class SingleExample {
                 .create();
 
         schema.indexLabel("personByName")
-                .on(person).by("name")
+                .onV("person").by("name")
                 .secondary()
                 .ifNotExist()
                 .create();
 
         schema.indexLabel("softwareByPrice")
-                .on(software).by("price")
+                .onV("software").by("price")
                 .search()
                 .ifNotExist()
                 .create();
@@ -97,7 +93,7 @@ public class SingleExample {
                 .create();
 
         schema.indexLabel("createdByDate")
-                .on(created).by("date")
+                .onE("created").by("date")
                 .secondary()
                 .ifNotExist()
                 .create();
@@ -134,38 +130,12 @@ public class SingleExample {
         Vertex peter = graph.addVertex(T.label, "person",
                 "name", "peter", "age", 35);
 
-        // Use addVeretx(vertex) method directly
-        Vertex linary = new Vertex("person").property("name", "linary")
-                .property("age", 25);
-        linary = graph.addVertex(linary);
-
-//        System.out.println(graph.getEdges(3).size());
-
         marko.addEdge("knows", vadas, "date", "20160110");
         marko.addEdge("knows", josh, "date", "20130220");
         marko.addEdge("created", lop, "date", "20171210");
         josh.addEdge("created", ripple, "date", "20171210");
         josh.addEdge("created", lop, "date", "20091111");
         peter.addEdge("created", lop, "date", "20170324");
-
-        Edge linaryKnowMarko = new Edge("knows").source(linary).target(marko)
-                .property("date", "20170624");
-        linaryKnowMarko = graph.addEdge(linaryKnowMarko);
-
-
-        ObjectMapper mapper = new ObjectMapper();
-
-        // Serialize vertex to file and deserialize from it.
-        File vertexFile = new File("vertex.json");
-        mapper.writeValue(vertexFile, linary);
-        Vertex linary1 = mapper.readValue(vertexFile, Vertex.class);
-        System.out.println(linary1);
-        //Serialize vertex to file and deserialize from it.
-        File edgeFile = new File("edge.json");
-        mapper.writeValue(edgeFile, linaryKnowMarko);
-        Edge linaryKnowMarko1 = mapper.readValue(edgeFile, Edge.class);
-        System.out.println(linaryKnowMarko1);
-
 
         GremlinManager gremlin = hugeClient.gremlin();
         System.out.println("==== Vertex ====");
@@ -188,8 +158,6 @@ public class SingleExample {
                 System.out.println(object);
             }
         });
-
-
     }
 
 }

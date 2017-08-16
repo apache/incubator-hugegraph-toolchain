@@ -372,9 +372,9 @@ public class SchemaTest extends BaseTest{
                 .primaryKeys("name")
                 .create();
         IndexLabel personByCity = schema.indexLabel("personByCity")
-                .on(person).secondary().by("city").create();
+                .onV("person").secondary().by("city").create();
         IndexLabel personByAge = schema.indexLabel("personByAge")
-                .on(person).search().by("age").create();
+                .onV("person").search().by("age").create();
 
         Assert.assertNotNull(personByCity);
         Assert.assertNotNull(personByAge);
@@ -404,7 +404,7 @@ public class SchemaTest extends BaseTest{
                 .create();
 
         IndexLabel authoredByContri = schema.indexLabel("authoredByContri")
-                .on(authored)
+                .onE("authored")
                 .secondary()
                 .by("time")
                 .create();

@@ -100,8 +100,18 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    public RestResult put(String path, Object object) throws ClientException {
-        Response response = this.target.path(path).request().put(Entity.json(object));
+    public RestResult put(String path, Object object,
+                          Map<String, Object> params) throws ClientException {
+
+        WebTarget target = this.target;
+
+        if (params != null && !params.isEmpty()) {
+            for (Map.Entry<String, Object> param : params.entrySet()) {
+                target = target.queryParam(param.getKey(), param.getValue());
+            }
+        }
+
+        Response response = target.path(path).request().put(Entity.json(object));
         // If check status failed, throw client exception.
         checkStatus(response, Response.Status.OK);
         return new RestResult(response);

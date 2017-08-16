@@ -138,8 +138,18 @@ public class EdgeLabel extends Indexable {
             return this.edgeLabel;
         }
 
-        public void append() {
+        public EdgeLabel append() {
             this.manager.appendEdgeLabel(this.edgeLabel);
+            return this.edgeLabel;
+        }
+
+        public EdgeLabel eliminate() {
+            this.manager.eliminateEdgeLabel(this.edgeLabel);
+            return this.edgeLabel;
+        }
+
+        public void remove() {
+            this.manager.removeEdgeLabel(this.edgeLabel.name);
         }
 
         public Builder properties(String... properties) {

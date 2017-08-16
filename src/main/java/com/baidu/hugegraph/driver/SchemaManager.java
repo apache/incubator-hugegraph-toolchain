@@ -67,16 +67,16 @@ public class SchemaManager {
         this.propertyKeyApi.create(propertyKey);
     }
 
+    public void removePropertyKey(String name) {
+        this.propertyKeyApi.delete(name);
+    }
+
     public PropertyKey getPropertyKey(String name) {
         return this.propertyKeyApi.get(name);
     }
 
     public List<PropertyKey> getPropertyKeys() {
         return this.propertyKeyApi.list();
-    }
-
-    public void removePropertyKey(String name) {
-        this.propertyKeyApi.delete(name);
     }
 
     public void addVertexLabel(VertexLabel vertexLabel) {
@@ -87,16 +87,20 @@ public class SchemaManager {
         this.vertexLabelApi.append(vertexLabel);
     }
 
+    public void eliminateVertexLabel(VertexLabel vertexLabel) {
+        this.vertexLabelApi.eliminate(vertexLabel);
+    }
+
+    public void removeVertexLabel(String name) {
+        this.vertexLabelApi.delete(name);
+    }
+
     public VertexLabel getVertexLabel(String name) {
         return this.vertexLabelApi.get(name);
     }
 
     public List<VertexLabel> getVertexLabels() {
         return this.vertexLabelApi.list();
-    }
-
-    public void removeVertexLabel(String name) {
-        this.vertexLabelApi.delete(name);
     }
 
     public void addEdgeLabel(EdgeLabel edgeLabel) {
@@ -107,6 +111,14 @@ public class SchemaManager {
         this.edgeLabelAPI.append(edgeLabel);
     }
 
+    public void eliminateEdgeLabel(EdgeLabel edgeLabel) {
+        this.edgeLabelAPI.eliminate(edgeLabel);
+    }
+
+    public void removeEdgeLabel(String name) {
+        this.edgeLabelAPI.delete(name);
+    }
+
     public EdgeLabel getEdgeLabel(String name) {
         return this.edgeLabelAPI.get(name);
     }
@@ -115,12 +127,12 @@ public class SchemaManager {
         return this.edgeLabelAPI.list();
     }
 
-    public void removeEdgeLabel(String name) {
-        this.edgeLabelAPI.delete(name);
-    }
-
     public void addIndexLabel(IndexLabel indexLabel) {
         this.indexLabelAPI.create(indexLabel);
+    }
+
+    public void removeIndexLabel(String name) {
+        this.indexLabelAPI.delete(name);
     }
 
     public IndexLabel getIndexLabel(String name) {
@@ -129,9 +141,5 @@ public class SchemaManager {
 
     public List<IndexLabel> getIndexLabels() {
         return this.indexLabelAPI.list();
-    }
-
-    public void removeIndexLabel(String name) {
-        this.indexLabelAPI.delete(name);
     }
 }
