@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.baidu.hugegraph.driver.GraphManager;
+import com.baidu.hugegraph.util.Log;
 
 /**
  * HugeGraph is a mirror of server-side data(vertex/edge), it used to speed up
@@ -36,23 +36,22 @@ import com.baidu.hugegraph.driver.GraphManager;
  */
 public class Graph {
 
-    private static final Logger logger =
-                         LoggerFactory.getLogger(Graph.class);
+    private static final Logger LOG = Log.logger(Graph.class);
 
     private Map<String, HugeVertex> hugeVerticesMap;
     private List<HugeEdge> hugeEdges;
 
     public Graph(GraphManager graph) {
-        logger.debug("Loading Graph...");
+        LOG.debug("Loading Graph...");
 
         List<Vertex> vertices = graph.getVertices();
-        logger.debug("Loaded vertices: {}", vertices.size());
+        LOG.debug("Loaded vertices: {}", vertices.size());
 
         List<Edge> edges = graph.getEdges();
-        logger.debug("Loaded edges: {}", edges.size());
+        LOG.debug("Loaded edges: {}", edges.size());
 
         this.mergeEdges2Vertices(vertices, edges);
-        logger.debug("Loaded Graph");
+        LOG.debug("Loaded Graph");
     }
 
     public Graph(List<Vertex> vertices, List<Edge> edges) {
