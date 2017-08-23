@@ -57,8 +57,8 @@ public class RestResult {
 
     public <T> T readObject(Class<T> clazz) {
         T obj;
-        ObjectMapper mapper = new ObjectMapper();
         try {
+            ObjectMapper mapper = new ObjectMapper();
             obj = mapper.readValue(this.content, clazz);
         } catch (Exception e) {
             throw new SerializeException(String.format(
@@ -69,13 +69,13 @@ public class RestResult {
 
     public <T> List<T> readList(String key, Class<T> clazz) {
         List<T> objList;
-        ObjectMapper mapper = new ObjectMapper();
         try {
+            ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(this.content);
             JsonNode element = root.get(key);
             if (element == null) {
                 throw new SerializeException(String.format(
-                        "Can not find value of the key: %s in json.", key));
+                        "Can't find value of the key: %s in json.", key));
             }
             JavaType type = mapper.getTypeFactory()
                     .constructParametricType(List.class, clazz);
@@ -89,8 +89,8 @@ public class RestResult {
 
     public <T> List<T> readList(Class<T> clazz) {
         List<T> objList;
-        ObjectMapper mapper = new ObjectMapper();
         try {
+            ObjectMapper mapper = new ObjectMapper();
             JavaType type = mapper.getTypeFactory()
                     .constructParametricType(List.class, clazz);
             objList = mapper.readValue(this.content, type);
@@ -103,7 +103,7 @@ public class RestResult {
 
     @Override
     public String toString() {
-        return String.format("{status=%s, headers=%s, content=%s",
+        return String.format("{status=%s, headers=%s, content=%s}",
                 this.status,
                 this.headers,
                 this.content);
