@@ -36,5 +36,4 @@ public class GremlinAPI extends API {
         RestResult result = this.client.post(path(), request);
         return result.readObject(Response.class);
     }
-
 }

@@ -154,7 +154,7 @@ public class RestClient {
     private void checkStatus(Response response, Response.Status... status) {
         if (!Arrays.asList(status).contains(response.getStatusInfo())) {
             RestResult rs = new RestResult(response);
-            ClientException exception = null;
+            ClientException exception;
             try {
                 exception = rs.readObject(ClientException.class);
             } catch (Exception ignored) {

@@ -35,7 +35,7 @@ public class ClientVersion {
 
     public static final void check() {
         // Check version of hugegraph-common
-        VersionUtil.check(CommonVersion.VERSION, "1.2", "1.3",
+        VersionUtil.check(CommonVersion.VERSION, "1.3", "1.4",
                           CommonVersion.NAME);
     }
 }

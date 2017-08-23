@@ -23,12 +23,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 import com.baidu.hugegraph.exception.SerializeException;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -99,6 +99,8 @@ public class ResultSet {
     }
 
     public Iterator<Result> iterator() {
+        E.checkState(data != null, "Invalid response from server");
+
         return new Iterator<Result>() {
 
             @Override
@@ -108,11 +110,7 @@ public class ResultSet {
 
             @Override
             public Result next() {
-                Result result = one();
-                if (result == null) {
-                    throw new NoSuchElementException();
-                }
-                return result;
+                return one();
             }
 
             @Override
@@ -121,5 +119,4 @@ public class ResultSet {
             }
         };
     }
-
 }
