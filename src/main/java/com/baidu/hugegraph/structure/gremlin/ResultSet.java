@@ -56,10 +56,13 @@ public class ResultSet {
         if (index >= this.data.size()) {
             return null;
         }
-
+        // TODO: index++ should replace by thread safe incremnet
         Object object = this.data().get(this.index++);
-        Class clazz = parseResultClass(object);
+        if (object == null) {
+            return null;
+        }
 
+        Class clazz = parseResultClass(object);
         if (clazz.equals(object.getClass())) {
             return new Result(object);
         }
