@@ -30,7 +30,6 @@ import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class VertexLabel extends Indexable {
 
     @JsonProperty
@@ -41,7 +40,7 @@ public class VertexLabel extends Indexable {
     @JsonCreator
     public VertexLabel(@JsonProperty("name") String name) {
         super(name);
-        this.idStrategy = IdStrategy.DAFAULT;
+        this.idStrategy = IdStrategy.DEFAULT;
         this.primaryKeys = new ArrayList<>();
     }
 
@@ -55,7 +54,7 @@ public class VertexLabel extends Indexable {
     }
 
     public void idStrategy(IdStrategy idStrategy) {
-        E.checkArgument(this.idStrategy == IdStrategy.DAFAULT ||
+        E.checkArgument(this.idStrategy == IdStrategy.DEFAULT ||
                         this.idStrategy == idStrategy,
                         "Not allowed to change id strategy for " +
                         "vertex label '%s'", this.name);

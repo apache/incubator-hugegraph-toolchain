@@ -31,7 +31,6 @@ import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class EdgeLabel extends Indexable {
 
     @JsonProperty
@@ -46,7 +45,7 @@ public class EdgeLabel extends Indexable {
     @JsonCreator
     public EdgeLabel(@JsonProperty("name") String name) {
         super(name);
-        this.frequency = Frequency.SINGLE;
+        this.frequency = Frequency.DEFAULT;
         this.sortKeys = new ArrayList<>();
     }
 
@@ -60,6 +59,9 @@ public class EdgeLabel extends Indexable {
     }
 
     public EdgeLabel frequency(Frequency frequency) {
+        E.checkArgument(this.frequency == Frequency.DEFAULT,
+                        "Not allowed to change frequency for " +
+                        "vertex label '%s'", this.name);
         this.frequency = frequency;
         return this;
     }
@@ -169,12 +171,12 @@ public class EdgeLabel extends Indexable {
         }
 
         public Builder singleTime() {
-            this.edgeLabel.frequency = Frequency.SINGLE;
+            this.edgeLabel.frequency(Frequency.SINGLE);
             return this;
         }
 
         public Builder multiTimes() {
-            this.edgeLabel.frequency = Frequency.MULTIPLE;
+            this.edgeLabel.frequency(Frequency.MULTIPLE);
             return this;
         }
 

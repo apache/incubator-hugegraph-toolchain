@@ -21,7 +21,7 @@ package com.baidu.hugegraph.structure.constant;
 
 public enum IdStrategy {
 
-    DAFAULT(0, "default"),
+    DEFAULT(0, "default"),
 
     AUTOMATIC(1, "automatic"),
 

@@ -19,8 +19,10 @@
 
 package com.baidu.hugegraph.structure.constant;
 
-
 public enum Frequency {
+
+    DEFAULT(0, "default"),
+
     SINGLE(1, "single"),
 
     MULTIPLE(2, "multiple");
