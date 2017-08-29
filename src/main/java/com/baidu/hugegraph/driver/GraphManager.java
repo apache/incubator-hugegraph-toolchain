@@ -91,8 +91,8 @@ public class GraphManager {
 
     public Edge addEdge(Edge edge) {
         if (edge.id() != null) {
-            throw new ClientException(String.format("Not allowed "
-                    + "to custom id for edge: '%s'", edge));
+            throw new ClientException(String.format("Not allowed " +
+                    "to custom id for edge: '%s'", edge));
         }
         return this.edgeApi.create(edge);
     }
@@ -148,7 +148,7 @@ public class GraphManager {
             if (keyValues[i].equals(key)) {
                 if (!(keyValues[i + 1] instanceof String)) {
                     throw new IllegalArgumentException(String.format(
-                              "Expected a string value as the vertex label " +
+                              "Expect a string value as the vertex label " +
                               "argument, but got: %s", keyValues[i + 1]));
                 }
                 value = (String) keyValues[i + 1];
