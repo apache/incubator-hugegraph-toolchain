@@ -170,6 +170,16 @@ public class EdgeLabel extends Indexable {
             return this;
         }
 
+        public Builder sourceLabel(String label) {
+            this.edgeLabel.sourceLabel(label);
+            return this;
+        }
+
+        public Builder targetLabel(String label) {
+            this.edgeLabel.targetLabel(label);
+            return this;
+        }
+
         public Builder singleTime() {
             this.edgeLabel.frequency(Frequency.SINGLE);
             return this;

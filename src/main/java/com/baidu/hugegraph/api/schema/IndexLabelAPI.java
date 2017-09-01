@@ -38,8 +38,9 @@ public class IndexLabelAPI extends SchemaAPI {
         return HugeType.INDEX_LABEL.string();
     }
 
-    public void create(IndexLabel indexLabel) {
-        this.client.post(path(), indexLabel);
+    public IndexLabel create(IndexLabel indexLabel) {
+        RestResult result = this.client.post(path(), indexLabel);
+        return result.readObject(IndexLabel.class);
     }
 
     public IndexLabel get(String name) {

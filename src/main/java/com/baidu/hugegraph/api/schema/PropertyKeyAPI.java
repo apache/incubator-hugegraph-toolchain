@@ -38,8 +38,9 @@ public class PropertyKeyAPI extends SchemaAPI {
         return HugeType.PROPERTY_KEY.string();
     }
 
-    public void create(PropertyKey propertyKey) {
-        this.client.post(path(), propertyKey);
+    public PropertyKey create(PropertyKey propertyKey) {
+        RestResult result = this.client.post(path(), propertyKey);
+        return result.readObject(PropertyKey.class);
     }
 
     public PropertyKey get(String name) {

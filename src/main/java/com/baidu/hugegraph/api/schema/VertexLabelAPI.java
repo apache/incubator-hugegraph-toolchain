@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api.schema;
 
 import java.util.List;
+import java.util.Map;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
@@ -38,18 +39,21 @@ public class VertexLabelAPI extends SchemaAPI {
         return HugeType.VERTEX_LABEL.string();
     }
 
-    public void create(VertexLabel vertexLabel) {
-        this.client.post(path(), vertexLabel);
+    public VertexLabel create(VertexLabel vertexLabel) {
+        RestResult result = this.client.post(path(), vertexLabel);
+        return result.readObject(VertexLabel.class);
     }
 
-    public void append(VertexLabel vertexLabel) {
-        this.client.put(path(), vertexLabel,
-                        ImmutableMap.of("action", "append"));
+    public VertexLabel append(VertexLabel vertexLabel) {
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(path(), vertexLabel, params);
+        return result.readObject(VertexLabel.class);
     }
 
-    public void eliminate(VertexLabel vertexLabel) {
-        this.client.put(path(), vertexLabel,
-                        ImmutableMap.of("action", "eliminate"));
+    public VertexLabel eliminate(VertexLabel vertexLabel) {
+        Map<String, Object> params = ImmutableMap.of("action", "eliminate");
+        RestResult result = this.client.put(path(), vertexLabel, params);
+        return result.readObject(VertexLabel.class);
     }
 
     public VertexLabel get(String name) {

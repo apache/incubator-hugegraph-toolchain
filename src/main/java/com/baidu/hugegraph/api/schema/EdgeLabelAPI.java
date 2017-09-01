@@ -39,19 +39,21 @@ public class EdgeLabelAPI extends SchemaAPI {
         return HugeType.EDGE_LABEL.string();
     }
 
-    public void create(EdgeLabel edgeLabel) {
-        this.client.post(path(), edgeLabel);
+    public EdgeLabel create(EdgeLabel edgeLabel) {
+        RestResult result = this.client.post(path(), edgeLabel);
+        return result.readObject(EdgeLabel.class);
     }
 
-    public void append(EdgeLabel edgeLabel) {
-        final Map<String, Object> params = ImmutableMap.of("action", "append");
-        this.client.put(path(), edgeLabel, params);
+    public EdgeLabel append(EdgeLabel edgeLabel) {
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(path(), edgeLabel, params);
+        return result.readObject(EdgeLabel.class);
     }
 
-    public void eliminate(EdgeLabel edgeLabel) {
-        final Map<String, Object> params = ImmutableMap.of("action",
-                                                           "eliminate");
-        this.client.put(path(), edgeLabel, params);
+    public EdgeLabel eliminate(EdgeLabel edgeLabel) {
+        Map<String, Object> params = ImmutableMap.of("action", "eliminate");
+        RestResult result = this.client.put(path(), edgeLabel, params);
+        return result.readObject(EdgeLabel.class);
     }
 
     public EdgeLabel get(String name) {
