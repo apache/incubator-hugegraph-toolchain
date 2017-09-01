@@ -90,8 +90,7 @@ public class Edge extends GraphElement {
 
     @Override
     public Edge property(String key, Object value) {
-        this.properties.put(key, value);
-        return this;
+        return (Edge) super.property(key, value);
     }
 
     @Override

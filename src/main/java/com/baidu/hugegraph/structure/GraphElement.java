@@ -19,15 +19,20 @@
 
 package com.baidu.hugegraph.structure;
 
+import java.sql.Timestamp;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.ReflectionUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
@@ -60,12 +65,26 @@ public abstract class GraphElement extends Element {
     }
 
     public String type() {
-        return type;
+        return this.type;
     }
 
-    public abstract GraphElement property(String key, Object value);
+    public GraphElement property(String name, Object value) {
+        E.checkArgumentNotNull(name, "property name");
+        E.checkArgumentNotNull(value, "property value");
+
+        Class<?> clazz = value.getClass();
+        E.checkArgument(ReflectionUtil.isSimpleType(clazz) ||
+                        clazz.equals(UUID.class) ||
+                        clazz.equals(Timestamp.class) ||
+                        value instanceof List ||
+                        value instanceof Set,
+                        "Invalid property value type: '%s'", clazz);
+
+        this.properties.put(name, value);
+        return this;
+    }
 
     public Map<String, Object> properties() {
-        return properties;
+        return this.properties;
     }
 }

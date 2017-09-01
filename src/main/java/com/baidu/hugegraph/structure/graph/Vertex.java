@@ -27,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 
-
 public class Vertex extends GraphElement {
 
     // Hold a graphManager object for addEdge().
@@ -54,8 +53,7 @@ public class Vertex extends GraphElement {
 
     @Override
     public Vertex property(String key, Object value) {
-        this.properties.put(key, value);
-        return this;
+        return (Vertex) super.property(key, value);
     }
 
     @Override

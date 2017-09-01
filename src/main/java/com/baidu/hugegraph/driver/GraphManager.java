@@ -91,8 +91,8 @@ public class GraphManager {
 
     public Edge addEdge(Edge edge) {
         if (edge.id() != null) {
-            throw new ClientException(String.format("Not allowed " +
-                    "to custom id for edge: '%s'", edge));
+            throw new ClientException(String.format(
+                      "Not allowed to custom id for edge: '%s'", edge));
         }
         return this.edgeApi.create(edge);
     }
