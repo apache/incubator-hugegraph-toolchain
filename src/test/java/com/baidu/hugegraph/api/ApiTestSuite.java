@@ -17,38 +17,20 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.driver;
+package com.baidu.hugegraph.api;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-
-public class BaseTest {
-
-    public static String BASE_URL = "http://127.0.0.1:8080";
-    public static String GRAPH = "hugegraph";
-
-    private HugeClient client;
-
-    @Before
-    public void init() {
-        this.client = HugeClient.open(BASE_URL, GRAPH);
-    }
-
-    @After
-    public void clear() {
-        //        this.client.close();
-    }
-
-    public HugeClient client() {
-        return this.client;
-    }
-
-    public static HugeClient newClient() {
-        return new HugeClient(BASE_URL, GRAPH);
-    }
-
-//    public GraphManager graph() {
-//        return client.graph();
-//    }
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+    PropertyKeyApiTest.class,
+    VertexLabelApiTest.class,
+    EdgeLabelApiTest.class,
+    IndexLabelApiTest.class,
+    VertexApiTest.class,
+    EdgeApiTest.class,
+    GremlinApiTest.class
+})
+public class ApiTestSuite {
 }
