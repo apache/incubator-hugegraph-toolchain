@@ -36,8 +36,7 @@ public class GraphManager {
     private VertexAPI vertexApi;
     private EdgeAPI edgeApi;
 
-    public GraphManager(String url, String graph) {
-        RestClient client = new RestClient(url);
+    public GraphManager(RestClient client, String graph) {
         this.vertexApi = new VertexAPI(client, graph);
         this.edgeApi = new EdgeAPI(client, graph);
     }

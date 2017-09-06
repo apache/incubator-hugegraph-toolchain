@@ -19,14 +19,20 @@
 
 package com.baidu.hugegraph.driver;
 
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.exception.ClientException;
 import com.baidu.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.version.ClientVersion;
 
 public class HugeClient {
 
+    private static final int DEFAULT_TIMEOUT = 20;
+
     static {
         ClientVersion.check();
     }
+
+    private RestClient restClient;
 
     private VersionManager version;
     private GraphsManager graphs;
@@ -35,18 +41,32 @@ public class HugeClient {
     private GremlinManager gremlin;
 
     public HugeClient(String url, String graph) {
-        // Check hugegraph-server api version
-        this.version = new VersionManager(url);
-        this.checkServerApiVersion();
-
-        this.graphs = new GraphsManager(url);
-        this.schema = new SchemaManager(url, graph);
-        this.graph = new GraphManager(url, graph);
-        this.gremlin = new GremlinManager(url, graph);
+        this(url, graph, DEFAULT_TIMEOUT);
     }
 
+    public HugeClient(String url, String graph, int timeout) {
+        this.restClient = new RestClient(url, timeout);
+
+        // Check hugegraph-server api version
+        this.version = new VersionManager(this.restClient);
+        this.checkServerApiVersion();
+
+        this.graphs = new GraphsManager(this.restClient);
+        this.schema = new SchemaManager(this.restClient, graph);
+        this.graph = new GraphManager(this.restClient, graph);
+        this.gremlin = new GremlinManager(this.restClient, graph);
+    }
+
+    /**
+     * TODO: Need to add some unit test
+     */
     public static HugeClient open(String url, String name) {
-        return new HugeClient(url, name);
+        try {
+            return new HugeClient(url, name);
+        } catch (Exception e) {
+            throw new ClientException(String.format(
+                      "Failed to connect url '%s'", url));
+        }
     }
 
     private void checkServerApiVersion() {

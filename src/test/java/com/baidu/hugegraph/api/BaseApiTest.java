@@ -53,7 +53,7 @@ public class BaseApiTest extends BaseClientTest {
     public static void init() {
         BaseClientTest.init();
 
-        client = new RestClient(BASE_URL);
+        client = new RestClient(BASE_URL, 5);
         propertyKeyAPI = new PropertyKeyAPI(client, GRAPH);
         vertexLabelAPI = new VertexLabelAPI(client, GRAPH);
         edgeLabelAPI = new EdgeLabelAPI(client, GRAPH);

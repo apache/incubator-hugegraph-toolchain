@@ -31,8 +31,7 @@ public class GremlinManager {
     private GremlinAPI gremlinApi;
     private String graph;
 
-    public GremlinManager(String url, String graph) {
-        RestClient client = new RestClient(url);
+    public GremlinManager(RestClient client, String graph) {
         this.gremlinApi = new GremlinAPI(client);
         this.graph = graph;
     }

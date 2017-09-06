@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ClientException extends IllegalArgumentException {
 
-    private int status;
+    private int status = 0;
     @JsonProperty
     private String exception;
     @JsonProperty
@@ -49,12 +49,12 @@ public class ClientException extends IllegalArgumentException {
     }
 
     public ClientException(String message) {
-        super("");
+        super(message);
         this.message = message;
     }
 
     public ClientException(String message, Throwable cause) {
-        super("", cause);
+        super(message, cause);
         this.message = message;
     }
 

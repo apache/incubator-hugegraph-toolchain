@@ -39,8 +39,7 @@ public class SchemaManager {
     private EdgeLabelAPI edgeLabelAPI;
     private IndexLabelAPI indexLabelAPI;
 
-    public SchemaManager(String url, String graph) {
-        RestClient client = new RestClient(url);
+    public SchemaManager(RestClient client, String graph) {
         this.propertyKeyApi = new PropertyKeyAPI(client, graph);
         this.vertexLabelApi = new VertexLabelAPI(client, graph);
         this.edgeLabelAPI = new EdgeLabelAPI(client, graph);

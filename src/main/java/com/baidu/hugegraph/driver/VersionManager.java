@@ -27,8 +27,7 @@ public class VersionManager {
 
     private VersionApi versionApi;
 
-    public VersionManager(String url) {
-        RestClient client = new RestClient(url);
+    public VersionManager(RestClient client) {
         this.versionApi = new VersionApi(client);
     }
 

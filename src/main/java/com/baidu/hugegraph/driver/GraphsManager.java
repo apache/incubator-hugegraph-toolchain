@@ -29,8 +29,7 @@ public class GraphsManager {
 
     private GraphsAPI graphsApi;
 
-    public GraphsManager(String url) {
-        RestClient client = new RestClient(url);
+    public GraphsManager(RestClient client) {
         this.graphsApi = new GraphsAPI(client);
     }
 
