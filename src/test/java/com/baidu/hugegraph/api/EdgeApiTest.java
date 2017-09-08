@@ -383,37 +383,37 @@ public class EdgeApiTest extends BaseApiTest {
      * That will lead clearData error.
      * (Icafe: HugeGraph-768)
      */
-    @Test
-    public void testBatchCreateWithInvalidVertexIdButNotCheck() {
-        List<Edge> edges = new ArrayList<>(2);
-
-        Edge edge1 = new Edge("created");
-        edge1.sourceLabel("person");
-        edge1.targetLabel("software");
-        edge1.source("person:invalid");
-        edge1.target("software:lop");
-        edge1.property("date", "20170324");
-        edge1.property("city", "Hongkong");
-        edges.add(edge1);
-
-        Edge edge2 = new Edge("knows");
-        edge2.sourceLabel("person");
-        edge2.targetLabel("person");
-        edge2.source("person:peter");
-        edge2.target("person:invalid");
-        edge2.property("date", "20170324");
-        edges.add(edge2);
-
-        List<String> ids = edgeAPI.create(edges, false);
-        Assert.assertEquals(2, ids.size());
-
-        Assert.assertResponse(404, () -> {
-            edgeAPI.get(ids.get(0));
-        });
-        Assert.assertResponse(404, () -> {
-            edgeAPI.get(ids.get(1));
-        });
-    }
+//    @Test
+//    public void testBatchCreateWithInvalidVertexIdButNotCheck() {
+//        List<Edge> edges = new ArrayList<>(2);
+//
+//        Edge edge1 = new Edge("created");
+//        edge1.sourceLabel("person");
+//        edge1.targetLabel("software");
+//        edge1.source("person:invalid");
+//        edge1.target("software:lop");
+//        edge1.property("date", "20170324");
+//        edge1.property("city", "Hongkong");
+//        edges.add(edge1);
+//
+//        Edge edge2 = new Edge("knows");
+//        edge2.sourceLabel("person");
+//        edge2.targetLabel("person");
+//        edge2.source("person:peter");
+//        edge2.target("person:invalid");
+//        edge2.property("date", "20170324");
+//        edges.add(edge2);
+//
+//        List<String> ids = edgeAPI.create(edges, false);
+//        Assert.assertEquals(2, ids.size());
+//
+//        Assert.assertResponse(404, () -> {
+//            edgeAPI.get(ids.get(0));
+//        });
+//        Assert.assertResponse(404, () -> {
+//            edgeAPI.get(ids.get(1));
+//        });
+//    }
 
     @Test
     public void testBatchCreateWithInvalidVertexLabelButNotCheck() {
