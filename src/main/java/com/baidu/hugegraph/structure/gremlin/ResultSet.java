@@ -49,11 +49,11 @@ public class ResultSet {
     }
 
     public List<Object> data() {
-        return data;
+        return this.data;
     }
 
     public Result one() {
-        if (index >= this.data.size()) {
+        if (this.index >= this.data.size()) {
             return null;
         }
         // TODO: index++ should replace by thread safe incremnet
@@ -62,7 +62,7 @@ public class ResultSet {
             return null;
         }
 
-        Class clazz = parseResultClass(object);
+        Class<?> clazz = parseResultClass(object);
         if (clazz.equals(object.getClass())) {
             return new Result(object);
         }
@@ -81,9 +81,10 @@ public class ResultSet {
      * @param object
      * @return
      */
-    private Class parseResultClass(Object object) {
+    private Class<?> parseResultClass(Object object) {
         if (object.getClass().equals(LinkedHashMap.class)) {
-            LinkedHashMap map = (LinkedHashMap) object;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) object;
             String type = (String) map.get("type");
             if (type != null) {
                 if (type.equals("vertex")) {
@@ -102,13 +103,13 @@ public class ResultSet {
     }
 
     public Iterator<Result> iterator() {
-        E.checkState(data != null, "Invalid response from server");
+        E.checkState(this.data != null, "Invalid response from server");
 
         return new Iterator<Result>() {
 
             @Override
             public boolean hasNext() {
-                return index < data.size();
+                return ResultSet.this.index < ResultSet.this.data.size();
             }
 
             @Override

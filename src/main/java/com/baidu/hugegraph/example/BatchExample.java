@@ -27,8 +27,6 @@ import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.structure.schema.EdgeLabel;
-import com.baidu.hugegraph.structure.schema.VertexLabel;
 
 public class BatchExample {
 
@@ -45,51 +43,51 @@ public class BatchExample {
         schema.propertyKey("date").asText().ifNotExist().create();
         schema.propertyKey("price").asInt().ifNotExist().create();
 
-        VertexLabel person = schema.vertexLabel("person")
-                .properties("name", "age")
-                .primaryKeys("name")
-                .ifNotExist()
-                .create();
+        schema.vertexLabel("person")
+              .properties("name", "age")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
 
         schema.vertexLabel("person")
-                .properties("price")
-                .append();
+              .properties("price")
+              .append();
 
-        VertexLabel software = schema.vertexLabel("software")
-                .properties("name", "lang", "price")
-                .primaryKeys("name")
-                .ifNotExist()
-                .create();
+        schema.vertexLabel("software")
+              .properties("name", "lang", "price")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
 
         schema.indexLabel("personByName")
-                .onV("person").by("name")
-                .secondary()
-                .ifNotExist()
-                .create();
+              .onV("person").by("name")
+              .secondary()
+              .ifNotExist()
+              .create();
 
         schema.indexLabel("softwareByPrice")
-                .onV("software").by("price")
-                .search()
-                .ifNotExist()
-                .create();
+              .onV("software").by("price")
+              .search()
+              .ifNotExist()
+              .create();
 
-        EdgeLabel knows = schema.edgeLabel("knows")
-                .link("person", "person")
-                .properties("date")
-                .ifNotExist()
-                .create();
+        schema.edgeLabel("knows")
+              .link("person", "person")
+              .properties("date")
+              .ifNotExist()
+              .create();
 
-        EdgeLabel created = schema.edgeLabel("created")
-                .link("person", "software")
-                .properties("date")
-                .ifNotExist()
-                .create();
+        schema.edgeLabel("created")
+              .link("person", "software")
+              .properties("date")
+              .ifNotExist()
+              .create();
 
         schema.indexLabel("createdByDate")
-                .onE("created").by("date")
-                .secondary()
-                .ifNotExist()
-                .create();
+              .onE("created").by("date")
+              .secondary()
+              .ifNotExist()
+              .create();
 
         // get schema object by name
         System.out.println(schema.getPropertyKey("name"));

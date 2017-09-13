@@ -39,6 +39,7 @@ public class GraphsAPI extends API {
         return HugeType.GRAPHS.string();
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, String> get(String name) {
         RestResult result = this.client.get(path(), name);
         return result.readObject(Map.class);

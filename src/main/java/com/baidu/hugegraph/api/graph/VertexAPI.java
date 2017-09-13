@@ -47,8 +47,8 @@ public class VertexAPI extends GraphAPI {
     }
 
     public List<String> create(List<Vertex> vertices) {
-        MultivaluedHashMap headers = new MultivaluedHashMap();
-        headers.putSingle("Content-Encoding", this.BATCH_ENCODING);
+        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.putSingle("Content-Encoding", BATCH_ENCODING);
         RestResult result = this.client.post(batchPath(), vertices, headers);
         return result.readList(String.class);
     }

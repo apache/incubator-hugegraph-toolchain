@@ -23,29 +23,34 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ClientException extends IllegalArgumentException {
 
+    private static final long serialVersionUID = -5381487354479556742L;
+
     private int status = 0;
+
     @JsonProperty
     private String exception;
+
     @JsonProperty
     private String message;
+
     @JsonProperty
     private String cause;
 
     public String exception() {
-        return exception;
+        return this.exception;
     }
 
     public String message() {
-        return message;
+        return this.message;
     }
 
     public String cause() {
-        return cause;
+        return this.cause;
     }
 
     @Override
     public String getMessage() {
-        return message;
+        return this.message;
     }
 
     public ClientException(String message) {
@@ -63,6 +68,6 @@ public class ClientException extends IllegalArgumentException {
     }
 
     public int status() {
-        return status;
+        return this.status;
     }
 }

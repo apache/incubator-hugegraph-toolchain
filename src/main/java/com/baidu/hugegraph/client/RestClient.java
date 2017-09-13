@@ -102,7 +102,7 @@ public class RestClient {
          * because Entity.json() method will reset "content encoding =
          * null" that has been set up by headers before.
          */
-        Ref<Entity> entity = Refs.of(null);
+        Ref<Entity<?>> entity = Refs.of(null);
         if (encoding == null) {
             entity.set(Entity.json(object));
         } else {

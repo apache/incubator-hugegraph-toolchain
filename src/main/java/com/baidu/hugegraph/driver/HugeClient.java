@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.driver;
 
+import javax.ws.rs.ProcessingException;
+
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.ClientException;
 import com.baidu.hugegraph.util.VersionUtil;
@@ -35,6 +37,7 @@ public class HugeClient {
     private RestClient restClient;
 
     private VersionManager version;
+    @SuppressWarnings("unused")
     private GraphsManager graphs;
     private SchemaManager schema;
     private GraphManager graph;
@@ -45,7 +48,12 @@ public class HugeClient {
     }
 
     public HugeClient(String url, String graph, int timeout) {
-        this.restClient = new RestClient(url, timeout);
+        try {
+            this.restClient = new RestClient(url, timeout);
+        } catch (ProcessingException e) {
+            throw new ClientException(String.format(
+                      "Failed to connect url '%s'", url));
+        }
 
         // Check hugegraph-server api version
         this.version = new VersionManager(this.restClient);
@@ -61,12 +69,7 @@ public class HugeClient {
      * TODO: Need to add some unit test
      */
     public static HugeClient open(String url, String name) {
-        try {
-            return new HugeClient(url, name);
-        } catch (Exception e) {
-            throw new ClientException(String.format(
-                      "Failed to connect url '%s'", url));
-        }
+        return new HugeClient(url, name);
     }
 
     private void checkServerApiVersion() {
