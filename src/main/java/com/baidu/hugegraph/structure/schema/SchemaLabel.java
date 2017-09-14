@@ -26,22 +26,33 @@ import java.util.Set;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+public abstract class SchemaLabel extends SchemaElement {
 
-public abstract class Indexable extends SchemaElement {
-
+    @JsonProperty
+    protected Set<String> nullableKeys;
     @JsonProperty
     protected Set<String> indexNames;
 
-    public Indexable(String name) {
+    public SchemaLabel(String name) {
         super(name);
+        this.nullableKeys = new HashSet<>();
         this.indexNames = new HashSet<>();
+    }
+
+    public Set<String> nullableKeys() {
+        return this.nullableKeys;
+    }
+
+    public SchemaLabel nullableKeys(String... keys) {
+        this.nullableKeys.addAll(Arrays.asList(keys));
+        return this;
     }
 
     public Set<String> indexNames() {
         return this.indexNames;
     }
 
-    public Indexable indexNames(String... indexNames) {
+    public SchemaLabel indexNames(String... indexNames) {
         this.indexNames.addAll(Arrays.asList(indexNames));
         return this;
     }

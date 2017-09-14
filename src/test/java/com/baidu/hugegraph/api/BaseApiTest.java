@@ -107,12 +107,14 @@ public class BaseApiTest extends BaseClientTest {
         schema.vertexLabel("person")
               .properties("name", "age", "city")
               .primaryKeys("name")
+              .nullableKeys("city")
               .ifNotExist()
               .create();
 
         schema.vertexLabel("software")
               .properties("name", "lang", "price")
               .primaryKeys("name")
+              .nullableKeys("city")
               .ifNotExist()
               .create();
     }
@@ -123,7 +125,8 @@ public class BaseApiTest extends BaseClientTest {
         schema.edgeLabel("knows")
               .sourceLabel("person")
               .targetLabel("person")
-              .properties("date")
+              .properties("date", "city")
+              .nullableKeys("city")
               .ifNotExist()
               .create();
 
@@ -131,6 +134,7 @@ public class BaseApiTest extends BaseClientTest {
               .sourceLabel("person")
               .targetLabel("software")
               .properties("date", "city")
+              .nullableKeys("city")
               .ifNotExist()
               .create();
     }

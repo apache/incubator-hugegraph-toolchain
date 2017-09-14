@@ -30,7 +30,7 @@ import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class VertexLabel extends Indexable {
+public class VertexLabel extends SchemaLabel {
 
     @JsonProperty
     private IdStrategy idStrategy;
@@ -81,10 +81,11 @@ public class VertexLabel extends Indexable {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, primaryKeys=%s, " +
-                             "indexNames=%s, properties=%s}",
-                             this.name, this.primaryKeys,
-                             this.indexNames, this.properties);
+        return String.format("{name=%s, idStrategy=%s, primaryKeys=%s, " +
+                             "nullableKeys=%s, indexNames=%s, properties=%s}",
+                             this.name, this.idStrategy, this.primaryKeys,
+                             this.nullableKeys, this.indexNames,
+                             this.properties);
     }
 
     public static class Builder {
@@ -136,6 +137,11 @@ public class VertexLabel extends Indexable {
 
         public Builder primaryKeys(String... keys) {
             this.vertexLabel.primaryKeys(keys);
+            return this;
+        }
+
+        public Builder nullableKeys(String... keys) {
+            this.vertexLabel.nullableKeys(keys);
             return this;
         }
 

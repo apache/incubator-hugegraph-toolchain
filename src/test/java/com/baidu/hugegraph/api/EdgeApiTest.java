@@ -200,6 +200,41 @@ public class EdgeApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateWithNullableKeysAbsent() {
+        Edge edge = new Edge("created");
+        edge.sourceLabel("person");
+        edge.targetLabel("software");
+        edge.source("person:peter");
+        edge.target("software:lop");
+        // Absent prop 'city'
+        edge.property("date", "20170324");
+        edgeAPI.create(edge);
+
+        Assert.assertEquals("created", edge.label());
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("software", edge.targetLabel());
+        Assert.assertEquals("person:peter", edge.source());
+        Assert.assertEquals("software:lop", edge.target());
+        Map<String, Object> props = ImmutableMap.of("date", "20170324");
+        Assert.assertEquals(props, edge.properties());
+    }
+
+    @Test
+    public void testCreateWithNonNullKeysAbsent() {
+        Edge edge = new Edge("created");
+        edge.sourceLabel("person");
+        edge.targetLabel("software");
+        edge.source("person:peter");
+        edge.target("software:lop");
+        // Absent prop 'date'
+        edge.property("city", "Beijing");
+
+        Assert.assertResponse(400, () -> {
+            edgeAPI.create(edge);
+        });
+    }
+
+    @Test
     public void testBatchCreateWithValidVertexAndCheck() {
         List<Vertex> persons = super.create100PersonBatch();
         List<Vertex> softwares = super.create50SoftwareBatch();

@@ -112,6 +112,33 @@ public class VertexApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateWithNullableKeysAbsent() {
+        Vertex vertex = new Vertex("person");
+        // Absent prop city
+        vertex.property("name", "James");
+        vertex.property("age", 19);
+
+        vertex = vertexAPI.create(vertex);
+
+        Assert.assertEquals("person", vertex.label());
+        Map<String, Object> props = ImmutableMap.of("name", "James",
+                                                    "age", 19);
+        Assert.assertEquals(props, prune(vertex.properties()));
+    }
+
+    @Test
+    public void testCreateWithNonNullKeysAbsent() {
+        Vertex vertex = new Vertex("person");
+        // Absent prop 'age'
+        vertex.property("name", "James");
+        vertex.property("city", "Beijing");
+
+        Assert.assertResponse(400, () -> {
+            vertexAPI.create(vertex);
+        });
+    }
+
+    @Test
     public void testCreateExistVertex() {
         Vertex vertex = new Vertex("person");
         vertex.property("name", "James");

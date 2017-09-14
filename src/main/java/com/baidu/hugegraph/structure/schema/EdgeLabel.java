@@ -31,7 +31,7 @@ import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class EdgeLabel extends Indexable {
+public class EdgeLabel extends SchemaLabel {
 
     @JsonProperty
     private Frequency frequency;
@@ -120,9 +120,11 @@ public class EdgeLabel extends Indexable {
     @Override
     public String toString() {
         return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
-                             "sortKeys=%s, indexNames=%s, properties=%s}",
+                             "sortKeys=%s, nullableKeys=%s, indexNames=%s, " +
+                             "properties=%s}",
                              this.name, this.sourceLabel, this.targetLabel,
-                             this.sortKeys, this.indexNames, this.properties);
+                             this.sortKeys, this.nullableKeys, this.indexNames,
+                             this.properties);
     }
 
     public static class Builder {
@@ -161,6 +163,11 @@ public class EdgeLabel extends Indexable {
 
         public Builder sortKeys(String... keys) {
             this.edgeLabel.sortKeys(keys);
+            return this;
+        }
+
+        public Builder nullableKeys(String... keys) {
+            this.edgeLabel.nullableKeys(keys);
             return this;
         }
 

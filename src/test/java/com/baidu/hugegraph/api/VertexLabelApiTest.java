@@ -85,9 +85,59 @@ public class VertexLabelApiTest extends BaseApiTest {
     public void testCreateWithUndefinedPropertyKey() {
         VertexLabel vertexLabel = new VertexLabel("person");
         vertexLabel.idStrategy(IdStrategy.PRIMARY_KEY);
-        vertexLabel.properties("idcard", "age", "city");
-        vertexLabel.primaryKeys("idcard");
+        vertexLabel.properties("name", "age", "undefined");
+        vertexLabel.primaryKeys("name");
 
+        Assert.assertResponse(400, () -> {
+            vertexLabelAPI.create(vertexLabel);
+        });
+    }
+
+    @Test
+    public void testCreateWithUndefinedPrimaryKey() {
+        VertexLabel vertexLabel = new VertexLabel("person");
+        vertexLabel.idStrategy(IdStrategy.PRIMARY_KEY);
+        vertexLabel.properties("name", "age", "city");
+        vertexLabel.primaryKeys("undefined");
+
+        Assert.assertResponse(400, () -> {
+            vertexLabelAPI.create(vertexLabel);
+        });
+    }
+
+    @Test
+    public void testCreateWithUndefinedNullableKeys() {
+        VertexLabel vertexLabel = new VertexLabel("person");
+        vertexLabel.idStrategy(IdStrategy.PRIMARY_KEY);
+        vertexLabel.properties("name", "age", "city");
+        vertexLabel.primaryKeys("name");
+        vertexLabel.nullableKeys("undefined");
+
+        Assert.assertResponse(400, () -> {
+            vertexLabelAPI.create(vertexLabel);
+        });
+    }
+
+    @Test
+    public void testCreateWithNonNullKeysIntersectPrimaryKeys() {
+        VertexLabel vertexLabel = new VertexLabel("person");
+        vertexLabel.idStrategy(IdStrategy.PRIMARY_KEY);
+        vertexLabel.properties("name", "age", "city");
+
+        vertexLabel.primaryKeys("name");
+        vertexLabel.nullableKeys("name");
+        Assert.assertResponse(400, () -> {
+            vertexLabelAPI.create(vertexLabel);
+        });
+
+        vertexLabel.primaryKeys("name", "age");
+        vertexLabel.nullableKeys("name");
+        Assert.assertResponse(400, () -> {
+            vertexLabelAPI.create(vertexLabel);
+        });
+
+        vertexLabel.primaryKeys("name");
+        vertexLabel.nullableKeys("name", "age");
         Assert.assertResponse(400, () -> {
             vertexLabelAPI.create(vertexLabel);
         });
@@ -126,15 +176,20 @@ public class VertexLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", vertexLabel1.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel1.idStrategy());
         Set<String> props = ImmutableSet.of("name", "age");
+        Set<String> nullableKeys = ImmutableSet.of();
         Assert.assertEquals(props, vertexLabel1.properties());
+        Assert.assertEquals(nullableKeys, vertexLabel1.nullableKeys());
 
         VertexLabel vertexLabel2 = new VertexLabel("person");
         vertexLabel2.properties("city");
+        vertexLabel2.nullableKeys("city");
         vertexLabel2 = vertexLabelAPI.append(vertexLabel2);
         Assert.assertEquals("person", vertexLabel2.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel2.idStrategy());
         props = ImmutableSet.of("name", "age", "city");
+        nullableKeys = ImmutableSet.of("city");
         Assert.assertEquals(props, vertexLabel2.properties());
+        Assert.assertEquals(nullableKeys, vertexLabel2.nullableKeys());
     }
 
     @Test
@@ -149,7 +204,25 @@ public class VertexLabelApiTest extends BaseApiTest {
         Assert.assertEquals(props, vertexLabel1.properties());
 
         VertexLabel vertexLabel2 = new VertexLabel("person");
-        vertexLabel2.properties("idcard");
+        vertexLabel2.properties("undefined");
+        Assert.assertResponse(400, () -> {
+            vertexLabelAPI.append(vertexLabel2);
+        });
+    }
+
+    @Test
+    public void testAppendWithUndefinedNullabelKeys() {
+        VertexLabel vertexLabel1 = new VertexLabel("person");
+        vertexLabel1.idStrategy(IdStrategy.AUTOMATIC);
+        vertexLabel1.properties("name", "age");
+        vertexLabel1 = vertexLabelAPI.create(vertexLabel1);
+        Assert.assertEquals("person", vertexLabel1.name());
+        Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel1.idStrategy());
+        Set<String> props = ImmutableSet.of("name", "age");
+        Assert.assertEquals(props, vertexLabel1.properties());
+
+        VertexLabel vertexLabel2 = new VertexLabel("person");
+        vertexLabel2.nullableKeys("undefined");
         Assert.assertResponse(400, () -> {
             vertexLabelAPI.append(vertexLabel2);
         });

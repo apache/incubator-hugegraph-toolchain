@@ -56,11 +56,13 @@ public class SingleExample {
               .ifNotExist()
               .create();
 
-        schema.vertexLabel("person").properties("price").append();
+        schema.vertexLabel("person").properties("price")
+              .nullableKeys("price").append();
 
         schema.vertexLabel("software")
               .useCustomizeId()
               .properties("name", "lang", "price")
+              .nullableKeys("price")
               .ifNotExist()
               .create();
 
