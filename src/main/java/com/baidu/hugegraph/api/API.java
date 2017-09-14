@@ -21,7 +21,6 @@ package com.baidu.hugegraph.api;
 
 import com.baidu.hugegraph.client.RestClient;
 
-
 public abstract class API {
 
     protected RestClient client;

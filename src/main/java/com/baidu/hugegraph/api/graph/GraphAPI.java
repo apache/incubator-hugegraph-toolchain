@@ -22,7 +22,6 @@ package com.baidu.hugegraph.api.graph;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 
-
 public abstract class GraphAPI extends API {
 
     private static final String PATH = "graphs/%s/graph/%s";

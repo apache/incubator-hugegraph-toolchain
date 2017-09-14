@@ -56,5 +56,4 @@ public abstract class SchemaLabel extends SchemaElement {
         this.indexNames.addAll(Arrays.asList(indexNames));
         return this;
     }
-
 }

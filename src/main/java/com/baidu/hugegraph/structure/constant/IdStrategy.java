@@ -32,7 +32,7 @@ public enum IdStrategy {
     private byte code = 0;
     private String name = null;
 
-    private IdStrategy(int code, String name) {
+    IdStrategy(int code, String name) {
         assert code < 256;
         this.code = (byte) code;
         this.name = name;

@@ -26,11 +26,10 @@ import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class GremlinRequest {
 
-    // see org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer
+    // See org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer
     public String gremlin;
     public Map<String, Object> bindings;
     public String language;

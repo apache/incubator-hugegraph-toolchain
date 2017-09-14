@@ -27,12 +27,11 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 
-
 public class GraphsAPI extends API {
 
     public GraphsAPI(RestClient client) {
         super(client);
-        this.path(type());
+        this.path(this.type());
     }
 
     public String type() {
@@ -41,12 +40,12 @@ public class GraphsAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, String> get(String name) {
-        RestResult result = this.client.get(path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(Map.class);
     }
 
     public List<String> list() {
-        RestResult result = this.client.get(path());
-        return result.readList(type(), String.class);
+        RestResult result = this.client.get(this.path());
+        return result.readList(this.type(), String.class);
     }
 }

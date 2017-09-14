@@ -31,7 +31,6 @@ import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 
-
 public class SchemaManager {
 
     private PropertyKeyAPI propertyKeyApi;

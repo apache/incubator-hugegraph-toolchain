@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 public class RestResult {
 
     private int status;
@@ -44,15 +43,15 @@ public class RestResult {
     }
 
     public int status() {
-        return status;
+        return this.status;
     }
 
     public MultivaluedMap<String, Object> headers() {
-        return headers;
+        return this.headers;
     }
 
     public String content() {
-        return content;
+        return this.content;
     }
 
     public <T> T readObject(Class<T> clazz) {
@@ -75,14 +74,14 @@ public class RestResult {
             JsonNode element = root.get(key);
             if (element == null) {
                 throw new SerializeException(String.format(
-                        "Can't find value of the key: %s in json.", key));
+                          "Can't find value of the key: %s in json.", key));
             }
             JavaType type = mapper.getTypeFactory()
-                    .constructParametricType(List.class, clazz);
+                            .constructParametricType(List.class, clazz);
             objList = mapper.readValue(element.toString(), type);
         } catch (IOException e) {
             throw new SerializeException(String.format(
-                    "Failed to deserialize %s", this.content), e);
+                      "Failed to deserialize %s", this.content), e);
         }
         return objList;
     }
@@ -92,11 +91,11 @@ public class RestResult {
         try {
             ObjectMapper mapper = new ObjectMapper();
             JavaType type = mapper.getTypeFactory()
-                    .constructParametricType(List.class, clazz);
+                            .constructParametricType(List.class, clazz);
             objList = mapper.readValue(this.content, type);
         } catch (IOException e) {
             throw new SerializeException(String.format(
-                    "Failed to deserialize %s", this.content), e);
+                      "Failed to deserialize %s", this.content), e);
         }
         return objList;
     }
@@ -104,8 +103,6 @@ public class RestResult {
     @Override
     public String toString() {
         return String.format("{status=%s, headers=%s, content=%s}",
-                this.status,
-                this.headers,
-                this.content);
+                             this.status, this.headers, this.content);
     }
 }

@@ -26,7 +26,6 @@ import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 
-
 public class IndexLabelAPI extends SchemaAPI {
 
     public IndexLabelAPI(RestClient client, String graph) {
@@ -39,21 +38,21 @@ public class IndexLabelAPI extends SchemaAPI {
     }
 
     public IndexLabel create(IndexLabel indexLabel) {
-        RestResult result = this.client.post(path(), indexLabel);
+        RestResult result = this.client.post(this.path(), indexLabel);
         return result.readObject(IndexLabel.class);
     }
 
     public IndexLabel get(String name) {
-        RestResult result = this.client.get(path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(IndexLabel.class);
     }
 
     public List<IndexLabel> list() {
-        RestResult result = this.client.get(path());
-        return result.readList(type(), IndexLabel.class);
+        RestResult result = this.client.get(this.path());
+        return result.readList(this.type(), IndexLabel.class);
     }
 
     public void delete(String name) {
-        this.client.delete(path(), name);
+        this.client.delete(this.path(), name);
     }
 }

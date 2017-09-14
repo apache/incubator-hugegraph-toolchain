@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api.graph;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
@@ -28,7 +29,6 @@ import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.google.common.collect.ImmutableMap;
-
 
 public class VertexAPI extends GraphAPI {
 
@@ -42,29 +42,30 @@ public class VertexAPI extends GraphAPI {
     }
 
     public Vertex create(Vertex vertex) {
-        RestResult result = this.client.post(path(), vertex);
+        RestResult result = this.client.post(this.path(), vertex);
         return result.readObject(Vertex.class);
     }
 
     public List<String> create(List<Vertex> vertices) {
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.putSingle("Content-Encoding", BATCH_ENCODING);
-        RestResult result = this.client.post(batchPath(), vertices, headers);
+        RestResult result = this.client.post(this.batchPath(), vertices,
+                                             headers);
         return result.readList(String.class);
     }
 
     public Vertex get(String name) {
-        RestResult result = this.client.get(path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(Vertex.class);
     }
 
     public List<Vertex> list(int limit) {
-        RestResult result = this.client.get(path(),
-                ImmutableMap.of("limit", limit));
-        return result.readList(type(), Vertex.class);
+        Map<String, Object> parmas = ImmutableMap.of("limit", limit);
+        RestResult result = this.client.get(this.path(), parmas);
+        return result.readList(this.type(), Vertex.class);
     }
 
     public void delete(String name) {
-        this.client.delete(path(), name);
+        this.client.delete(this.path(), name);
     }
 }

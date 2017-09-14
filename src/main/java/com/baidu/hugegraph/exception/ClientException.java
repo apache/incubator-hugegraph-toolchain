@@ -26,13 +26,10 @@ public class ClientException extends IllegalArgumentException {
     private static final long serialVersionUID = -5381487354479556742L;
 
     private int status = 0;
-
     @JsonProperty
     private String exception;
-
     @JsonProperty
     private String message;
-
     @JsonProperty
     private String cause;
 

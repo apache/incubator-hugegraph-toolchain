@@ -25,7 +25,6 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.gremlin.Response;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 
-
 public class GremlinManager {
 
     private GremlinAPI gremlinApi;

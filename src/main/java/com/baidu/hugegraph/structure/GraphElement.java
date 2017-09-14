@@ -35,12 +35,10 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.EXISTING_PROPERTY,
-        property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = Vertex.class, name = "vertex"),
-        @JsonSubTypes.Type(value = Edge.class, name = "edge")})
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type",
+              include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes({@JsonSubTypes.Type(value = Vertex.class, name = "vertex"),
+               @JsonSubTypes.Type(value = Edge.class, name = "edge")})
 public abstract class GraphElement extends Element {
 
     @JsonProperty

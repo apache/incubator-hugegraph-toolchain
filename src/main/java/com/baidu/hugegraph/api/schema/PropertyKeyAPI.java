@@ -26,7 +26,6 @@ import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 
-
 public class PropertyKeyAPI extends SchemaAPI {
 
     public PropertyKeyAPI(RestClient client, String graph) {
@@ -39,21 +38,21 @@ public class PropertyKeyAPI extends SchemaAPI {
     }
 
     public PropertyKey create(PropertyKey propertyKey) {
-        RestResult result = this.client.post(path(), propertyKey);
+        RestResult result = this.client.post(this.path(), propertyKey);
         return result.readObject(PropertyKey.class);
     }
 
     public PropertyKey get(String name) {
-        RestResult result = this.client.get(path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(PropertyKey.class);
     }
 
     public List<PropertyKey> list() {
-        RestResult result = this.client.get(path());
-        return result.readList(type(), PropertyKey.class);
+        RestResult result = this.client.get(this.path());
+        return result.readList(this.type(), PropertyKey.class);
     }
 
     public void delete(String name) {
-        this.client.delete(path(), name);
+        this.client.delete(this.path(), name);
     }
 }

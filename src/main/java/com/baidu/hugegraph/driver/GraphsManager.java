@@ -24,7 +24,6 @@ import java.util.Map;
 import com.baidu.hugegraph.api.graphs.GraphsAPI;
 import com.baidu.hugegraph.client.RestClient;
 
-
 public class GraphsManager {
 
     private GraphsAPI graphsApi;

@@ -24,7 +24,6 @@ import java.util.List;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class Path {
 
     @JsonProperty
@@ -33,17 +32,16 @@ public class Path {
     private List<GraphElement> objects;
 
     public List<Object> labels() {
-        return labels;
+        return this.labels;
     }
 
     public List<GraphElement> objects() {
-        return objects;
+        return this.objects;
     }
 
     @Override
     public String toString() {
         return String.format("{labels=%s, objects=%s}",
-                this.labels,
-                this.objects);
+                             this.labels, this.objects);
     }
 }

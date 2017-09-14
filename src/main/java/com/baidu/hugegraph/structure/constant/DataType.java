@@ -36,7 +36,7 @@ public enum DataType {
     private byte code = 0;
     private String name = null;
 
-    private DataType(int code, String name) {
+    DataType(int code, String name) {
         assert code < 256;
         this.code = (byte) code;
         this.name = name;

@@ -33,7 +33,7 @@ public class BatchExample {
     public static void main(String[] args) {
         // If connect failed will throw a exception.
         HugeClient hugeClient = HugeClient.open("http://localhost:8080",
-                "hugegraph");
+                                                "hugegraph");
 
         SchemaManager schema = hugeClient.schema();
 
@@ -104,17 +104,19 @@ public class BatchExample {
         GraphManager graph = hugeClient.graph();
 
         Vertex marko = new Vertex("person").property("name", "marko")
-                .property("age", 29);
+                                           .property("age", 29);
         Vertex vadas = new Vertex("person").property("name", "vadas")
-                .property("age", 27);
+                                           .property("age", 27);
         Vertex lop = new Vertex("software").property("name", "lop")
-                .property("lang", "java").property("price", 328);
+                                           .property("lang", "java")
+                                           .property("price", 328);
         Vertex josh = new Vertex("person").property("name", "josh")
-                .property("age", 32);
+                                          .property("age", 32);
         Vertex ripple = new Vertex("software").property("name", "ripple")
-                .property("lang", "java").property("price", 199);
+                                              .property("lang", "java")
+                                              .property("price", 199);
         Vertex peter = new Vertex("person").property("name", "peter")
-                .property("age", 35);
+                                           .property("age", 35);
 
         List<Vertex> vertices = new LinkedList<>();
         vertices.add(marko);
@@ -128,17 +130,17 @@ public class BatchExample {
         vertices.forEach(vertex -> System.out.println(vertex));
 
         Edge markoKnowsVadas = new Edge("knows").source(marko).target(vadas)
-                .property("date", "20160110");
+                                                .property("date", "20160110");
         Edge markoKnowsJosh = new Edge("knows").source(marko).target(josh)
-                .property("date", "20130220");
+                                               .property("date", "20130220");
         Edge markoCreateLop = new Edge("created").source(marko).target(lop)
-                .property("date", "20171210");
+                                                 .property("date", "20171210");
         Edge joshCreateRipple = new Edge("created").source(josh).target(ripple)
-                .property("date", "20171210");
+                                                   .property("date", "20171210");
         Edge joshCreateLop = new Edge("created").source(josh).target(lop)
-                .property("date", "20091111");
+                                                .property("date", "20091111");
         Edge peterCreateLop = new Edge("created").source(peter).target(lop)
-                .property("date", "20170324");
+                                                 .property("date", "20170324");
 
         List<Edge> edges = new LinkedList<>();
         edges.add(markoKnowsVadas);
@@ -150,7 +152,5 @@ public class BatchExample {
 
         edges = graph.addEdges(edges, false);
         edges.forEach(edge -> System.out.println(edge));
-
     }
-
 }

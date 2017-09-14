@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.exception;
 
-
 public class StructureException extends RuntimeException {
 
     private static final long serialVersionUID = -8711375282196157058L;

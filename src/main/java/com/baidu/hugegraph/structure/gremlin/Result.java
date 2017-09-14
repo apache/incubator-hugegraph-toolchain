@@ -23,7 +23,6 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
 
-
 public class Result {
 
     private Object object;
@@ -33,54 +32,54 @@ public class Result {
     }
 
     public Object getObject() {
-        return object;
+        return this.object;
     }
 
     public String getString() {
-        return object.toString();
+        return this.object.toString();
     }
 
     public int getInt() {
-        return Integer.parseInt(object.toString());
+        return Integer.parseInt(this.object.toString());
     }
 
     public byte getByte() {
-        return Byte.parseByte(object.toString());
+        return Byte.parseByte(this.object.toString());
     }
 
     public short getShort() {
-        return Short.parseShort(object.toString());
+        return Short.parseShort(this.object.toString());
     }
 
     public long getLong() {
-        return Long.parseLong(object.toString());
+        return Long.parseLong(this.object.toString());
     }
 
     public float getFloat() {
-        return Float.parseFloat(object.toString());
+        return Float.parseFloat(this.object.toString());
     }
 
     public double getDouble() {
-        return Double.parseDouble(object.toString());
+        return Double.parseDouble(this.object.toString());
     }
 
     public boolean getBoolean() {
-        return Boolean.parseBoolean(object.toString());
+        return Boolean.parseBoolean(this.object.toString());
     }
 
     public boolean isNull() {
-        return null == object;
+        return null == this.object;
     }
 
     public Vertex getVertex() {
-        return (Vertex) object;
+        return (Vertex) this.object;
     }
 
     public Edge getEdge() {
-        return (Edge) object;
+        return (Edge) this.object;
     }
 
     public Path getPath() {
-        return (Path) object;
+        return (Path) this.object;
     }
 }

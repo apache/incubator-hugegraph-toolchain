@@ -25,7 +25,6 @@ import com.baidu.hugegraph.structure.GraphElement;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class Edge extends GraphElement {
 
     @JsonProperty("outV")
@@ -95,12 +94,10 @@ public class Edge extends GraphElement {
 
     @Override
     public String toString() {
-        return String.format("{id=%s, "
-                        + "source=%s, sourceLabel=%s, "
-                        + "target=%s, targetLabel=%s, "
-                        + "label=%s, properties=%s}",
-                this.id,
-                this.source, this.sourceLabel,
+        return String.format("{id=%s, source=%s, sourceLabel=%s, " +
+                             "target=%s, targetLabel=%s, " +
+                             "label=%s, properties=%s}",
+                this.id, this.source, this.sourceLabel,
                 this.target, this.targetLabel,
                 this.label, this.properties);
     }

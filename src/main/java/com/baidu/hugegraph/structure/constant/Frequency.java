@@ -30,7 +30,7 @@ public enum Frequency {
     private byte code = 0;
     private String name = null;
 
-    private Frequency(int code, String name) {
+    Frequency(int code, String name) {
         assert code < 256;
         this.code = (byte) code;
         this.name = name;

@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.structure;
 
-
 public abstract class Element {
 
     public abstract String type();

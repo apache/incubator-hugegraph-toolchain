@@ -32,7 +32,6 @@ import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 public class ResultSet {
 
     @JsonProperty
@@ -68,11 +67,11 @@ public class ResultSet {
         }
 
         try {
-            return new Result(this.mapper.readValue(
-                    this.mapper.writeValueAsString(object), clazz));
+            String rawValue = this.mapper.writeValueAsString(object);
+            return new Result(this.mapper.readValue(rawValue, clazz));
         } catch (Exception e) {
             throw new SerializeException(String.format(
-                    "Failed to deserialize: %s", object), e);
+                      "Failed to deserialize: %s", object), e);
         }
     }
 

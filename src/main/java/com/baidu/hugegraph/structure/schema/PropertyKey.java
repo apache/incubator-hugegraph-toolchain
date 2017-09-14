@@ -29,7 +29,6 @@ import com.baidu.hugegraph.structure.constant.HugeType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class PropertyKey extends SchemaElement {
 
     @JsonProperty
@@ -74,12 +73,10 @@ public class PropertyKey extends SchemaElement {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, cardinality=%s, "
-                        + "dataType=%s, properties=%s}",
-                this.name,
-                this.cardinality,
-                this.dataType,
-                this.properties);
+        return String.format("{name=%s, cardinality=%s, " +
+                             "dataType=%s, properties=%s}",
+                             this.name, this.cardinality,
+                             this.dataType, this.properties);
     }
 
     public static class Builder {

@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api.graph;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
@@ -28,7 +29,6 @@ import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.google.common.collect.ImmutableMap;
-
 
 public class EdgeAPI extends GraphAPI {
 
@@ -42,30 +42,32 @@ public class EdgeAPI extends GraphAPI {
     }
 
     public Edge create(Edge edge) {
-        RestResult result = this.client.post(path(), edge);
+        RestResult result = this.client.post(this.path(), edge);
         return result.readObject(Edge.class);
     }
 
     public List<String> create(List<Edge> edges, boolean checkVertex) {
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.putSingle("Content-Encoding", BATCH_ENCODING);
-        RestResult result = this.client.post(batchPath(), edges, headers,
-                ImmutableMap.of("checkVertex", checkVertex));
+        Map<String, Object> params = ImmutableMap.of("checkVertex",
+                                                     checkVertex);
+        RestResult result = this.client.post(this.batchPath(), edges,
+                                             headers, params);
         return result.readList(String.class);
     }
 
     public Edge get(String name) {
-        RestResult result = this.client.get(path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(Edge.class);
     }
 
     public List<Edge> list(int limit) {
-        RestResult result = this.client.get(path(),
-                ImmutableMap.of("limit", limit));
-        return result.readList(type(), Edge.class);
+        Map<String, Object> params = ImmutableMap.of("limit", limit);
+        RestResult result = this.client.get(this.path(), params);
+        return result.readList(this.type(), Edge.class);
     }
 
     public void delete(String name) {
-        this.client.delete(path(), name);
+        this.client.delete(this.path(), name);
     }
 }

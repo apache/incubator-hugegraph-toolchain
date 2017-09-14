@@ -39,7 +39,7 @@ public enum HugeType {
     private int code;
     private String name = null;
 
-    private HugeType(int code, String name) {
+    HugeType(int code, String name) {
         assert code < 256;
         this.code = code;
         this.name = name;

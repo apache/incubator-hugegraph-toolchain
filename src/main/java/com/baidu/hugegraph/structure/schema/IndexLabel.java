@@ -30,7 +30,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 @JsonIgnoreProperties({"id", "properties"})
 public class IndexLabel extends SchemaElement {
 
@@ -93,13 +92,10 @@ public class IndexLabel extends SchemaElement {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, baseType=%s, baseValue=%s, "
-                        + "indexType=%s, fields=%s}",
-                this.name,
-                this.baseType,
-                this.baseValue,
-                this.indexType,
-                this.fields);
+        return String.format("{name=%s, baseType=%s, baseValue=%s, " +
+                             "indexType=%s, fields=%s}",
+                             this.name, this.baseType, this.baseValue,
+                             this.indexType, this.fields);
     }
 
     public static class Builder {

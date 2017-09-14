@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
@@ -40,10 +41,8 @@ public class Vertex extends GraphElement {
     }
 
     public Edge addEdge(String label, Vertex vertex, Object... properties) {
-        Preconditions.checkNotNull(label,
-                "The edge label can not be null.");
-        Preconditions.checkNotNull(vertex,
-                "The target vertex can not be null.");
+        E.checkNotNull(label, "The edge label can not be null.");
+        E.checkNotNull(vertex, "The target vertex can not be null.");
         return this.manager.addEdge(this, label, vertex, properties);
     }
 
@@ -59,8 +58,6 @@ public class Vertex extends GraphElement {
     @Override
     public String toString() {
         return String.format("{id=%s, label=%s, properties=%s}",
-                this.id,
-                this.label,
-                this.properties);
+                             this.id, this.label, this.properties);
     }
 }

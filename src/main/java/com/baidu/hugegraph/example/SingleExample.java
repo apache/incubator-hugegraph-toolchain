@@ -40,7 +40,7 @@ public class SingleExample {
     public static void main(String[] args) throws IOException {
         // If connect failed will throw a exception.
         HugeClient hugeClient = HugeClient.open("http://localhost:8080",
-                "hugegraph");
+                                                "hugegraph");
 
         SchemaManager schema = hugeClient.schema();
 
@@ -116,17 +116,19 @@ public class SingleExample {
         GraphManager graph = hugeClient.graph();
 
         Vertex marko = graph.addVertex(T.label, "person",
-                "name", "marko", "age", 29);
+                                       "name", "marko", "age", 29);
         Vertex vadas = graph.addVertex(T.label, "person",
-                "name", "vadas", "age", 27);
+                                       "name", "vadas", "age", 27);
         Vertex lop = graph.addVertex(T.label, "software", T.id, "software-lop",
-                "name", "lop", "lang", "java", "price", 328);
-        Vertex josh = graph.addVertex(T.label, "person",
-                "name", "josh", "age", 32);
+                                     "name", "lop", "lang", "java",
+                                     "price", 328);
+        Vertex josh = graph.addVertex(T.label, "person", "name", "josh",
+                                      "age", 32);
         Vertex ripple = graph.addVertex(T.label, "software", T.id, "123456",
-                "name", "ripple", "lang", "java", "price", 199);
-        Vertex peter = graph.addVertex(T.label, "person",
-                "name", "peter", "age", 35);
+                                        "name", "ripple", "lang", "java",
+                                        "price", 199);
+        Vertex peter = graph.addVertex(T.label, "person", "name", "peter",
+                                       "age", 35);
 
         marko.addEdge("knows", vadas, "date", "20160110");
         marko.addEdge("knows", josh, "date", "20130220");
@@ -157,5 +159,4 @@ public class SingleExample {
             }
         });
     }
-
 }

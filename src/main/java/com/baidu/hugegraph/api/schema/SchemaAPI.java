@@ -22,14 +22,13 @@ package com.baidu.hugegraph.api.schema;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 
-
 public abstract class SchemaAPI extends API {
 
     private static final String PATH = "graphs/%s/schema/%s";
 
     public SchemaAPI(RestClient client, String graph) {
         super(client);
-        this.path(String.format(PATH, graph, type()));
+        this.path(String.format(PATH, graph, this.type()));
     }
 
     public abstract String type();

@@ -31,7 +31,7 @@ public enum Cardinality {
     private byte code = 0;
     private String name = null;
 
-    private Cardinality(int code, String name) {
+    Cardinality(int code, String name) {
         assert code < 256;
         this.code = (byte) code;
         this.name = name;

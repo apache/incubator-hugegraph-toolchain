@@ -23,7 +23,6 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 public class Response {
 
     private static class Status {
@@ -43,14 +42,14 @@ public class Response {
     private ResultSet result;
 
     public String requestId() {
-        return requestId;
+        return this.requestId;
     }
 
     public Status status() {
-        return status;
+        return this.status;
     }
 
     public ResultSet result() {
-        return result;
+        return this.result;
     }
 }

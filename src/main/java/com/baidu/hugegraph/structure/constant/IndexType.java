@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.structure.constant;
 
-
 public enum IndexType {
 
     SECONDARY(1, "secondary"),
@@ -29,7 +28,7 @@ public enum IndexType {
     private byte code = 0;
     private String name = null;
 
-    private IndexType(int code, String name) {
+    IndexType(int code, String name) {
         assert code < 256;
         this.code = (byte) code;
         this.name = name;
