@@ -114,7 +114,7 @@ public class BaseApiTest extends BaseClientTest {
         schema.vertexLabel("software")
               .properties("name", "lang", "price")
               .primaryKeys("name")
-              .nullableKeys("city")
+              .nullableKeys("price")
               .ifNotExist()
               .create();
     }
