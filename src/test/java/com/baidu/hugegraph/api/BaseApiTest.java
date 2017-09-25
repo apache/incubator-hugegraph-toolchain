@@ -22,6 +22,7 @@ package com.baidu.hugegraph.api;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.baidu.hugegraph.api.variables.VariablesAPI;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -48,6 +49,7 @@ public class BaseApiTest extends BaseClientTest {
     protected static IndexLabelAPI indexLabelAPI;
     protected static VertexAPI vertexAPI;
     protected static EdgeAPI edgeAPI;
+    protected static VariablesAPI variablesAPI;
 
     @BeforeClass
     public static void init() {
@@ -60,6 +62,7 @@ public class BaseApiTest extends BaseClientTest {
         indexLabelAPI = new IndexLabelAPI(client, GRAPH);
         vertexAPI = new VertexAPI(client, GRAPH);
         edgeAPI = new EdgeAPI(client, GRAPH);
+        variablesAPI = new VariablesAPI(client, GRAPH);
     }
 
     @AfterClass

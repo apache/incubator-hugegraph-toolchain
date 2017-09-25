@@ -30,6 +30,4 @@ public abstract class SchemaAPI extends API {
         super(client);
         this.path(String.format(PATH, graph, this.type()));
     }
-
-    public abstract String type();
 }

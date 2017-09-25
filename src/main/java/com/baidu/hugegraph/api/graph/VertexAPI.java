@@ -37,7 +37,7 @@ public class VertexAPI extends GraphAPI {
     }
 
     @Override
-    public String type() {
+    protected String type() {
         return HugeType.VERTEX.string();
     }
 

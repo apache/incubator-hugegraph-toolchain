@@ -37,7 +37,7 @@ public class EdgeAPI extends GraphAPI {
     }
 
     @Override
-    public String type() {
+    protected String type() {
         return HugeType.EDGE.string();
     }
 

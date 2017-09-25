@@ -33,6 +33,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Variant;
 
+import com.google.common.collect.ImmutableMap;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.internal.util.collection.Refs;
@@ -119,7 +120,12 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    public RestResult put(String path, Object object,
+    public RestResult put(String path, String id, Object object)
+                          throws ClientException {
+        return this.put(path, id, object, ImmutableMap.of());
+    }
+
+    public RestResult put(String path, String id, Object object,
                           Map<String, Object> params) throws ClientException {
         Ref<WebTarget> target = Refs.of(this.target);
         if (params != null && !params.isEmpty()) {
@@ -129,7 +135,8 @@ public class RestClient {
         }
 
         Response response = this.request(() -> {
-            return target.get().path(path).request().put(Entity.json(object));
+            return target.get().path(path).path(id).request()
+                         .put(Entity.json(object));
         });
         // If check status failed, throw client exception.
         checkStatus(response, Response.Status.OK);

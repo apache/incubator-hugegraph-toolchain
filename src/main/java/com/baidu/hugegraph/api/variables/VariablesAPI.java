@@ -17,35 +17,50 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.graphs;
-
-import java.util.List;
-import java.util.Map;
+package com.baidu.hugegraph.api.variables;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.google.common.collect.ImmutableMap;
 
-public class GraphsAPI extends API {
+import java.util.Map;
 
-    public GraphsAPI(RestClient client) {
+public class VariablesAPI extends API {
+
+    private static final String PATH = "graphs/%s/%s";
+
+    public VariablesAPI(RestClient client, String graph) {
         super(client);
-        this.path(this.type());
+        this.path(String.format(PATH, graph, this.type()));
     }
 
+    @Override
     protected String type() {
-        return HugeType.GRAPHS.string();
+        return HugeType.VARIABLES.string();
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, String> get(String name) {
-        RestResult result = this.client.get(this.path(), name);
+    public Map<String, Object> get(String key) {
+        RestResult result = this.client.get(path(), key);
         return result.readObject(Map.class);
     }
 
-    public List<String> list() {
-        RestResult result = this.client.get(this.path());
-        return result.readList(this.type(), String.class);
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> set(String key, Object value) {
+        value = ImmutableMap.of("data", value);
+        RestResult result = this.client.put(path(), key, value);
+        return result.readObject(Map.class);
+    }
+
+    public void remove(String key) {
+        this.client.delete(path(), key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> all() {
+        RestResult result = this.client.get(path());
+        return result.readObject(Map.class);
     }
 }

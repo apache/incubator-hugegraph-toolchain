@@ -29,7 +29,12 @@ public class GremlinAPI extends API {
 
     public GremlinAPI(RestClient client) {
         super(client);
-        this.path(HugeType.GREMLIN.string());
+        this.path(type());
+    }
+
+    @Override
+    protected String type() {
+        return HugeType.GREMLIN.string();
     }
 
     public Response post(GremlinRequest request) {

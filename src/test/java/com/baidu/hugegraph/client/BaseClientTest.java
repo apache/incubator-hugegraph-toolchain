@@ -18,7 +18,7 @@ public class BaseClientTest {
     private static HugeClient client;
 
     protected static HugeClient open() {
-        return HugeClient.open(BASE_URL, GRAPH);
+        return new HugeClient(BASE_URL, GRAPH);
     }
 
     @BeforeClass

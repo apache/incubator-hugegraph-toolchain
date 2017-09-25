@@ -17,45 +17,34 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure.constant;
+package com.baidu.hugegraph.driver;
 
-public enum HugeType {
+import com.baidu.hugegraph.api.variables.VariablesAPI;
+import com.baidu.hugegraph.client.RestClient;
 
-    // Schema
-    VERTEX_LABEL(1, "vertexlabels"),
-    EDGE_LABEL(2, "edgelabels"),
-    PROPERTY_KEY(3, "propertykeys"),
-    INDEX_LABEL(4, "indexlabels"),
+import java.util.Map;
 
-    // Data
-    VERTEX(101, "vertices"),
-    EDGE(120, "edges"),
+public class VariablesManager {
 
-    // Variables
-    VARIABLES(130, "variables"),
+    private VariablesAPI variablesAPI;
 
-    // Gremlin
-    GREMLIN(201, "gremlin"),
-
-    GRAPHS(220, "graphs"),
-
-    // Version
-    VERSION(230, "versions");
-
-    private int code;
-    private String name = null;
-
-    HugeType(int code, String name) {
-        assert code < 256;
-        this.code = code;
-        this.name = name;
+    public VariablesManager(RestClient client, String graph) {
+        this.variablesAPI = new VariablesAPI(client, graph);
     }
 
-    public int code() {
-        return this.code;
+    public Map<String, Object> get(String key) {
+        return this.variablesAPI.get(key);
     }
 
-    public String string() {
-        return this.name;
+    public Map<String, Object> set(String key, Object value) {
+        return this.variablesAPI.set(key, value);
+    }
+
+    public void remove(String key) {
+        this.variablesAPI.remove(key);
+    }
+
+    public Map<String, Object> all() {
+        return this.variablesAPI.all();
     }
 }

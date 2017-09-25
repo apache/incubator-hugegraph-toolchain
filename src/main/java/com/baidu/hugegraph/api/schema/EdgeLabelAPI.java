@@ -35,7 +35,7 @@ public class EdgeLabelAPI extends SchemaAPI {
     }
 
     @Override
-    public String type() {
+    protected String type() {
         return HugeType.EDGE_LABEL.string();
     }
 
@@ -46,13 +46,15 @@ public class EdgeLabelAPI extends SchemaAPI {
 
     public EdgeLabel append(EdgeLabel edgeLabel) {
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), edgeLabel, params);
+        RestResult result = this.client.put(path(), edgeLabel.name(),
+                                            edgeLabel, params);
         return result.readObject(EdgeLabel.class);
     }
 
     public EdgeLabel eliminate(EdgeLabel edgeLabel) {
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), edgeLabel, params);
+        RestResult result = this.client.put(path(), edgeLabel.name(),
+                                            edgeLabel, params);
         return result.readObject(EdgeLabel.class);
     }
 

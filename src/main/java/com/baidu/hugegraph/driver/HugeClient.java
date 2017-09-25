@@ -42,6 +42,7 @@ public class HugeClient {
     private SchemaManager schema;
     private GraphManager graph;
     private GremlinManager gremlin;
+    private VariablesManager variables;
 
     public HugeClient(String url, String graph) {
         this(url, graph, DEFAULT_TIMEOUT);
@@ -63,19 +64,17 @@ public class HugeClient {
         this.schema = new SchemaManager(this.restClient, graph);
         this.graph = new GraphManager(this.restClient, graph);
         this.gremlin = new GremlinManager(this.restClient, graph);
+        this.variables = new VariablesManager(this.restClient, graph);
     }
 
     /**
      * TODO: Need to add some unit test
      */
-    public static HugeClient open(String url, String name) {
-        return new HugeClient(url, name);
-    }
-
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.7", "0.8", "hugegraph-api in server");
+        VersionUtil.check(apiVersion, "0.8", "0.9",
+                          "hugegraph-api in server");
     }
 
     public SchemaManager schema() {

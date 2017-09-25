@@ -22,13 +22,19 @@ package com.baidu.hugegraph.api.version;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
+import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.version.Versions;
 
-public class VersionApi extends API {
+public class VersionAPI extends API {
 
-    public VersionApi(RestClient client) {
+    public VersionAPI(RestClient client) {
         super(client);
-        this.path("versions");
+        this.path(this.type());
+    }
+
+    @Override
+    protected String type() {
+        return HugeType.VERSION.string();
     }
 
     public Versions get() {

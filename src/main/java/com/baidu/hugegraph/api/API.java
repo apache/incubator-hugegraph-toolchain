@@ -34,6 +34,8 @@ public abstract class API {
         return this.path;
     }
 
+    protected abstract String type();
+
     public void path(String path) {
         this.path = path;
     }

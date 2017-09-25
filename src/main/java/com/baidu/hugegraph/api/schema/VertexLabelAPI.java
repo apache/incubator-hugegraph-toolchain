@@ -35,7 +35,7 @@ public class VertexLabelAPI extends SchemaAPI {
     }
 
     @Override
-    public String type() {
+    protected String type() {
         return HugeType.VERTEX_LABEL.string();
     }
 
@@ -46,13 +46,15 @@ public class VertexLabelAPI extends SchemaAPI {
 
     public VertexLabel append(VertexLabel vertexLabel) {
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), vertexLabel, params);
+        RestResult result = this.client.put(path(), vertexLabel.name(),
+                                            vertexLabel, params);
         return result.readObject(VertexLabel.class);
     }
 
     public VertexLabel eliminate(VertexLabel vertexLabel) {
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), vertexLabel, params);
+        RestResult result = this.client.put(path(), vertexLabel.name(),
+                                            vertexLabel, params);
         return result.readObject(VertexLabel.class);
     }
 

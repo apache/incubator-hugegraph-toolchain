@@ -33,7 +33,7 @@ public class PropertyKeyAPI extends SchemaAPI {
     }
 
     @Override
-    public String type() {
+    protected String type() {
         return HugeType.PROPERTY_KEY.string();
     }
 

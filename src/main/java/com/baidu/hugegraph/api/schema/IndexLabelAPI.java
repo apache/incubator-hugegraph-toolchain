@@ -33,7 +33,7 @@ public class IndexLabelAPI extends SchemaAPI {
     }
 
     @Override
-    public String type() {
+    protected String type() {
         return HugeType.INDEX_LABEL.string();
     }
 

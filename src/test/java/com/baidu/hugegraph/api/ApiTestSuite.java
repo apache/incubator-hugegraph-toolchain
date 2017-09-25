@@ -30,7 +30,8 @@ import org.junit.runners.Suite;
     IndexLabelApiTest.class,
     VertexApiTest.class,
     EdgeApiTest.class,
-    GremlinApiTest.class
+    GremlinApiTest.class,
+    VariablesApiTest.class
 })
 public class ApiTestSuite {
 }

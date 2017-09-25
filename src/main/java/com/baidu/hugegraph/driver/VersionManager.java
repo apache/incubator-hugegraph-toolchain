@@ -19,30 +19,30 @@
 
 package com.baidu.hugegraph.driver;
 
-import com.baidu.hugegraph.api.version.VersionApi;
+import com.baidu.hugegraph.api.version.VersionAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.version.Versions;
 
 public class VersionManager {
 
-    private VersionApi versionApi;
+    private VersionAPI versionAPI;
 
     public VersionManager(RestClient client) {
-        this.versionApi = new VersionApi(client);
+        this.versionAPI = new VersionAPI(client);
     }
 
     public String getCoreVersion() {
-        Versions versions = this.versionApi.get();
+        Versions versions = this.versionAPI.get();
         return versions.get("core");
     }
 
     public String getGremlinVersion() {
-        Versions versions = this.versionApi.get();
+        Versions versions = this.versionAPI.get();
         return versions.get("gremlin");
     }
 
     public String getApiVersion() {
-        Versions versions = this.versionApi.get();
+        Versions versions = this.versionAPI.get();
         return versions.get("api");
     }
 }

@@ -36,8 +36,6 @@ public abstract class GraphAPI extends API {
         this.batchPath = String.format("%s/%s", this.path, "batch");
     }
 
-    public abstract String type();
-
     public String batchPath() {
         return this.batchPath;
     }
