@@ -32,9 +32,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class VertexLabel extends SchemaLabel {
 
-    @JsonProperty
+    @JsonProperty("id_strategy")
     private IdStrategy idStrategy;
-    @JsonProperty
+    @JsonProperty("primary_keys")
     private List<String> primaryKeys;
 
     @JsonCreator

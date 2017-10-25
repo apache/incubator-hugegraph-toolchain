@@ -304,7 +304,9 @@ public class VertexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testDeleteNotExist() {
-        vertexLabelAPI.delete("not-exist-vl");
+        Assert.assertResponse(404, () -> {
+            vertexLabelAPI.delete("not-exist-vl");
+        });
     }
 
     private static void assertContains(List<VertexLabel> vertexLabels,

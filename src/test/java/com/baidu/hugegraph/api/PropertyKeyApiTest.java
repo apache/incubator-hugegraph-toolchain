@@ -129,7 +129,9 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @Test
     public void testDeleteNotExist() {
-        propertyKeyAPI.delete("not-exist-pk");
+        Assert.assertResponse(404, () -> {
+            propertyKeyAPI.delete("not-exist-pk");
+        });
     }
 
     private static void assertContains(List<PropertyKey> propertyKeys,

@@ -363,7 +363,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testDeleteNotExist() {
-        edgeLabelAPI.delete("not-exist-el");
+        Assert.assertResponse(404, () -> {
+            edgeLabelAPI.delete("not-exist-el");
+        });
     }
 
     private static void assertContains(List<EdgeLabel> edgeLabels,

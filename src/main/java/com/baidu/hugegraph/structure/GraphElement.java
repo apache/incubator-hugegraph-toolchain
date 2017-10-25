@@ -41,13 +41,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
                @JsonSubTypes.Type(value = Edge.class, name = "edge")})
 public abstract class GraphElement extends Element {
 
-    @JsonProperty
+    @JsonProperty("id")
     protected String id;
-    @JsonProperty
+    @JsonProperty("label")
     protected String label;
-    @JsonProperty
+    @JsonProperty("type")
     protected String type;
-    @JsonProperty
+    @JsonProperty("properties")
     protected Map<String, Object> properties;
 
     public String id() {

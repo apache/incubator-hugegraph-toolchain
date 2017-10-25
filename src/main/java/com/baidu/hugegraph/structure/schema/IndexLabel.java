@@ -33,13 +33,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties({"id", "properties"})
 public class IndexLabel extends SchemaElement {
 
-    @JsonProperty
+    @JsonProperty("base_type")
     private HugeType baseType;
-    @JsonProperty
+    @JsonProperty("base_value")
     private String baseValue;
-    @JsonProperty
+    @JsonProperty("index_type")
     private IndexType indexType;
-    @JsonProperty
+    @JsonProperty("fields")
     private List<String> fields;
 
     @JsonCreator

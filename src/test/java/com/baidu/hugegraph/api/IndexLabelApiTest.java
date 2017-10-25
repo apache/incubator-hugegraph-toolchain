@@ -202,7 +202,9 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testDeleteNotExist() {
-        indexLabelAPI.delete("not-exist-il");
+        Assert.assertResponse(404, () -> {
+            indexLabelAPI.delete("not-exist-il");
+        });
     }
 
     private static void assertContains(List<IndexLabel> indexLabels,

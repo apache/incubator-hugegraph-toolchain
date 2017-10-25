@@ -130,16 +130,9 @@ public class EdgeApiTest extends BaseApiTest {
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
-        edge = edgeAPI.create(edge);
-
-        Assert.assertEquals("created", edge.label());
-        Assert.assertEquals("person", edge.sourceLabel());
-        Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals("person:peter", edge.source());
-        Assert.assertEquals("software:lop", edge.target());
-        Map<String, Object> props = ImmutableMap.of("date", "20170324",
-                                                    "city", "Hongkong");
-        Assert.assertEquals(props, edge.properties());
+        Assert.assertResponse(400, () -> {
+            edgeAPI.create(edge);
+        });
     }
 
     @Test

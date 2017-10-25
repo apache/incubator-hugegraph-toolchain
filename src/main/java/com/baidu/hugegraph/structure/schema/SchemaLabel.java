@@ -28,9 +28,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class SchemaLabel extends SchemaElement {
 
-    @JsonProperty
+    @JsonProperty("nullable_keys")
     protected Set<String> nullableKeys;
-    @JsonProperty
+    @JsonProperty("index_names")
     protected Set<String> indexNames;
 
     public SchemaLabel(String name) {

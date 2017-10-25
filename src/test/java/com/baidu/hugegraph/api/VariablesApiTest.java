@@ -121,7 +121,9 @@ public class VariablesApiTest extends BaseApiTest {
 
     @Test
     public void testDeleteNotExist() {
-        vertexLabelAPI.delete("not-exist-variable");
+        Assert.assertResponse(404, () -> {
+            vertexLabelAPI.delete("not-exist-variable");
+        });
     }
 
     @SuppressWarnings("unchecked")

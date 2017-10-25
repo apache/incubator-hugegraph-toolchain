@@ -31,9 +31,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PropertyKey extends SchemaElement {
 
-    @JsonProperty
+    @JsonProperty("data_type")
     private DataType dataType;
-    @JsonProperty
+    @JsonProperty("cardinality")
     private Cardinality cardinality;
 
     @JsonCreator

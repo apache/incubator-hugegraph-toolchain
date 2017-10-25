@@ -33,13 +33,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EdgeLabel extends SchemaLabel {
 
-    @JsonProperty
+    @JsonProperty("frequency")
     private Frequency frequency;
-    @JsonProperty
+    @JsonProperty("source_label")
     private String sourceLabel;
-    @JsonProperty
+    @JsonProperty("target_label")
     private String targetLabel;
-    @JsonProperty
+    @JsonProperty("sort_keys")
     private List<String> sortKeys;
 
     @JsonCreator

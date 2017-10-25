@@ -28,11 +28,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class SchemaElement extends Element {
 
-    @JsonProperty
+    @JsonProperty("name")
     protected String name;
-    @JsonProperty
+    @JsonProperty("properties")
     protected Set<String> properties;
-    @JsonProperty
+    @JsonProperty("check_exist")
     protected boolean checkExist;
 
     public SchemaElement(String name) {
