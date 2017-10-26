@@ -21,7 +21,9 @@ package com.baidu.hugegraph.structure.graph;
 
 import java.util.HashMap;
 
+import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -89,7 +91,43 @@ public class Edge extends GraphElement {
 
     @Override
     public Edge property(String key, Object value) {
-        return (Edge) super.property(key, value);
+        E.checkNotNull(key, "The property name can not be null");
+        E.checkNotNull(value, "The property value can not be null");
+        if (this.fresh()) {
+            return (Edge) super.property(key, value);
+        } else {
+            return this.setProperty(key, value);
+        }
+    }
+
+    @Override
+    protected Edge setProperty(String key, Object value) {
+        Edge edge = new Edge(this.label);
+        edge.id(this.id);
+        edge.property(key, value);
+        // NOTE: append can also b used to update property
+        edge = this.manager.appendEdgeProperty(edge);
+
+        super.property(key, edge.property(key));
+        return this;
+    }
+
+    @Override
+    public Edge removeProperty(String key) {
+        E.checkNotNull(key, "The property name can not be null");
+        if (!this.properties.containsKey(key)) {
+            throw new InvalidOperationException(
+                      "The edge '%s' doesn't have the property '%s'",
+                      this.id, key);
+        }
+        Edge edge = new Edge(this.label);
+        edge.id(this.id);
+        Object value = this.properties.get(key);
+        edge.property(key, value);
+        this.manager.eliminateEdgeProperty(edge);
+
+        this.properties().remove(key);
+        return this;
     }
 
     @Override

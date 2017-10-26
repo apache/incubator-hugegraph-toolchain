@@ -17,17 +17,15 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.exception;
+package com.baidu.hugegraph.functional;
 
-public class StructureException extends RuntimeException {
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-    private static final long serialVersionUID = -8711375282196157058L;
-
-    public StructureException(String message) {
-        super(message);
-    }
-
-    public StructureException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+    VertexTest.class,
+    EdgeTest.class
+})
+public class FuncTestSuite {
 }

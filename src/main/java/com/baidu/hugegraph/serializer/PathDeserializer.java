@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import com.baidu.hugegraph.exception.InvalidResponseException;
-import com.baidu.hugegraph.exception.SerializeException;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -50,7 +49,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
         JsonNode labelsNode = node.get("labels");
         if (labelsNode == null ||
             labelsNode.getNodeType() != JsonNodeType.ARRAY) {
-            throw new InvalidResponseException("labels", node.toString());
+            throw InvalidResponseException.expectField("labels", node);
         }
         labelsNode.elements().forEachRemaining(path::labels);
 
@@ -58,7 +57,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
         JsonNode objectsNode = node.get("objects");
         if (objectsNode == null ||
             objectsNode.getNodeType() != JsonNodeType.ARRAY) {
-            throw new InvalidResponseException("objects", node.toString());
+            throw InvalidResponseException.expectField("objects", node);
         }
 
         Iterator<JsonNode> objects = objectsNode.elements();
@@ -84,8 +83,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
         } else if (type.equals("edge")) {
             return mapper.convertValue(objectNode, Edge.class);
         } else {
-            throw new SerializeException(String.format(
-                      "Unknown object type '%s'", type));
+            throw InvalidResponseException.expectField("vertex/edge", type);
         }
     }
 }

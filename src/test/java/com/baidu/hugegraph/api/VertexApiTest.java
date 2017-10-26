@@ -20,7 +20,6 @@
 package com.baidu.hugegraph.api;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -61,7 +60,7 @@ public class VertexApiTest extends BaseApiTest {
         Map<String, Object> props = ImmutableMap.of("name", "James",
                                                     "city", "Beijing",
                                                     "age", 19);
-        Assert.assertEquals(props, prune(vertex.properties()));
+        Assert.assertEquals(props, vertex.properties());
     }
 
     @Test
@@ -123,7 +122,7 @@ public class VertexApiTest extends BaseApiTest {
         Assert.assertEquals("person", vertex.label());
         Map<String, Object> props = ImmutableMap.of("name", "James",
                                                     "age", 19);
-        Assert.assertEquals(props, prune(vertex.properties()));
+        Assert.assertEquals(props, vertex.properties());
     }
 
     @Test
@@ -156,7 +155,7 @@ public class VertexApiTest extends BaseApiTest {
         Map<String, Object> props = ImmutableMap.of("name", "James",
                                                     "city", "Shanghai",
                                                     "age", 20);
-        Assert.assertEquals(props, prune(vertex.properties()));
+        Assert.assertEquals(props, vertex.properties());
     }
 
     @Test
@@ -172,7 +171,7 @@ public class VertexApiTest extends BaseApiTest {
             Map<String, Object> props = ImmutableMap.of("name", "Person-" + i,
                                                         "city", "Beijing",
                                                         "age", 30);
-            Assert.assertEquals(props, prune(person.properties()));
+            Assert.assertEquals(props, person.properties());
         }
     }
 
@@ -270,20 +269,5 @@ public class VertexApiTest extends BaseApiTest {
 
     private static void assertContains(List<Vertex> vertices, Vertex vertex) {
         Assert.assertTrue(Utils.contains(vertices, vertex));
-    }
-
-    public static Map<String,Object> prune(Map<String, Object> properties) {
-        Map<String, Object> props = new HashMap<>();
-        for (Map.Entry<String, Object> entry : properties.entrySet()) {
-            Object value = entry.getValue();
-            try {
-                value = ((List<?>) value).get(0);
-                props.put(entry.getKey(), ((Map) value).get("value"));
-            } catch (Exception e) {
-                throw new IllegalArgumentException(
-                          "Failed to cast properties value", e);
-            }
-        }
-        return props;
     }
 }

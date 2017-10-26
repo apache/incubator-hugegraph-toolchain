@@ -24,7 +24,7 @@ import java.util.List;
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -43,7 +43,7 @@ public class GraphManager {
 
     public Vertex addVertex(Vertex vertex) {
         vertex = this.vertexApi.create(vertex);
-        vertex.manager(this);
+        this.attachManager(vertex);
         return vertex;
     }
 
@@ -52,22 +52,21 @@ public class GraphManager {
         Vertex vertex = new Vertex(label);
         vertex.id(this.getValue(T.id, keyValues));
         this.attachProperties(vertex, keyValues);
-        vertex = this.vertexApi.create(vertex);
-        vertex.manager(this);
-        return vertex;
+        return this.addVertex(vertex);
     }
 
     public Vertex getVertex(String vertexId) {
         Vertex vertex = this.vertexApi.get(vertexId);
-        vertex.manager(this);
+        this.attachManager(vertex);
         return vertex;
     }
 
     public List<Vertex> addVertices(List<Vertex> vertices) {
         List<String> ids = this.vertexApi.create(vertices);
-        assert vertices.size() == ids.size();
         for (int i = 0; i < vertices.size(); i++) {
-            vertices.get(i).id(ids.get(i));
+            Vertex vertex = vertices.get(i);
+            vertex.id(ids.get(i));
+            this.attachManager(vertex);
         }
         return vertices;
     }
@@ -79,7 +78,7 @@ public class GraphManager {
     public List<Vertex> getVertices(int limit) {
         List<Vertex> vertices = this.vertexApi.list(limit);
         for (Vertex vertex : vertices) {
-            vertex.manager(this);
+            this.attachManager(vertex);
         }
         return vertices;
     }
@@ -88,12 +87,26 @@ public class GraphManager {
         this.vertexApi.delete(vertexId);
     }
 
+    public Vertex appendVertexProperty(Vertex vertex) {
+        vertex = this.vertexApi.append(vertex);
+        this.attachManager(vertex);
+        return vertex;
+    }
+
+    public Vertex eliminateVertexProperty(Vertex vertex) {
+        vertex = this.vertexApi.eliminate(vertex);
+        this.attachManager(vertex);
+        return vertex;
+    }
+
     public Edge addEdge(Edge edge) {
         if (edge.id() != null) {
-            throw new ClientException(String.format(
-                      "Not allowed to custom id for edge: '%s'", edge));
+            throw new InvalidOperationException(
+                      "Not allowed to custom id for edge: '%s'", edge);
         }
-        return this.edgeApi.create(edge);
+        edge = this.edgeApi.create(edge);
+        this.attachManager(edge);
+        return edge;
     }
 
     public Edge addEdge(Vertex source, String label, Vertex target,
@@ -107,11 +120,13 @@ public class GraphManager {
         edge.source(sourceId);
         edge.target(targetId);
         this.attachProperties(edge, properties);
-        return this.edgeApi.create(edge);
+        return this.addEdge(edge);
     }
 
     public Edge getEdge(String edgeId) {
-        return this.edgeApi.get(edgeId);
+        Edge edge = this.edgeApi.get(edgeId);
+        this.attachManager(edge);
+        return edge;
     }
 
     public List<Edge> addEdges(List<Edge> edges) {
@@ -120,9 +135,10 @@ public class GraphManager {
 
     public List<Edge> addEdges(List<Edge> edges, boolean checkVertex) {
         List<String> ids = this.edgeApi.create(edges, checkVertex);
-        assert edges.size() == ids.size();
         for (int i = 0; i < edges.size(); i++) {
-            edges.get(i).id(ids.get(i));
+            Edge edge = edges.get(i);
+            edge.id(ids.get(i));
+            this.attachManager(edge);
         }
         return edges;
     }
@@ -132,11 +148,27 @@ public class GraphManager {
     }
 
     public List<Edge> getEdges(int limit) {
-        return this.edgeApi.list(limit);
+        List<Edge> edges = this.edgeApi.list(limit);
+        for (Edge edge : edges) {
+            this.attachManager(edge);
+        }
+        return edges;
     }
 
     public void removeEdge(String edgeId) {
         this.edgeApi.delete(edgeId);
+    }
+
+    public Edge appendEdgeProperty(Edge edge) {
+        edge = this.edgeApi.append(edge);
+        this.attachManager(edge);
+        return edge;
+    }
+
+    public Edge eliminateEdgeProperty(Edge edge) {
+        edge = this.edgeApi.eliminate(edge);
+        this.attachManager(edge);
+        return edge;
     }
 
     private String getValue(String key, Object... keyValues) {
@@ -157,7 +189,7 @@ public class GraphManager {
         return value;
     }
 
-    public void attachProperties(GraphElement element, Object... properties) {
+    private void attachProperties(GraphElement element, Object... properties) {
         E.checkArgument((properties.length & 0x01) == 0,
                         "The number of properties must be even");
         for (int i = 0; i < properties.length; i = i + 2) {
@@ -166,5 +198,9 @@ public class GraphManager {
                 element.property((String) properties[i], properties[i + 1]);
             }
         }
+    }
+
+    private void attachManager(GraphElement element) {
+        element.manager(this);
     }
 }

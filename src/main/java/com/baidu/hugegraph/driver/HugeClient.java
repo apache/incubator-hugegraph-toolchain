@@ -22,7 +22,7 @@ package com.baidu.hugegraph.driver;
 import javax.ws.rs.ProcessingException;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.version.ClientVersion;
 
@@ -52,8 +52,7 @@ public class HugeClient {
         try {
             this.restClient = new RestClient(url, timeout);
         } catch (ProcessingException e) {
-            throw new ClientException(String.format(
-                      "Failed to connect url '%s'", url));
+            throw new ServerException("Failed to connect url '%s'", url);
         }
 
         // Check hugegraph-server api version
@@ -73,7 +72,7 @@ public class HugeClient {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.8", "0.9",
+        VersionUtil.check(apiVersion, "0.9", "0.10",
                           "hugegraph-api in server");
     }
 

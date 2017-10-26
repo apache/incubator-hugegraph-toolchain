@@ -26,6 +26,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
+import com.baidu.hugegraph.exception.NotAllCreatedException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.google.common.collect.ImmutableMap;
@@ -53,7 +54,28 @@ public class EdgeAPI extends GraphAPI {
                                                      checkVertex);
         RestResult result = this.client.post(this.batchPath(), edges,
                                              headers, params);
-        return result.readList(String.class);
+        List<String> ids = result.readList(String.class);
+        if (edges.size() != ids.size()) {
+            throw new NotAllCreatedException(
+                      "Not all edges are successfully created, " +
+                      "expect '%s', the actual is '%s'",
+                      ids, edges.size(), ids.size());
+        }
+        return ids;
+    }
+
+    public Edge append(Edge edge) {
+        String path = RestClient.buildPath(this.path(), edge.id());
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(path, edge, params);
+        return result.readObject(Edge.class);
+    }
+
+    public Edge eliminate(Edge edge) {
+        String path = RestClient.buildPath(this.path(), edge.id());
+        Map<String, Object> params = ImmutableMap.of("action", "eliminate");
+        RestResult result = this.client.put(path, edge, params);
+        return result.readObject(Edge.class);
     }
 
     public Edge get(String name) {

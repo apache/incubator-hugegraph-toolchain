@@ -19,15 +19,21 @@
 
 package com.baidu.hugegraph.exception;
 
-public class ClientException extends RuntimeException {
+import java.util.List;
 
-    private static final long serialVersionUID = -8711375282196157051L;
+public class NotAllCreatedException extends ServerException {
 
-    public ClientException(String message, Throwable cause) {
-        super(message, cause);
+    private static final long serialVersionUID = -5381487354479556752L;
+
+    private List<String> ids;
+
+    public NotAllCreatedException(String message, List<String> ids,
+                                  Object... args) {
+        super(message, args);
+        this.ids = ids;
     }
 
-    public ClientException(String message, Object... args) {
-        super(String.format(message, args));
+    public List<String> ids() {
+        return this.ids;
     }
 }

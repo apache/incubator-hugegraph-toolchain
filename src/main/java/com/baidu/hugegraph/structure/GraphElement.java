@@ -25,11 +25,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.ReflectionUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class GraphElement extends Element {
+
+    // Hold a graphManager object to call graphApi
+    protected GraphManager manager;
 
     @JsonProperty("id")
     protected String id;
@@ -39,6 +43,10 @@ public abstract class GraphElement extends Element {
     protected String type;
     @JsonProperty("properties")
     protected Map<String, Object> properties;
+
+    public void manager(GraphManager manager) {
+        this.manager = manager;
+    }
 
     public String id() {
         return this.id;
@@ -54,6 +62,14 @@ public abstract class GraphElement extends Element {
 
     public String type() {
         return this.type;
+    }
+
+    protected boolean fresh() {
+        return this.manager == null;
+    }
+
+    public Object property(String key) {
+        return this.properties.get(key);
     }
 
     public GraphElement property(String name, Object value) {
@@ -75,4 +91,8 @@ public abstract class GraphElement extends Element {
     public Map<String, Object> properties() {
         return this.properties;
     }
+
+    protected abstract GraphElement setProperty(String key, Object value);
+
+    public abstract GraphElement removeProperty(String key);
 }

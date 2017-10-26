@@ -21,7 +21,7 @@ package com.baidu.hugegraph.testutil;
 
 import java.util.function.Consumer;
 
-import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.exception.ServerException;
 
 public class Assert extends org.junit.Assert {
 
@@ -60,9 +60,11 @@ public class Assert extends org.junit.Assert {
     }
 
     public static void assertResponse(int status, ThrowableRunnable runnable) {
-        Assert.assertThrows(ClientException.class, runnable, (e) -> {
-            Assert.assertEquals("The status codes doesn't match",
-                                status, ((ClientException) e).status());
+        Assert.assertThrows(ServerException.class, runnable, (e) -> {
+            if (e instanceof ServerException) {
+                Assert.assertEquals("The rest status code is not matched",
+                                    status, ((ServerException) e).status());
+            }
         });
     }
 }

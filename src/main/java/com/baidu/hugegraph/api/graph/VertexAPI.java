@@ -26,6 +26,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
+import com.baidu.hugegraph.exception.NotAllCreatedException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.google.common.collect.ImmutableMap;
@@ -51,7 +52,28 @@ public class VertexAPI extends GraphAPI {
         headers.putSingle("Content-Encoding", BATCH_ENCODING);
         RestResult result = this.client.post(this.batchPath(), vertices,
                                              headers);
-        return result.readList(String.class);
+        List<String> ids = result.readList(String.class);
+        if (vertices.size() != ids.size()) {
+            throw new NotAllCreatedException(
+                      "Not all vertices are successfully created, " +
+                      "expect '%s', the actual is '%s'",
+                      ids, vertices.size(), ids.size());
+        }
+        return ids;
+    }
+
+    public Vertex append(Vertex vertex) {
+        String path = RestClient.buildPath(this.path(), vertex.id());
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(path, vertex, params);
+        return result.readObject(Vertex.class);
+    }
+
+    public Vertex eliminate(Vertex vertex) {
+        String path = RestClient.buildPath(this.path(), vertex.id());
+        Map<String, Object> params = ImmutableMap.of("action", "eliminate");
+        RestResult result = this.client.put(path, vertex, params);
+        return result.readObject(Vertex.class);
     }
 
     public Vertex get(String name) {

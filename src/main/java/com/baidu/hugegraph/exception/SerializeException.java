@@ -19,15 +19,15 @@
 
 package com.baidu.hugegraph.exception;
 
-public class SerializeException extends RuntimeException {
+public class SerializeException extends ClientException {
 
-    private static final long serialVersionUID = -8711375282196157058L;
+    private static final long serialVersionUID = -8711375282196157054L;
 
-    public SerializeException(String message) {
-        super(message);
+    public SerializeException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    public SerializeException(String msg, Throwable cause) {
-        super(msg, cause);
+    public SerializeException(String message, Object... args) {
+        super(message, args);
     }
 }

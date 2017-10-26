@@ -19,15 +19,15 @@
 
 package com.baidu.hugegraph.exception;
 
-public class ClientException extends RuntimeException {
+public class InvalidOperationException extends ClientException {
 
-    private static final long serialVersionUID = -8711375282196157051L;
+    private static final long serialVersionUID = -8711375282196157052L;
 
-    public ClientException(String message, Throwable cause) {
+    public InvalidOperationException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public ClientException(String message, Object... args) {
-        super(String.format(message, args));
+    public InvalidOperationException(String message, Object... args) {
+        super(message, args);
     }
 }

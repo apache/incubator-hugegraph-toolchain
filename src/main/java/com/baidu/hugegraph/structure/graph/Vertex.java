@@ -21,17 +21,16 @@ package com.baidu.hugegraph.structure.graph;
 
 import java.util.HashMap;
 
-import com.baidu.hugegraph.driver.GraphManager;
+import com.baidu.hugegraph.exception.InvalidOperationException;
+import com.baidu.hugegraph.serialize.VertexDeserializer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Preconditions;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+@JsonDeserialize(using = VertexDeserializer.class)
 public class Vertex extends GraphElement {
-
-    // Hold a graphManager object for addEdge().
-    private GraphManager manager;
 
     @JsonCreator
     public Vertex(@JsonProperty("label") String label) {
@@ -46,13 +45,45 @@ public class Vertex extends GraphElement {
         return this.manager.addEdge(this, label, vertex, properties);
     }
 
-    public void manager(GraphManager manager) {
-        this.manager = manager;
+    @Override
+    public Vertex property(String key, Object value) {
+        E.checkNotNull(key, "The property name can not be null");
+        E.checkNotNull(value, "The property value can not be null");
+        if (this.fresh()) {
+            return (Vertex) super.property(key, value);
+        } else {
+            return this.setProperty(key, value);
+        }
     }
 
     @Override
-    public Vertex property(String key, Object value) {
-        return (Vertex) super.property(key, value);
+    protected Vertex setProperty(String key, Object value) {
+        Vertex vertex = new Vertex(this.label);
+        vertex.id(this.id);
+        vertex.property(key, value);
+        // NOTE: append can also b used to update property
+        vertex = this.manager.appendVertexProperty(vertex);
+
+        super.property(key, vertex.property(key));
+        return this;
+    }
+
+    @Override
+    public Vertex removeProperty(String key) {
+        E.checkNotNull(key, "The property name can not be null");
+        if (!this.properties.containsKey(key)) {
+            throw new InvalidOperationException(
+                      "The vertex '%s' doesn't have the property '%s'",
+                      this.id, key);
+        }
+        Vertex vertex = new Vertex(this.label);
+        vertex.id(this.id);
+        Object value = this.properties.get(key);
+        vertex.property(key, value);
+        this.manager.eliminateVertexProperty(vertex);
+
+        this.properties().remove(key);
+        return this;
     }
 
     @Override

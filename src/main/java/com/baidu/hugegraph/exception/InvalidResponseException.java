@@ -19,10 +19,22 @@
 
 package com.baidu.hugegraph.exception;
 
-public class InvalidResponseException extends RuntimeException {
+public class InvalidResponseException extends ClientException {
 
-    public InvalidResponseException(String node, String json) {
-        super(String.format("Invalid response, expect '%s' in '%s'",
-                            node, json));
+    private static final long serialVersionUID = -8711375282196157053L;
+
+    public InvalidResponseException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public InvalidResponseException(String message, Object... args) {
+        super(message, args);
+    }
+
+    public static InvalidResponseException expectField(String expectField,
+                                                       Object parentField) {
+        return new InvalidResponseException(
+                   "Invalid response, expect '%s' in '%s'",
+                   expectField, parentField);
     }
 }

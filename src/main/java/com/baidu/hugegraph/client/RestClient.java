@@ -33,13 +33,15 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Variant;
 
-import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.internal.util.collection.Refs;
 import org.glassfish.jersey.message.GZipEncoder;
 
 import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.exception.ServerException;
+import com.google.common.collect.ImmutableMap;
 
 public class RestClient {
 
@@ -69,19 +71,19 @@ public class RestClient {
         }
     }
 
-    public RestResult post(String path, Object object) throws ClientException {
+    public RestResult post(String path, Object object) throws ServerException {
         return this.post(path, object, null);
     }
 
     public RestResult post(String path, Object object,
                            MultivaluedMap<String, Object> headers)
-                           throws ClientException {
+                           throws ServerException {
         return this.post(path, object, headers, null);
     }
 
     public RestResult post(String path, Object object,
                            MultivaluedMap<String, Object> headers,
-                           Map<String, Object> params) throws ClientException {
+                           Map<String, Object> params) throws ServerException {
         WebTarget target = this.target;
         if (params != null && !params.isEmpty()) {
             for (Map.Entry<String, Object> param : params.entrySet()) {
@@ -120,13 +122,12 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    public RestResult put(String path, String id, Object object)
-                          throws ClientException {
-        return this.put(path, id, object, ImmutableMap.of());
+    public RestResult put(String path, Object object) throws ServerException {
+        return this.put(path, object, ImmutableMap.of());
     }
 
-    public RestResult put(String path, String id, Object object,
-                          Map<String, Object> params) throws ClientException {
+    public RestResult put(String path, Object object,
+                          Map<String, Object> params) throws ServerException {
         Ref<WebTarget> target = Refs.of(this.target);
         if (params != null && !params.isEmpty()) {
             for (String key : params.keySet()) {
@@ -135,15 +136,14 @@ public class RestClient {
         }
 
         Response response = this.request(() -> {
-            return target.get().path(path).path(id).request()
-                         .put(Entity.json(object));
+            return target.get().path(path).request().put(Entity.json(object));
         });
         // If check status failed, throw client exception.
         checkStatus(response, Response.Status.OK);
         return new RestResult(response);
     }
 
-    public RestResult get(String path) throws ClientException {
+    public RestResult get(String path) throws ServerException {
         Response response = this.request(() -> {
             return this.target.path(path).request().get();
         });
@@ -152,7 +152,7 @@ public class RestClient {
     }
 
     public RestResult get(String path, Map<String, Object> params)
-                          throws ClientException {
+                          throws ServerException {
         Ref<WebTarget> target = Refs.of(this.target);
         for (String key : params.keySet()) {
             target.set(target.get().queryParam(key, params.get(key)));
@@ -164,7 +164,7 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    public RestResult get(String path, String id) throws ClientException {
+    public RestResult get(String path, String id) throws ServerException {
         Response response = this.request(() -> {
             return this.target.path(path).path(id).request().get();
         });
@@ -172,7 +172,7 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    public RestResult delete(String path, String id) throws ClientException {
+    public RestResult delete(String path, String id) throws ServerException {
         Response response = this.request(() -> {
             return this.target.path(path).path(id).request().delete();
         });
@@ -188,14 +188,18 @@ public class RestClient {
                                     Response.Status... status) {
         if (!Arrays.asList(status).contains(response.getStatusInfo())) {
             RestResult rs = new RestResult(response);
-            ClientException exception;
+            ServerException exception;
             try {
-                exception = rs.readObject(ClientException.class);
+                exception = rs.readObject(ServerException.class);
             } catch (Exception ignored) {
-                exception = new ClientException(rs.content());
+                exception = new ServerException(rs.content());
             }
             exception.status(response.getStatus());
             throw exception;
         }
+    }
+
+    public static String buildPath(String... paths) {
+        return StringUtils.join(paths, "/");
     }
 }

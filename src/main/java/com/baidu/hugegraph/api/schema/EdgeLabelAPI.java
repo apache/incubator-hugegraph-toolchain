@@ -45,16 +45,16 @@ public class EdgeLabelAPI extends SchemaAPI {
     }
 
     public EdgeLabel append(EdgeLabel edgeLabel) {
+        String path = RestClient.buildPath(this.path(), edgeLabel.name());
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(path(), edgeLabel.name(),
-                                            edgeLabel, params);
+        RestResult result = this.client.put(path, edgeLabel, params);
         return result.readObject(EdgeLabel.class);
     }
 
     public EdgeLabel eliminate(EdgeLabel edgeLabel) {
+        String path = RestClient.buildPath(this.path(), edgeLabel.name());
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(path(), edgeLabel.name(),
-                                            edgeLabel, params);
+        RestResult result = this.client.put(path, edgeLabel, params);
         return result.readObject(EdgeLabel.class);
     }
 
