@@ -61,7 +61,7 @@ public class ResultSet {
             return null;
         }
 
-        Class<?> clazz = parseResultClass(object);
+        Class<?> clazz = this.parseResultClass(object);
         if (clazz.equals(object.getClass())) {
             return new Result(object);
         }

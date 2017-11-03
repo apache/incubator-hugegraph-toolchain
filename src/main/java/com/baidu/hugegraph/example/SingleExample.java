@@ -149,7 +149,7 @@ public class SingleExample {
             } else if (object instanceof Edge) {
                 System.out.println(((Edge) object).id());
             } else if (object instanceof Path) {
-                List<GraphElement> elements = ((Path) object).objects();
+                List<Object> elements = ((Path) object).objects();
                 elements.forEach(element -> {
                     System.out.println(element.getClass());
                     System.out.println(element);

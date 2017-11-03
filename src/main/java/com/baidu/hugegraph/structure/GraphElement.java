@@ -25,20 +25,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.baidu.hugegraph.structure.graph.Edge;
-import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.ReflectionUtil;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type",
-              include = JsonTypeInfo.As.EXISTING_PROPERTY)
-@JsonSubTypes({@JsonSubTypes.Type(value = Vertex.class, name = "vertex"),
-               @JsonSubTypes.Type(value = Edge.class, name = "edge")})
 public abstract class GraphElement extends Element {
 
     @JsonProperty("id")

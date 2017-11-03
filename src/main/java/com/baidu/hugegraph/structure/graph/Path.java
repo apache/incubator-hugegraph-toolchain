@@ -19,24 +19,42 @@
 
 package com.baidu.hugegraph.structure.graph;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+@JsonDeserialize(using = PathDeserializer.class)
 public class Path {
 
     @JsonProperty
     private List<Object> labels;
     @JsonProperty
-    private List<GraphElement> objects;
+    private List<Object> objects;
 
-    public List<Object> labels() {
-        return this.labels;
+    public Path() {
+        this.labels = new ArrayList<>();
+        this.objects = new ArrayList<>();
     }
 
-    public List<GraphElement> objects() {
-        return this.objects;
+    public List<Object> labels() {
+        return Collections.unmodifiableList(this.labels);
+    }
+
+    public void labels(Object... labels) {
+        this.labels.addAll(Arrays.asList(labels));
+    }
+
+    public List<Object> objects() {
+        return Collections.unmodifiableList(this.objects);
+    }
+
+    public void objects(Object... objects) {
+        this.objects.addAll(Arrays.asList(objects));
     }
 
     @Override
