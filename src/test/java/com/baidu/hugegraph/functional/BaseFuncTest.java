@@ -48,9 +48,9 @@ public class BaseFuncTest extends BaseClientTest {
 
     protected static void clearData() {
         // Clear edge
-        graph().getEdges().forEach(e -> graph().removeEdge(e.id()));
+        graph().listEdges().forEach(e -> graph().removeEdge(e.id()));
         // Clear vertex
-        graph().getVertices().forEach(v -> graph().removeVertex(v.id()));
+        graph().listVertices().forEach(v -> graph().removeVertex(v.id()));
 
         // Clear schema
         schema().getIndexLabels().forEach(il -> {

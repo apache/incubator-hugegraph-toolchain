@@ -19,14 +19,25 @@
 
 package com.baidu.hugegraph.api.graph;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Map;
+
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.exception.ClientException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 
 public abstract class GraphAPI extends API {
 
     private static final String PATH = "graphs/%s/graph/%s";
 
+    protected static final String CHARSET = "UTF-8";
     protected static final String BATCH_ENCODING = "gzip";
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private String batchPath;
 
@@ -38,5 +49,21 @@ public abstract class GraphAPI extends API {
 
     public String batchPath() {
         return this.batchPath;
+    }
+
+    public static String formatProperties(Map<String, Object> properties) {
+        if (properties == null) {
+            properties = ImmutableMap.of();
+        }
+        try {
+            String props = MAPPER.writeValueAsString(properties);
+            return URLEncoder.encode(props, CHARSET);
+        } catch (JsonProcessingException e) {
+            throw new ClientException(String.format(
+                      "Failed to serialize properties '%s'", properties));
+        } catch (UnsupportedEncodingException e) {
+            throw new ClientException(String.format(
+                      "Failed to encode properties '%s'", properties));
+        }
     }
 }

@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api.graph;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -82,8 +83,18 @@ public class VertexAPI extends GraphAPI {
     }
 
     public List<Vertex> list(int limit) {
-        Map<String, Object> parmas = ImmutableMap.of("limit", limit);
-        RestResult result = this.client.get(this.path(), parmas);
+        return this.list(null, null, limit);
+    }
+
+    public List<Vertex> list(String label,
+                             Map<String, Object> properties,
+                             int limit) {
+        String props = GraphAPI.formatProperties(properties);
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("label", label);
+        params.put("properties", props);
+        params.put("limit", limit);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Vertex.class);
     }
 

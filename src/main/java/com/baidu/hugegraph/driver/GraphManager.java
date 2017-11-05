@@ -20,12 +20,14 @@
 package com.baidu.hugegraph.driver;
 
 import java.util.List;
+import java.util.Map;
 
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -71,12 +73,31 @@ public class GraphManager {
         return vertices;
     }
 
-    public List<Vertex> getVertices() {
-        return this.getVertices(-1);
+    public List<Vertex> listVertices() {
+        return this.listVertices(-1);
     }
 
-    public List<Vertex> getVertices(int limit) {
-        List<Vertex> vertices = this.vertexApi.list(limit);
+    public List<Vertex> listVertices(int limit) {
+        return this.listVertices(null, null, limit);
+    }
+
+    public List<Vertex> listVertices(String label) {
+        return this.listVertices(label, null, -1);
+    }
+
+    public List<Vertex> listVertices(String label, int limit) {
+        return this.listVertices(label, null, limit);
+    }
+
+    public List<Vertex> listVertices(String label,
+                                     Map<String, Object> properties) {
+        return this.listVertices(label, properties, -1);
+    }
+
+    public List<Vertex> listVertices(String label,
+                                     Map<String, Object> properties,
+                                     int limit) {
+        List<Vertex> vertices = this.vertexApi.list(label, properties, limit);
         for (Vertex vertex : vertices) {
             this.attachManager(vertex);
         }
@@ -143,12 +164,78 @@ public class GraphManager {
         return edges;
     }
 
-    public List<Edge> getEdges() {
-        return this.getEdges(-1);
+    public List<Edge> listEdges() {
+        return this.listEdges(-1);
     }
 
-    public List<Edge> getEdges(int limit) {
-        List<Edge> edges = this.edgeApi.list(limit);
+    public List<Edge> listEdges(int limit) {
+        return this.getEdges(null, null, null, null, limit);
+    }
+
+    public List<Edge> listEdges(String label) {
+        return this.getEdges(null, null, label, null, -1);
+    }
+
+    public List<Edge> listEdges(String label, int limit) {
+        return this.getEdges(null, null, label, null, limit);
+    }
+
+    public List<Edge> listEdges(String label,
+                                Map<String, Object> properties) {
+        return this.getEdges(null, null, label, properties, -1);
+    }
+
+    public List<Edge> listEdges(String label,
+                                Map<String, Object> properties,
+                                int limit) {
+        return this.getEdges(null, null, label, properties, limit);
+    }
+
+    public List<Edge> getEdges(String vertexId) {
+        return this.getEdges(vertexId, Direction.BOTH, null, null, -1);
+    }
+
+    public List<Edge> getEdges(String vertexId, int limit) {
+        return this.getEdges(vertexId, Direction.BOTH, null, null, limit);
+    }
+
+    public List<Edge> getEdges(String vertexId, Direction direction) {
+        return this.getEdges(vertexId, direction, null, null, -1);
+    }
+
+    public List<Edge> getEdges(String vertexId,
+                               Direction direction,
+                               int limit) {
+        return this.getEdges(vertexId, direction, null, null, limit);
+    }
+
+    public List<Edge> getEdges(String vertexId,
+                               Direction direction,
+                               String label) {
+        return this.getEdges(vertexId, direction, label, null, -1);
+    }
+
+    public List<Edge> getEdges(String vertexId,
+                               Direction direction,
+                               String label,
+                               int limit) {
+        return this.getEdges(vertexId, direction, label, null, limit);
+    }
+
+    public List<Edge> getEdges(String vertexId,
+                               Direction direction,
+                               String label,
+                               Map<String, Object> properties) {
+        return this.getEdges(vertexId, direction, label, properties, -1);
+    }
+
+    public List<Edge> getEdges(String vertexId,
+                               Direction direction,
+                               String label,
+                               Map<String, Object> properties,
+                               int limit) {
+        List<Edge> edges = this.edgeApi.list(vertexId, direction, label,
+                                             properties, limit);
         for (Edge edge : edges) {
             this.attachManager(edge);
         }

@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api.graph;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.exception.NotAllCreatedException;
+import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.google.common.collect.ImmutableMap;
@@ -78,18 +80,32 @@ public class EdgeAPI extends GraphAPI {
         return result.readObject(Edge.class);
     }
 
-    public Edge get(String name) {
-        RestResult result = this.client.get(this.path(), name);
+    public Edge get(String id) {
+        RestResult result = this.client.get(this.path(), id);
         return result.readObject(Edge.class);
     }
 
     public List<Edge> list(int limit) {
-        Map<String, Object> params = ImmutableMap.of("limit", limit);
+        return this.list(null, null, null, null, limit);
+    }
+
+    public List<Edge> list(String vertexId,
+                           Direction direction,
+                           String label,
+                           Map<String, Object> properties,
+                           int limit) {
+        String props = GraphAPI.formatProperties(properties);
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("vertex_id", vertexId);
+        params.put("direction", direction);
+        params.put("label", label);
+        params.put("properties", props);
+        params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Edge.class);
     }
 
-    public void delete(String name) {
-        this.client.delete(this.path(), name);
+    public void delete(String id) {
+        this.client.delete(this.path(), id);
     }
 }

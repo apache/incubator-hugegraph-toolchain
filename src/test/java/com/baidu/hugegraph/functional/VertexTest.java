@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.After;
@@ -30,6 +31,7 @@ import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -207,5 +209,113 @@ public class VertexTest extends BaseFuncTest {
         Assert.assertThrows(InvalidOperationException.class, () -> {
             vadas.removeProperty("not-exist");
         });
+    }
+
+    @Test
+    public void testGetAllVertices() {
+        BaseClientTest.initVertex();
+
+        List<Vertex> vertices = graph().listVertices();
+        Assert.assertEquals(6, vertices.size());
+        assertContains(vertices, T.label, "person", "name", "marko",
+                                 "age", 29, "city", "Beijing");
+        assertContains(vertices, T.label, "person", "name", "vadas",
+                                 "age", 27, "city", "Hongkong");
+        assertContains(vertices, T.label, "software", "name", "lop",
+                                 "lang", "java", "price", 328);
+        assertContains(vertices, T.label, "person", "name", "josh",
+                                 "age", 32, "city", "Beijing");
+        assertContains(vertices, T.label, "software", "name", "ripple",
+                                 "lang", "java", "price", 199);
+        assertContains(vertices, T.label, "person", "name", "peter",
+                                 "age", 29, "city", "Shanghai");
+    }
+
+    @Test
+    public void testGetVerticesWithNoLimit() {
+        BaseClientTest.initVertex();
+
+        List<Vertex> vertices = graph().listVertices(-1);
+        Assert.assertEquals(6, vertices.size());
+        assertContains(vertices, T.label, "person", "name", "marko",
+                                 "age", 29, "city", "Beijing");
+        assertContains(vertices, T.label, "person", "name", "vadas",
+                                 "age", 27, "city", "Hongkong");
+        assertContains(vertices, T.label, "software", "name", "lop",
+                                 "lang", "java", "price", 328);
+        assertContains(vertices, T.label, "person", "name", "josh",
+                                 "age", 32, "city", "Beijing");
+        assertContains(vertices, T.label, "software", "name", "ripple",
+                                 "lang", "java", "price", 199);
+        assertContains(vertices, T.label, "person", "name", "peter",
+                                 "age", 29, "city", "Shanghai");
+    }
+
+    @Test
+    public void testGetVerticesByLabel() {
+        BaseClientTest.initVertex();
+
+        List<Vertex> vertices = graph().listVertices("person");
+        Assert.assertEquals(4, vertices.size());
+        assertContains(vertices, T.label, "person", "name", "marko",
+                                 "age", 29, "city", "Beijing");
+        assertContains(vertices, T.label, "person", "name", "vadas",
+                                 "age", 27, "city", "Hongkong");
+        assertContains(vertices, T.label, "person", "name", "josh",
+                                 "age", 32, "city", "Beijing");
+        assertContains(vertices, T.label, "person", "name", "peter",
+                                 "age", 29, "city", "Shanghai");
+    }
+
+    @Test
+    public void testGetVerticesByLabelWithLimit2() {
+        BaseClientTest.initVertex();
+
+        List<Vertex> vertices = graph().listVertices("person", 2);
+        Assert.assertEquals(2, vertices.size());
+        for (Vertex vertex : vertices) {
+            Assert.assertEquals("person", vertex.label());
+        }
+    }
+
+    @Test
+    public void testGetVerticesByLabelAndProperties() {
+        schema().indexLabel("PersonByAge").onV("person").by("age").create();
+        BaseClientTest.initVertex();
+
+        Map<String, Object> properties = ImmutableMap.of("age", 29);
+        List<Vertex> vertices = graph().listVertices("person", properties);
+        Assert.assertEquals(2, vertices.size());
+        assertContains(vertices, T.label, "person", "name", "marko",
+                                 "age", 29, "city", "Beijing");
+        assertContains(vertices, T.label, "person", "name", "peter",
+                                 "age", 29, "city", "Shanghai");
+    }
+
+    @Test
+    public void testGetVerticesByLabelAndPropertiesWithLimit1() {
+        schema().indexLabel("PersonByAge").onV("person").by("age").create();
+        BaseClientTest.initVertex();
+
+        Map<String, Object> properties = ImmutableMap.of("age", 29);
+        List<Vertex> vertices = graph().listVertices("person", properties, 1);
+        Assert.assertEquals(1, vertices.size());
+        Assert.assertEquals("person", vertices.get(0).label());
+    }
+
+    private static void assertContains(List<Vertex> vertices,
+                                       Object... keyValues) {
+        String label = Utils.getLabelValue(keyValues).get();
+        Map<String, Object> properties = Utils.asMap(keyValues);
+
+        Vertex vertex = new Vertex(label);
+        for (String key : properties.keySet()) {
+            if (key.equals(T.label)) {
+                continue;
+            }
+            vertex.property(key, properties.get(key));
+        }
+
+        Assert.assertTrue(Utils.contains(vertices, vertex));
     }
 }

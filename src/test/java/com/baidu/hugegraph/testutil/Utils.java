@@ -19,9 +19,16 @@
 
 package com.baidu.hugegraph.testutil;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -219,12 +226,20 @@ public class Utils {
         if (!left.target().equals(right.target())) {
             return false;
         }
-        if (!left.sourceLabel().equals(right.sourceLabel())) {
-            return false;
+
+        // Only compare source label when the expected `right` passed
+        if (right.sourceLabel() != null) {
+            if (!left.sourceLabel().equals(right.sourceLabel())) {
+                return false;
+            }
         }
-        if (!left.targetLabel().equals(right.targetLabel())) {
-            return false;
+        // Only compare target label when the expected `right` passed
+        if (right.targetLabel() != null) {
+            if (!left.targetLabel().equals(right.targetLabel())) {
+                return false;
+            }
         }
+
         Map<String, Object> leftProps = left.properties();
         Map<String, Object> rightProps = right.properties();
         if (leftProps.size() != rightProps.size() ||
@@ -238,5 +253,26 @@ public class Utils {
             }
         }
         return true;
+    }
+
+    public static Optional<String> getLabelValue(final Object... keyValues) {
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            if (keyValues[i].equals(T.label)) {
+                return Optional.of((String) keyValues[i + 1]);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static Map<String, Object> asMap(Object... keyValues) {
+        return Utils.asPairs(keyValues).stream()
+               .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+    }
+
+    public static List<Pair<String, Object>> asPairs(Object... keyValues) {
+        final List list = Arrays.asList(keyValues);
+        return IntStream.range(1, list.size()).filter(i -> i % 2 != 0)
+               .mapToObj(i -> Pair.of(list.get(i - 1).toString(), list.get(i)))
+               .collect(Collectors.toList());
     }
 }

@@ -22,7 +22,7 @@ package com.baidu.hugegraph.structure.graph;
 import java.util.HashMap;
 
 import com.baidu.hugegraph.exception.InvalidOperationException;
-import com.baidu.hugegraph.serialize.VertexDeserializer;
+import com.baidu.hugegraph.serializer.VertexDeserializer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;

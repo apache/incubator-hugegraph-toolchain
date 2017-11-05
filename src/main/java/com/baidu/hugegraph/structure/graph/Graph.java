@@ -44,10 +44,10 @@ public class Graph {
     public Graph(GraphManager graph) {
         LOG.debug("Loading Graph...");
 
-        List<Vertex> vertices = graph.getVertices();
+        List<Vertex> vertices = graph.listVertices();
         LOG.debug("Loaded vertices: {}", vertices.size());
 
-        List<Edge> edges = graph.getEdges();
+        List<Edge> edges = graph.listEdges();
         LOG.debug("Loaded edges: {}", edges.size());
 
         this.mergeEdges2Vertices(vertices, edges);

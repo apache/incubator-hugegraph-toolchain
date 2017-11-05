@@ -1,4 +1,4 @@
-package com.baidu.hugegraph.serialize;
+package com.baidu.hugegraph.serializer;
 
 import java.io.IOException;
 import java.util.List;
