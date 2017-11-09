@@ -26,6 +26,7 @@ import java.util.List;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
+import com.baidu.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -53,30 +54,8 @@ public class VertexLabel extends SchemaLabel {
         return this.idStrategy;
     }
 
-    public void idStrategy(IdStrategy idStrategy) {
-        E.checkArgument(this.idStrategy == IdStrategy.DEFAULT ||
-                        this.idStrategy == idStrategy,
-                        "Not allowed to change id strategy for " +
-                        "vertex label '%s'", this.name);
-        this.idStrategy = idStrategy;
-    }
-
     public List<String> primaryKeys() {
         return this.primaryKeys;
-    }
-
-    public VertexLabel primaryKeys(String... primaryKeys) {
-        for (String primaryKey : primaryKeys) {
-            if (!this.primaryKeys.contains(primaryKey)) {
-                this.primaryKeys.add(primaryKey);
-            }
-        }
-        return this;
-    }
-
-    public VertexLabel properties(String... properties) {
-        this.properties.addAll(Arrays.asList(properties));
-        return this;
     }
 
     @Override
@@ -88,66 +67,106 @@ public class VertexLabel extends SchemaLabel {
                              this.properties);
     }
 
-    public static class Builder {
+    public interface Builder extends SchemaBuilder<VertexLabel> {
+
+        Builder useAutomaticId();
+
+        Builder useCustomizeId();
+
+        Builder usePrimaryKeyId();
+
+        Builder properties(String... properties);
+
+        Builder primaryKeys(String... keys);
+
+        Builder nullableKeys(String... keys);
+
+        Builder ifNotExist();
+    }
+
+    public static class BuilderImpl implements Builder {
 
         private VertexLabel vertexLabel;
         private SchemaManager manager;
 
-        public Builder(String name, SchemaManager manager) {
+        public BuilderImpl(String name, SchemaManager manager) {
             this.vertexLabel = new VertexLabel(name);
             this.manager = manager;
         }
 
-        public VertexLabel create() {
-            this.manager.addVertexLabel(this.vertexLabel);
+        @Override
+        public VertexLabel build() {
             return this.vertexLabel;
         }
 
-        public void append() {
-            this.manager.appendVertexLabel(this.vertexLabel);
+        @Override
+        public VertexLabel create() {
+            return this.manager.addVertexLabel(this.vertexLabel);
         }
 
-        public void eliminate() {
-            this.manager.eliminateVertexLabel(this.vertexLabel);
+        @Override
+        public VertexLabel append() {
+            return this.manager.appendVertexLabel(this.vertexLabel);
         }
 
+        @Override
+        public VertexLabel eliminate() {
+            return this.manager.eliminateVertexLabel(this.vertexLabel);
+        }
+
+        @Override
         public void remove() {
             this.manager.removeVertexLabel(this.vertexLabel.name);
         }
 
         public Builder useAutomaticId() {
-            this.vertexLabel.idStrategy(IdStrategy.AUTOMATIC);
+            this.checkIdStrategy();
+            this.vertexLabel.idStrategy = IdStrategy.AUTOMATIC;
             return this;
         }
 
         public Builder useCustomizeId() {
-            this.vertexLabel.idStrategy(IdStrategy.CUSTOMIZE);
+            this.checkIdStrategy();
+            this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE;
             return this;
         }
 
         public Builder usePrimaryKeyId() {
-            this.vertexLabel.idStrategy(IdStrategy.PRIMARY_KEY);
+            this.checkIdStrategy();
+            this.vertexLabel.idStrategy = IdStrategy.PRIMARY_KEY;
             return this;
         }
 
         public Builder properties(String... properties) {
-            this.vertexLabel.properties(properties);
+            this.vertexLabel.properties.addAll(Arrays.asList(properties));
             return this;
         }
 
         public Builder primaryKeys(String... keys) {
-            this.vertexLabel.primaryKeys(keys);
+            E.checkArgument(this.vertexLabel.primaryKeys.isEmpty(),
+                            "Not allowed to assign primary keys multi times");
+            List<String> primaryKeys = Arrays.asList(keys);
+            E.checkArgument(CollectionUtil.allUnique(primaryKeys),
+                            "Invalid primary keys %s, which contains some " +
+                            "duplicate properties", primaryKeys);
+            this.vertexLabel.primaryKeys.addAll(primaryKeys);
             return this;
         }
 
         public Builder nullableKeys(String... keys) {
-            this.vertexLabel.nullableKeys(keys);
+            this.vertexLabel.nullableKeys.addAll(Arrays.asList(keys));
             return this;
         }
 
         public Builder ifNotExist() {
             this.vertexLabel.checkExist = false;
             return this;
+        }
+
+        private void checkIdStrategy() {
+            E.checkArgument(this.vertexLabel.idStrategy == IdStrategy.DEFAULT,
+                            "Not allowed to change id strategy for " +
+                            "vertex label '%s'", this.vertexLabel.name);
         }
     }
 }

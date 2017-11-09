@@ -39,9 +39,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @Test
     public void testCreate() {
-        PropertyKey propertyKey = new PropertyKey("name");
-        propertyKey.dataType(DataType.TEXT);
-        propertyKey.cardinality(Cardinality.SINGLE);
+        PropertyKey propertyKey = schema().propertyKey("name")
+                                          .asText()
+                                          .valueSingle()
+                                          .build();
 
         propertyKey = propertyKeyAPI.create(propertyKey);
 
@@ -75,9 +76,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @Test
     public void testGet() {
-        PropertyKey propertyKey1 = new PropertyKey("name");
-        propertyKey1.dataType(DataType.TEXT);
-        propertyKey1.cardinality(Cardinality.SINGLE);
+        PropertyKey propertyKey1 = schema().propertyKey("name")
+                                           .asText()
+                                           .valueSingle()
+                                           .build();
 
         propertyKey1 = propertyKeyAPI.create(propertyKey1);
 
@@ -98,14 +100,16 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @Test
     public void testList() {
-        PropertyKey propertyKey1 = new PropertyKey("name");
-        propertyKey1.dataType(DataType.TEXT);
-        propertyKey1.cardinality(Cardinality.SINGLE);
+        PropertyKey propertyKey1 = schema().propertyKey("name")
+                                           .asText()
+                                           .valueSingle()
+                                           .build();
         propertyKey1 = propertyKeyAPI.create(propertyKey1);
 
-        PropertyKey propertyKey2 = new PropertyKey("age");
-        propertyKey2.dataType(DataType.INT);
-        propertyKey2.cardinality(Cardinality.SINGLE);
+        PropertyKey propertyKey2 = schema().propertyKey("age")
+                                           .asInt()
+                                           .valueSingle()
+                                           .build();
         propertyKey2 = propertyKeyAPI.create(propertyKey2);
 
         List<PropertyKey> propertyKeys = propertyKeyAPI.list();
@@ -116,9 +120,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @Test
     public void testDelete() {
-        PropertyKey propertyKey = new PropertyKey("name");
-        propertyKey.dataType(DataType.TEXT);
-        propertyKey.cardinality(Cardinality.SINGLE);
+        PropertyKey propertyKey = schema().propertyKey("name")
+                                          .asText()
+                                          .valueSingle()
+                                          .build();
         propertyKeyAPI.create(propertyKey);
         propertyKeyAPI.delete("name");
 

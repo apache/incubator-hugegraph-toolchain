@@ -20,12 +20,16 @@
 package com.baidu.hugegraph.structure.schema;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
+import com.baidu.hugegraph.util.CollectionUtil;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -58,36 +62,16 @@ public class IndexLabel extends SchemaElement {
         return baseType;
     }
 
-    public IndexLabel baseType(HugeType baseType) {
-        this.baseType = baseType;
-        return this;
-    }
-
     public String baseValue() {
         return baseValue;
-    }
-
-    public IndexLabel baseValue(String baseValue) {
-        this.baseValue = baseValue;
-        return this;
     }
 
     public IndexType indexType() {
         return indexType;
     }
 
-    public IndexLabel indexType(IndexType indexType) {
-        this.indexType = indexType;
-        return this;
-    }
-
     public List<String> indexFields() {
         return fields;
-    }
-
-    public IndexLabel indexFields(List<String> fields) {
-        this.fields = fields;
-        return this;
     }
 
     @Override
@@ -98,56 +82,95 @@ public class IndexLabel extends SchemaElement {
                              this.indexType, this.fields);
     }
 
-    public static class Builder {
+    public interface Builder extends SchemaBuilder<IndexLabel> {
+
+        Builder onV(String baseValue);
+
+        Builder onE(String baseValue);
+
+        Builder by(String... fields);
+
+        Builder secondary();
+
+        Builder search();
+
+        Builder ifNotExist();
+    }
+
+    public static class BuilderImpl implements Builder {
 
         private IndexLabel indexLabel;
         private SchemaManager manager;
 
-        public Builder(String name, SchemaManager manager) {
+        public BuilderImpl(String name, SchemaManager manager) {
             this.indexLabel = new IndexLabel(name);
             this.manager = manager;
         }
 
-        public IndexLabel create() {
-            this.manager.addIndexLabel(this.indexLabel);
+        @Override
+        public IndexLabel build() {
             return this.indexLabel;
         }
 
+        @Override
+        public IndexLabel create() {
+            return this.manager.addIndexLabel(this.indexLabel);
+        }
+
+        @Override
+        public IndexLabel append() {
+            throw new NotSupportException("action append on index label");
+        }
+
+        @Override
+        public IndexLabel eliminate() {
+            throw new NotSupportException("action eliminate on index label");
+        }
+
+        @Override
         public void remove() {
             this.manager.removeIndexLabel(this.indexLabel.name);
         }
 
+        @Override
         public Builder onV(String baseValue) {
             this.indexLabel.baseType = HugeType.VERTEX_LABEL;
             this.indexLabel.baseValue = baseValue;
             return this;
         }
 
+        @Override
         public Builder onE(String baseValue) {
             this.indexLabel.baseType = HugeType.EDGE_LABEL;
             this.indexLabel.baseValue = baseValue;
             return this;
         }
 
-        public Builder by(String... indexFields) {
-            for (String field : indexFields) {
-                if (!this.indexLabel.fields.contains(field)) {
-                    this.indexLabel.fields.add(field);
-                }
-            }
+        @Override
+        public Builder by(String... fields) {
+            E.checkArgument(this.indexLabel.fields.isEmpty(),
+                            "Not allowed to assign index fields multi times");
+            List<String> indexFields = Arrays.asList(fields);
+            E.checkArgument(CollectionUtil.allUnique(indexFields),
+                            "Invalid index fields %s, which contains some " +
+                            "duplicate properties", indexFields);
+            this.indexLabel.fields.addAll(indexFields);
             return this;
         }
 
+        @Override
         public Builder secondary() {
             this.indexLabel.indexType = IndexType.SECONDARY;
             return this;
         }
 
+        @Override
         public Builder search() {
             this.indexLabel.indexType = IndexType.SEARCH;
             return this;
         }
 
+        @Override
         public Builder ifNotExist() {
             this.indexLabel.checkExist = false;
             return this;

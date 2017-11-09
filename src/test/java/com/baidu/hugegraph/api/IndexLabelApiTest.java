@@ -35,14 +35,12 @@ import com.google.common.collect.ImmutableList;
 
 public class IndexLabelApiTest extends BaseApiTest {
 
-    private static Function<IndexLabel, IndexLabel> fillIndexLabel =
-            (indexLabel) -> {
-                indexLabel.baseType(HugeType.VERTEX_LABEL);
-                indexLabel.baseValue("person");
-                indexLabel.indexType(IndexType.SEARCH);
-                indexLabel.indexFields(ImmutableList.of("age"));
-                return indexLabel;
-            };
+    private static Function<String, IndexLabel> fillIndexLabel =
+            (name) -> schema().indexLabel(name)
+                              .onV("person")
+                              .by("age")
+                              .search()
+                              .build();
 
     @BeforeClass
     public static void prepareSchema() {
@@ -58,8 +56,8 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreate() {
-        IndexLabel indexLabel = new IndexLabel("personByAge");
-        indexLabel = indexLabelAPI.create(fillIndexLabel.apply(indexLabel));
+        IndexLabel indexLabel = indexLabelAPI.create(fillIndexLabel.apply
+                                                    ("personByAge"));
 
         Assert.assertEquals("personByAge", indexLabel.name());
         Assert.assertEquals(HugeType.VERTEX_LABEL, indexLabel.baseType());
@@ -73,47 +71,42 @@ public class IndexLabelApiTest extends BaseApiTest {
     @Test
     public void testCreateWithInvalidName() {
         Assert.assertResponse(400, () -> {
-            IndexLabel indexLabel = new IndexLabel("");
-            indexLabelAPI.create(fillIndexLabel.apply(indexLabel));
+            indexLabelAPI.create(fillIndexLabel.apply(""));
         });
         Assert.assertResponse(400, () -> {
-            IndexLabel indexLabel = new IndexLabel(" ");
-            indexLabelAPI.create(fillIndexLabel.apply(indexLabel));
+            indexLabelAPI.create(fillIndexLabel.apply(" "));
         });
         Assert.assertResponse(400, () -> {
-            IndexLabel indexLabel = new IndexLabel("    ");
-            indexLabelAPI.create(fillIndexLabel.apply(indexLabel));
+            indexLabelAPI.create(fillIndexLabel.apply("    "));
         });
     }
 
     @Test
     public void testCreateExistedVertexLabel() {
-        IndexLabel indexLabel1 = new IndexLabel("personByAge");
-        indexLabelAPI.create(fillIndexLabel.apply(indexLabel1));
+        indexLabelAPI.create(fillIndexLabel.apply("personByAge"));
 
         Assert.assertResponse(400, () -> {
-            IndexLabel indexLabel2 = new IndexLabel("personByAge");
-            indexLabelAPI.create(fillIndexLabel.apply(indexLabel2));
+            indexLabelAPI.create(fillIndexLabel.apply("personByAge"));
         });
     }
 
     @Test
     public void testCreateOnUndefinedSchemaLabel() {
 
-        IndexLabel indexLabel1 = new IndexLabel("authorByAge");
-        indexLabel1.baseType(HugeType.VERTEX_LABEL);
-        indexLabel1.baseValue("author");
-        indexLabel1.indexType(IndexType.SEARCH);
-        indexLabel1.indexFields(ImmutableList.of("age"));
+        IndexLabel indexLabel1 = schema().indexLabel("authorByAge")
+                                         .onV("author")
+                                         .by("age")
+                                         .search()
+                                         .build();
         Assert.assertResponse(400, () -> {
             indexLabelAPI.create(indexLabel1);
         });
 
-        IndexLabel indexLabel2 = new IndexLabel("writeByDate");
-        indexLabel2.baseType(HugeType.EDGE_LABEL);
-        indexLabel2.baseValue("write");
-        indexLabel2.indexType(IndexType.SECONDARY);
-        indexLabel2.indexFields(ImmutableList.of("date"));
+        IndexLabel indexLabel2 = schema().indexLabel("writeByDate")
+                                         .onE("write")
+                                         .by("date")
+                                         .secondary()
+                                         .build();
         Assert.assertResponse(400, () -> {
             indexLabelAPI.create(indexLabel2);
         });
@@ -121,11 +114,11 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateSearchIndexOnMultiProperties() {
-        IndexLabel indexLabel = new IndexLabel("personByAgeAndCity");
-        indexLabel.baseType(HugeType.VERTEX_LABEL);
-        indexLabel.baseValue("person");
-        indexLabel.indexType(IndexType.SEARCH);
-        indexLabel.indexFields(ImmutableList.of("age", "city"));
+        IndexLabel indexLabel = schema().indexLabel("personByAgeAndCity")
+                                        .onV("person")
+                                        .by("age", "city")
+                                        .search()
+                                        .build();
         Assert.assertResponse(400, () -> {
             indexLabelAPI.create(indexLabel);
         });
@@ -133,11 +126,11 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateSearchIndexOnNotNumberProperty() {
-        IndexLabel indexLabel = new IndexLabel("personByCity");
-        indexLabel.baseType(HugeType.VERTEX_LABEL);
-        indexLabel.baseValue("person");
-        indexLabel.indexType(IndexType.SEARCH);
-        indexLabel.indexFields(ImmutableList.of("city"));
+        IndexLabel indexLabel = schema().indexLabel("personByCity")
+                                        .onV("person")
+                                        .by("city")
+                                        .search()
+                                        .build();
         Assert.assertResponse(400, () -> {
             indexLabelAPI.create(indexLabel);
         });
@@ -145,11 +138,11 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testGet() {
-        IndexLabel indexLabel1 = new IndexLabel("personByAge");
-        indexLabel1.baseType(HugeType.VERTEX_LABEL);
-        indexLabel1.baseValue("person");
-        indexLabel1.indexType(IndexType.SEARCH);
-        indexLabel1.indexFields(ImmutableList.of("age"));
+        IndexLabel indexLabel1 = schema().indexLabel("personByAge")
+                                         .onV("person")
+                                         .by("age")
+                                         .search()
+                                         .build();
 
         indexLabel1 = indexLabelAPI.create(indexLabel1);
 
@@ -172,14 +165,14 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testList() {
-        IndexLabel indexLabel1 = new IndexLabel("personByAge");
-        indexLabel1 = indexLabelAPI.create(fillIndexLabel.apply(indexLabel1));
+        IndexLabel indexLabel1 = indexLabelAPI.create(fillIndexLabel.apply
+                                                     ("personByAge"));
 
-        IndexLabel indexLabel2 = new IndexLabel("personByCity");
-        indexLabel2.baseType(HugeType.VERTEX_LABEL);
-        indexLabel2.baseValue("person");
-        indexLabel2.indexType(IndexType.SECONDARY);
-        indexLabel2.indexFields(ImmutableList.of("city"));
+        IndexLabel indexLabel2 = schema().indexLabel("personByCity")
+                                         .onV("person")
+                                         .by("city")
+                                         .secondary()
+                                         .build();
         indexLabel2 = indexLabelAPI.create(indexLabel2);
 
         List<IndexLabel> indexLabels = indexLabelAPI.list();
@@ -190,8 +183,7 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testDelete() {
-        IndexLabel indexLabel = new IndexLabel("personByAge");
-        indexLabelAPI.create(fillIndexLabel.apply(indexLabel));
+        indexLabelAPI.create(fillIndexLabel.apply("personByAge"));
 
         indexLabelAPI.delete("personByAge");
 

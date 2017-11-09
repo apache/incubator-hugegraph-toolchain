@@ -44,7 +44,7 @@ public abstract class GraphElement extends Element {
     @JsonProperty("properties")
     protected Map<String, Object> properties;
 
-    public void manager(GraphManager manager) {
+    public void attachManager(GraphManager manager) {
         this.manager = manager;
     }
 

@@ -35,14 +35,13 @@ import com.google.common.collect.ImmutableSet;
 
 public class EdgeLabelApiTest extends BaseApiTest {
 
-    private static Function<EdgeLabel, EdgeLabel> fillEdgeLabel =
-            (edgeLabel) -> {
-                edgeLabel.sourceLabel("person");
-                edgeLabel.targetLabel("software");
-                edgeLabel.frequency(Frequency.SINGLE);
-                edgeLabel.properties("date", "city");
-                return edgeLabel;
-            };
+    private static Function<String, EdgeLabel> fillEdgeLabel =
+            (name) -> schema().edgeLabel(name)
+                              .sourceLabel("person")
+                              .targetLabel("software")
+                              .singleTime()
+                              .properties("date", "city")
+                              .build();
 
     @BeforeClass
     public static void prepareSchema() {
@@ -57,8 +56,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreate() {
-        EdgeLabel edgeLabel = new EdgeLabel("created");
-        edgeLabel = edgeLabelAPI.create(fillEdgeLabel.apply(edgeLabel));
+        EdgeLabel edgeLabel = fillEdgeLabel.apply("created");
+        edgeLabel = edgeLabelAPI.create(edgeLabel);
 
         Assert.assertEquals("created", edgeLabel.name());
         Assert.assertEquals("person", edgeLabel.sourceLabel());
@@ -72,37 +71,33 @@ public class EdgeLabelApiTest extends BaseApiTest {
     @Test
     public void testCreateWithInvalidName() {
         Assert.assertResponse(400, () -> {
-            EdgeLabel edgeLabel = new EdgeLabel("");
-            edgeLabelAPI.create(fillEdgeLabel.apply(edgeLabel));
+            edgeLabelAPI.create(fillEdgeLabel.apply(""));
         });
         Assert.assertResponse(400, () -> {
-            EdgeLabel edgeLabel = new EdgeLabel(" ");
-            edgeLabelAPI.create(fillEdgeLabel.apply(edgeLabel));
+            edgeLabelAPI.create(fillEdgeLabel.apply(" "));
         });
         Assert.assertResponse(400, () -> {
-            EdgeLabel edgeLabel = new EdgeLabel("    ");
-            edgeLabelAPI.create(fillEdgeLabel.apply(edgeLabel));
+            edgeLabelAPI.create(fillEdgeLabel.apply("    "));
         });
     }
 
     @Test
     public void testCreateExistedVertexLabel() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabelAPI.create(fillEdgeLabel.apply(edgeLabel1));
+        edgeLabelAPI.create(fillEdgeLabel.apply("created"));
 
         Assert.assertResponse(400, () -> {
-            EdgeLabel edgeLabel2 = new EdgeLabel("created");
-            edgeLabelAPI.create(fillEdgeLabel.apply(edgeLabel2));
+            edgeLabelAPI.create(fillEdgeLabel.apply("created"));
         });
     }
 
     @Test
     public void testCreateWithUndefinedPropertyKey() {
-        EdgeLabel edgeLabel = new EdgeLabel("created");
-        edgeLabel.sourceLabel("person");
-        edgeLabel.targetLabel("software");
-        edgeLabel.frequency(Frequency.SINGLE);
-        edgeLabel.properties("undefined", "city");
+        EdgeLabel edgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .singleTime()
+                                      .properties("undefined", "city")
+                                      .build();
 
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.create(edgeLabel);
@@ -111,12 +106,13 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithUndefinedSortKey() {
-        EdgeLabel edgeLabel = new EdgeLabel("created");
-        edgeLabel.sourceLabel("person");
-        edgeLabel.targetLabel("software");
-        edgeLabel.frequency(Frequency.MULTIPLE);
-        edgeLabel.properties("date", "city");
-        edgeLabel.sortKeys("undefined");
+        EdgeLabel edgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .multiTimes()
+                                      .properties("date", "city")
+                                      .sortKeys("undefined")
+                                      .build();
 
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.create(edgeLabel);
@@ -125,11 +121,13 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithUndefinedNullableKeys() {
-        EdgeLabel edgeLabel = new EdgeLabel("created");
-        edgeLabel.sourceLabel("person");
-        edgeLabel.targetLabel("software");
-        edgeLabel.properties("date", "city");
-        edgeLabel.nullableKeys("undefined");
+        EdgeLabel edgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .singleTime()
+                                      .properties("date", "city")
+                                      .nullableKeys("undefined")
+                                      .build();
 
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.create(edgeLabel);
@@ -138,26 +136,19 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithNonNullKeysIntersectSortKeys() {
-        EdgeLabel edgeLabel = new EdgeLabel("created");
-        edgeLabel.frequency(Frequency.MULTIPLE);
-        edgeLabel.sourceLabel("person");
-        edgeLabel.targetLabel("software");
-        edgeLabel.properties("date", "city");
+        EdgeLabel edgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .multiTimes()
+                                      .properties("date", "city")
+                                      .sortKeys("date")
+                                      .nullableKeys("date")
+                                      .build();
 
-        edgeLabel.sortKeys("date");
-        edgeLabel.nullableKeys("date");
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
 
-        edgeLabel.sortKeys("date", "city");
-        edgeLabel.nullableKeys("date");
-        Assert.assertResponse(400, () -> {
-            edgeLabelAPI.create(edgeLabel);
-        });
-
-        edgeLabel.sortKeys("date");
-        edgeLabel.nullableKeys("date", "city");
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
@@ -165,11 +156,12 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithUndefinedVertexLabel() {
-        EdgeLabel edgeLabel = new EdgeLabel("created");
-        edgeLabel.sourceLabel("programmer");
-        edgeLabel.targetLabel("software");
-        edgeLabel.frequency(Frequency.SINGLE);
-        edgeLabel.properties("date", "city");
+        EdgeLabel edgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("programmer")
+                                      .targetLabel("software")
+                                      .singleTime()
+                                      .properties("date", "city")
+                                      .build();
 
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.create(edgeLabel);
@@ -178,11 +170,13 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testAppend() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabel1.sourceLabel("person");
-        edgeLabel1.targetLabel("software");
-        edgeLabel1.frequency(Frequency.SINGLE);
-        edgeLabel1.properties("date");
+        EdgeLabel edgeLabel1 = schema().edgeLabel("created")
+                                       .sourceLabel("person")
+                                       .targetLabel("software")
+                                       .singleTime()
+                                       .properties("date")
+                                       .build();
+
         edgeLabel1 = edgeLabelAPI.create(edgeLabel1);
 
         Assert.assertEquals("created", edgeLabel1.name());
@@ -190,12 +184,12 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("software", edgeLabel1.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel1.frequency());
         Set<String> props = ImmutableSet.of("date");
-        Set<String> nullableKeys = ImmutableSet.of();
         Assert.assertEquals(props, edgeLabel1.properties());
 
-        EdgeLabel edgeLabel2 = new EdgeLabel("created");
-        edgeLabel2.properties("city");
-        edgeLabel2.nullableKeys("city");
+        EdgeLabel edgeLabel2 = schema().edgeLabel("created")
+                                       .properties("city")
+                                       .nullableKeys("city")
+                                       .build();
         edgeLabel2 = edgeLabelAPI.append(edgeLabel2);
 
         Assert.assertEquals("created", edgeLabel2.name());
@@ -203,18 +197,19 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("software", edgeLabel2.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel2.frequency());
         props = ImmutableSet.of("date", "city");
-        nullableKeys = ImmutableSet.of("city");
+        Set<String> nullableKeys = ImmutableSet.of("city");
         Assert.assertEquals(props, edgeLabel2.properties());
         Assert.assertEquals(nullableKeys, edgeLabel2.nullableKeys());
     }
 
     @Test
     public void testAppendWithUndefinedPropertyKey() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabel1.sourceLabel("person");
-        edgeLabel1.targetLabel("software");
-        edgeLabel1.frequency(Frequency.SINGLE);
-        edgeLabel1.properties("date");
+        EdgeLabel edgeLabel1 = schema().edgeLabel("created")
+                                       .sourceLabel("person")
+                                       .targetLabel("software")
+                                       .singleTime()
+                                       .properties("date")
+                                       .build();
         edgeLabel1 = edgeLabelAPI.create(edgeLabel1);
 
         Assert.assertEquals("created", edgeLabel1.name());
@@ -224,8 +219,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Set<String> props = ImmutableSet.of("date");
         Assert.assertEquals(props, edgeLabel1.properties());
 
-        EdgeLabel edgeLabel2 = new EdgeLabel("created");
-        edgeLabel2.properties("undefined");
+        EdgeLabel edgeLabel2 = schema().edgeLabel("created")
+                                       .properties("undefined")
+                                       .build();
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.append(edgeLabel2);
         });
@@ -233,11 +229,13 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testAppendWithUndefinedNullableKeys() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabel1.sourceLabel("person");
-        edgeLabel1.targetLabel("software");
-        edgeLabel1.frequency(Frequency.SINGLE);
-        edgeLabel1.properties("date");
+        EdgeLabel edgeLabel1 = schema().edgeLabel("created")
+                                       .sourceLabel("person")
+                                       .targetLabel("software")
+                                       .singleTime()
+                                       .properties("date")
+                                       .build();
+        
         edgeLabel1 = edgeLabelAPI.create(edgeLabel1);
 
         Assert.assertEquals("created", edgeLabel1.name());
@@ -247,8 +245,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Set<String> props = ImmutableSet.of("date");
         Assert.assertEquals(props, edgeLabel1.properties());
 
-        EdgeLabel edgeLabel2 = new EdgeLabel("created");
-        edgeLabel2.nullableKeys("undefined");
+        EdgeLabel edgeLabel2 = schema().edgeLabel("created")
+                                .nullableKeys("undefined").build();
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.append(edgeLabel2);
         });
@@ -256,11 +254,12 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testAppendWithSourceOrTaregtLabel() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabel1.sourceLabel("person");
-        edgeLabel1.targetLabel("software");
-        edgeLabel1.frequency(Frequency.SINGLE);
-        edgeLabel1.properties("date");
+        EdgeLabel edgeLabel1 = schema().edgeLabel("created")
+                                       .sourceLabel("person")
+                                       .targetLabel("software")
+                                       .singleTime()
+                                       .properties("date")
+                                       .build();
         edgeLabel1 = edgeLabelAPI.create(edgeLabel1);
 
         Assert.assertEquals("created", edgeLabel1.name());
@@ -270,10 +269,11 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Set<String> props = ImmutableSet.of("date");
         Assert.assertEquals(props, edgeLabel1.properties());
 
-        EdgeLabel edgeLabel2 = new EdgeLabel("created");
-        edgeLabel2.sourceLabel("person");
-        edgeLabel2.targetLabel("person");
-        edgeLabel2.properties("city");
+        EdgeLabel edgeLabel2 = schema().edgeLabel("created")
+                                       .sourceLabel("person")
+                                       .targetLabel("person")
+                                       .properties("city")
+                                       .build();
 
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.append(edgeLabel2);
@@ -282,11 +282,12 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testEliminate() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabel1.sourceLabel("person");
-        edgeLabel1.targetLabel("software");
-        edgeLabel1.frequency(Frequency.SINGLE);
-        edgeLabel1.properties("date");
+        EdgeLabel edgeLabel1 = schema().edgeLabel("created")
+                                       .sourceLabel("person")
+                                       .targetLabel("software")
+                                       .singleTime()
+                                       .properties("date")
+                                       .build();
         edgeLabel1 = edgeLabelAPI.create(edgeLabel1);
         Assert.assertEquals("created", edgeLabel1.name());
         Assert.assertEquals("person", edgeLabel1.sourceLabel());
@@ -295,8 +296,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Set<String> props = ImmutableSet.of("date");
         Assert.assertEquals(props, edgeLabel1.properties());
 
-        EdgeLabel edgeLabel2 = new EdgeLabel("created");
-        edgeLabel2.properties("city");
+        EdgeLabel edgeLabel2 = schema().edgeLabel("created")
+                                .properties("city").build();
         Assert.assertResponse(400, () -> {
             edgeLabelAPI.eliminate(edgeLabel2);
         });
@@ -304,8 +305,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testGet() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabel1 = edgeLabelAPI.create(fillEdgeLabel.apply(edgeLabel1));
+        EdgeLabel edgeLabel1 = edgeLabelAPI.create(fillEdgeLabel.apply
+                ("created"));
 
         EdgeLabel edgeLabel2 = edgeLabelAPI.get("created");
 
@@ -325,18 +326,20 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testList() {
-        EdgeLabel edgeLabel1 = new EdgeLabel("created");
-        edgeLabel1.sourceLabel("person");
-        edgeLabel1.targetLabel("software");
-        edgeLabel1.frequency(Frequency.SINGLE);
-        edgeLabel1.properties("date", "city");
+        EdgeLabel edgeLabel1 = schema().edgeLabel("created")
+                                       .sourceLabel("person")
+                                       .targetLabel("software")
+                                       .singleTime()
+                                       .properties("date", "city")
+                                       .build();
         edgeLabel1 = edgeLabelAPI.create(edgeLabel1);
 
-        EdgeLabel edgeLabel2 = new EdgeLabel("knows");
-        edgeLabel2.sourceLabel("person");
-        edgeLabel2.targetLabel("person");
-        edgeLabel2.frequency(Frequency.SINGLE);
-        edgeLabel2.properties("date");
+        EdgeLabel edgeLabel2 = schema().edgeLabel("knows")
+                                       .sourceLabel("person")
+                                       .targetLabel("person")
+                                       .singleTime()
+                                       .properties("date")
+                                       .build();
         edgeLabel2 = edgeLabelAPI.create(edgeLabel2);
 
         List<EdgeLabel> edgeLabels = edgeLabelAPI.list();
@@ -347,11 +350,12 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testDelete() {
-        EdgeLabel edgeLabel = new EdgeLabel("created");
-        edgeLabel.sourceLabel("person");
-        edgeLabel.targetLabel("software");
-        edgeLabel.frequency(Frequency.SINGLE);
-        edgeLabel.properties("date", "city");
+        EdgeLabel edgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .singleTime()
+                                      .properties("date", "city")
+                                      .build();
         edgeLabelAPI.create(edgeLabel);
 
         edgeLabelAPI.delete("created");

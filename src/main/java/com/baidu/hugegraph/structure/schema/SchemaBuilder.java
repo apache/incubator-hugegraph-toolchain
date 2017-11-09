@@ -19,30 +19,17 @@
 
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.baidu.hugegraph.structure.SchemaElement;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class SchemaLabel extends SchemaElement {
+public interface SchemaBuilder<T extends SchemaElement> {
 
-    @JsonProperty("nullable_keys")
-    protected Set<String> nullableKeys;
-    @JsonProperty("index_names")
-    protected Set<String> indexNames;
+    T build();
 
-    public SchemaLabel(String name) {
-        super(name);
-        this.nullableKeys = new HashSet<>();
-        this.indexNames = new HashSet<>();
-    }
+    T create();
 
-    public Set<String> nullableKeys() {
-        return this.nullableKeys;
-    }
+    T append();
 
-    public Set<String> indexNames() {
-        return this.indexNames;
-    }
+    T eliminate();
+
+    void remove();
 }

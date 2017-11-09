@@ -288,6 +288,6 @@ public class GraphManager {
     }
 
     private void attachManager(GraphElement element) {
-        element.manager(this);
+        element.attachManager(this);
     }
 }

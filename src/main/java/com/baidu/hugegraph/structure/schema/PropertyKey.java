@@ -19,9 +19,8 @@
 
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.Set;
-
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
@@ -52,23 +51,8 @@ public class PropertyKey extends SchemaElement {
         return this.dataType;
     }
 
-    public PropertyKey dataType(DataType dataType) {
-        this.dataType = dataType;
-        return this;
-    }
-
     public Cardinality cardinality() {
         return this.cardinality;
-    }
-
-    public PropertyKey cardinality(Cardinality cardinality) {
-        this.cardinality = cardinality;
-        return this;
-    }
-
-    protected PropertyKey properties(Set<String> properties) {
-        this.properties = properties;
-        return this;
     }
 
     @Override
@@ -79,21 +63,68 @@ public class PropertyKey extends SchemaElement {
                              this.dataType, this.properties);
     }
 
-    public static class Builder {
+    public interface Builder extends SchemaBuilder<PropertyKey> {
+
+        Builder asText();
+
+        Builder asInt();
+
+        Builder asTimestamp();
+
+        Builder asUuid();
+
+        Builder asBoolean();
+
+        Builder asByte();
+
+        Builder asBlob();
+
+        Builder asDouble();
+
+        Builder asFloat();
+
+        Builder asLong();
+
+        Builder valueSingle();
+
+        Builder valueList();
+
+        Builder valueSet();
+
+        Builder ifNotExist();
+    }
+
+    public static class BuilderImpl implements Builder {
 
         private PropertyKey propertyKey;
         private SchemaManager manager;
 
-        public Builder(String name, SchemaManager manager) {
+        public BuilderImpl(String name, SchemaManager manager) {
             this.propertyKey = new PropertyKey(name);
             this.manager = manager;
         }
 
-        public PropertyKey create() {
-            this.manager.addPropertyKey(this.propertyKey);
+        @Override
+        public PropertyKey build() {
             return this.propertyKey;
         }
 
+        @Override
+        public PropertyKey create() {
+            return this.manager.addPropertyKey(this.propertyKey);
+        }
+
+        @Override
+        public PropertyKey append() {
+            throw new NotSupportException("action append on property key");
+        }
+
+        @Override
+        public PropertyKey eliminate() {
+            throw new NotSupportException("action eliminate on property key");
+        }
+
+        @Override
         public void remove() {
             this.manager.removePropertyKey(this.propertyKey.name);
         }

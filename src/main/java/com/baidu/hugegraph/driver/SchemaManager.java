@@ -26,6 +26,7 @@ import com.baidu.hugegraph.api.schema.IndexLabelAPI;
 import com.baidu.hugegraph.api.schema.PropertyKeyAPI;
 import com.baidu.hugegraph.api.schema.VertexLabelAPI;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.schema.BuilderProxy;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
@@ -46,23 +47,32 @@ public class SchemaManager {
     }
 
     public PropertyKey.Builder propertyKey(String name) {
-        return new PropertyKey.Builder(name, this);
+        PropertyKey.Builder builder = new PropertyKey.BuilderImpl(name, this);
+        BuilderProxy<PropertyKey.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+
     }
 
     public VertexLabel.Builder vertexLabel(String name) {
-        return new VertexLabel.Builder(name, this);
+        VertexLabel.Builder builder = new VertexLabel.BuilderImpl(name, this);
+        BuilderProxy<VertexLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
     }
 
     public EdgeLabel.Builder edgeLabel(String name) {
-        return new EdgeLabel.Builder(name, this);
+        EdgeLabel.Builder builder = new EdgeLabel.BuilderImpl(name, this);
+        BuilderProxy<EdgeLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
     }
 
     public IndexLabel.Builder indexLabel(String name) {
-        return new IndexLabel.Builder(name, this);
+        IndexLabel.Builder builder = new IndexLabel.BuilderImpl(name, this);
+        BuilderProxy<IndexLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
     }
 
-    public void addPropertyKey(PropertyKey propertyKey) {
-        this.propertyKeyApi.create(propertyKey);
+    public PropertyKey addPropertyKey(PropertyKey propertyKey) {
+        return this.propertyKeyApi.create(propertyKey);
     }
 
     public void removePropertyKey(String name) {
@@ -77,16 +87,16 @@ public class SchemaManager {
         return this.propertyKeyApi.list();
     }
 
-    public void addVertexLabel(VertexLabel vertexLabel) {
-        this.vertexLabelApi.create(vertexLabel);
+    public VertexLabel addVertexLabel(VertexLabel vertexLabel) {
+        return this.vertexLabelApi.create(vertexLabel);
     }
 
-    public void appendVertexLabel(VertexLabel vertexLabel) {
-        this.vertexLabelApi.append(vertexLabel);
+    public VertexLabel appendVertexLabel(VertexLabel vertexLabel) {
+        return this.vertexLabelApi.append(vertexLabel);
     }
 
-    public void eliminateVertexLabel(VertexLabel vertexLabel) {
-        this.vertexLabelApi.eliminate(vertexLabel);
+    public VertexLabel eliminateVertexLabel(VertexLabel vertexLabel) {
+        return this.vertexLabelApi.eliminate(vertexLabel);
     }
 
     public void removeVertexLabel(String name) {
@@ -101,16 +111,16 @@ public class SchemaManager {
         return this.vertexLabelApi.list();
     }
 
-    public void addEdgeLabel(EdgeLabel edgeLabel) {
-        this.edgeLabelAPI.create(edgeLabel);
+    public EdgeLabel addEdgeLabel(EdgeLabel edgeLabel) {
+        return this.edgeLabelAPI.create(edgeLabel);
     }
 
-    public void appendEdgeLabel(EdgeLabel edgeLabel) {
-        this.edgeLabelAPI.append(edgeLabel);
+    public EdgeLabel appendEdgeLabel(EdgeLabel edgeLabel) {
+        return this.edgeLabelAPI.append(edgeLabel);
     }
 
-    public void eliminateEdgeLabel(EdgeLabel edgeLabel) {
-        this.edgeLabelAPI.eliminate(edgeLabel);
+    public EdgeLabel eliminateEdgeLabel(EdgeLabel edgeLabel) {
+        return this.edgeLabelAPI.eliminate(edgeLabel);
     }
 
     public void removeEdgeLabel(String name) {
@@ -125,8 +135,8 @@ public class SchemaManager {
         return this.edgeLabelAPI.list();
     }
 
-    public void addIndexLabel(IndexLabel indexLabel) {
-        this.indexLabelAPI.create(indexLabel);
+    public IndexLabel addIndexLabel(IndexLabel indexLabel) {
+        return this.indexLabelAPI.create(indexLabel);
     }
 
     public void removeIndexLabel(String name) {

@@ -17,32 +17,20 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure.schema;
+package com.baidu.hugegraph.exception;
 
-import java.util.HashSet;
-import java.util.Set;
+public class NotSupportException extends ClientException {
 
-import com.baidu.hugegraph.structure.SchemaElement;
-import com.fasterxml.jackson.annotation.JsonProperty;
+    private static final long serialVersionUID = -8711375282196157056L;
 
-public abstract class SchemaLabel extends SchemaElement {
+    private static final String PREFIX = "Not support ";
 
-    @JsonProperty("nullable_keys")
-    protected Set<String> nullableKeys;
-    @JsonProperty("index_names")
-    protected Set<String> indexNames;
-
-    public SchemaLabel(String name) {
-        super(name);
-        this.nullableKeys = new HashSet<>();
-        this.indexNames = new HashSet<>();
+    public NotSupportException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    public Set<String> nullableKeys() {
-        return this.nullableKeys;
+    public NotSupportException(String message, Object... args) {
+        super(PREFIX + message, args);
     }
 
-    public Set<String> indexNames() {
-        return this.indexNames;
-    }
 }

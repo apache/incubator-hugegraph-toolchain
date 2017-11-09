@@ -52,5 +52,4 @@ public abstract class SchemaElement extends Element {
     public boolean checkExits() {
         return this.checkExist;
     }
-
 }
