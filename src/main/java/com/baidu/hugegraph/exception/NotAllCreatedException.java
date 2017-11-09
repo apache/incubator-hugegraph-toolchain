@@ -23,7 +23,7 @@ import java.util.List;
 
 public class NotAllCreatedException extends ServerException {
 
-    private static final long serialVersionUID = -5381487354479556752L;
+    private static final long serialVersionUID = -8795820552805040556L;
 
     private List<String> ids;
 

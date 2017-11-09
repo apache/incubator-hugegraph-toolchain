@@ -21,7 +21,7 @@ package com.baidu.hugegraph.exception;
 
 public class ClientException extends RuntimeException {
 
-    private static final long serialVersionUID = -8711375282196157051L;
+    private static final long serialVersionUID = 814572040103754705L;
 
     public ClientException(String message, Throwable cause) {
         super(message, cause);

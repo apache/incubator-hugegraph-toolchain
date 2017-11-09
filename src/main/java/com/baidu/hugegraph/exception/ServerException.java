@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ServerException extends IllegalArgumentException {
 
-    private static final long serialVersionUID = -5381487354479556742L;
+    private static final long serialVersionUID = 6335623004322652358L;
 
     private int status = 0;
     @JsonProperty
@@ -79,6 +79,8 @@ public class ServerException extends IllegalArgumentException {
      * The stack trace of server exception
      */
     private static class ServerCause extends RuntimeException {
+
+        private static final long serialVersionUID = 8755660573085501031L;
 
         public ServerCause(String cause) {
             super(cause, null, true, false);

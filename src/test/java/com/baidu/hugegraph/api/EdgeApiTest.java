@@ -43,6 +43,7 @@ public class EdgeApiTest extends BaseApiTest {
         BaseApiTest.initVertex();
     }
 
+    @Override
     @After
     public void teardown() throws Exception {
         edgeAPI.list(-1).forEach(e -> edgeAPI.delete(e.id()));
@@ -562,6 +563,7 @@ public class EdgeApiTest extends BaseApiTest {
         });
     }
 
+    @SuppressWarnings("unused")
     private static void assertContains(List<Edge> edges, Edge edge) {
         Assert.assertTrue(Utils.contains(edges, edge));
     }

@@ -110,7 +110,7 @@ public class Utils {
         return true;
     }
 
-    public static boolean equalVertexLabel(VertexLabel left, 
+    public static boolean equalVertexLabel(VertexLabel left,
                                            VertexLabel right) {
         assert left != null;
         assert right != null;
@@ -270,7 +270,7 @@ public class Utils {
     }
 
     public static List<Pair<String, Object>> asPairs(Object... keyValues) {
-        final List list = Arrays.asList(keyValues);
+        final List<Object> list = Arrays.asList(keyValues);
         return IntStream.range(1, list.size()).filter(i -> i % 2 != 0)
                .mapToObj(i -> Pair.of(list.get(i - 1).toString(), list.get(i)))
                .collect(Collectors.toList());

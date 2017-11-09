@@ -29,15 +29,18 @@ import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
 import com.baidu.hugegraph.testutil.Assert;
 
 public class VariablesApiTest extends BaseApiTest {
 
+    @Override
     @Before
     public void setup() {
         clearVariables();
     }
 
+    @Override
     @After
     public void teardown() {
         clearVariables();
@@ -126,15 +129,14 @@ public class VariablesApiTest extends BaseApiTest {
         });
     }
 
-    @SuppressWarnings("unchecked")
     private static void assertContains(Map<String, Object> variables,
                                        String key, Object value) {
         Assert.assertTrue(variables.containsKey(key));
 
         if (variables.get(key) instanceof Collection) {
             Assert.assertTrue(value instanceof Collection);
-            Collection expect = (Collection) value;
-            Collection actual = (Collection) variables.get(key);
+            Collection<?> expect = (Collection<?>) value;
+            Collection<?> actual = (Collection<?>) variables.get(key);
             Assert.assertTrue(expect.size()== actual.size());
             actual.forEach(elem -> {
                 Assert.assertTrue((expect.contains(elem)));

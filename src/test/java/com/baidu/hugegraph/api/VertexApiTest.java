@@ -42,6 +42,7 @@ public class VertexApiTest extends BaseApiTest {
         BaseApiTest.initEdgeLabel();
     }
 
+    @Override
     @After
     public void teardown() throws Exception {
         vertexAPI.list(-1).forEach(v -> vertexAPI.delete(v.id()));
@@ -267,6 +268,7 @@ public class VertexApiTest extends BaseApiTest {
         });
     }
 
+    @SuppressWarnings("unused")
     private static void assertContains(List<Vertex> vertices, Vertex vertex) {
         Assert.assertTrue(Utils.contains(vertices, vertex));
     }

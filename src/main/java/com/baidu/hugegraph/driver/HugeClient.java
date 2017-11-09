@@ -84,6 +84,10 @@ public class HugeClient {
         return this.graph;
     }
 
+    public VariablesManager variables() {
+        return this.variables;
+    }
+
     public GremlinManager gremlin() {
         return this.gremlin;
     }

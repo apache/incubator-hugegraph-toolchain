@@ -68,7 +68,7 @@ public class VertexDeserializer extends JsonDeserializer<Vertex> {
                           "There should be only one object element in the " +
                           "value of key '%s', actual are %s", key, elems);
             }
-            Map<String, ?> elem = (Map) elems.get(0);
+            Map<String, ?> elem = (Map<String, ?>) elems.get(0);
             if (!elem.containsKey("value")) {
                 throw InvalidResponseException.expectField("value", elem);
             }
