@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.exception.InvalidResponseException;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -16,7 +17,12 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public class VertexDeserializer extends JsonDeserializer<Vertex> {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper;
+
+    public VertexDeserializer(ObjectMapper mapper) {
+        E.checkNotNull(mapper, "object mapper");
+        this.mapper = mapper;
+    }
 
     @SuppressWarnings("unchecked")
     @Override

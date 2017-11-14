@@ -21,11 +21,13 @@ package com.baidu.hugegraph.serializer;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 
 import com.baidu.hugegraph.exception.InvalidResponseException;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -36,13 +38,18 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public class PathDeserializer extends JsonDeserializer<Path> {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper;
 
+    public PathDeserializer(ObjectMapper mapper) {
+        E.checkNotNull(mapper, "object mapper");
+        this.mapper = mapper;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public Path deserialize(JsonParser parser, DeserializationContext ctxt)
                             throws IOException, JsonProcessingException {
 
-        Path path = new Path();
         JsonNode node = parser.getCodec().readTree(parser);
 
         // Parse node 'labels'
@@ -51,7 +58,13 @@ public class PathDeserializer extends JsonDeserializer<Path> {
             labelsNode.getNodeType() != JsonNodeType.ARRAY) {
             throw InvalidResponseException.expectField("labels", node);
         }
-        labelsNode.elements().forEachRemaining(path::labels);
+
+        Path path = new Path();
+
+        Object labels = mapper.convertValue(labelsNode, Object.class);
+        if (labels instanceof List) {
+            ((List) labels).forEach(path::labels);
+        }
 
         // Parse node 'objects'
         JsonNode objectsNode = node.get("objects");
@@ -75,13 +88,12 @@ public class PathDeserializer extends JsonDeserializer<Path> {
         return path;
     }
 
-    private static Object parseTypedNode(JsonNode objectNode,
-                                         JsonNode typeNode) {
+    private Object parseTypedNode(JsonNode objectNode, JsonNode typeNode) {
         String type = typeNode.asText();
         if (type.equals("vertex")) {
-            return mapper.convertValue(objectNode, Vertex.class);
+            return this.mapper.convertValue(objectNode, Vertex.class);
         } else if (type.equals("edge")) {
-            return mapper.convertValue(objectNode, Edge.class);
+            return this.mapper.convertValue(objectNode, Edge.class);
         } else {
             throw InvalidResponseException.expectField("vertex/edge", type);
         }

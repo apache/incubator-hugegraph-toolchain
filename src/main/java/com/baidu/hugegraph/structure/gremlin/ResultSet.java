@@ -25,12 +25,15 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.exception.SerializeException;
+import com.baidu.hugegraph.serializer.PathDeserializer;
+import com.baidu.hugegraph.serializer.VertexDeserializer;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class ResultSet {
 
@@ -39,11 +42,17 @@ public class ResultSet {
     @JsonProperty
     private Map<String, ?> meta;
 
-    private ObjectMapper mapper;
+    private static ObjectMapper mapper = new ObjectMapper();
     private int index;
 
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Vertex.class, new VertexDeserializer(mapper));
+        module.addDeserializer(Path.class, new PathDeserializer(mapper));
+        mapper.registerModule(module);
+    }
+
     public ResultSet() {
-        this.mapper = new ObjectMapper();
         this.index = 0;
     }
 

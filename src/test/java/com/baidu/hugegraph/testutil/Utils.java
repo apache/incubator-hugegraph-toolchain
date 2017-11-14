@@ -28,6 +28,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -35,8 +36,23 @@ import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.google.common.collect.ImmutableList;
 
 public class Utils {
+
+    public static void assertGraphEqual(ImmutableList<Vertex> vertices,
+                                        ImmutableList<Edge> edges,
+                                        List<Object> objects) {
+        for (Object object : objects) {
+            Assert.assertTrue(object instanceof GraphElement);
+            if (object instanceof Vertex) {
+                Utils.contains(vertices, (Vertex) object);
+            } else {
+                Assert.assertTrue(object instanceof Edge);
+                Utils.contains(edges, (Edge) object);
+            }
+        }
+    }
 
     public static boolean contains(List<PropertyKey> propertyKeys,
                                    PropertyKey propertyKey) {

@@ -26,11 +26,25 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import com.baidu.hugegraph.exception.SerializeException;
+import com.baidu.hugegraph.serializer.PathDeserializer;
+import com.baidu.hugegraph.serializer.VertexDeserializer;
+import com.baidu.hugegraph.structure.graph.Path;
+import com.baidu.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class RestResult {
+
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Vertex.class, new VertexDeserializer(mapper));
+        module.addDeserializer(Path.class, new PathDeserializer(mapper));
+        mapper.registerModule(module);
+    }
 
     private int status;
     private MultivaluedMap<String, Object> headers;
@@ -55,21 +69,16 @@ public class RestResult {
     }
 
     public <T> T readObject(Class<T> clazz) {
-        T obj;
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            obj = mapper.readValue(this.content, clazz);
+            return mapper.readValue(this.content, clazz);
         } catch (Exception e) {
             throw new SerializeException(String.format(
                       "Failed to deserialize %s", this.content), e);
         }
-        return obj;
     }
 
     public <T> List<T> readList(String key, Class<T> clazz) {
-        List<T> objList;
         try {
-            ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(this.content);
             JsonNode element = root.get(key);
             if (element == null) {
@@ -78,26 +87,22 @@ public class RestResult {
             }
             JavaType type = mapper.getTypeFactory()
                             .constructParametricType(List.class, clazz);
-            objList = mapper.readValue(element.toString(), type);
+            return mapper.readValue(element.toString(), type);
         } catch (IOException e) {
             throw new SerializeException(String.format(
                       "Failed to deserialize %s", this.content), e);
         }
-        return objList;
     }
 
     public <T> List<T> readList(Class<T> clazz) {
-        List<T> objList;
         try {
-            ObjectMapper mapper = new ObjectMapper();
             JavaType type = mapper.getTypeFactory()
                             .constructParametricType(List.class, clazz);
-            objList = mapper.readValue(this.content, type);
+            return mapper.readValue(this.content, type);
         } catch (IOException e) {
             throw new SerializeException(String.format(
                       "Failed to deserialize %s", this.content), e);
         }
-        return objList;
     }
 
     @Override
