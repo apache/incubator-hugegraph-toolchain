@@ -22,8 +22,13 @@ package com.baidu.hugegraph.functional;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+import com.baidu.hugegraph.structure.schema.EdgeLabel;
+
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    PropertyKeyTest.class,
+    VertexLabelTest.class,
+    EdgeLabel.class,
     VertexTest.class,
     EdgeTest.class
 })

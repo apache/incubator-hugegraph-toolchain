@@ -25,6 +25,7 @@ import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -90,6 +91,8 @@ public class PropertyKey extends SchemaElement {
         Builder valueList();
 
         Builder valueSet();
+
+        Builder userData(String key, Object val);
 
         Builder ifNotExist();
     }
@@ -191,6 +194,14 @@ public class PropertyKey extends SchemaElement {
 
         public Builder valueSet() {
             this.propertyKey.cardinality = Cardinality.SET;
+            return this;
+        }
+
+        @Override
+        public Builder userData(String key, Object val) {
+            E.checkArgumentNotNull(key, "The user data key can't be null");
+            E.checkArgumentNotNull(val, "The user data value can't be null");
+            this.propertyKey.userData.put(key, val);
             return this;
         }
 

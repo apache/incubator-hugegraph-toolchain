@@ -336,6 +336,27 @@ public class VertexLabelApiTest extends BaseApiTest {
         });
     }
 
+    @Test
+    public void testAddVertexLabelWithUserData() {
+        VertexLabel player = schema().vertexLabel("player")
+                                     .properties("name")
+                                     .userData("super_vl", "person")
+                                     .build();
+        vertexLabelAPI.create(player);
+        Assert.assertEquals(1, player.userData().size());
+        Assert.assertEquals("person", player.userData().get("super_vl"));
+
+        VertexLabel runner = schema().vertexLabel("runner")
+                                     .properties("name")
+                                     .userData("super_vl", "person")
+                                     .userData("super_vl", "player")
+                                     .build();
+        vertexLabelAPI.create(runner);
+        // The same key user data will be overwritten
+        Assert.assertEquals(1, runner.userData().size());
+        Assert.assertEquals("player", runner.userData().get("super_vl"));
+    }
+
     private static void assertContains(List<VertexLabel> vertexLabels,
                                        VertexLabel vertexLabel) {
         Assert.assertTrue(Utils.contains(vertexLabels, vertexLabel));

@@ -21,6 +21,7 @@ package com.baidu.hugegraph.structure.schema;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.baidu.hugegraph.driver.SchemaManager;
@@ -34,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties({"id", "properties"})
+@JsonIgnoreProperties({"id", "properties", "user_data"})
 public class IndexLabel extends SchemaElement {
 
     @JsonProperty("base_type")
@@ -56,6 +57,11 @@ public class IndexLabel extends SchemaElement {
     @Override
     public String type() {
         return HugeType.INDEX_LABEL.string();
+    }
+
+    @Override
+    public Map<String, Object> userData() {
+        throw new NotSupportException("user data for index label");
     }
 
     public HugeType baseType() {

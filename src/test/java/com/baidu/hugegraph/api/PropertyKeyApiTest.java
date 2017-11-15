@@ -29,6 +29,7 @@ import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.google.common.collect.ImmutableList;
 
 public class PropertyKeyApiTest extends BaseApiTest {
 
@@ -137,6 +138,36 @@ public class PropertyKeyApiTest extends BaseApiTest {
         Assert.assertResponse(404, () -> {
             propertyKeyAPI.delete("not-exist-pk");
         });
+    }
+
+    @Test
+    public void testAddPropertyKeyWithUserData() {
+        PropertyKey age = schema().propertyKey("age")
+                                  .userData("min", 0)
+                                  .userData("max", 100)
+                                  .build();
+        propertyKeyAPI.create(age);
+        Assert.assertEquals(2, age.userData().size());
+        Assert.assertEquals(0, age.userData().get("min"));
+        Assert.assertEquals(100, age.userData().get("max"));
+
+        PropertyKey id = schema().propertyKey("id")
+                                 .userData("length", 15)
+                                 .userData("length", 18)
+                                 .build();
+        propertyKeyAPI.create(id);
+        // The same key user data will be overwritten
+        Assert.assertEquals(1, id.userData().size());
+        Assert.assertEquals(18, id.userData().get("length"));
+
+        PropertyKey sex = schema().propertyKey("sex")
+                                  .userData("range",
+                                            ImmutableList.of("male", "female"))
+                                  .build();
+        propertyKeyAPI.create(sex);
+        Assert.assertEquals(1, sex.userData().size());
+        Assert.assertEquals(ImmutableList.of("male", "female"),
+                            sex.userData().get("range"));
     }
 
     private static void assertContains(List<PropertyKey> propertyKeys,

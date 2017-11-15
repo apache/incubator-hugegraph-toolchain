@@ -19,7 +19,9 @@
 
 package com.baidu.hugegraph.structure;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,10 +36,13 @@ public abstract class SchemaElement extends Element {
     protected Set<String> properties;
     @JsonProperty("check_exist")
     protected boolean checkExist;
+    @JsonProperty("user_data")
+    protected Map<String, Object> userData;
 
     public SchemaElement(String name) {
         this.name = name;
         this.properties = new ConcurrentSkipListSet<>();
+        this.userData = new ConcurrentHashMap<>();
         this.checkExist = true;
     }
 
@@ -47,6 +52,10 @@ public abstract class SchemaElement extends Element {
 
     public Set<String> properties() {
         return this.properties;
+    }
+
+    public Map<String, Object> userData() {
+        return this.userData;
     }
 
     public boolean checkExits() {
