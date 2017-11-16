@@ -25,13 +25,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Response {
 
-    private static class Status {
+    public static class Status {
         @JsonProperty
         private String message;
         @JsonProperty
         private int code;
         @JsonProperty
         private Map<String, ?> attributes;
+
+        public String message() {
+            return message;
+        }
+
+        public int code() {
+            return code;
+        }
+
+        public Map<String, ?> attributes() {
+            return attributes;
+        }
     }
 
     @JsonProperty

@@ -73,7 +73,7 @@ public class RestResult {
             return mapper.readValue(this.content, clazz);
         } catch (Exception e) {
             throw new SerializeException(String.format(
-                      "Failed to deserialize %s", this.content), e);
+                      "Failed to deserialize: %s", this.content), e);
         }
     }
 
