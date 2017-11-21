@@ -61,10 +61,9 @@ public class VertexLabel extends SchemaLabel {
     @Override
     public String toString() {
         return String.format("{name=%s, idStrategy=%s, primaryKeys=%s, " +
-                             "nullableKeys=%s, indexNames=%s, properties=%s}",
+                             "nullableKeys=%s, properties=%s}",
                              this.name, this.idStrategy, this.primaryKeys,
-                             this.nullableKeys, this.indexNames,
-                             this.properties);
+                             this.nullableKeys, this.properties);
     }
 
     public interface Builder extends SchemaBuilder<VertexLabel> {

@@ -29,20 +29,13 @@ public abstract class SchemaLabel extends SchemaElement {
 
     @JsonProperty("nullable_keys")
     protected Set<String> nullableKeys;
-    @JsonProperty("index_names")
-    protected Set<String> indexNames;
 
     public SchemaLabel(String name) {
         super(name);
         this.nullableKeys = new HashSet<>();
-        this.indexNames = new HashSet<>();
     }
 
     public Set<String> nullableKeys() {
         return this.nullableKeys;
-    }
-
-    public Set<String> indexNames() {
-        return this.indexNames;
     }
 }

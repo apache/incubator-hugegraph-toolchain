@@ -73,11 +73,9 @@ public class EdgeLabel extends SchemaLabel {
     @Override
     public String toString() {
         return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
-                             "sortKeys=%s, nullableKeys=%s, indexNames=%s, " +
-                             "properties=%s}",
+                             "sortKeys=%s, nullableKeys=%s, properties=%s}",
                              this.name, this.sourceLabel, this.targetLabel,
-                             this.sortKeys, this.nullableKeys, this.indexNames,
-                             this.properties);
+                             this.sortKeys, this.nullableKeys, this.properties);
     }
 
     public interface Builder extends SchemaBuilder<EdgeLabel> {

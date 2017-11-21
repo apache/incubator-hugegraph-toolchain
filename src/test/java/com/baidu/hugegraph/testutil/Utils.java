@@ -145,10 +145,6 @@ public class Utils {
             !left.primaryKeys().containsAll(right.primaryKeys())) {
             return false;
         }
-        if (left.indexNames().size() != right.indexNames().size() ||
-            !left.indexNames().containsAll(right.indexNames())) {
-            return false;
-        }
         return true;
     }
 
@@ -174,10 +170,6 @@ public class Utils {
         }
         if (left.sortKeys().size() != right.sortKeys().size() ||
             !left.sortKeys().containsAll(right.sortKeys())) {
-            return false;
-        }
-        if (left.indexNames().size() != right.indexNames().size() ||
-            !left.indexNames().containsAll(right.indexNames())) {
             return false;
         }
         return true;
