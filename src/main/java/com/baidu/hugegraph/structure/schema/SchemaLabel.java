@@ -19,8 +19,8 @@
 
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,7 +32,7 @@ public abstract class SchemaLabel extends SchemaElement {
 
     public SchemaLabel(String name) {
         super(name);
-        this.nullableKeys = new HashSet<>();
+        this.nullableKeys = new ConcurrentSkipListSet<>();
     }
 
     public Set<String> nullableKeys() {

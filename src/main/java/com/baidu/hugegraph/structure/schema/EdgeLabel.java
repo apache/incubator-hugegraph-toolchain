@@ -19,9 +19,9 @@
 
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.Frequency;
@@ -46,7 +46,7 @@ public class EdgeLabel extends SchemaLabel {
     public EdgeLabel(@JsonProperty("name") String name) {
         super(name);
         this.frequency = Frequency.DEFAULT;
-        this.sortKeys = new ArrayList<>();
+        this.sortKeys = new CopyOnWriteArrayList<>();
     }
 
     @Override

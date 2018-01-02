@@ -19,8 +19,8 @@
 
 package com.baidu.hugegraph.structure;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,7 +37,7 @@ public abstract class SchemaElement extends Element {
 
     public SchemaElement(String name) {
         this.name = name;
-        this.properties = new HashSet<>();
+        this.properties = new ConcurrentSkipListSet<>();
         this.checkExist = true;
     }
 

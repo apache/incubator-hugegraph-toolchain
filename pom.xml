@@ -107,7 +107,7 @@
                         </manifest>
                         <manifestEntries>
                             <Implementation-Version>
-                                1.4.6.0
+                                1.4.6.1
                             </Implementation-Version>
                         </manifestEntries>
                     </archive>

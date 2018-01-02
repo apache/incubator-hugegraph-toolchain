@@ -30,8 +30,6 @@ public class ServerException extends IllegalArgumentException {
     private String exception;
     @JsonProperty
     private String message;
-    @JsonProperty
-    private String cause;
 
     public String exception() {
         return this.exception;
@@ -42,7 +40,7 @@ public class ServerException extends IllegalArgumentException {
     }
 
     public String cause() {
-        return this.cause;
+        return super.getCause().getMessage();
     }
 
     @Override
@@ -52,7 +50,7 @@ public class ServerException extends IllegalArgumentException {
 
     @Override
     public Throwable getCause() {
-        return new ServerCause(this.cause);
+        return new ServerCause(this.cause());
     }
 
     public ServerException(String message) {
@@ -84,6 +82,11 @@ public class ServerException extends IllegalArgumentException {
 
         public ServerCause(String cause) {
             super(cause, null, true, false);
+        }
+
+        @Override
+        public String toString() {
+            return super.getMessage();
         }
     }
 }

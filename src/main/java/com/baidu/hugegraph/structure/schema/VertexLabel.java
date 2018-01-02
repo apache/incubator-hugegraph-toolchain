@@ -19,9 +19,9 @@
 
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -42,7 +42,7 @@ public class VertexLabel extends SchemaLabel {
     public VertexLabel(@JsonProperty("name") String name) {
         super(name);
         this.idStrategy = IdStrategy.DEFAULT;
-        this.primaryKeys = new ArrayList<>();
+        this.primaryKeys = new CopyOnWriteArrayList<>();
     }
 
     @Override

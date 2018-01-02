@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.structure.graph;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -41,7 +41,7 @@ public class Edge extends GraphElement {
     @JsonCreator
     public Edge(@JsonProperty("label") String label) {
         this.label = label;
-        this.properties = new HashMap<>();
+        this.properties = new ConcurrentHashMap<>();
         this.type = "edge";
     }
 

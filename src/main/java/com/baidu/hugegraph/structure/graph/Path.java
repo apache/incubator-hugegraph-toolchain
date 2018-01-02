@@ -19,10 +19,10 @@
 
 package com.baidu.hugegraph.structure.graph;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -34,8 +34,8 @@ public class Path {
     private List<Object> objects;
 
     public Path() {
-        this.labels = new ArrayList<>();
-        this.objects = new ArrayList<>();
+        this.labels = new CopyOnWriteArrayList<>();
+        this.objects = new CopyOnWriteArrayList<>();
     }
 
     public List<Object> labels() {

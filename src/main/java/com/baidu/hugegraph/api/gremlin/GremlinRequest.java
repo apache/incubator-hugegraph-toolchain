@@ -19,8 +19,8 @@
 
 package com.baidu.hugegraph.api.gremlin;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
@@ -37,9 +37,9 @@ public class GremlinRequest {
 
     public GremlinRequest(String gremlin) {
         this.gremlin = gremlin;
-        this.bindings = new HashMap<>();
+        this.bindings = new ConcurrentHashMap<>();
         this.language = "gremlin-groovy";
-        this.aliases = new HashMap<>();
+        this.aliases = new ConcurrentHashMap<>();
     }
 
     public static class Builder {

@@ -19,9 +19,9 @@
 
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.NotSupportException;
@@ -50,7 +50,7 @@ public class IndexLabel extends SchemaElement {
     public IndexLabel(@JsonProperty("name") String name) {
         super(name);
         this.indexType = IndexType.SECONDARY;
-        this.fields = new ArrayList<>();
+        this.fields = new CopyOnWriteArrayList<>();
     }
 
     @Override
