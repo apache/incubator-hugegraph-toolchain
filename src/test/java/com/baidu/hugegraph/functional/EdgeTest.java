@@ -52,8 +52,10 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testAddEdgeProperty() {
-        Edge created = graph().addEdge("person:peter", "created",
-                                       "software:lop",
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324");
         Map<String, Object> props = ImmutableMap.of("date", "20170324");
         Assert.assertEquals(props, created.properties());
@@ -65,8 +67,10 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testUpdateEdgeProperty() {
-        Edge created = graph().addEdge("person:peter", "created",
-                                       "software:lop",
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324");
         Map<String, Object> props = ImmutableMap.of("date", "20170324");
         Assert.assertEquals(props, created.properties());
@@ -88,10 +92,12 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Edge created = graph().addEdge("person:peter", "created",
-                                        "software:lop",
-                                        "date", "20170324",
-                                        "time", "20121010");
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
+                                       "date", "20170324",
+                                       "time", "20121010");
 
         Map<String, Object> props = ImmutableMap.of("date", "20170324",
                                                     "time", ImmutableList.of(
@@ -116,8 +122,10 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Edge created = graph().addEdge("person:peter", "created",
-                                       "software:lop",
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
                                        "time", "20121010");
 
@@ -144,8 +152,10 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Edge created = graph().addEdge("person:peter", "created",
-                                       "software:lop",
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
                                        "time", "20121010");
 
@@ -172,8 +182,10 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Edge created = graph().addEdge("person:peter", "created",
-                                       "software:lop",
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
                                        "time", "20121010");
 
@@ -200,8 +212,10 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Edge created = graph().addEdge("person:peter", "created",
-                                       "software:lop",
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
                                        "time", "20121010");
 
@@ -217,8 +231,10 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testRemoveEdgePropertyNotExist() {
-        Edge created = graph().addEdge("person:peter", "created",
-                                       "software:lop",
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324");
         Map<String, Object> props = ImmutableMap.of("date", "20170324");
         Assert.assertEquals(props, created.properties());
@@ -232,64 +248,79 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetAllEdges() {
         BaseClientTest.initEdge();
 
+        String markoId = getVertexId("person", "name", "marko");
+        String vadasId = getVertexId("person", "name", "vadas");
+        String joshId = getVertexId("person", "name", "josh");
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+        String rippleId = getVertexId("software", "name", "ripple");
+        
         List<Edge> edges = graph().listEdges();
         Assert.assertEquals(6, edges.size());
-        assertContains(edges, "person:marko", "knows", "person:vadas",
-                              "date", "20160110");
-        assertContains(edges, "person:marko", "knows", "person:josh",
-                              "date", "20130220");
-        assertContains(edges, "person:marko", "created", "software:lop",
-                              "date", "20171210", "city", "Shanghai");
-        assertContains(edges, "person:josh", "created", "software:ripple",
-                              "date", "20171210", "city", "Beijing");
-        assertContains(edges, "person:josh", "created", "software:lop",
-                              "date", "20091111", "city", "Beijing");
-        assertContains(edges, "person:peter", "created", "software:lop",
-                              "date", "20170324", "city", "Hongkong");
+        assertContains(edges, markoId, "knows", vadasId, "date", "20160110");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "created", lopId,
+                       "date", "20171210", "city", "Shanghai");
+        assertContains(edges, joshId, "created", rippleId,
+                       "date", "20171210", "city", "Beijing");
+        assertContains(edges, joshId, "created", lopId,
+                       "date", "20091111", "city", "Beijing");
+        assertContains(edges, peterId, "created", lopId,
+                       "date", "20170324", "city", "Hongkong");
     }
 
     @Test
     public void testGetAllEdgesWithNoLimit() {
         BaseClientTest.initEdge();
 
+        String markoId = getVertexId("person", "name", "marko");
+        String vadasId = getVertexId("person", "name", "vadas");
+        String joshId = getVertexId("person", "name", "josh");
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+        String rippleId = getVertexId("software", "name", "ripple");
+
         List<Edge> edges = graph().listEdges(-1);
         Assert.assertEquals(6, edges.size());
-        assertContains(edges, "person:marko", "knows", "person:vadas",
-                              "date", "20160110");
-        assertContains(edges, "person:marko", "knows", "person:josh",
-                              "date", "20130220");
-        assertContains(edges, "person:marko", "created", "software:lop",
-                              "date", "20171210", "city", "Shanghai");
-        assertContains(edges, "person:josh", "created", "software:ripple",
-                              "date", "20171210", "city", "Beijing");
-        assertContains(edges, "person:josh", "created", "software:lop",
-                              "date", "20091111", "city", "Beijing");
-        assertContains(edges, "person:peter", "created", "software:lop",
-                              "date", "20170324", "city", "Hongkong");
+        assertContains(edges, markoId, "knows", vadasId, "date", "20160110");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "created", lopId,
+                       "date", "20171210", "city", "Shanghai");
+        assertContains(edges, joshId, "created", rippleId,
+                       "date", "20171210", "city", "Beijing");
+        assertContains(edges, joshId, "created", lopId,
+                       "date", "20091111", "city", "Beijing");
+        assertContains(edges, peterId, "created", lopId,
+                       "date", "20170324", "city", "Hongkong");
     }
 
     @Test
     public void testGetEdgesByVertexId() {
         BaseClientTest.initEdge();
 
-        List<Edge> edges = graph().getEdges("person:marko");
+        String markoId = getVertexId("person", "name", "marko");
+        String vadasId = getVertexId("person", "name", "vadas");
+        String joshId = getVertexId("person", "name", "josh");
+        String lopId = getVertexId("software", "name", "lop");
+
+        List<Edge> edges = graph().getEdges(markoId);
         Assert.assertEquals(3, edges.size());
-        assertContains(edges, "person:marko", "knows", "person:vadas",
-                              "date", "20160110");
-        assertContains(edges, "person:marko", "knows", "person:josh",
-                              "date", "20130220");
-        assertContains(edges, "person:marko", "created", "software:lop",
-                              "date", "20171210", "city", "Shanghai");
+        assertContains(edges, markoId, "knows", vadasId, "date", "20160110");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "created", lopId,
+                       "date", "20171210", "city", "Shanghai");
     }
 
     @Test
     public void testGetEdgesByVertexIdWithLimit2() {
         BaseClientTest.initEdge();
 
-        List<Edge> edges = graph().getEdges("person:marko", 2);
+        String markoId = getVertexId("person", "name", "marko");
+
+        List<Edge> edges = graph().getEdges(markoId, 2);
         Assert.assertEquals(2, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals("person:marko", edge.source());
+            Assert.assertEquals(markoId, edge.source());
         }
     }
 
@@ -297,34 +328,40 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirection() {
         BaseClientTest.initEdge();
 
-        List<Edge> edges = graph().getEdges("person:josh", Direction.OUT);
-        Assert.assertEquals(2, edges.size());
-        assertContains(edges, "person:josh", "created", "software:ripple",
-                              "date", "20171210", "city", "Beijing");
-        assertContains(edges, "person:josh", "created", "software:lop",
-                              "date", "20091111", "city", "Beijing");
+        String markoId = getVertexId("person", "name", "marko");
+        String joshId = getVertexId("person", "name", "josh");
+        String lopId = getVertexId("software", "name", "lop");
+        String rippleId = getVertexId("software", "name", "ripple");
 
-        edges = graph().getEdges("person:josh", Direction.IN);
+        List<Edge> edges = graph().getEdges(joshId, Direction.OUT);
+        Assert.assertEquals(2, edges.size());
+        assertContains(edges, joshId, "created", rippleId,
+                       "date", "20171210", "city", "Beijing");
+        assertContains(edges, joshId, "created", lopId,
+                       "date", "20091111", "city", "Beijing");
+
+        edges = graph().getEdges(joshId, Direction.IN);
         Assert.assertEquals(1, edges.size());
-        assertContains(edges, "person:marko", "knows", "person:josh",
-                              "date", "20130220");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
     }
 
     @Test
     public void testGetEdgesByVertexIdDirectionWithLimit1() {
         BaseClientTest.initEdge();
 
-        List<Edge> edges = graph().getEdges("person:josh", Direction.OUT, 1);
+        String joshId = getVertexId("person", "name", "josh");
+
+        List<Edge> edges = graph().getEdges(joshId, Direction.OUT, 1);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
             // TODO: Whether need to add direction property in Edge?
-            Assert.assertEquals("person:josh", edge.source());
+            Assert.assertEquals(joshId, edge.source());
         }
 
-        edges = graph().getEdges("person:josh", Direction.IN, 1);
+        edges = graph().getEdges(joshId, Direction.IN, 1);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals("person:josh", edge.target());
+            Assert.assertEquals(joshId, edge.target());
         }
     }
 
@@ -332,36 +369,42 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirectionLabel() {
         BaseClientTest.initEdge();
 
-        List<Edge> edges = graph().getEdges("person:josh", Direction.OUT,
+        String markoId = getVertexId("person", "name", "marko");
+        String joshId = getVertexId("person", "name", "josh");
+        String lopId = getVertexId("software", "name", "lop");
+        String rippleId = getVertexId("software", "name", "ripple");
+
+        List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created");
         Assert.assertEquals(2, edges.size());
-        assertContains(edges, "person:josh", "created", "software:ripple",
-                              "date", "20171210", "city", "Beijing");
-        assertContains(edges, "person:josh", "created", "software:lop",
-                              "date", "20091111", "city", "Beijing");
+        assertContains(edges, joshId, "created", rippleId,
+                       "date", "20171210", "city", "Beijing");
+        assertContains(edges, joshId, "created", lopId,
+                       "date", "20091111", "city", "Beijing");
 
-        edges = graph().getEdges("person:josh", Direction.IN, "knows");
+        edges = graph().getEdges(joshId, Direction.IN, "knows");
         Assert.assertEquals(1, edges.size());
-        assertContains(edges, "person:marko", "knows", "person:josh",
-                              "date", "20130220");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
     }
 
     @Test
     public void testGetEdgesByVertexIdDirectionLabelWithLimit1() {
         BaseClientTest.initEdge();
 
-        List<Edge> edges = graph().getEdges("person:josh", Direction.OUT,
+        String joshId = getVertexId("person", "name", "josh");
+
+        List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", 1);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals("person:josh", edge.source());
+            Assert.assertEquals(joshId, edge.source());
             Assert.assertEquals("created", edge.label());
         }
 
-        edges = graph().getEdges("person:josh", Direction.IN, "knows", 1);
+        edges = graph().getEdges(joshId, Direction.IN, "knows", 1);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals("person:josh", edge.target());
+            Assert.assertEquals(joshId, edge.target());
             Assert.assertEquals("knows", edge.label());
         }
     }
@@ -370,40 +413,43 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirectionLabelProperties() {
         BaseClientTest.initEdge();
 
+        String markoId = getVertexId("person", "name", "marko");
+        String joshId = getVertexId("person", "name", "josh");
+        String rippleId = getVertexId("software", "name", "ripple");
+
         Map<String, Object> properties = ImmutableMap.of("date", "20171210");
-        List<Edge> edges = graph().getEdges("person:josh", Direction.OUT,
+        List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", properties);
         Assert.assertEquals(1, edges.size());
-        assertContains(edges, "person:josh", "created", "software:ripple",
-                              "date", "20171210", "city", "Beijing");
+        assertContains(edges, joshId, "created", rippleId,
+                       "date", "20171210", "city", "Beijing");
 
         properties = ImmutableMap.of("date", "20130220");
-        edges = graph().getEdges("person:josh", Direction.IN, "knows",
-                                 properties);
+        edges = graph().getEdges(joshId, Direction.IN, "knows", properties);
         Assert.assertEquals(1, edges.size());
-        assertContains(edges, "person:marko", "knows", "person:josh",
-                              "date", "20130220");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
     }
 
     @Test
     public void testGetEdgesByVertexIdDirectionLabelPropertiesWithLimit1() {
         BaseClientTest.initEdge();
 
+        String joshId = getVertexId("person", "name", "josh");
+
         Map<String, Object> properties = ImmutableMap.of("date", "20171210");
-        List<Edge> edges = graph().getEdges("person:josh", Direction.OUT,
+        List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", properties);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals("person:josh", edge.source());
+            Assert.assertEquals(joshId, edge.source());
             Assert.assertEquals("created", edge.label());
         }
 
         properties = ImmutableMap.of("date", "20130220");
-        edges = graph().getEdges("person:josh", Direction.IN, "knows",
-                                 properties);
+        edges = graph().getEdges(joshId, Direction.IN, "knows", properties);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals("person:josh", edge.target());
+            Assert.assertEquals(joshId, edge.target());
             Assert.assertEquals("knows", edge.label());
         }
     }

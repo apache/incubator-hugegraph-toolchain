@@ -39,7 +39,7 @@ public class IndexLabelApiTest extends BaseApiTest {
             (name) -> schema().indexLabel(name)
                               .onV("person")
                               .by("age")
-                              .search()
+                              .range()
                               .build();
 
     @BeforeClass
@@ -62,7 +62,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertEquals("personByAge", indexLabel.name());
         Assert.assertEquals(HugeType.VERTEX_LABEL, indexLabel.baseType());
         Assert.assertEquals("person", indexLabel.baseValue());
-        Assert.assertEquals(IndexType.SEARCH, indexLabel.indexType());
+        Assert.assertEquals(IndexType.RANGE, indexLabel.indexType());
         List<String> fields = ImmutableList.of("age");
         Assert.assertTrue(fields.size() == indexLabel.indexFields().size());
         Assert.assertTrue(fields.containsAll(indexLabel.indexFields()));
@@ -96,7 +96,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         IndexLabel indexLabel1 = schema().indexLabel("authorByAge")
                                          .onV("author")
                                          .by("age")
-                                         .search()
+                                         .range()
                                          .build();
         Assert.assertResponse(400, () -> {
             indexLabelAPI.create(indexLabel1);
@@ -117,7 +117,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         IndexLabel indexLabel = schema().indexLabel("personByAgeAndCity")
                                         .onV("person")
                                         .by("age", "city")
-                                        .search()
+                                        .range()
                                         .build();
         Assert.assertResponse(400, () -> {
             indexLabelAPI.create(indexLabel);
@@ -129,7 +129,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         IndexLabel indexLabel = schema().indexLabel("personByCity")
                                         .onV("person")
                                         .by("city")
-                                        .search()
+                                        .range()
                                         .build();
         Assert.assertResponse(400, () -> {
             indexLabelAPI.create(indexLabel);
@@ -141,7 +141,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         IndexLabel indexLabel1 = schema().indexLabel("personByAge")
                                          .onV("person")
                                          .by("age")
-                                         .search()
+                                         .range()
                                          .build();
 
         indexLabel1 = indexLabelAPI.create(indexLabel1);

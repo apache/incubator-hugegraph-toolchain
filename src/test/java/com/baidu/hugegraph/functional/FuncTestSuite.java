@@ -28,7 +28,7 @@ import com.baidu.hugegraph.structure.schema.EdgeLabel;
 @Suite.SuiteClasses({
     PropertyKeyTest.class,
     VertexLabelTest.class,
-    EdgeLabel.class,
+    EdgeLabelTest.class,
     VertexTest.class,
     EdgeTest.class
 })

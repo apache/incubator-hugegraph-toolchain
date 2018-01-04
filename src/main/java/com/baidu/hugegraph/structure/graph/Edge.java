@@ -104,6 +104,8 @@ public class Edge extends GraphElement {
     protected Edge setProperty(String key, Object value) {
         Edge edge = new Edge(this.label);
         edge.id(this.id);
+        edge.source(this.source);
+        edge.target(this.target);
         edge.property(key, value);
         // NOTE: append can also b used to update property
         edge = this.manager.appendEdgeProperty(edge);
@@ -122,6 +124,9 @@ public class Edge extends GraphElement {
         }
         Edge edge = new Edge(this.label);
         edge.id(this.id);
+        edge.source(this.source);
+        edge.target(this.target);
+
         Object value = this.properties.get(key);
         edge.property(key, value);
         this.manager.eliminateEdgeProperty(edge);

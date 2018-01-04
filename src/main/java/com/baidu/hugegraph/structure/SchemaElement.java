@@ -30,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class SchemaElement extends Element {
 
+    @JsonProperty("id")
+    protected long id;
     @JsonProperty("name")
     protected String name;
     @JsonProperty("properties")
@@ -44,6 +46,10 @@ public abstract class SchemaElement extends Element {
         this.properties = new ConcurrentSkipListSet<>();
         this.userData = new ConcurrentHashMap<>();
         this.checkExist = true;
+    }
+
+    public long id() {
+        return this.id;
     }
 
     public String name() {

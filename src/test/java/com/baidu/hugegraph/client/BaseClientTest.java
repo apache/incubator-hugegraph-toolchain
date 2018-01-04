@@ -2,6 +2,7 @@ package com.baidu.hugegraph.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -15,6 +16,8 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.google.common.collect.ImmutableMap;
 
 public class BaseClientTest {
 
@@ -59,6 +62,13 @@ public class BaseClientTest {
         // pass
     }
 
+    protected static String getVertexId(String label, String key, String value) {
+        Map<String, Object> params = ImmutableMap.of(key, value);
+        List<Vertex> vertices = graph().listVertices(label, params);
+        assert vertices.size() == 1;
+        return vertices.get(0).id();
+    }
+
     protected static void initPropertyKey() {
         SchemaManager schema = schema();
         schema.propertyKey("name").asText().ifNotExist().create();
@@ -67,6 +77,7 @@ public class BaseClientTest {
         schema.propertyKey("lang").asText().ifNotExist().create();
         schema.propertyKey("date").asText().ifNotExist().create();
         schema.propertyKey("price").asInt().ifNotExist().create();
+        schema.propertyKey("weight").asDouble().ifNotExist().create();
     }
 
     protected static void initVertexLabel() {
@@ -123,17 +134,22 @@ public class BaseClientTest {
     }
 
     protected static void initEdge() {
-        graph().addEdge("person:marko", "knows", "person:vadas",
-                        "date", "20160110");
-        graph().addEdge("person:marko", "knows", "person:josh",
-                        "date", "20130220");
-        graph().addEdge("person:marko", "created", "software:lop",
+        String markoId = getVertexId("person", "name", "marko");
+        String vadasId = getVertexId("person", "name", "vadas");
+        String joshId = getVertexId("person", "name", "josh");
+        String peterId = getVertexId("person", "name", "peter");
+        String lopId = getVertexId("software", "name", "lop");
+        String rippleId = getVertexId("software", "name", "ripple");
+
+        graph().addEdge(markoId, "knows", vadasId, "date", "20160110");
+        graph().addEdge(markoId, "knows", joshId, "date", "20130220");
+        graph().addEdge(markoId, "created", lopId,
                         "date", "20171210", "city", "Shanghai");
-        graph().addEdge("person:josh", "created", "software:ripple",
+        graph().addEdge(joshId, "created", rippleId,
                         "date", "20171210", "city", "Beijing");
-        graph().addEdge("person:josh", "created", "software:lop",
+        graph().addEdge(joshId, "created", lopId,
                         "date", "20091111", "city", "Beijing");
-        graph().addEdge("person:peter", "created", "software:lop",
+        graph().addEdge(peterId, "created", lopId,
                         "date", "20170324", "city", "Hongkong");
     }
 
@@ -162,13 +178,16 @@ public class BaseClientTest {
     }
 
     protected List<Edge> create50CreatedBatch() {
+        VertexLabel person = schema().getVertexLabel("person");
+        VertexLabel software = schema().getVertexLabel("software");
+
         List<Edge> edges = new ArrayList<>(50);
         for (int i = 0; i < 50; i++) {
             Edge edge = new Edge("created");
             edge.sourceLabel("person");
             edge.targetLabel("software");
-            edge.source("person:Person-" + i);
-            edge.target("software:Software-" + i);
+            edge.source(person.id() + ":Person-" + i);
+            edge.target(software.id() + ":Software-" + i);
             edge.property("date", "20170324");
             edge.property("city", "Hongkong");
             edges.add(edge);
@@ -177,13 +196,15 @@ public class BaseClientTest {
     }
 
     protected List<Edge> create50KnowsBatch() {
+        VertexLabel person = schema().getVertexLabel("person");
+
         List<Edge> edges = new ArrayList<>(50);
         for (int i = 0; i < 50; i++) {
             Edge edge = new Edge("knows");
             edge.sourceLabel("person");
             edge.targetLabel("person");
-            edge.source("person:Person-" + i);
-            edge.target("person:Person-" + (i + 50));
+            edge.source(person.id() + ":Person-" + i);
+            edge.target(person.id() + ":Person-" + (i + 50));
             edge.property("date", "20170324");
             edges.add(edge);
         }

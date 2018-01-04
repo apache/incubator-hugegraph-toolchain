@@ -98,6 +98,8 @@ public class IndexLabel extends SchemaElement {
 
         Builder secondary();
 
+        Builder range();
+
         Builder search();
 
         Builder ifNotExist();
@@ -167,6 +169,12 @@ public class IndexLabel extends SchemaElement {
         @Override
         public Builder secondary() {
             this.indexLabel.indexType = IndexType.SECONDARY;
+            return this;
+        }
+
+        @Override
+        public Builder range() {
+            this.indexLabel.indexType = IndexType.RANGE;
             return this;
         }
 

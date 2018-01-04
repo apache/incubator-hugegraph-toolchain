@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableMap;
@@ -51,11 +52,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreate() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
@@ -64,8 +68,8 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("created", edge.label());
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals("person:peter", edge.source());
-        Assert.assertEquals("software:lop", edge.target());
+        Assert.assertEquals(outVId, edge.source());
+        Assert.assertEquals(inVId, edge.target());
         Map<String, Object> props = ImmutableMap.of("date", "20170324",
                                                     "city", "Hongkong");
         Assert.assertEquals(props, edge.properties());
@@ -73,11 +77,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithUndefinedLabel() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge = new Edge("undefined");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
@@ -88,11 +95,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithUndefinedPropertyKey() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         edge.property("not-exist-key", "not-exist-value");
         edge.property("city", "Hongkong");
 
@@ -103,9 +113,12 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithoutSourceOrTargetLabel() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge = new Edge("created");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
@@ -114,8 +127,8 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("created", edge.label());
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals("person:peter", edge.source());
-        Assert.assertEquals("software:lop", edge.target());
+        Assert.assertEquals(outVId, edge.source());
+        Assert.assertEquals(inVId, edge.target());
         Map<String, Object> props = ImmutableMap.of("date", "20170324",
                                                     "city", "Hongkong");
         Assert.assertEquals(props, edge.properties());
@@ -166,11 +179,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateExistVertex() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
         edgeAPI.create(edge);
@@ -178,16 +194,16 @@ public class EdgeApiTest extends BaseApiTest {
         edge = new Edge("created");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         edge.property("date", "20170324");
         edge.property("city", "Beijing");
 
         Assert.assertEquals("created", edge.label());
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals("person:peter", edge.source());
-        Assert.assertEquals("software:lop", edge.target());
+        Assert.assertEquals(outVId, edge.source());
+        Assert.assertEquals(inVId, edge.target());
         Map<String, Object> props = ImmutableMap.of("date", "20170324",
                                                     "city", "Beijing");
         Assert.assertEquals(props, edge.properties());
@@ -195,11 +211,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithNullableKeysAbsent() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         // Absent prop 'city'
         edge.property("date", "20170324");
         edgeAPI.create(edge);
@@ -207,8 +226,8 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("created", edge.label());
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals("person:peter", edge.source());
-        Assert.assertEquals("software:lop", edge.target());
+        Assert.assertEquals(outVId, edge.source());
+        Assert.assertEquals(inVId, edge.target());
         Map<String, Object> props = ImmutableMap.of("date", "20170324");
         Assert.assertEquals(props, edge.properties());
     }
@@ -230,6 +249,9 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testBatchCreateWithValidVertexAndCheck() {
+        VertexLabel person = schema().getVertexLabel("person");
+        VertexLabel software = schema().getVertexLabel("software");
+
         List<Vertex> persons = super.create100PersonBatch();
         List<Vertex> softwares = super.create50SoftwareBatch();
 
@@ -250,8 +272,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals("created", created.label());
             Assert.assertEquals("person", created.sourceLabel());
             Assert.assertEquals("software", created.targetLabel());
-            Assert.assertEquals("person:Person-" + i, created.source());
-            Assert.assertEquals("software:Software-" + i, created.target());
+            Assert.assertEquals(person.id() + ":Person-" + i, created.source());
+            Assert.assertEquals(software.id() + ":Software-" + i,
+                                created.target());
             Map<String, Object> props = ImmutableMap.of("date", "20170324",
                                                         "city", "Hongkong");
             Assert.assertEquals(props, created.properties());
@@ -262,8 +285,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals("knows", know.label());
             Assert.assertEquals("person", know.sourceLabel());
             Assert.assertEquals("person", know.targetLabel());
-            Assert.assertEquals("person:Person-" + i, know.source());
-            Assert.assertEquals("person:Person-" + (i + 50), know.target());
+            Assert.assertEquals(person.id() + ":Person-" + i, know.source());
+            Assert.assertEquals(person.id() + ":Person-" + (i + 50),
+                                know.target());
             Map<String, Object> props = ImmutableMap.of("date", "20170324");
             Assert.assertEquals(props, know.properties());
         }
@@ -317,6 +341,9 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testBatchCreateWithValidVertexAndNotCheck() {
+        VertexLabel person = schema().getVertexLabel("person");
+        VertexLabel software = schema().getVertexLabel("software");
+
         List<Vertex> persons = super.create100PersonBatch();
         List<Vertex> softwares = super.create50SoftwareBatch();
 
@@ -337,8 +364,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals("created", created.label());
             Assert.assertEquals("person", created.sourceLabel());
             Assert.assertEquals("software", created.targetLabel());
-            Assert.assertEquals("person:Person-" + i, created.source());
-            Assert.assertEquals("software:Software-" + i, created.target());
+            Assert.assertEquals(person.id() + ":Person-" + i, created.source());
+            Assert.assertEquals(software.id() + ":Software-" + i,
+                                created.target());
             Map<String, Object> props = ImmutableMap.of("date", "20170324",
                                                         "city", "Hongkong");
             Assert.assertEquals(props, created.properties());
@@ -349,8 +377,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals("knows", know.label());
             Assert.assertEquals("person", know.sourceLabel());
             Assert.assertEquals("person", know.targetLabel());
-            Assert.assertEquals("person:Person-" + i, know.source());
-            Assert.assertEquals("person:Person-" + (i + 50), know.target());
+            Assert.assertEquals(person.id() + ":Person-" + i, know.source());
+            Assert.assertEquals(person.id() + ":Person-" + (i + 50),
+                                know.target());
             Map<String, Object> props = ImmutableMap.of("date", "20170324");
             Assert.assertEquals(props, know.properties());
         }
@@ -470,11 +499,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testGet() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge1 = new Edge("created");
         edge1.sourceLabel("person");
         edge1.targetLabel("software");
-        edge1.source("person:peter");
-        edge1.target("software:lop");
+        edge1.source(outVId);
+        edge1.target(inVId);
         edge1.property("date", "20170324");
         edge1.property("city", "Hongkong");
 
@@ -536,11 +568,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testDelete() {
+        String outVId = getVertexId("person", "name", "peter");
+        String inVId = getVertexId("software", "name", "lop");
+
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.source("person:peter");
-        edge.target("software:lop");
+        edge.source(outVId);
+        edge.target(inVId);
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 

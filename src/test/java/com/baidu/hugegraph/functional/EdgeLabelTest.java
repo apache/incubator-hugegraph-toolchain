@@ -48,11 +48,13 @@ public class EdgeLabelTest extends BaseFuncTest {
               .properties("name", "age", "city")
               .primaryKeys("name")
               .nullableKeys("city")
+              .ifNotExist()
               .create();
 
         schema.vertexLabel("book")
               .properties("name")
               .primaryKeys("name")
+              .ifNotExist()
               .create();
 
         EdgeLabel father = schema.edgeLabel("father").link("person", "person")
@@ -65,7 +67,7 @@ public class EdgeLabelTest extends BaseFuncTest {
                             father.userData().get("multiplicity"));
 
         EdgeLabel write = schema.edgeLabel("write").link("person", "book")
-                                .properties("time", "weight")
+                                .properties("date", "weight")
                                 .userData("multiplicity", "one-to-many")
                                 .userData("multiplicity", "many-to-many")
                                 .create();

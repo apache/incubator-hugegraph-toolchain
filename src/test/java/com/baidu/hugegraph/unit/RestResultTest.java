@@ -50,7 +50,7 @@ public class RestResultTest {
     @Test
     public void testReadPropertyKey() {
         String json = "{"
-                + "\"id\": \"3id\","
+                + "\"id\": 3,"
                 + "\"dataType\": \"TEXT\","
                 + "\"name\": \"id\","
                 + "\"cardinality\": \"SINGLE\","
@@ -77,13 +77,13 @@ public class RestResultTest {
     public void testReadPropertyKeys() {
         String json = "{\"propertykeys\": ["
                 + "{"
-                + "\"id\": \"3id\","
+                + "\"id\": 3,"
                 + "\"dataType\": \"TEXT\","
                 + "\"name\": \"id\","
                 + "\"cardinality\": \"SINGLE\","
                 + "\"properties\": []"
                 + "},"
-                + "{\"id\": \"3date\"," 
+                + "{\"id\": 4,"
                 + "\"dataType\": \"TEXT\","
                 + "\"name\": \"date\","
                 + "\"cardinality\": \"SET\","
@@ -119,7 +119,7 @@ public class RestResultTest {
     @Test
     public void testReadVertexLabel() {
         String json = "{"
-                + "\"id\": \"1software\","
+                + "\"id\": 1,"
                 + "\"primary_keys\": [\"name\"],"
                 + "\"index_names\": [],"
                 + "\"name\": \"software\","
@@ -143,14 +143,13 @@ public class RestResultTest {
                             vertexLabel.primaryKeys());
         Assert.assertEquals(ImmutableSet.of("price", "name", "lang"),
                             vertexLabel.properties());
-        Assert.assertEquals(Collections.emptySet(), vertexLabel.indexNames());
     }
 
     @Test
     public void testReadVertexLabels() {
         String json = "{\"vertexlabels\": ["
                 + "{"
-                + "\"id\": \"1software\","
+                + "\"id\": 1,"
                 + "\"primary_keys\": [\"name\"],"
                 + "\"index_names\": [],"
                 + "\"name\": \"software\","
@@ -158,7 +157,7 @@ public class RestResultTest {
                 + "\"properties\": [\"price\", \"name\", \"lang\"]"
                 + "},"
                 + "{"
-                + "\"id\": \"1person\","
+                + "\"id\": 2,"
                 + "\"primary_keys\": [],"
                 + "\"index_names\": [],"
                 + "\"name\": \"person\"," 
@@ -187,7 +186,6 @@ public class RestResultTest {
                             vertexLabel1.primaryKeys());
         Assert.assertEquals(ImmutableSet.of("price", "name", "lang"),
                             vertexLabel1.properties());
-        Assert.assertEquals(Collections.emptySet(), vertexLabel1.indexNames());
 
         Assert.assertEquals("person", vertexLabel2.name());
         Assert.assertEquals(IdStrategy.CUSTOMIZE, vertexLabel2.idStrategy());
@@ -195,13 +193,12 @@ public class RestResultTest {
                             vertexLabel2.primaryKeys());
         Assert.assertEquals(ImmutableSet.of("city", "name", "age"),
                             vertexLabel2.properties());
-        Assert.assertEquals(Collections.emptySet(), vertexLabel2.indexNames());
     }
 
     @Test
     public void testReadEdgeLabel() {
         String json = "{"
-                + "\"id\": \"2created\","
+                + "\"id\": 2,"
                 + "\"source_label\": \"person\","
                 + "\"index_names\": [\"createdByDate\"],"
                 + "\"name\": \"created\","
@@ -227,15 +224,13 @@ public class RestResultTest {
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
         Assert.assertEquals(Collections.emptyList(), edgeLabel.sortKeys());
         Assert.assertEquals(ImmutableSet.of("date"), edgeLabel.properties());
-        Assert.assertEquals(ImmutableSet.of("createdByDate"),
-                            edgeLabel.indexNames());
     }
 
     @Test
     public void testReadEdgeLabels() {
         String json = "{\"edgelabels\": ["
                 + "{"
-                + "\"id\": \"2created\","
+                + "\"id\": 2,"
                 + "\"source_label\": \"person\","
                 + "\"index_names\": [\"createdByDate\"],"
                 + "\"name\": \"created\","
@@ -244,7 +239,7 @@ public class RestResultTest {
                 + "\"properties\": [\"date\"],"
                 + "\"frequency\": \"SINGLE\""
                 + "},"
-                + "{\"id\": \"2knows\"," 
+                + "{\"id\": 3,"
                 + "\"source_label\": \"person\","
                 + "\"index_names\": [],"
                 + "\"name\": \"knows\"," 
@@ -275,8 +270,6 @@ public class RestResultTest {
         Assert.assertEquals(Frequency.SINGLE, edgeLabel1.frequency());
         Assert.assertEquals(Collections.emptyList(), edgeLabel1.sortKeys());
         Assert.assertEquals(ImmutableSet.of("date"), edgeLabel1.properties());
-        Assert.assertEquals(ImmutableSet.of("createdByDate"),
-                            edgeLabel1.indexNames());
 
         Assert.assertEquals("knows", edgeLabel2.name());
         Assert.assertEquals("person", edgeLabel2.sourceLabel());
@@ -285,7 +278,6 @@ public class RestResultTest {
         Assert.assertEquals(Collections.emptyList(), edgeLabel2.sortKeys());
         Assert.assertEquals(ImmutableSet.of("date", "city"),
                             edgeLabel2.properties());
-        Assert.assertEquals(Collections.emptySet(), edgeLabel2.indexNames());
     }
 
     @Test

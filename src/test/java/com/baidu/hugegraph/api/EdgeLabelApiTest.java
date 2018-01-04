@@ -391,7 +391,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
         EdgeLabel write = schema().edgeLabel("write")
                                   .link("person", "book")
-                                  .properties("time", "weight")
+                                  .properties("date", "weight")
                                   .userData("multiplicity", "one-to-many")
                                   .userData("multiplicity", "many-to-many")
                                   .build();

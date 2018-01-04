@@ -51,6 +51,7 @@ public class BatchExample {
 
         schema.vertexLabel("person")
               .properties("price")
+              .nullableKeys("price")
               .append();
 
         schema.vertexLabel("software")
@@ -67,7 +68,7 @@ public class BatchExample {
 
         schema.indexLabel("softwareByPrice")
               .onV("software").by("price")
-              .search()
+              .range()
               .ifNotExist()
               .create();
 
