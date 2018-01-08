@@ -89,14 +89,15 @@ public class EdgeAPI extends GraphAPI {
         return this.list(null, null, null, null, limit);
     }
 
-    public List<Edge> list(String vertexId,
+    public List<Edge> list(Object vertexId,
                            Direction direction,
                            String label,
                            Map<String, Object> properties,
                            int limit) {
+        String vid = GraphAPI.formatVertexId(vertexId, true);
         String props = GraphAPI.formatProperties(properties);
         Map<String, Object> params = new LinkedHashMap<>();
-        params.put("vertex_id", vertexId);
+        params.put("vertex_id", vid);
         params.put("direction", direction);
         params.put("label", label);
         params.put("properties", props);

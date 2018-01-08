@@ -17,34 +17,31 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure.constant;
+package com.baidu.hugegraph.util;
 
-public enum IdStrategy {
+import java.io.IOException;
 
-    DEFAULT(0, "default"),
+import com.baidu.hugegraph.exception.SerializeException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-    AUTOMATIC(1, "automatic"),
+public class JsonUtil {
 
-    PRIMARY_KEY(2, "primary_key"),
+    private static ObjectMapper mapper = new ObjectMapper();
 
-    CUSTOMIZE_STRING(3, "customize_string"),
-
-    CUSTOMIZE_NUMBER(4, "customize_number");
-
-    private byte code = 0;
-    private String name = null;
-
-    IdStrategy(int code, String name) {
-        assert code < 256;
-        this.code = (byte) code;
-        this.name = name;
+    public static String toJson(Object object) {
+        try {
+            return mapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new SerializeException("Failed to serialize objects", e);
+        }
     }
 
-    public byte code() {
-        return this.code;
-    }
-
-    public String string() {
-        return this.name;
+    public static <T> T fromJson(String json, Class<T> clazz) {
+        try {
+            return mapper.readValue(json, clazz);
+        } catch (IOException e) {
+            throw new SerializeException("Failed to deserialize json", e);
+        }
     }
 }

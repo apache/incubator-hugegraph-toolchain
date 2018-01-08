@@ -52,8 +52,8 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testAddEdgeProperty() {
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324");
@@ -67,8 +67,8 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testUpdateEdgeProperty() {
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324");
@@ -92,8 +92,8 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
@@ -122,8 +122,8 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
@@ -152,8 +152,8 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
@@ -182,8 +182,8 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
@@ -212,8 +212,8 @@ public class EdgeTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324",
@@ -231,8 +231,8 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testRemoveEdgePropertyNotExist() {
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
 
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "20170324");
@@ -248,12 +248,12 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetAllEdges() {
         BaseClientTest.initEdge();
 
-        String markoId = getVertexId("person", "name", "marko");
-        String vadasId = getVertexId("person", "name", "vadas");
-        String joshId = getVertexId("person", "name", "josh");
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
-        String rippleId = getVertexId("software", "name", "ripple");
+        Object markoId = getVertexId("person", "name", "marko");
+        Object vadasId = getVertexId("person", "name", "vadas");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
+        Object rippleId = getVertexId("software", "name", "ripple");
         
         List<Edge> edges = graph().listEdges();
         Assert.assertEquals(6, edges.size());
@@ -273,12 +273,12 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetAllEdgesWithNoLimit() {
         BaseClientTest.initEdge();
 
-        String markoId = getVertexId("person", "name", "marko");
-        String vadasId = getVertexId("person", "name", "vadas");
-        String joshId = getVertexId("person", "name", "josh");
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
-        String rippleId = getVertexId("software", "name", "ripple");
+        Object markoId = getVertexId("person", "name", "marko");
+        Object vadasId = getVertexId("person", "name", "vadas");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
+        Object rippleId = getVertexId("software", "name", "ripple");
 
         List<Edge> edges = graph().listEdges(-1);
         Assert.assertEquals(6, edges.size());
@@ -298,10 +298,10 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexId() {
         BaseClientTest.initEdge();
 
-        String markoId = getVertexId("person", "name", "marko");
-        String vadasId = getVertexId("person", "name", "vadas");
-        String joshId = getVertexId("person", "name", "josh");
-        String lopId = getVertexId("software", "name", "lop");
+        Object markoId = getVertexId("person", "name", "marko");
+        Object vadasId = getVertexId("person", "name", "vadas");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object lopId = getVertexId("software", "name", "lop");
 
         List<Edge> edges = graph().getEdges(markoId);
         Assert.assertEquals(3, edges.size());
@@ -315,7 +315,7 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdWithLimit2() {
         BaseClientTest.initEdge();
 
-        String markoId = getVertexId("person", "name", "marko");
+        Object markoId = getVertexId("person", "name", "marko");
 
         List<Edge> edges = graph().getEdges(markoId, 2);
         Assert.assertEquals(2, edges.size());
@@ -328,10 +328,10 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirection() {
         BaseClientTest.initEdge();
 
-        String markoId = getVertexId("person", "name", "marko");
-        String joshId = getVertexId("person", "name", "josh");
-        String lopId = getVertexId("software", "name", "lop");
-        String rippleId = getVertexId("software", "name", "ripple");
+        Object markoId = getVertexId("person", "name", "marko");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object lopId = getVertexId("software", "name", "lop");
+        Object rippleId = getVertexId("software", "name", "ripple");
 
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT);
         Assert.assertEquals(2, edges.size());
@@ -349,7 +349,7 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirectionWithLimit1() {
         BaseClientTest.initEdge();
 
-        String joshId = getVertexId("person", "name", "josh");
+        Object joshId = getVertexId("person", "name", "josh");
 
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT, 1);
         Assert.assertEquals(1, edges.size());
@@ -369,10 +369,10 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirectionLabel() {
         BaseClientTest.initEdge();
 
-        String markoId = getVertexId("person", "name", "marko");
-        String joshId = getVertexId("person", "name", "josh");
-        String lopId = getVertexId("software", "name", "lop");
-        String rippleId = getVertexId("software", "name", "ripple");
+        Object markoId = getVertexId("person", "name", "marko");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object lopId = getVertexId("software", "name", "lop");
+        Object rippleId = getVertexId("software", "name", "ripple");
 
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created");
@@ -391,7 +391,7 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirectionLabelWithLimit1() {
         BaseClientTest.initEdge();
 
-        String joshId = getVertexId("person", "name", "josh");
+        Object joshId = getVertexId("person", "name", "josh");
 
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", 1);
@@ -413,9 +413,9 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirectionLabelProperties() {
         BaseClientTest.initEdge();
 
-        String markoId = getVertexId("person", "name", "marko");
-        String joshId = getVertexId("person", "name", "josh");
-        String rippleId = getVertexId("software", "name", "ripple");
+        Object markoId = getVertexId("person", "name", "marko");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object rippleId = getVertexId("software", "name", "ripple");
 
         Map<String, Object> properties = ImmutableMap.of("date", "20171210");
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
@@ -434,7 +434,7 @@ public class EdgeTest extends BaseFuncTest {
     public void testGetEdgesByVertexIdDirectionLabelPropertiesWithLimit1() {
         BaseClientTest.initEdge();
 
-        String joshId = getVertexId("person", "name", "josh");
+        Object joshId = getVertexId("person", "name", "josh");
 
         Map<String, Object> properties = ImmutableMap.of("date", "20171210");
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
@@ -454,8 +454,8 @@ public class EdgeTest extends BaseFuncTest {
         }
     }
     
-    private static void assertContains(List<Edge> edges, String source,
-                                       String label, String target,
+    private static void assertContains(List<Edge> edges, Object source,
+                                       String label, Object target,
                                        Object... keyValues) {
         Map<String, Object> properties = Utils.asMap(keyValues);
 

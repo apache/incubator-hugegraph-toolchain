@@ -19,21 +19,21 @@
 
 package com.baidu.hugegraph.exception;
 
-import java.util.List;
+import java.util.Collection;
 
 public class NotAllCreatedException extends ServerException {
 
     private static final long serialVersionUID = -8795820552805040556L;
 
-    private List<String> ids;
+    private Collection<?> ids;
 
-    public NotAllCreatedException(String message, List<String> ids,
+    public NotAllCreatedException(String message, Collection<?> ids,
                                   Object... args) {
         super(message, args);
         this.ids = ids;
     }
 
-    public List<String> ids() {
+    public Collection<?> ids() {
         return this.ids;
     }
 }

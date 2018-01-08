@@ -172,6 +172,19 @@ public class RestClient {
         return new RestResult(response);
     }
 
+    public RestResult delete(String path, Map<String, Object> params)
+                             throws ServerException {
+        Ref<WebTarget> target = Refs.of(this.target);
+        for (String key : params.keySet()) {
+            target.set(target.get().queryParam(key, params.get(key)));
+        }
+        Response response = this.request(() -> {
+            return target.get().path(path).request().delete();
+        });
+        checkStatus(response, Response.Status.NO_CONTENT);
+        return new RestResult(response);
+    }
+
     public RestResult delete(String path, String id) throws ServerException {
         Response response = this.request(() -> {
             return this.target.path(path).path(id).request().delete();

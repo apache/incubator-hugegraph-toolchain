@@ -26,6 +26,8 @@ import java.util.Map;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -49,6 +51,24 @@ public abstract class GraphAPI extends API {
 
     public String batchPath() {
         return this.batchPath;
+    }
+
+    public static String formatVertexId(Object id) {
+        return formatVertexId(id, false);
+    }
+
+    public static String formatVertexId(Object id, boolean allowNull) {
+        if (!allowNull) {
+            E.checkArgumentNotNull(id, "The vertex id can't be null");
+        } else {
+            if (id == null) {
+                return null;
+            }
+        }
+        E.checkArgument(id instanceof String || id instanceof Number,
+                        "The vertex id must be either 'string' or " +
+                        "'number', but got '%s'", id);
+        return JsonUtil.toJson(id);
     }
 
     public static String formatProperties(Map<String, Object> properties) {

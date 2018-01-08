@@ -377,6 +377,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
         schema().vertexLabel("book")
                 .properties("name")
                 .primaryKeys("name")
+                .ifNotExist()
                 .create();
 
         EdgeLabel father = schema().edgeLabel("father")

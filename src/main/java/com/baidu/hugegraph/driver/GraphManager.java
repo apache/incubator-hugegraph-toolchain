@@ -64,7 +64,7 @@ public class GraphManager {
     }
 
     public List<Vertex> addVertices(List<Vertex> vertices) {
-        List<String> ids = this.vertexApi.create(vertices);
+        List<Object> ids = this.vertexApi.create(vertices);
         for (int i = 0; i < vertices.size(); i++) {
             Vertex vertex = vertices.get(i);
             vertex.id(ids.get(i));
@@ -104,7 +104,7 @@ public class GraphManager {
         return vertices;
     }
 
-    public void removeVertex(String vertexId) {
+    public void removeVertex(Object vertexId) {
         this.vertexApi.delete(vertexId);
     }
 
@@ -135,7 +135,7 @@ public class GraphManager {
         return this.addEdge(source.id(), label, target.id(), properties);
     }
 
-    public Edge addEdge(String sourceId, String label, String targetId,
+    public Edge addEdge(Object sourceId, String label, Object targetId,
                         Object... properties) {
         Edge edge = new Edge(label);
         edge.source(sourceId);
@@ -191,45 +191,45 @@ public class GraphManager {
         return this.getEdges(null, null, label, properties, limit);
     }
 
-    public List<Edge> getEdges(String vertexId) {
+    public List<Edge> getEdges(Object vertexId) {
         return this.getEdges(vertexId, Direction.BOTH, null, null, -1);
     }
 
-    public List<Edge> getEdges(String vertexId, int limit) {
+    public List<Edge> getEdges(Object vertexId, int limit) {
         return this.getEdges(vertexId, Direction.BOTH, null, null, limit);
     }
 
-    public List<Edge> getEdges(String vertexId, Direction direction) {
+    public List<Edge> getEdges(Object vertexId, Direction direction) {
         return this.getEdges(vertexId, direction, null, null, -1);
     }
 
-    public List<Edge> getEdges(String vertexId,
+    public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                int limit) {
         return this.getEdges(vertexId, direction, null, null, limit);
     }
 
-    public List<Edge> getEdges(String vertexId,
+    public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label) {
         return this.getEdges(vertexId, direction, label, null, -1);
     }
 
-    public List<Edge> getEdges(String vertexId,
+    public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label,
                                int limit) {
         return this.getEdges(vertexId, direction, label, null, limit);
     }
 
-    public List<Edge> getEdges(String vertexId,
+    public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label,
                                Map<String, Object> properties) {
         return this.getEdges(vertexId, direction, label, properties, -1);
     }
 
-    public List<Edge> getEdges(String vertexId,
+    public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label,
                                Map<String, Object> properties,

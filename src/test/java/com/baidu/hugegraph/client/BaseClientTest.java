@@ -62,7 +62,7 @@ public class BaseClientTest {
         // pass
     }
 
-    protected static String getVertexId(String label, String key, String value) {
+    protected static Object getVertexId(String label, String key, String value) {
         Map<String, Object> params = ImmutableMap.of(key, value);
         List<Vertex> vertices = graph().listVertices(label, params);
         assert vertices.size() == 1;
@@ -94,6 +94,19 @@ public class BaseClientTest {
               .properties("name", "lang", "price")
               .primaryKeys("name")
               .nullableKeys("price")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("book")
+              .useCustomizeStringId()
+              .properties("name", "price")
+              .nullableKeys("price")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("log")
+              .useCustomizeNumberId()
+              .properties("date")
               .ifNotExist()
               .create();
     }
@@ -134,12 +147,12 @@ public class BaseClientTest {
     }
 
     protected static void initEdge() {
-        String markoId = getVertexId("person", "name", "marko");
-        String vadasId = getVertexId("person", "name", "vadas");
-        String joshId = getVertexId("person", "name", "josh");
-        String peterId = getVertexId("person", "name", "peter");
-        String lopId = getVertexId("software", "name", "lop");
-        String rippleId = getVertexId("software", "name", "ripple");
+        Object markoId = getVertexId("person", "name", "marko");
+        Object vadasId = getVertexId("person", "name", "vadas");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
+        Object rippleId = getVertexId("software", "name", "ripple");
 
         graph().addEdge(markoId, "knows", vadasId, "date", "20160110");
         graph().addEdge(markoId, "knows", joshId, "date", "20130220");

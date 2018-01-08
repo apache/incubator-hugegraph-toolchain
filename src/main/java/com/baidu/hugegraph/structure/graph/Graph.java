@@ -38,7 +38,7 @@ public class Graph {
 
     private static final Logger LOG = Log.logger(Graph.class);
 
-    private Map<String, HugeVertex> hugeVerticesMap;
+    private Map<Object, HugeVertex> hugeVerticesMap;
     private List<HugeEdge> hugeEdges;
 
     public Graph(GraphManager graph) {

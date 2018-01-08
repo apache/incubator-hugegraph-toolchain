@@ -161,7 +161,7 @@ public class RestResultTest {
                 + "\"primary_keys\": [],"
                 + "\"index_names\": [],"
                 + "\"name\": \"person\"," 
-                + "\"id_strategy\": \"CUSTOMIZE\","
+                + "\"id_strategy\": \"CUSTOMIZE_STRING\","
                 + "\"properties\": [\"city\", \"name\", \"age\"]"
                 + "}"
                 + "]}";
@@ -188,7 +188,7 @@ public class RestResultTest {
                             vertexLabel1.properties());
 
         Assert.assertEquals("person", vertexLabel2.name());
-        Assert.assertEquals(IdStrategy.CUSTOMIZE, vertexLabel2.idStrategy());
+        Assert.assertEquals(IdStrategy.CUSTOMIZE_STRING, vertexLabel2.idStrategy());
         Assert.assertEquals(Collections.emptyList(),
                             vertexLabel2.primaryKeys());
         Assert.assertEquals(ImmutableSet.of("city", "name", "age"),

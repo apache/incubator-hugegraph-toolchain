@@ -31,10 +31,10 @@ public class VertexDeserializer extends JsonDeserializer<Vertex> {
         JsonNode node = parser.getCodec().readTree(parser);
 
         JsonNode idNode = node.get("id");
-        if (idNode == null || idNode.getNodeType() != JsonNodeType.STRING) {
+        if (idNode == null) {
             throw InvalidResponseException.expectField("id", node);
         }
-        String id = idNode.asText();
+        Object id = mapper.convertValue(idNode, Object.class);
 
         JsonNode labelNode = node.get("label");
         if (labelNode == null ||

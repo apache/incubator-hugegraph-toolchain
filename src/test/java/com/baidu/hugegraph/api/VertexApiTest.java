@@ -99,16 +99,49 @@ public class VertexApiTest extends BaseApiTest {
     }
 
     @Test
-    public void testCreateWithCustomizeId() {
-        Vertex vertex = new Vertex("person");
-        vertex.property(T.id, 123456);
-        vertex.property("name", "James");
-        vertex.property("city", "Beijing");
-        vertex.property("age", 19);
+    public void testCreateWithCustomizeStringId() {
+        Vertex person = new Vertex("person");
+        person.property(T.id, "123456");
+        person.property("name", "James");
+        person.property("city", "Beijing");
+        person.property("age", 19);
 
         Assert.assertResponse(400, () -> {
-            vertexAPI.create(vertex);
+            vertexAPI.create(person);
         });
+
+        Vertex book = new Vertex("book");
+        book.id("ISBN-123456");
+        book.property("name", "spark graphx");
+
+        Vertex vertex = vertexAPI.create(book);
+        Assert.assertEquals("book", vertex.label());
+        Assert.assertEquals("ISBN-123456", vertex.id());
+        Map<String, Object> props = ImmutableMap.of("name", "spark graphx");
+        Assert.assertEquals(props, vertex.properties());
+    }
+
+    @Test
+    public void testCreateWithCustomizeNumberId() {
+        Vertex person = new Vertex("person");
+        person.property(T.id, 123456);
+        person.property("name", "James");
+        person.property("city", "Beijing");
+        person.property("age", 19);
+
+        Assert.assertResponse(400, () -> {
+            vertexAPI.create(person);
+        });
+
+        Vertex log = new Vertex("log");
+        log.id(123456);
+        log.property("date", "20180101");
+
+        Vertex vertex = vertexAPI.create(log);
+        Assert.assertEquals("log", vertex.label());
+        Assert.assertEquals(123456, vertex.id());
+        Map<String, Object> props = ImmutableMap.of("date", "20180101");
+        Assert.assertEquals(props, vertex.properties());
     }
 
     @Test
@@ -164,7 +197,7 @@ public class VertexApiTest extends BaseApiTest {
         List<Vertex> vertices = super.create100PersonBatch();
         vertexAPI.create(vertices);
 
-        List<String> ids = vertexAPI.create(vertices);
+        List<Object> ids = vertexAPI.create(vertices);
         Assert.assertEquals(100, ids.size());
         for (int i = 0; i < 100; i++) {
             Vertex person = vertexAPI.get(ids.get(i));
@@ -212,7 +245,32 @@ public class VertexApiTest extends BaseApiTest {
         vertex1 = vertexAPI.create(vertex1);
 
         Vertex vertex2 = vertexAPI.get(vertex1.id());
+        Assert.assertEquals(vertex1.label(), vertex2.label());
+        Assert.assertEquals(vertex1.properties(), vertex2.properties());
+    }
 
+    @Test
+    public void testGetWithCustomizeStringId() {
+        Vertex vertex1 = new Vertex("book");
+        vertex1.id("ISBN-123456");
+        vertex1.property("name", "spark graphx");
+
+        vertex1 = vertexAPI.create(vertex1);
+
+        Vertex vertex2 = vertexAPI.get("ISBN-123456");
+        Assert.assertEquals(vertex1.label(), vertex2.label());
+        Assert.assertEquals(vertex1.properties(), vertex2.properties());
+    }
+
+    @Test
+    public void testGetWithCustomizeNumberId() {
+        Vertex vertex1 = new Vertex("log");
+        vertex1.id(123456);
+        vertex1.property("date", "20180101");
+
+        vertex1 = vertexAPI.create(vertex1);
+
+        Vertex vertex2 = vertexAPI.get(123456);
         Assert.assertEquals(vertex1.label(), vertex2.label());
         Assert.assertEquals(vertex1.properties(), vertex2.properties());
     }
@@ -251,7 +309,7 @@ public class VertexApiTest extends BaseApiTest {
 
         vertex = vertexAPI.create(vertex);
 
-        String id = vertex.id();
+        Object id = vertex.id();
         vertexAPI.delete(id);
 
         Assert.assertResponse(404, () -> {

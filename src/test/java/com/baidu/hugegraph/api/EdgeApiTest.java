@@ -52,8 +52,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreate() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
@@ -77,8 +77,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithUndefinedLabel() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge = new Edge("undefined");
         edge.sourceLabel("person");
@@ -95,8 +95,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithUndefinedPropertyKey() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
@@ -113,8 +113,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithoutSourceOrTargetLabel() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge = new Edge("created");
         edge.source(outVId);
@@ -179,8 +179,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateExistVertex() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
@@ -211,8 +211,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithNullableKeysAbsent() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
@@ -499,8 +499,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testGet() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge1 = new Edge("created");
         edge1.sourceLabel("person");
@@ -568,8 +568,8 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testDelete() {
-        String outVId = getVertexId("person", "name", "peter");
-        String inVId = getVertexId("software", "name", "lop");
+        Object outVId = getVertexId("person", "name", "peter");
+        Object inVId = getVertexId("software", "name", "lop");
 
         Edge edge = new Edge("created");
         edge.sourceLabel("person");

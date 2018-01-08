@@ -35,8 +35,6 @@ public abstract class GraphElement extends Element {
     // Hold a graphManager object to call graphApi
     protected GraphManager manager;
 
-    @JsonProperty("id")
-    protected String id;
     @JsonProperty("label")
     protected String label;
     @JsonProperty("type")
@@ -46,14 +44,6 @@ public abstract class GraphElement extends Element {
 
     public void attachManager(GraphManager manager) {
         this.manager = manager;
-    }
-
-    public String id() {
-        return this.id;
-    }
-
-    public void id(String id) {
-        this.id = id;
     }
 
     public String label() {

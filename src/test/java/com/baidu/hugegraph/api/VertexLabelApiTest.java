@@ -168,7 +168,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         Assert.assertResponse(400, () -> {
             VertexLabel vertexLabel = schema().vertexLabel("person")
                                               .properties("name", "age", "city")
-                                              .useCustomizeId()
+                                              .useCustomizeStringId()
                                               .primaryKeys("name")
                                               .build();
             vertexLabelAPI.create(vertexLabel);
@@ -303,7 +303,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         vertexLabel1 = vertexLabelAPI.create(vertexLabel1);
 
         VertexLabel vertexLabel2 = schema().vertexLabel("software")
-                                           .useCustomizeId()
+                                           .useCustomizeStringId()
                                            .properties("name", "lang", "price")
                                            .build();
         vertexLabel2 = vertexLabelAPI.create(vertexLabel2);

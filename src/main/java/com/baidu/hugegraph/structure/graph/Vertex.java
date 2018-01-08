@@ -29,11 +29,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Vertex extends GraphElement {
 
+    @JsonProperty("id")
+    private Object id;
+
     @JsonCreator
     public Vertex(@JsonProperty("label") String label) {
         this.label = label;
         this.properties = new ConcurrentHashMap<>();
         this.type = "vertex";
+    }
+
+    public Object id() {
+        return this.id;
+    }
+
+    public void id(Object id) {
+        this.id = id;
     }
 
     public Edge addEdge(String label, Vertex vertex, Object... properties) {

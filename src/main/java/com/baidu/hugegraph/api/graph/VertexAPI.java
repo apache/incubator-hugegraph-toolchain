@@ -48,12 +48,12 @@ public class VertexAPI extends GraphAPI {
         return result.readObject(Vertex.class);
     }
 
-    public List<String> create(List<Vertex> vertices) {
+    public List<Object> create(List<Vertex> vertices) {
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.putSingle("Content-Encoding", BATCH_ENCODING);
         RestResult result = this.client.post(this.batchPath(), vertices,
                                              headers);
-        List<String> ids = result.readList(String.class);
+        List<Object> ids = result.readList(Object.class);
         if (vertices.size() != ids.size()) {
             throw new NotAllCreatedException(
                       "Not all vertices are successfully created, " +
@@ -64,21 +64,24 @@ public class VertexAPI extends GraphAPI {
     }
 
     public Vertex append(Vertex vertex) {
-        String path = RestClient.buildPath(this.path(), vertex.id());
+        String vertexId = GraphAPI.formatVertexId(vertex.id());
+        String path = RestClient.buildPath(this.path(), vertexId);
         Map<String, Object> params = ImmutableMap.of("action", "append");
         RestResult result = this.client.put(path, vertex, params);
         return result.readObject(Vertex.class);
     }
 
     public Vertex eliminate(Vertex vertex) {
-        String path = RestClient.buildPath(this.path(), vertex.id());
+        String vertexId = GraphAPI.formatVertexId(vertex.id());
+        String path = RestClient.buildPath(this.path(), vertexId);
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         RestResult result = this.client.put(path, vertex, params);
         return result.readObject(Vertex.class);
     }
 
-    public Vertex get(String name) {
-        RestResult result = this.client.get(this.path(), name);
+    public Vertex get(Object id) {
+        String vertexId = GraphAPI.formatVertexId(id);
+        RestResult result = this.client.get(this.path(), vertexId);
         return result.readObject(Vertex.class);
     }
 
@@ -98,7 +101,8 @@ public class VertexAPI extends GraphAPI {
         return result.readList(this.type(), Vertex.class);
     }
 
-    public void delete(String name) {
-        this.client.delete(this.path(), name);
+    public void delete(Object id) {
+        String vertexId = GraphAPI.formatVertexId(id);
+        this.client.delete(this.path(), vertexId);
     }
 }

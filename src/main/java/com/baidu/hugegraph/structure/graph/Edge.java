@@ -29,10 +29,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Edge extends GraphElement {
 
+    @JsonProperty("id")
+    private String id;
     @JsonProperty("outV")
-    private String source;
+    private Object source;
     @JsonProperty("inV")
-    private String target;
+    private Object target;
     @JsonProperty("outVLabel")
     private String sourceLabel;
     @JsonProperty("inVLabel")
@@ -45,11 +47,19 @@ public class Edge extends GraphElement {
         this.type = "edge";
     }
 
-    public String source() {
+    public String id() {
+        return this.id;
+    }
+
+    public void id(String id) {
+        this.id = id;
+    }
+
+    public Object source() {
         return this.source;
     }
 
-    public void source(String source) {
+    public void source(Object source) {
         this.source = source;
     }
 
@@ -59,11 +69,11 @@ public class Edge extends GraphElement {
         return this;
     }
 
-    public String target() {
+    public Object target() {
         return this.target;
     }
 
-    public void target(String target) {
+    public void target(Object target) {
         this.target = target;
     }
 

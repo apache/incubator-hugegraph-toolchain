@@ -70,9 +70,11 @@ public class VertexLabel extends SchemaLabel {
 
         Builder useAutomaticId();
 
-        Builder useCustomizeId();
-
         Builder usePrimaryKeyId();
+
+        Builder useCustomizeStringId();
+
+        Builder useCustomizeNumberId();
 
         Builder properties(String... properties);
 
@@ -126,15 +128,21 @@ public class VertexLabel extends SchemaLabel {
             return this;
         }
 
-        public Builder useCustomizeId() {
-            this.checkIdStrategy();
-            this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE;
-            return this;
-        }
-
         public Builder usePrimaryKeyId() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.PRIMARY_KEY;
+            return this;
+        }
+
+        public Builder useCustomizeStringId() {
+            this.checkIdStrategy();
+            this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE_STRING;
+            return this;
+        }
+
+        public Builder useCustomizeNumberId() {
+            this.checkIdStrategy();
+            this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE_NUMBER;
             return this;
         }
 
