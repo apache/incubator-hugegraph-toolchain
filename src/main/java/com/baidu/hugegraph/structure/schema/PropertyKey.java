@@ -70,7 +70,7 @@ public class PropertyKey extends SchemaElement {
 
         Builder asInt();
 
-        Builder asTimestamp();
+        Builder asDate();
 
         Builder asUuid();
 
@@ -142,8 +142,8 @@ public class PropertyKey extends SchemaElement {
             return this;
         }
 
-        public Builder asTimestamp() {
-            this.propertyKey.dataType = DataType.TIMESTAMP;
+        public Builder asDate() {
+            this.propertyKey.dataType = DataType.DATE;
             return this;
         }
 

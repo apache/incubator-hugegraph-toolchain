@@ -30,7 +30,7 @@ public enum DataType {
     INT(7, "int"),
     LONG(8, "long"),
     TEXT(9, "text"),
-    TIMESTAMP(10, "timestamp"),
+    DATE(10, "date"),
     UUID(11, "uuid");
 
     private byte code = 0;
