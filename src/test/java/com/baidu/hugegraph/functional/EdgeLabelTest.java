@@ -76,4 +76,29 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals("many-to-many",
                             write.userData().get("multiplicity"));
     }
+
+    @Test
+    public void testAppendEdgeLabelWithUserData() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+
+        EdgeLabel father = schema.edgeLabel("father").link("person", "person")
+                                 .properties("weight")
+                                 .create();
+
+        Assert.assertEquals(0, father.userData().size());
+
+        father = schema.edgeLabel("father")
+                       .userData("multiplicity", "one-to-many")
+                       .append();
+        Assert.assertEquals(1, father.userData().size());
+        Assert.assertEquals("one-to-many",
+                            father.userData().get("multiplicity"));
+    }
 }
