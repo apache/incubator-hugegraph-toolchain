@@ -24,12 +24,12 @@ public enum DataType {
     OBJECT(1, "object"),
     BOOLEAN(2, "boolean"),
     BYTE(3, "byte"),
-    BLOB(4, "blob"),
-    DOUBLE(5, "double"),
+    INT(4, "int"),
+    LONG(5, "long"),
     FLOAT(6, "float"),
-    INT(7, "int"),
-    LONG(8, "long"),
-    TEXT(9, "text"),
+    DOUBLE(7, "double"),
+    TEXT(8, "text"),
+    BLOB(9, "blob"),
     DATE(10, "date"),
     UUID(11, "uuid");
 
