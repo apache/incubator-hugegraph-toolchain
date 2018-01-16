@@ -57,7 +57,7 @@ public class GraphManager {
         return this.addVertex(vertex);
     }
 
-    public Vertex getVertex(String vertexId) {
+    public Vertex getVertex(Object vertexId) {
         Vertex vertex = this.vertexApi.get(vertexId);
         this.attachManager(vertex);
         return vertex;
