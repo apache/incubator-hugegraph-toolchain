@@ -26,6 +26,7 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
@@ -187,7 +188,7 @@ public class IndexLabelApiTest extends BaseApiTest {
 
         indexLabelAPI.delete("personByAge");
 
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(ServerException.class, () -> {
             indexLabelAPI.get("personByAge");
         });
     }

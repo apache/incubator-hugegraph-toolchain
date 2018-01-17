@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
@@ -524,7 +525,7 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(ServerException.class, () -> {
             // TODO: id to be modified
             edgeAPI.get("not-exist-edge-id");
         });
@@ -584,7 +585,7 @@ public class EdgeApiTest extends BaseApiTest {
         final String id = edge.id();
         edgeAPI.delete(id);
 
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(ServerException.class, () -> {
             edgeAPI.get(id);
         });
     }

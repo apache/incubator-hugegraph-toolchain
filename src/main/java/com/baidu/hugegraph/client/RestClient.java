@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.client;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -198,17 +197,16 @@ public class RestClient {
     }
 
     private static void checkStatus(Response response,
-                                    Response.Status... status) {
-        if (!Arrays.asList(status).contains(response.getStatusInfo())) {
-            RestResult rs = new RestResult(response);
-            ServerException exception;
-            try {
-                exception = rs.readObject(ServerException.class);
-            } catch (Exception ignored) {
-                exception = new ServerException(rs.content());
+                                    Response.Status... statuses) {
+        boolean match = false;
+        for (Response.Status status : statuses) {
+            if (status.getStatusCode() == response.getStatus()) {
+                match = true;
+                break;
             }
-            exception.status(response.getStatus());
-            throw exception;
+        }
+        if (!match) {
+            throw ServerException.fromResponse(response);
         }
     }
 

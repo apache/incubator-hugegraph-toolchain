@@ -19,17 +19,42 @@
 
 package com.baidu.hugegraph.exception;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 
-public class ServerException extends IllegalArgumentException {
+import javax.ws.rs.core.Response;
+
+import com.baidu.hugegraph.client.RestResult;
+
+public class ServerException extends RuntimeException {
 
     private static final long serialVersionUID = 6335623004322652358L;
 
     private int status = 0;
-    @JsonProperty
     private String exception;
-    @JsonProperty
     private String message;
+    private String cause;
+
+    public static ServerException fromResponse(Response response) {
+        RestResult rs = new RestResult(response);
+        ServerException exception = new ServerException(rs.content());
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, String> json = rs.readObject(Map.class);
+            exception.exception = json.get("exception");
+            exception.message = json.get("message");
+            exception.cause = json.get("cause");
+        } catch (Exception ignored) {}
+        exception.status(response.getStatus());
+        return exception;
+    }
+
+    public ServerException(String message) {
+        this.message = message;
+    }
+
+    public ServerException(String message, Object... args) {
+        this(String.format(message, args));
+    }
 
     public String exception() {
         return this.exception;
@@ -40,7 +65,7 @@ public class ServerException extends IllegalArgumentException {
     }
 
     public String cause() {
-        return super.getCause().getMessage();
+        return this.cause;
     }
 
     @Override
@@ -50,19 +75,10 @@ public class ServerException extends IllegalArgumentException {
 
     @Override
     public Throwable getCause() {
+        if (this.cause() == null || this.cause().isEmpty()) {
+            return null;
+        }
         return new ServerCause(this.cause());
-    }
-
-    public ServerException(String message) {
-        this.message = message;
-    }
-
-    public ServerException(String message, Object... args) {
-        this.message = String.format(message, args);
-    }
-
-    public ServerException(String message, Throwable cause) {
-        this.message = message;
     }
 
     public void status(int status) {
@@ -71,6 +87,13 @@ public class ServerException extends IllegalArgumentException {
 
     public int status() {
         return this.status;
+    }
+
+    @Override
+    public String toString() {
+        String s = this.exception;
+        String message = getLocalizedMessage();
+        return (message != null) ? (s + ": " + message) : s;
     }
 
     /**

@@ -72,8 +72,8 @@ public class RestResult {
         try {
             return mapper.readValue(this.content, clazz);
         } catch (Exception e) {
-            throw new SerializeException(String.format(
-                      "Failed to deserialize: %s", this.content), e);
+            throw new SerializeException(
+                      "Failed to deserialize: %s", this.content, e);
         }
     }
 
@@ -82,15 +82,15 @@ public class RestResult {
             JsonNode root = mapper.readTree(this.content);
             JsonNode element = root.get(key);
             if (element == null) {
-                throw new SerializeException(String.format(
-                          "Can't find value of the key: %s in json.", key));
+                throw new SerializeException(
+                          "Can't find value of the key: %s in json.", key);
             }
             JavaType type = mapper.getTypeFactory()
                             .constructParametricType(List.class, clazz);
             return mapper.readValue(element.toString(), type);
         } catch (IOException e) {
-            throw new SerializeException(String.format(
-                      "Failed to deserialize %s", this.content), e);
+            throw new SerializeException(
+                      "Failed to deserialize %s", this.content, e);
         }
     }
 
@@ -100,8 +100,8 @@ public class RestResult {
                             .constructParametricType(List.class, clazz);
             return mapper.readValue(this.content, type);
         } catch (IOException e) {
-            throw new SerializeException(String.format(
-                      "Failed to deserialize %s", this.content), e);
+            throw new SerializeException(
+                      "Failed to deserialize %s", this.content, e);
         }
     }
 
