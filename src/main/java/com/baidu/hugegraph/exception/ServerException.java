@@ -29,6 +29,11 @@ public class ServerException extends RuntimeException {
 
     private static final long serialVersionUID = 6335623004322652358L;
 
+    private static final String[] EXCEPTION_KEYS = {"exception",
+                                                    "Exception-Class"};
+    private static final String[] MESSAGE_KEYS = {"message"};
+    private static final String[] CAUSE_KEYS = {"cause", "stackTrace"};
+
     private int status = 0;
     private String exception;
     private String message;
@@ -40,9 +45,9 @@ public class ServerException extends RuntimeException {
         try {
             @SuppressWarnings("unchecked")
             Map<String, String> json = rs.readObject(Map.class);
-            exception.exception = json.get("exception");
-            exception.message = json.get("message");
-            exception.cause = json.get("cause");
+            exception.exception = getByKeys(json, EXCEPTION_KEYS);
+            exception.message = getByKeys(json, MESSAGE_KEYS);
+            exception.cause = getByKeys(json, CAUSE_KEYS);
         } catch (Exception ignored) {}
         exception.status(response.getStatus());
         return exception;
@@ -94,6 +99,15 @@ public class ServerException extends RuntimeException {
         String s = this.exception;
         String message = getLocalizedMessage();
         return (message != null) ? (s + ": " + message) : s;
+    }
+
+    private static String getByKeys(Map<String, String> json, String[] keys) {
+        for (String key : keys) {
+            if (json.containsKey(key)) {
+                return json.get(key);
+            }
+        }
+        return null;
     }
 
     /**
