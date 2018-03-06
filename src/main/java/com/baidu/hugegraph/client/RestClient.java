@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.client;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -154,7 +155,14 @@ public class RestClient {
                           throws ServerException {
         Ref<WebTarget> target = Refs.of(this.target);
         for (String key : params.keySet()) {
-            target.set(target.get().queryParam(key, params.get(key)));
+            Object value = params.get(key);
+            if (value instanceof Collection) {
+                for (Object i : (Collection) value) {
+                    target.set(target.get().queryParam(key, i));
+                }
+            } else {
+                target.set(target.get().queryParam(key, value));
+            }
         }
         Response response = this.request(() -> {
             return target.get().path(path).request().get();

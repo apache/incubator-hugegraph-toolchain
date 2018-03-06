@@ -37,16 +37,16 @@ import com.baidu.hugegraph.util.E;
 
 public class GraphManager {
 
-    private VertexAPI vertexApi;
-    private EdgeAPI edgeApi;
+    private VertexAPI vertexAPI;
+    private EdgeAPI edgeAPI;
 
     public GraphManager(RestClient client, String graph) {
-        this.vertexApi = new VertexAPI(client, graph);
-        this.edgeApi = new EdgeAPI(client, graph);
+        this.vertexAPI = new VertexAPI(client, graph);
+        this.edgeAPI = new EdgeAPI(client, graph);
     }
 
     public Vertex addVertex(Vertex vertex) {
-        vertex = this.vertexApi.create(vertex);
+        vertex = this.vertexAPI.create(vertex);
         this.attachManager(vertex);
         return vertex;
     }
@@ -60,13 +60,13 @@ public class GraphManager {
     }
 
     public Vertex getVertex(Object vertexId) {
-        Vertex vertex = this.vertexApi.get(vertexId);
+        Vertex vertex = this.vertexAPI.get(vertexId);
         this.attachManager(vertex);
         return vertex;
     }
 
     public List<Vertex> addVertices(List<Vertex> vertices) {
-        List<Object> ids = this.vertexApi.create(vertices);
+        List<Object> ids = this.vertexAPI.create(vertices);
         for (int i = 0; i < vertices.size(); i++) {
             Vertex vertex = vertices.get(i);
             vertex.id(ids.get(i));
@@ -99,7 +99,7 @@ public class GraphManager {
     public List<Vertex> listVertices(String label,
                                      Map<String, Object> properties,
                                      int limit) {
-        List<Vertex> vertices = this.vertexApi.list(label, properties,
+        List<Vertex> vertices = this.vertexAPI.list(label, properties,
                                                     null, limit).results();
         for (Vertex vertex : vertices) {
             this.attachManager(vertex);
@@ -119,22 +119,22 @@ public class GraphManager {
                                             Map<String, Object> properties,
                                             int sizePerPage) {
         return new GraphIterator<>(this, (page) -> {
-            return this.vertexApi.list(label, properties, page, sizePerPage);
+            return this.vertexAPI.list(label, properties, page, sizePerPage);
         });
     }
 
     public void removeVertex(Object vertexId) {
-        this.vertexApi.delete(vertexId);
+        this.vertexAPI.delete(vertexId);
     }
 
     public Vertex appendVertexProperty(Vertex vertex) {
-        vertex = this.vertexApi.append(vertex);
+        vertex = this.vertexAPI.append(vertex);
         this.attachManager(vertex);
         return vertex;
     }
 
     public Vertex eliminateVertexProperty(Vertex vertex) {
-        vertex = this.vertexApi.eliminate(vertex);
+        vertex = this.vertexAPI.eliminate(vertex);
         this.attachManager(vertex);
         return vertex;
     }
@@ -144,7 +144,7 @@ public class GraphManager {
             throw new InvalidOperationException(
                       "Not allowed to custom id for edge: '%s'", edge);
         }
-        edge = this.edgeApi.create(edge);
+        edge = this.edgeAPI.create(edge);
         this.attachManager(edge);
         return edge;
     }
@@ -164,7 +164,7 @@ public class GraphManager {
     }
 
     public Edge getEdge(String edgeId) {
-        Edge edge = this.edgeApi.get(edgeId);
+        Edge edge = this.edgeAPI.get(edgeId);
         this.attachManager(edge);
         return edge;
     }
@@ -174,7 +174,7 @@ public class GraphManager {
     }
 
     public List<Edge> addEdges(List<Edge> edges, boolean checkVertex) {
-        List<String> ids = this.edgeApi.create(edges, checkVertex);
+        List<String> ids = this.edgeAPI.create(edges, checkVertex);
         for (int i = 0; i < edges.size(); i++) {
             Edge edge = edges.get(i);
             edge.id(ids.get(i));
@@ -253,7 +253,7 @@ public class GraphManager {
                                String label,
                                Map<String, Object> properties,
                                int limit) {
-        List<Edge> edges = this.edgeApi.list(vertexId, direction, label,
+        List<Edge> edges = this.edgeAPI.list(vertexId, direction, label,
                                              properties, null, limit)
                                        .results();
         for (Edge edge : edges) {
@@ -274,7 +274,7 @@ public class GraphManager {
                                        Map<String, Object> properties,
                                        int sizePerPage) {
         return new GraphIterator<>(this, (page) -> {
-            return this.edgeApi.list(null, null, label, properties,
+            return this.edgeAPI.list(null, null, label, properties,
                                      page, sizePerPage);
         });
     }
@@ -303,23 +303,23 @@ public class GraphManager {
                                        Map<String, Object> properties,
                                        int sizePerPage) {
         return new GraphIterator<>(this, (page) -> {
-            return this.edgeApi.list(vertexId, direction, label, properties,
+            return this.edgeAPI.list(vertexId, direction, label, properties,
                                      page, sizePerPage);
         });
     }
 
     public void removeEdge(String edgeId) {
-        this.edgeApi.delete(edgeId);
+        this.edgeAPI.delete(edgeId);
     }
 
     public Edge appendEdgeProperty(Edge edge) {
-        edge = this.edgeApi.append(edge);
+        edge = this.edgeAPI.append(edge);
         this.attachManager(edge);
         return edge;
     }
 
     public Edge eliminateEdgeProperty(Edge edge) {
-        edge = this.edgeApi.eliminate(edge);
+        edge = this.edgeAPI.eliminate(edge);
         this.attachManager(edge);
         return edge;
     }

@@ -66,8 +66,8 @@ public abstract class GraphAPI extends API {
             }
         }
         E.checkArgument(id instanceof String || id instanceof Number,
-                        "The vertex id must be either 'string' or " +
-                        "'number', but got '%s'", id);
+                        "The vertex id must be either String or " +
+                        "Number, but got '%s'", id);
         return JsonUtil.toJson(id);
     }
 
