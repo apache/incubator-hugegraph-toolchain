@@ -34,14 +34,14 @@ import com.baidu.hugegraph.structure.schema.VertexLabel;
 
 public class SchemaManager {
 
-    private PropertyKeyAPI propertyKeyApi;
-    private VertexLabelAPI vertexLabelApi;
+    private PropertyKeyAPI propertyKeyAPI;
+    private VertexLabelAPI vertexLabelAPI;
     private EdgeLabelAPI edgeLabelAPI;
     private IndexLabelAPI indexLabelAPI;
 
     public SchemaManager(RestClient client, String graph) {
-        this.propertyKeyApi = new PropertyKeyAPI(client, graph);
-        this.vertexLabelApi = new VertexLabelAPI(client, graph);
+        this.propertyKeyAPI = new PropertyKeyAPI(client, graph);
+        this.vertexLabelAPI = new VertexLabelAPI(client, graph);
         this.edgeLabelAPI = new EdgeLabelAPI(client, graph);
         this.indexLabelAPI = new IndexLabelAPI(client, graph);
     }
@@ -72,43 +72,43 @@ public class SchemaManager {
     }
 
     public PropertyKey addPropertyKey(PropertyKey propertyKey) {
-        return this.propertyKeyApi.create(propertyKey);
+        return this.propertyKeyAPI.create(propertyKey);
     }
 
     public void removePropertyKey(String name) {
-        this.propertyKeyApi.delete(name);
+        this.propertyKeyAPI.delete(name);
     }
 
     public PropertyKey getPropertyKey(String name) {
-        return this.propertyKeyApi.get(name);
+        return this.propertyKeyAPI.get(name);
     }
 
     public List<PropertyKey> getPropertyKeys() {
-        return this.propertyKeyApi.list();
+        return this.propertyKeyAPI.list();
     }
 
     public VertexLabel addVertexLabel(VertexLabel vertexLabel) {
-        return this.vertexLabelApi.create(vertexLabel);
+        return this.vertexLabelAPI.create(vertexLabel);
     }
 
     public VertexLabel appendVertexLabel(VertexLabel vertexLabel) {
-        return this.vertexLabelApi.append(vertexLabel);
+        return this.vertexLabelAPI.append(vertexLabel);
     }
 
     public VertexLabel eliminateVertexLabel(VertexLabel vertexLabel) {
-        return this.vertexLabelApi.eliminate(vertexLabel);
+        return this.vertexLabelAPI.eliminate(vertexLabel);
     }
 
     public void removeVertexLabel(String name) {
-        this.vertexLabelApi.delete(name);
+        this.vertexLabelAPI.delete(name);
     }
 
     public VertexLabel getVertexLabel(String name) {
-        return this.vertexLabelApi.get(name);
+        return this.vertexLabelAPI.get(name);
     }
 
     public List<VertexLabel> getVertexLabels() {
-        return this.vertexLabelApi.list();
+        return this.vertexLabelAPI.list();
     }
 
     public EdgeLabel addEdgeLabel(EdgeLabel edgeLabel) {

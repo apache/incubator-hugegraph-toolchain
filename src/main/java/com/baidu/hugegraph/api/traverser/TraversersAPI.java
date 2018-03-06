@@ -17,22 +17,22 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.driver;
+package com.baidu.hugegraph.api.traverser;
 
-import java.util.Map;
-
-import com.baidu.hugegraph.api.graphs.GraphsAPI;
+import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 
-public class GraphsManager {
+public class TraversersAPI extends API {
 
-    private GraphsAPI graphsAPI;
+    private static final String PATH = "graphs/%s/traversers/%s";
 
-    public GraphsManager(RestClient client) {
-        this.graphsAPI = new GraphsAPI(client);
+    public TraversersAPI(RestClient client, String graph) {
+        super(client);
+        this.path(String.format(PATH, graph, type()));
     }
 
-    public Map<String, String> getGraph(String graph) {
-        return this.graphsAPI.get(graph);
+    @Override
+    protected String type() {
+        return "traversers";
     }
 }

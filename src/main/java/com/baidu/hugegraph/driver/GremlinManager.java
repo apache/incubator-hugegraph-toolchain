@@ -27,11 +27,11 @@ import com.baidu.hugegraph.structure.gremlin.ResultSet;
 
 public class GremlinManager {
 
-    private GremlinAPI gremlinApi;
+    private GremlinAPI gremlinAPI;
     private String graph;
 
     public GremlinManager(RestClient client, String graph) {
-        this.gremlinApi = new GremlinAPI(client);
+        this.gremlinAPI = new GremlinAPI(client);
         this.graph = graph;
     }
 
@@ -41,7 +41,7 @@ public class GremlinManager {
         // Bind "g" to all graphs by custom rule which define in gremlin server.
         request.aliases.put("g", "__g_" + this.graph);
 
-        Response response = this.gremlinApi.post(request);
+        Response response = this.gremlinAPI.post(request);
         // TODO: Can add some checks later
         return response.result();
     }

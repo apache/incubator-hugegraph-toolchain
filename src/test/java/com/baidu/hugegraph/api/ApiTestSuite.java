@@ -31,7 +31,8 @@ import org.junit.runners.Suite;
     VertexApiTest.class,
     EdgeApiTest.class,
     GremlinApiTest.class,
-    VariablesApiTest.class
+    VariablesApiTest.class,
+    TraverserApiTest.class
 })
 public class ApiTestSuite {
 }
