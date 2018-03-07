@@ -28,9 +28,6 @@ import com.baidu.hugegraph.api.schema.EdgeLabelAPI;
 import com.baidu.hugegraph.api.schema.IndexLabelAPI;
 import com.baidu.hugegraph.api.schema.PropertyKeyAPI;
 import com.baidu.hugegraph.api.schema.VertexLabelAPI;
-import com.baidu.hugegraph.api.traverser.KneighborAPI;
-import com.baidu.hugegraph.api.traverser.KoutAPI;
-import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
 import com.baidu.hugegraph.client.BaseClientTest;
 import com.baidu.hugegraph.client.RestClient;
@@ -46,9 +43,6 @@ public class BaseApiTest extends BaseClientTest {
     protected static VertexAPI vertexAPI;
     protected static EdgeAPI edgeAPI;
     protected static VariablesAPI variablesAPI;
-    protected static ShortestPathAPI shortestPathAPI;
-    protected static KoutAPI koutAPI;
-    protected static KneighborAPI kneighborAPI;
 
     @BeforeClass
     public static void init() {
@@ -62,9 +56,6 @@ public class BaseApiTest extends BaseClientTest {
         vertexAPI = new VertexAPI(client, GRAPH);
         edgeAPI = new EdgeAPI(client, GRAPH);
         variablesAPI = new VariablesAPI(client, GRAPH);
-        shortestPathAPI = new ShortestPathAPI(client, GRAPH);
-        koutAPI = new KoutAPI(client, GRAPH);
-        kneighborAPI = new KneighborAPI(client, GRAPH);
     }
 
     @AfterClass

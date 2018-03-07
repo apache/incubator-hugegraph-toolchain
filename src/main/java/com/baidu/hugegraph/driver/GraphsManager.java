@@ -26,13 +26,13 @@ import com.baidu.hugegraph.client.RestClient;
 
 public class GraphsManager {
 
-    private GraphsAPI graphsAPI;
+    private GraphsAPI graphsApi;
 
     public GraphsManager(RestClient client) {
-        this.graphsAPI = new GraphsAPI(client);
+        this.graphsApi = new GraphsAPI(client);
     }
 
     public Map<String, String> getGraph(String graph) {
-        return this.graphsAPI.get(graph);
+        return this.graphsApi.get(graph);
     }
 }
