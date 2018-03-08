@@ -55,6 +55,24 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person", vertexLabel.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
+        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Set<String> props = ImmutableSet.of("name", "age", "city");
+        Assert.assertEquals(props, vertexLabel.properties());
+    }
+
+    @Test
+    public void testCreateWithEnableLabelIndexFalse() {
+        VertexLabel vertexLabel = schema().vertexLabel("person")
+                                          .useAutomaticId()
+                                          .properties("name", "age", "city")
+                                          .enableLabelIndex(false)
+                                          .build();
+
+        vertexLabel = vertexLabelAPI.create(vertexLabel);
+
+        Assert.assertEquals("person", vertexLabel.name());
+        Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
+        Assert.assertEquals(false, vertexLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("name", "age", "city");
         Assert.assertEquals(props, vertexLabel.properties());
     }

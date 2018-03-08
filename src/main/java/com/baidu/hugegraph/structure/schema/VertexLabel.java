@@ -82,6 +82,8 @@ public class VertexLabel extends SchemaLabel {
 
         Builder nullableKeys(String... keys);
 
+        Builder enableLabelIndex(boolean enable);
+
         Builder userData(String key, Object val);
 
         Builder ifNotExist();
@@ -122,35 +124,41 @@ public class VertexLabel extends SchemaLabel {
             this.manager.removeVertexLabel(this.vertexLabel.name);
         }
 
+        @Override
         public Builder useAutomaticId() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.AUTOMATIC;
             return this;
         }
 
+        @Override
         public Builder usePrimaryKeyId() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.PRIMARY_KEY;
             return this;
         }
 
+        @Override
         public Builder useCustomizeStringId() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE_STRING;
             return this;
         }
 
+        @Override
         public Builder useCustomizeNumberId() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE_NUMBER;
             return this;
         }
 
+        @Override
         public Builder properties(String... properties) {
             this.vertexLabel.properties.addAll(Arrays.asList(properties));
             return this;
         }
 
+        @Override
         public Builder primaryKeys(String... keys) {
             E.checkArgument(this.vertexLabel.primaryKeys.isEmpty(),
                             "Not allowed to assign primary keys multi times");
@@ -162,8 +170,15 @@ public class VertexLabel extends SchemaLabel {
             return this;
         }
 
+        @Override
         public Builder nullableKeys(String... keys) {
             this.vertexLabel.nullableKeys.addAll(Arrays.asList(keys));
+            return this;
+        }
+
+        @Override
+        public Builder enableLabelIndex(boolean enable) {
+            this.vertexLabel.enableLabelIndex = enable;
             return this;
         }
 
@@ -175,6 +190,7 @@ public class VertexLabel extends SchemaLabel {
             return this;
         }
 
+        @Override
         public Builder ifNotExist() {
             this.vertexLabel.checkExist = false;
             return this;

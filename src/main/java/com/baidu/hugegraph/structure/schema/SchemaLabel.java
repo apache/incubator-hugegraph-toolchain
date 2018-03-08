@@ -29,13 +29,20 @@ public abstract class SchemaLabel extends SchemaElement {
 
     @JsonProperty("nullable_keys")
     protected Set<String> nullableKeys;
+    @JsonProperty("enable_label_index")
+    protected Boolean enableLabelIndex;
 
     public SchemaLabel(String name) {
         super(name);
         this.nullableKeys = new ConcurrentSkipListSet<>();
+        this.enableLabelIndex = null;
     }
 
     public Set<String> nullableKeys() {
         return this.nullableKeys;
+    }
+
+    public boolean enableLabelIndex() {
+        return this.enableLabelIndex;
     }
 }

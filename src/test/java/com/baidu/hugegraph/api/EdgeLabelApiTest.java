@@ -63,6 +63,27 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", edgeLabel.sourceLabel());
         Assert.assertEquals("software", edgeLabel.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
+        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
+        Set<String> props = ImmutableSet.of("date", "city");
+        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertTrue(props.containsAll(edgeLabel.properties()));
+    }
+
+    @Test
+    public void testCreateWithEnableLabelIndexFalse() {
+        EdgeLabel edgeLabel = schema().edgeLabel("created")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .singleTime()
+                                      .properties("date", "city")
+                                      .enableLabelIndex(false)
+                                      .create();
+
+        Assert.assertEquals("created", edgeLabel.name());
+        Assert.assertEquals("person", edgeLabel.sourceLabel());
+        Assert.assertEquals("software", edgeLabel.targetLabel());
+        Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
+        Assert.assertEquals(false, edgeLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("date", "city");
         Assert.assertTrue(props.size() == edgeLabel.properties().size());
         Assert.assertTrue(props.containsAll(edgeLabel.properties()));

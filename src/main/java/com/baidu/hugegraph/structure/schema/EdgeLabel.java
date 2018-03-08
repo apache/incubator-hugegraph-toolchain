@@ -96,6 +96,8 @@ public class EdgeLabel extends SchemaLabel {
 
         Builder multiTimes();
 
+        Builder enableLabelIndex(boolean enable);
+
         Builder userData(String key, Object val);
 
         Builder ifNotExist();
@@ -190,6 +192,12 @@ public class EdgeLabel extends SchemaLabel {
         public Builder multiTimes() {
             this.checkFrequency();
             this.edgeLabel.frequency = Frequency.MULTIPLE;
+            return this;
+        }
+
+        @Override
+        public Builder enableLabelIndex(boolean enable) {
+            this.edgeLabel.enableLabelIndex = enable;
             return this;
         }
 
