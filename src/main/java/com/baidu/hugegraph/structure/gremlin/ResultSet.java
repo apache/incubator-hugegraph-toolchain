@@ -64,6 +64,7 @@ public class ResultSet {
         if (this.index >= this.data.size()) {
             return null;
         }
+
         // TODO: index++ should replace by thread safe incremnet
         Object object = this.data().get(this.index++);
         if (object == null) {
@@ -76,8 +77,8 @@ public class ResultSet {
         }
 
         try {
-            String rawValue = this.mapper.writeValueAsString(object);
-            return new Result(this.mapper.readValue(rawValue, clazz));
+            String rawValue = mapper.writeValueAsString(object);
+            return new Result(mapper.readValue(rawValue, clazz));
         } catch (Exception e) {
             throw new SerializeException(String.format(
                       "Failed to deserialize: %s", object), e);
@@ -86,8 +87,6 @@ public class ResultSet {
 
     /**
      * TODO: Still need to constantly add and optimize
-     * @param object
-     * @return
      */
     private Class<?> parseResultClass(Object object) {
         if (object.getClass().equals(LinkedHashMap.class)) {

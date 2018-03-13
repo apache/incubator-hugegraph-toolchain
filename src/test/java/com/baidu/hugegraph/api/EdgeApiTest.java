@@ -48,7 +48,7 @@ public class EdgeApiTest extends BaseApiTest {
     @Override
     @After
     public void teardown() throws Exception {
-        edgeAPI.list(-1).forEach(e -> edgeAPI.delete(e.id()));
+        edgeAPI.list(-1).results().forEach(e -> edgeAPI.delete(e.id()));
     }
 
     @Test
@@ -545,7 +545,7 @@ public class EdgeApiTest extends BaseApiTest {
         edgeAPI.create(createds, true);
         edgeAPI.create(knows, true);
 
-        List<Edge> edges = edgeAPI.list(-1);
+        List<Edge> edges = edgeAPI.list(-1).results();
         Assert.assertEquals(100, edges.size());
     }
 
@@ -563,7 +563,7 @@ public class EdgeApiTest extends BaseApiTest {
         edgeAPI.create(createds, true);
         edgeAPI.create(knows, true);
 
-        List<Edge> edges = edgeAPI.list(10);
+        List<Edge> edges = edgeAPI.list(10).results();
         Assert.assertEquals(10, edges.size());
     }
 

@@ -45,7 +45,7 @@ public class VertexApiTest extends BaseApiTest {
     @Override
     @After
     public void teardown() throws Exception {
-        vertexAPI.list(-1).forEach(v -> vertexAPI.delete(v.id()));
+        vertexAPI.list(-1).results().forEach(v -> vertexAPI.delete(v.id()));
     }
 
     @Test
@@ -287,7 +287,7 @@ public class VertexApiTest extends BaseApiTest {
         List<Vertex> vertices = super.create100PersonBatch();
         vertexAPI.create(vertices);
 
-        vertices = vertexAPI.list(-1);
+        vertices = vertexAPI.list(-1).results();
         Assert.assertEquals(100, vertices.size());
     }
 
@@ -296,7 +296,7 @@ public class VertexApiTest extends BaseApiTest {
         List<Vertex> vertices = super.create100PersonBatch();
         vertexAPI.create(vertices);
 
-        vertices = vertexAPI.list(10);
+        vertices = vertexAPI.list(10).results();
         Assert.assertEquals(10, vertices.size());
     }
 

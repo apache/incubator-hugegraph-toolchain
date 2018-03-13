@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.driver;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.GraphIterator;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.E;
 
@@ -97,11 +99,28 @@ public class GraphManager {
     public List<Vertex> listVertices(String label,
                                      Map<String, Object> properties,
                                      int limit) {
-        List<Vertex> vertices = this.vertexApi.list(label, properties, limit);
+        List<Vertex> vertices = this.vertexApi.list(label, properties,
+                                                    null, limit).results();
         for (Vertex vertex : vertices) {
             this.attachManager(vertex);
         }
         return vertices;
+    }
+
+    public Iterator<Vertex> iterateVertices(int sizePerPage) {
+        return this.iterateVertices(null, null, sizePerPage);
+    }
+
+    public Iterator<Vertex> iterateVertices(String label, int sizePerPage) {
+        return this.iterateVertices(label, null, sizePerPage);
+    }
+
+    public Iterator<Vertex> iterateVertices(String label,
+                                            Map<String, Object> properties,
+                                            int sizePerPage) {
+        return new GraphIterator<>(this, (page) -> {
+            return this.vertexApi.list(label, properties, page, sizePerPage);
+        });
     }
 
     public void removeVertex(Object vertexId) {
@@ -235,11 +254,58 @@ public class GraphManager {
                                Map<String, Object> properties,
                                int limit) {
         List<Edge> edges = this.edgeApi.list(vertexId, direction, label,
-                                             properties, limit);
+                                             properties, null, limit)
+                                       .results();
         for (Edge edge : edges) {
             this.attachManager(edge);
         }
         return edges;
+    }
+
+    public Iterator<Edge> iterateEdges(int sizePerPage) {
+        return this.iterateEdges(null, (Map<String, Object>) null, sizePerPage);
+    }
+
+    public Iterator<Edge> iterateEdges(String label, int sizePerPage) {
+        return this.iterateEdges(label, (Map<String, Object>) null, sizePerPage);
+    }
+
+    public Iterator<Edge> iterateEdges(String label,
+                                       Map<String, Object> properties,
+                                       int sizePerPage) {
+        return new GraphIterator<>(this, (page) -> {
+            return this.edgeApi.list(null, null, label, properties,
+                                     page, sizePerPage);
+        });
+    }
+
+    public Iterator<Edge> iterateEdges(Object vertexId, int sizePerPage) {
+        return this.iterateEdges(vertexId, Direction.BOTH, null, null,
+                                 sizePerPage);
+    }
+
+    public Iterator<Edge> iterateEdges(Object vertexId,
+                                       Direction direction,
+                                       int sizePerPage) {
+        return this.iterateEdges(vertexId, direction, null, null, sizePerPage);
+    }
+
+    public Iterator<Edge> iterateEdges(Object vertexId,
+                                       Direction direction,
+                                       String label,
+                                       int sizePerPage) {
+        return this.iterateEdges(vertexId, direction, label, null, sizePerPage);
+    }
+
+    public Iterator<Edge> iterateEdges(Object vertexId,
+                                       Direction direction,
+                                       String label,
+                                       Map<String, Object> properties,
+                                       int sizePerPage) {
+        return new GraphIterator<>(this, (page) -> {
+            return this.edgeApi.list(vertexId, direction, label, properties,
+                                     page, sizePerPage);
+        });
     }
 
     public void removeEdge(String edgeId) {

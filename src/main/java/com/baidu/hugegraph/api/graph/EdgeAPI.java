@@ -31,6 +31,7 @@ import com.baidu.hugegraph.exception.NotAllCreatedException;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Edges;
 import com.google.common.collect.ImmutableMap;
 
 public class EdgeAPI extends GraphAPI {
@@ -85,15 +86,16 @@ public class EdgeAPI extends GraphAPI {
         return result.readObject(Edge.class);
     }
 
-    public List<Edge> list(int limit) {
-        return this.list(null, null, null, null, limit);
+    public Edges list(int limit) {
+        return this.list(null, null, null, null, null, limit);
     }
 
-    public List<Edge> list(Object vertexId,
-                           Direction direction,
-                           String label,
-                           Map<String, Object> properties,
-                           int limit) {
+    public Edges list(Object vertexId,
+                      Direction direction,
+                      String label,
+                      Map<String, Object> properties,
+                      String page,
+                      int limit) {
         String vid = GraphAPI.formatVertexId(vertexId, true);
         String props = GraphAPI.formatProperties(properties);
         Map<String, Object> params = new LinkedHashMap<>();
@@ -102,8 +104,9 @@ public class EdgeAPI extends GraphAPI {
         params.put("label", label);
         params.put("properties", props);
         params.put("limit", limit);
+        params.put("page", page);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList(this.type(), Edge.class);
+        return result.readObject(Edges.class);
     }
 
     public void delete(String id) {

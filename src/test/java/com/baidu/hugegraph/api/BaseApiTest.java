@@ -68,9 +68,13 @@ public class BaseApiTest extends BaseClientTest {
 
     protected static void clearData() {
         // Clear edge
-        edgeAPI.list(-1).forEach(edge -> edgeAPI.delete(edge.id()));
+        edgeAPI.list(-1).results().forEach(edge -> {
+            edgeAPI.delete(edge.id());
+        });
         // Clear vertex
-        vertexAPI.list(-1).forEach(vertex -> vertexAPI.delete(vertex.id()));
+        vertexAPI.list(-1).results().forEach(vertex -> {
+            vertexAPI.delete(vertex.id());
+        });
 
         // Clear schema
         indexLabelAPI.list().forEach(indexLabel -> {

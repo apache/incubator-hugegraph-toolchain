@@ -30,6 +30,7 @@ import com.baidu.hugegraph.client.RestResult;
 import com.baidu.hugegraph.exception.NotAllCreatedException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.graph.Vertices;
 import com.google.common.collect.ImmutableMap;
 
 public class VertexAPI extends GraphAPI {
@@ -85,20 +86,22 @@ public class VertexAPI extends GraphAPI {
         return result.readObject(Vertex.class);
     }
 
-    public List<Vertex> list(int limit) {
-        return this.list(null, null, limit);
+    public Vertices list(int limit) {
+        return this.list(null, null, null, limit);
     }
 
-    public List<Vertex> list(String label,
-                             Map<String, Object> properties,
-                             int limit) {
+    public Vertices list(String label,
+                         Map<String, Object> properties,
+                         String page,
+                         int limit) {
         String props = GraphAPI.formatProperties(properties);
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("label", label);
         params.put("properties", props);
         params.put("limit", limit);
+        params.put("page", page);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList(this.type(), Vertex.class);
+        return result.readObject(Vertices.class);
     }
 
     public void delete(Object id) {
