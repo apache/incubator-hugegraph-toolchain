@@ -23,6 +23,9 @@ import com.baidu.hugegraph.client.RestClient;
 
 public abstract class API {
 
+    public static final String CHARSET = "UTF-8";
+    public static final String BATCH_ENCODING = "gzip";
+
     protected RestClient client;
     protected String path;
 

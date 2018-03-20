@@ -64,18 +64,16 @@ public class VertexAPI extends GraphAPI {
     }
 
     public Vertex append(Vertex vertex) {
-        String vertexId = GraphAPI.formatVertexId(vertex.id());
-        String path = RestClient.buildPath(this.path(), vertexId);
+        String id = GraphAPI.formatVertexId(vertex.id());
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(path, vertex, params);
+        RestResult result = this.client.put(this.path(), id, vertex, params);
         return result.readObject(Vertex.class);
     }
 
     public Vertex eliminate(Vertex vertex) {
-        String vertexId = GraphAPI.formatVertexId(vertex.id());
-        String path = RestClient.buildPath(this.path(), vertexId);
+        String id = GraphAPI.formatVertexId(vertex.id());
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(path, vertex, params);
+        RestResult result = this.client.put(this.path(), id, vertex, params);
         return result.readObject(Vertex.class);
     }
 

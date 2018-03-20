@@ -19,9 +19,9 @@
 
 package com.baidu.hugegraph.api.graph;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Map;
+
+import org.glassfish.jersey.uri.UriComponent;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
@@ -35,9 +35,6 @@ import com.google.common.collect.ImmutableMap;
 public abstract class GraphAPI extends API {
 
     private static final String PATH = "graphs/%s/graph/%s";
-
-    protected static final String CHARSET = "UTF-8";
-    protected static final String BATCH_ENCODING = "gzip";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -75,15 +72,19 @@ public abstract class GraphAPI extends API {
         if (properties == null) {
             properties = ImmutableMap.of();
         }
+        String json;
         try {
-            String props = MAPPER.writeValueAsString(properties);
-            return URLEncoder.encode(props, CHARSET);
+            json = MAPPER.writeValueAsString(properties);
         } catch (JsonProcessingException e) {
-            throw new ClientException(String.format(
-                      "Failed to serialize properties '%s'", properties));
-        } catch (UnsupportedEncodingException e) {
-            throw new ClientException(String.format(
-                      "Failed to encode properties '%s'", properties));
+            throw new ClientException("Failed to serialize properties %s",
+                                      properties);
         }
+        /*
+         * Don't use UrlEncoder.encode, it encoded the space as `+`,
+         * which will invalidate the jersey's automatic decoding
+         * because it considers the space to be encoded as `%2F`
+         */
+        return UriComponent.encode(json,
+                                   UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
     }
 }
