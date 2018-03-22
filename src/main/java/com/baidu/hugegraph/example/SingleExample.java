@@ -42,7 +42,7 @@ public class SingleExample {
                                                "hugegraph");
 
         SchemaManager schema = hugeClient.schema();
-
+        
         schema.propertyKey("name").asText().ifNotExist().create();
         schema.propertyKey("age").asInt().ifNotExist().create();
         schema.propertyKey("city").asText().ifNotExist().create();
@@ -126,7 +126,6 @@ public class SingleExample {
               .create();
 
         GraphManager graph = hugeClient.graph();
-
         Vertex marko = graph.addVertex(T.label, "person", "name", "marko",
                                        "age", 29, "city", "Beijing");
         Vertex vadas = graph.addVertex(T.label, "person", "name", "vadas",

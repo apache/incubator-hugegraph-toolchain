@@ -45,18 +45,16 @@ public class VertexLabelAPI extends SchemaAPI {
     }
 
     public VertexLabel append(VertexLabel vertexLabel) {
-        String id = vertexLabel.name();
+        String path = RestClient.buildPath(this.path(), vertexLabel.name());
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), id, vertexLabel,
-                                            params);
+        RestResult result = this.client.put(path, vertexLabel, params);
         return result.readObject(VertexLabel.class);
     }
 
     public VertexLabel eliminate(VertexLabel vertexLabel) {
-        String id = vertexLabel.name();
+        String path = RestClient.buildPath(this.path(), vertexLabel.name());
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), id, vertexLabel,
-                                            params);
+        RestResult result = this.client.put(path, vertexLabel, params);
         return result.readObject(VertexLabel.class);
     }
 

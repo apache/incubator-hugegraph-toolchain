@@ -32,11 +32,11 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Variant;
 
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.internal.util.collection.Refs;
 import org.glassfish.jersey.message.GZipEncoder;
-import org.glassfish.jersey.uri.UriComponent;
 
 import com.baidu.hugegraph.exception.ClientException;
 import com.baidu.hugegraph.exception.ServerException;
@@ -121,12 +121,11 @@ public class RestClient {
         return new RestResult(response);
     }
 
-    public RestResult put(String path, String id, Object object)
-                          throws ServerException {
-        return this.put(path, id, object, ImmutableMap.of());
+    public RestResult put(String path, Object object) throws ServerException {
+        return this.put(path, object, ImmutableMap.of());
     }
 
-    public RestResult put(String path, String id, Object object,
+    public RestResult put(String path, Object object,
                           Map<String, Object> params) throws ServerException {
         Ref<WebTarget> target = Refs.of(this.target);
         if (params != null && !params.isEmpty()) {
@@ -136,8 +135,7 @@ public class RestClient {
         }
 
         Response response = this.request(() -> {
-            return target.get().path(path).path(encode(id)).request()
-                         .put(Entity.json(object));
+            return target.get().path(path).request().put(Entity.json(object));
         });
         // If check status failed, throw client exception.
         checkStatus(response, Response.Status.OK);
@@ -167,7 +165,7 @@ public class RestClient {
 
     public RestResult get(String path, String id) throws ServerException {
         Response response = this.request(() -> {
-            return this.target.path(path).path(encode(id)).request().get();
+            return this.target.path(path).path(id).request().get();
         });
         checkStatus(response, Response.Status.OK);
         return new RestResult(response);
@@ -188,7 +186,7 @@ public class RestClient {
 
     public RestResult delete(String path, String id) throws ServerException {
         Response response = this.request(() -> {
-            return this.target.path(path).path(encode(id)).request().delete();
+            return this.target.path(path).path(id).request().delete();
         });
         checkStatus(response, Response.Status.NO_CONTENT);
         return new RestResult(response);
@@ -196,10 +194,6 @@ public class RestClient {
 
     public void close() {
         this.client.close();
-    }
-
-    private static String encode(String raw) {
-        return UriComponent.encode(raw, UriComponent.Type.PATH_SEGMENT);
     }
 
     private static void checkStatus(Response response,
@@ -214,5 +208,9 @@ public class RestClient {
         if (!match) {
             throw ServerException.fromResponse(response);
         }
+    }
+
+    public static String buildPath(String... paths) {
+        return StringUtils.join(paths, "/");
     }
 }
