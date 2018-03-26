@@ -49,9 +49,8 @@ public class VariablesAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> set(String key, Object value) {
-        String path = RestClient.buildPath(this.path(), key);
         value = ImmutableMap.of("data", value);
-        RestResult result = this.client.put(path, value);
+        RestResult result = this.client.put(this.path(), key, value);
         return result.readObject(Map.class);
     }
 
