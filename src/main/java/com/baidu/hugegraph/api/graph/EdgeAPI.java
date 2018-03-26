@@ -53,7 +53,7 @@ public class EdgeAPI extends GraphAPI {
     public List<String> create(List<Edge> edges, boolean checkVertex) {
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.putSingle("Content-Encoding", BATCH_ENCODING);
-        Map<String, Object> params = ImmutableMap.of("checkVertex",
+        Map<String, Object> params = ImmutableMap.of("check_vertex",
                                                      checkVertex);
         RestResult result = this.client.post(this.batchPath(), edges,
                                              headers, params);
