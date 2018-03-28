@@ -22,7 +22,7 @@ package com.baidu.hugegraph.api.schema;
 import java.util.List;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.client.RestResult;
+import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 

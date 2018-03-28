@@ -25,7 +25,7 @@ import org.glassfish.jersey.uri.UriComponent;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.exception.ClientException;
+import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;

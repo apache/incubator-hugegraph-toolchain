@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
@@ -45,6 +46,7 @@ public class BaseClientTest {
     }
 
     public static GraphManager graph() {
+        Assert.assertNotNull("Not opened client", client);
         return client.graph();
     }
 

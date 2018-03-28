@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.exception;
 
+import com.baidu.hugegraph.rest.ClientException;
+
 public class InvalidResponseException extends ClientException {
 
     private static final long serialVersionUID = -6837901607110262081L;

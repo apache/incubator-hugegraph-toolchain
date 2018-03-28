@@ -23,7 +23,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
-import com.baidu.hugegraph.client.RestResult;
+import com.baidu.hugegraph.rest.RestResult;
 
 public class ServerException extends RuntimeException {
 

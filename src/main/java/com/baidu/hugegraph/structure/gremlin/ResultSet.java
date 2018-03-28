@@ -24,7 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.baidu.hugegraph.exception.SerializeException;
+import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.serializer.VertexDeserializer;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -37,18 +37,19 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class ResultSet {
 
+    private static ObjectMapper mapper = new ObjectMapper();
+
     @JsonProperty
     private List<Object> data;
     @JsonProperty
     private Map<String, ?> meta;
-
-    private static ObjectMapper mapper = new ObjectMapper();
+    
     private int index;
 
     static {
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(Vertex.class, new VertexDeserializer(mapper));
-        module.addDeserializer(Path.class, new PathDeserializer(mapper));
+        module.addDeserializer(Vertex.class, new VertexDeserializer());
+        module.addDeserializer(Path.class, new PathDeserializer());
         mapper.registerModule(module);
     }
 
@@ -80,8 +81,8 @@ public class ResultSet {
             String rawValue = mapper.writeValueAsString(object);
             return new Result(mapper.readValue(rawValue, clazz));
         } catch (Exception e) {
-            throw new SerializeException(String.format(
-                      "Failed to deserialize: %s", object), e);
+            throw new SerializeException(
+                      "Failed to deserialize: %s", e, object);
         }
     }
 

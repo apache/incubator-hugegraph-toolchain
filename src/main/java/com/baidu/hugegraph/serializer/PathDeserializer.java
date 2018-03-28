@@ -27,7 +27,6 @@ import com.baidu.hugegraph.exception.InvalidResponseException;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -38,11 +37,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public class PathDeserializer extends JsonDeserializer<Path> {
 
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
-    public PathDeserializer(ObjectMapper mapper) {
-        E.checkNotNull(mapper, "object mapper");
-        this.mapper = mapper;
+    public PathDeserializer() {
+        this.mapper = new ObjectMapper();
     }
 
     @SuppressWarnings("unchecked")

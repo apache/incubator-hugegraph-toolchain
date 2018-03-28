@@ -21,7 +21,7 @@ package com.baidu.hugegraph.util;
 
 import java.io.IOException;
 
-import com.baidu.hugegraph.exception.SerializeException;
+import com.baidu.hugegraph.rest.SerializeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

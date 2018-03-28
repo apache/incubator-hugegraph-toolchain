@@ -26,7 +26,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.client.RestResult;
+import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.E;
 

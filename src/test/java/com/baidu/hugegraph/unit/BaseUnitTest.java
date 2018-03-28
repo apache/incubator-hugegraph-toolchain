@@ -2,7 +2,7 @@ package com.baidu.hugegraph.unit;
 
 import java.io.IOException;
 
-import com.baidu.hugegraph.exception.SerializeException;
+import com.baidu.hugegraph.rest.SerializeException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class BaseUnitTest {
