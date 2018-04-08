@@ -30,24 +30,25 @@ import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.util.E;
 
-public class ShortestPathAPI extends TraversersAPI {
+public class PathsAPI extends TraversersAPI {
 
-    public ShortestPathAPI(RestClient client, String graph) {
+    public PathsAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "shortestpath";
+        return "paths";
     }
 
-    public Path get(Object sourceId, Object targetId,
-                    Direction direction, String label, int maxDepth) {
+    public List<Path> get(Object sourceId, Object targetId,
+                          Direction direction, String label,
+                          int maxDepth, int limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
         E.checkArgument(maxDepth >= 1,
-                        "Max depth of shortest path must be >= 1, " +
-                        "but got '%s'", maxDepth);
+                        "Max depth of path must be >= 1, but got '%s'",
+                        maxDepth);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);
@@ -55,8 +56,8 @@ public class ShortestPathAPI extends TraversersAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("max_depth", maxDepth);
+        params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        List<Object> vertices = result.readList("path", Object.class);
-        return new Path(vertices);
+        return result.readList("paths", Path.class);
     }
 }

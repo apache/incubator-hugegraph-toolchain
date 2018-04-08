@@ -22,20 +22,29 @@ package com.baidu.hugegraph.structure.graph;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 
 public class Path {
 
-    @JsonProperty
     private List<Object> labels;
-    @JsonProperty
     private List<Object> objects;
+    private Object crosspoint;
 
     public Path() {
+        this(ImmutableList.of());
+    }
+
+    public Path(List<Object> objects) {
+        this(null, objects);
+    }
+
+    public Path(Object crosspoint, List<Object> objects) {
+        this.crosspoint = crosspoint;
         this.labels = new CopyOnWriteArrayList<>();
-        this.objects = new CopyOnWriteArrayList<>();
+        this.objects = new CopyOnWriteArrayList<>(objects);
     }
 
     public List<Object> labels() {
@@ -54,9 +63,32 @@ public class Path {
         this.objects.addAll(Arrays.asList(objects));
     }
 
+    public Object crosspoint() {
+        return this.crosspoint;
+    }
+
+    public void crosspoint(Object crosspoint) {
+        this.crosspoint = crosspoint;
+    }
+
+    public int size() {
+        return this.objects.size();
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof Path)) {
+            return false;
+        }
+        Path other = (Path) object;
+        return Objects.equals(this.labels, other.labels) &&
+               Objects.equals(this.objects, other.objects) &&
+               Objects.equals(this.crosspoint, other.crosspoint);
+    }
+
     @Override
     public String toString() {
-        return String.format("{labels=%s, objects=%s}",
-                             this.labels, this.objects);
+        return String.format("{labels=%s, objects=%s, crosspoint=%s}",
+                             this.labels, this.objects, this.crosspoint);
     }
 }

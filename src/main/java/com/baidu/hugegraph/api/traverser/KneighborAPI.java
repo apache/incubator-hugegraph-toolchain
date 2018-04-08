@@ -44,7 +44,7 @@ public class KneighborAPI extends TraversersAPI {
                             String label, int depth) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         E.checkArgument(depth >= 1,
-                        "Depth of k-neighbor must >= 1, but got '%s'",
+                        "Depth of k-neighbor must be >= 1, but got '%s'",
                         depth);
 
         Map<String, Object> params = new LinkedHashMap<>();

@@ -53,18 +53,15 @@ public class PathDeserializer extends JsonDeserializer<Path> {
                             throws IOException, JsonProcessingException {
 
         JsonNode node = parser.getCodec().readTree(parser);
+        Path path = new Path();
 
         // Parse node 'labels'
         JsonNode labelsNode = node.get("labels");
-        if (labelsNode == null ||
-            labelsNode.getNodeType() != JsonNodeType.ARRAY) {
-            throw InvalidResponseException.expectField("labels", node);
-        }
-
-        Path path = new Path();
-
-        Object labels = mapper.convertValue(labelsNode, Object.class);
-        if (labels instanceof List) {
+        if (labelsNode != null) {
+            if (labelsNode.getNodeType() != JsonNodeType.ARRAY) {
+                throw InvalidResponseException.expectField("labels", node);
+            }
+            Object labels = mapper.convertValue(labelsNode, Object.class);
             ((List) labels).forEach(path::labels);
         }
 
@@ -86,6 +83,13 @@ public class PathDeserializer extends JsonDeserializer<Path> {
                 object = mapper.convertValue(objectNode, Object.class);
             }
             path.objects(object);
+        }
+
+        // Parse node 'crosspoint'
+        JsonNode crosspointNode = node.get("crosspoint");
+        if (crosspointNode != null) {
+            Object object = mapper.convertValue(crosspointNode, Object.class);
+            path.crosspoint(object);
         }
         return path;
     }

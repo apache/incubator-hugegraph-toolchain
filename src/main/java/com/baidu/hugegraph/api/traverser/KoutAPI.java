@@ -44,7 +44,7 @@ public class KoutAPI extends TraversersAPI {
                             String label, int depth, boolean nearest) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         E.checkArgument(depth >= 1,
-                        "Depth of k-out must >= 1, but got '%s'", depth);
+                        "Depth of k-out must be >= 1, but got '%s'", depth);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);

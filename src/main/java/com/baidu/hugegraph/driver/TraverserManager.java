@@ -21,39 +21,71 @@ package com.baidu.hugegraph.driver;
 
 import java.util.List;
 
+import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
+import com.baidu.hugegraph.api.traverser.PathsAPI;
 import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
 
 public class TraverserManager {
 
     private ShortestPathAPI shortestPathAPI;
+    private PathsAPI pathsAPI;
+    private CrosspointsAPI crosspointsAPI;
     private KoutAPI koutAPI;
     private KneighborAPI kneighborAPI;
     private VerticesAPI verticesAPI;
 
     public TraverserManager(RestClient client, String graph) {
         this.shortestPathAPI = new ShortestPathAPI(client, graph);
+        this.pathsAPI = new PathsAPI(client, graph);
+        this.crosspointsAPI = new CrosspointsAPI(client, graph);
         this.koutAPI = new KoutAPI(client, graph);
         this.kneighborAPI = new KneighborAPI(client, graph);
         this.verticesAPI = new VerticesAPI(client, graph);
     }
 
-    public List<Object> shortestPath(Object sourceId, Object targetId,
-                                     Direction direction, int maxDepth) {
+    public Path shortestPath(Object sourceId, Object targetId,
+                             Direction direction, int maxDepth) {
         return this.shortestPathAPI.get(sourceId, targetId, direction,
                                         null, maxDepth);
     }
 
-    public List<Object> shortestPath(Object sourceId, Object targetId,
-                                     Direction direction, String label,
-                                     int maxDepth) {
+    public Path shortestPath(Object sourceId, Object targetId,
+                             Direction direction, String label, int maxDepth) {
         return this.shortestPathAPI.get(sourceId, targetId, direction,
                                         label, maxDepth);
+    }
+
+    public List<Path> paths(Object sourceId, Object targetId,
+                            Direction direction, int maxDepth, int limit) {
+        return this.pathsAPI.get(sourceId, targetId, direction, null,
+                                 maxDepth, limit);
+    }
+
+    public List<Path> paths(Object sourceId, Object targetId,
+                            Direction direction, String label,
+                            int maxDepth, int limit) {
+        return this.pathsAPI.get(sourceId, targetId, direction,
+                                 label, maxDepth, limit);
+    }
+
+    public List<Path> crosspoint(Object sourceId, Object targetId,
+                                 Direction direction, int maxDepth, int limit) {
+        return this.crosspointsAPI.get(sourceId, targetId, direction, null,
+                                       maxDepth, limit);
+    }
+
+    public List<Path> crosspoint(Object sourceId, Object targetId,
+                                 Direction direction, String label,
+                                 int maxDepth, int limit) {
+        return this.crosspointsAPI.get(sourceId, targetId, direction,
+                                       label, maxDepth, limit);
     }
 
     public List<Object> kout(Object sourceId, Direction direction, int depth) {
