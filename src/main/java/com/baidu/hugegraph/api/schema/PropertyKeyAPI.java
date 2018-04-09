@@ -20,11 +20,13 @@
 package com.baidu.hugegraph.api.schema;
 
 import java.util.List;
+import java.util.Map;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
+import com.google.common.collect.ImmutableMap;
 
 public class PropertyKeyAPI extends SchemaAPI {
 
@@ -39,6 +41,22 @@ public class PropertyKeyAPI extends SchemaAPI {
 
     public PropertyKey create(PropertyKey propertyKey) {
         RestResult result = this.client.post(this.path(), propertyKey);
+        return result.readObject(PropertyKey.class);
+    }
+
+    public PropertyKey append(PropertyKey propertyKey) {
+        String id = propertyKey.name();
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(this.path(), id,
+                                            propertyKey, params);
+        return result.readObject(PropertyKey.class);
+    }
+
+    public PropertyKey eliminate(PropertyKey propertyKey) {
+        String id = propertyKey.name();
+        Map<String, Object> params = ImmutableMap.of("action", "eliminate");
+        RestResult result = this.client.put(this.path(), id,
+                                            propertyKey, params);
         return result.readObject(PropertyKey.class);
     }
 

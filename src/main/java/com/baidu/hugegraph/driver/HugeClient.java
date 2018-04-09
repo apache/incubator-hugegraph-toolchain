@@ -72,7 +72,7 @@ public class HugeClient {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.18", "0.19",
+        VersionUtil.check(apiVersion, "0.19", "0.20",
                           "hugegraph-api in server");
     }
 

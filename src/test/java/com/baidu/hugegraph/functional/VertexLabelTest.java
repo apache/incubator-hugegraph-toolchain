@@ -75,4 +75,24 @@ public class VertexLabelTest extends BaseFuncTest {
         Assert.assertEquals(1, player.userData().size());
         Assert.assertEquals("person", player.userData().get("super_vl"));
     }
+
+    @Test
+    public void testEliminateVertexLabelWithUserData() {
+        SchemaManager schema = schema();
+
+        VertexLabel player = schema.vertexLabel("player")
+                                   .properties("name")
+                                   .userData("super_vl", "person")
+                                   .userData("icon", "picture1")
+                                   .create();
+        Assert.assertEquals(2, player.userData().size());
+        Assert.assertEquals("person", player.userData().get("super_vl"));
+        Assert.assertEquals("picture1", player.userData().get("icon"));
+
+        player = schema.vertexLabel("player")
+                       .userData("icon", "")
+                       .eliminate();
+        Assert.assertEquals(1, player.userData().size());
+        Assert.assertEquals("person", player.userData().get("super_vl"));
+    }
 }

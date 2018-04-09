@@ -119,12 +119,12 @@ public class PropertyKey extends SchemaElement {
 
         @Override
         public PropertyKey append() {
-            throw new NotSupportException("action append on property key");
+            return this.manager.appendPropertyKey(this.propertyKey);
         }
 
         @Override
         public PropertyKey eliminate() {
-            throw new NotSupportException("action eliminate on property key");
+            return this.manager.eliminatePropertyKey(this.propertyKey);
         }
 
         @Override

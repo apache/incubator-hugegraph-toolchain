@@ -68,4 +68,40 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(ImmutableList.of("male", "female"),
                             sex.userData().get("range"));
     }
+
+    @Test
+    public void testAppendPropertyKeyWithUserData() {
+        SchemaManager schema = schema();
+        PropertyKey age = schema.propertyKey("age")
+                                .userData("min", 0)
+                                .create();
+        Assert.assertEquals(1, age.userData().size());
+        Assert.assertEquals(0, age.userData().get("min"));
+
+        age = schema.propertyKey("age")
+                    .userData("min", 1)
+                    .userData("max", 100)
+                    .append();
+        Assert.assertEquals(2, age.userData().size());
+        Assert.assertEquals(1, age.userData().get("min"));
+        Assert.assertEquals(100, age.userData().get("max"));
+    }
+
+    @Test
+    public void testEliminatePropertyKeyWithUserData() {
+        SchemaManager schema = schema();
+        PropertyKey age = schema.propertyKey("age")
+                                .userData("min", 0)
+                                .userData("max", 100)
+                                .create();
+        Assert.assertEquals(2, age.userData().size());
+        Assert.assertEquals(0, age.userData().get("min"));
+        Assert.assertEquals(100, age.userData().get("max"));
+
+        age = schema.propertyKey("age")
+                    .userData("max", "")
+                    .eliminate();
+        Assert.assertEquals(1, age.userData().size());
+        Assert.assertEquals(0, age.userData().get("min"));
+    }
 }

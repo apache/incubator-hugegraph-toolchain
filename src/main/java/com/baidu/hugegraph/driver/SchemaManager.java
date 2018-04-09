@@ -75,6 +75,14 @@ public class SchemaManager {
         return this.propertyKeyAPI.create(propertyKey);
     }
 
+    public PropertyKey appendPropertyKey(PropertyKey propertyKey) {
+        return this.propertyKeyAPI.append(propertyKey);
+    }
+
+    public PropertyKey eliminatePropertyKey(PropertyKey propertyKey) {
+        return this.propertyKeyAPI.eliminate(propertyKey);
+    }
+
     public void removePropertyKey(String name) {
         this.propertyKeyAPI.delete(name);
     }
