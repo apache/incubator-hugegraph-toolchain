@@ -2,7 +2,7 @@
 
 hugegraph-client is a Java-written client of [HugeGraph](), providing operations of graph, schema, gremlin, variables and traversals etc. All these operations are interpreted and translated into RESTful requests to HugeGraph Server. Besides, hugegraph-client also checks arguments, serializes and deserializes structures and encapsulates server exceptions.
 
-# Features
+## Features
 
 - Graph Operation, CRUD of vertexes and edges, batch load of vertexes and edges
 - Schema Operation, CRUD of vertex label, edge label, index label and property key
@@ -11,5 +11,5 @@ hugegraph-client is a Java-written client of [HugeGraph](), providing operations
 - Variables, CRUD of variables
 
 
-# Licence
+## Licence
 The same as HugeGraph, hugegraph-client is also licensed under Apache 2.0 License.
