@@ -28,7 +28,6 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -50,7 +49,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
     @SuppressWarnings("unchecked")
     @Override
     public Path deserialize(JsonParser parser, DeserializationContext ctxt)
-                            throws IOException, JsonProcessingException {
+                            throws IOException {
 
         JsonNode node = parser.getCodec().readTree(parser);
         Path path = new Path();

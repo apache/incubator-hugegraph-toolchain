@@ -7,7 +7,6 @@ import java.util.Map;
 import com.baidu.hugegraph.exception.InvalidResponseException;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,7 +24,7 @@ public class VertexDeserializer extends JsonDeserializer<Vertex> {
     @SuppressWarnings("unchecked")
     @Override
     public Vertex deserialize(JsonParser parser, DeserializationContext ctxt)
-                              throws IOException, JsonProcessingException {
+                              throws IOException {
         JsonNode node = parser.getCodec().readTree(parser);
 
         JsonNode idNode = node.get("id");

@@ -22,6 +22,7 @@ package com.baidu.hugegraph.driver;
 import java.util.List;
 
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
+import com.baidu.hugegraph.api.traverser.EdgesAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
 import com.baidu.hugegraph.api.traverser.PathsAPI;
@@ -29,10 +30,14 @@ import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.type.Shard;
 
 public class TraverserManager {
+
+    private final GraphManager graphManager;
 
     private ShortestPathAPI shortestPathAPI;
     private PathsAPI pathsAPI;
@@ -40,14 +45,18 @@ public class TraverserManager {
     private KoutAPI koutAPI;
     private KneighborAPI kneighborAPI;
     private VerticesAPI verticesAPI;
+    private EdgesAPI edgesAPI;
 
-    public TraverserManager(RestClient client, String graph) {
+    public TraverserManager(RestClient client, GraphManager graphManager) {
+        this.graphManager = graphManager;
+        String graph = graphManager.graph();
         this.shortestPathAPI = new ShortestPathAPI(client, graph);
         this.pathsAPI = new PathsAPI(client, graph);
         this.crosspointsAPI = new CrosspointsAPI(client, graph);
         this.koutAPI = new KoutAPI(client, graph);
         this.kneighborAPI = new KneighborAPI(client, graph);
         this.verticesAPI = new VerticesAPI(client, graph);
+        this.edgesAPI = new EdgesAPI(client, graph);
     }
 
     public Path shortestPath(Object sourceId, Object targetId,
@@ -107,7 +116,43 @@ public class TraverserManager {
         return this.kneighborAPI.get(sourceId, direction, label, depth);
     }
 
+    public List<Shard> vertexShards(long splitSize) {
+        return this.verticesAPI.shards(splitSize);
+    }
+
+    public List<Shard> edgeShards(long splitSize) {
+        return this.edgesAPI.shards(splitSize);
+    }
+
     public List<Vertex> vertices(List<Object> ids) {
-        return this.verticesAPI.get(ids);
+        List<Vertex> vertices = this.verticesAPI.list(ids);
+        for (Vertex vertex : vertices) {
+            vertex.attachManager(this.graphManager);
+        }
+        return vertices;
+    }
+
+    public List<Vertex> vertices(Shard shard) {
+        List<Vertex> vertices = this.verticesAPI.scan(shard);
+        for (Vertex vertex : vertices) {
+            vertex.attachManager(this.graphManager);
+        }
+        return vertices;
+    }
+
+    public List<Edge> edges(List<String> ids) {
+        List<Edge> edges = this.edgesAPI.list(ids);
+        for (Edge edge : edges) {
+            edge.attachManager(this.graphManager);
+        }
+        return edges;
+    }
+
+    public List<Edge> edges(Shard shard) {
+        List<Edge> edges = this.edgesAPI.scan(shard);
+        for (Edge edge : edges) {
+            edge.attachManager(this.graphManager);
+        }
+        return edges;
     }
 }

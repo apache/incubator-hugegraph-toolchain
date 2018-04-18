@@ -20,43 +20,36 @@
 package com.baidu.hugegraph.api.traverser;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
-import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.type.Shard;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
-public class VerticesAPI extends TraversersAPI {
+public class EdgesAPI extends TraversersAPI {
 
-    public VerticesAPI(RestClient client, String graph) {
+    public EdgesAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "vertices";
+        return "edges";
     }
 
-    public List<Vertex> list(List<Object> ids) {
+    public List<Edge> list(List<String> ids) {
         E.checkArgument(ids != null && !ids.isEmpty(),
                         "Ids can't be null or empty");
 
-        List<String> stringIds = new ArrayList<>(ids.size());
-        for (Object id : ids) {
-            stringIds.add(GraphAPI.formatVertexId(id, false));
-        }
-
         Map<String, Object> params = new LinkedHashMap<>();
-        params.put("ids", stringIds);
+        params.put("ids", ids);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList(this.type(), Vertex.class);
+        return result.readList(this.type(), Edge.class);
     }
 
     public List<Shard> shards(long splitSize) {
@@ -66,13 +59,13 @@ public class VerticesAPI extends TraversersAPI {
         return result.readList("shards", Shard.class);
     }
 
-    public List<Vertex> scan(Shard shard) {
+    public List<Edge> scan(Shard shard) {
         String path = Paths.get(this.path(), "scan").toString();
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("start", shard.start());
         params.put("end", shard.end());
         RestResult result = this.client.get(path, params);
-        return result.readList(this.type(), Vertex.class);
+        return result.readList(this.type(), Edge.class);
     }
 }
 

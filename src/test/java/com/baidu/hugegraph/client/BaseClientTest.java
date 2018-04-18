@@ -71,6 +71,13 @@ public class BaseClientTest {
         return vertices.get(0).id();
     }
 
+    protected static String getEdgeId(String label, String key, String value) {
+        Map<String, Object> params = ImmutableMap.of(key, value);
+        List<Edge> edges = graph().listEdges(label, params);
+        assert edges.size() == 1;
+        return edges.get(0).id();
+    }
+
     protected static void initPropertyKey() {
         SchemaManager schema = schema();
         schema.propertyKey("name").asText().ifNotExist().create();
@@ -133,6 +140,24 @@ public class BaseClientTest {
               .create();
     }
 
+    protected static void initIndexLabel() {
+        SchemaManager schema = schema();
+
+        schema.indexLabel("knowsByDate")
+              .onE("knows")
+              .by("date")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("createdByDate")
+              .onE("created")
+              .by("date")
+              .secondary()
+              .ifNotExist()
+              .create();
+    }
+
     protected static void initVertex() {
         graph().addVertex(T.label, "person", "name", "marko",
                           "age", 29, "city", "Beijing");
@@ -156,16 +181,16 @@ public class BaseClientTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        graph().addEdge(markoId, "knows", vadasId, "date", "20160110");
-        graph().addEdge(markoId, "knows", joshId, "date", "20130220");
+        graph().addEdge(markoId, "knows", vadasId, "date", "20120110");
+        graph().addEdge(markoId, "knows", joshId, "date", "20130110");
         graph().addEdge(markoId, "created", lopId,
-                        "date", "20171210", "city", "Shanghai");
+                        "date", "20140110", "city", "Shanghai");
         graph().addEdge(joshId, "created", rippleId,
-                        "date", "20171210", "city", "Beijing");
+                        "date", "20150110", "city", "Beijing");
         graph().addEdge(joshId, "created", lopId,
-                        "date", "20091111", "city", "Beijing");
+                        "date", "20160110", "city", "Beijing");
         graph().addEdge(peterId, "created", lopId,
-                        "date", "20170324", "city", "Hongkong");
+                        "date", "20170110", "city", "Hongkong");
     }
 
     protected List<Vertex> create100PersonBatch() {

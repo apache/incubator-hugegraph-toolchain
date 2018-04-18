@@ -22,6 +22,7 @@ package com.baidu.hugegraph.api.graph;
 import java.util.Map;
 
 import org.glassfish.jersey.uri.UriComponent;
+import org.glassfish.jersey.uri.UriComponent.Type;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
@@ -42,7 +43,7 @@ public abstract class GraphAPI extends API {
 
     public GraphAPI(RestClient client, String graph) {
         super(client);
-        this.path(String.format(PATH, graph, type()));
+        this.path = String.format(PATH, graph, type());
         this.batchPath = String.format("%s/%s", this.path, "batch");
     }
 
@@ -84,7 +85,10 @@ public abstract class GraphAPI extends API {
          * which will invalidate the jersey's automatic decoding
          * because it considers the space to be encoded as `%2F`
          */
-        return UriComponent.encode(json,
-                                   UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
+        return encode(json);
+    }
+
+    public static String encode(String raw) {
+        return UriComponent.encode(raw, Type.QUERY_PARAM_SPACE_ENCODED);
     }
 }

@@ -437,8 +437,8 @@ public class EdgeApiTest extends BaseApiTest {
     }
 
     /**
-     * Note: When the vertex of the edge is dirty (id), use g.E () will
-     * construct the vertex, and then throw the exception illegally.
+     * Note: When the vertex of an edge is dirty (id), g.E() will
+     * construct the vertex, and then throw a illegal exception.
      * That will lead clearData error.
      * (Icafe: HugeGraph-768)
      */

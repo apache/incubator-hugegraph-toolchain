@@ -37,12 +37,18 @@ import com.baidu.hugegraph.util.E;
 
 public class GraphManager {
 
-    private VertexAPI vertexAPI;
-    private EdgeAPI edgeAPI;
+    private final String graph;
+    private final VertexAPI vertexAPI;
+    private final EdgeAPI edgeAPI;
 
     public GraphManager(RestClient client, String graph) {
+        this.graph = graph;
         this.vertexAPI = new VertexAPI(client, graph);
         this.edgeAPI = new EdgeAPI(client, graph);
+    }
+
+    public String graph() {
+        return this.graph;
     }
 
     public Vertex addVertex(Vertex vertex) {

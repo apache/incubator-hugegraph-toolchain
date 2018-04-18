@@ -19,16 +19,20 @@
 
 package com.baidu.hugegraph.api;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.type.Shard;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -39,6 +43,7 @@ public class TraverserApiTest extends BaseApiTest {
         BaseApiTest.initPropertyKey();
         BaseApiTest.initVertexLabel();
         BaseApiTest.initEdgeLabel();
+        BaseApiTest.initIndexLabel();
         BaseApiTest.initVertex();
         BaseApiTest.initEdge();
     }
@@ -192,7 +197,7 @@ public class TraverserApiTest extends BaseApiTest {
 
         List<Object> ids = ImmutableList.of(markoId, vadasId, joshId,
                                             peterId, lopId, rippleId);
-        List<Vertex> vertices = verticesAPI.get(ids);
+        List<Vertex> vertices = verticesAPI.list(ids);
 
         Assert.assertEquals(6, vertices.size());
 
@@ -207,5 +212,67 @@ public class TraverserApiTest extends BaseApiTest {
                                                     "city", "Beijing",
                                                     "age", 32);
         Assert.assertEquals(props, vertices.get(2).properties());
+    }
+
+    @Test
+    public void testEdges() {
+        String date2012Id = getEdgeId("knows", "date", "20120110");
+        String date2013Id = getEdgeId("knows", "date", "20130110");
+        String date2014Id = getEdgeId("created", "date", "20140110");
+        String date2015Id = getEdgeId("created", "date", "20150110");
+        String date2016Id = getEdgeId("created", "date", "20160110");
+        String date2017Id = getEdgeId("created", "date", "20170110");
+
+        List<String> ids = ImmutableList.of(date2012Id, date2013Id, date2014Id,
+                                            date2015Id, date2016Id, date2017Id);
+
+        List<Edge> edges = edgesAPI.list(ids);
+
+        Assert.assertEquals(6, edges.size());
+
+        Assert.assertEquals(date2012Id, edges.get(0).id());
+        Assert.assertEquals(date2013Id, edges.get(1).id());
+        Assert.assertEquals(date2014Id, edges.get(2).id());
+        Assert.assertEquals(date2015Id, edges.get(3).id());
+        Assert.assertEquals(date2016Id, edges.get(4).id());
+        Assert.assertEquals(date2017Id, edges.get(5).id());
+
+        Map<String, Object> props = ImmutableMap.of("date", "20140110",
+                                                    "city", "Shanghai");
+        Assert.assertEquals(props, edges.get(2).properties());
+    }
+
+    @Test
+    public void testScanVertex() {
+        List<Shard> shards = verticesAPI.shards(1 * 1024 * 1024);
+        List<Vertex> vertices = new LinkedList<>();
+        for (Shard shard : shards) {
+            vertices.addAll(ImmutableList.copyOf(verticesAPI.scan(shard)));
+        }
+        Assert.assertEquals(6, vertices.size());
+    }
+
+    @Test
+    public void testScanVertexWithSplitSizeLt1MB() {
+        Assert.assertThrows(ServerException.class, () -> {
+            verticesAPI.shards(1 * 1024 * 1024 - 1);
+        });
+    }
+
+    @Test
+    public void testScanEdge() {
+        List<Shard> shards = edgesAPI.shards(1 * 1024 * 1024);
+        List<Edge> edges = new LinkedList<>();
+        for (Shard shard : shards) {
+            edges.addAll(ImmutableList.copyOf(edgesAPI.scan(shard)));
+        }
+        Assert.assertEquals(6, edges.size());
+    }
+
+    @Test
+    public void testScanEdgeWithSplitSizeLt1MB() {
+        Assert.assertThrows(ServerException.class, () -> {
+            edgesAPI.shards(1 * 1024 * 1024 - 1);
+        });
     }
 }
