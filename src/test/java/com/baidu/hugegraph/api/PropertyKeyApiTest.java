@@ -143,31 +143,31 @@ public class PropertyKeyApiTest extends BaseApiTest {
     @Test
     public void testAddPropertyKeyWithUserData() {
         PropertyKey age = schema().propertyKey("age")
-                                  .userData("min", 0)
-                                  .userData("max", 100)
+                                  .userdata("min", 0)
+                                  .userdata("max", 100)
                                   .build();
         propertyKeyAPI.create(age);
-        Assert.assertEquals(2, age.userData().size());
-        Assert.assertEquals(0, age.userData().get("min"));
-        Assert.assertEquals(100, age.userData().get("max"));
+        Assert.assertEquals(2, age.userdata().size());
+        Assert.assertEquals(0, age.userdata().get("min"));
+        Assert.assertEquals(100, age.userdata().get("max"));
 
         PropertyKey id = schema().propertyKey("id")
-                                 .userData("length", 15)
-                                 .userData("length", 18)
+                                 .userdata("length", 15)
+                                 .userdata("length", 18)
                                  .build();
         propertyKeyAPI.create(id);
         // The same key user data will be overwritten
-        Assert.assertEquals(1, id.userData().size());
-        Assert.assertEquals(18, id.userData().get("length"));
+        Assert.assertEquals(1, id.userdata().size());
+        Assert.assertEquals(18, id.userdata().get("length"));
 
         PropertyKey sex = schema().propertyKey("sex")
-                                  .userData("range",
+                                  .userdata("range",
                                             ImmutableList.of("male", "female"))
                                   .build();
         propertyKeyAPI.create(sex);
-        Assert.assertEquals(1, sex.userData().size());
+        Assert.assertEquals(1, sex.userdata().size());
         Assert.assertEquals(ImmutableList.of("male", "female"),
-                            sex.userData().get("range"));
+                            sex.userdata().get("range"));
     }
 
     private static void assertContains(List<PropertyKey> propertyKeys,

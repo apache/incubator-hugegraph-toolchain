@@ -404,24 +404,24 @@ public class EdgeLabelApiTest extends BaseApiTest {
         EdgeLabel father = schema().edgeLabel("father")
                                    .link("person", "person")
                                    .properties("weight")
-                                   .userData("multiplicity", "one-to-many")
+                                   .userdata("multiplicity", "one-to-many")
                                    .build();
         edgeLabelAPI.create(father);
-        Assert.assertEquals(1, father.userData().size());
+        Assert.assertEquals(1, father.userdata().size());
         Assert.assertEquals("one-to-many",
-                            father.userData().get("multiplicity"));
+                            father.userdata().get("multiplicity"));
 
         EdgeLabel write = schema().edgeLabel("write")
                                   .link("person", "book")
                                   .properties("date", "weight")
-                                  .userData("multiplicity", "one-to-many")
-                                  .userData("multiplicity", "many-to-many")
+                                  .userdata("multiplicity", "one-to-many")
+                                  .userdata("multiplicity", "many-to-many")
                                   .build();
         edgeLabelAPI.create(write);
         // The same key user data will be overwritten
-        Assert.assertEquals(1, write.userData().size());
+        Assert.assertEquals(1, write.userdata().size());
         Assert.assertEquals("many-to-many",
-                            write.userData().get("multiplicity"));
+                            write.userdata().get("multiplicity"));
     }
 
     private static void assertContains(List<EdgeLabel> edgeLabels,

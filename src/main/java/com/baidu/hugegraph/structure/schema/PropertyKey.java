@@ -20,7 +20,6 @@
 package com.baidu.hugegraph.structure.schema;
 
 import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
@@ -92,7 +91,7 @@ public class PropertyKey extends SchemaElement {
 
         Builder valueSet();
 
-        Builder userData(String key, Object val);
+        Builder userdata(String key, Object val);
 
         Builder ifNotExist();
     }
@@ -198,10 +197,10 @@ public class PropertyKey extends SchemaElement {
         }
 
         @Override
-        public Builder userData(String key, Object val) {
+        public Builder userdata(String key, Object val) {
             E.checkArgumentNotNull(key, "The user data key can't be null");
             E.checkArgumentNotNull(val, "The user data value can't be null");
-            this.propertyKey.userData.put(key, val);
+            this.propertyKey.userdata.put(key, val);
             return this;
         }
 

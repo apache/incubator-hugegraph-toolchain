@@ -60,7 +60,7 @@ public class IndexLabel extends SchemaElement {
     }
 
     @Override
-    public Map<String, Object> userData() {
+    public Map<String, Object> userdata() {
         throw new NotSupportException("user data for index label");
     }
 

@@ -84,7 +84,7 @@ public class VertexLabel extends SchemaLabel {
 
         Builder enableLabelIndex(boolean enable);
 
-        Builder userData(String key, Object val);
+        Builder userdata(String key, Object val);
 
         Builder ifNotExist();
     }
@@ -183,10 +183,10 @@ public class VertexLabel extends SchemaLabel {
         }
 
         @Override
-        public Builder userData(String key, Object val) {
+        public Builder userdata(String key, Object val) {
             E.checkArgumentNotNull(key, "The user data key can't be null");
             E.checkArgumentNotNull(val, "The user data value can't be null");
-            this.vertexLabel.userData.put(key, val);
+            this.vertexLabel.userdata.put(key, val);
             return this;
         }
 

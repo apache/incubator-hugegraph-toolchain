@@ -39,12 +39,12 @@ public abstract class SchemaElement extends Element {
     @JsonProperty("check_exist")
     protected boolean checkExist;
     @JsonProperty("user_data")
-    protected Map<String, Object> userData;
+    protected Map<String, Object> userdata;
 
     public SchemaElement(String name) {
         this.name = name;
         this.properties = new ConcurrentSkipListSet<>();
-        this.userData = new ConcurrentHashMap<>();
+        this.userdata = new ConcurrentHashMap<>();
         this.checkExist = true;
     }
 
@@ -60,8 +60,8 @@ public abstract class SchemaElement extends Element {
         return this.properties;
     }
 
-    public Map<String, Object> userData() {
-        return this.userData;
+    public Map<String, Object> userdata() {
+        return this.userdata;
     }
 
     public boolean checkExits() {
