@@ -47,6 +47,10 @@ public class RestClient extends com.baidu.hugegraph.rest.RestClient {
         super(url, timeout * SECOND);
     }
 
+    public RestClient(String url, String username, String password, int timeout) {
+        super(url, username, password, timeout * SECOND);
+    }
+
     protected void checkStatus(Response response, Response.Status... statuses) {
         boolean match = false;
         for (Response.Status status : statuses) {

@@ -34,8 +34,6 @@ public class HugeClient {
         ClientVersion.check();
     }
 
-    private RestClient client;
-
     private VersionManager version;
     private GraphsManager graphs;
     private SchemaManager schema;
@@ -49,22 +47,46 @@ public class HugeClient {
     }
 
     public HugeClient(String url, String graph, int timeout) {
+        RestClient client = null;
         try {
-            this.client = new RestClient(url, timeout);
+            client = new RestClient(url, timeout);
         } catch (ProcessingException e) {
             throw new ServerException("Failed to connect url '%s'", url);
         }
 
+        this.initManagers(client, graph);
+    }
+
+    public HugeClient(String url, String graph,
+                      String username, String password) {
+        this(url, graph, username, password, DEFAULT_TIMEOUT);
+    }
+
+    public HugeClient(String url, String graph,
+                      String username, String password,
+                      int timeout) {
+        RestClient client = null;
+        try {
+            client = new RestClient(url, username, password, timeout);
+        } catch (ProcessingException e) {
+            throw new ServerException("Failed to connect url '%s'", url);
+        }
+
+        this.initManagers(client, graph);
+    }
+
+    private void initManagers(RestClient client, String graph) {
+        assert client != null;
         // Check hugegraph-server api version
-        this.version = new VersionManager(this.client);
+        this.version = new VersionManager(client);
         this.checkServerApiVersion();
 
-        this.graphs = new GraphsManager(this.client);
-        this.schema = new SchemaManager(this.client, graph);
-        this.graph = new GraphManager(this.client, graph);
-        this.gremlin = new GremlinManager(this.client, graph);
-        this.traverser = new TraverserManager(this.client, this.graph);
-        this.variables = new VariablesManager(this.client, graph);
+        this.graphs = new GraphsManager(client);
+        this.schema = new SchemaManager(client, graph);
+        this.graph = new GraphManager(client, graph);
+        this.gremlin = new GremlinManager(client, graph);
+        this.traverser = new TraverserManager(client, this.graph);
+        this.variables = new VariablesManager(client, graph);
     }
 
     /**
@@ -73,7 +95,7 @@ public class HugeClient {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.21", "0.22",
+        VersionUtil.check(apiVersion, "0.22", "0.23",
                           "hugegraph-api in server");
     }
 

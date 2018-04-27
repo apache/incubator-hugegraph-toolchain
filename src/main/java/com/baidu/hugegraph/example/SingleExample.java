@@ -42,7 +42,7 @@ public class SingleExample {
                                                "hugegraph");
 
         SchemaManager schema = hugeClient.schema();
-        
+
         schema.propertyKey("name").asText().ifNotExist().create();
         schema.propertyKey("age").asInt().ifNotExist().create();
         schema.propertyKey("city").asText().ifNotExist().create();
@@ -145,7 +145,6 @@ public class SingleExample {
         josh.addEdge("created", lop, "date", "20091111", "weight", 0.4);
         josh.addEdge("created", ripple, "date", "20171210", "weight", 1.0);
         peter.addEdge("created", lop, "date", "20170324", "weight", 0.2);
-
 
         GremlinManager gremlin = hugeClient.gremlin();
         System.out.println("==== Path ====");
