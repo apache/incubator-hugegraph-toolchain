@@ -42,12 +42,14 @@ public class ShortestPathAPI extends TraversersAPI {
     }
 
     public Path get(Object sourceId, Object targetId,
-                    Direction direction, String label, int maxDepth) {
+                    Direction direction, String label, int maxDepth,
+                    long degree, long capacity) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
-        E.checkArgument(maxDepth >= 1,
-                        "Max depth of shortest path must be >= 1, " +
-                        "but got '%s'", maxDepth);
+
+        checkPositive(maxDepth, "Max depth of shortest path");
+        checkDegree(degree);
+        checkCapacity(capacity);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);
@@ -55,6 +57,8 @@ public class ShortestPathAPI extends TraversersAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("max_depth", maxDepth);
+        params.put("degree", degree);
+        params.put("capacity", capacity);
         RestResult result = this.client.get(this.path(), params);
         List<Object> vertices = result.readList("path", Object.class);
         return new Path(vertices);

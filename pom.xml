@@ -5,7 +5,7 @@
 
     <groupId>com.baidu.hugegraph</groupId>
     <artifactId>hugegraph-client</artifactId>
-    <version>1.5.4-SNAPSHOT</version>
+    <version>1.5.5-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>hugegraph-client</name>
@@ -90,7 +90,7 @@
                         </manifest>
                         <manifestEntries>
                             <Implementation-Version>
-                                1.5.4.0
+                                1.5.5.0
                             </Implementation-Version>
                         </manifestEntries>
                     </archive>

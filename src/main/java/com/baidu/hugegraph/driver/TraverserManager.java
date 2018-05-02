@@ -61,59 +61,96 @@ public class TraverserManager {
 
     public Path shortestPath(Object sourceId, Object targetId,
                              Direction direction, int maxDepth) {
-        return this.shortestPathAPI.get(sourceId, targetId, direction,
-                                        null, maxDepth);
+        return this.shortestPath(sourceId, targetId, direction, null,
+                                 maxDepth);
     }
 
     public Path shortestPath(Object sourceId, Object targetId,
                              Direction direction, String label, int maxDepth) {
+        return this.shortestPath(sourceId, targetId, direction,
+                                 label, maxDepth, -1L, -1L);
+    }
+
+    public Path shortestPath(Object sourceId, Object targetId,
+                             Direction direction, String label, int maxDepth,
+                             long degree, long capacity) {
         return this.shortestPathAPI.get(sourceId, targetId, direction,
-                                        label, maxDepth);
+                                        label, maxDepth, degree, capacity);
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
-                            Direction direction, int maxDepth, int limit) {
-        return this.pathsAPI.get(sourceId, targetId, direction, null,
-                                 maxDepth, limit);
+                            Direction direction, int maxDepth, long limit) {
+        return this.paths(sourceId, targetId, direction, null,
+                          maxDepth, limit);
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
                             Direction direction, String label,
-                            int maxDepth, int limit) {
-        return this.pathsAPI.get(sourceId, targetId, direction,
-                                 label, maxDepth, limit);
+                            int maxDepth, long limit) {
+        return this.paths(sourceId, targetId, direction,
+                          label, maxDepth, -1L, -1L, limit);
+    }
+
+    public List<Path> paths(Object sourceId, Object targetId,
+                            Direction direction, String label, int maxDepth,
+                            long degree, long capacity, long limit) {
+        return this.pathsAPI.get(sourceId, targetId, direction, label,
+                                 maxDepth, degree, capacity, limit);
     }
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  Direction direction, int maxDepth, int limit) {
-        return this.crosspointsAPI.get(sourceId, targetId, direction, null,
-                                       maxDepth, limit);
+        return this.crosspoint(sourceId, targetId, direction, null,
+                               maxDepth, limit);
     }
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  Direction direction, String label,
                                  int maxDepth, int limit) {
-        return this.crosspointsAPI.get(sourceId, targetId, direction,
-                                       label, maxDepth, limit);
+        return this.crosspoint(sourceId, targetId, direction,
+                               label, maxDepth, -1L, -1L, limit);
+    }
+
+    public List<Path> crosspoint(Object sourceId, Object targetId,
+                                 Direction direction, String label,
+                                 int maxDepth, long degree, long capacity,
+                                 long limit) {
+        return this.crosspointsAPI.get(sourceId, targetId, direction, label,
+                                       maxDepth, degree, capacity, limit);
     }
 
     public List<Object> kout(Object sourceId, Direction direction, int depth) {
-        return this.koutAPI.get(sourceId, direction, null, depth, true);
+        return this.kout(sourceId, direction, null, depth, true);
     }
 
     public List<Object> kout(Object sourceId, Direction direction,
                              String label, int depth, boolean nearest) {
-        return this.koutAPI.get(sourceId, direction, label, depth, nearest);
+        return this.kout(sourceId, direction, label, depth, nearest,
+                         -1L, -1L, -1L);
+    }
+
+    public List<Object> kout(Object sourceId, Direction direction,
+                             String label, int depth, boolean nearest,
+                             long degree, long capacity, long limit) {
+        return this.koutAPI.get(sourceId, direction, label, depth, nearest,
+                                degree, capacity, limit);
     }
 
     public List<Object> kneighbor(Object sourceId, Direction direction,
                                   int depth) {
-        return this.kneighborAPI.get(sourceId, direction, null, depth);
+        return this.kneighbor(sourceId, direction, null, depth);
     }
 
     public List<Object> kneighbor(Object sourceId, Direction direction,
                                   String label, int depth) {
-        return this.kneighborAPI.get(sourceId, direction, label, depth);
+        return this.kneighbor(sourceId, direction, label, depth, -1L, -1L);
+    }
+
+    public List<Object> kneighbor(Object sourceId, Direction direction,
+                                  String label, int depth,
+                                  long degree, long limit) {
+        return this.kneighborAPI.get(sourceId, direction, label, depth,
+                                     degree, limit);
     }
 
     public List<Shard> vertexShards(long splitSize) {

@@ -43,12 +43,15 @@ public class PathsAPI extends TraversersAPI {
 
     public List<Path> get(Object sourceId, Object targetId,
                           Direction direction, String label,
-                          int maxDepth, int limit) {
+                          int maxDepth, long degree, long capacity,
+                          long limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
-        E.checkArgument(maxDepth >= 1,
-                        "Max depth of path must be >= 1, but got '%s'",
-                        maxDepth);
+
+        checkPositive(maxDepth, "Max depth of path");
+        checkDegree(degree);
+        checkCapacity(capacity);
+        checkLimit(limit);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);
@@ -56,6 +59,8 @@ public class PathsAPI extends TraversersAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("max_depth", maxDepth);
+        params.put("degree", degree);
+        params.put("capacity", capacity);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readList("paths", Path.class);

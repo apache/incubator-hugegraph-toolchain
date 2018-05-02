@@ -41,17 +41,20 @@ public class KneighborAPI extends TraversersAPI {
     }
 
     public List<Object> get(Object sourceId, Direction direction,
-                            String label, int depth) {
+                            String label, int depth, long degree, long limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
-        E.checkArgument(depth >= 1,
-                        "Depth of k-neighbor must be >= 1, but got '%s'",
-                        depth);
+
+        checkPositive(depth, "Depth of k-neighbor");
+        checkDegree(degree);
+        checkLimit(limit);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);
         params.put("direction", direction);
         params.put("label", label);
         params.put("depth", depth);
+        params.put("degree", degree);
+        params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readList("vertices", Object.class);
     }

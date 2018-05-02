@@ -57,7 +57,7 @@ public class TraverserApiTest extends BaseApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         Path path = shortestPathAPI.get(markoId, lopId, Direction.OUT,
-                                        null, 3);
+                                        null, 3, -1L, -1L);
         Assert.assertEquals(2, path.size());
         Assert.assertEquals(personId + ":marko", path.objects().get(0));
         Assert.assertEquals(softwareId + ":lop", path.objects().get(1));
@@ -71,7 +71,7 @@ public class TraverserApiTest extends BaseApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
 
         List<Path> paths = pathsAPI.get(markoId, rippleId, Direction.BOTH,
-                                        null, 3, 10);
+                                        null, 3, -1L, -1L, 10);
         Assert.assertEquals(2, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, joshId, rippleId);
         List<Object> path2 = ImmutableList.of(markoId, lopId, joshId, rippleId);
@@ -87,7 +87,7 @@ public class TraverserApiTest extends BaseApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
 
         List<Path> paths = pathsAPI.get(markoId, rippleId, Direction.BOTH,
-                                        null, 3, 1);
+                                        null, 3, -1L, -1L, 1);
         Assert.assertEquals(1, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, joshId, rippleId);
         Assert.assertEquals(path1, paths.get(0).objects());
@@ -101,7 +101,7 @@ public class TraverserApiTest extends BaseApiTest {
         Object peterId = getVertexId("person", "name", "peter");
 
         List<Path> paths = crosspointsAPI.get(markoId, peterId, Direction.OUT,
-                                             null, 3, 10);
+                                             null, 3, -1L, -1L, 10);
         Assert.assertEquals(2, paths.size());
         Path crosspoint1 = new Path(lopId,
                                     ImmutableList.of(markoId, lopId, peterId));
@@ -120,7 +120,7 @@ public class TraverserApiTest extends BaseApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = koutAPI.get(markoId, Direction.OUT,
-                                            null, 2, true);
+                                            null, 2, true, -1L, -1L, -1L);
         Assert.assertEquals(1, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
     }
@@ -131,8 +131,8 @@ public class TraverserApiTest extends BaseApiTest {
 
         long softwareId = vertexLabelAPI.get("software").id();
 
-        List<Object> vertices = koutAPI.get(markoId, Direction.OUT,
-                                            null, 2, false);
+        List<Object> vertices = koutAPI.get(markoId, Direction.OUT, null,
+                                            2, false, -1L, -1L, -1L);
         Assert.assertEquals(2, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -146,7 +146,7 @@ public class TraverserApiTest extends BaseApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = koutAPI.get(markoId, Direction.BOTH,
-                                            null, 2, true);
+                                            null, 2, true, -1L, -1L, -1L);
         Assert.assertEquals(2, vertices.size());
         Assert.assertTrue(vertices.contains(personId + ":peter"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -159,8 +159,8 @@ public class TraverserApiTest extends BaseApiTest {
         long personId = vertexLabelAPI.get("person").id();
         long softwareId = vertexLabelAPI.get("software").id();
 
-        List<Object> vertices = koutAPI.get(markoId, Direction.BOTH,
-                                            null, 2, false);
+        List<Object> vertices = koutAPI.get(markoId, Direction.BOTH, null,
+                                            2, false, -1L, -1L, -1L);
         Assert.assertEquals(5, vertices.size());
         Assert.assertTrue(vertices.contains(personId + ":marko"));
         Assert.assertTrue(vertices.contains(personId + ":josh"));
@@ -177,7 +177,7 @@ public class TraverserApiTest extends BaseApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = kneighborAPI.get(markoId, Direction.OUT,
-                                                 null, 2);
+                                                 null, 2, -1L, -1L);
         Assert.assertEquals(5, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));

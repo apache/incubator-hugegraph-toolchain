@@ -21,10 +21,12 @@ package com.baidu.hugegraph.api.traverser;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.util.E;
 
 public class TraversersAPI extends API {
 
     private static final String PATH = "graphs/%s/traversers/%s";
+    public static final long NO_LIMIT = -1L;
 
     public TraversersAPI(RestClient client, String graph) {
         super(client);
@@ -34,5 +36,28 @@ public class TraversersAPI extends API {
     @Override
     protected String type() {
         return "traversers";
+    }
+
+    protected static void checkPositive(int value, String name) {
+        E.checkArgument(value > 0,
+                        "%s must be > 0, but got '%s'", name, value);
+    }
+
+    protected static void checkDegree(long degree) {
+        checkLimit(degree, "Degree");
+    }
+
+    protected static void checkCapacity(long capacity) {
+        checkLimit(capacity, "Capacity");
+    }
+
+    protected static void checkLimit(long limit) {
+        checkLimit(limit, "Limit");
+    }
+
+    private static void checkLimit(long value, String name) {
+        E.checkArgument(value > 0 || value == NO_LIMIT,
+                        "%s must be > 0 or == %s, but got: %s",
+                        name, NO_LIMIT, value);
     }
 }
