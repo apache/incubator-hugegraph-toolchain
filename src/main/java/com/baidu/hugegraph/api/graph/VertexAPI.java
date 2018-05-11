@@ -85,17 +85,18 @@ public class VertexAPI extends GraphAPI {
     }
 
     public Vertices list(int limit) {
-        return this.list(null, null, null, limit);
+        return this.list(null, null, 0, null, limit);
     }
 
-    public Vertices list(String label,
-                         Map<String, Object> properties,
-                         String page,
-                         int limit) {
+    public Vertices list(String label, Map<String, Object> properties,
+                         int offset, String page, int limit) {
+        checkOffset(offset);
+        checkLimit(limit, "Limit");
         String props = GraphAPI.formatProperties(properties);
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("label", label);
         params.put("properties", props);
+        params.put("offset", offset);
         params.put("limit", limit);
         params.put("page", page);
         RestResult result = this.client.get(this.path(), params);

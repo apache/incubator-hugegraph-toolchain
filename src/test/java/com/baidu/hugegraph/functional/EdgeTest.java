@@ -257,16 +257,16 @@ public class EdgeTest extends BaseFuncTest {
         
         List<Edge> edges = graph().listEdges();
         Assert.assertEquals(6, edges.size());
-        assertContains(edges, markoId, "knows", vadasId, "date", "20160110");
-        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "knows", vadasId, "date", "20120110");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130110");
         assertContains(edges, markoId, "created", lopId,
-                       "date", "20171210", "city", "Shanghai");
+                       "date", "20140110", "city", "Shanghai");
         assertContains(edges, joshId, "created", rippleId,
-                       "date", "20171210", "city", "Beijing");
+                       "date", "20150110", "city", "Beijing");
         assertContains(edges, joshId, "created", lopId,
-                       "date", "20091111", "city", "Beijing");
+                       "date", "20160110", "city", "Beijing");
         assertContains(edges, peterId, "created", lopId,
-                       "date", "20170324", "city", "Hongkong");
+                       "date", "20170110", "city", "Hongkong");
     }
 
     @Test
@@ -282,16 +282,16 @@ public class EdgeTest extends BaseFuncTest {
 
         List<Edge> edges = graph().listEdges(-1);
         Assert.assertEquals(6, edges.size());
-        assertContains(edges, markoId, "knows", vadasId, "date", "20160110");
-        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "knows", vadasId, "date", "20120110");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130110");
         assertContains(edges, markoId, "created", lopId,
-                       "date", "20171210", "city", "Shanghai");
+                       "date", "20140110", "city", "Shanghai");
         assertContains(edges, joshId, "created", rippleId,
-                       "date", "20171210", "city", "Beijing");
+                       "date", "20150110", "city", "Beijing");
         assertContains(edges, joshId, "created", lopId,
-                       "date", "20091111", "city", "Beijing");
+                       "date", "20160110", "city", "Beijing");
         assertContains(edges, peterId, "created", lopId,
-                       "date", "20170324", "city", "Hongkong");
+                       "date", "20170110", "city", "Hongkong");
     }
 
     @Test
@@ -305,10 +305,10 @@ public class EdgeTest extends BaseFuncTest {
 
         List<Edge> edges = graph().getEdges(markoId);
         Assert.assertEquals(3, edges.size());
-        assertContains(edges, markoId, "knows", vadasId, "date", "20160110");
-        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "knows", vadasId, "date", "20120110");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130110");
         assertContains(edges, markoId, "created", lopId,
-                       "date", "20171210", "city", "Shanghai");
+                       "date", "20140110", "city", "Shanghai");
     }
 
     @Test
@@ -336,13 +336,13 @@ public class EdgeTest extends BaseFuncTest {
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT);
         Assert.assertEquals(2, edges.size());
         assertContains(edges, joshId, "created", rippleId,
-                       "date", "20171210", "city", "Beijing");
+                       "date", "20150110", "city", "Beijing");
         assertContains(edges, joshId, "created", lopId,
-                       "date", "20091111", "city", "Beijing");
+                       "date", "20160110", "city", "Beijing");
 
         edges = graph().getEdges(joshId, Direction.IN);
         Assert.assertEquals(1, edges.size());
-        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130110");
     }
 
     @Test
@@ -378,13 +378,13 @@ public class EdgeTest extends BaseFuncTest {
                                             "created");
         Assert.assertEquals(2, edges.size());
         assertContains(edges, joshId, "created", rippleId,
-                       "date", "20171210", "city", "Beijing");
+                       "date", "20150110", "city", "Beijing");
         assertContains(edges, joshId, "created", lopId,
-                       "date", "20091111", "city", "Beijing");
+                       "date", "20160110", "city", "Beijing");
 
         edges = graph().getEdges(joshId, Direction.IN, "knows");
         Assert.assertEquals(1, edges.size());
-        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130110");
     }
 
     @Test
@@ -417,17 +417,17 @@ public class EdgeTest extends BaseFuncTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        Map<String, Object> properties = ImmutableMap.of("date", "20171210");
+        Map<String, Object> properties = ImmutableMap.of("date", "20150110");
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", properties);
         Assert.assertEquals(1, edges.size());
         assertContains(edges, joshId, "created", rippleId,
-                       "date", "20171210", "city", "Beijing");
+                       "date", "20150110", "city", "Beijing");
 
-        properties = ImmutableMap.of("date", "20130220");
+        properties = ImmutableMap.of("date", "20130110");
         edges = graph().getEdges(joshId, Direction.IN, "knows", properties);
         Assert.assertEquals(1, edges.size());
-        assertContains(edges, markoId, "knows", joshId, "date", "20130220");
+        assertContains(edges, markoId, "knows", joshId, "date", "20130110");
     }
 
     @Test
@@ -436,7 +436,7 @@ public class EdgeTest extends BaseFuncTest {
 
         Object joshId = getVertexId("person", "name", "josh");
 
-        Map<String, Object> properties = ImmutableMap.of("date", "20171210");
+        Map<String, Object> properties = ImmutableMap.of("date", "20150110");
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", properties);
         Assert.assertEquals(1, edges.size());
@@ -445,7 +445,7 @@ public class EdgeTest extends BaseFuncTest {
             Assert.assertEquals("created", edge.label());
         }
 
-        properties = ImmutableMap.of("date", "20130220");
+        properties = ImmutableMap.of("date", "20130110");
         edges = graph().getEdges(joshId, Direction.IN, "knows", properties);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {

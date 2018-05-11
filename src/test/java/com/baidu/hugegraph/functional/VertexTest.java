@@ -298,7 +298,7 @@ public class VertexTest extends BaseFuncTest {
         BaseClientTest.initVertex();
 
         Map<String, Object> properties = ImmutableMap.of("age", 29);
-        List<Vertex> vertices = graph().listVertices("person", properties, 1);
+        List<Vertex> vertices = graph().listVertices("person", properties, 0, 1);
         Assert.assertEquals(1, vertices.size());
         Assert.assertEquals("person", vertices.get(0).label());
     }

@@ -26,7 +26,6 @@ import com.baidu.hugegraph.util.E;
 public class TraversersAPI extends API {
 
     private static final String PATH = "graphs/%s/traversers/%s";
-    public static final long NO_LIMIT = -1L;
 
     public TraversersAPI(RestClient client, String graph) {
         super(client);
@@ -53,11 +52,5 @@ public class TraversersAPI extends API {
 
     protected static void checkLimit(long limit) {
         checkLimit(limit, "Limit");
-    }
-
-    private static void checkLimit(long value, String name) {
-        E.checkArgument(value > 0 || value == NO_LIMIT,
-                        "%s must be > 0 or == %s, but got: %s",
-                        name, NO_LIMIT, value);
     }
 }

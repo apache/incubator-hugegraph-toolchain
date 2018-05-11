@@ -86,27 +86,33 @@ public class GraphManager {
     }
 
     public List<Vertex> listVertices(int limit) {
-        return this.listVertices(null, null, limit);
+        return this.listVertices(null, null, 0, limit);
+    }
+
+    public List<Vertex> listVertices(int offset, int limit) {
+        return this.listVertices(null, null, offset, limit);
     }
 
     public List<Vertex> listVertices(String label) {
-        return this.listVertices(label, null, -1);
+        return this.listVertices(label, null, 0, -1);
     }
 
     public List<Vertex> listVertices(String label, int limit) {
-        return this.listVertices(label, null, limit);
+        return this.listVertices(label, null, 0, limit);
     }
 
     public List<Vertex> listVertices(String label,
                                      Map<String, Object> properties) {
-        return this.listVertices(label, properties, -1);
+        return this.listVertices(label, properties, 0, -1);
     }
 
     public List<Vertex> listVertices(String label,
                                      Map<String, Object> properties,
+                                     int offset,
                                      int limit) {
         List<Vertex> vertices = this.vertexAPI.list(label, properties,
-                                                    null, limit).results();
+                                                    offset, null, limit)
+                                              .results();
         for (Vertex vertex : vertices) {
             this.attachManager(vertex);
         }
@@ -125,7 +131,7 @@ public class GraphManager {
                                             Map<String, Object> properties,
                                             int sizePerPage) {
         return new GraphIterator<>(this, (page) -> {
-            return this.vertexAPI.list(label, properties, page, sizePerPage);
+            return this.vertexAPI.list(label, properties, 0, page, sizePerPage);
         });
     }
 
@@ -194,73 +200,78 @@ public class GraphManager {
     }
 
     public List<Edge> listEdges(int limit) {
-        return this.getEdges(null, null, null, null, limit);
+        return this.getEdges(null, null, null, null, 0, limit);
+    }
+
+    public List<Edge> listEdges(int offset, int limit) {
+        return this.getEdges(null, null, null, null, offset, limit);
     }
 
     public List<Edge> listEdges(String label) {
-        return this.getEdges(null, null, label, null, -1);
+        return this.getEdges(null, null, label, null, 0, -1);
     }
 
     public List<Edge> listEdges(String label, int limit) {
-        return this.getEdges(null, null, label, null, limit);
+        return this.getEdges(null, null, label, null, 0, limit);
     }
 
     public List<Edge> listEdges(String label,
                                 Map<String, Object> properties) {
-        return this.getEdges(null, null, label, properties, -1);
+        return this.getEdges(null, null, label, properties, 0, -1);
     }
 
     public List<Edge> listEdges(String label,
                                 Map<String, Object> properties,
                                 int limit) {
-        return this.getEdges(null, null, label, properties, limit);
+        return this.getEdges(null, null, label, properties, 0, limit);
     }
 
     public List<Edge> getEdges(Object vertexId) {
-        return this.getEdges(vertexId, Direction.BOTH, null, null, -1);
+        return this.getEdges(vertexId, Direction.BOTH, null, null, 0, -1);
     }
 
     public List<Edge> getEdges(Object vertexId, int limit) {
-        return this.getEdges(vertexId, Direction.BOTH, null, null, limit);
+        return this.getEdges(vertexId, Direction.BOTH, null, null, 0, limit);
     }
 
     public List<Edge> getEdges(Object vertexId, Direction direction) {
-        return this.getEdges(vertexId, direction, null, null, -1);
+        return this.getEdges(vertexId, direction, null, null, 0, -1);
     }
 
     public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                int limit) {
-        return this.getEdges(vertexId, direction, null, null, limit);
+        return this.getEdges(vertexId, direction, null, null, 0, limit);
     }
 
     public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label) {
-        return this.getEdges(vertexId, direction, label, null, -1);
+        return this.getEdges(vertexId, direction, label, null, 0, -1);
     }
 
     public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label,
                                int limit) {
-        return this.getEdges(vertexId, direction, label, null, limit);
+        return this.getEdges(vertexId, direction, label, null, 0, limit);
     }
 
     public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label,
                                Map<String, Object> properties) {
-        return this.getEdges(vertexId, direction, label, properties, -1);
+        return this.getEdges(vertexId, direction, label, properties, 0, -1);
     }
 
     public List<Edge> getEdges(Object vertexId,
                                Direction direction,
                                String label,
                                Map<String, Object> properties,
+                               int offset,
                                int limit) {
         List<Edge> edges = this.edgeAPI.list(vertexId, direction, label,
-                                             properties, null, limit)
+                                             properties, offset, null, limit)
                                        .results();
         for (Edge edge : edges) {
             this.attachManager(edge);
@@ -281,7 +292,7 @@ public class GraphManager {
                                        int sizePerPage) {
         return new GraphIterator<>(this, (page) -> {
             return this.edgeAPI.list(null, null, label, properties,
-                                     page, sizePerPage);
+                                     0, page, sizePerPage);
         });
     }
 
@@ -310,7 +321,7 @@ public class GraphManager {
                                        int sizePerPage) {
         return new GraphIterator<>(this, (page) -> {
             return this.edgeAPI.list(vertexId, direction, label, properties,
-                                     page, sizePerPage);
+                                     0, page, sizePerPage);
         });
     }
 

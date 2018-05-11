@@ -87,15 +87,14 @@ public class EdgeAPI extends GraphAPI {
     }
 
     public Edges list(int limit) {
-        return this.list(null, null, null, null, null, limit);
+        return this.list(null, null, null, null, 0, null, limit);
     }
 
-    public Edges list(Object vertexId,
-                      Direction direction,
-                      String label,
-                      Map<String, Object> properties,
-                      String page,
-                      int limit) {
+    public Edges list(Object vertexId, Direction direction,
+                      String label, Map<String, Object> properties,
+                      int offset, String page, int limit) {
+        checkOffset(offset);
+        checkLimit(limit, "Limit");
         String vid = GraphAPI.formatVertexId(vertexId, true);
         String props = GraphAPI.formatProperties(properties);
         Map<String, Object> params = new LinkedHashMap<>();
@@ -103,6 +102,7 @@ public class EdgeAPI extends GraphAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("properties", props);
+        params.put("offset", offset);
         params.put("limit", limit);
         params.put("page", page);
         RestResult result = this.client.get(this.path(), params);

@@ -20,11 +20,13 @@
 package com.baidu.hugegraph.api;
 
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.util.E;
 
 public abstract class API {
 
     public static final String CHARSET = "UTF-8";
     public static final String BATCH_ENCODING = "gzip";
+    public static final long NO_LIMIT = -1L;
 
     protected RestClient client;
     protected String path;
@@ -41,5 +43,15 @@ public abstract class API {
 
     public void path(String path) {
         this.path = path;
+    }
+
+    protected static void checkOffset(long value) {
+        E.checkArgument(value >= 0, "Offset must be >= 0, but got: %s", value);
+    }
+
+    protected static void checkLimit(long value, String name) {
+        E.checkArgument(value > 0 || value == NO_LIMIT,
+                        "%s must be > 0 or == %s, but got: %s",
+                        name, NO_LIMIT, value);
     }
 }
