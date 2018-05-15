@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Set environment here if needed
+#export HUGEGRAPH_URL=
+#export HUGEGRAPH_GRAPH=
+#export HUGEGRAPH_USERNAME=
+#export HUGEGRAPH_PASSWORD=
+
+abs_path() {
+    SOURCE="${BASH_SOURCE[0]}"
+    while [ -h "$SOURCE" ]; do
+        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        SOURCE="$(readlink "$SOURCE")"
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    done
+    echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+}
+
+BIN=`abs_path`
+TOP="$(cd $BIN/../ && pwd)"
+LIB=$TOP/lib
+
+if [ -n "$JAVA_HOME" ]; then
+    JAVA="$JAVA_HOME"/bin/java
+else
+    JAVA=java
+fi
+
+cd $TOP
+
+if [ $# -eq 2 -a "$1" == "deploy" ]; then
+    bash $BIN/deploy.sh $2
+    exit $?
+fi
+
+if [ $# -eq 2 -a "$1" == "start-all" ]; then
+    bash $BIN/start-all.sh $2
+    exit $?
+fi
+
+if [ $# -eq 1 -a "$1" == "clear" ]; then
+    bash $BIN/clear.sh
+    exit $?
+fi
+
+if [ $# -eq 1 -a "$1" == "stop-all" ]; then
+    bash $BIN/stop-all.sh
+    exit $?
+fi
+
+# Set default environment variables if not exist
+echo $* | grep "\--url" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_URL" ]; then
+    URL_ARG="--url $HUGEGRAPH_URL"
+else
+    URL_ARG=""
+fi
+
+echo $* | grep "\--hugegraph" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_GRAPH" ]; then
+    GRAPH_ARG="--hugegraph $HUGEGRAPH_GRAPH"
+else
+    GRAPH_ARG=""
+fi
+
+echo $* | grep "\--user" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_USERNAME" ]; then
+    USER_ARG="--user $HUGEGRAPH_USERNAME"
+else
+    USER_ARG=""
+fi
+
+echo $* | grep "\--password" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_PASSWORD" ]; then
+    PASS_ARG="--password $HUGEGRAPH_PASSWORD"
+else
+    PASS_ARG=""
+fi
+
+exec $JAVA -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
+com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASS_ARG $*

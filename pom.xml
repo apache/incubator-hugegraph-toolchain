@@ -20,6 +20,8 @@
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <shell-executable>bash</shell-executable>
+        <hugegraph-client-version>1.5.6-SNAPSHOT</hugegraph-client-version>
+        <jcommand-version>1.72</jcommand-version>
     </properties>
 
     <dependencyManagement>
@@ -38,6 +40,16 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.baidu.hugegraph</groupId>
+            <artifactId>hugegraph-client</artifactId>
+            <version>${hugegraph-client-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+            <version>${jcommand-version}</version>
         </dependency>
     </dependencies>
 

@@ -28,7 +28,7 @@
     </fileSets>
 
     <dependencySets>
-         code jars
+        <!--code jars-->
         <dependencySet>
             <outputDirectory>/lib</outputDirectory>
             <unpack>false</unpack>
