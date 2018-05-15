@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.driver;
 
+import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.api.graphs.GraphsAPI;
@@ -34,5 +35,21 @@ public class GraphsManager {
 
     public Map<String, String> getGraph(String graph) {
         return this.graphsAPI.get(graph);
+    }
+
+    public List<String> listGraph() {
+        return this.graphsAPI.list();
+    }
+
+    public void restoring(String graph, boolean restoring) {
+        this.graphsAPI.restoring(graph, restoring);
+    }
+
+    public boolean restoring(String graph) {
+        return this.graphsAPI.restoring(graph);
+    }
+
+    public void clear(String graph, String message) {
+        this.graphsAPI.clear(graph, message);
     }
 }

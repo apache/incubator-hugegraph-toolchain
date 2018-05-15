@@ -26,6 +26,7 @@ import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.google.common.collect.ImmutableMap;
 
 public class GraphsAPI extends API {
 
@@ -47,5 +48,26 @@ public class GraphsAPI extends API {
     public List<String> list() {
         RestResult result = this.client.get(this.path());
         return result.readList(this.type(), String.class);
+    }
+
+    public void restoring(String graph, boolean restoring) {
+        String path = String.join("/", this.path(), graph);
+        // NOTE: Must provide id for PUT. If use "graph/restoring", "/" will
+        // be encoded to "%2F". So use "restoring" here although inaccurate.
+        this.client.put(path, "restoring",
+                        ImmutableMap.of("restoring", restoring));
+    }
+
+    @SuppressWarnings("unchecked")
+    public boolean restoring(String graph) {
+        String path = String.join("/", this.path(), graph);
+        RestResult result =  this.client.get(path, "restoring");
+        return (boolean) result.readObject(Map.class).get("restoring");
+    }
+
+    public void clear(String graph, String message) {
+        String path = String.join("/", this.path(), graph, "clear");
+        this.client.delete(path,
+                           ImmutableMap.of("confirm_message", message));
     }
 }
