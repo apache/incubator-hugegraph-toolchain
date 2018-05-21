@@ -136,7 +136,7 @@ wait_for_shutdown() {
             # Class not found in the jps output. Assume that it stopped.
             return 0
         fi
-        sleep $SLEEP_INTERVAL_S
+        sleep 2
         now_s=`date '+%s'`
     done
 
@@ -174,4 +174,23 @@ kill_process() {
             *)       kill "$pid" ;;
         esac
     done
+}
+
+function remove_with_prompt() {
+    local path=$1
+
+    local tips=""
+    if [ -d "$path" ]; then
+        tips="Remove directory '$path' and all sub files [yn]?"
+    elif [ -f "$path" ]; then
+        tips="Remove file '$path' [yn]?"
+    else
+        return 0
+    fi
+
+    read -p "$tips " yn
+    case $yn in
+        [Yy]* ) rm -rf "$path";;
+        * ) ;;
+    esac
 }

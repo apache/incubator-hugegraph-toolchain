@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# != 1 ]; then
-    echo "USAGE: $0 ${hugegraph-version}"
+    echo "USAGE: $0 {hugegraph-version}"
     echo "eg   : $0 version-0.5"
     exit 1
 fi
@@ -16,8 +16,9 @@ function abs_path() {
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
-TOP=`abs_path`
-cd $TOP
+
+BIN=`abs_path`
+cd $BIN
 
 . util.sh
 
@@ -42,44 +43,29 @@ if [ "$STUDIO_VERSION" = "" ]; then
     exit 1
 fi
 
-# Download and unzip
-DOWNLOAD_LINK_PREFIX="http://yq01-sw-hdsserver16.yq01.baidu.com:8080/hadoop-web-proxy/yqns02/hugegraph"
-SERVER_DIR_NAME="hugegraph-release-{version}-SNAPSHOT"
-STUDIO_DIR_NAME="hugestudio-release-{version}-SNAPSHOT"
-ARCHIVE_FORMAT=".tar.gz"
+SERVER_DIR="hugegraph-release-${SERVER_VERSION}-SNAPSHOT"
+STUDIO_DIR="hugestudio-release-${STUDIO_VERSION}-SNAPSHOT"
 
-# HugeGraphServer dir and tar package name
-SERVER_DIR=${SERVER_DIR_NAME/"{version}"/$SERVER_VERSION}
-SERVER_TAR=${SERVER_DIR}${ARCHIVE_FORMAT}
+if [ ! -d "$SERVER_DIR" ]; then
+    echo "The server dir $SERVER_DIR doesn't exist"
+    exit 1
+fi
 
-# HugeGraphStudio dir and tar package name
-STUDIO_DIR=${STUDIO_DIR_NAME/"{version}"/$STUDIO_VERSION}
-STUDIO_TAR=${STUDIO_DIR}${ARCHIVE_FORMAT}
-
-ensure_dir_exist $SERVER_DIR $SERVER_TAR ${DOWNLOAD_LINK_PREFIX}"/"${SERVER_TAR}
-ensure_dir_exist $STUDIO_DIR $STUDIO_TAR ${DOWNLOAD_LINK_PREFIX}"/hugestudio/"${STUDIO_TAR}
-
-IP=`get_ip`
+if [ ! -d "$STUDIO_DIR" ]; then
+    echo "The studio dir $STUDIO_DIR doesn't exist"
+    exit 1
+fi
 
 function start_hugegraph_server() {
-    local rest_server_conf="conf/rest-server.properties"
-    local server_url="http://"$IP":8080"
-
-    write_property $rest_server_conf "restserver\.url" $server_url
-
     bin/start-hugegraph.sh
     if [ $? -ne 0 ]; then
-        echo "Failed to start HugeGraphServer, please check the logs under '$TOP/$SERVER_DIR/logs' for details"
+        echo "Failed to start HugeGraphServer, please check the logs under '$BIN/$SERVER_DIR/logs' for details"
         exit 1
     fi
 }
 
 function start_hugegraph_studio() {
-    local studio_server_conf="conf/hugestudio.properties"
-
-    write_property $studio_server_conf "server\.httpBindAddress" $IP
-
-    local server_host=$IP
+    local server_host=`read_property "conf/hugestudio.properties" "server.httpBindAddress"`
     local server_port=`read_property "conf/hugestudio.properties" "server.httpPort"`
     local server_url="http://${server_host}:${server_port}"
     local start_timeout_s=20
@@ -88,19 +74,19 @@ function start_hugegraph_studio() {
     bin/hugestudio.sh >/dev/null 2>&1 &
 
     pid="$!"
-    trap '$TOP/stop-all.sh; exit' SIGHUP SIGINT SIGQUIT SIGTERM
+    trap '$BIN/stop-all.sh; exit' SIGHUP SIGINT SIGQUIT SIGTERM
 
     wait_for_startup 'HugeStudio' "$server_url" $start_timeout_s || {
-        echo "Failed to start HugeGraphStudio, please check the logs under '$TOP/$STUDIO_DIR/logs' for details"
+        echo "Failed to start HugeGraphStudio, please check the logs under '$BIN/$STUDIO_DIR/logs' for details"
         bin/stop-hugegraph.sh
         exit 1
     }
 }
 
-cd $SERVER_DIR
+cd $BIN/$SERVER_DIR
 start_hugegraph_server
 
-cd ../$STUDIO_DIR
+cd $BIN/$STUDIO_DIR
 start_hugegraph_studio
 
 echo "[OK] Started HugeGraphServer and HugeGraphStudio"

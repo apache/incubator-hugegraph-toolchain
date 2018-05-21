@@ -10,8 +10,8 @@ function abs_path() {
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
-TOP=`abs_path`
-cd $TOP
+BIN=`abs_path`
+cd $BIN
 
 . util.sh
 

@@ -12,32 +12,32 @@
     <fileSets>
         <fileSet>
             <directory>${assembly.dir}/bin</directory>
-            <outputDirectory>.</outputDirectory>
+            <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>*</include>
             </includes>
             <fileMode>755</fileMode>
         </fileSet>
-        <!--<fileSet>-->
-            <!--<directory>${project.build.directory}</directory>-->
-            <!--<outputDirectory>lib</outputDirectory>-->
-            <!--<includes>-->
-                <!--<include>*.jar</include>-->
-            <!--</includes>-->
-        <!--</fileSet>-->
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>lib</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
     </fileSets>
 
     <dependencySets>
-        <!-- code jars -->
-        <!--<dependencySet>-->
-            <!--<outputDirectory>/lib</outputDirectory>-->
-            <!--<unpack>false</unpack>-->
-            <!--<scope>runtime</scope>-->
-            <!--<useProjectArtifact>false</useProjectArtifact>-->
-            <!--<includes>-->
-                <!--<include>*:*:jar:*</include>-->
-            <!--</includes>-->
-        <!--</dependencySet>-->
+         code jars
+        <dependencySet>
+            <outputDirectory>/lib</outputDirectory>
+            <unpack>false</unpack>
+            <scope>runtime</scope>
+            <useProjectArtifact>false</useProjectArtifact>
+            <includes>
+                <include>*:*:jar:*</include>
+            </includes>
+        </dependencySet>
     </dependencySets>
 
 </assembly>
