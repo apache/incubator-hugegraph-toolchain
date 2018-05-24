@@ -43,8 +43,6 @@ public class ResultSet {
     private List<Object> data;
     @JsonProperty
     private Map<String, ?> meta;
-    
-    private int index;
 
     static {
         SimpleModule module = new SimpleModule();
@@ -53,21 +51,20 @@ public class ResultSet {
         mapper.registerModule(module);
     }
 
-    public ResultSet() {
-        this.index = 0;
-    }
-
     public List<Object> data() {
         return this.data;
     }
 
-    public Result one() {
-        if (this.index >= this.data.size()) {
+    public int size() {
+        return this.data.size();
+    }
+
+    public Result get(int index) {
+        if (index >= this.data.size()) {
             return null;
         }
 
-        // TODO: index++ should replace by thread safe incremnet
-        Object object = this.data().get(this.index++);
+        Object object = this.data().get(index);
         if (object == null) {
             return null;
         }
@@ -115,14 +112,16 @@ public class ResultSet {
 
         return new Iterator<Result>() {
 
+            private int index = 0;
+
             @Override
             public boolean hasNext() {
-                return ResultSet.this.index < ResultSet.this.data.size();
+                return this.index < ResultSet.this.data.size();
             }
 
             @Override
             public Result next() {
-                return one();
+                return get(this.index++);
             }
 
             @Override
