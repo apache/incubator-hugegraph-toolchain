@@ -13,11 +13,11 @@ Default:
 Profiles:
     - profile:
       name : dev
-      env : cmc_standard
-      command : mvn -U clean install && sh postBuild.sh
+      env : CENTOS6U3
+      command : sh ./build.sh
       release : false
     - profile:
       name :  publish
       env : cmc_standard
-      command : mvn -U clean deploy -Prelease && sh postBuild.sh
+      command : mvn -U clean deploy -Prelease
       release : true

@@ -1,1 +1,0 @@
-BUILD_SUBMITTER -x -m baidu/xbu-data/hugegraph-tools -c "cd baidu/xbu-data/hugegraph-tools && mkdir output &&cp BCLOUD ./output/" -u ./
