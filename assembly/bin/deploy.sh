@@ -2,7 +2,7 @@
 
 if [ $# != 1 ]; then
     echo "USAGE: $0 {hugegraph-version}"
-    echo "eg   : $0 version-0.5"
+    echo "eg   : $0 version-0.6"
     exit 1
 fi
 

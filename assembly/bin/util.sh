@@ -5,7 +5,7 @@ function parse_yaml() {
     local version=$2
     local module=$3
 
-    cat $file | tr -d '\n {}'| awk -F',|:' '''{
+    cat $file | tr -d '\n {}'| awk -F',+|:' '''{
         pre="";
         for(i=1; i<=NF; ) {
             if(match($i, /version/)) {

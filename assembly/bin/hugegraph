@@ -28,22 +28,22 @@ fi
 
 cd $TOP
 
-if [ $# -eq 2 -a "$1" == "deploy" ]; then
+if [ "$1" == "deploy" ]; then
     bash $BIN/deploy.sh $2
     exit $?
 fi
 
-if [ $# -eq 2 -a "$1" == "start-all" ]; then
+if [ "$1" == "start-all" ]; then
     bash $BIN/start-all.sh $2
     exit $?
 fi
 
-if [ $# -eq 1 -a "$1" == "clear" ]; then
+if [ "$1" == "clear" ]; then
     bash $BIN/clear.sh
     exit $?
 fi
 
-if [ $# -eq 1 -a "$1" == "stop-all" ]; then
+if [ "$1" == "stop-all" ]; then
     bash $BIN/stop-all.sh
     exit $?
 fi
