@@ -35,16 +35,13 @@ function write_property() {
     local value=$3
 
     local os=`uname`
-    local option=""
     case $os in
         # Note: in mac os should use sed -i '' "xxx" to replace string,
         # otherwise prompt 'command c expects \ followed by text'.
         # See http://www.cnblogs.com/greedy-day/p/5952899.html
-        Darwin) option="-i ''";;
-        *) option="-i ";;
+        Darwin) sed -i '' "s!$key=.*!$key=$value!g" "$file" ;;
+        *) sed -i "s!$key=.*!$key=$value!g" "$file" ;;
     esac
-
-    sed $option "s!$key=.*!$key=$value!g" $file
 }
 
 function get_ip() {
@@ -181,9 +178,9 @@ function remove_with_prompt() {
 
     local tips=""
     if [ -d "$path" ]; then
-        tips="Remove directory '$path' and all sub files [yn]?"
+        tips="Remove directory '$path' and all sub files [y/n]?"
     elif [ -f "$path" ]; then
-        tips="Remove file '$path' [yn]?"
+        tips="Remove file '$path' [y/n]?"
     else
         return 0
     fi

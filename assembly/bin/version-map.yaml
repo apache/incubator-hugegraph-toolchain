@@ -1,6 +1,8 @@
 version-0.5: {
   server: 0.5.6,
-  loader: 0.5.6,
   studio: 0.5.0,
-  spark:  0.5.6
+},
+version-0.6: {
+  server: 0.6.1,
+  studio: 0.6.1
 }

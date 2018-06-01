@@ -68,9 +68,9 @@
     <build>
         <directory>output</directory>
         <sourceDirectory>src/main/java</sourceDirectory>
-        <testSourceDirectory>src/test/java</testSourceDirectory>
+        <!--<testSourceDirectory>src/test/java</testSourceDirectory>-->
         <outputDirectory>output/classes</outputDirectory>
-        <testOutputDirectory>output/test-classes</testOutputDirectory>
+        <!--<testOutputDirectory>output/test-classes</testOutputDirectory>-->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

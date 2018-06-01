@@ -75,4 +75,6 @@ function config_hugegraph_studio() {
 config_hugegraph_server
 config_hugegraph_studio
 
-./start-all.sh $VERSION
+$BIN/$SERVER_DIR/bin/init-store.sh
+
+$BIN/start-all.sh $VERSION
