@@ -81,10 +81,10 @@ public class SubCommands {
     public class GraphGet {
 
         @ParametersDelegate
-        private Graph graph = new Graph();
+        private GraphName graph = new GraphName();
 
         public String graph() {
-            return this.graph.graph;
+            return this.graph.graphName;
         }
     }
 
@@ -92,13 +92,13 @@ public class SubCommands {
     public class GraphClear {
 
         @ParametersDelegate
-        private Graph graph = new Graph();
+        private GraphName graph = new GraphName();
 
         @ParametersDelegate
         private ConfirmMessage message = new ConfirmMessage();
 
         public String graph() {
-            return this.graph.graph;
+            return this.graph.graphName;
         }
 
         public String confirmMessage() {
@@ -110,13 +110,13 @@ public class SubCommands {
     public class GraphModeSet {
 
         @ParametersDelegate
-        private Graph graph = new Graph();
+        private GraphName graph = new GraphName();
 
         @ParametersDelegate
         private RestoreFlag restoreFlag = new RestoreFlag();
 
         public String graph() {
-            return this.graph.graph;
+            return this.graph.graphName;
         }
 
         public boolean restoreFlag() {
@@ -128,10 +128,10 @@ public class SubCommands {
     public class GraphModeGet {
 
         @ParametersDelegate
-        private Graph graph = new Graph();
+        private GraphName graph = new GraphName();
 
         public String graph() {
-            return this.graph.graph;
+            return this.graph.graphName;
         }
     }
 
@@ -222,9 +222,9 @@ public class SubCommands {
         public String url = "http://127.0.0.1:8080";
     }
 
-    public static class HugeGraph {
+    public static class Graph {
 
-        @Parameter(names = {"--hugegraph"}, arity = 1,
+        @Parameter(names = {"--graph"}, arity = 1,
                    description = "Name of graph")
         public String graph = "hugegraph";
     }
@@ -243,11 +243,11 @@ public class SubCommands {
         public String password;
     }
 
-    public static class Graph {
+    public static class GraphName {
 
-        @Parameter(names = {"--graph"}, arity = 1,
+        @Parameter(names = {"--graph-name"}, arity = 1,
                    description = "Name of graph")
-        public String graph = "hugegraph";
+        public String graphName = "hugegraph";
     }
 
     public class HugeTypes {

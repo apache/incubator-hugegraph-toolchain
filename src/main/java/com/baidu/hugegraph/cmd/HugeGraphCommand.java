@@ -42,7 +42,7 @@ public class HugeGraphCommand {
     private SubCommands.Url url = new SubCommands.Url();
 
     @ParametersDelegate
-    private SubCommands.HugeGraph graph = new SubCommands.HugeGraph();
+    private SubCommands.Graph graph = new SubCommands.Graph();
 
     @ParametersDelegate
     private SubCommands.Username username = new SubCommands.Username();
@@ -173,9 +173,9 @@ public class HugeGraphCommand {
     }
 
     private void checkMainParams() {
-        E.checkArgument(this.url != null, "Url can't be null");
-        E.checkArgument(this.username == null && this.password == null ||
-                        this.username != null && this.password != null,
+        E.checkArgument(this.url() != null, "Url can't be null");
+        E.checkArgument(this.username() == null && this.password() == null ||
+                        this.username() != null && this.password() != null,
                         "Both user name and password must be null or " +
                         "not null at same time");
     }
@@ -184,14 +184,14 @@ public class HugeGraphCommand {
     private <T extends ToolManager> T manager(Class<T> clz) {
         try {
             if (clz == GraphsManager.class) {
-                if (this.username != null) {
+                if (this.username() != null) {
                     return (T) new GraphsManager(this.url(), this.username(),
                                                  this.password());
                 } else {
                     return (T) new GraphsManager(this.url());
                 }
             } else {
-                if (this.username != null) {
+                if (this.username() != null) {
                     return clz.getConstructor(String.class, String.class,
                                               String.class, String.class)
                               .newInstance(this.url(), this.graph(),

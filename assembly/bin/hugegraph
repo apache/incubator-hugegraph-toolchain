@@ -56,9 +56,9 @@ else
     URL_ARG=""
 fi
 
-echo $* | grep "\--hugegraph" > /dev/null 2>&1
+echo $* | grep "\--graph " > /dev/null 2>&1
 if [ $? -ne 0 -a -n "$HUGEGRAPH_GRAPH" ]; then
-    GRAPH_ARG="--hugegraph $HUGEGRAPH_GRAPH"
+    GRAPH_ARG="--graph $HUGEGRAPH_GRAPH"
 else
     GRAPH_ARG=""
 fi
