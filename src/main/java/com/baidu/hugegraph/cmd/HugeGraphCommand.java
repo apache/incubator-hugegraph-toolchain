@@ -96,19 +96,21 @@ public class HugeGraphCommand {
         this.checkMainParams();
         switch (subCommand) {
             case "backup":
+                Printer.print("Graph '%s' start back up!", this.graph());
                 SubCommands.Backup backup =
                         (SubCommands.Backup) this.subCommands().get(subCommand);
                 BackupManager backupManager = manager(BackupManager.class);
+                backupManager.retry(backup.retry());
                 backupManager.backup(backup.types(), backup.directory());
-                Printer.print("Graph '%s' is backed up!", this.graph());
                 break;
             case "restore":
+                Printer.print("Graph '%s' start restore!", this.graph());
                 SubCommands.Restore restore =
                         (SubCommands.Restore) this.subCommands()
                                                   .get(subCommand);
                 RestoreManager restoreManager = manager(RestoreManager.class);
+                restoreManager.retry(restore.retry());
                 restoreManager.restore(restore.types(), restore.directory());
-                Printer.print("Graph '%s' is restored!", this.graph());
                 break;
             case "graph-list":
                 GraphsManager graphsManager = manager(GraphsManager.class);
@@ -231,7 +233,5 @@ public class HugeGraphCommand {
         }
 
         cmd.execute(subCommand, jCommander);
-
-        ToolManager.shutdown(subCommand);
     }
 }

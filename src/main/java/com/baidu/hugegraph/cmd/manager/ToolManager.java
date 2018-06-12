@@ -19,21 +19,7 @@
 
 package com.baidu.hugegraph.cmd.manager;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import com.baidu.hugegraph.rest.ClientException;
-
 public class ToolManager {
-
-    private static int threadsNum =
-            Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
-    private static ExecutorService pool =
-            Executors.newFixedThreadPool(threadsNum);
-
-    protected static final long SPLIT_SIZE = 64 * 1024 * 1024;
-    protected static final int LBUF_SIZE = 1024;
 
     protected final ToolClient client;
     private final String type;
@@ -51,23 +37,5 @@ public class ToolManager {
 
     protected String type() {
         return this.type;
-    }
-
-    public static void shutdown(String taskType) {
-        pool.shutdown();
-        try {
-            pool.awaitTermination(24, TimeUnit.HOURS);
-        } catch (InterruptedException e) {
-            throw new ClientException(
-                      "Exception appears in %s threads", e, taskType);
-        }
-    }
-
-    public static void submit(Runnable task) {
-        pool.submit(task);
-    }
-
-    public static int threadsNum() {
-        return threadsNum;
     }
 }

@@ -25,15 +25,23 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.concurrent.KeyLock;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.schema.EdgeLabel;
+import com.baidu.hugegraph.structure.schema.IndexLabel;
+import com.baidu.hugegraph.structure.schema.PropertyKey;
+import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.type.Shard;
 
-public class BackupManager extends ToolManager {
+public class BackupManager extends RetryManager {
+
+    private static KeyLock locks = new KeyLock();
 
     public BackupManager(String url, String graph) {
         super(url, graph, "backup");
@@ -45,6 +53,7 @@ public class BackupManager extends ToolManager {
     }
 
     public void backup(List<HugeType> types, String outputDir) {
+        this.startTimer();
         for (HugeType type : types) {
             String prefix = outputDir + type.string();
             switch (type) {
@@ -71,6 +80,8 @@ public class BackupManager extends ToolManager {
                               "Bad backup type: %s", type));
             }
         }
+        shutdown(this.type());
+        this.printSummary();
     }
 
     private void backupVertices(String prefix) {
@@ -78,61 +89,76 @@ public class BackupManager extends ToolManager {
                                         .vertexShards(SPLIT_SIZE);
         int i = 0;
         for (Shard shard : shards) {
-            List<Vertex> vertices = this.client.traverser().vertices(shard);
-            if (vertices.isEmpty()) {
-                continue;
-            }
             final int j = ++i;
-            submit(() -> {
+            this.submit(() -> {
+                List<Vertex> vertices = retry(
+                             () -> this.client.traverser().vertices(shard),
+                             "backing up vertices");
+                if (vertices == null || vertices.isEmpty()) {
+                    return;
+                }
+                this.vertexCounter.getAndAdd(vertices.size());
                 write(prefix + (j % threadsNum()),
                       this.writeList(HugeType.VERTEX.string(), vertices));
             });
         }
+        this.awaitTasks();
     }
 
     private void backupEdges(String prefix) {
         List<Shard> shards = this.client.traverser().edgeShards(SPLIT_SIZE);
         int i = 0;
         for (Shard shard : shards) {
-            List<Edge> edges = this.client.traverser().edges(shard);
-            if (edges.isEmpty()) {
-                continue;
-            }
             final int j = ++i;
-            submit(() -> {
+            this.submit(() -> {
+                List<Edge> edges = retry(
+                        () -> this.client.traverser().edges(shard),
+                        "backing up edges");
+                if (edges == null || edges.isEmpty()) {
+                    return;
+                }
+                this.edgeCounter.getAndAdd(edges.size());
                 write(prefix + (j % threadsNum()),
                       this.writeList(HugeType.EDGE.string(), edges));
             });
         }
+        this.awaitTasks();
     }
 
     private void backupPropertyKeys(String filename) {
-        write(filename, this.writeList(HugeType.PROPERTY_KEY.string(),
-                                       this.client.schema().getPropertyKeys()));
+        List<PropertyKey> pks = this.client.schema().getPropertyKeys();
+        this.propertyKeyCounter.getAndAdd(pks.size());
+        write(filename, this.writeList(HugeType.PROPERTY_KEY.string(), pks));
     }
 
     private void backupVertexLabels(String filename) {
-        write(filename, this.writeList(HugeType.VERTEX_LABEL.string(),
-                                       this.client.schema().getVertexLabels()));
+        List<VertexLabel> vls = this.client.schema().getVertexLabels();
+        this.vertexLabelCounter.getAndAdd(vls.size());
+        write(filename, this.writeList(HugeType.VERTEX_LABEL.string(), vls));
     }
 
     private void backupEdgeLabels(String filename) {
-        write(filename, this.writeList(HugeType.EDGE_LABEL.string(),
-                                       this.client.schema().getEdgeLabels()));
+        List<EdgeLabel> els = this.client.schema().getEdgeLabels();
+        this.edgeLabelCounter.getAndAdd(els.size());
+        write(filename, this.writeList(HugeType.EDGE_LABEL.string(), els));
     }
 
     private void backupIndexLabels(String filename) {
-        write(filename, this.writeList(HugeType.INDEX_LABEL.string(),
-                                       this.client.schema().getIndexLabels()));
+        List<IndexLabel> ils = this.client.schema().getIndexLabels();
+        this.indexLabelCounter.getAndAdd(ils.size());
+        write(filename, this.writeList(HugeType.INDEX_LABEL.string(), ils));
     }
 
     private static void write(String filename, String content) {
         File file = new File(filename);
+        Lock lock = locks.lock(filename);
         try (FileWriter fr = new FileWriter(file, true);
              BufferedWriter writer = new BufferedWriter(fr)) {
             writer.write(content);
         } catch (IOException e) {
             throw new ClientException("IO error occur", e);
+        } finally {
+            lock.unlock();
         }
     }
 

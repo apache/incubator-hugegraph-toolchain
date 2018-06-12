@@ -46,7 +46,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 
-public class RestoreManager extends ToolManager {
+public class RestoreManager extends RetryManager {
 
     private static final int BATCH_SIZE = 500;
 
@@ -60,6 +60,7 @@ public class RestoreManager extends ToolManager {
     }
 
     public void restore(List<HugeType> types, String inputDir) {
+        this.startTimer();
         for (HugeType type : types) {
             switch (type) {
                 case VERTEX:
@@ -85,6 +86,8 @@ public class RestoreManager extends ToolManager {
                               "Bad restore type: %s", type));
             }
         }
+        shutdown(this.type());
+        this.printSummary();
     }
 
     private void restoreVertices(HugeType type, String dir) {
@@ -108,14 +111,17 @@ public class RestoreManager extends ToolManager {
                         vertex.id(null);
                     }
                 }
-                this.client.graph().addVertices(subVertices);
+                this.retry(() -> this.client.graph().addVertices(subVertices),
+                           "restoring vertices");
+                this.vertexCounter.getAndAdd(toIndex - i);
             }
         };
         for (File file : files) {
-            submit(() -> {
+            this.submit(() -> {
                 this.restore(type, file, consumer);
             });
         }
+        this.awaitTasks();
     }
 
     private void restoreEdges(HugeType type, String dir) {
@@ -126,14 +132,18 @@ public class RestoreManager extends ToolManager {
             int size = edges.size();
             for (int i = 0; i < size; i += BATCH_SIZE) {
                 int toIndex = Math.min(i + BATCH_SIZE, size);
-                this.client.graph().addEdges(edges.subList(i, toIndex), false);
+                List<Edge> subEdges = edges.subList(i, toIndex);
+                this.retry(() -> this.client.graph().addEdges(subEdges, false),
+                           "restoring edges");
+                this.edgeCounter.getAndAdd(toIndex - i);
             }
         };
         for (File file : files) {
-            submit(() -> {
+            this.submit(() -> {
                 this.restore(type, file, consumer);
             });
         }
+        this.awaitTasks();
     }
 
     private void restorePropertyKeys(HugeType type, String dir) {
@@ -141,6 +151,7 @@ public class RestoreManager extends ToolManager {
         BiConsumer<String, String> consumer = (t, l) -> {
             for (PropertyKey pk : this.readList(t, PropertyKey.class, l)) {
                 this.client.schema().addPropertyKey(pk);
+                this.propertyKeyCounter.getAndIncrement();
             }
         };
         this.restore(type, new File(dir + fileName), consumer);
@@ -151,6 +162,7 @@ public class RestoreManager extends ToolManager {
         BiConsumer<String, String> consumer = (t, l) -> {
             for (VertexLabel vl : this.readList(t, VertexLabel.class, l)) {
                 this.client.schema().addVertexLabel(vl);
+                this.vertexLabelCounter.getAndIncrement();
             }
         };
         this.restore(type, new File(dir + fileName), consumer);
@@ -161,6 +173,7 @@ public class RestoreManager extends ToolManager {
         BiConsumer<String, String> consumer = (t, l) -> {
             for (EdgeLabel el : this.readList(t, EdgeLabel.class, l)) {
                 this.client.schema().addEdgeLabel(el);
+                this.edgeLabelCounter.getAndIncrement();
             }
         };
         this.restore(type, new File(dir + fileName), consumer);
@@ -171,6 +184,7 @@ public class RestoreManager extends ToolManager {
         BiConsumer<String, String> consumer = (t, l) -> {
             for (IndexLabel il : this.readList(t, IndexLabel.class, l)) {
                 this.client.schema().addIndexLabel(il);
+                this.indexLabelCounter.getAndIncrement();
             }
         };
         this.restore(type, new File(dir + fileName), consumer);

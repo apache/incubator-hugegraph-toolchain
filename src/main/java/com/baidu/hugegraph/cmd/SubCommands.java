@@ -205,12 +205,19 @@ public class SubCommands {
         @ParametersDelegate
         private Directory directory = new Directory();
 
+        @ParametersDelegate
+        private Retry retry = new Retry();
+
         public List<HugeType> types() {
             return this.types.types;
         }
 
         public String directory() {
             return this.directory.directory;
+        }
+
+        public int retry() {
+            return this.retry.retry;
         }
     }
 
@@ -326,6 +333,14 @@ public class SubCommands {
         public String version;
     }
 
+    public class Retry {
+
+        @Parameter(names = {"--retry"}, arity = 1,
+                   validateWith = {PositiveValidator.class},
+                   description = "retry times, default is 3")
+        public int retry = 3;
+    }
+
     public static class HugeTypeListConverter
                   implements IStringConverter<List<HugeType>> {
 
@@ -404,6 +419,19 @@ public class SubCommands {
             if (!file.exists() || !file.isDirectory()) {
                 throw new ParameterException(String.format(
                           "Invalid value of argument '%s': '%s'", name, value));
+            }
+        }
+    }
+
+    public static class PositiveValidator implements IParameterValidator {
+
+        @Override
+        public void validate(String name, String value) {
+            int retry = Integer.parseInt(value);
+            if (retry <= 0) {
+                throw new ParameterException(
+                          "Parameter " + name + " should be positive, " +
+                          "but got " + value);
             }
         }
     }
