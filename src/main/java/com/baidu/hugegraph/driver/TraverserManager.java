@@ -32,8 +32,8 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
+import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.type.Shard;
 
 public class TraverserManager {
 

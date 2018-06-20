@@ -21,7 +21,7 @@ package com.baidu.hugegraph.serializer;
 
 import java.io.IOException;
 
-import com.baidu.hugegraph.type.Shard;
+import com.baidu.hugegraph.structure.graph.Shard;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;

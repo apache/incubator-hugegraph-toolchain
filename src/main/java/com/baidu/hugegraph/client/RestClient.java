@@ -27,8 +27,8 @@ import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.serializer.ShardDeserializer;
 import com.baidu.hugegraph.serializer.VertexDeserializer;
 import com.baidu.hugegraph.structure.graph.Path;
+import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.type.Shard;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class RestClient extends com.baidu.hugegraph.rest.RestClient {
