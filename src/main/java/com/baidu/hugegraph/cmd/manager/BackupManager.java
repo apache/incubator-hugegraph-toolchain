@@ -19,11 +19,8 @@
 
 package com.baidu.hugegraph.cmd.manager;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.FileOutputStream;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
@@ -98,8 +95,8 @@ public class BackupManager extends RetryManager {
                     return;
                 }
                 this.vertexCounter.getAndAdd(vertices.size());
-                write(prefix + (j % threadsNum()),
-                      this.writeList(HugeType.VERTEX.string(), vertices));
+                String filename = prefix + (j % threadsNum());
+                this.write(filename, HugeType.VERTEX, vertices);
             });
         }
         this.awaitTasks();
@@ -118,8 +115,8 @@ public class BackupManager extends RetryManager {
                     return;
                 }
                 this.edgeCounter.getAndAdd(edges.size());
-                write(prefix + (j % threadsNum()),
-                      this.writeList(HugeType.EDGE.string(), edges));
+                String filename = prefix + (j % threadsNum());
+                this.write(filename, HugeType.EDGE, edges);
             });
         }
         this.awaitTasks();
@@ -128,48 +125,41 @@ public class BackupManager extends RetryManager {
     private void backupPropertyKeys(String filename) {
         List<PropertyKey> pks = this.client.schema().getPropertyKeys();
         this.propertyKeyCounter.getAndAdd(pks.size());
-        write(filename, this.writeList(HugeType.PROPERTY_KEY.string(), pks));
+        this.write(filename, HugeType.PROPERTY_KEY, pks);
     }
 
     private void backupVertexLabels(String filename) {
         List<VertexLabel> vls = this.client.schema().getVertexLabels();
         this.vertexLabelCounter.getAndAdd(vls.size());
-        write(filename, this.writeList(HugeType.VERTEX_LABEL.string(), vls));
+        this.write(filename, HugeType.VERTEX_LABEL, vls);
     }
 
     private void backupEdgeLabels(String filename) {
         List<EdgeLabel> els = this.client.schema().getEdgeLabels();
         this.edgeLabelCounter.getAndAdd(els.size());
-        write(filename, this.writeList(HugeType.EDGE_LABEL.string(), els));
+        this.write(filename, HugeType.EDGE_LABEL, els);
     }
 
     private void backupIndexLabels(String filename) {
         List<IndexLabel> ils = this.client.schema().getIndexLabels();
         this.indexLabelCounter.getAndAdd(ils.size());
-        write(filename, this.writeList(HugeType.INDEX_LABEL.string(), ils));
+        this.write(filename, HugeType.INDEX_LABEL, ils);
     }
 
-    private static void write(String filename, String content) {
-        File file = new File(filename);
-        Lock lock = locks.lock(filename);
-        try (FileWriter fr = new FileWriter(file, true);
-             BufferedWriter writer = new BufferedWriter(fr)) {
-            writer.write(content);
-        } catch (IOException e) {
-            throw new ClientException("IO error occur", e);
+    private void write(String file, HugeType type, List<?> list) {
+        Lock lock = locks.lock(file);
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(LBUF_SIZE);
+             FileOutputStream fos = new FileOutputStream(file, true)) {
+            String key = String.format("{\"%s\": ", type.string());
+            baos.write(key.getBytes(API.CHARSET));
+            this.client.mapper().writeValue(baos, list);
+            baos.write("}\n".getBytes(API.CHARSET));
+            fos.write(baos.toByteArray());
+        } catch (Exception e) {
+            throw new ClientException("Failed to serialize %s",
+                                      e, type.string());
         } finally {
             lock.unlock();
-        }
-    }
-
-    private String writeList(String label, List<?> list) {
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream(LBUF_SIZE)) {
-            out.write(String.format("{\"%s\": ", label).getBytes(API.CHARSET));
-            this.client.mapper().writeValue(out, list);
-            out.write("}\n".getBytes(API.CHARSET));
-            return out.toString(API.CHARSET);
-        } catch (Exception e) {
-            throw new ClientException("Failed to serialize %s", e, label);
         }
     }
 }

@@ -21,8 +21,10 @@ package com.baidu.hugegraph.cmd.manager;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -196,8 +199,10 @@ public class RestoreManager extends RetryManager {
                 file.exists() && file.isFile() && file.canRead(),
                 "Need to specify a readable filter file rather than: %s",
                 file.toString());
-        try (FileReader fr = new FileReader(file);
-             BufferedReader reader = new BufferedReader(fr)) {
+
+        try (InputStream is = new FileInputStream(file);
+             InputStreamReader isr = new InputStreamReader(is, API.CHARSET);
+             BufferedReader reader = new BufferedReader(isr)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 consumer.accept(type.string(), line);
