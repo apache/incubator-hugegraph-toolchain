@@ -1,5 +1,18 @@
 #!/bin/bash
 
+function ensure_path_writable() {
+    local path=$1
+    # Ensure input path exist
+    if [ ! -d "${path}" ]; then
+        mkdir -p ${path}
+    fi
+    # Check for write permission
+    if [ ! -w "${path}" ]; then
+        echo "No write permission on directory ${path}"
+        exit 1
+    fi
+}
+
 function parse_yaml() {
     local file=$1
     local version=$2
@@ -58,26 +71,29 @@ function get_ip() {
 }
 
 function download() {
-    local link_url=$1
+    local path=$1
+    local link_url=$2
+
     if command -v wget >/dev/null 2>&1; then
         wget --help | grep -q '\--show-progress' && progress_opt="-q --show-progress" || progress_opt=""
-        wget ${link_url} $progress_opt
+        wget ${link_url} -P ${path} $progress_opt
     elif command -v curl >/dev/null 2>&1; then
-        curl ${link_url} -O
+        curl ${link_url} -o ${path}/${link_url}
     else
         echo "Required wget or curl but they are not installed"
     fi
 }
 
-function ensure_dir_exist() {
-    local dir=$1
-    local tar=$2
-    local link=$3
+function ensure_package_exist() {
+    local path=$1
+    local dir=$2
+    local tar=$3
+    local link=$4
 
-    if [ ! -d $dir ]; then
-        if [ ! -f $tar ]; then
+    if [ ! -d ${path}/${dir} ]; then
+        if [ ! -f ${path}/${tar} ]; then
             echo "Downloading the compressed package '${tar}'"
-            download ${link}
+            download ${path} ${link}
             if [ $? -ne 0 ]; then
                 echo "Failed to download, please ensure the network is available and link is valid"
                 exit 1
@@ -85,7 +101,7 @@ function ensure_dir_exist() {
             echo "[OK] Finished download"
         fi
         echo "Unzip the compressed package '$tar'"
-        tar -zxvf $tar >/dev/null 2>&1
+        tar -zxvf ${path}/${tar} -C ${path} >/dev/null 2>&1
         if [ $? -ne 0 ]; then
             echo "Failed to unzip, please check the compressed package"
             exit 1
@@ -120,7 +136,7 @@ function wait_for_startup() {
     return 1
 }
 
-wait_for_shutdown() {
+function wait_for_shutdown() {
     local p_name="$1"
     local timeout_s="$2"
 
@@ -141,7 +157,7 @@ wait_for_shutdown() {
     return 1
 }
 
-process_status() {
+function process_status() {
     local p=`ps -ef | grep "$1" | grep -v grep | awk '{print $2}'`
     if [ -n "$p" ]; then
         echo "$1 is running with pid $p"
@@ -152,7 +168,7 @@ process_status() {
     fi
 }
 
-kill_process() {
+function kill_process() {
     local pids=`ps -ef | grep "$1" | grep -v grep | awk '{print $2}' | xargs`
 
     if [ "$pids" = "" ]; then
@@ -175,8 +191,8 @@ kill_process() {
 
 function remove_with_prompt() {
     local path=$1
-
     local tips=""
+
     if [ -d "$path" ]; then
         tips="Remove directory '$path' and all sub files [y/n]?"
     elif [ -f "$path" ]; then

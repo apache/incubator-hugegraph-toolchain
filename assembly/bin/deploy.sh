@@ -1,8 +1,23 @@
 #!/bin/bash
 
-if [ $# != 1 ]; then
-    echo "USAGE: $0 {hugegraph-version}"
-    echo "eg   : $0 0.6"
+VERSION=""
+INSTALL_PATH=""
+
+function print_usage() {
+    echo "USAGE: $0 -v {hugegraph-version} -p {install-path}"
+    echo "eg   : $0 -v 0.6 -p ."
+}
+
+while getopts "v:p:" arg; do
+    case ${arg} in
+        v) VERSION="$OPTARG" ;;
+        p) INSTALL_PATH="$OPTARG" ;;
+        ?) print_usage && exit 1 ;;
+    esac
+done
+
+if [[ "$VERSION" = "" || "$INSTALL_PATH" = "" ]]; then
+    print_usage
     exit 1
 fi
 
@@ -17,11 +32,14 @@ function abs_path() {
 }
 
 BIN=`abs_path`
-cd $BIN
+. ${BIN}/util.sh
 
-. util.sh
+`ensure_path_writable ${INSTALL_PATH}`
 
-VERSION=$1
+# Convert to absolute path
+INSTALL_PATH="$(cd ${INSTALL_PATH} && pwd)"
+
+cd ${BIN}
 
 # Check input version can be found in version-map.yaml
 OPTIONAL_VERSIONS=`cat version-map.yaml | grep 'version' | awk -F ':' '{print $1}' | xargs`
@@ -54,8 +72,8 @@ SERVER_TAR=${SERVER_DIR}${ARCHIVE_FORMAT}
 STUDIO_DIR="hugestudio-release-${STUDIO_VERSION}-SNAPSHOT"
 STUDIO_TAR=${STUDIO_DIR}${ARCHIVE_FORMAT}
 
-ensure_dir_exist $SERVER_DIR $SERVER_TAR ${DOWNLOAD_LINK_PREFIX}"/"${SERVER_TAR}
-ensure_dir_exist $STUDIO_DIR $STUDIO_TAR ${DOWNLOAD_LINK_PREFIX}"/hugestudio/"${STUDIO_TAR}
+ensure_package_exist $INSTALL_PATH $SERVER_DIR $SERVER_TAR ${DOWNLOAD_LINK_PREFIX}"/"${SERVER_TAR}
+ensure_package_exist $INSTALL_PATH $STUDIO_DIR $STUDIO_TAR ${DOWNLOAD_LINK_PREFIX}"/hugestudio/"${STUDIO_TAR}
 
 IP=`get_ip`
 
@@ -72,9 +90,10 @@ function config_hugegraph_studio() {
     write_property $studio_server_conf "server\.httpBindAddress" $IP
 }
 
+cd ${INSTALL_PATH}
 config_hugegraph_server
 config_hugegraph_studio
 
-$BIN/$SERVER_DIR/bin/init-store.sh
+${SERVER_DIR}/bin/init-store.sh
 
-$BIN/start-all.sh $VERSION
+${BIN}/start-all.sh -v ${VERSION} -p ${INSTALL_PATH}

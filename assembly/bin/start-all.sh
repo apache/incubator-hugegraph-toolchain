@@ -1,8 +1,23 @@
 #!/bin/bash
 
-if [ $# != 1 ]; then
-    echo "USAGE: $0 {hugegraph-version}"
-    echo "eg   : $0 0.6"
+VERSION=""
+INSTALL_PATH=""
+
+function print_usage() {
+    echo "USAGE: $0 -v {hugegraph-version} -p {install-path}"
+    echo "eg   : $0 -v 0.6 -p ."
+}
+
+while getopts "v:p:" arg; do
+    case ${arg} in
+        v) VERSION="$OPTARG" ;;
+        p) INSTALL_PATH="$OPTARG" ;;
+        ?) print_usage && exit 1 ;;
+    esac
+done
+
+if [[ "$VERSION" = "" || "$INSTALL_PATH" = "" ]]; then
+    print_usage
     exit 1
 fi
 
@@ -16,13 +31,15 @@ function abs_path() {
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
-
 BIN=`abs_path`
-cd $BIN
+. ${BIN}/util.sh
 
-. util.sh
+`ensure_path_writable ${INSTALL_PATH}`
 
-VERSION=$1
+# Convert to absolute path
+INSTALL_PATH="$(cd ${INSTALL_PATH} && pwd)"
+
+cd ${BIN}
 
 # Check input version can be found in version-map.yaml
 OPTIONAL_VERSIONS=`cat version-map.yaml | grep 'version' | awk -F ':' '{print $1}' | xargs`
@@ -43,23 +60,23 @@ if [ "$STUDIO_VERSION" = "" ]; then
     exit 1
 fi
 
-SERVER_DIR="hugegraph-release-${SERVER_VERSION}-SNAPSHOT"
-STUDIO_DIR="hugestudio-release-${STUDIO_VERSION}-SNAPSHOT"
+SERVER_DIR="${INSTALL_PATH}/hugegraph-release-${SERVER_VERSION}-SNAPSHOT"
+STUDIO_DIR="${INSTALL_PATH}/hugestudio-release-${STUDIO_VERSION}-SNAPSHOT"
 
-if [ ! -d "$SERVER_DIR" ]; then
-    echo "The server dir $SERVER_DIR doesn't exist"
+if [ ! -d "${SERVER_DIR}" ]; then
+    echo "The server dir ${SERVER_DIR} doesn't exist"
     exit 1
 fi
 
-if [ ! -d "$STUDIO_DIR" ]; then
-    echo "The studio dir $STUDIO_DIR doesn't exist"
+if [ ! -d "${STUDIO_DIR}" ]; then
+    echo "The studio dir ${STUDIO_DIR} doesn't exist"
     exit 1
 fi
 
 function start_hugegraph_server() {
     bin/start-hugegraph.sh
     if [ $? -ne 0 ]; then
-        echo "Failed to start HugeGraphServer, please check the logs under '$BIN/$SERVER_DIR/logs' for details"
+        echo "Failed to start HugeGraphServer, please check the logs under '$SERVER_DIR/logs' for details"
         exit 1
     fi
 }
@@ -77,16 +94,16 @@ function start_hugegraph_studio() {
     trap '$BIN/stop-all.sh; exit' SIGHUP SIGINT SIGQUIT SIGTERM
 
     wait_for_startup 'HugeStudio' "$server_url" $start_timeout_s || {
-        echo "Failed to start HugeGraphStudio, please check the logs under '$BIN/$STUDIO_DIR/logs' for details"
+        echo "Failed to start HugeGraphStudio, please check the logs under '$STUDIO_DIR/logs' for details"
         bin/stop-hugegraph.sh
         exit 1
     }
 }
 
-cd $BIN/$SERVER_DIR
+cd $SERVER_DIR
 start_hugegraph_server
 
-cd $BIN/$STUDIO_DIR
+cd $STUDIO_DIR
 start_hugegraph_studio
 
 echo "[OK] Started HugeGraphServer and HugeGraphStudio"

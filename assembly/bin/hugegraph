@@ -29,17 +29,20 @@ fi
 cd $TOP
 
 if [ "$1" == "deploy" ]; then
-    bash $BIN/deploy.sh $2
+    shift
+    bash $BIN/deploy.sh $@
     exit $?
 fi
 
 if [ "$1" == "start-all" ]; then
-    bash $BIN/start-all.sh $2
+    shift
+    bash $BIN/start-all.sh $@
     exit $?
 fi
 
 if [ "$1" == "clear" ]; then
-    bash $BIN/clear.sh
+    shift
+    bash $BIN/clear.sh $@
     exit $?
 fi
 
