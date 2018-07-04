@@ -13,7 +13,7 @@ public class BaseUnitTest {
         try {
             return mapper.writeValueAsString(data);
         } catch (IOException e) {
-            throw new SerializeException("Failed to serialize '%s'", data);
+            throw new SerializeException("Failed to serialize '%s'", e, data);
         }
     }
 
@@ -23,7 +23,7 @@ public class BaseUnitTest {
         } catch (IOException e) {
             throw new SerializeException(
                       "Failed to deserialize instance of '%s' from %s",
-                      clazz, json);
+                      e, clazz, json);
         }
     }
 

@@ -7,10 +7,13 @@ import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.serializer.PathDeserializer;
+import com.baidu.hugegraph.serializer.VertexDeserializer;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.constant.Frequency;
@@ -28,6 +31,7 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -35,6 +39,14 @@ import com.google.common.collect.ImmutableSet;
 public class RestResultTest {
 
     private javax.ws.rs.core.Response mockResponse;
+
+    @BeforeClass
+    public static void init() {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Vertex.class, new VertexDeserializer());
+        module.addDeserializer(Path.class, new PathDeserializer());
+        RestResult.registerModule(module);
+    }
 
     @Before
     public void setup() {

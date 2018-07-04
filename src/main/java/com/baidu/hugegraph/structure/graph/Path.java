@@ -25,12 +25,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 
 public class Path {
 
+    @JsonProperty
     private List<Object> labels;
+    @JsonProperty
     private List<Object> objects;
+    @JsonProperty
     private Object crosspoint;
 
     public Path() {
