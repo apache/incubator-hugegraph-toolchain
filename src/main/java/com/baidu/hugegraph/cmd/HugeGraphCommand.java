@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import com.baidu.hugegraph.cmd.manager.BackupManager;
+import com.baidu.hugegraph.cmd.manager.DumpGraphManager;
 import com.baidu.hugegraph.cmd.manager.GraphsManager;
 import com.baidu.hugegraph.cmd.manager.GremlinManager;
 import com.baidu.hugegraph.cmd.manager.RestoreManager;
@@ -56,6 +57,11 @@ public class HugeGraphCommand {
 
     public Map<String, Object> subCommands() {
         return this.subCommands.commands();
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T subCommand(String subCmd) {
+        return (T) this.subCommands.commands().get(subCmd);
     }
 
     public String url() {
@@ -92,51 +98,49 @@ public class HugeGraphCommand {
         return jCommander;
     }
 
-    private void execute(String subCommand, JCommander jCommander) {
+    private void execute(String subCmd, JCommander jCommander) {
         this.checkMainParams();
-        switch (subCommand) {
+        switch (subCmd) {
             case "backup":
-                Printer.print("Graph '%s' start back up!", this.graph());
-                SubCommands.Backup backup =
-                        (SubCommands.Backup) this.subCommands().get(subCommand);
+                Printer.print("Graph '%s' start backup!", this.graph());
+                SubCommands.Backup backup = this.subCommand(subCmd);
                 BackupManager backupManager = manager(BackupManager.class);
                 backupManager.retry(backup.retry());
                 backupManager.backup(backup.types(), backup.directory());
                 break;
             case "restore":
                 Printer.print("Graph '%s' start restore!", this.graph());
-                SubCommands.Restore restore =
-                        (SubCommands.Restore) this.subCommands()
-                                                  .get(subCommand);
+                SubCommands.Restore restore = this.subCommand(subCmd);
                 RestoreManager restoreManager = manager(RestoreManager.class);
                 restoreManager.retry(restore.retry());
                 restoreManager.restore(restore.types(), restore.directory());
+                break;
+            case "dump":
+                Printer.print("Graph '%s' start dump!", this.graph());
+                SubCommands.DumpGraph dump = this.subCommand(subCmd);
+                DumpGraphManager dumpManager = manager(DumpGraphManager.class);
+                dumpManager.retry(dump.retry());
+                dumpManager.dump(dump.directory());
                 break;
             case "graph-list":
                 GraphsManager graphsManager = manager(GraphsManager.class);
                 Printer.printList("Graphs", graphsManager.list());
                 break;
             case "graph-get":
-                SubCommands.GraphGet graphGet =
-                        (SubCommands.GraphGet) this.subCommands()
-                                                   .get(subCommand);
+                SubCommands.GraphGet graphGet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
                 Printer.printMap("Graph info",
                                  graphsManager.get(graphGet.graph()));
                 break;
             case "graph-clear":
-                SubCommands.GraphClear graphClear =
-                        (SubCommands.GraphClear) this.subCommands()
-                                                     .get(subCommand);
+                SubCommands.GraphClear graphClear = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
                 graphsManager.clear(graphClear.graph(),
                                     graphClear.confirmMessage());
                 Printer.print("Graph '%s' is cleared", graphClear.graph());
                 break;
             case "graph-mode-set":
-                SubCommands.GraphModeSet graphModeSet =
-                        (SubCommands.GraphModeSet) this.subCommands()
-                                                       .get(subCommand);
+                SubCommands.GraphModeSet graphModeSet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
                 graphsManager.restoring(graphModeSet.graph(),
                                         graphModeSet.restoreFlag());
@@ -144,17 +148,13 @@ public class HugeGraphCommand {
                               graphModeSet.graph(), graphModeSet.restoreFlag());
                 break;
             case "graph-mode-get":
-                SubCommands.GraphModeGet graphModeGet =
-                        (SubCommands.GraphModeGet) this.subCommands()
-                                                       .get(subCommand);
+                SubCommands.GraphModeGet graphModeGet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
                 Printer.printKV("restoring",
                                 graphsManager.restoring(graphModeGet.graph()));
                 break;
             case "gremlin":
-                SubCommands.Gremlin gremlin =
-                        (SubCommands.Gremlin) this.subCommands()
-                                                  .get(subCommand);
+                SubCommands.Gremlin gremlin = this.subCommand(subCmd);
                 GremlinManager gremlinManager = manager(GremlinManager.class);
                 ResultSet result = gremlinManager.execute(gremlin.script(),
                                                           gremlin.bindings(),
@@ -170,7 +170,7 @@ public class HugeGraphCommand {
                 break;
             default:
                 throw new ParameterException(String.format(
-                          "Invalid sub-command: %s", subCommand));
+                          "Invalid sub-command: %s", subCmd));
         }
     }
 
@@ -221,7 +221,6 @@ public class HugeGraphCommand {
             jCommander.parse(args);
         } catch (ParameterException e) {
             Printer.print(e.getMessage());
-            jCommander.usage();
             System.exit(-1);
         }
 

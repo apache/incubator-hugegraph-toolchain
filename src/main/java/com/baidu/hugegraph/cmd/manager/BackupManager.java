@@ -22,12 +22,13 @@ package com.baidu.hugegraph.cmd.manager;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
 import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.cmd.Printer;
 import com.baidu.hugegraph.concurrent.KeyLock;
-import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -52,20 +53,11 @@ public class BackupManager extends RetryManager {
     }
 
     public void backup(List<HugeType> types, String outputDir) {
-        File file = new File(outputDir);
-        if (file.exists()) {
-            E.checkState(file.isDirectory(),
-                         "Can't use '%s' as output directory because " +
-                         "a file with same name exists.",
-                         file.getAbsolutePath());
-        } else {
-            E.checkState(file.mkdirs(),
-                         "Backup directory '%s' not exists and created failed",
-                         outputDir);
-        }
+        ensureDirectoryExist(outputDir);
         this.startTimer();
+
         for (HugeType type : types) {
-            String prefix = outputDir + type.string();
+            String prefix = Paths.get(outputDir, type.string()).toString();
             switch (type) {
                 case VERTEX:
                     this.backupVertices(prefix);
@@ -90,11 +82,11 @@ public class BackupManager extends RetryManager {
                               "Bad backup type: %s", type));
             }
         }
-        shutdown(this.type());
+        this.shutdown(this.type());
         this.printSummary();
     }
 
-    private void backupVertices(String prefix) {
+    protected void backupVertices(String prefix) {
         List<Shard> shards = this.client.traverser()
                                         .vertexShards(SPLIT_SIZE);
         int i = 0;
@@ -115,7 +107,7 @@ public class BackupManager extends RetryManager {
         this.awaitTasks();
     }
 
-    private void backupEdges(String prefix) {
+    protected void backupEdges(String prefix) {
         List<Shard> shards = this.client.traverser().edgeShards(SPLIT_SIZE);
         int i = 0;
         for (Shard shard : shards) {
@@ -135,31 +127,31 @@ public class BackupManager extends RetryManager {
         this.awaitTasks();
     }
 
-    private void backupPropertyKeys(String filename) {
+    protected void backupPropertyKeys(String filename) {
         List<PropertyKey> pks = this.client.schema().getPropertyKeys();
         this.propertyKeyCounter.getAndAdd(pks.size());
         this.write(filename, HugeType.PROPERTY_KEY, pks);
     }
 
-    private void backupVertexLabels(String filename) {
+    protected void backupVertexLabels(String filename) {
         List<VertexLabel> vls = this.client.schema().getVertexLabels();
         this.vertexLabelCounter.getAndAdd(vls.size());
         this.write(filename, HugeType.VERTEX_LABEL, vls);
     }
 
-    private void backupEdgeLabels(String filename) {
+    protected void backupEdgeLabels(String filename) {
         List<EdgeLabel> els = this.client.schema().getEdgeLabels();
         this.edgeLabelCounter.getAndAdd(els.size());
         this.write(filename, HugeType.EDGE_LABEL, els);
     }
 
-    private void backupIndexLabels(String filename) {
+    protected void backupIndexLabels(String filename) {
         List<IndexLabel> ils = this.client.schema().getIndexLabels();
         this.indexLabelCounter.getAndAdd(ils.size());
         this.write(filename, HugeType.INDEX_LABEL, ils);
     }
 
-    private void write(String file, HugeType type, List<?> list) {
+    protected void write(String file, HugeType type, List<?> list) {
         Lock lock = locks.lock(file);
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(LBUF_SIZE);
              FileOutputStream fos = new FileOutputStream(file, true)) {
@@ -169,10 +161,22 @@ public class BackupManager extends RetryManager {
             baos.write("}\n".getBytes(API.CHARSET));
             fos.write(baos.toByteArray());
         } catch (Exception e) {
-            throw new ClientException("Failed to serialize %s",
-                                      e, type.string());
+            Printer.print("Failed to serialize %s: %s", type.string(), e);
         } finally {
             lock.unlock();
+        }
+    }
+
+    protected static void ensureDirectoryExist(String dir) {
+        File file = new File(dir);
+        if (file.exists()) {
+            E.checkState(file.isDirectory(),
+                         "Can't use '%s' as output directory because " +
+                         "a file with same name exists.",
+                         file.getAbsolutePath());
+        } else {
+            E.checkState(file.mkdirs(),
+                         "Directory '%s' not exists and created failed", dir);
         }
     }
 }

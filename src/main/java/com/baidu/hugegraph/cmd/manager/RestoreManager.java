@@ -89,7 +89,7 @@ public class RestoreManager extends RetryManager {
                               "Bad restore type: %s", type));
             }
         }
-        shutdown(this.type());
+        this.shutdown(this.type());
         this.printSummary();
     }
 
@@ -225,7 +225,7 @@ public class RestoreManager extends RetryManager {
             } else {
                 JavaType t = mapper.getTypeFactory()
                                    .constructParametricType(List.class, clazz);
-                return (List) mapper.readValue(element.toString(), t);
+                return (List<T>) mapper.readValue(element.toString(), t);
             }
         } catch (IOException e) {
             throw new SerializeException(

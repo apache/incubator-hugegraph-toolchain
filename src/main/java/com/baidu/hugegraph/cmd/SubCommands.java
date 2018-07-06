@@ -49,6 +49,7 @@ public class SubCommands {
         this.commands.put("backup", new Backup());
         this.commands.put("restore", new Restore());
         this.commands.put("schedule-backup", new ScheduleBackup());
+        this.commands.put("dump", new DumpGraph());
         this.commands.put("graph-list", new GraphList());
         this.commands.put("graph-get", new GraphGet());
         this.commands.put("graph-clear", new GraphClear());
@@ -64,29 +65,6 @@ public class SubCommands {
 
     public Map<String, Object> commands() {
         return this.commands;
-    }
-
-    @Parameters(commandDescription = "Backup graph schema/data to files")
-    public class Backup extends BackupRestore {
-
-        @Parameter(names = {"--directory", "-d"}, arity = 1,
-                   description = "Directory of graph schema/data")
-        public String directory = "./";
-
-        public String directory() {
-            return this.directory;
-        }
-    }
-
-    @Parameters(commandDescription = "Restore graph schema/data from files")
-    public class Restore extends BackupRestore {
-
-        @ParametersDelegate
-        private ExistDirectory directory = new ExistDirectory();
-
-        public String directory() {
-            return this.directory.directory;
-        }
     }
 
     @Parameters(commandDescription = "Schedule backup task")
@@ -112,6 +90,48 @@ public class SubCommands {
                    validateWith = {UrlValidator.class}, required = true,
                    description = "The directory of backups stored")
         public String directory;
+    }
+
+    @Parameters(commandDescription = "Backup graph schema/data to files")
+    public class Backup extends BackupRestore {
+
+        @Parameter(names = {"--directory", "-d"}, arity = 1,
+                   description = "Directory to store graph schema/data")
+        public String directory = "./";
+
+        public String directory() {
+            return this.directory;
+        }
+    }
+
+    @Parameters(commandDescription = "Restore graph schema/data from files")
+    public class Restore extends BackupRestore {
+
+        @ParametersDelegate
+        private ExistDirectory directory = new ExistDirectory();
+
+        public String directory() {
+            return this.directory.directory;
+        }
+    }
+
+    @Parameters(commandDescription = "Dump graph to files")
+    public class DumpGraph {
+
+        @ParametersDelegate
+        private Retry retry = new Retry();
+
+        @Parameter(names = {"--directory", "-d"}, arity = 1,
+                   description = "Directory to store graph data")
+        public String directory = "./";
+
+        public int retry() {
+            return this.retry.retry;
+        }
+
+        public String directory() {
+            return this.directory;
+        }
     }
 
     @Parameters(commandDescription = "List all graphs")

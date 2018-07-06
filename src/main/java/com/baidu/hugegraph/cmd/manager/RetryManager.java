@@ -52,7 +52,7 @@ public class RetryManager extends ToolManager {
             Math.max(4, Runtime.getRuntime().availableProcessors() / 2));
     private ExecutorService pool =
             Executors.newFixedThreadPool(threadsNum);
-    private List<Future> futures = new ArrayList<>();
+    private List<Future<?>> futures = new ArrayList<>();
 
     protected static final long SPLIT_SIZE = 1024 * 1024L;
     protected static final int LBUF_SIZE = 1024;
@@ -87,11 +87,11 @@ public class RetryManager extends ToolManager {
     }
 
     public void submit(Runnable task) {
-        futures.add(this.pool.submit(task));
+        this.futures.add(this.pool.submit(task));
     }
 
     public void awaitTasks() {
-        for (Future future : this.futures) {
+        for (Future<?> future : this.futures) {
             try {
                 future.get();
             } catch (InterruptedException | ExecutionException e) {
@@ -112,6 +112,10 @@ public class RetryManager extends ToolManager {
     }
 
     protected void printSummary() {
+        this.printSummary(this.type());
+    }
+
+    protected void printSummary(String type) {
         Map<String, Long> summary = ImmutableMap.<String, Long>builder()
                 .put("property key number", this.propertyKeyCounter.longValue())
                 .put("vertex label number", this.vertexLabelCounter.longValue())
@@ -119,9 +123,9 @@ public class RetryManager extends ToolManager {
                 .put("index label number", this.indexLabelCounter.longValue())
                 .put("vertex number", this.vertexCounter.longValue())
                 .put("edge number", this.edgeCounter.longValue()).build();
-        Printer.printMap(this.type() + " summary", summary);
+        Printer.printMap(type + " summary", summary);
 
-        Printer.printKV("cost time(s): ", this.elapseSeconds());
+        Printer.printKV("cost time(s)", this.elapseSeconds());
     }
 
     public int retry() {
