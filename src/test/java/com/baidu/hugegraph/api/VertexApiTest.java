@@ -71,7 +71,7 @@ public class VertexApiTest extends BaseApiTest {
         vertex.property("city", "Beijing");
         vertex.property("age", 19);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(vertex);
         });
     }
@@ -82,7 +82,7 @@ public class VertexApiTest extends BaseApiTest {
         vertex.property("name", "James");
         vertex.property("not-exist-key", "not-exist-value");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(vertex);
         });
     }
@@ -93,7 +93,7 @@ public class VertexApiTest extends BaseApiTest {
         vertex.property("city", "Beijing");
         vertex.property("age", 19);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(vertex);
         });
     }
@@ -106,7 +106,7 @@ public class VertexApiTest extends BaseApiTest {
         person.property("city", "Beijing");
         person.property("age", 19);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(person);
         });
 
@@ -129,7 +129,7 @@ public class VertexApiTest extends BaseApiTest {
         person.property("city", "Beijing");
         person.property("age", 19);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(person);
         });
 
@@ -166,7 +166,7 @@ public class VertexApiTest extends BaseApiTest {
         vertex.property("name", "James");
         vertex.property("city", "Beijing");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(vertex);
         });
     }
@@ -215,7 +215,7 @@ public class VertexApiTest extends BaseApiTest {
         vertices.get(0).property("invalid-key", "invalid-value");
         vertices.get(10).property("not-exist-key", "not-exist-value");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(vertices);
         });
     }
@@ -230,7 +230,7 @@ public class VertexApiTest extends BaseApiTest {
             vertex.property("age", 20);
             vertices.add(vertex);
         }
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.create(vertices);
         });
     }
@@ -277,7 +277,7 @@ public class VertexApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             vertexAPI.get("not-exist-vertex-id");
         });
     }
@@ -312,16 +312,14 @@ public class VertexApiTest extends BaseApiTest {
         Object id = vertex.id();
         vertexAPI.delete(id);
 
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             vertexAPI.get(id);
         });
     }
 
     @Test
     public void testDeleteNotExist() {
-        // TODO: Should change to 204 when server end add the method
-        // 'removeVertex()'
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexAPI.delete("not-exist-v");
         });
     }

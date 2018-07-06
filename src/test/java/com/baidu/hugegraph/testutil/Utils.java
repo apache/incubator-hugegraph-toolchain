@@ -28,6 +28,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -36,9 +37,19 @@ import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.baidu.hugegraph.testutil.Assert.ThrowableRunnable;
 import com.google.common.collect.ImmutableList;
 
 public class Utils {
+
+    public static void assertResponseError(int status, ThrowableRunnable run) {
+        Assert.assertThrows(ServerException.class, run, (e) -> {
+            if (e instanceof ServerException) {
+                Assert.assertEquals("The rest status code is not matched",
+                                    status, ((ServerException) e).status());
+            }
+        });
+    }
 
     public static void assertGraphEqual(ImmutableList<Vertex> vertices,
                                         ImmutableList<Edge> edges,

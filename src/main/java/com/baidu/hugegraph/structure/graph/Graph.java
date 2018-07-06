@@ -62,7 +62,7 @@ public class Graph {
         return this.hugeVerticesMap.values().iterator();
     }
 
-    public HugeVertex vertex(String id) {
+    public HugeVertex vertex(Object id) {
         return this.hugeVerticesMap.get(id);
     }
 

@@ -79,13 +79,13 @@ public class VertexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithInvalidName() {
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(new VertexLabel(""));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(new VertexLabel(" "));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(new VertexLabel("    "));
         });
     }
@@ -95,7 +95,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         VertexLabel vertexLabel = new VertexLabel("name");
         vertexLabelAPI.create(vertexLabel);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(new VertexLabel("name"));
         });
     }
@@ -108,7 +108,7 @@ public class VertexLabelApiTest extends BaseApiTest {
                                           .primaryKeys("name")
                                           .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(vertexLabel);
         });
     }
@@ -121,7 +121,7 @@ public class VertexLabelApiTest extends BaseApiTest {
                                           .primaryKeys("undefined")
                                           .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(vertexLabel);
         });
     }
@@ -135,7 +135,7 @@ public class VertexLabelApiTest extends BaseApiTest {
                                           .nullableKeys("undefined")
                                           .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(vertexLabel);
         });
     }
@@ -148,7 +148,7 @@ public class VertexLabelApiTest extends BaseApiTest {
                                            .primaryKeys("name")
                                            .nullableKeys("name")
                                            .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(vertexLabel1);
         });
 
@@ -158,7 +158,7 @@ public class VertexLabelApiTest extends BaseApiTest {
                                            .primaryKeys("name", "age")
                                            .nullableKeys("name")
                                            .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(vertexLabel2);
         });
 
@@ -168,14 +168,14 @@ public class VertexLabelApiTest extends BaseApiTest {
                                            .primaryKeys("name")
                                            .nullableKeys("name", "age")
                                            .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(vertexLabel3);
         });
     }
 
     @Test
     public void testCreateWithUnmatchIdStrategyAndProperties() {
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             VertexLabel vertexLabel = schema().vertexLabel("person")
                                               .properties("name", "age", "city")
                                               .useAutomaticId()
@@ -183,7 +183,7 @@ public class VertexLabelApiTest extends BaseApiTest {
                                               .build();
             vertexLabelAPI.create(vertexLabel);
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             VertexLabel vertexLabel = schema().vertexLabel("person")
                                               .properties("name", "age", "city")
                                               .useCustomizeStringId()
@@ -191,7 +191,7 @@ public class VertexLabelApiTest extends BaseApiTest {
                                               .build();
             vertexLabelAPI.create(vertexLabel);
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             VertexLabel vertexLabel = schema().vertexLabel("person")
                                               .properties("name", "age", "city")
                                               .usePrimaryKeyId()
@@ -242,7 +242,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         VertexLabel vertexLabel2 = schema().vertexLabel("person")
                                            .properties("undefined")
                                            .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.append(vertexLabel2);
         });
     }
@@ -262,7 +262,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         VertexLabel vertexLabel2 = schema().vertexLabel("person")
                                            .nullableKeys("undefined")
                                            .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.append(vertexLabel2);
         });
     }
@@ -282,7 +282,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         VertexLabel vertexLabel2 = schema().vertexLabel("person")
                                            .properties("city")
                                            .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             vertexLabelAPI.eliminate(vertexLabel2);
         });
     }
@@ -307,7 +307,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             vertexLabelAPI.get("not-exist-vl");
         });
     }
@@ -342,14 +342,14 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         vertexLabelAPI.delete("person");
 
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             vertexLabelAPI.get("person");
         });
     }
 
     @Test
     public void testDeleteNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             vertexLabelAPI.delete("not-exist-vl");
         });
     }

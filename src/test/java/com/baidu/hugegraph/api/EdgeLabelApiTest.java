@@ -91,13 +91,13 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithInvalidName() {
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(fillEdgeLabel.apply(""));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(fillEdgeLabel.apply(" "));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(fillEdgeLabel.apply("    "));
         });
     }
@@ -106,7 +106,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
     public void testCreateExistedVertexLabel() {
         edgeLabelAPI.create(fillEdgeLabel.apply("created"));
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(fillEdgeLabel.apply("created"));
         });
     }
@@ -120,7 +120,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                       .properties("undefined", "city")
                                       .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
     }
@@ -135,7 +135,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                       .sortKeys("undefined")
                                       .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
     }
@@ -150,7 +150,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                       .nullableKeys("undefined")
                                       .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
     }
@@ -166,11 +166,11 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                       .nullableKeys("date")
                                       .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
     }
@@ -184,7 +184,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                       .properties("date", "city")
                                       .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.create(edgeLabel);
         });
     }
@@ -243,7 +243,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
         EdgeLabel edgeLabel2 = schema().edgeLabel("created")
                                        .properties("undefined")
                                        .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.append(edgeLabel2);
         });
     }
@@ -268,7 +268,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
         EdgeLabel edgeLabel2 = schema().edgeLabel("created")
                                 .nullableKeys("undefined").build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.append(edgeLabel2);
         });
     }
@@ -296,7 +296,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                        .properties("city")
                                        .build();
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.append(edgeLabel2);
         });
     }
@@ -319,7 +319,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
         EdgeLabel edgeLabel2 = schema().edgeLabel("created")
                                 .properties("city").build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeLabelAPI.eliminate(edgeLabel2);
         });
     }
@@ -340,7 +340,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             edgeLabelAPI.get("not-exist-el");
         });
     }
@@ -381,14 +381,14 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
         edgeLabelAPI.delete("created");
 
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             edgeLabelAPI.get("created");
         });
     }
 
     @Test
     public void testDeleteNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             edgeLabelAPI.delete("not-exist-el");
         });
     }

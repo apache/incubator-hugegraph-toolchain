@@ -54,13 +54,13 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithInvalidName() {
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             propertyKeyAPI.create(new PropertyKey(""));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             propertyKeyAPI.create(new PropertyKey(" "));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             propertyKeyAPI.create(new PropertyKey("    "));
         });
     }
@@ -70,7 +70,7 @@ public class PropertyKeyApiTest extends BaseApiTest {
         PropertyKey propertyKey = new PropertyKey("name");
         propertyKeyAPI.create(propertyKey);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             propertyKeyAPI.create(new PropertyKey("name"));
         });
     }
@@ -94,7 +94,7 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             propertyKeyAPI.get("not-exist-pk");
         });
     }
@@ -128,14 +128,14 @@ public class PropertyKeyApiTest extends BaseApiTest {
         propertyKeyAPI.create(propertyKey);
         propertyKeyAPI.delete("name");
 
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             propertyKeyAPI.get("name");
         });
     }
 
     @Test
     public void testDeleteNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             propertyKeyAPI.delete("not-exist-pk");
         });
     }

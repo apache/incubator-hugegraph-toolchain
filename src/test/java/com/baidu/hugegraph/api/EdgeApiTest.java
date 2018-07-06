@@ -89,7 +89,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edge);
         });
     }
@@ -107,7 +107,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.property("not-exist-key", "not-exist-value");
         edge.property("city", "Hongkong");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edge);
         });
     }
@@ -145,7 +145,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edge);
         });
     }
@@ -158,7 +158,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edge);
         });
     }
@@ -173,7 +173,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.property("date", "20170324");
         edge.property("city", "Hongkong");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edge);
         });
     }
@@ -243,7 +243,7 @@ public class EdgeApiTest extends BaseApiTest {
         // Absent prop 'date'
         edge.property("city", "Beijing");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edge);
         });
     }
@@ -308,10 +308,10 @@ public class EdgeApiTest extends BaseApiTest {
         createds.get(0).source("not-exist-source-id");
         knows.get(10).property("undefined-key", "undefined-value");
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(createds, true);
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(knows, true);
         });
     }
@@ -335,7 +335,7 @@ public class EdgeApiTest extends BaseApiTest {
             edge.property("city", "Hongkong");
             edges.add(edge);
         }
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edges, true);
         });
     }
@@ -407,7 +407,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge2.property("date", "20170324");
         edges.add(edge2);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edges, true);
         });
     }
@@ -431,7 +431,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge2.property("date", "20170324");
         edges.add(edge2);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edges, true);
         });
     }
@@ -466,10 +466,10 @@ public class EdgeApiTest extends BaseApiTest {
 //        List<String> ids = edgeAPI.create(edges, false);
 //        Assert.assertEquals(2, ids.size());
 //
-//        Assert.assertResponse(404, () -> {
+//        Utils.assertErrorResponse(404, () -> {
 //            edgeAPI.get(ids.get(0));
 //        });
-//        Assert.assertResponse(404, () -> {
+//        Utils.assertErrorResponse(404, () -> {
 //            edgeAPI.get(ids.get(1));
 //        });
 //    }
@@ -493,7 +493,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge2.property("date", "20170324");
         edges.add(edge2);
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             edgeAPI.create(edges, false);
         });
     }
@@ -592,9 +592,10 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testDeleteNotExist() {
-        // TODO: Should change to 204 when server end add the method
-        // 'removeEdge()'
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(400, () -> {
+            edgeAPI.delete("S364:peter>213>>S365:not-found");
+        });
+        Utils.assertResponseError(400, () -> {
             edgeAPI.delete("not-exist-e");
         });
     }

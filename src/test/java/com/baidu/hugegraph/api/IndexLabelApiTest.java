@@ -71,13 +71,13 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateWithInvalidName() {
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(fillIndexLabel.apply(""));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(fillIndexLabel.apply(" "));
         });
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(fillIndexLabel.apply("    "));
         });
     }
@@ -86,7 +86,7 @@ public class IndexLabelApiTest extends BaseApiTest {
     public void testCreateExistedVertexLabel() {
         indexLabelAPI.create(fillIndexLabel.apply("personByAge"));
 
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(fillIndexLabel.apply("personByAge"));
         });
     }
@@ -99,7 +99,7 @@ public class IndexLabelApiTest extends BaseApiTest {
                                          .by("age")
                                          .range()
                                          .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(indexLabel1);
         });
 
@@ -108,7 +108,7 @@ public class IndexLabelApiTest extends BaseApiTest {
                                          .by("date")
                                          .secondary()
                                          .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(indexLabel2);
         });
     }
@@ -120,7 +120,7 @@ public class IndexLabelApiTest extends BaseApiTest {
                                         .by("age", "city")
                                         .range()
                                         .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(indexLabel);
         });
     }
@@ -132,7 +132,7 @@ public class IndexLabelApiTest extends BaseApiTest {
                                         .by("city")
                                         .range()
                                         .build();
-        Assert.assertResponse(400, () -> {
+        Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(indexLabel);
         });
     }
@@ -159,7 +159,7 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             indexLabelAPI.get("not-exist-il");
         });
     }
@@ -195,7 +195,7 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testDeleteNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             indexLabelAPI.delete("not-exist-il");
         });
     }

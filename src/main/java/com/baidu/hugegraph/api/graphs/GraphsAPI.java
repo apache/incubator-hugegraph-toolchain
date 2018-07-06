@@ -35,6 +35,7 @@ public class GraphsAPI extends API {
         this.path(this.type());
     }
 
+    @Override
     protected String type() {
         return HugeType.GRAPHS.string();
     }
@@ -58,7 +59,6 @@ public class GraphsAPI extends API {
                         ImmutableMap.of("restoring", restoring));
     }
 
-    @SuppressWarnings("unchecked")
     public boolean restoring(String graph) {
         String path = String.join("/", this.path(), graph);
         RestResult result =  this.client.get(path, "restoring");

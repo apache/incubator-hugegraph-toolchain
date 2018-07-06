@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Utils;
 
 public class VariablesApiTest extends BaseApiTest {
 
@@ -108,7 +109,7 @@ public class VariablesApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             variablesAPI.get("not-exist-variable");
         });
     }
@@ -117,14 +118,14 @@ public class VariablesApiTest extends BaseApiTest {
     public void testRemove() {
         variablesAPI.set("version", "0.3.2");
         variablesAPI.remove("version");
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             variablesAPI.get("version");
         });
     }
 
     @Test
     public void testDeleteNotExist() {
-        Assert.assertResponse(404, () -> {
+        Utils.assertResponseError(404, () -> {
             vertexLabelAPI.delete("not-exist-variable");
         });
     }

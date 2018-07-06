@@ -46,7 +46,6 @@ public class PathDeserializer extends JsonDeserializer<Path> {
         this.mapper.registerModule(module);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Path deserialize(JsonParser parser, DeserializationContext ctxt)
                             throws IOException {
@@ -60,8 +59,8 @@ public class PathDeserializer extends JsonDeserializer<Path> {
             if (labelsNode.getNodeType() != JsonNodeType.ARRAY) {
                 throw InvalidResponseException.expectField("labels", node);
             }
-            Object labels = mapper.convertValue(labelsNode, Object.class);
-            ((List) labels).forEach(path::labels);
+            Object labels = this.mapper.convertValue(labelsNode, Object.class);
+            ((List<?>) labels).forEach(path::labels);
         }
 
         // Parse node 'objects'
@@ -79,7 +78,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
             if (typeNode != null) {
                 object = parseTypedNode(objectNode, typeNode);
             } else {
-                object = mapper.convertValue(objectNode, Object.class);
+                object = this.mapper.convertValue(objectNode, Object.class);
             }
             path.objects(object);
         }
@@ -87,7 +86,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
         // Parse node 'crosspoint'
         JsonNode crosspointNode = node.get("crosspoint");
         if (crosspointNode != null) {
-            Object object = mapper.convertValue(crosspointNode, Object.class);
+            Object object = this.mapper.convertValue(crosspointNode, Object.class);
             path.crosspoint(object);
         }
         return path;
