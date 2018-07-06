@@ -48,8 +48,8 @@ public class RetryManager extends ToolManager {
 
     private long startTime = 0L;
 
-    private static int threadsNum =
-            Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
+    private static int threadsNum = Math.min(10,
+            Math.max(4, Runtime.getRuntime().availableProcessors() / 2));
     private ExecutorService pool =
             Executors.newFixedThreadPool(threadsNum);
     private List<Future> futures = new ArrayList<>();

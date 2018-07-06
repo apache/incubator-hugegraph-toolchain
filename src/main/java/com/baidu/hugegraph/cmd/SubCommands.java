@@ -48,6 +48,7 @@ public class SubCommands {
     private void initSubCommands() {
         this.commands.put("backup", new Backup());
         this.commands.put("restore", new Restore());
+        this.commands.put("schedule-backup", new ScheduleBackup());
         this.commands.put("graph-list", new GraphList());
         this.commands.put("graph-get", new GraphGet());
         this.commands.put("graph-clear", new GraphClear());
@@ -67,10 +68,50 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Backup graph schema/data to files")
     public class Backup extends BackupRestore {
+
+        @Parameter(names = {"--directory", "-d"}, arity = 1,
+                   description = "Directory of graph schema/data")
+        public String directory = "./";
+
+        public String directory() {
+            return this.directory;
+        }
     }
 
     @Parameters(commandDescription = "Restore graph schema/data from files")
     public class Restore extends BackupRestore {
+
+        @ParametersDelegate
+        private ExistDirectory directory = new ExistDirectory();
+
+        public String directory() {
+            return this.directory.directory;
+        }
+    }
+
+    @Parameters(commandDescription = "Schedule backup task")
+    public class ScheduleBackup {
+
+        @Parameter(names = {"--interval"}, arity = 1,
+                   description =
+                           "The interval of backup, format is: \"a b c d e\"." +
+                           " 'a' means minute (0 - 59)," +
+                           " 'b' means hour (0 - 23)," +
+                           " 'c' means day of month (1 - 31)," +
+                           " 'd' means month (1 - 12)," +
+                           " 'e' means day of week (0 - 6) (Sunday=0)," +
+                           " \"*\" means all")
+        public String interval = "0,0,*,*,*";
+
+        @Parameter(names = {"--backup-num"}, arity = 1,
+                   validateWith = {UrlValidator.class},
+                   description = "The number of latest backups to keep")
+        public int num = 3;
+
+        @Parameter(names = {"--directory", "-d"}, arity = 1,
+                   validateWith = {UrlValidator.class}, required = true,
+                   description = "The directory of backups stored")
+        public String directory;
     }
 
     @Parameters(commandDescription = "List all graphs")
@@ -203,17 +244,10 @@ public class SubCommands {
         private HugeTypes types = new HugeTypes();
 
         @ParametersDelegate
-        private Directory directory = new Directory();
-
-        @ParametersDelegate
         private Retry retry = new Retry();
 
         public List<HugeType> types() {
             return this.types.types;
-        }
-
-        public String directory() {
-            return this.directory.directory;
         }
 
         public int retry() {
@@ -269,7 +303,7 @@ public class SubCommands {
         public List<HugeType> types;
     }
 
-    public class Directory {
+    public class ExistDirectory {
 
         @Parameter(names = {"--directory", "-d"}, arity = 1,
                    validateWith = {DirectoryValidator.class},

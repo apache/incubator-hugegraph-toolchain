@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.cmd.manager;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
@@ -35,6 +36,7 @@ import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.type.Shard;
+import com.baidu.hugegraph.util.E;
 
 public class BackupManager extends RetryManager {
 
@@ -50,6 +52,17 @@ public class BackupManager extends RetryManager {
     }
 
     public void backup(List<HugeType> types, String outputDir) {
+        File file = new File(outputDir);
+        if (file.exists()) {
+            E.checkState(file.isDirectory(),
+                         "Can't use '%s' as output directory because " +
+                         "a file with same name exists.",
+                         file.getAbsolutePath());
+        } else {
+            E.checkState(file.mkdirs(),
+                         "Backup directory '%s' not exists and created failed",
+                         outputDir);
+        }
         this.startTimer();
         for (HugeType type : types) {
             String prefix = outputDir + type.string();
