@@ -235,3 +235,45 @@ function crontab_remove() {
         return 0
     fi
 }
+
+function free_memory() {
+    local free=""
+    local os=`uname`
+    if [ "$os" == "Linux" ]; then
+        local distributor=`lsb_release -a | grep 'Distributor ID' | awk -F':' '{print $2}' | tr -d "\t"`
+        if [ "$distributor" == "CentOS" ]; then
+            free=`free -m | grep '\-\/\+' | awk '{print $4}'`
+        elif [ "$distributor" == "Ubuntu" ]; then
+            free=`free -m | grep 'Mem' | awk '{print $7}'`
+        else
+            echo "Unsupported Linux Distributor " $distributor
+        fi
+    elif [ "$os" == "Darwin" ]; then
+        free=`top -l 1 | head -n 10 | grep PhysMem | awk -F',' '{print $2}' \
+             | awk -F'M' '{print $1}' | tr -d " "`
+    else
+        echo "Unsupported operating system " $os
+        exit 1
+    fi
+    echo $free
+}
+
+function calc_xmx() {
+    local min_mem=$1
+    local max_mem=$2
+    # Get machine available memory
+    local free=`free_memory`
+    local half_free=$[free/2]
+
+    local xmx=$min_mem
+    if [[ "$free" -lt "$min_mem" ]]; then
+        exit 1
+    elif [[ "$half_free" -ge "$max_mem" ]]; then
+        xmx=$max_mem
+    elif [[ "$half_free" -lt "$min_mem" ]]; then
+        xmx=$min_mem
+    else
+        xmx=$half_free
+    fi
+    echo $xmx
+}

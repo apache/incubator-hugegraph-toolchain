@@ -123,10 +123,10 @@
                                     }
 
                                     tar -zcvf \
-                                    ${project.basedir}/${final.name}.tar.gz ${final.name}
+                                    ${project.basedir}/${final.name}-${release.version}.tar.gz ${final.name}
                                     rm -f ${project.basedir}/dist.sh
                                     echo -n "hugegraph-tools tar.gz available at: "
-                                    echo "${project.basedir}/${final.name}.tar.gz"
+                                    echo "${project.basedir}/${final.name}-${release.version}.tar.gz"
                                 </echo>
                                 <exec executable="${shell-executable}"
                                       dir="${project.basedir}" failonerror="true">
