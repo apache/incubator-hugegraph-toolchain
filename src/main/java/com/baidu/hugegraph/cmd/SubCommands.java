@@ -214,6 +214,9 @@ public class SubCommands {
 
         @ParametersDelegate
         private Version version = new Version();
+
+        @ParametersDelegate
+        public InstallPath path = new InstallPath();
     }
 
     @Parameters(commandDescription = "Start HugeGraph-Server and " +
@@ -222,11 +225,17 @@ public class SubCommands {
 
         @ParametersDelegate
         private Version version = new Version();
+
+        @ParametersDelegate
+        public InstallPath path = new InstallPath();
     }
 
     @Parameters(commandDescription = "Clear HugeGraph-Server and " +
                                      "HugeGraph-Studio")
     public class Clear {
+
+        @ParametersDelegate
+        public InstallPath path = new InstallPath();
     }
 
     @Parameters(commandDescription = "Stop HugeGraph-Server and " +
@@ -309,6 +318,14 @@ public class SubCommands {
                    validateWith = {DirectoryValidator.class},
                    description = "Directory of graph schema/data")
         public String directory = "./";
+    }
+
+    public class InstallPath {
+
+        @Parameter(names = {"-p"}, arity = 1, required = true,
+                   description = "Install path of hugegraph-server and " +
+                                 "hugegraph-studio")
+        public String directory = null;
     }
 
     public class ConfirmMessage {
