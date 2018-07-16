@@ -20,6 +20,11 @@ BIN=`abs_path`
 TOP="$(cd $BIN/../ && pwd)"
 LIB=$TOP/lib
 
+. $BIN/util.sh
+
+MAX_MEM=$[96*1024]
+MIN_MEM=512
+
 if [ -n "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME"/bin/java
 else
@@ -89,5 +94,15 @@ do
     fi
 done
 
-exec $JAVA -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
+# Set Java options
+if [ "$JAVA_OPTIONS" = "" ] ; then
+    XMX=`calc_xmx $MIN_MEM $MAX_MEM`
+    if [ $? -ne 0 ]; then
+        echo "Failed to run bin/hugegraph, requires at least ${MIN_MEM}m free memory" \
+        exit 1
+    fi
+    JAVA_OPTIONS="-Xms256m -Xmx${XMX}m"
+fi
+
+exec $JAVA $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
 com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $*
