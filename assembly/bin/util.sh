@@ -1,16 +1,27 @@
 #!/bin/bash
 
-function ensure_path_writable() {
-    local path=$1
-    # Ensure input path exist
-    if [ ! -d "${path}" ]; then
-        mkdir -p ${path}
-    fi
-    # Check for write permission
-    if [ ! -w "${path}" ]; then
-        echo "No write permission on directory ${path}"
-        exit 1
-    fi
+# read a property from .properties file
+function read_property() {
+    # file path
+    file_name=$1
+    # replace "." to "\."
+    property_name=`echo $2 | sed 's/\./\\\./g'`
+    cat $file_name | sed -n -e "s/^[ ]*//g;/^#/d;s/^$property_name=//p" | tail -1
+}
+
+function write_property() {
+    local file=$1
+    local key=$2
+    local value=$3
+
+    local os=`uname`
+    case $os in
+        # Note: in mac os should use sed -i '' "xxx" to replace string,
+        # otherwise prompt 'command c expects \ followed by text'.
+        # See http://www.cnblogs.com/greedy-day/p/5952899.html
+        Darwin) sed -i '' "s!$key=.*!$key=$value!g" "$file" ;;
+        *) sed -i "s!$key=.*!$key=$value!g" "$file" ;;
+    esac
 }
 
 function parse_yaml() {
@@ -33,28 +44,154 @@ function parse_yaml() {
     | grep "$version-$module" | awk -F':' '{print $2}' | tr -d ' ' && echo
 }
 
-#read a property from a .properties file
-function read_property(){
-    # replace "." to "\."
-    property_name=`echo $2 | sed 's/\./\\\./g'`
-    # file path
-    file_name=$1;
-    cat $file_name | sed -n -e "s/^[ ]*//g;/^#/d;s/^$property_name=//p" | tail -1
+function process_num() {
+    num=`ps -ef | grep $1 | grep -v grep | wc -l`
+    return $num
 }
 
-function write_property() {
-    local file=$1
-    local key=$2
-    local value=$3
+function process_id() {
+    pid=`ps -ef | grep $1 | grep -v grep | awk '{print $2}'`
+    return $pid
+}
 
+# check the port of rest server is occupied
+function check_port() {
+    local port=`echo $1 | awk -F':' '{print $3}'`
+    lsof -i :$port >/dev/null
+
+    if [ $? -eq 0 ]; then
+        echo "The port "$port" has already used"
+        exit 1
+    fi
+}
+
+function crontab_append() {
+    local job="$1"
+    crontab -l | grep -F "$job" >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        return 1
+    fi
+    (crontab -l ; echo "$job") | crontab -
+}
+
+function crontab_remove() {
+    local job="$1"
+    # check exist before remove
+    crontab -l | grep -F "$job" >/dev/null 2>&1
+    if [ $? -eq 1 ]; then
+        return 0
+    fi
+
+    crontab -l | grep -Fv "$job"  | crontab -
+
+    # Check exist after remove
+    crontab -l | grep -F "$job" >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# wait_for_startup friendly_name host port timeout_s
+function wait_for_startup() {
+    local server_name="$1"
+    local server_url="$2"
+    local timeout_s="$3"
+
+    local now_s=`date '+%s'`
+    local stop_s=$(( $now_s + $timeout_s ))
+
+    local status
+
+    echo -n "Connecting to $server_name ($server_url)"
+    while [ $now_s -le $stop_s ]; do
+        echo -n .
+        status=`curl -o /dev/null -s -w %{http_code} $server_url`
+        if [ $status -eq 200 ]; then
+            echo "OK"
+            return 0
+        fi
+        sleep 2
+        now_s=`date '+%s'`
+    done
+
+    echo "The operation timed out when attempting to connect to $server_url" >&2
+    return 1
+}
+
+function free_memory() {
+    local free=""
     local os=`uname`
-    case $os in
-        # Note: in mac os should use sed -i '' "xxx" to replace string,
-        # otherwise prompt 'command c expects \ followed by text'.
-        # See http://www.cnblogs.com/greedy-day/p/5952899.html
-        Darwin) sed -i '' "s!$key=.*!$key=$value!g" "$file" ;;
-        *) sed -i "s!$key=.*!$key=$value!g" "$file" ;;
+    if [ "$os" == "Linux" ]; then
+        local distributor=`lsb_release -a | grep 'Distributor ID' | awk -F':' '{print $2}' | tr -d "\t"`
+        if [ "$distributor" == "CentOS" ]; then
+            free=`free -m | grep '\-\/\+' | awk '{print $4}'`
+        elif [ "$distributor" == "Ubuntu" ]; then
+            free=`free -m | grep 'Mem' | awk '{print $7}'`
+        else
+            echo "Unsupported Linux Distributor " $distributor
+        fi
+    elif [ "$os" == "Darwin" ]; then
+        free=`top -l 1 | head -n 10 | grep PhysMem | awk -F',' '{print $2}' \
+             | awk -F'M' '{print $1}' | tr -d " "`
+    else
+        echo "Unsupported operating system " $os
+        exit 1
+    fi
+    echo $free
+}
+
+function calc_xmx() {
+    local min_mem=$1
+    local max_mem=$2
+    # Get machine available memory
+    local free=`free_memory`
+    local half_free=$[free/2]
+
+    local xmx=$min_mem
+    if [[ "$free" -lt "$min_mem" ]]; then
+        exit 1
+    elif [[ "$half_free" -ge "$max_mem" ]]; then
+        xmx=$max_mem
+    elif [[ "$half_free" -lt "$min_mem" ]]; then
+        xmx=$min_mem
+    else
+        xmx=$half_free
+    fi
+    echo $xmx
+}
+
+function remove_with_prompt() {
+    local path=$1
+    local tips=""
+
+    if [ -d "$path" ]; then
+        tips="Remove directory '$path' and all sub files [y/n]?"
+    elif [ -f "$path" ]; then
+        tips="Remove file '$path' [y/n]?"
+    else
+        return 0
+    fi
+
+    read -p "$tips " yn
+    case $yn in
+        [Yy]* ) rm -rf "$path";;
+        * ) ;;
     esac
+}
+
+function ensure_path_writable() {
+    local path=$1
+    # Ensure input path exist
+    if [ ! -d "${path}" ]; then
+        mkdir -p ${path}
+    fi
+    # Check for write permission
+    if [ ! -w "${path}" ]; then
+        echo "No write permission on directory ${path}"
+        exit 1
+    fi
 }
 
 function get_ip() {
@@ -110,31 +247,7 @@ function ensure_package_exist() {
     fi
 }
 
-function wait_for_startup() {
-    local server_name="$1"
-    local server_url="$2"
-    local timeout_s="$3"
-
-    local now_s=`date '+%s'`
-    local stop_s=$(( $now_s + $timeout_s ))
-
-    local status
-
-    echo -n "Connecting to $server_name ($server_url)"
-    while [ $now_s -le $stop_s ]; do
-        echo -n .
-        status=`curl -o /dev/null -s -w %{http_code} $server_url`
-        if [ $status -eq 200 ]; then
-            echo "OK"
-            return 0
-        fi
-        sleep 2
-        now_s=`date '+%s'`
-    done
-
-    echo "The operation timed out when attempting to connect to $server_url" >&2
-    return 1
-}
+###########################################################################
 
 function wait_for_shutdown() {
     local p_name="$1"
@@ -169,7 +282,7 @@ function process_status() {
 }
 
 function kill_process() {
-    local pids=`ps -ef | grep "$1" | grep -v grep | awk '{print $2}' | xargs`
+    local pids=`ps -ef | grep "$1" | grep -v grep | xargs`
 
     if [ "$pids" = "" ]; then
         echo "There is no $1 process"
@@ -187,93 +300,4 @@ function kill_process() {
             *)       kill "$pid" ;;
         esac
     done
-}
-
-function remove_with_prompt() {
-    local path=$1
-    local tips=""
-
-    if [ -d "$path" ]; then
-        tips="Remove directory '$path' and all sub files [y/n]?"
-    elif [ -f "$path" ]; then
-        tips="Remove file '$path' [y/n]?"
-    else
-        return 0
-    fi
-
-    read -p "$tips " yn
-    case $yn in
-        [Yy]* ) rm -rf "$path";;
-        * ) ;;
-    esac
-}
-
-function crontab_append() {
-    local job="$1"
-    crontab -l | grep -F "$job" >/dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        return 1
-    fi
-    (crontab -l ; echo "$job") | crontab -
-}
-
-function crontab_remove() {
-    local job="$1"
-    # check exist before remove
-    crontab -l | grep -F "$job" >/dev/null 2>&1
-    if [ $? -eq 1 ]; then
-        return 0
-    fi
-
-    crontab -l | grep -Fv "$job"  | crontab -
-
-    # Check exist after remove
-    crontab -l | grep -F "$job" >/dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        return 1
-    else
-        return 0
-    fi
-}
-
-function free_memory() {
-    local free=""
-    local os=`uname`
-    if [ "$os" == "Linux" ]; then
-        local distributor=`lsb_release -a | grep 'Distributor ID' | awk -F':' '{print $2}' | tr -d "\t"`
-        if [ "$distributor" == "CentOS" ]; then
-            free=`free -m | grep '\-\/\+' | awk '{print $4}'`
-        elif [ "$distributor" == "Ubuntu" ]; then
-            free=`free -m | grep 'Mem' | awk '{print $7}'`
-        else
-            echo "Unsupported Linux Distributor " $distributor
-        fi
-    elif [ "$os" == "Darwin" ]; then
-        free=`top -l 1 | head -n 10 | grep PhysMem | awk -F',' '{print $2}' \
-             | awk -F'M' '{print $1}' | tr -d " "`
-    else
-        echo "Unsupported operating system " $os
-        exit 1
-    fi
-    echo $free
-}
-
-function calc_xmx() {
-    local min_mem=$1
-    local max_mem=$2
-    # Get machine available memory
-    local free=`free_memory`
-    local half_free=$[free/2]
-
-    local xmx=$min_mem
-    if [[ "$free" -lt "$min_mem" ]]; then
-        exit 1
-    elif [[ "$half_free" -ge "$max_mem" ]]; then
-        xmx=$max_mem
-    elif [[ "$half_free" -lt "$min_mem" ]]; then
-        xmx=$min_mem
-    else
-        xmx=$half_free
-    fi
-    echo $xmx
 }
