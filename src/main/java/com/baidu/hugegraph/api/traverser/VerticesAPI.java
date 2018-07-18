@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.api.traverser;
 
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,14 +59,14 @@ public class VerticesAPI extends TraversersAPI {
     }
 
     public List<Shard> shards(long splitSize) {
-        String path = Paths.get(this.path(), "shards").toString();
+        String path = String.join(PATH_SPLITOR, this.path(), "shards");
         Map<String, Object> params = ImmutableMap.of("split_size", splitSize);
         RestResult result = this.client.get(path, params);
         return result.readList("shards", Shard.class);
     }
 
     public List<Vertex> scan(Shard shard) {
-        String path = Paths.get(this.path(), "scan").toString();
+        String path = String.join(PATH_SPLITOR, this.path(), "scan");
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("start", shard.start());
         params.put("end", shard.end());

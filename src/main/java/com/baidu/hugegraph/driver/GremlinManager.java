@@ -21,6 +21,7 @@ package com.baidu.hugegraph.driver;
 
 import com.baidu.hugegraph.api.gremlin.GremlinAPI;
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
+import com.baidu.hugegraph.api.job.GremlinJobAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.gremlin.Response;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
@@ -28,10 +29,12 @@ import com.baidu.hugegraph.structure.gremlin.ResultSet;
 public class GremlinManager {
 
     private GremlinAPI gremlinAPI;
+    private GremlinJobAPI gremlinJobAPI;
     private String graph;
 
     public GremlinManager(RestClient client, String graph) {
         this.gremlinAPI = new GremlinAPI(client);
+        this.gremlinJobAPI = new GremlinJobAPI(client, graph);
         this.graph = graph;
     }
 
@@ -44,6 +47,10 @@ public class GremlinManager {
         Response response = this.gremlinAPI.post(request);
         // TODO: Can add some checks later
         return response.result();
+    }
+
+    public long executeAsTask(GremlinRequest request) {
+        return this.gremlinJobAPI.execute(request);
     }
 
     public GremlinRequest.Builder gremlin(String gremlin) {

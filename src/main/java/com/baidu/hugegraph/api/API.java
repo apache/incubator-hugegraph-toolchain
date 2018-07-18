@@ -27,6 +27,7 @@ public abstract class API {
     public static final String CHARSET = "UTF-8";
     public static final String BATCH_ENCODING = "gzip";
     public static final long NO_LIMIT = -1L;
+    public static final String PATH_SPLITOR = "/";
 
     protected final RestClient client;
 

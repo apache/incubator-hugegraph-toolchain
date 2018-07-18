@@ -145,6 +145,20 @@ public class BaseClientTest {
     protected static void initIndexLabel() {
         SchemaManager schema = schema();
 
+        schema.indexLabel("personByCity")
+              .onV("person")
+              .by("city")
+              .secondary()
+              .ifNotExist()
+              .create();
+
+        schema.indexLabel("personByAge")
+              .onV("person")
+              .by("age")
+              .range()
+              .ifNotExist()
+              .create();
+
         schema.indexLabel("knowsByDate")
               .onE("knows")
               .by("date")

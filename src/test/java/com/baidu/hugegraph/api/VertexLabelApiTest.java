@@ -41,7 +41,9 @@ public class VertexLabelApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        vertexLabelAPI.list().forEach(vl -> vertexLabelAPI.delete(vl.name()));
+        vertexLabelAPI.list().forEach(vl -> {
+            waitUntilTaskCompleted(vertexLabelAPI.delete(vl.name()));
+        });
     }
 
     @Test
@@ -340,7 +342,8 @@ public class VertexLabelApiTest extends BaseApiTest {
                                           .build();
         vertexLabelAPI.create(vertexLabel);
 
-        vertexLabelAPI.delete("person");
+        long taskId = vertexLabelAPI.delete("person");
+        waitUntilTaskCompleted(taskId);
 
         Utils.assertResponseError(404, () -> {
             vertexLabelAPI.get("person");

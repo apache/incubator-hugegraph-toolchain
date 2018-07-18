@@ -32,7 +32,9 @@ import org.junit.runners.Suite;
     EdgeApiTest.class,
     GremlinApiTest.class,
     VariablesApiTest.class,
-    TraverserApiTest.class
+    TraverserApiTest.class,
+    TaskApiTest.class,
+    JobApiTest.class
 })
 public class ApiTestSuite {
 }

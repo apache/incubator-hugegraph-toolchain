@@ -51,7 +51,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        edgeLabelAPI.list().forEach(el -> edgeLabelAPI.delete(el.name()));
+        edgeLabelAPI.list().forEach(el -> {
+            waitUntilTaskCompleted(edgeLabelAPI.delete(el.name()));
+        });
     }
 
     @Test
@@ -103,7 +105,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
     }
 
     @Test
-    public void testCreateExistedVertexLabel() {
+    public void testCreateExistedEdgeLabel() {
         edgeLabelAPI.create(fillEdgeLabel.apply("created"));
 
         Utils.assertResponseError(400, () -> {
@@ -379,7 +381,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                       .build();
         edgeLabelAPI.create(edgeLabel);
 
-        edgeLabelAPI.delete("created");
+        long taskId = edgeLabelAPI.delete("created");
+        waitUntilTaskCompleted(taskId);
 
         Utils.assertResponseError(404, () -> {
             edgeLabelAPI.get("created");

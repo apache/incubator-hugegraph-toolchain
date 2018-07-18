@@ -22,6 +22,7 @@ package com.baidu.hugegraph.api.schema;
 import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -70,7 +71,10 @@ public class VertexLabelAPI extends SchemaAPI {
         return result.readList(this.type(), VertexLabel.class);
     }
 
-    public void delete(String name) {
-        this.client.delete(this.path(), name);
+    public long delete(String name) {
+        RestResult result = this.client.delete(this.path(), name);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> task = result.readObject(Map.class);
+        return TaskAPI.parseTaskId(task);
     }
 }

@@ -17,45 +17,54 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.schema;
+package com.baidu.hugegraph.api.job;
 
-import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
+import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.baidu.hugegraph.util.E;
 
-public class IndexLabelAPI extends SchemaAPI {
+public class RebuildAPI extends JobAPI {
 
-    public IndexLabelAPI(RestClient client, String graph) {
+    private static final String JOB_TYPE = "rebuild";
+
+    public RebuildAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
-    protected String type() {
-        return HugeType.INDEX_LABEL.string();
+    protected String jobType() {
+        return JOB_TYPE;
     }
 
-    public IndexLabel create(IndexLabel indexLabel) {
-        RestResult result = this.client.post(this.path(), indexLabel);
-        return result.readObject(IndexLabel.class);
+    public long rebuild(VertexLabel vertexLabel) {
+        return this.rebuildIndex(vertexLabel);
     }
 
-    public IndexLabel get(String name) {
-        RestResult result = this.client.get(this.path(), name);
-        return result.readObject(IndexLabel.class);
+    public long rebuild(EdgeLabel edgeLabel) {
+        return this.rebuildIndex(edgeLabel);
     }
 
-    public List<IndexLabel> list() {
-        RestResult result = this.client.get(this.path());
-        return result.readList(this.type(), IndexLabel.class);
+    public long rebuild(IndexLabel indexLabel) {
+        return this.rebuildIndex(indexLabel);
     }
 
-    public long delete(String name) {
-        RestResult result = this.client.delete(this.path(), name);
+    private long rebuildIndex(SchemaElement element) {
+        E.checkArgument(element instanceof VertexLabel ||
+                        element instanceof EdgeLabel ||
+                        element instanceof IndexLabel,
+                        "Only VertexLabel, EdgeLabel and IndexLabel support " +
+                        "rebuild, but got '%s'", element);
+        String path = String.join(PATH_SPLITOR, this.path(), element.type());
+        RestResult result = this.client.put(path, element.name(), element);
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);

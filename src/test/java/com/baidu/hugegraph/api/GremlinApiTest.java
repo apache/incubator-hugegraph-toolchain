@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,6 +34,10 @@ public class GremlinApiTest extends BaseApiTest {
         BaseApiTest.initPropertyKey();
         BaseApiTest.initVertexLabel();
         BaseApiTest.initEdgeLabel();
+    }
+
+    @Before
+    public void prepareData() {
         BaseApiTest.initVertex();
         BaseApiTest.initEdge();
     }
@@ -42,7 +47,15 @@ public class GremlinApiTest extends BaseApiTest {
         GremlinRequest request = new GremlinRequest("g.V()");
         ResultSet resultSet = gremlin().execute(request);
 
-        Assert.assertEquals(6, resultSet.data().size());
+        Assert.assertEquals(6, resultSet.size());
+
+        request = new GremlinRequest("g.V().drop()");
+        gremlin().execute(request);
+
+        request = new GremlinRequest("g.V()");
+        resultSet = gremlin().execute(request);
+
+        Assert.assertEquals(0, resultSet.size());
     }
 
     @Test
@@ -50,6 +63,47 @@ public class GremlinApiTest extends BaseApiTest {
         GremlinRequest request = new GremlinRequest("g.E()");
         ResultSet resultSet = gremlin().execute(request);
 
-        Assert.assertEquals(6, resultSet.data().size());
+        Assert.assertEquals(6, resultSet.size());
+
+        request = new GremlinRequest("g.E().drop()");
+        gremlin().execute(request);
+
+        request = new GremlinRequest("g.E()");
+        resultSet = gremlin().execute(request);
+
+        Assert.assertEquals(0, resultSet.size());
+    }
+
+    @Test
+    public void testAsyncRemoveAllVertices() {
+        GremlinRequest request = new GremlinRequest("g.V()");
+        ResultSet resultSet = gremlin().execute(request);
+        Assert.assertEquals(6, resultSet.size());
+
+        String gremlin = "hugegraph.traversal().V().drop()";
+        request = new GremlinRequest(gremlin);
+        long id = gremlin().executeAsTask(request);
+        waitUntilTaskCompleted(id);
+
+        request = new GremlinRequest("g.V()");
+        resultSet = gremlin().execute(request);
+        Assert.assertEquals(0, resultSet.size());
+    }
+
+    @Test
+    public void testAsyncRemoveAllEdges() {
+
+        GremlinRequest request = new GremlinRequest("g.E()");
+        ResultSet resultSet = gremlin().execute(request);
+        Assert.assertEquals(6, resultSet.size());
+
+        String gremlin = "g.E().drop()";
+        request = new GremlinRequest(gremlin);
+        long id = gremlin().executeAsTask(request);
+        waitUntilTaskCompleted(id);
+
+        request = new GremlinRequest("g.E()");
+        resultSet = gremlin().execute(request);
+        Assert.assertEquals(0, resultSet.size());
     }
 }

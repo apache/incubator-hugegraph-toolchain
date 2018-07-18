@@ -52,7 +52,9 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        indexLabelAPI.list().forEach(il -> indexLabelAPI.delete(il.name()));
+        indexLabelAPI.list().forEach(il -> {
+            waitUntilTaskCompleted(indexLabelAPI.delete(il.name()));
+        });
     }
 
     @Test
@@ -186,7 +188,8 @@ public class IndexLabelApiTest extends BaseApiTest {
     public void testDelete() {
         indexLabelAPI.create(fillIndexLabel.apply("personByAge"));
 
-        indexLabelAPI.delete("personByAge");
+        long taskId = indexLabelAPI.delete("personByAge");
+        waitUntilTaskCompleted(taskId);
 
         Assert.assertThrows(ServerException.class, () -> {
             indexLabelAPI.get("personByAge");

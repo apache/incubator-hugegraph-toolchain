@@ -107,8 +107,8 @@ public class SchemaManager {
         return this.vertexLabelAPI.eliminate(vertexLabel);
     }
 
-    public void removeVertexLabel(String name) {
-        this.vertexLabelAPI.delete(name);
+    public long removeVertexLabel(String name) {
+        return this.vertexLabelAPI.delete(name);
     }
 
     public VertexLabel getVertexLabel(String name) {
@@ -131,8 +131,8 @@ public class SchemaManager {
         return this.edgeLabelAPI.eliminate(edgeLabel);
     }
 
-    public void removeEdgeLabel(String name) {
-        this.edgeLabelAPI.delete(name);
+    public long removeEdgeLabel(String name) {
+        return this.edgeLabelAPI.delete(name);
     }
 
     public EdgeLabel getEdgeLabel(String name) {
@@ -147,8 +147,8 @@ public class SchemaManager {
         return this.indexLabelAPI.create(indexLabel);
     }
 
-    public void removeIndexLabel(String name) {
-        this.indexLabelAPI.delete(name);
+    public long removeIndexLabel(String name) {
+        return this.indexLabelAPI.delete(name);
     }
 
     public IndexLabel getIndexLabel(String name) {

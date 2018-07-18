@@ -17,51 +17,31 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure.constant;
+package com.baidu.hugegraph.driver;
 
-public enum HugeType {
+import com.baidu.hugegraph.api.job.RebuildAPI;
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.schema.EdgeLabel;
+import com.baidu.hugegraph.structure.schema.IndexLabel;
+import com.baidu.hugegraph.structure.schema.VertexLabel;
 
-    // Schema
-    VERTEX_LABEL(1, "vertexlabels"),
-    EDGE_LABEL(2, "edgelabels"),
-    PROPERTY_KEY(3, "propertykeys"),
-    INDEX_LABEL(4, "indexlabels"),
+public class JobManager {
 
-    // Data
-    VERTEX(101, "vertices"),
-    EDGE(120, "edges"),
+    private RebuildAPI rebuildAPI;
 
-    // Variables
-    VARIABLES(130, "variables"),
-
-    // Task
-    TASK(140, "tasks"),
-
-    // Job
-    JOB(150, "jobs"),
-
-    // Gremlin
-    GREMLIN(201, "gremlin"),
-
-    GRAPHS(220, "graphs"),
-
-    // Version
-    VERSION(230, "versions");
-
-    private int code;
-    private String name = null;
-
-    HugeType(int code, String name) {
-        assert code < 256;
-        this.code = code;
-        this.name = name;
+    public JobManager(RestClient client, String graph) {
+        this.rebuildAPI = new RebuildAPI(client, graph);
     }
 
-    public int code() {
-        return this.code;
+    public long rebuild(VertexLabel vertexLabel) {
+        return this.rebuildAPI.rebuild(vertexLabel);
     }
 
-    public String string() {
-        return this.name;
+    public long rebuild(EdgeLabel edgeLabel) {
+        return this.rebuildAPI.rebuild(edgeLabel);
+    }
+
+    public long rebuild(IndexLabel indexLabel) {
+        return this.rebuildAPI.rebuild(indexLabel);
     }
 }

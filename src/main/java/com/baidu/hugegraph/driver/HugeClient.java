@@ -41,6 +41,8 @@ public class HugeClient {
     private GremlinManager gremlin;
     private TraverserManager traverser;
     private VariablesManager variables;
+    private JobManager job;
+    private TaskManager task;
 
     public HugeClient(String url, String graph) {
         this(url, graph, DEFAULT_TIMEOUT);
@@ -87,6 +89,8 @@ public class HugeClient {
         this.gremlin = new GremlinManager(client, graph);
         this.traverser = new TraverserManager(client, this.graph);
         this.variables = new VariablesManager(client, graph);
+        this.job = new JobManager(client, graph);
+        this.task = new TaskManager(client, graph);
     }
 
     /**
@@ -95,7 +99,7 @@ public class HugeClient {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.26", "0.27",
+        VersionUtil.check(apiVersion, "0.27", "0.28",
                           "hugegraph-api in server");
     }
 
@@ -121,5 +125,13 @@ public class HugeClient {
 
     public VariablesManager variables() {
         return this.variables;
+    }
+
+    public JobManager job() {
+        return this.job;
+    }
+
+    public TaskManager task() {
+        return this.task;
     }
 }

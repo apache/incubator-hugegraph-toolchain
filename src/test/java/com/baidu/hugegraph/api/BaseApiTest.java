@@ -25,10 +25,12 @@ import org.junit.BeforeClass;
 import com.baidu.hugegraph.BaseClientTest;
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
+import com.baidu.hugegraph.api.job.RebuildAPI;
 import com.baidu.hugegraph.api.schema.EdgeLabelAPI;
 import com.baidu.hugegraph.api.schema.IndexLabelAPI;
 import com.baidu.hugegraph.api.schema.PropertyKeyAPI;
 import com.baidu.hugegraph.api.schema.VertexLabelAPI;
+import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.EdgesAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
@@ -38,6 +40,7 @@ import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.testutil.Assert;
 
 public class BaseApiTest extends BaseClientTest {
@@ -58,6 +61,8 @@ public class BaseApiTest extends BaseClientTest {
     protected static KneighborAPI kneighborAPI;
     protected static VerticesAPI verticesAPI;
     protected static EdgesAPI edgesAPI;
+    protected static TaskAPI taskAPI;
+    protected static RebuildAPI rebuildAPI;
 
     @BeforeClass
     public static void init() {
@@ -78,6 +83,8 @@ public class BaseApiTest extends BaseClientTest {
         kneighborAPI = new KneighborAPI(client, GRAPH);
         verticesAPI = new VerticesAPI(client, GRAPH);
         edgesAPI = new EdgesAPI(client, GRAPH);
+        taskAPI = new TaskAPI(client, GRAPH);
+        rebuildAPI = new RebuildAPI(client, GRAPH);
     }
 
     @AfterClass
@@ -102,16 +109,27 @@ public class BaseApiTest extends BaseClientTest {
 
         // Clear schema
         indexLabelAPI.list().forEach(indexLabel -> {
-            indexLabelAPI.delete(indexLabel.name());
+            waitUntilTaskCompleted(indexLabelAPI.delete(indexLabel.name()));
         });
+
         edgeLabelAPI.list().forEach(edgeLabel -> {
-            edgeLabelAPI.delete(edgeLabel.name());
+            waitUntilTaskCompleted(edgeLabelAPI.delete(edgeLabel.name()));
         });
+
         vertexLabelAPI.list().forEach(vertexLabel -> {
-            vertexLabelAPI.delete(vertexLabel.name());
+            waitUntilTaskCompleted(vertexLabelAPI.delete(vertexLabel.name()));
         });
         propertyKeyAPI.list().forEach(propertyKey -> {
             propertyKeyAPI.delete(propertyKey.name());
         });
+
+        // Clear system
+        taskAPI.list(null, -1).forEach(task -> {
+            taskAPI.delete(task.id());
+        });
+    }
+
+    protected static void waitUntilTaskCompleted(long taskId) {
+        taskAPI.waitUntilTaskCompleted(taskId, 5L);
     }
 }

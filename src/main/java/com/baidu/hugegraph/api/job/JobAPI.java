@@ -17,51 +17,26 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure.constant;
+package com.baidu.hugegraph.api.job;
 
-public enum HugeType {
+import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.constant.HugeType;
 
-    // Schema
-    VERTEX_LABEL(1, "vertexlabels"),
-    EDGE_LABEL(2, "edgelabels"),
-    PROPERTY_KEY(3, "propertykeys"),
-    INDEX_LABEL(4, "indexlabels"),
+public abstract class JobAPI extends API {
 
-    // Data
-    VERTEX(101, "vertices"),
-    EDGE(120, "edges"),
+    // For example: graphs/hugegraph/jobs/gremlin
+    private static final String PATH = "graphs/%s/%s/%s";
 
-    // Variables
-    VARIABLES(130, "variables"),
-
-    // Task
-    TASK(140, "tasks"),
-
-    // Job
-    JOB(150, "jobs"),
-
-    // Gremlin
-    GREMLIN(201, "gremlin"),
-
-    GRAPHS(220, "graphs"),
-
-    // Version
-    VERSION(230, "versions");
-
-    private int code;
-    private String name = null;
-
-    HugeType(int code, String name) {
-        assert code < 256;
-        this.code = code;
-        this.name = name;
+    public JobAPI(RestClient client, String graph) {
+        super(client);
+        this.path(String.format(PATH, graph, this.type(), this.jobType()));
     }
 
-    public int code() {
-        return this.code;
+    @Override
+    protected String type() {
+        return HugeType.JOB.string();
     }
 
-    public String string() {
-        return this.name;
-    }
+    protected abstract String jobType();
 }
