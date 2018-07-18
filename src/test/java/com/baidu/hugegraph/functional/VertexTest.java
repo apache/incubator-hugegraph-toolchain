@@ -26,7 +26,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.baidu.hugegraph.client.BaseClientTest;
+import com.baidu.hugegraph.BaseClientTest;
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;

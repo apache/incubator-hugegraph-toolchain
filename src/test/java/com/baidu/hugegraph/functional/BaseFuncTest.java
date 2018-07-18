@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.baidu.hugegraph.client.BaseClientTest;
+import com.baidu.hugegraph.BaseClientTest;
 import com.baidu.hugegraph.util.TimeUtil;
 
 public class BaseFuncTest extends BaseClientTest {

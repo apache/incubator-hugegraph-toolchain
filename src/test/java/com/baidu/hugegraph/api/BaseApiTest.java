@@ -22,6 +22,7 @@ package com.baidu.hugegraph.api;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import com.baidu.hugegraph.BaseClientTest;
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
 import com.baidu.hugegraph.api.schema.EdgeLabelAPI;
@@ -36,8 +37,8 @@ import com.baidu.hugegraph.api.traverser.PathsAPI;
 import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
-import com.baidu.hugegraph.client.BaseClientTest;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.testutil.Assert;
 
 public class BaseApiTest extends BaseClientTest {
 
@@ -81,9 +82,11 @@ public class BaseApiTest extends BaseClientTest {
 
     @AfterClass
     public static void clear() throws Exception {
-        BaseApiTest.clearData();
+        Assert.assertNotNull("Not opened client", client);
 
+        clearData();
         client.close();
+
         BaseClientTest.clear();
     }
 

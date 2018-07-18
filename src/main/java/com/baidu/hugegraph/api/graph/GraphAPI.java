@@ -39,12 +39,12 @@ public abstract class GraphAPI extends API {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private String batchPath;
+    private final String batchPath;
 
     public GraphAPI(RestClient client, String graph) {
         super(client);
-        this.path = String.format(PATH, graph, type());
-        this.batchPath = String.format("%s/%s", this.path, "batch");
+        this.path(PATH, graph, this.type());
+        this.batchPath = String.join("/", this.path(), "batch");
     }
 
     public String batchPath() {

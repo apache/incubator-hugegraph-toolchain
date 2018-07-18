@@ -28,22 +28,30 @@ public abstract class API {
     public static final String BATCH_ENCODING = "gzip";
     public static final long NO_LIMIT = -1L;
 
-    protected RestClient client;
-    protected String path;
+    protected final RestClient client;
+
+    private String path;
 
     public API(RestClient client) {
+        E.checkNotNull(client, "client");
         this.client = client;
+        this.path = null;
     }
 
     public String path() {
+        E.checkState(this.path != null, "Path can't be null");
         return this.path;
     }
 
-    protected abstract String type();
-
-    public void path(String path) {
+    protected void path(String path) {
         this.path = path;
     }
+
+    protected void path(String pathTemplate, Object... args) {
+        this.path = String.format(pathTemplate, args);
+    }
+
+    protected abstract String type();
 
     protected static void checkOffset(long value) {
         E.checkArgument(value >= 0, "Offset must be >= 0, but got: %s", value);

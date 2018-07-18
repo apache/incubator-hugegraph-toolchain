@@ -1,4 +1,4 @@
-package com.baidu.hugegraph.client;
+package com.baidu.hugegraph;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +42,7 @@ public class BaseClientTest {
     }
 
     public static SchemaManager schema() {
+        Assert.assertNotNull("Not opened client", client);
         return client.schema();
     }
 
@@ -51,6 +52,7 @@ public class BaseClientTest {
     }
 
     public static GremlinManager gremlin() {
+        Assert.assertNotNull("Not opened client", client);
         return client.gremlin();
     }
 

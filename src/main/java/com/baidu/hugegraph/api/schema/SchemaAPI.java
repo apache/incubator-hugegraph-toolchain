@@ -28,6 +28,6 @@ public abstract class SchemaAPI extends API {
 
     public SchemaAPI(RestClient client, String graph) {
         super(client);
-        this.path(String.format(PATH, graph, this.type()));
+        this.path(PATH, graph, this.type());
     }
 }

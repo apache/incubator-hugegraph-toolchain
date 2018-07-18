@@ -33,7 +33,7 @@ public class VariablesAPI extends API {
 
     public VariablesAPI(RestClient client, String graph) {
         super(client);
-        this.path(String.format(PATH, graph, this.type()));
+        this.path(PATH, graph, this.type());
     }
 
     @Override

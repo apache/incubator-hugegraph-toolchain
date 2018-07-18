@@ -29,7 +29,7 @@ public class TraversersAPI extends API {
 
     public TraversersAPI(RestClient client, String graph) {
         super(client);
-        this.path(String.format(PATH, graph, type()));
+        this.path(PATH, graph, this.type());
     }
 
     @Override
