@@ -1,6 +1,6 @@
 version-0.5: {
-  server: 0.5.6,
-  studio: 0.5.0,
+  server: 0.5.6-SNAPSHOT,
+  studio: 0.5.0-SNAPSHOT
 },
 version-0.6: {
   server: 0.6.1,

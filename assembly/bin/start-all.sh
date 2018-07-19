@@ -60,8 +60,8 @@ if [ "$STUDIO_VERSION" = "" ]; then
     exit 1
 fi
 
-SERVER_DIR="${INSTALL_PATH}/hugegraph-release-${SERVER_VERSION}-SNAPSHOT"
-STUDIO_DIR="${INSTALL_PATH}/hugestudio-release-${STUDIO_VERSION}-SNAPSHOT"
+SERVER_DIR="${INSTALL_PATH}/hugegraph-release-${SERVER_VERSION}"
+STUDIO_DIR="${INSTALL_PATH}/hugestudio-release-${STUDIO_VERSION}"
 
 if [ ! -d "${SERVER_DIR}" ]; then
     echo "The server dir ${SERVER_DIR} doesn't exist"

@@ -237,6 +237,9 @@ public class SubCommands {
 
         @ParametersDelegate
         public InstallPath path = new InstallPath();
+
+        @ParametersDelegate
+        public DownloadURL url = new DownloadURL();
     }
 
     @Parameters(commandDescription = "Start HugeGraph-Server and " +
@@ -288,7 +291,7 @@ public class SubCommands {
 
         @Parameter(names = {"--url"}, arity = 1,
                    validateWith = {UrlValidator.class},
-                   description = "The URL of hugegraph url")
+                   description = "The URL of HugeGraph-Server url")
         public String url = "http://127.0.0.1:8080";
     }
 
@@ -343,9 +346,17 @@ public class SubCommands {
     public class InstallPath {
 
         @Parameter(names = {"-p"}, arity = 1, required = true,
-                   description = "Install path of hugegraph-server and " +
-                                 "hugegraph-studio")
+                   description = "Install path of HugeGraph-Server and " +
+                                 "HugeGraph-Studio")
         public String directory = null;
+    }
+
+    public class DownloadURL {
+
+        @Parameter(names = {"-u"}, arity = 1,
+                   description = "Download url prefix path of " +
+                                 "HugeGraph-Server and HugeGraph-Studio")
+        public String url = null;
     }
 
     public class ConfirmMessage {
@@ -399,8 +410,9 @@ public class SubCommands {
 
     public class Version {
 
-        @Parameter(arity = 1,
-                   description = "version")
+        @Parameter(names = {"-v"}, arity = 1, required = true,
+                   description = "Version of HugeGraph-Server and " +
+                                 "HugeGraph-Studio")
         public String version;
     }
 
@@ -408,7 +420,7 @@ public class SubCommands {
 
         @Parameter(names = {"--retry"}, arity = 1,
                    validateWith = {PositiveValidator.class},
-                   description = "retry times, default is 3")
+                   description = "Retry times, default is 3")
         public int retry = 3;
     }
 

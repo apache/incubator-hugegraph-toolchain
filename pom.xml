@@ -5,7 +5,7 @@
 
     <groupId>com.baidu.xbu-data</groupId>
     <artifactId>hugegraph-tools</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
     <url>http://maven.apache.org</url>
     <name>${project.artifactId}</name>
@@ -20,7 +20,7 @@
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <shell-executable>bash</shell-executable>
-        <hugegraph-client-version>1.5.6-SNAPSHOT</hugegraph-client-version>
+        <hugegraph-client-version>1.5.6</hugegraph-client-version>
         <jcommand-version>1.72</jcommand-version>
     </properties>
 
@@ -52,18 +52,6 @@
             <version>${jcommand-version}</version>
         </dependency>
     </dependencies>
-
-    <!-- The remote central repository -->
-    <distributionManagement>
-        <repository>
-            <id>Baidu_Local</id>
-            <url>http://maven.baidu-int.com/nexus/content/repositories/Baidu_Local</url>
-        </repository>
-        <snapshotRepository>
-            <id>Baidu_Local_Snapshots</id>
-            <url>http://maven.baidu-int.com/nexus/content/repositories/Baidu_Local_Snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <build>
         <directory>output</directory>

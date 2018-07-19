@@ -2,16 +2,20 @@
 
 VERSION=""
 INSTALL_PATH=""
+DOWNLOAD_LINK_PREFIX=""
+DEFAULT_DOWNLOAD_LINK_PREFIX="https://hugegraph.github.io/hugegraph-doc/downloads"
+DOWNLOAD_LINK_PREFIX_CONFIG="~/hugegraph-download-url-prefix"
 
 function print_usage() {
-    echo "USAGE: $0 -v {hugegraph-version} -p {install-path}"
-    echo "eg   : $0 -v 0.6 -p ."
+    echo "USAGE: $0 -v {hugegraph-version} -p {install-path} [-u {download-path-prefix}]"
+    echo "eg   : $0 -v 0.6 -p ./ [-u http://xxx]"
 }
 
-while getopts "v:p:" arg; do
+while getopts "v:p:u:" arg; do
     case ${arg} in
         v) VERSION="$OPTARG" ;;
         p) INSTALL_PATH="$OPTARG" ;;
+        u) DOWNLOAD_LINK_PREFIX="$OPTARG" ;;
         ?) print_usage && exit 1 ;;
     esac
 done
@@ -19,6 +23,16 @@ done
 if [[ "$VERSION" = "" || "$INSTALL_PATH" = "" ]]; then
     print_usage
     exit 1
+fi
+
+if [[ "$DOWNLOAD_LINK_PREFIX" = "" ]]; then
+    if [ -f ${DOWNLOAD_LINK_PREFIX_CONFIG} ]; then
+        DOWNLOAD_LINK_PREFIX=`sed -n "1p" ${DOWNLOAD_LINK_PREFIX_CONFIG}`
+    else
+        DOWNLOAD_LINK_PREFIX=${DEFAULT_DOWNLOAD_LINK_PREFIX}
+    fi
+else
+    echo ${DOWNLOAD_LINK_PREFIX} > ${DOWNLOAD_LINK_PREFIX_CONFIG}
 fi
 
 function abs_path() {
@@ -61,15 +75,14 @@ if [ "$STUDIO_VERSION" = "" ]; then
 fi
 
 # Download and unzip
-DOWNLOAD_LINK_PREFIX="http://yq01-sw-hdsserver16.yq01.baidu.com:8080/hadoop-web-proxy/yqns02/hugegraph"
 ARCHIVE_FORMAT=".tar.gz"
 
 # HugeGraphServer dir and tar package name
-SERVER_DIR="hugegraph-release-${SERVER_VERSION}-SNAPSHOT"
+SERVER_DIR="hugegraph-release-${SERVER_VERSION}"
 SERVER_TAR=${SERVER_DIR}${ARCHIVE_FORMAT}
 
 # HugeGraphStudio dir and tar package name
-STUDIO_DIR="hugestudio-release-${STUDIO_VERSION}-SNAPSHOT"
+STUDIO_DIR="hugestudio-release-${STUDIO_VERSION}"
 STUDIO_TAR=${STUDIO_DIR}${ARCHIVE_FORMAT}
 
 ensure_package_exist $INSTALL_PATH $SERVER_DIR $SERVER_TAR ${DOWNLOAD_LINK_PREFIX}"/"${SERVER_TAR}
