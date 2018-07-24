@@ -31,12 +31,12 @@ import com.baidu.hugegraph.cmd.Printer;
 import com.baidu.hugegraph.concurrent.KeyLock;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.type.Shard;
 import com.baidu.hugegraph.util.E;
 
 public class BackupManager extends RetryManager {

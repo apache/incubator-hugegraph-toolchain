@@ -5,7 +5,7 @@
 
     <groupId>com.baidu.xbu-data</groupId>
     <artifactId>hugegraph-tools</artifactId>
-    <version>1.0.2</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <url>http://maven.apache.org</url>
     <name>${project.artifactId}</name>
@@ -20,7 +20,7 @@
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <shell-executable>bash</shell-executable>
-        <hugegraph-client-version>1.5.6</hugegraph-client-version>
+        <hugegraph-client-version>1.5.8</hugegraph-client-version>
         <jcommand-version>1.72</jcommand-version>
     </properties>
 

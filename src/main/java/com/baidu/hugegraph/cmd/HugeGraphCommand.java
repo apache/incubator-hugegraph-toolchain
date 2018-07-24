@@ -20,14 +20,18 @@
 package com.baidu.hugegraph.cmd;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.baidu.hugegraph.cmd.manager.BackupManager;
 import com.baidu.hugegraph.cmd.manager.DumpGraphManager;
 import com.baidu.hugegraph.cmd.manager.GraphsManager;
 import com.baidu.hugegraph.cmd.manager.GremlinManager;
 import com.baidu.hugegraph.cmd.manager.RestoreManager;
+import com.baidu.hugegraph.cmd.manager.TasksManager;
 import com.baidu.hugegraph.cmd.manager.ToolManager;
+import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.util.E;
@@ -144,16 +148,16 @@ public class HugeGraphCommand {
                 graphsManager = manager(GraphsManager.class);
                 graphsManager.restoring(graphModeSet.graph(),
                                         graphModeSet.restoreFlag());
-                Printer.print("set graph '%s' restoring to '%s'",
+                Printer.print("Set graph '%s' restoring to '%s'",
                               graphModeSet.graph(), graphModeSet.restoreFlag());
                 break;
             case "graph-mode-get":
                 SubCommands.GraphModeGet graphModeGet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
-                Printer.printKV("restoring",
+                Printer.printKV("Is restoring",
                                 graphsManager.restoring(graphModeGet.graph()));
                 break;
-            case "gremlin":
+            case "gremlin-execute":
                 SubCommands.Gremlin gremlin = this.subCommand(subCmd);
                 GremlinManager gremlinManager = manager(GremlinManager.class);
                 ResultSet result = gremlinManager.execute(gremlin.script(),
@@ -164,6 +168,35 @@ public class HugeGraphCommand {
                 while (iterator.hasNext()) {
                     Printer.print(iterator.next().getString());
                 }
+                break;
+            case "gremlin-schedule":
+                SubCommands.GremlinJob job = this.subCommand(subCmd);
+                gremlinManager = manager(GremlinManager.class);
+                long taskId = gremlinManager.executeAsTask(job.script(),
+                                                           job.bindings(),
+                                                           job.language());
+                Printer.printKV("Task id", taskId);
+                break;
+            case "task-list":
+                SubCommands.TaskList taskList = this.subCommand(subCmd);
+                TasksManager tasksManager = manager(TasksManager.class);
+                List<Task> tasks = tasksManager.list(taskList.status(),
+                                                     taskList.limit());
+                List<Object> results = tasks.stream().map(Task::asMap)
+                                            .collect(Collectors.toList());
+                Printer.printList("Tasks", results);
+                break;
+            case "task-get":
+                SubCommands.TaskGet taskGet = this.subCommand(subCmd);
+                tasksManager = manager(TasksManager.class);
+                Printer.printKV("Task info",
+                                tasksManager.get(taskGet.taskId()).asMap());
+                break;
+            case "task-delete":
+                SubCommands.TaskDelete taskDelete = this.subCommand(subCmd);
+                tasksManager = manager(TasksManager.class);
+                tasksManager.delete(taskDelete.taskId());
+                Printer.print("Task '%s' is deleted", taskDelete.taskId());
                 break;
             case "help":
                 jCommander.usage();

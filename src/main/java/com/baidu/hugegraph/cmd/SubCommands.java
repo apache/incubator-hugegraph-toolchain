@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
@@ -35,6 +36,7 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 public class SubCommands {
 
@@ -55,7 +57,11 @@ public class SubCommands {
         this.commands.put("graph-clear", new GraphClear());
         this.commands.put("graph-mode-set", new GraphModeSet());
         this.commands.put("graph-mode-get", new GraphModeGet());
-        this.commands.put("gremlin", new Gremlin());
+        this.commands.put("gremlin-execute", new Gremlin());
+        this.commands.put("gremlin-schedule", new GremlinJob());
+        this.commands.put("task-list", new TaskList());
+        this.commands.put("task-get", new TaskGet());
+        this.commands.put("task-delete", new TaskDelete());
         this.commands.put("deploy", new Deploy());
         this.commands.put("start-all", new StartAll());
         this.commands.put("clear", new Clear());
@@ -225,6 +231,72 @@ public class SubCommands {
 
         public Map<String, String> aliases() {
             return this.aliases.aliases;
+        }
+    }
+
+    @Parameters(commandDescription = "Execute Gremlin statements as " +
+                                     "asynchronous job")
+    public class GremlinJob {
+
+        @ParametersDelegate
+        private GremlinScript script = new GremlinScript();
+
+        @ParametersDelegate
+        private Language language = new Language();
+
+        @ParametersDelegate
+        private Bindings bindings = new Bindings();
+
+        public String script() {
+            return this.script.script;
+        }
+
+        public String language() {
+            return this.language.language;
+        }
+
+        public Map<String, String> bindings() {
+            return this.bindings.bindings;
+        }
+    }
+
+    @Parameters(commandDescription = "List tasks")
+    public class TaskList {
+
+        @ParametersDelegate
+        private TaskStatus status = new TaskStatus();
+
+        @ParametersDelegate
+        private Limit limit = new Limit();
+
+        public String status() {
+            return this.status.status.toUpperCase();
+        }
+
+        public long limit() {
+            return this.limit.limit;
+        }
+    }
+
+    @Parameters(commandDescription = "Get task info")
+    public class TaskGet {
+
+        @ParametersDelegate
+        private TaskId taskId = new TaskId();
+
+        public long taskId() {
+            return this.taskId.taskId;
+        }
+    }
+
+    @Parameters(commandDescription = "Delete task")
+    public class TaskDelete {
+
+        @ParametersDelegate
+        private TaskId taskId = new TaskId();
+
+        public long taskId() {
+            return this.taskId.taskId;
         }
     }
 
@@ -424,6 +496,30 @@ public class SubCommands {
         public int retry = 3;
     }
 
+    public class Limit {
+
+        @Parameter(names = {"--limit"}, arity = 1,
+                   validateWith = {PositiveValidator.class},
+                   description = "Limit number, no limit if not provided")
+        public long limit = -1;
+    }
+
+    public class TaskStatus {
+
+        @Parameter(names = {"--status"}, arity = 1,
+                   validateWith = TaskStatusValidator.class,
+                   description = "Status of task")
+        public String status = null;
+    }
+
+    public class TaskId {
+
+        @Parameter(names = {"--task-id"}, arity = 1, required = true,
+                   validateWith = {PositiveValidator.class},
+                   description = "Task id")
+        private long taskId;
+    }
+
     public static class HugeTypeListConverter
                   implements IStringConverter<List<HugeType>> {
 
@@ -472,6 +568,25 @@ public class SubCommands {
                 result.put(kv[0], kv[1]);
             }
             return result;
+        }
+    }
+
+    public static class TaskStatusValidator implements IParameterValidator {
+
+        private static final Set<String> STATUSES = ImmutableSet.of(
+                "UNKNOWN", "NEW", "QUEUED", "RESTORING", "RUNNING",
+                "SUCCESS", "CANCELLED", "FAILED"
+        );
+
+        @Override
+        public void validate(String name, String value) {
+            System.out.println(value.toUpperCase());
+            System.out.println(STATUSES.contains(value.toUpperCase()));
+            if (!STATUSES.contains(value.toUpperCase())) {
+                throw new ParameterException(String.format(
+                          "Invalid --status '%s', valid value is %s",
+                          value, STATUSES));
+            }
         }
     }
 

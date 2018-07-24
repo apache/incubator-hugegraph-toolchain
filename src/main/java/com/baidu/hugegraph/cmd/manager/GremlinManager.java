@@ -47,4 +47,14 @@ public class GremlinManager extends ToolManager {
         builder.language(language);
         return builder.execute();
     }
+
+    public long executeAsTask(String gremlin, Map<String, String> bindings,
+                              String language) {
+        GremlinRequest.Builder builder = this.client.gremlin().gremlin(gremlin);
+        for (Map.Entry<String, String> entry : bindings.entrySet()) {
+            builder.binding(entry.getKey(), entry.getValue());
+        }
+        builder.language(language);
+        return builder.executeAsTask();
+    }
 }

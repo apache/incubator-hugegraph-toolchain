@@ -23,6 +23,7 @@ import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.driver.TaskManager;
 import com.baidu.hugegraph.driver.TraverserManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -56,6 +57,10 @@ public class ToolClient {
 
     public com.baidu.hugegraph.driver.GraphsManager graphs() {
         return this.client.graphs();
+    }
+
+    public TaskManager tasks() {
+        return this.client.task();
     }
 
     public GremlinManager gremlin() {
