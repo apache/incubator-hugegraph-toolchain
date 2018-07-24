@@ -19,6 +19,10 @@
 
 package com.baidu.hugegraph.structure;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
 
@@ -27,37 +31,37 @@ public class Task {
     @JsonProperty
     private long id;
 
-    @JsonProperty("task_type")
+    @JsonProperty(P.TYPE)
     private String type;
 
-    @JsonProperty("task_name")
+    @JsonProperty(P.NAME)
     private String name;
 
-    @JsonProperty("task_status")
+    @JsonProperty(P.STATUS)
     private String status;
 
-    @JsonProperty("task_callable")
+    @JsonProperty(P.CALLABLE)
     private String callable;
 
-    @JsonProperty("task_create")
+    @JsonProperty(P.CREATE)
     private long create;
 
-    @JsonProperty("task_update")
+    @JsonProperty(P.UPDATE)
     private long update;
 
-    @JsonProperty("task_progress")
+    @JsonProperty(P.PROGRESS)
     private long progress;
 
-    @JsonProperty("task_retries")
+    @JsonProperty(P.RETRIES)
     private long retries;
 
-    @JsonProperty("task_input")
+    @JsonProperty(P.INPUT)
     private String input;
 
-    @JsonProperty("task_result")
+    @JsonProperty(P.RESULT)
     private Object result;
 
-    @JsonProperty("task_description")
+    @JsonProperty(P.DESCRIPTION)
     private String description;
 
     public long id() {
@@ -115,5 +119,50 @@ public class Task {
 
     public boolean success() {
         return "success".equals(this.status);
+    }
+
+    public Map<String, Object> asMap() {
+        E.checkState(this.name != null, "Task name can't be null");
+
+        Map<String, Object> map = new HashMap<>();
+
+        map.put(P.ID, this.id);
+        map.put(P.TYPE, this.type);
+        map.put(P.NAME, this.name);
+        map.put(P.CALLABLE, this.callable);
+        map.put(P.STATUS, this.status);
+        map.put(P.PROGRESS, this.progress);
+        map.put(P.CREATE, this.create);
+        map.put(P.RETRIES, this.retries);
+        if (this.description != null) {
+            map.put(P.DESCRIPTION, this.description);
+        }
+        if (this.update != 0) {
+            map.put(P.UPDATE, this.update);
+        }
+        if (this.input != null) {
+            map.put(P.INPUT, this.input);
+        }
+        if (this.result != null) {
+            map.put(P.RESULT, this.result);
+        }
+
+        return map;
+    }
+
+    public static final class P {
+
+        public static final String ID = "id";
+        public static final String TYPE = "task_type";
+        public static final String NAME = "task_name";
+        public static final String CALLABLE = "task_callable";
+        public static final String DESCRIPTION = "task_description";
+        public static final String STATUS = "task_status";
+        public static final String PROGRESS = "task_progress";
+        public static final String CREATE = "task_create";
+        public static final String UPDATE = "task_update";
+        public static final String RETRIES = "task_retries";
+        public static final String INPUT = "task_input";
+        public static final String RESULT = "task_result";
     }
 }
