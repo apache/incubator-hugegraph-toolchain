@@ -11,15 +11,15 @@
     <name>${project.artifactId}</name>
 
     <properties>
-        <junit.version>4.12</junit.version>
-        <java.version>1.8</java.version>
-        <source.encoding>UTF-8</source.encoding>
-        <release.version>${project.version}</release.version>
-        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ssZ</maven.build.timestamp.format>
-        <final.name>hugegraph-tools</final.name>
+        <release.name>hugegraph-tools</release.name>
+        <final.name>${release.name}-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <shell-executable>bash</shell-executable>
+        <junit.version>4.12</junit.version>
+        <java.version>1.8</java.version>
+        <source.encoding>UTF-8</source.encoding>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ssZ</maven.build.timestamp.format>
         <hugegraph-client-version>1.5.8</hugegraph-client-version>
         <jcommand-version>1.72</jcommand-version>
     </properties>
@@ -102,19 +102,11 @@
                         <configuration>
                             <tasks>
                                 <echo file="${project.basedir}/dist.sh">
-                                    run() {
-                                    res=$?
-                                    if [ $res != 0 ]; then
-                                        echo "Failed!"
-                                        exit $res
-                                    fi
-                                    }
-
                                     tar -zcvf \
-                                    ${project.basedir}/${final.name}-${release.version}.tar.gz ${final.name}
+                                    ${project.basedir}/${final.name}.tar.gz ${final.name} || exit 1
                                     rm -f ${project.basedir}/dist.sh
                                     echo -n "hugegraph-tools tar.gz available at: "
-                                    echo "${project.basedir}/${final.name}-${release.version}.tar.gz"
+                                    echo "${project.basedir}/${final.name}.tar.gz"
                                 </echo>
                                 <exec executable="${shell-executable}"
                                       dir="${project.basedir}" failonerror="true">
