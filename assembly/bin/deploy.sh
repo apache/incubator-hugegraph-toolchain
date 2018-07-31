@@ -95,7 +95,7 @@ IP=`get_ip`
 
 function config_hugegraph_server() {
     local rest_server_conf="$SERVER_DIR/conf/rest-server.properties"
-    local server_url="http://"$IP":8080"
+    local server_url="http://$IP:8080"
 
     write_property $rest_server_conf "restserver\.url" $server_url
 }

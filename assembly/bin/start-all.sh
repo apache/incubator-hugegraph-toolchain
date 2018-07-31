@@ -74,7 +74,7 @@ if [ ! -d "${STUDIO_DIR}" ]; then
 fi
 
 function start_hugegraph_server() {
-    bin/start-hugegraph.sh
+    $SERVER_DIR/bin/start-hugegraph.sh
     if [ $? -ne 0 ]; then
         echo "Failed to start HugeGraphServer, please check the logs under '$SERVER_DIR/logs' for details"
         exit 1
@@ -82,6 +82,9 @@ function start_hugegraph_server() {
 }
 
 function start_hugegraph_studio() {
+    # TODO: Let hugestudio.sh can execute in any directory instead of $STUDIO_DIR
+    cd $STUDIO_DIR
+
     local server_host=`read_property "conf/hugestudio.properties" "server.httpBindAddress"`
     local server_port=`read_property "conf/hugestudio.properties" "server.httpPort"`
     local server_url="http://${server_host}:${server_port}"
@@ -95,15 +98,13 @@ function start_hugegraph_studio() {
 
     wait_for_startup 'HugeStudio' "$server_url" $start_timeout_s || {
         echo "Failed to start HugeGraphStudio, please check the logs under '$STUDIO_DIR/logs' for details"
-        bin/stop-hugegraph.sh
+        $SERVER_DIR/bin/stop-hugegraph.sh
         exit 1
     }
+    cd ..
 }
 
-cd $SERVER_DIR
 start_hugegraph_server
-
-cd $STUDIO_DIR
 start_hugegraph_studio
 
 echo "[OK] Started HugeGraphServer and HugeGraphStudio"
