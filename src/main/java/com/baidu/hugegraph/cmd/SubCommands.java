@@ -131,12 +131,20 @@ public class SubCommands {
                    description = "Directory to store graph data")
         public String directory = "./";
 
+        @Parameter(names = {"--formatter", "-f"}, arity = 1,
+                   description = "Formatter to customize format of vertex/edge")
+        public String formatter = "JsonFormatter";
+
         public int retry() {
             return this.retry.retry;
         }
 
         public String directory() {
             return this.directory;
+        }
+
+        public String formatter() {
+            return this.formatter;
         }
     }
 

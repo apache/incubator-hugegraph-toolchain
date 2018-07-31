@@ -17,11 +17,12 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.cmd.manager;
+package com.baidu.hugegraph.manager;
 
 import java.util.Map;
 
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
+import com.baidu.hugegraph.base.ToolManager;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 
 public class GremlinManager extends ToolManager {

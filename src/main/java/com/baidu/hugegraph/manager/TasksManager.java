@@ -17,25 +17,33 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.cmd.manager;
+package com.baidu.hugegraph.manager;
 
-public class ToolManager {
+import java.util.List;
 
-    protected final ToolClient client;
-    private final String type;
+import com.baidu.hugegraph.base.ToolManager;
+import com.baidu.hugegraph.structure.Task;
 
-    public ToolManager(String url, String graph, String type) {
-        this.client = new ToolClient(url, graph);
-        this.type = type;
+public class TasksManager extends ToolManager {
+
+    public TasksManager(String url, String graph) {
+        super(url, graph, "tasks");
     }
 
-    public ToolManager(String url, String graph,
-                       String username, String password, String type) {
-        this.client = new ToolClient(url, graph, username, password);
-        this.type = type;
+    public TasksManager(String url, String graph,
+                        String username, String password) {
+        super(url, graph, username, password, "tasks");
     }
 
-    protected String type() {
-        return this.type;
+    public List<Task> list(String status, long limit) {
+        return this.client.tasks().list(status, limit);
+    }
+
+    public Task get(long taskId) {
+        return this.client.tasks().get(taskId);
+    }
+
+    public void delete(long taskId) {
+        this.client.tasks().delete(taskId);
     }
 }

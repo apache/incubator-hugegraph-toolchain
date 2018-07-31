@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.cmd.manager;
+package com.baidu.hugegraph.manager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 
 import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.base.RetryManager;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.structure.constant.HugeType;

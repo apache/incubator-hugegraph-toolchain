@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.cmd.manager;
+package com.baidu.hugegraph.manager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -27,7 +27,8 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 
 import com.baidu.hugegraph.api.API;
-import com.baidu.hugegraph.cmd.Printer;
+import com.baidu.hugegraph.base.Printer;
+import com.baidu.hugegraph.base.RetryManager;
 import com.baidu.hugegraph.concurrent.KeyLock;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;

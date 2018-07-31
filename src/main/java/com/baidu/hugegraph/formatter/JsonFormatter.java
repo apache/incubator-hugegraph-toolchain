@@ -17,32 +17,17 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.cmd.manager;
+package com.baidu.hugegraph.formatter;
 
-import java.util.List;
+import com.baidu.hugegraph.structure.JsonGraph.JsonVertex;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.baidu.hugegraph.structure.Task;
+public class JsonFormatter implements Formatter {
 
-public class TasksManager extends ToolManager {
+    private final ObjectMapper mapper = new ObjectMapper();
 
-    public TasksManager(String url, String graph) {
-        super(url, graph, "tasks");
-    }
-
-    public TasksManager(String url, String graph,
-                        String username, String password) {
-        super(url, graph, username, password, "tasks");
-    }
-
-    public List<Task> list(String status, long limit) {
-        return this.client.tasks().list(status, limit);
-    }
-
-    public Task get(long taskId) {
-        return this.client.tasks().get(taskId);
-    }
-
-    public void delete(long taskId) {
-        this.client.tasks().delete(taskId);
+    @Override
+    public String dump(JsonVertex vertex) throws Exception {
+        return this.mapper.writeValueAsString(vertex);
     }
 }

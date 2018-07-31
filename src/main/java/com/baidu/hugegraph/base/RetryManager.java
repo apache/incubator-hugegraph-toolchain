@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.cmd.manager;
+package com.baidu.hugegraph.base;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import com.baidu.hugegraph.cmd.Printer;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;

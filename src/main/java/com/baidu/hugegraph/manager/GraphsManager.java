@@ -17,10 +17,12 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.cmd.manager;
+package com.baidu.hugegraph.manager;
 
 import java.util.List;
 import java.util.Map;
+
+import com.baidu.hugegraph.base.ToolManager;
 
 public class GraphsManager extends ToolManager {
 
