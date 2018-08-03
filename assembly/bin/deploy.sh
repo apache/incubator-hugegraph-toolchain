@@ -3,8 +3,8 @@
 VERSION=""
 INSTALL_PATH=""
 DOWNLOAD_LINK_PREFIX=""
-DEFAULT_DOWNLOAD_LINK_PREFIX="https://hugegraph.github.io/hugegraph-doc/downloads"
-DOWNLOAD_LINK_PREFIX_CONFIG="~/hugegraph-download-url-prefix"
+DEFAULT_DOWNLOAD_LINK_PREFIX="https://github.com/hugegraph"
+DOWNLOAD_LINK_PREFIX_CONFIG=`env | grep ^HOME= | cut -c 6-`"/hugegraph-download-url-prefix"
 
 function print_usage() {
     echo "USAGE: $0 -v {hugegraph-version} -p {install-path} [-u {download-path-prefix}]"
@@ -78,15 +78,18 @@ fi
 ARCHIVE_FORMAT=".tar.gz"
 
 # HugeGraphServer dir and tar package name
-SERVER_DIR="hugegraph-release-${SERVER_VERSION}"
+SERVER_DIR="hugegraph-${SERVER_VERSION}"
 SERVER_TAR=${SERVER_DIR}${ARCHIVE_FORMAT}
 
 # HugeGraphStudio dir and tar package name
-STUDIO_DIR="hugestudio-release-${STUDIO_VERSION}"
+STUDIO_DIR="hugegraph-studio-${STUDIO_VERSION}"
 STUDIO_TAR=${STUDIO_DIR}${ARCHIVE_FORMAT}
 
-ensure_package_exist $INSTALL_PATH $SERVER_DIR $SERVER_TAR ${DOWNLOAD_LINK_PREFIX}"/"${SERVER_TAR}
-ensure_package_exist $INSTALL_PATH $STUDIO_DIR $STUDIO_TAR ${DOWNLOAD_LINK_PREFIX}"/hugestudio/"${STUDIO_TAR}
+SERVER_DOWNLOAD_URL="${DOWNLOAD_LINK_PREFIX}/hugegraph/releases/download/v${SERVER_VERSION}/${SERVER_TAR}"
+STUDIO_DOWNLOAD_URL="${DOWNLOAD_LINK_PREFIX}/hugegraph-studio/releases/download/v${STUDIO_VERSION}/${STUDIO_TAR}"
+
+ensure_package_exist $INSTALL_PATH $SERVER_DIR $SERVER_TAR $SERVER_DOWNLOAD_URL
+ensure_package_exist $INSTALL_PATH $STUDIO_DIR $STUDIO_TAR $STUDIO_DOWNLOAD_URL
 
 IP=`get_ip`
 

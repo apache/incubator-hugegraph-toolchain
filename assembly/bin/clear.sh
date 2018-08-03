@@ -46,8 +46,8 @@ BIN=`abs_path`
 
 cd ${BIN}
 
-SERVER_RELEASE_PREFIX="hugegraph-release"
-STUDIO_RELEASE_PREFIX="hugestudio-release"
+SERVER_RELEASE_PREFIX="hugegraph"
+STUDIO_RELEASE_PREFIX="hugegraph-studio"
 
 function ensure_no_process() {
     local path=$1
