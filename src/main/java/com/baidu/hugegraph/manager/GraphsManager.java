@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.base.ToolManager;
+import com.baidu.hugegraph.structure.constant.GraphMode;
 
 public class GraphsManager extends ToolManager {
 
@@ -46,11 +47,11 @@ public class GraphsManager extends ToolManager {
         this.client.graphs().clear(graph, confirmMessage);
     }
 
-    public void restoring(String graph, boolean restoring) {
-        this.client.graphs().restoring(graph, restoring);
+    public void mode(String graph, GraphMode mode) {
+        this.client.graphs().mode(graph, mode);
     }
 
-    public boolean restoring(String graph) {
-        return this.client.graphs().restoring(graph);
+    public GraphMode mode(String graph) {
+        return this.client.graphs().mode(graph);
     }
 }

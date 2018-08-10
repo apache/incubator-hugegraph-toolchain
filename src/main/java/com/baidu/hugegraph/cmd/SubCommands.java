@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
 import com.beust.jcommander.IParameterValidator;
@@ -192,14 +193,14 @@ public class SubCommands {
         private GraphName graph = new GraphName();
 
         @ParametersDelegate
-        private RestoreFlag restoreFlag = new RestoreFlag();
+        private Mode mode = new Mode();
 
         public String graph() {
             return this.graph.graphName;
         }
 
-        public boolean restoreFlag() {
-            return this.restoreFlag.restoreFlag;
+        public GraphMode mode() {
+            return this.mode.mode;
         }
     }
 
@@ -455,12 +456,14 @@ public class SubCommands {
         public String confirmMessage;
     }
 
-    public class RestoreFlag {
+    public class Mode {
 
-        @Parameter(names = {"--restore", "-r"}, arity = 1,
-                   description = "Restore flag",
+        @Parameter(names = {"--graph-mode", "-m"}, arity = 1,
+                   converter = GraphModeConverter.class,
+                   description = "Graph mode, " +
+                                 "include: [NONE, RESTORING, MERGING]",
                    required = true)
-        public boolean restoreFlag;
+        public GraphMode mode;
     }
 
     public class FileScript {
@@ -545,6 +548,17 @@ public class SubCommands {
         private long taskId;
     }
 
+    public static class GraphModeConverter
+                  implements IStringConverter<GraphMode> {
+
+        @Override
+        public GraphMode convert(String value) {
+            E.checkArgument(value != null && !value.isEmpty(),
+                            "GraphMode can't be null or empty");
+            return GraphMode.valueOf(value);
+        }
+    }
+
     public static class HugeTypeListConverter
                   implements IStringConverter<List<HugeType>> {
 
@@ -626,8 +640,6 @@ public class SubCommands {
 
         @Override
         public void validate(String name, String value) {
-            System.out.println(value.toUpperCase());
-            System.out.println(STATUSES.contains(value.toUpperCase()));
             if (!STATUSES.contains(value.toUpperCase())) {
                 throw new ParameterException(String.format(
                           "Invalid --status '%s', valid value is %s",

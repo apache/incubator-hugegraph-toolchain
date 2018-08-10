@@ -33,6 +33,7 @@ import com.baidu.hugegraph.manager.GremlinManager;
 import com.baidu.hugegraph.manager.RestoreManager;
 import com.baidu.hugegraph.manager.TasksManager;
 import com.baidu.hugegraph.structure.Task;
+import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.util.E;
@@ -114,10 +115,19 @@ public class HugeGraphCommand {
                 backupManager.backup(backup.types(), backup.directory());
                 break;
             case "restore":
-                Printer.print("Graph '%s' start restore!", this.graph());
+                SubCommands.GraphModeGet graphModeGet =
+                                         this.subCommand("graph-mode-get");
+                GraphsManager graphsManager = manager(GraphsManager.class);
+                GraphMode mode = graphsManager.mode(graphModeGet.graph());
+                E.checkState(mode.maintaining(),
+                             "Invalid mode '%s' of graph '%s' for restore " +
+                             "sub-command", mode, this.graph());
+                Printer.print("Graph '%s' start restore in mode '%s'!",
+                              this.graph(), mode);
                 SubCommands.Restore restore = this.subCommand(subCmd);
                 RestoreManager restoreManager = manager(RestoreManager.class);
                 restoreManager.retry(restore.retry());
+                restoreManager.mode(mode);
                 restoreManager.restore(restore.types(), restore.directory());
                 break;
             case "dump":
@@ -129,7 +139,7 @@ public class HugeGraphCommand {
                 dumpManager.dump(dump.directory());
                 break;
             case "graph-list":
-                GraphsManager graphsManager = manager(GraphsManager.class);
+                graphsManager = manager(GraphsManager.class);
                 Printer.printList("Graphs", graphsManager.list());
                 break;
             case "graph-get":
@@ -148,16 +158,15 @@ public class HugeGraphCommand {
             case "graph-mode-set":
                 SubCommands.GraphModeSet graphModeSet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
-                graphsManager.restoring(graphModeSet.graph(),
-                                        graphModeSet.restoreFlag());
-                Printer.print("Set graph '%s' restoring to '%s'",
-                              graphModeSet.graph(), graphModeSet.restoreFlag());
+                graphsManager.mode(graphModeSet.graph(), graphModeSet.mode());
+                Printer.print("Set graph '%s' mode to '%s'",
+                              graphModeSet.graph(), graphModeSet.mode());
                 break;
             case "graph-mode-get":
-                SubCommands.GraphModeGet graphModeGet = this.subCommand(subCmd);
+                graphModeGet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
-                Printer.printKV("Is restoring",
-                                graphsManager.restoring(graphModeGet.graph()));
+                Printer.printKV("Graph mode",
+                                graphsManager.mode(graphModeGet.graph()));
                 break;
             case "gremlin-execute":
                 SubCommands.Gremlin gremlin = this.subCommand(subCmd);

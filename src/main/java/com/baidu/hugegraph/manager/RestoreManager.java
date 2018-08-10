@@ -27,15 +27,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.base.RetryManager;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.rest.SerializeException;
+import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -53,6 +54,9 @@ import com.google.common.collect.ImmutableList;
 public class RestoreManager extends RetryManager {
 
     private static final int BATCH_SIZE = 500;
+    private GraphMode mode = null;
+
+    private Map<String, Long> primaryKeyVLs = null;
 
     public RestoreManager(String url, String graph) {
         super(url, graph, "restore");
@@ -63,7 +67,12 @@ public class RestoreManager extends RetryManager {
         super(url, graph, username, password, "restore");
     }
 
+    public void mode(GraphMode mode) {
+        this.mode = mode;
+    }
+
     public void restore(List<HugeType> types, String inputDir) {
+        E.checkNotNull(this.mode, "mode");
         this.startTimer();
         for (HugeType type : types) {
             switch (type) {
@@ -95,13 +104,7 @@ public class RestoreManager extends RetryManager {
     }
 
     private void restoreVertices(HugeType type, String dir) {
-        List<VertexLabel> vertexLabels = this.client.schema().getVertexLabels();
-        Set<String> primaryKeyVLs = new HashSet<>();
-        for (VertexLabel vl : vertexLabels) {
-            if (vl.idStrategy() == IdStrategy.PRIMARY_KEY) {
-                primaryKeyVLs.add(vl.name());
-            }
-        }
+        this.initPrimaryKeyVLs();
         String filePrefix = type.string();
         List<File> files = filesWithPrefix(dir, filePrefix);
         BiConsumer<String, String> consumer = (t, l) -> {
@@ -111,7 +114,7 @@ public class RestoreManager extends RetryManager {
                 int toIndex = Math.min(i + BATCH_SIZE, size);
                 List<Vertex> subVertices = vertices.subList(i, toIndex);
                 for (Vertex vertex : subVertices) {
-                    if (primaryKeyVLs.contains(vertex.label())) {
+                    if (this.primaryKeyVLs.containsKey(vertex.label())) {
                         vertex.id(null);
                     }
                 }
@@ -129,6 +132,7 @@ public class RestoreManager extends RetryManager {
     }
 
     private void restoreEdges(HugeType type, String dir) {
+        this.initPrimaryKeyVLs();
         String filePrefix = type.string();
         List<File> files = filesWithPrefix(dir, filePrefix);
         BiConsumer<String, String> consumer = (t, l) -> {
@@ -137,6 +141,12 @@ public class RestoreManager extends RetryManager {
             for (int i = 0; i < size; i += BATCH_SIZE) {
                 int toIndex = Math.min(i + BATCH_SIZE, size);
                 List<Edge> subEdges = edges.subList(i, toIndex);
+                /*
+                 * Edge id is concat using source and target vertex id and
+                 * vertices of primary key id strategy might have changed
+                 * their id
+                 */
+                this.updateVertexIdInEdge(subEdges);
                 this.retry(() -> this.client.graph().addEdges(subEdges, false),
                            "restoring edges");
                 this.edgeCounter.getAndAdd(toIndex - i);
@@ -154,44 +164,60 @@ public class RestoreManager extends RetryManager {
         String fileName = type.string();
         BiConsumer<String, String> consumer = (t, l) -> {
             for (PropertyKey pk : this.readList(t, PropertyKey.class, l)) {
+                if (this.mode == GraphMode.MERGING) {
+                    pk.resetId();
+                    pk.checkExist(false);
+                }
                 this.client.schema().addPropertyKey(pk);
                 this.propertyKeyCounter.getAndIncrement();
             }
         };
-        this.restore(type, new File(dir + fileName), consumer);
+        this.restore(type, Paths.get(dir, fileName).toFile(), consumer);
     }
 
     private void restoreVertexLabels(HugeType type, String dir) {
         String fileName = type.string();
         BiConsumer<String, String> consumer = (t, l) -> {
             for (VertexLabel vl : this.readList(t, VertexLabel.class, l)) {
+                if (this.mode == GraphMode.MERGING) {
+                    vl.resetId();
+                    vl.checkExist(false);
+                }
                 this.client.schema().addVertexLabel(vl);
                 this.vertexLabelCounter.getAndIncrement();
             }
         };
-        this.restore(type, new File(dir + fileName), consumer);
+        this.restore(type, Paths.get(dir, fileName).toFile(), consumer);
     }
 
     private void restoreEdgeLabels(HugeType type, String dir) {
         String fileName = type.string();
         BiConsumer<String, String> consumer = (t, l) -> {
             for (EdgeLabel el : this.readList(t, EdgeLabel.class, l)) {
+                if (this.mode == GraphMode.MERGING) {
+                    el.resetId();
+                    el.checkExist(false);
+                }
                 this.client.schema().addEdgeLabel(el);
                 this.edgeLabelCounter.getAndIncrement();
             }
         };
-        this.restore(type, new File(dir + fileName), consumer);
+        this.restore(type, Paths.get(dir, fileName).toFile(), consumer);
     }
 
     private void restoreIndexLabels(HugeType type, String dir) {
         String fileName = type.string();
         BiConsumer<String, String> consumer = (t, l) -> {
             for (IndexLabel il : this.readList(t, IndexLabel.class, l)) {
+                if (this.mode == GraphMode.MERGING) {
+                    il.resetId();
+                    il.checkExist(false);
+                }
                 this.client.schema().addIndexLabel(il);
                 this.indexLabelCounter.getAndIncrement();
             }
         };
-        this.restore(type, new File(dir + fileName), consumer);
+        this.restore(type, Paths.get(dir, fileName).toFile(), consumer);
     }
 
     private void restore(HugeType type, File file,
@@ -249,5 +275,34 @@ public class RestoreManager extends RetryManager {
             }
         }
         return inputFiles;
+    }
+
+    private void initPrimaryKeyVLs() {
+        if (this.primaryKeyVLs != null) {
+            return;
+        }
+        this.primaryKeyVLs = new HashMap<>();
+        List<VertexLabel> vertexLabels = this.client.schema().getVertexLabels();
+        for (VertexLabel vl : vertexLabels) {
+            if (vl.idStrategy() == IdStrategy.PRIMARY_KEY) {
+                this.primaryKeyVLs.put(vl.name(), vl.id());
+            }
+        }
+    }
+
+    private void updateVertexIdInEdge(List<Edge> edges) {
+        for (Edge edge : edges) {
+            edge.source(this.updateVid(edge.sourceLabel(), edge.source()));
+            edge.target(this.updateVid(edge.targetLabel(), edge.target()));
+        }
+    }
+
+    private Object updateVid(String label, Object id) {
+        if (this.primaryKeyVLs.containsKey(label)) {
+            String sid = (String) id;
+            return this.primaryKeyVLs.get(label) +
+                   sid.substring(sid.indexOf(':'));
+        }
+        return id;
     }
 }
