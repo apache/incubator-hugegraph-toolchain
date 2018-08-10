@@ -52,6 +52,10 @@ public abstract class SchemaElement extends Element {
         return this.id;
     }
 
+    public void resetId() {
+        this.id = 0L;
+    }
+
     public String name() {
         return this.name;
     }
@@ -64,7 +68,11 @@ public abstract class SchemaElement extends Element {
         return this.userdata;
     }
 
-    public boolean checkExits() {
+    public boolean checkExist() {
         return this.checkExist;
+    }
+
+    public void checkExist(boolean checkExist) {
+        this.checkExist = checkExist;
     }
 }

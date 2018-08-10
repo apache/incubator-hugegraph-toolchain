@@ -295,7 +295,7 @@ public class RestResultTest {
     @Test
     public void testReadIndexLabel() {
         String json = "{"
-                + "\"id\": \"4softwareByPrice\","
+                + "\"id\": \"4\","
                 + "\"index_type\": \"SEARCH\","
                 + "\"base_value\": \"software\","
                 + "\"name\": \"softwareByPrice\","
@@ -325,7 +325,7 @@ public class RestResultTest {
     public void testReadIndexLabels() {
         String json = "{\"indexlabels\": ["
                 + "{"
-                + "\"id\": \"4softwareByPrice\","
+                + "\"id\": \"4\","
                 + "\"index_type\": \"SEARCH\","
                 + "\"base_value\": \"software\","
                 + "\"name\": \"softwareByPrice\","
@@ -333,7 +333,7 @@ public class RestResultTest {
                 + "\"base_type\": \"VERTEX_LABEL\""
                 + "},"
                 + "{"
-                + "\"id\": \"4personByName\","
+                + "\"id\": \"4\","
                 + "\"index_type\": \"SECONDARY\","
                 + "\"base_value\": \"person\","
                 + "\"name\": \"personByName\","

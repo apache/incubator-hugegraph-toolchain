@@ -120,4 +120,24 @@ public class VertexLabelTest extends BaseFuncTest {
         Task task = task().waitUntilTaskCompleted(taskId, 10);
         Assert.assertTrue(task.completed());
     }
+
+    @Test
+    public void testResetVertexLabelId() {
+        SchemaManager schema = schema();
+        VertexLabel player = schema.vertexLabel("player")
+                                   .properties("name").create();
+        Assert.assertTrue(player.id() > 0);
+        player.resetId();
+        Assert.assertEquals(0, player.id());
+    }
+
+    @Test
+    public void testSetCheckExist() {
+        SchemaManager schema = schema();
+        VertexLabel player = schema.vertexLabel("player")
+                                   .properties("name").build();
+        Assert.assertTrue(player.checkExist());
+        player.checkExist(false);
+        Assert.assertFalse(player.checkExist());
+    }
 }

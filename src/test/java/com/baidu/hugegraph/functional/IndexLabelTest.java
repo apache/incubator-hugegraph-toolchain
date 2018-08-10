@@ -80,4 +80,34 @@ public class IndexLabelTest extends BaseFuncTest {
         // Remove index label async
         schema.removeIndexLabelAsync("playerByName");
     }
+
+    @Test
+    public void testResetVertexLabelId() {
+        SchemaManager schema = schema();
+        schema.vertexLabel("player")
+              .properties("name", "age")
+              .create();
+        IndexLabel playerByName = schema.indexLabel("playerByName")
+                                        .onV("player")
+                                        .by("name")
+                                        .create();
+        Assert.assertTrue(playerByName.id() > 0);
+        playerByName.resetId();
+        Assert.assertEquals(0, playerByName.id());
+    }
+
+    @Test
+    public void testSetCheckExist() {
+        SchemaManager schema = schema();
+        schema.vertexLabel("player")
+              .properties("name", "age")
+              .create();
+        IndexLabel playerByName = schema.indexLabel("playerByName")
+                                        .onV("player")
+                                        .by("name")
+                                        .create();
+        Assert.assertTrue(playerByName.checkExist());
+        playerByName.checkExist(false);
+        Assert.assertFalse(playerByName.checkExist());
+    }
 }

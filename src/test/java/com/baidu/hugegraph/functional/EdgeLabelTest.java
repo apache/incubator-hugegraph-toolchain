@@ -198,4 +198,53 @@ public class EdgeLabelTest extends BaseFuncTest {
         Task task = task().waitUntilTaskCompleted(taskId, 10);
         Assert.assertTrue(task.completed());
     }
+
+
+    @Test
+    public void testResetVertexLabelId() {
+        SchemaManager schema = schema();
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+        schema.vertexLabel("book")
+              .properties("name")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+        EdgeLabel write = schema.edgeLabel("write").link("person", "book")
+                                .properties("date", "weight")
+                                .userdata("multiplicity", "one-to-many")
+                                .userdata("icon", "picture2")
+                                .create();
+        Assert.assertTrue(write.id() > 0);
+        write.resetId();
+        Assert.assertEquals(0, write.id());
+    }
+
+    @Test
+    public void testSetCheckExist() {
+        SchemaManager schema = schema();
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+        schema.vertexLabel("book")
+              .properties("name")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+        EdgeLabel write = schema.edgeLabel("write").link("person", "book")
+                                .properties("date", "weight")
+                                .userdata("multiplicity", "one-to-many")
+                                .userdata("icon", "picture2")
+                                .create();
+        Assert.assertTrue(write.checkExist());
+        write.checkExist(false);
+        Assert.assertFalse(write.checkExist());
+    }
 }

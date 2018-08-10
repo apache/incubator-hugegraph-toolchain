@@ -24,7 +24,9 @@ import java.util.Map;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.exception.InvalidResponseException;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.google.common.collect.ImmutableMap;
 
@@ -51,18 +53,28 @@ public class GraphsAPI extends API {
         return result.readList(this.type(), String.class);
     }
 
-    public void restoring(String graph, boolean restoring) {
+    public void mode(String graph, GraphMode mode) {
         String path = String.join("/", this.path(), graph);
-        // NOTE: Must provide id for PUT. If use "graph/restoring", "/" will
-        // be encoded to "%2F". So use "restoring" here although inaccurate.
-        this.client.put(path, "restoring",
-                        ImmutableMap.of("restoring", restoring));
+        // NOTE: Must provide id for PUT. If use "graph/mode", "/" will
+        // be encoded to "%2F". So use "mode" here although inaccurate.
+        this.client.put(path, "mode", mode);
     }
 
-    public boolean restoring(String graph) {
+    public GraphMode mode(String graph) {
         String path = String.join("/", this.path(), graph);
-        RestResult result =  this.client.get(path, "restoring");
-        return (boolean) result.readObject(Map.class).get("restoring");
+        RestResult result =  this.client.get(path, "mode");
+        @SuppressWarnings("unchecked")
+        Map<String, String> mode = result.readObject(Map.class);
+        String value = mode.get("mode");
+        if (value == null) {
+            throw new InvalidResponseException("mode", "mode response");
+        }
+        try {
+            return GraphMode.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidResponseException(
+                      "Invalid GraphMode value '%s'", value);
+        }
     }
 
     public void clear(String graph, String message) {

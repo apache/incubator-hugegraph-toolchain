@@ -34,7 +34,8 @@ import org.junit.runners.Suite;
     VariablesApiTest.class,
     TraverserApiTest.class,
     TaskApiTest.class,
-    JobApiTest.class
+    JobApiTest.class,
+    RestoreApiTest.class
 })
 public class ApiTestSuite {
 }

@@ -104,4 +104,28 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(1, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
     }
+
+    @Test
+    public void testResetVertexLabelId() {
+        SchemaManager schema = schema();
+        PropertyKey age = schema.propertyKey("age")
+                                .userdata("min", 0)
+                                .userdata("max", 100)
+                                .create();
+        Assert.assertTrue(age.id() > 0);
+        age.resetId();
+        Assert.assertEquals(0, age.id());
+    }
+
+    @Test
+    public void testSetCheckExist() {
+        SchemaManager schema = schema();
+        PropertyKey age = schema.propertyKey("age")
+                                .userdata("min", 0)
+                                .userdata("max", 100)
+                                .create();
+        Assert.assertTrue(age.checkExist());
+        age.checkExist(false);
+        Assert.assertFalse(age.checkExist());
+    }
 }

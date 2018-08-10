@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.api.graphs.GraphsAPI;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.constant.GraphMode;
 
 public class GraphsManager {
 
@@ -41,12 +42,12 @@ public class GraphsManager {
         return this.graphsAPI.list();
     }
 
-    public void restoring(String graph, boolean restoring) {
-        this.graphsAPI.restoring(graph, restoring);
+    public void mode(String graph, GraphMode mode) {
+        this.graphsAPI.mode(graph, mode);
     }
 
-    public boolean restoring(String graph) {
-        return this.graphsAPI.restoring(graph);
+    public GraphMode mode(String graph) {
+        return this.graphsAPI.mode(graph);
     }
 
     public void clear(String graph, String message) {

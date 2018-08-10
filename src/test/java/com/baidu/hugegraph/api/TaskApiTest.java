@@ -69,7 +69,8 @@ public class TaskApiTest extends BaseApiTest {
         for (Task task : tasks) {
             listedTaskIds.add(task.id());
         }
-        Assert.assertEquals(taskIds, listedTaskIds);
+        Assert.assertEquals(taskIds.size(), listedTaskIds.size());
+        Assert.assertTrue(taskIds.containsAll(listedTaskIds));
 
         taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
         taskIds.forEach(id -> taskAPI.delete(id));

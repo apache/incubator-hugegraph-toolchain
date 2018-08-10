@@ -28,6 +28,7 @@ import org.junit.BeforeClass;
 import com.baidu.hugegraph.BaseClientTest;
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
+import com.baidu.hugegraph.api.graphs.GraphsAPI;
 import com.baidu.hugegraph.api.job.RebuildAPI;
 import com.baidu.hugegraph.api.schema.EdgeLabelAPI;
 import com.baidu.hugegraph.api.schema.IndexLabelAPI;
@@ -65,6 +66,7 @@ public class BaseApiTest extends BaseClientTest {
     protected static EdgesAPI edgesAPI;
     protected static TaskAPI taskAPI;
     protected static RebuildAPI rebuildAPI;
+    protected static GraphsAPI graphsAPI;
 
     @BeforeClass
     public static void init() {
@@ -87,6 +89,7 @@ public class BaseApiTest extends BaseClientTest {
         edgesAPI = new EdgesAPI(client, GRAPH);
         taskAPI = new TaskAPI(client, GRAPH);
         rebuildAPI = new RebuildAPI(client, GRAPH);
+        graphsAPI = new GraphsAPI(client);
     }
 
     @AfterClass
