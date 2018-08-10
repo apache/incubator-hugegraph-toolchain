@@ -20,7 +20,9 @@
 package com.baidu.hugegraph.api;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -53,7 +55,7 @@ public class TaskApiTest extends BaseApiTest {
         IndexLabel knowsByDate = schema().getIndexLabel("knowsByDate");
         IndexLabel createdByDate = schema().getIndexLabel("createdByDate");
 
-        List<Long> taskIds = new ArrayList<>();
+        Set<Long> taskIds = new HashSet<>();
         taskIds.add(rebuildAPI.rebuild(personByCity));
         taskIds.add(rebuildAPI.rebuild(personByAge));
         taskIds.add(rebuildAPI.rebuild(knowsByDate));
@@ -62,7 +64,7 @@ public class TaskApiTest extends BaseApiTest {
         List<Task> tasks = taskAPI.list(null, -1);
         Assert.assertEquals(4, tasks.size());
 
-        List<Long> listedTaskIds = new ArrayList<>();
+        Set<Long> listedTaskIds = new HashSet<>();
         for (Task task : tasks) {
             listedTaskIds.add(task.id());
         }
