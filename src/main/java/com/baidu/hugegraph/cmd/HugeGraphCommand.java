@@ -162,6 +162,7 @@ public class HugeGraphCommand {
             case "gremlin-execute":
                 SubCommands.Gremlin gremlin = this.subCommand(subCmd);
                 GremlinManager gremlinManager = manager(GremlinManager.class);
+                Printer.print("Run gremlin script");
                 ResultSet result = gremlinManager.execute(gremlin.script(),
                                                           gremlin.bindings(),
                                                           gremlin.language(),
@@ -174,6 +175,7 @@ public class HugeGraphCommand {
             case "gremlin-schedule":
                 SubCommands.GremlinJob job = this.subCommand(subCmd);
                 gremlinManager = manager(GremlinManager.class);
+                Printer.print("Run gremlin script as async job");
                 long taskId = gremlinManager.executeAsTask(job.script(),
                                                            job.bindings(),
                                                            job.language());

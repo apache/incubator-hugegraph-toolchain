@@ -20,12 +20,16 @@
 package com.baidu.hugegraph.cmd;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
+
+import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
 import com.beust.jcommander.IParameterValidator;
@@ -211,31 +215,10 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Execute Gremlin statements")
-    public class Gremlin {
-
-        @ParametersDelegate
-        private GremlinScript script = new GremlinScript();
-
-        @ParametersDelegate
-        private Language language = new Language();
-
-        @ParametersDelegate
-        private Bindings bindings = new Bindings();
+    public class Gremlin extends GremlinJob {
 
         @ParametersDelegate
         private Aliases aliases = new Aliases();
-
-        public String script() {
-            return this.script.script;
-        }
-
-        public String language() {
-            return this.language.language;
-        }
-
-        public Map<String, String> bindings() {
-            return this.bindings.bindings;
-        }
 
         public Map<String, String> aliases() {
             return this.aliases.aliases;
@@ -247,7 +230,10 @@ public class SubCommands {
     public class GremlinJob {
 
         @ParametersDelegate
-        private GremlinScript script = new GremlinScript();
+        private FileScript fileScript = new FileScript();
+
+        @ParametersDelegate
+        private GremlinScript cmdScript = new GremlinScript();
 
         @ParametersDelegate
         private Language language = new Language();
@@ -255,8 +241,12 @@ public class SubCommands {
         @ParametersDelegate
         private Bindings bindings = new Bindings();
 
-        public String script() {
-            return this.script.script;
+        public String fileScript() {
+            return this.fileScript.script;
+        }
+
+        public String cmdScript() {
+            return this.cmdScript.script;
         }
 
         public String language() {
@@ -265,6 +255,24 @@ public class SubCommands {
 
         public Map<String, String> bindings() {
             return this.bindings.bindings;
+        }
+
+        public String script() {
+            String script;
+            if (this.cmdScript() == null) {
+                E.checkArgument(this.fileScript() != null,
+                                "Either --script or --file must " +
+                                "be provided, but both are null");
+                script = this.fileScript();
+            } else {
+                E.checkArgument(this.fileScript() == null,
+                                "Either --script or --file must " +
+                                "be provided, but both are provided: " +
+                                "'%s' and '%s'",
+                                this.cmdScript(), this.fileScript());
+                script = this.cmdScript();
+            }
+            return script;
         }
     }
 
@@ -455,11 +463,20 @@ public class SubCommands {
         public boolean restoreFlag;
     }
 
+    public class FileScript {
+
+        @Parameter(names = {"--file", "-f"}, arity = 1,
+                   converter = FileNameToContentConverter.class,
+                   description = "Gremlin Script file to be executed, UTF-8" +
+                                 "encoded, exclusive to --script")
+        public String script;
+    }
+
     public class GremlinScript {
 
         @Parameter(names = {"--script", "-s"}, arity = 1,
-                   required = true,
-                   description = "Script to be executed")
+                   description = "Gremlin script to be executed, " +
+                                 "exclusive to --file")
         public String script;
     }
 
@@ -576,6 +593,27 @@ public class SubCommands {
                 result.put(kv[0], kv[1]);
             }
             return result;
+        }
+    }
+
+    public static class FileNameToContentConverter
+           implements IStringConverter<String> {
+
+        @Override
+        public String convert(String value) {
+            File file = FileUtils.getFile(value);
+            if (!file.exists() || !file.isFile() || !file.canRead()) {
+                throw new ParameterException(String.format(
+                          "'%s' must be existed readable file", value));
+            }
+            String content;
+            try {
+                content = FileUtils.readFileToString(file, API.CHARSET);
+            } catch (IOException e) {
+                throw new ParameterException(String.format(
+                          "Read file '%s' error", value), e);
+            }
+            return content;
         }
     }
 
