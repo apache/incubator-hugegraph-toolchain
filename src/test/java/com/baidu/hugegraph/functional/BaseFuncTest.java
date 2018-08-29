@@ -54,19 +54,19 @@ public class BaseFuncTest extends BaseClientTest {
         List<Long> ilTaskIds = new ArrayList<>();
         // Clear schema
         schema().getIndexLabels().forEach(il -> {
-            ilTaskIds.add(schema().removeIndexLabel(il.name()));
+            ilTaskIds.add(schema().removeIndexLabelAsync(il.name()));
         });
         ilTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
 
         List<Long> elTaskIds = new ArrayList<>();
         schema().getEdgeLabels().forEach(el -> {
-            elTaskIds.add(schema().removeEdgeLabel(el.name()));
+            elTaskIds.add(schema().removeEdgeLabelAsync(el.name()));
         });
         elTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
 
         List<Long> vlTaskIds = new ArrayList<>();
         schema().getVertexLabels().forEach(vl -> {
-            vlTaskIds.add(schema().removeVertexLabel(vl.name()));
+            vlTaskIds.add(schema().removeVertexLabelAsync(vl.name()));
         });
         vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
 

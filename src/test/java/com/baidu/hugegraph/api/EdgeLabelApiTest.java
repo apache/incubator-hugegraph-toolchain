@@ -331,8 +331,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testGet() {
-        EdgeLabel edgeLabel1 = edgeLabelAPI.create(fillEdgeLabel.apply
-                ("created"));
+        EdgeLabel edgeLabel1 = edgeLabelAPI.create(
+                               fillEdgeLabel.apply("created"));
 
         EdgeLabel edgeLabel2 = edgeLabelAPI.get("created");
 

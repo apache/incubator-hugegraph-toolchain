@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;
 
@@ -94,5 +95,29 @@ public class VertexLabelTest extends BaseFuncTest {
                        .eliminate();
         Assert.assertEquals(1, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
+    }
+
+    @Test
+    public void testRemoveVertexLabelSync() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("player").properties("name").create();
+        // Remove vertex label sync
+        schema.removeVertexLabel("player");
+
+        schema.vertexLabel("player").properties("name").create();
+        // Remove vertex label sync with timeout
+        schema.removeVertexLabel("player", 10);
+    }
+
+    @Test
+    public void testRemoveVertexLabelASync() {
+        SchemaManager schema = schema();
+        schema.vertexLabel("player").properties("name").create();
+
+        // Remove vertex label async and wait
+        long taskId = schema.removeVertexLabelAsync("player");
+        Task task = task().waitUntilTaskCompleted(taskId, 10);
+        Assert.assertTrue(task.completed());
     }
 }

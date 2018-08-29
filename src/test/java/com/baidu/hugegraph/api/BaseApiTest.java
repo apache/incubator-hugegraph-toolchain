@@ -139,10 +139,10 @@ public class BaseApiTest extends BaseClientTest {
     }
 
     protected static void waitUntilTaskCompleted(long taskId) {
-        taskAPI.waitUntilTaskCompleted(taskId, 5L);
+        taskAPI.waitUntilTaskSuccess(taskId, 5L);
     }
 
     protected static void waitUntilTaskCompleted(long taskId, long timeout) {
-        taskAPI.waitUntilTaskCompleted(taskId, timeout);
+        taskAPI.waitUntilTaskSuccess(taskId, timeout);
     }
 }

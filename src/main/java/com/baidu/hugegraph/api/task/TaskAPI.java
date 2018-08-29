@@ -30,22 +30,31 @@ import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.TaskCache;
 import com.google.common.collect.ImmutableMap;
 
 public class TaskAPI extends API {
 
     private static final String PATH = "graphs/%s/tasks";
+    private String graph;
     public static final String TASKS = "tasks";
-    public static final String TASK_ID_KEY = "task_id";
+    public static final String TASK_ID = "task_id";
+    public static final long TASK_TIMEOUT = 60L;
+    private static final long QUERY_INTERVAL = 500L;
 
     public TaskAPI(RestClient client, String graph) {
         super(client);
         this.path(String.format(PATH, graph));
+        this.graph = graph;
     }
 
     @Override
     protected String type() {
         return HugeType.TASK.string();
+    }
+
+    public String graph() {
+        return this.graph;
     }
 
     public List<Task> list(String status, long limit) {
@@ -54,6 +63,13 @@ public class TaskAPI extends API {
         if (status != null) {
             params.put("status", status);
         }
+        RestResult result = this.client.get(this.path(), params);
+        return result.readList(TASKS, Task.class);
+    }
+
+    public List<Task> list(List<Long> ids) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("ids", ids);
         RestResult result = this.client.get(this.path(), params);
         return result.readList(TASKS, Task.class);
     }
@@ -80,33 +96,52 @@ public class TaskAPI extends API {
         return (Boolean) cancelled;
     }
 
-    public Task waitUntilTaskCompleted(long taskId, long seconds) {
-        for (long pass = 0;; pass++) {
-            Task task = this.get(taskId);
-            if (task.success()) {
-                return task;
-            } else if (task.completed()) {
-                throw new ClientException("Task '%s' is '%s', result is '%s'",
-                                          taskId, task.status(), task.result());
+    public Task waitUntilTaskSuccess(long taskId, long seconds) {
+        long passes = seconds * 1000 / QUERY_INTERVAL;
+        try {
+            for (long pass = 0; ; pass++) {
+                Task task = this.getFromCache(taskId);
+                if (task.success()) {
+                    return task;
+                } else if (task.completed()) {
+                    throw new ClientException(
+                              "Task '%s' is '%s', result is '%s'",
+                              taskId, task.status(), task.result());
+                }
+                if (pass >= passes) {
+                    break;
+                }
+                try {
+                    // Query every half second from cache to decrease waiting
+                    // time because restful query is executed per second
+                    Thread.sleep(QUERY_INTERVAL);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
             }
-            if (pass >= seconds) {
-                break;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
+            throw new ClientException(
+                      "Task '%s' not completed in %s seconds, " +
+                      "it can still be queried by task-get API",
+                      taskId, seconds);
+        } finally {
+            // Stop querying this task info whatever
+            this.removeFromCache(taskId);
         }
-        throw new ClientException("Task '%s' was not completed in %s seconds",
-                                  taskId, seconds);
+    }
+
+    private Task getFromCache(long taskId) {
+        return TaskCache.instance().get(this, taskId);
+    }
+
+    private void removeFromCache(long taskId) {
+        TaskCache.instance().remove(this, taskId);
     }
 
     public static long parseTaskId(Map<String, Object> task) {
-        E.checkState(task.size() == 1 && task.containsKey(TASK_ID_KEY),
+        E.checkState(task.size() == 1 && task.containsKey(TASK_ID),
                      "Task must be formatted to {\"%s\" : id}, but got %s",
-                     TASK_ID_KEY, task);
-        Object taskId = task.get(TASK_ID_KEY);
+                     TASK_ID, task);
+        Object taskId = task.get(TASK_ID);
         E.checkState(taskId instanceof Number,
                      "Task id must be number, but got '%s'", taskId);
         return ((Number) taskId).longValue();

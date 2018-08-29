@@ -62,6 +62,6 @@ public class TaskManager {
     }
 
     public Task waitUntilTaskCompleted(long taskId, long seconds) {
-        return this.taskAPI.waitUntilTaskCompleted(taskId, seconds);
+        return this.taskAPI.waitUntilTaskSuccess(taskId, seconds);
     }
 }

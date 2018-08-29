@@ -190,4 +190,21 @@ public class IndexLabel extends SchemaElement {
             return this;
         }
     }
+
+    public static class CreatedIndexLabel {
+
+        @JsonProperty("index_label")
+        private IndexLabel indexLabel;
+
+        @JsonProperty("task_id")
+        private long taskid;
+
+        public IndexLabel indexLabel() {
+            return this.indexLabel;
+        }
+
+        public long taskId() {
+            return this.taskid;
+        }
+    }
 }

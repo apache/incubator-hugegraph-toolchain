@@ -21,12 +21,10 @@ package com.baidu.hugegraph.api.job;
 
 import java.util.Map;
 
-import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.SchemaElement;
-import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;

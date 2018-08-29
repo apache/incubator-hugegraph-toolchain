@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.testutil.Assert;
 
@@ -133,5 +134,68 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals(1, write.userdata().size());
         Assert.assertEquals("one-to-many",
                             write.userdata().get("multiplicity"));
+    }
+
+    @Test
+    public void testRemoveEdgeLabelSync() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+        schema.vertexLabel("book")
+              .properties("name")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+        EdgeLabel write = schema.edgeLabel("write").link("person", "book")
+                                .properties("date", "weight")
+                                .userdata("multiplicity", "one-to-many")
+                                .userdata("icon", "picture2")
+                                .create();
+
+        Assert.assertNotNull(write);
+        // Remove edge label sync
+        schema.removeEdgeLabel("write");
+
+        write = schema.edgeLabel("write").link("person", "book")
+                      .properties("date", "weight")
+                      .userdata("multiplicity", "one-to-many")
+                      .userdata("icon", "picture2")
+                      .create();
+
+        Assert.assertNotNull(write);
+        // Remove edge label sync with timeout
+        schema.removeEdgeLabel("write", 10);
+    }
+
+    @Test
+    public void testRemoveEdgeLabelAsync() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+        schema.vertexLabel("book")
+              .properties("name")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+        EdgeLabel write = schema.edgeLabel("write").link("person", "book")
+                                .properties("date", "weight")
+                                .userdata("multiplicity", "one-to-many")
+                                .userdata("icon", "picture2")
+                                .create();
+        Assert.assertNotNull(write);
+        // Remove edge label async and wait
+        long taskId = schema.removeEdgeLabelAsync("write");
+        Task task = task().waitUntilTaskCompleted(taskId, 10);
+        Assert.assertTrue(task.completed());
     }
 }

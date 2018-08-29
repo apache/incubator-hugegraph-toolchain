@@ -21,6 +21,7 @@ package com.baidu.hugegraph.structure;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -63,6 +64,9 @@ public class Task {
 
     @JsonProperty(P.DESCRIPTION)
     private String description;
+
+    @JsonProperty(P.DEPENDENCIES)
+    private Set<Long> dependencies;
 
     public long id() {
         return this.id;
@@ -112,6 +116,10 @@ public class Task {
         return description;
     }
 
+    public Set<Long> dependencies() {
+        return this.dependencies;
+    }
+
     public boolean completed() {
         return ImmutableSet.of("success", "failed", "cancelled")
                            .contains(this.status);
@@ -146,6 +154,9 @@ public class Task {
         if (this.result != null) {
             map.put(P.RESULT, this.result);
         }
+        if (this.dependencies != null) {
+            map.put(P.DEPENDENCIES, this.dependencies);
+        }
 
         return map;
     }
@@ -164,5 +175,6 @@ public class Task {
         public static final String RETRIES = "task_retries";
         public static final String INPUT = "task_input";
         public static final String RESULT = "task_result";
+        public static final String DEPENDENCIES = "task_dependencies";
     }
 }

@@ -62,8 +62,9 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreate() {
-        IndexLabel indexLabel = indexLabelAPI.create(fillIndexLabel.apply
-                                                    ("personByAge"));
+        IndexLabel indexLabel = indexLabelAPI.create(
+                                fillIndexLabel.apply("personByAge"))
+                                .indexLabel();
 
         Assert.assertEquals("personByAge", indexLabel.name());
         Assert.assertEquals(HugeType.VERTEX_LABEL, indexLabel.baseType());
@@ -131,6 +132,20 @@ public class IndexLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateSecondaryIndexOnMultiPropertiesOverrideExist() {
+        schema().indexLabel("personByCity")
+                .onV("person")
+                .by("city")
+                .secondary()
+                .create();
+        schema().indexLabel("personByCityAndAge")
+                .onV("person")
+                .by("city", "age")
+                .secondary()
+                .create();
+    }
+
+    @Test
     public void testCreateSearchIndexOnNotNumberProperty() {
         IndexLabel indexLabel = schema().indexLabel("personByCity")
                                         .onV("person")
@@ -150,7 +165,7 @@ public class IndexLabelApiTest extends BaseApiTest {
                                          .range()
                                          .build();
 
-        indexLabel1 = indexLabelAPI.create(indexLabel1);
+        indexLabel1 = indexLabelAPI.create(indexLabel1).indexLabel();
 
         IndexLabel indexLabel2 = indexLabelAPI.get("personByAge");
 
@@ -171,15 +186,16 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testList() {
-        IndexLabel indexLabel1 = indexLabelAPI.create(fillIndexLabel.apply
-                                                     ("personByAge"));
+        IndexLabel indexLabel1 = indexLabelAPI.create(
+                                 fillIndexLabel.apply("personByAge"))
+                                 .indexLabel();
 
         IndexLabel indexLabel2 = schema().indexLabel("personByCity")
                                          .onV("person")
                                          .by("city")
                                          .secondary()
                                          .build();
-        indexLabel2 = indexLabelAPI.create(indexLabel2);
+        indexLabel2 = indexLabelAPI.create(indexLabel2).indexLabel();
 
         List<IndexLabel> indexLabels = indexLabelAPI.list();
         Assert.assertEquals(2, indexLabels.size());
