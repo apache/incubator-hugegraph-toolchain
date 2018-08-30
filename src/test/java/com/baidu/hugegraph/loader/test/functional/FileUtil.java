@@ -20,78 +20,74 @@
 package com.baidu.hugegraph.loader.test.functional;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
-public class FileUtil {
+public class FileUtil implements IOUtil {
 
-    private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+    private final String storePath;
 
-    public static String newCSVLine(Object... parts) {
-        return StringUtils.join(parts, ",");
+    public FileUtil(String storePath) {
+        this.storePath = storePath;
     }
 
-    public static void clear(String fileName) {
-        File file = org.apache.commons.io.FileUtils.getFile(fileName);
-        checkFileValid(file, true);
-        try {
-            FileUtils.write(file, "", DEFAULT_CHARSET);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to clear file '%s'", fileName), e);
-        }
+    @Override
+    public void mkdirs(String dir) {
+        String path = Paths.get(this.storePath, dir).toString();
+        FileUtils.getFile(path).mkdirs();
     }
 
-    public static void append(String fileName, String... lines) {
+    @Override
+    public void append(String fileName, String... lines) {
         append(fileName, DEFAULT_CHARSET, lines);
     }
 
-    public static void append(String fileName, Charset charset,
-                              String... lines) {
-        File file = org.apache.commons.io.FileUtils.getFile(fileName);
-        checkFileValid(file, true);
+    @Override
+    public void append(String fileName, Charset charset, String... lines) {
+        String path = Paths.get(this.storePath, fileName).toString();
+        File file = org.apache.commons.io.FileUtils.getFile(path);
+        try {
+            this.checkFile(file);
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                      "Failed to check file '%s' valid", file), e);
+        }
         try {
             FileUtils.writeLines(file, charset.name(),
                                  Arrays.asList(lines), true);
         } catch (IOException e) {
             throw new RuntimeException(String.format(
                       "Failed to append lines '%s' to file '%s'",
-                      lines, fileName), e);
+                      Arrays.asList(lines), path), e);
         }
     }
 
-    public static void delete(String fileName) {
+    @Override
+    public void delete() {
         try {
-            FileUtils.forceDelete(FileUtils.getFile(fileName));
+            FileUtils.forceDelete(FileUtils.getFile(this.storePath));
+        } catch (FileNotFoundException ignored) {
+            // pass
         } catch (IOException e) {
             throw new RuntimeException(String.format(
-                      "Failed to delete file '%s'", fileName), e);
+                      "Failed to delete file '%s'", this.storePath), e);
         }
     }
 
-    public static void mkdirs(String directory) {
-        FileUtils.getFile(directory).mkdirs();
+    @Override
+    public void close() {
+        // pass
     }
 
-    private static void checkFileValid(File file, boolean autoCreate) {
+    private void checkFile(File file) throws IOException {
         if (!file.exists()) {
-            if (autoCreate) {
-                try {
-                    file.getParentFile().mkdirs();
-                    file.createNewFile();
-                } catch (IOException e) {
-                    throw new RuntimeException(String.format(
-                              "Failed to create file '%s'", file.getName()), e);
-                }
-            } else {
-                throw new RuntimeException(String.format(
-                          "Please ensure the file '%s' exist", file.getName()));
-            }
+            file.getParentFile().mkdirs();
+            file.createNewFile();
         } else {
             if (!file.isFile() || !file.canWrite()) {
                 throw new RuntimeException(String.format(

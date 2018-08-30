@@ -1,0 +1,13 @@
+// Define schema
+schema.propertyKey("name").asText().ifNotExist().create();
+schema.propertyKey("age").asInt().ifNotExist().create();
+schema.propertyKey("city").asText().ifNotExist().create();
+schema.propertyKey("lang").asText().ifNotExist().create();
+schema.propertyKey("price").asDouble().ifNotExist().create();
+schema.propertyKey("feel").asInt().valueList().ifNotExist().create();
+schema.propertyKey("time").asText().valueSet().ifNotExist().create();
+
+schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
+schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
+
+schema.edgeLabel("use").sourceLabel("person").targetLabel("software").properties("feel", "time").nullableKeys("feel", "time").ifNotExist().create();

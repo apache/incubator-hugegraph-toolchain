@@ -31,16 +31,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.builder.EdgeBuilder;
+import com.baidu.hugegraph.loader.builder.VertexBuilder;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadLogger;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.executor.LoadSummary;
-import com.baidu.hugegraph.loader.parser.EdgeParser;
-import com.baidu.hugegraph.loader.parser.VertexParser;
-import com.baidu.hugegraph.loader.reader.InputReader;
-import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.source.EdgeSource;
 import com.baidu.hugegraph.loader.source.GraphSource;
 import com.baidu.hugegraph.loader.source.VertexSource;
@@ -160,16 +158,14 @@ public class HugeGraphLoader {
         List<VertexSource> vertexSources = this.graphSource.vertexSources();
         for (VertexSource source : vertexSources) {
             LOG.info("Loading vertex source '{}'", source.label());
-            InputReader reader = InputReaderFactory.create(source.input());
+            VertexBuilder builder = new VertexBuilder(source, this.options);
             try {
-                VertexParser parser = new VertexParser(source, reader,
-                                                       this.options);
-                this.loadVertex(parser);
+                this.loadVertex(builder);
             } finally {
                 try {
-                    reader.close();
+                    builder.close();
                 } catch (Throwable e) {
-                    LOG.warn("Failed to close reader for {} with exception {}",
+                    LOG.warn("Failed to close builder for {} with exception {}",
                              source, e);
                 }
             }
@@ -189,12 +185,12 @@ public class HugeGraphLoader {
         return summary;
     }
 
-    private void loadVertex(VertexParser parser) {
+    private void loadVertex(VertexBuilder builder) {
         int batchSize = this.options.batchSize;
         List<Vertex> batch = new ArrayList<>(batchSize);
-        while (parser.hasNext()) {
+        while (builder.hasNext()) {
             try {
-                Vertex vertex = parser.next();
+                Vertex vertex = builder.next();
                 batch.add(vertex);
             } catch (ParseException e) {
                 if (this.options.testMode) {
@@ -206,6 +202,7 @@ public class HugeGraphLoader {
                     LoaderUtil.printError("Error: More than %s vertices " +
                                           "parsing error ... Stopping",
                                           this.options.maxParseErrors);
+                    // TODO: replace with a more graceful way
                     System.exit(-1);
                 }
                 continue;
@@ -226,16 +223,14 @@ public class HugeGraphLoader {
         List<EdgeSource> edgeSources = this.graphSource.edgeSources();
         for (EdgeSource source : edgeSources) {
             LOG.info("Loading edge source '{}'", source.label());
-            InputReader reader = InputReaderFactory.create(source.input());
+            EdgeBuilder builder = new EdgeBuilder(source, this.options);
             try {
-                EdgeParser parser = new EdgeParser(source, reader,
-                                                   this.options);
-                this.loadEdge(parser);
+                this.loadEdge(builder);
             } finally {
                 try {
-                    reader.close();
+                    builder.close();
                 } catch (Throwable e) {
-                    LOG.warn("Failed to close reader for {} with exception {}",
+                    LOG.warn("Failed to close builder for {} with exception {}",
                              source, e);
                 }
             }
@@ -255,12 +250,12 @@ public class HugeGraphLoader {
         return summary;
     }
 
-    private void loadEdge(EdgeParser parser) {
+    private void loadEdge(EdgeBuilder builder) {
         int batchSize = this.options.batchSize;
         List<Edge> batch = new ArrayList<>(batchSize);
-        while (parser.hasNext()) {
+        while (builder.hasNext()) {
             try {
-                Edge edge = parser.next();
+                Edge edge = builder.next();
                 batch.add(edge);
             } catch (ParseException e) {
                 if (this.options.testMode) {

@@ -19,39 +19,33 @@
 
 package com.baidu.hugegraph.loader.reader;
 
-import com.baidu.hugegraph.loader.reader.file.CsvFileReader;
 import com.baidu.hugegraph.loader.reader.file.FileReader;
-import com.baidu.hugegraph.loader.reader.file.JsonFileReader;
-import com.baidu.hugegraph.loader.reader.file.TextFileReader;
-import com.baidu.hugegraph.loader.source.file.FileFormat;
-import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.reader.hdfs.HDFSReader;
+import com.baidu.hugegraph.loader.reader.hdfs.OrcFileReader;
+import com.baidu.hugegraph.loader.reader.jdbc.JDBCReader;
 import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.file.Compression;
+import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 
 public class InputReaderFactory {
 
     public static InputReader create(InputSource source) {
         switch (source.type()) {
             case FILE:
-                return createFileReader((FileSource) source);
+                    return new FileReader((FileSource) source);
+            case HDFS:
+                if (((FileSource) source).compression() == Compression.ORC) {
+                    return new OrcFileReader((HDFSSource) source);
+                } else {
+                    return new HDFSReader((HDFSSource) source);
+                }
+            case JDBC:
+                return new JDBCReader((JDBCSource) source);
             default:
-                // TODO: Expand more input sources
                 throw new AssertionError(String.format(
                           "Unsupported input source '%s'", source.type()));
-        }
-    }
-
-    private static FileReader createFileReader(FileSource source) {
-        FileFormat format = source.format();
-        switch (format) {
-            case CSV:
-                return new CsvFileReader(source);
-            case TEXT:
-                return new TextFileReader(source);
-            case JSON:
-                return new JsonFileReader(source);
-            default:
-                throw new AssertionError(String.format(
-                          "Unsupported file format '%s'", source));
         }
     }
 }

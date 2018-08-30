@@ -1,0 +1,57 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "hdfs",
+        "path": "hdfs://localhost:8020/example/vertex_person.csv",
+        "format": "CSV",
+        "header": ["name", "age", "city"],
+        "charset": "UTF-8",
+        "comment_symbols": ["#"]
+      },
+      "null_values": ["NULL", "null", ""]
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "hdfs",
+        "path": "hdfs://localhost:8020/example/vertex_software.text",
+        "format": "TEXT",
+        "delimiter": "|",
+        "charset": "GBK"
+      },
+      "id": "id",
+      "ignored": ["ISBN"]
+    }
+  ],
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "hdfs",
+        "path": "hdfs://localhost:8020/example/edge_knows.json",
+        "format": "JSON"
+      },
+      "mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    },
+    {
+      "label": "created",
+      "source": ["source_name"],
+      "target": ["target_id"],
+      "input": {
+        "type": "hdfs",
+        "path": "hdfs://localhost:8020/example/edge_created.json",
+        "format": "JSON"
+      },
+      "mapping": {
+        "source_name": "name"
+      }
+    }
+  ]
+}

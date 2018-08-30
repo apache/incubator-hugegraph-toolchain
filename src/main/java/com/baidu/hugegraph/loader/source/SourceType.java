@@ -21,5 +21,9 @@ package com.baidu.hugegraph.loader.source;
 
 public enum SourceType {
 
-    FILE;
+    FILE,
+
+    HDFS,
+
+    JDBC;
 }

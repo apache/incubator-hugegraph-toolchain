@@ -46,6 +46,22 @@
             <artifactId>opencsv</artifactId>
             <version>4.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>2.8.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-exec</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>6.0.6</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -144,7 +160,55 @@
                     <check />
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>write-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>
+                                ${build.testOutputDirectory}/profile.properties
+                            </outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
+
+        <testResources>
+            <testResource>
+                <directory>src/test/resources/</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
     </build>
 
+    <profiles>
+        <profile>
+            <id>file</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <source_type>file</source_type>
+                <store_path>files</store_path>
+            </properties>
+        </profile>
+        <profile>
+            <id>hdfs</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <source_type>hdfs</source_type>
+                <store_path>hdfs://localhost:8020/files</store_path>
+            </properties>
+        </profile>
+    </profiles>
 </project>

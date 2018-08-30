@@ -1,0 +1,12 @@
+{
+  "vertices": [
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.csv",
+        "format": "CSV"
+      }
+    }
+  ]
+}
