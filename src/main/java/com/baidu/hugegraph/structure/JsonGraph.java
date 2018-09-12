@@ -58,7 +58,7 @@ public class JsonGraph {
         assert vertices != null;
         JsonVertex source = vertices.get(edge.source());
         if (source == null) {
-            Printer.print("Invalid edge without source vertex: %s", edge);
+            // Printer.print("Invalid edge without source vertex: %s", edge);
             return;
         }
 
@@ -67,7 +67,7 @@ public class JsonGraph {
         assert vertices != null;
         JsonVertex target = vertices.get(edge.target());
         if (target == null) {
-            Printer.print("Invalid edge without target vertex: %s", edge);
+            // Printer.print("Invalid edge without target vertex: %s", edge);
             return;
         }
 
