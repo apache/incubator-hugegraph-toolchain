@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.source;
 
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -31,12 +32,16 @@ public abstract class ElementSource {
     private InputSource input;
     @JsonProperty("mapping")
     private Map<String, String> mappingFields;
+    @JsonProperty("ignored")
+    private Set<String> ignoredFields;
 
     public ElementSource(String label, InputSource input,
-                         Map<String, String> mappingFields) {
+                         Map<String, String> mappingFields,
+                         Set<String> ignoredFields) {
         this.label = label;
         this.input = input;
         this.mappingFields = mappingFields;
+        this.ignoredFields = ignoredFields;
     }
 
     public String label() {
@@ -57,5 +62,9 @@ public abstract class ElementSource {
             mappingName = this.mappingFields.get(fieldName);
         }
         return mappingName;
+    }
+
+    public Set<String> ignoredFields() {
+        return this.ignoredFields;
     }
 }

@@ -20,15 +20,16 @@
 package com.baidu.hugegraph.loader.source;
 
 import java.util.Map;
+import java.util.Set;
 
 public class VertexSource extends ElementSource {
 
     // Be null when id strategy is primary key
     private final String idField;
 
-    public VertexSource(String label, InputSource input,
-                        String idField, Map<String, String> mapping) {
-        super(label, input, mapping);
+    public VertexSource(String label, InputSource input, String idField,
+                        Map<String, String> mapping, Set<String> ignored) {
+        super(label, input, mapping, ignored);
         this.idField = idField;
     }
 

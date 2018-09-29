@@ -21,8 +21,10 @@ package com.baidu.hugegraph.loader.serializer;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.baidu.hugegraph.loader.source.EdgeSource;
 import com.baidu.hugegraph.loader.source.InputSource;
@@ -61,6 +63,14 @@ public class EdgeSourceDeserializer
             mapping = new HashMap<>();
         }
 
-        return new EdgeSource(label, input, source, target, mapping);
+        JsonNode ignoredNode = node.get("ignored");
+        Set<String> ignored = null;
+        if (ignoredNode != null) {
+            ignored = this.read(ignoredNode, Set.class);
+        } else {
+            ignored = new HashSet<>();
+        }
+
+        return new EdgeSource(label, input, source, target, mapping, ignored);
     }
 }
