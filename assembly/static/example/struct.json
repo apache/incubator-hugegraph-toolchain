@@ -23,7 +23,8 @@
         "format": "TEXT",
         "delimiter": "|",
         "charset": "GBK"
-      }
+      },
+      "ignored": ["ISBN"]
     }
   ],
   "edges": [

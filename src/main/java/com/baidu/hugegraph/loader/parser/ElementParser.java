@@ -77,7 +77,7 @@ public abstract class ElementParser<GE extends GraphElement>
     public GE next() {
         String line = this.reader().line();
         try {
-            return this.parse(this.reader().next());
+            return this.parse(this.filterFields(this.reader().next()));
         } catch (IllegalArgumentException e) {
             throw new ParseException(line, e.getMessage());
         }
@@ -91,6 +91,13 @@ public abstract class ElementParser<GE extends GraphElement>
     protected abstract GE parse(Map<String, Object> keyValues);
 
     protected abstract boolean isIdField(String fieldName);
+
+    protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
+        for (String field : this.source().ignoredFields()) {
+            keyValues.remove(field);
+        }
+        return keyValues;
+    }
 
     protected void addProperties(GE element, Map<String, Object> keyValues) {
         for (Map.Entry<String, Object> entry : keyValues.entrySet()) {

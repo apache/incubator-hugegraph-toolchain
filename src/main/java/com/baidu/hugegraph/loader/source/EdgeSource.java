@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader.source;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class EdgeSource extends ElementSource {
 
@@ -29,8 +30,8 @@ public class EdgeSource extends ElementSource {
 
     public EdgeSource(String label, InputSource input,
                       List<String> sourceFields, List<String> targetFields,
-                      Map<String, String> mapping) {
-        super(label, input, mapping);
+                      Map<String, String> mapping, Set<String> ignored) {
+        super(label, input, mapping, ignored);
         this.sourceFields = sourceFields;
         this.targetFields = targetFields;
     }
