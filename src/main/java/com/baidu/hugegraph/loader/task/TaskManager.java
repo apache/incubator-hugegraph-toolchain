@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.loader.exception.InsertException;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.HugeClients;
 import com.baidu.hugegraph.loader.executor.LoadLogger;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -141,15 +142,15 @@ public class TaskManager {
 
             @Override
             public void onSuccess(Integer size) {
-                available.release();
                 successNum.add(size);
+                available.release();
                 printProgress("Vertices", BATCH_PRINT_FREQUENCY, size);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                available.release();
                 submitVerticesInSingleMode(batch);
+                available.release();
             }
         });
     }
@@ -168,15 +169,15 @@ public class TaskManager {
 
             @Override
             public void onSuccess(Integer size) {
-                available.release();
                 successNum.add(size);
+                available.release();
                 printProgress("Edges", BATCH_PRINT_FREQUENCY, size);
             }
 
             @Override
             public void onFailure(Throwable t) {
-                available.release();
                 submitEdgesInSingleMode(batch);
+                available.release();
             }
         });
     }
