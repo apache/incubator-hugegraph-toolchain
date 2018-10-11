@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.test.functional;
 
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,9 +44,10 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 public class LoaderTest {
+
+    private static final Charset GBK = Charset.forName("GBK");
 
     private static final String PATH_PREFIX = "src/test/resources";
     private static final String url = "http://127.0.0.1:8080";
@@ -61,9 +63,11 @@ public class LoaderTest {
     @Before
     public void init() {
         FileUtil.append(path("vertex_person.csv"), "name,age,city");
-        FileUtil.append(path("vertex_software.csv"), "name,lang,price", "GBK");
-        FileUtil.append(path("edge_knows.csv"), "aname,bname,date,weight");
-        FileUtil.append(path("edge_created.csv"), "aname,bname,date,weight");
+        FileUtil.append(path("vertex_software.csv"), GBK, "name,lang,price");
+        FileUtil.append(path("edge_knows.csv"),
+                        "source_name,target_name,date,weight");
+        FileUtil.append(path("edge_created.csv"),
+                        "source_name,target_name,date,weight");
     }
 
     @After
@@ -99,17 +103,17 @@ public class LoaderTest {
         // Clear schema
         List<Long> taskIds = new ArrayList<>();
         schema.getIndexLabels().forEach(il -> {
-            taskIds.add(schema.removeIndexLabel(il.name()));
+            taskIds.add(schema.removeIndexLabelAsync(il.name()));
         });
         taskIds.forEach(id -> task.waitUntilTaskCompleted(id, 5L));
         taskIds.clear();
         schema.getEdgeLabels().forEach(el -> {
-            taskIds.add(schema.removeEdgeLabel(el.name()));
+            taskIds.add(schema.removeEdgeLabelAsync(el.name()));
         });
         taskIds.forEach(id -> task.waitUntilTaskCompleted(id, 5L));
         taskIds.clear();
         schema.getVertexLabels().forEach(vl -> {
-            taskIds.add(schema.removeVertexLabel(vl.name()));
+            taskIds.add(schema.removeVertexLabelAsync(vl.name()));
         });
         taskIds.forEach(id -> task.waitUntilTaskCompleted(id, 5L));
         taskIds.clear();
@@ -170,8 +174,29 @@ public class LoaderTest {
 
     @Test
     public void testLoadWithCustomizedSchema() {
-        String[] args = new String[]{"-f", "example/struct.json",
-                                     "-s", "example/schema.groovy",
+        FileUtil.append(path("vertex_person.csv"),
+                        "marko,29,Beijing",
+                        "vadas,27,Hongkong",
+                        "josh,32,Beijing",
+                        "peter,35,Shanghai",
+                        "\"li,nary\",26,\"Wu,han\"");
+
+        FileUtil.append(path("vertex_software.csv"),
+                        "lop,java,328",
+                        "ripple,java,199");
+
+        FileUtil.append(path("edge_knows.csv"),
+                        "marko,vadas,20160110,0.5",
+                        "marko,josh,20130220,1.0");
+
+        FileUtil.append(path("edge_created.csv"),
+                        "marko,lop,20171210,0.4",
+                        "josh,lop,20091111,0.4",
+                        "josh,ripple,20171210,1.0",
+                        "peter,lop,20170324,0.2");
+
+        String[] args = new String[]{"-f", path("struct.json"),
+                                     "-s", path("schema.groovy"),
                                      "-g", "hugegraph",
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
@@ -239,7 +264,7 @@ public class LoaderTest {
                     "啡前壳+极光银后壳+浅灰电池扣+极光银电池组件+深灰天线";
         assert pk.length() < 128;
         String line = FileUtil.newCSVLine(pk, "中文", 328);
-        FileUtil.append(path("vertex_software.csv"), line, "GBK");
+        FileUtil.append(path("vertex_software.csv"), GBK, line);
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
@@ -330,7 +355,7 @@ public class LoaderTest {
     @Test
     public void testLoadWithUnmatchedEncodingCharset() {
         String line = FileUtil.newCSVLine("lop", "中文", 328);
-        FileUtil.append(path("vertex_software.csv"), line, "GBK");
+        FileUtil.append(path("vertex_software.csv"), GBK, line);
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-g", "hugegraph",
@@ -354,7 +379,7 @@ public class LoaderTest {
     @Test
     public void testLoadWithMatchedEncodingCharset() {
         String line = FileUtil.newCSVLine("lop", "中文", 328);
-        FileUtil.append(path("vertex_software.csv"), line, "GBK");
+        FileUtil.append(path("vertex_software.csv"), GBK, line);
 
         String[] args = new String[]{"-f", path("struct_gbk.json"),
                                      "-g", "hugegraph",
@@ -382,7 +407,7 @@ public class LoaderTest {
         FileUtil.append(path("vertex_person.csv"), line);
 
         line = FileUtil.newCSVLine("lop", "中文", 328);
-        FileUtil.append(path("vertex_software.csv"), line, "GBK");
+        FileUtil.append(path("vertex_software.csv"), GBK, line);
 
         line = "{\"person_name\": \"marko\", \"software_name\": \"lop\", " +
                "\"feel\": [\"so so\", \"good\", \"good\"]}";
@@ -419,7 +444,7 @@ public class LoaderTest {
         FileUtil.append(path("vertex_person.csv"), line);
 
         line = FileUtil.newCSVLine("lop", "中文", 328);
-        FileUtil.append(path("vertex_software.csv"), line, "GBK");
+        FileUtil.append(path("vertex_software.csv"), GBK, line);
 
         line = "{\"person_name\": \"marko\", \"software_name\": \"lop\", " +
                 "\"time\": [\"20171210\", \"20180101\"]}";

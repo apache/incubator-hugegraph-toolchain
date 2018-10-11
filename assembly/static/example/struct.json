@@ -44,16 +44,16 @@
     },
     {
       "label": "created",
-      "source": ["aname"],
-      "target": ["bname"],
+      "source": ["source_name"],
+      "target": ["target_name"],
       "input": {
         "type": "file",
         "path": "example/edge_created.json",
         "format": "JSON"
       },
       "mapping": {
-        "aname": "name",
-        "bname": "name"
+        "source_name": "name",
+        "target_name": "name"
       }
     }
   ]
