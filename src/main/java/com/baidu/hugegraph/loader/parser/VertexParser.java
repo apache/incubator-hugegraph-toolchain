@@ -72,9 +72,12 @@ public class VertexParser extends ElementParser<Vertex> {
                             "The value of id field '%s' can't be null",
                             this.source.idField());
 
-            String id = String.valueOf(idValue);
             if (this.vertexLabel.idStrategy() == IdStrategy.CUSTOMIZE_STRING) {
+                String id = String.valueOf(idValue);
                 this.checkVertexIdLength(id);
+                vertex.id(id);
+            } else {
+                Long id = parseNumberId(idValue);
                 vertex.id(id);
             }
         } else {
@@ -111,6 +114,18 @@ public class VertexParser extends ElementParser<Vertex> {
             // The id strategy is automatic
             throw new IllegalArgumentException(
                       "Unsupported AUTOMATIC id strategy for hugegraph-loader");
+        }
+    }
+
+    private static long parseNumberId(Object idValue) {
+        if (idValue instanceof Number) {
+            return ((Number) idValue).longValue();
+        } else if (idValue instanceof String) {
+            return Long.parseLong((String) idValue);
+        } else {
+            throw new IllegalArgumentException(String.format(
+                      "The id value must can be casted to Long, " +
+                      "but got %s(%s)", idValue, idValue.getClass().getName()));
         }
     }
 }

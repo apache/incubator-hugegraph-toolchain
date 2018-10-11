@@ -451,6 +451,36 @@ public class LoaderTest {
         FileUtil.delete(path("edge_use.json"));
     }
 
+    @Test
+    public void testLoadVerticesWithCustomizedNumberId() {
+        String line = FileUtil.newCSVLine(1, "marko", 29, "Beijing");
+        FileUtil.append(path("vertex_person_number_id.csv"), line);
+
+        String[] args = new String[]{"-f", path("struct_number_id.json"),
+                                     "-g", "hugegraph",
+                                     "-s", path("schema_number_id.groovy"),
+                                     "--test-mode", "true"};
+
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            FileUtil.delete(path("vertex_person_number_id.csv"));
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+
+        List<Vertex> vertices = client.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
+        Vertex vertex = vertices.get(0);
+
+        Assert.assertEquals(1, vertex.id());
+        Assert.assertEquals("person", vertex.label());
+        Assert.assertEquals("marko", vertex.property("name"));
+        Assert.assertEquals(29, vertex.property("age"));
+        Assert.assertEquals("Beijing", vertex.property("city"));
+
+        FileUtil.delete(path("vertex_person_number_id.csv"));
+    }
+
     private static String path(String fileName) {
         return Paths.get(PATH_PREFIX, fileName).toString();
     }
