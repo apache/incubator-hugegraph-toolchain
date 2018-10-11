@@ -21,15 +21,16 @@ package com.baidu.hugegraph.loader.test.functional;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.common.collect.ImmutableList;
-
 public class FileUtil {
 
-    private static final String DEFAULT_CHARSET = "UTF-8";
+    private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     public static String newCSVLine(Object... parts) {
         return StringUtils.join(parts, ",");
@@ -46,19 +47,21 @@ public class FileUtil {
         }
     }
 
-    public static void append(String fileName, String line) {
-        append(fileName, line, DEFAULT_CHARSET);
+    public static void append(String fileName, String... lines) {
+        append(fileName, DEFAULT_CHARSET, lines);
     }
 
-    public static void append(String fileName, String line, String charset) {
+    public static void append(String fileName, Charset charset,
+                              String... lines) {
         File file = org.apache.commons.io.FileUtils.getFile(fileName);
         checkFileValid(file, true);
         try {
-            FileUtils.writeLines(file, charset, ImmutableList.of(line), true);
+            FileUtils.writeLines(file, charset.name(),
+                                 Arrays.asList(lines), true);
         } catch (IOException e) {
             throw new RuntimeException(String.format(
-                      "Failed to append line '%s' to file '%s'",
-                      line, fileName), e);
+                      "Failed to append lines '%s' to file '%s'",
+                      lines, fileName), e);
         }
     }
 
