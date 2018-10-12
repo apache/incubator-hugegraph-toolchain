@@ -28,8 +28,6 @@ import static com.baidu.hugegraph.structure.constant.DataType.LONG;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import com.baidu.hugegraph.structure.constant.Cardinality;
@@ -151,13 +149,9 @@ public final class DataTypeUtil {
                 valid = checkDataType(value, dataType);
                 break;
             case SET:
-                valid = value instanceof Set;
-                valid = valid && checkCollectionDataType((Set<?>) value,
-                                                         dataType);
-                break;
             case LIST:
-                valid = value instanceof List;
-                valid = valid && checkCollectionDataType((List<?>) value,
+                valid = value instanceof Collection;
+                valid = valid && checkCollectionDataType((Collection<?>) value,
                                                          dataType);
                 break;
             default:

@@ -413,8 +413,7 @@ public class LoaderTest {
         FileUtil.delete(path("edge_use.json"));
     }
 
-    // TODO: Support cardinality set property
-    // @Test
+    @Test
     public void testLoadWithValueSetPorpertyInJsonFile() {
         String line = FileUtil.newCSVLine("marko", 29, "Beijing");
         FileUtil.append(path("vertex_person.csv"), line);
@@ -445,7 +444,11 @@ public class LoaderTest {
 
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals(ImmutableSet.of("20171210", "20180101"),
+        /*
+         * NOTE: Although the cardinality of the property is set in schema
+         * declaration, client will deserialize it to list type in default.
+         */
+        Assert.assertEquals(ImmutableList.of("20171210", "20180101"),
                             edge.property("time"));
 
         FileUtil.delete(path("edge_use.json"));
