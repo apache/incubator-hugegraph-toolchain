@@ -36,9 +36,10 @@ public class DumpKGFormatter implements Formatter {
 
     // entity dump format："plaint_id value key weight type parent parent_weight
     // child child_weight region region_weight\t\t\t"
-    private String entity_format = "%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t\t\t";
+    private static final String ENTITY_FORMAT =
+            "%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t\t\t";
     // mention dump format: "mention descript descript_weight"
-    private String mention_format = "%s\t%s\t%s";
+    private static final String MENTION_FORMAT = "%s\t%s\t%s";
 
     public DumpKGFormatter() throws IOException {
         cs = new ComputeSign("./trade_value", "GBK");
@@ -46,8 +47,6 @@ public class DumpKGFormatter implements Formatter {
 
     @Override
     public String dump(JsonVertex vertex) throws Exception {
-        // Printer.print("Dump vertex '%s', its edges size: %d",
-        //               vertex.getId(), vertex.getEdges().size());
         switch (vertex.getLabel()) {
             case "entity":
                 return this.dumpEntity(vertex);
@@ -72,24 +71,24 @@ public class DumpKGFormatter implements Formatter {
         String key = (String) properties.get("key");
         double weight = (double) properties.get("weight");
         int type = (int) properties.get("type");
-        List<String> parent = new ArrayList<String>();
-        List<String> parentWeight = new ArrayList<String>();
-        List<String> child = new ArrayList<String>();
-        List<String> childWeight = new ArrayList<String>();
-        List<String> region = new ArrayList<String>();
-        List<String> regionWeight = new ArrayList<String>();
+
+        List<String> parent = new ArrayList<>();
+        List<String> parentWeight = new ArrayList<>();
+        List<String> child = new ArrayList<>();
+        List<String> childWeight = new ArrayList<>();
+        List<String> region = new ArrayList<>();
+        List<String> regionWeight = new ArrayList<>();
 
         for (int i = 0; i < edges.size(); i++) {
             JsonEdge edge = edges.get(i);
             if (edge == null) {
                 continue;
             }
-            Map<String, Object> props = edge.properties();
-            // Printer.print("id:%s source:%s", vertex.getId(), edge.getSource());
             if (!vertex.getId().equals(edge.getSource())) {
                 continue;
             }
-            // Printer.print("%d label:%s", i, edge.getLabel());
+
+            Map<String, Object> props = edge.properties();
             switch (edge.getLabel()) {
                 case "is":
                     parent.add(((String) edge.getTarget()).split(":", 2)[1]);
@@ -105,7 +104,7 @@ public class DumpKGFormatter implements Formatter {
                     break;
             }
         }
-        return String.format(entity_format,
+        return String.format(ENTITY_FORMAT,
                              seqPlainId, value, key, weight, type,
                              String.join("|*|", parent),
                              String.join("|*|", parentWeight),
@@ -120,33 +119,28 @@ public class DumpKGFormatter implements Formatter {
         if (vertex == null) {
             return "";
         }
-        List<JsonEdge> edges = vertex.getEdges();
-        Map<String, Object> properties = vertex.properties();
 
-        String value1 = (String) properties.get("value");
-        List<String> descript = new ArrayList<String>();
-        List<String> descriptWeight = new ArrayList<String>();
-        // Printer.print("edges size: %d", tmp.size());
+        List<JsonEdge> edges = vertex.getEdges();
+        String value = (String) vertex.properties().get("value");
+
+        List<String> descript = new ArrayList<>();
+        List<String> descriptWeight = new ArrayList<>();
         for (int i = 0; i < edges.size(); i++) {
             JsonEdge edge = edges.get(i);
-            // Printer.print("id:%s source:%s", vertex.getId(), edge.getSource());
             if (!vertex.getId().equals(edge.getSource())) {
                 continue;
             }
-            // Printer.print("id:%s source:%s is the same", vertex.getId(), edge.getSource());
-            // Printer.print("mention to write vertex: %d", i);
-
-            if (edge.getLabel().equals("describe")) {
-                // Printer.print("lable:%s ", edge.getLabel());
-                String plainId = ((String) edge.getTarget()).split(":", 2)[1];
-                String seqPlainId = cs.computeSeqNum(plainId);
-                // Printer.print("lable:%s, plainid:%s, seqPlainId:%s", edge.getLabel(), plainId, seqPlainId);
-                descript.add(seqPlainId);
-                descriptWeight.add(edge.properties().get("confidence").toString());
+            if (!edge.getLabel().equals("describe")) {
+                continue;
             }
+
+            String plainId = ((String) edge.getTarget()).split(":", 2)[1];
+            String seqPlainId = cs.computeSeqNum(plainId);
+            descript.add(seqPlainId);
+            descriptWeight.add(edge.properties().get("confidence").toString());
         }
 
-        return String.format(mention_format, value1,
+        return String.format(MENTION_FORMAT, value,
                              String.join("|*|", descript),
                              String.join("|*|", descriptWeight));
     }

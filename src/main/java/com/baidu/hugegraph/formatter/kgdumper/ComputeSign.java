@@ -25,9 +25,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
 
 public class ComputeSign {
 
@@ -35,7 +35,8 @@ public class ComputeSign {
     private LinkedHashMap<String, String> entPlain2Id;
     private String inputEncoding;
 
-    public ComputeSign(String tradeValueFile, String inputEncode) throws IOException {
+    public ComputeSign(String tradeValueFile, String inputEncode)
+                       throws IOException {
 
         File file = new File(tradeValueFile);
         Long fileLen = file.length();
@@ -56,17 +57,17 @@ public class ComputeSign {
         inputEncoding = inputEncode;
 
         final int cacheSize = 1000;
-        entPlain2Id = new LinkedHashMap<String, String>(
-                          (int) Math.ceil(cacheSize / 0.75f) + 1, 0.75f, true) {
+        final int capacity = (int) Math.ceil(cacheSize / 0.75f) + 1;
+        entPlain2Id = new LinkedHashMap<String, String>(capacity, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<String, String> e) {
                 return size() > cacheSize;
             }
         };
     }
 
     public synchronized String computeSeqNum(String entPlain)
-                                             throws UnsupportedEncodingException {
+           throws UnsupportedEncodingException {
         String seqNum = "0";
         if (entPlain2Id.containsKey(entPlain)) {
             seqNum = entPlain2Id.get(entPlain);
@@ -77,14 +78,15 @@ public class ComputeSign {
         if (entSpa.length != 3) {
             return seqNum;
         }
-        List<String> trans = new ArrayList<String>();
+        List<String> trans = new ArrayList<>();
         if (tradeValue2Num.containsKey(entSpa[0])) {
             trans.add(tradeValue2Num.get(entSpa[0]).toString());
         } else {
             trans.add(entSpa[0]);
         }
         trans.add(entSpa[1]);
-        if (entSpa[1].contains("trade") && tradeValue2Num.containsKey(entSpa[2])) {
+        if (entSpa[1].contains("trade") &&
+            tradeValue2Num.containsKey(entSpa[2])) {
             trans.add(tradeValue2Num.get(entSpa[2]).toString());
         } else {
             trans.add(entSpa[2]);
