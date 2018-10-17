@@ -24,27 +24,33 @@ import java.util.concurrent.Callable;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.exception.ServerException;
-import com.baidu.hugegraph.loader.executor.HugeClients;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.GraphElement;
 
-public abstract class InsertTask<E extends GraphElement>
+public abstract class InsertionTask<E extends GraphElement>
        implements Callable<Integer> {
 
     protected static final String ILLEGAL_ARGUMENT_EXCEPTION =
               "class java.lang.IllegalArgumentException";
 
     private final List<E> batch;
+    private final LoadOptions options;
     private final HugeClient client;
 
-    public InsertTask(List<E> batch) {
+    public InsertionTask(List<E> batch, LoadOptions options) {
         this.batch = batch;
-        this.client = HugeClients.get(LoadOptions.instance());
+        this.options = options;
+        this.client = HugeClientWrapper.get(options);
     }
 
     public List<E> batch() {
         return this.batch;
+    }
+
+    public LoadOptions options() {
+        return this.options;
     }
 
     public HugeClient client() {
@@ -57,8 +63,6 @@ public abstract class InsertTask<E extends GraphElement>
             return 0;
         }
 
-        LoadOptions options = LoadOptions.instance();
-        int retryTimes = options.retryTimes;
         int retryCount = 0;
         do {
             try {
@@ -72,21 +76,19 @@ public abstract class InsertTask<E extends GraphElement>
                 }
                 retryCount = this.waitThenRetry(retryCount, e);
             }
-        } while (retryCount > 0 && retryCount <= retryTimes);
+        } while (retryCount > 0 && retryCount <= this.options.retryTimes);
 
         return this.batch.size();
     }
 
     protected int waitThenRetry(int retryCount, RuntimeException e) {
-        LoadOptions options = LoadOptions.instance();
         try {
-            int retryInterval = options.retryInterval;
-            Thread.sleep(retryInterval * 1000);
+            Thread.sleep(this.options.retryInterval * 1000);
         } catch (InterruptedException ignored) {
             // That's fine, just continue.
         }
 
-        if (++retryCount > options.retryTimes) {
+        if (++retryCount > this.options.retryTimes) {
             throw e;
         }
         return retryCount;

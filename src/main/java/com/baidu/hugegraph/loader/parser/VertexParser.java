@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.source.VertexSource;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
@@ -35,8 +36,9 @@ public class VertexParser extends ElementParser<Vertex> {
     private final VertexSource source;
     private final VertexLabel vertexLabel;
 
-    public VertexParser(VertexSource source, InputReader reader) {
-        super(reader);
+    public VertexParser(VertexSource source, InputReader reader,
+                        LoadOptions options) {
+        super(reader, options);
         this.source = source;
         this.vertexLabel = this.getVertexLabel(source.label());
         // Ensure the id field is matched with id strategy

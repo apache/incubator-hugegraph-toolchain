@@ -21,25 +21,12 @@ package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
 
-import org.slf4j.Logger;
-
-import com.baidu.hugegraph.util.Log;
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
 public class LoadOptions {
-
-    private Logger LOG = Log.logger(LoadOptions.class);
-
-    private static final LoadOptions instance = new LoadOptions();
-
-    public static LoadOptions instance() {
-        return instance;
-    }
-
-    private LoadOptions() {}
-
+    
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
                description = "The path of the data source description file")
@@ -67,7 +54,7 @@ public class LoadOptions {
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The number of threads to use")
-    public int numThreads = Runtime.getRuntime().availableProcessors() * 2 - 1;
+    public int numThreads = Runtime.getRuntime().availableProcessors();
 
     @Parameter(names = {"--batch-size"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -97,8 +84,8 @@ public class LoadOptions {
 
     @Parameter(names = {"--timeout"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The timeout of inserting task in seconds")
-    public int timeout = 100;
+               description = "The timeout of HugeClient request")
+    public int timeout = 60;
 
     @Parameter(names = {"--retry-times"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -113,6 +100,10 @@ public class LoadOptions {
     @Parameter(names = {"--test-mode"}, arity = 1,
                description = "Whether the hugegraph-loader work in test mode")
     public boolean testMode = false;
+
+    @Parameter(names = {"--help"}, help = true,
+               description = "Print usage of HugeGraphLoader")
+    public boolean help;
 
     public static class UrlValidator implements IParameterValidator {
 

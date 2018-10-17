@@ -17,29 +17,21 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.executor;
+package com.baidu.hugegraph.loader.task;
 
-import com.baidu.hugegraph.driver.HugeClient;
+import java.util.List;
+
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.structure.graph.Vertex;
 
-public class HugeClients {
+public class VertexInsertionTask extends InsertionTask<Vertex> {
 
-    // TODO: seems no need to use ThreadLocal, reuse HugeClient is ok
-    private static final ThreadLocal<HugeClient> instance = new ThreadLocal<>();
-
-    public static HugeClient get(LoadOptions options) {
-        HugeClient client = instance.get();
-        if (client == null) {
-            client = newHugeClient(options);
-            instance.set(client);
-        }
-        return client;
+    public VertexInsertionTask(List<Vertex> batch, LoadOptions options) {
+        super(batch, options);
     }
 
-    private HugeClients() {}
-
-    private static HugeClient newHugeClient(LoadOptions options) {
-        String address = options.host + ":" + options.port;
-        return new HugeClient(address, options.graph, options.timeout);
+    @Override
+    protected void execute() {
+        this.client().graph().addVertices(this.batch());
     }
 }
