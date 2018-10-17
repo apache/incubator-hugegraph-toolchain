@@ -17,20 +17,30 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.task;
+package com.baidu.hugegraph.loader.util;
 
-import java.util.List;
+import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 
-import com.baidu.hugegraph.structure.graph.Vertex;
+public final class HugeClientWrapper {
 
-public class InsertVertexTask extends InsertTask<Vertex>  {
+    private static volatile HugeClient instance;
 
-    InsertVertexTask(List<Vertex> batch) {
-        super(batch);
+    public static HugeClient get(LoadOptions options) {
+        if (instance == null) {
+            synchronized(HugeClientWrapper.class) {
+                if (instance == null) {
+                    instance = newHugeClient(options);
+                }
+            }
+        }
+        return instance;
     }
 
-    @Override
-    protected void execute() {
-        this.client().graph().addVertices(this.batch());
+    private HugeClientWrapper() {}
+
+    private static HugeClient newHugeClient(LoadOptions options) {
+        String address = options.host + ":" + options.port;
+        return new HugeClient(address, options.graph, options.timeout);
     }
 }

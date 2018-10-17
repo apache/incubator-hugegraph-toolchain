@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.parser;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -27,12 +28,11 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.executor.HugeClients;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.source.ElementSource;
-import com.baidu.hugegraph.loader.util.AutoCloseableIterator;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
+import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -45,7 +45,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
 public abstract class ElementParser<GE extends GraphElement>
-       implements AutoCloseableIterator<GE> {
+       implements Iterator<GE> {
 
     private static final int VERTEX_ID_LIMIT = 128;
     private static final String ID_CHARSET = "UTF-8";
@@ -55,9 +55,9 @@ public abstract class ElementParser<GE extends GraphElement>
     private final HugeClient client;
     private final Table<HugeType, String, SchemaElement> schemas;
 
-    ElementParser(InputReader reader) {
+    ElementParser(InputReader reader, LoadOptions options) {
         this.reader = reader;
-        this.client = HugeClients.get(LoadOptions.instance());
+        this.client = HugeClientWrapper.get(options);
         this.schemas = HashBasedTable.create();
         this.reader.init();
     }
@@ -81,11 +81,6 @@ public abstract class ElementParser<GE extends GraphElement>
         } catch (IllegalArgumentException e) {
             throw new ParseException(line, e.getMessage());
         }
-    }
-
-    @Override
-    public void close() throws Exception {
-        this.reader.close();
     }
 
     protected abstract GE parse(Map<String, Object> keyValues);

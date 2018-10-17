@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.source.EdgeSource;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
@@ -38,8 +39,9 @@ public class EdgeParser extends ElementParser<Edge> {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeParser(EdgeSource source, InputReader reader) {
-        super(reader);
+    public EdgeParser(EdgeSource source, InputReader reader,
+                      LoadOptions options) {
+        super(reader, options);
         this.source = source;
         this.edgeLabel = this.getEdgeLabel(source.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());

@@ -24,15 +24,14 @@ import java.util.List;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.structure.graph.Edge;
 
-public class InsertEdgeTask extends InsertTask<Edge> {
+public class EdgeInsertionTask extends InsertionTask<Edge> {
 
-    InsertEdgeTask(List<Edge> batch) {
-        super(batch);
+    public EdgeInsertionTask(List<Edge> batch, LoadOptions options) {
+        super(batch, options);
     }
 
     @Override
     protected void execute() {
-        LoadOptions options = LoadOptions.instance();
-        this.client().graph().addEdges(this.batch(), options.checkVertex);
+        this.client().graph().addEdges(this.batch(), this.options().checkVertex);
     }
 }
