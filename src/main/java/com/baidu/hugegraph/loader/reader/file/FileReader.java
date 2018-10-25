@@ -123,14 +123,15 @@ public abstract class FileReader implements InputReader {
 
     private static void checkFile(File file) {
         if (!file.exists()) {
-            throw new LoadException("The file %s doesn't exist", file);
+            throw new LoadException("Please ensure the file exist: '%s'", file);
         }
         if (!file.isFile()) {
-            throw new LoadException(
-                      "The file %s must be file rather than a directory", file);
+            throw new LoadException("Please ensure the file is indeed a file " +
+                                    "instead of a directory: '%s'", file);
         }
         if (!file.canRead()) {
-            throw new LoadException("The file %s must be readable", file);
+            throw new LoadException("Please ensure the file is readable: '%s'",
+                                    file);
         }
     }
 }
