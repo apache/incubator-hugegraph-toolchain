@@ -139,8 +139,8 @@ public class LoadOptions {
             File file = new File(value);
             if (!file.exists() || !file.isDirectory()) {
                 throw new ParameterException(String.format(
-                          "Ensure the directory '%s' exists and is indeed a " +
-                          "directory instead of a file", value));
+                          "Ensure the directory exists and is indeed a " +
+                          "directory instead of a file: '%s'", value));
             }
         }
     }
@@ -152,8 +152,8 @@ public class LoadOptions {
             File file = new File(value);
             if (!file.exists() || !file.isFile()) {
                 throw new ParameterException(String.format(
-                          "Ensure the file '%s' exists and is indeed a file " +
-                          "instead of a directory", value));
+                          "Ensure the file exists and is indeed a file " +
+                          "instead of a directory: '%s'", value));
             }
         }
     }
