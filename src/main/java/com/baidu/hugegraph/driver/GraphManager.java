@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.annotation.UnimplementedFeature;
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
 import com.baidu.hugegraph.client.RestClient;
@@ -128,14 +129,16 @@ public class GraphManager {
         return this.iterateVertices(null, null, sizePerPage);
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by label")
     public Iterator<Vertex> iterateVertices(String label, int sizePerPage) {
         return this.iterateVertices(label, null, sizePerPage);
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by label and properties")
     public Iterator<Vertex> iterateVertices(String label,
                                             Map<String, Object> properties,
                                             int sizePerPage) {
-        return new GraphIterator<>(this, (page) -> {
+        return new GraphIterator<>(this, sizePerPage, (page) -> {
             return this.vertexAPI.list(label, properties, 0, page, sizePerPage);
         });
     }
@@ -288,30 +291,35 @@ public class GraphManager {
         return this.iterateEdges(null, (Map<String, Object>) null, sizePerPage);
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by label")
     public Iterator<Edge> iterateEdges(String label, int sizePerPage) {
         return this.iterateEdges(label, (Map<String, Object>) null, sizePerPage);
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by label and properties")
     public Iterator<Edge> iterateEdges(String label,
                                        Map<String, Object> properties,
                                        int sizePerPage) {
-        return new GraphIterator<>(this, (page) -> {
+        return new GraphIterator<>(this, sizePerPage, (page) -> {
             return this.edgeAPI.list(null, null, label, properties,
                                      0, page, sizePerPage);
         });
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by vertexId")
     public Iterator<Edge> iterateEdges(Object vertexId, int sizePerPage) {
         return this.iterateEdges(vertexId, Direction.BOTH, null, null,
                                  sizePerPage);
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by vertexId and direction")
     public Iterator<Edge> iterateEdges(Object vertexId,
                                        Direction direction,
                                        int sizePerPage) {
         return this.iterateEdges(vertexId, direction, null, null, sizePerPage);
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by vertexId, direction and label")
     public Iterator<Edge> iterateEdges(Object vertexId,
                                        Direction direction,
                                        String label,
@@ -319,12 +327,14 @@ public class GraphManager {
         return this.iterateEdges(vertexId, direction, label, null, sizePerPage);
     }
 
+    @UnimplementedFeature(desc = "Server doesn't support paging by vertexId, direction, label " +
+                                 "and properties")
     public Iterator<Edge> iterateEdges(Object vertexId,
                                        Direction direction,
                                        String label,
                                        Map<String, Object> properties,
                                        int sizePerPage) {
-        return new GraphIterator<>(this, (page) -> {
+        return new GraphIterator<>(this, sizePerPage, (page) -> {
             return this.edgeAPI.list(vertexId, direction, label, properties,
                                      0, page, sizePerPage);
         });

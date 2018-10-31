@@ -17,25 +17,20 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.version;
+package com.baidu.hugegraph.annotation;
 
-import com.baidu.hugegraph.util.VersionUtil;
-import com.baidu.hugegraph.util.VersionUtil.Version;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class ClientVersion {
+/**
+ * Indicates that a method is a feature to be implemented,
+ * and may cause an exception if it is used directly now.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+public @interface UnimplementedFeature {
 
-    static {
-        // Check versions of the dependency packages
-        ClientVersion.check();
-    }
-
-    public static final String NAME = "hugegraph-client";
-
-    public static final Version VERSION = Version.of(ClientVersion.class);
-
-    public static final void check() {
-        // Check version of hugegraph-common
-        VersionUtil.check(CommonVersion.VERSION, "1.5", "1.6",
-                          CommonVersion.NAME);
-    }
+    String desc() default "";
 }

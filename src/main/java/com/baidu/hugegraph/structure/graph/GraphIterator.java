@@ -31,31 +31,46 @@ import com.baidu.hugegraph.util.E;
 public class GraphIterator<T extends GraphElement> implements Iterator<T> {
 
     private final GraphManager graphManager;
+    private final int sizePerPage;
     private final Function<String, Pageable<T>> pageFetcher;
     private List<T> results;
     private String page;
     private int cursor;
+    private boolean finished;
 
-    public GraphIterator(final GraphManager graphManager,
+    public GraphIterator(final GraphManager graphManager, final int sizePerPage,
                          final Function<String, Pageable<T>> pageFetcher) {
         E.checkNotNull(graphManager, "Graph manager");
         E.checkNotNull(pageFetcher, "Page fetcher");
         this.graphManager = graphManager;
+        this.sizePerPage = sizePerPage;
         this.pageFetcher = pageFetcher;
         this.results = null;
         this.page = "";
         this.cursor = 0;
+        this.finished = false;
     }
 
     @Override
     public boolean hasNext() {
         if (this.results == null || this.cursor >= this.results.size()) {
-            Pageable<T> pageable = this.pageFetcher.apply(this.page);
-            this.results = pageable.results();
-            this.page = pageable.page();
-            this.cursor = 0;
+            this.fetch();
         }
-        return this.results != null && this.cursor < this.results.size();
+        assert this.results != null;
+        return this.cursor < this.results.size();
+    }
+
+    private void fetch() {
+        if (this.finished) {
+            return;
+        }
+        Pageable<T> pageable = this.pageFetcher.apply(this.page);
+        this.results = pageable.results();
+        this.page = pageable.page();
+        this.cursor = 0;
+        if (this.results.size() != this.sizePerPage || this.page == null) {
+            this.finished = true;
+        }
     }
 
     @Override

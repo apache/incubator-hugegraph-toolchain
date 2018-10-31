@@ -34,5 +34,4 @@ public class NotSupportException extends ClientException {
     public NotSupportException(String message, Object... args) {
         super(PREFIX + message, args);
     }
-
 }

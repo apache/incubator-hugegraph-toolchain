@@ -71,7 +71,7 @@ public abstract class GraphAPI extends API {
 
     public static String formatProperties(Map<String, Object> properties) {
         if (properties == null) {
-            properties = ImmutableMap.of();
+            return null;
         }
         String json;
         try {

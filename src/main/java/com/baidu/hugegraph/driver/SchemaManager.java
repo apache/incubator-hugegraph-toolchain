@@ -55,7 +55,6 @@ public class SchemaManager {
         PropertyKey.Builder builder = new PropertyKey.BuilderImpl(name, this);
         BuilderProxy<PropertyKey.Builder> proxy = new BuilderProxy<>(builder);
         return proxy.proxy();
-
     }
 
     public VertexLabel.Builder vertexLabel(String name) {
