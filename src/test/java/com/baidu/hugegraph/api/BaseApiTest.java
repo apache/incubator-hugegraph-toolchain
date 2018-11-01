@@ -43,7 +43,6 @@ import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.testutil.Assert;
 
 public class BaseApiTest extends BaseClientTest {
@@ -141,5 +140,9 @@ public class BaseApiTest extends BaseClientTest {
 
     protected static void waitUntilTaskCompleted(long taskId) {
         taskAPI.waitUntilTaskCompleted(taskId, 5L);
+    }
+
+    protected static void waitUntilTaskCompleted(long taskId, long timeout) {
+        taskAPI.waitUntilTaskCompleted(taskId, timeout);
     }
 }

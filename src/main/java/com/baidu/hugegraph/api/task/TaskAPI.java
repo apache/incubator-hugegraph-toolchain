@@ -30,6 +30,7 @@ import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
+import com.google.common.collect.ImmutableMap;
 
 public class TaskAPI extends API {
 
@@ -66,11 +67,24 @@ public class TaskAPI extends API {
         this.client.delete(path(), String.valueOf(id));
     }
 
-    public void waitUntilTaskCompleted(long taskId, long seconds) {
+    public boolean cancel(long id) {
+        Map<String, Object> params = ImmutableMap.of("action", "cancel");
+        RestResult result = this.client.put(path(), String.valueOf(id),
+                                            ImmutableMap.of(), params);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = result.readObject(Map.class);
+        Object cancelled = response.get("cancelled");
+        E.checkState(cancelled instanceof Boolean,
+                     "Invalid task-cancel response, expect format is " +
+                     "{\"cancelled\": [true|false]}, but got '%s'", response);
+        return (Boolean) cancelled;
+    }
+
+    public Task waitUntilTaskCompleted(long taskId, long seconds) {
         for (long pass = 0;; pass++) {
             Task task = this.get(taskId);
             if (task.success()) {
-                return;
+                return task;
             } else if (task.completed()) {
                 throw new ClientException("Task '%s' is '%s', result is '%s'",
                                           taskId, task.status(), task.result());

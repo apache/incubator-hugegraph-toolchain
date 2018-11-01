@@ -24,12 +24,14 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.api.gremlin.GremlinRequest;
 import com.baidu.hugegraph.structure.Task;
+import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
+import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 
 public class TaskApiTest extends BaseApiTest {
@@ -99,5 +101,63 @@ public class TaskApiTest extends BaseApiTest {
         Utils.assertResponseError(404, () -> {
             taskAPI.get(taskId);
         });
+    }
+
+    @Test
+    public void testCancel() {
+        schema().vertexLabel("man").useAutomaticId().ifNotExist().create();
+
+        String groovy = "for (int i = 0; i < 10; i++) {" +
+                            "hugegraph.addVertex(T.label, 'man');" +
+                            "hugegraph.tx().commit();" +
+                        "}";
+        // Insert 10 records in sync mode
+        GremlinRequest request = new GremlinRequest(groovy);
+        gremlin().execute(request);
+        // Verify insertion takes effect
+        groovy = "g.V()";
+        request = new GremlinRequest(groovy);
+        ResultSet resultSet = gremlin().execute(request);
+        Assert.assertEquals(10, resultSet.size());
+        // Delete to prepare for insertion in async mode
+        groovy = "g.V().drop()";
+        request = new GremlinRequest(groovy);
+        gremlin().execute(request);
+
+        /*
+         * The asyn task scripts need to be able to handle interrupts,
+         * otherwise they cannot be cancelled
+         */
+        groovy = "for (int i = 0; i < 10; i++) {" +
+                     "hugegraph.addVertex(T.label, 'man');" +
+                     "hugegraph.tx().commit();" +
+                     "try {" +
+                         "sleep(1000);" +
+                     "} catch (InterruptedException e) {" +
+                         "break;" +
+                     "}" +
+                 "}";
+        request = new GremlinRequest(groovy);
+        long taskId = gremlin().executeAsTask(request);
+
+        groovy = "g.V()";
+        request = new GremlinRequest(groovy);
+        // Wait async task running
+        while (true) {
+            resultSet = gremlin().execute(request);
+            if (resultSet.size() > 0) {
+                break;
+            } else {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {}
+            }
+        }
+        // Cancel async task
+        boolean cancelled = taskAPI.cancel(taskId);
+        Assert.assertTrue(cancelled);
+
+        resultSet = gremlin().execute(request);
+        Assert.assertTrue(resultSet.size() < 10);
     }
 }

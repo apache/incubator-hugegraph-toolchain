@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -41,9 +42,11 @@ public class VertexLabelApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
+        List<Long> taskIds = new ArrayList<>();
         vertexLabelAPI.list().forEach(vl -> {
-            waitUntilTaskCompleted(vertexLabelAPI.delete(vl.name()));
+            taskIds.add(vertexLabelAPI.delete(vl.name()));
         });
+        taskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
     }
 
     @Test

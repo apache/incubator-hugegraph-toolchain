@@ -57,7 +57,11 @@ public class TaskManager {
         this.taskAPI.delete(id);
     }
 
-    public void waitUntilTaskCompleted(long taskId, long seconds) {
-        this.taskAPI.waitUntilTaskCompleted(taskId, seconds);
+    public boolean cancel(long id) {
+        return this.taskAPI.cancel(id);
+    }
+
+    public Task waitUntilTaskCompleted(long taskId, long seconds) {
+        return this.taskAPI.waitUntilTaskCompleted(taskId, seconds);
     }
 }

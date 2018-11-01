@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -51,9 +52,11 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
+        List<Long> taskIds = new ArrayList<>();
         edgeLabelAPI.list().forEach(el -> {
-            waitUntilTaskCompleted(edgeLabelAPI.delete(el.name()));
+            taskIds.add(edgeLabelAPI.delete(el.name()));
         });
+        taskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
     }
 
     @Test
