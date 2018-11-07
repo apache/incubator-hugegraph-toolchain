@@ -30,7 +30,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import com.baidu.hugegraph.BaseClientTest;
-import com.baidu.hugegraph.util.TimeUtil;
 
 public class BaseFuncTest extends BaseClientTest {
 
@@ -52,22 +51,31 @@ public class BaseFuncTest extends BaseClientTest {
         // Clear vertex
         graph().listVertices().forEach(v -> graph().removeVertex(v.id()));
 
+        List<Long> ilTaskIds = new ArrayList<>();
         // Clear schema
         schema().getIndexLabels().forEach(il -> {
-            schema().removeIndexLabel(il.name());
+            ilTaskIds.add(schema().removeIndexLabel(il.name()));
         });
+        ilTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+
+        List<Long> elTaskIds = new ArrayList<>();
         schema().getEdgeLabels().forEach(el -> {
-            schema().removeEdgeLabel(el.name());
+            elTaskIds.add(schema().removeEdgeLabel(el.name()));
         });
+        elTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+
+        List<Long> vlTaskIds = new ArrayList<>();
         schema().getVertexLabels().forEach(vl -> {
-            schema().removeVertexLabel(vl.name());
+            vlTaskIds.add(schema().removeVertexLabel(vl.name()));
         });
+        vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+
         schema().getPropertyKeys().forEach(pk -> {
             schema().removePropertyKey(pk.name());
         });
     }
 
-    protected static final void runWithThreads(int threads, Runnable task) {
+    protected static void runWithThreads(int threads, Runnable task) {
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
@@ -82,7 +90,7 @@ public class BaseFuncTest extends BaseClientTest {
         }
     }
 
-    protected static final void waitTillNext(long seconds) {
-        TimeUtil.tillNextMillis(TimeUtil.timeGen() + seconds * 1000);
+    protected static void waitUntilTaskCompleted(long taskId) {
+        task().waitUntilTaskCompleted(taskId, 3L);
     }
 }

@@ -19,6 +19,9 @@
 
 package com.baidu.hugegraph.api;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -108,17 +111,24 @@ public class BaseApiTest extends BaseClientTest {
         });
 
         // Clear schema
+        List<Long> ilTaskIds = new ArrayList<>();
         indexLabelAPI.list().forEach(indexLabel -> {
-            waitUntilTaskCompleted(indexLabelAPI.delete(indexLabel.name()));
+            ilTaskIds.add(indexLabelAPI.delete(indexLabel.name()));
         });
+        ilTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
 
+        List<Long> elTaskIds = new ArrayList<>();
         edgeLabelAPI.list().forEach(edgeLabel -> {
-            waitUntilTaskCompleted(edgeLabelAPI.delete(edgeLabel.name()));
+            elTaskIds.add(edgeLabelAPI.delete(edgeLabel.name()));
         });
+        elTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
 
+        List<Long> vlTaskIds = new ArrayList<>();
         vertexLabelAPI.list().forEach(vertexLabel -> {
-            waitUntilTaskCompleted(vertexLabelAPI.delete(vertexLabel.name()));
+            vlTaskIds.add(vertexLabelAPI.delete(vertexLabel.name()));
         });
+        vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+
         propertyKeyAPI.list().forEach(propertyKey -> {
             propertyKeyAPI.delete(propertyKey.name());
         });

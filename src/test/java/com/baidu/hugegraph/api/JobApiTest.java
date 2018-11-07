@@ -51,6 +51,7 @@ public class JobApiTest extends BaseApiTest {
         Task task = taskAPI.get(taskId);
         Assert.assertNotNull(task);
         Assert.assertEquals(taskId, task.id());
+        waitUntilTaskCompleted(taskId);
     }
 
     @Test
@@ -60,6 +61,7 @@ public class JobApiTest extends BaseApiTest {
         Task task = taskAPI.get(taskId);
         Assert.assertNotNull(task);
         Assert.assertEquals(taskId, task.id());
+        waitUntilTaskCompleted(taskId);
     }
 
     @Test
@@ -69,5 +71,6 @@ public class JobApiTest extends BaseApiTest {
         Task task = taskAPI.get(taskId);
         Assert.assertNotNull(task);
         Assert.assertEquals(taskId, task.id());
+        waitUntilTaskCompleted(taskId);
     }
 }

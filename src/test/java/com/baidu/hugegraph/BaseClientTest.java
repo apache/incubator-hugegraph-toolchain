@@ -14,6 +14,7 @@ import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.driver.TaskManager;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -54,6 +55,11 @@ public class BaseClientTest {
     public static GremlinManager gremlin() {
         Assert.assertNotNull("Not opened client", client);
         return client.gremlin();
+    }
+
+    public static TaskManager task() {
+        Assert.assertNotNull("Not opened client", client);
+        return client.task();
     }
 
     @Before

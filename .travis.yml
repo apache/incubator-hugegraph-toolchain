@@ -3,9 +3,28 @@ language: java
 jdk:
   - oraclejdk8
 
+sudo: required
+
+branches:
+  only:
+  - master
+  - /^release-.*$/
+  - /^test-.*$/
+
 install: mvn compile -Dmaven.javadoc.skip=true
 
-script: mvn test -Dtest=UnitTestSuite && mvn cobertura:cobertura
+before_script:
+  - $TRAVIS_DIR/install-hugegraph.sh $TRAVIS_BRANCH
+
+script:
+  - mvn test -Dtest=UnitTestSuite
+  - mvn test -Dtest=ApiTestSuite
+  - mvn test -Dtest=FuncTestSuite
+  - mvn cobertura:cobertura
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+
+env:
+  global:
+  - TRAVIS_DIR=assembly/travis

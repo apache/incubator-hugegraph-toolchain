@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.api;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -86,6 +85,7 @@ public class TaskApiTest extends BaseApiTest {
 
         Assert.assertNotNull(task);
         Assert.assertEquals(taskId, task.id());
+        waitUntilTaskCompleted(taskId);
     }
 
     @Test
