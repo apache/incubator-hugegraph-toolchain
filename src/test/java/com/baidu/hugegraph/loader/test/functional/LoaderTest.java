@@ -509,6 +509,33 @@ public class LoaderTest {
         FileUtil.delete(path("vertex_person_number_id.csv"));
     }
 
+    @Test
+    public void testLoadVerticesWithJointPrimaryKeys() {
+        String line = FileUtil.newCSVLine("marko", 29, "Beijing");
+        FileUtil.append(path("vertex_person.csv"), line);
+
+        String[] args = new String[]{"-f", path("struct_joint_pk.json"),
+                                     "-s", path("schema_joint_pk.groovy"),
+                                     "-g", "hugegraph",
+                                     "--test-mode", "true"};
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+
+        List<Vertex> vertices = client.graph().listVertices();
+
+        Assert.assertEquals(1, vertices.size());
+        Vertex vertex = vertices.get(0);
+
+        Assert.assertTrue(vertex.id().toString().contains("marko!Beijing"));
+        Assert.assertEquals("person", vertex.label());
+        Assert.assertEquals("marko", vertex.property("name"));
+        Assert.assertEquals(29, vertex.property("age"));
+        Assert.assertEquals("Beijing", vertex.property("city"));
+    }
+
     private static String path(String fileName) {
         return Paths.get(PATH_PREFIX, fileName).toString();
     }

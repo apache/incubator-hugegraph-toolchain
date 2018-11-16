@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.loader.parser;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -82,7 +81,7 @@ public class EdgeParser extends ElementParser<Edge> {
                                  List<String> fieldNames,
                                  Map<String, Object> keyValues) {
         List<String> primaryKeys = vertexLabel.primaryKeys();
-        List<Object> primaryValues = new ArrayList<>(primaryKeys.size());
+        Object[] primaryValues = new Object[primaryKeys.size()];
         for (String fieldName : fieldNames) {
             if (!keyValues.containsKey(fieldName)) {
                 continue;
@@ -110,7 +109,7 @@ public class EdgeParser extends ElementParser<Edge> {
                 // The id strategy of source/target label must be PRIMARY_KEY
                 if (primaryKeys.contains(key)) {
                     int index = primaryKeys.indexOf(key);
-                    primaryValues.add(index, value);
+                    primaryValues[index] = value;
                 }
             }
         }
