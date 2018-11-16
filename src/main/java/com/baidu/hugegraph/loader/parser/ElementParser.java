@@ -151,8 +151,8 @@ public abstract class ElementParser<GE extends GraphElement>
     }
 
     protected String spliceVertexId(VertexLabel vertexLabel,
-                                    List<Object> primaryValues) {
-        E.checkArgument(vertexLabel.primaryKeys().size() == primaryValues.size(),
+                                    Object[] primaryValues) {
+        E.checkArgument(vertexLabel.primaryKeys().size() == primaryValues.length,
                         "Missing some primary key columns, expect %s, " +
                         "but only got %s for vertex label '%s'",
                         vertexLabel.primaryKeys(), primaryValues, vertexLabel);

@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.loader.parser;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -85,7 +84,7 @@ public class VertexParser extends ElementParser<Vertex> {
         } else {
             assert isPrimaryKey(this.vertexLabel.idStrategy());
             List<String> primaryKeys = this.vertexLabel.primaryKeys();
-            List<Object> primaryValues = new ArrayList<>(primaryKeys.size());
+            Object[] primaryValues = new Object[primaryKeys.size()];
             for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
                 String fieldName = entry.getKey();
                 Object fieldValue = entry.getValue();
@@ -95,7 +94,7 @@ public class VertexParser extends ElementParser<Vertex> {
 
                 if (primaryKeys.contains(key)) {
                     int index = primaryKeys.indexOf(key);
-                    primaryValues.add(index, value);
+                    primaryValues[index] = value;
                 }
             }
             String id = this.spliceVertexId(this.vertexLabel, primaryValues);
