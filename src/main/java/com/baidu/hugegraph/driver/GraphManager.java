@@ -58,8 +58,13 @@ public class GraphManager {
     }
 
     public Vertex addVertex(Object... keyValues) {
-        String label = this.getValue(T.label, keyValues);
-        Vertex vertex = new Vertex(label);
+        Object label = this.getValue(T.label, keyValues);
+        if (!(label instanceof String)) {
+            throw new IllegalArgumentException(String.format(
+                      "Expect a string value as the vertex label " +
+                      "argument, but got: %s", label));
+        }
+        Vertex vertex = new Vertex(String.valueOf(label));
         vertex.id(this.getValue(T.id, keyValues));
         this.attachProperties(vertex, keyValues);
         return this.addVertex(vertex);
@@ -341,18 +346,13 @@ public class GraphManager {
         return edge;
     }
 
-    private String getValue(String key, Object... keyValues) {
+    private Object getValue(String key, Object... keyValues) {
         E.checkArgument((keyValues.length & 0x01) == 0,
                         "The number of parameters must be even");
-        String value = null;
+        Object value = null;
         for (int i = 0; i < keyValues.length; i = i + 2) {
             if (keyValues[i].equals(key)) {
-                if (!(keyValues[i + 1] instanceof String)) {
-                    throw new IllegalArgumentException(String.format(
-                              "Expect a string value as the vertex label " +
-                              "argument, but got: %s", keyValues[i + 1]));
-                }
-                value = (String) keyValues[i + 1];
+                value = keyValues[i + 1];
                 break;
             }
         }
