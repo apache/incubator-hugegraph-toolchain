@@ -101,7 +101,7 @@ if [ "$JAVA_OPTIONS" = "" ] ; then
         echo "Failed to run bin/hugegraph, requires at least ${MIN_MEM}m free memory" \
         exit 1
     fi
-    JAVA_OPTIONS="-Xms256m -Xmx${XMX}m"
+    JAVA_OPTIONS="-Xms${MIN_MEM}m -Xmx${XMX}m"
 fi
 
 exec $JAVA $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \

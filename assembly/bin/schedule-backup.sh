@@ -64,7 +64,7 @@ do
 done
 
 if [ -z "$DIR" ]; then
-    echo "Must privide backup directory"
+    echo "Must provide backup directory"
     exit 1
 else
     if [ ${DIR:0:1} != "/" ]; then
@@ -93,8 +93,8 @@ fi
 if [ -z "$NUM" ]; then
     NUM=3
 elif [ ! "$NUM" -gt 0 ] 2>/dev/null ;then
-  echo "Number of backups must be positive number."
-  exit 1
+    echo "Number of backups must be positive number."
+    exit 1
 fi
 
 if [ -z "$INTERVAL" ]; then

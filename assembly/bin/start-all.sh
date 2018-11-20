@@ -82,21 +82,21 @@ function start_hugegraph_server() {
 }
 
 function start_hugegraph_studio() {
-    # TODO: Let hugestudio.sh can execute in any directory instead of $STUDIO_DIR
+    # TODO: Let hugegraph-studio.sh can execute in any directory instead of $STUDIO_DIR
     cd $STUDIO_DIR
 
-    local server_host=`read_property "conf/hugestudio.properties" "server.httpBindAddress"`
-    local server_port=`read_property "conf/hugestudio.properties" "server.httpPort"`
+    local server_host=`read_property "conf/hugegraph-studio.properties" "server.httpBindAddress"`
+    local server_port=`read_property "conf/hugegraph-studio.properties" "server.httpPort"`
     local server_url="http://${server_host}:${server_port}"
     local start_timeout_s=20
 
     echo "Starting HugeGraphStudio..."
-    bin/hugestudio.sh >/dev/null 2>&1 &
+    bin/hugegraph-studio.sh >/dev/null 2>&1 &
 
     pid="$!"
     trap '$BIN/stop-all.sh; exit' SIGHUP SIGINT SIGQUIT SIGTERM
 
-    wait_for_startup 'HugeStudio' "$server_url" $start_timeout_s || {
+    wait_for_startup 'HugeGraphStudio' "$server_url" $start_timeout_s || {
         echo "Failed to start HugeGraphStudio, please check the logs under '$STUDIO_DIR/logs' for details"
         $SERVER_DIR/bin/stop-hugegraph.sh
         exit 1

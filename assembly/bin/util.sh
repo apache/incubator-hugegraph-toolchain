@@ -195,14 +195,43 @@ function ensure_path_writable() {
     fi
 }
 
+function command_available() {
+    local cmd=$1
+    if [ `command -v $cmd >/dev/null 2>&1` ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 function get_ip() {
     local os=`uname`
     local loopback="127.0.0.1"
     local ip=""
     case $os in
-        Linux) ip=`ifconfig | grep 'inet addr:'| grep -v "$loopback" | cut -d: -f2 | awk '{ print $1}'`;;
-        FreeBSD|OpenBSD|Darwin) ip=`ifconfig  | grep -E 'inet.[0-9]' | grep -v "$loopback" | awk '{ print $2}'`;;
-        SunOS) ip=`ifconfig -a | grep inet | grep -v "$loopback" | awk '{ print $2} '`;;
+        Linux)
+            if command_available "ifconfig"; then
+                ip=`ifconfig | grep 'inet addr:' | grep -v "$loopback" | cut -d: -f2 | awk '{ print $1}'`
+            elif command_available "ip"; then
+                ip=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | awk -F"/" '{print $1}'`
+            else
+                ip=$loopback
+            fi
+            ;;
+        FreeBSD|OpenBSD|Darwin)
+            if command_available "ifconfig"; then
+                ip=`ifconfig | grep -E 'inet.[0-9]' | grep -v "$loopback" | awk '{ print $2}'`
+            else
+                ip=$loopback
+            fi
+            ;;
+        SunOS)
+            if command_available "ifconfig"; then
+                ip=`ifconfig -a | grep inet | grep -v "$loopback" | awk '{ print $2} '`
+            else
+                ip=$loopback
+            fi
+            ;;
         *) ip=$loopback;;
     esac
     echo $ip
@@ -212,13 +241,14 @@ function download() {
     local path=$1
     local link_url=$2
 
-    if command -v wget >/dev/null 2>&1; then
+    if command_available "wget"; then
         wget --help | grep -q '\--show-progress' && progress_opt="-q --show-progress" || progress_opt=""
         wget ${link_url} -P ${path} $progress_opt
-    elif command -v curl >/dev/null 2>&1; then
+    elif command_available "curl"; then
         curl ${link_url} -o ${path}/${link_url}
     else
-        echo "Required wget or curl but they are not installed"
+        echo "Required wget or curl but they are unavailable"
+        exit 1
     fi
 }
 
