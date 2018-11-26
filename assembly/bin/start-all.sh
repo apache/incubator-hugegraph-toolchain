@@ -5,7 +5,7 @@ INSTALL_PATH=""
 
 function print_usage() {
     echo "USAGE: $0 -v {hugegraph-version} -p {install-path}"
-    echo "eg   : $0 -v 0.6 -p ."
+    echo "eg   : $0 -v 0.8 -p ."
 }
 
 while getopts "v:p:" arg; do
@@ -85,8 +85,8 @@ function start_hugegraph_studio() {
     # TODO: Let hugegraph-studio.sh can execute in any directory instead of $STUDIO_DIR
     cd $STUDIO_DIR
 
-    local server_host=`read_property "conf/hugegraph-studio.properties" "server.httpBindAddress"`
-    local server_port=`read_property "conf/hugegraph-studio.properties" "server.httpPort"`
+    local server_host=`read_property "conf/hugegraph-studio.properties" "studio.server.host"`
+    local server_port=`read_property "conf/hugegraph-studio.properties" "studio.server.port"`
     local server_url="http://${server_host}:${server_port}"
     local start_timeout_s=20
 

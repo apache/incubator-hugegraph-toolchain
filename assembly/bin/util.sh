@@ -1,5 +1,14 @@
 #!/bin/bash
 
+function command_available() {
+    local cmd=$1
+    if [ `command -v $cmd >/dev/null 2>&1` ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 # read a property from .properties file
 function read_property() {
     # file path
@@ -57,10 +66,13 @@ function process_id() {
 # check the port of rest server is occupied
 function check_port() {
     local port=`echo $1 | awk -F':' '{print $3}'`
+    if ! command_available "lsof"; then
+        echo "Required lsof but it is unavailable"
+        exit 1
+    fi
     lsof -i :$port >/dev/null
-
     if [ $? -eq 0 ]; then
-        echo "The port "$port" has already used"
+        echo "The port $port has already been used"
         exit 1
     fi
 }
@@ -195,15 +207,6 @@ function ensure_path_writable() {
     fi
 }
 
-function command_available() {
-    local cmd=$1
-    if [ `command -v $cmd >/dev/null 2>&1` ]; then
-        return 1
-    else
-        return 0
-    fi
-}
-
 function get_ip() {
     local os=`uname`
     local loopback="127.0.0.1"
@@ -313,7 +316,7 @@ function process_status() {
 }
 
 function kill_process() {
-    local pids=`ps -ef | grep "$1" | grep -v grep | xargs`
+    local pids=`ps -ef | grep "$1" | grep -v grep | awk '{print $2}' | xargs`
 
     if [ "$pids" = "" ]; then
         echo "There is no $1 process"

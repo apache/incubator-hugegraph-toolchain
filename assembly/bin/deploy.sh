@@ -8,7 +8,7 @@ DOWNLOAD_LINK_PREFIX_CONFIG=`env | grep ^HOME= | cut -c 6-`"/hugegraph-download-
 
 function print_usage() {
     echo "USAGE: $0 -v {hugegraph-version} -p {install-path} [-u {download-path-prefix}]"
-    echo "eg   : $0 -v 0.6 -p ./ [-u http://xxx]"
+    echo "eg   : $0 -v 0.8 -p ./ [-u http://xxx]"
 }
 
 while getopts "v:p:u:" arg; do
@@ -101,9 +101,10 @@ function config_hugegraph_server() {
 }
 
 function config_hugegraph_studio() {
-    local studio_server_conf="$STUDIO_DIR/conf/hugestudio.properties"
+    local studio_server_conf="$STUDIO_DIR/conf/hugegraph-studio.properties"
 
-    write_property $studio_server_conf "server\.httpBindAddress" $IP
+    write_property $studio_server_conf "studio\.server\.host" $IP
+    write_property $studio_server_conf "graph\.server\.host" $IP
 }
 
 cd ${INSTALL_PATH}

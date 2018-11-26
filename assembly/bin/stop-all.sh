@@ -20,6 +20,5 @@ SHUTDOWN_TIMEOUT_S=10
 
 kill_process      'HugeGraphServer'
 wait_for_shutdown 'HugeGraphServer' $SHUTDOWN_TIMEOUT_S
-kill_process      'HugeStudio'
-wait_for_shutdown 'HugeStudio' $SHUTDOWN_TIMEOUT_S
-
+kill_process      'HugeGraphStudio'
+wait_for_shutdown 'HugeGraphStudio' $SHUTDOWN_TIMEOUT_S
