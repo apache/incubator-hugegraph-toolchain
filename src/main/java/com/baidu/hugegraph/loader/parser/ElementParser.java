@@ -21,8 +21,8 @@ package com.baidu.hugegraph.loader.parser;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -39,6 +39,7 @@ import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
+import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.HashBasedTable;
@@ -77,7 +78,8 @@ public abstract class ElementParser<GE extends GraphElement>
     public GE next() {
         String line = this.reader().line();
         try {
-            return this.parse(this.filterFields(this.reader().next()));
+            Map<String, Object> keyValues = this.reader().next();
+            return this.parse(this.filterFields(keyValues));
         } catch (IllegalArgumentException e) {
             throw new ParseException(line, e.getMessage());
         }
@@ -90,6 +92,21 @@ public abstract class ElementParser<GE extends GraphElement>
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
         for (String field : this.source().ignoredFields()) {
             keyValues.remove(field);
+        }
+
+        SchemaLabel schemaLabel = this.getSchemaLabel(this.source().label());
+        Set<String> nullableKeys = schemaLabel.nullableKeys();
+        Set<Object> nullValues = this.source().nullValues();
+        if (!nullableKeys.isEmpty() && !nullValues.isEmpty()) {
+            Iterator<Map.Entry<String, Object>> itor = keyValues.entrySet()
+                                                                .iterator();
+            itor.forEachRemaining(entry -> {
+                String key = entry.getKey();
+                Object val = entry.getValue();
+                if (nullableKeys.contains(key) && nullValues.contains(val)) {
+                    itor.remove();
+                }
+            });
         }
         return keyValues;
     }
@@ -149,6 +166,8 @@ public abstract class ElementParser<GE extends GraphElement>
         }
         return (EdgeLabel) schema;
     }
+
+    protected abstract SchemaLabel getSchemaLabel(String label);
 
     protected String spliceVertexId(VertexLabel vertexLabel,
                                     Object[] primaryValues) {

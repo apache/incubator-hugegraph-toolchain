@@ -536,6 +536,55 @@ public class LoaderTest {
         Assert.assertEquals("Beijing", vertex.property("city"));
     }
 
+    @Test
+    public void testLoadWithIgnoreLastRedundantEmptyColumn() {
+        // Has a redundant seperator at the end of line
+        FileUtil.append(path("vertex_person.csv"), "marko,29,Beijing,");
+
+        String[] args = new String[]{"-f", path("struct.json"),
+                                     "-s", path("schema.groovy"),
+                                     "-g", "hugegraph",
+                                     "--test-mode", "true"};
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+
+        List<Vertex> vertices = client.graph().listVertices();
+
+        Assert.assertEquals(1, vertices.size());
+        Vertex vertex = vertices.get(0);
+        Assert.assertEquals(3, vertex.properties().size());
+    }
+
+    @Test
+    public void testLoadWithIgnoreNullValueColumns() {
+        FileUtil.append(path("vertex_person.csv"),
+                        "marko,NULL,null",
+                        "vadas,NULL,",
+                        "josh,,null");
+
+        String[] args = new String[]{"-f", path("struct_null_value.json"),
+                                     "-s", path("schema_null_value.groovy"),
+                                     "-g", "hugegraph",
+                                     "--test-mode", "true"};
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+
+        List<Vertex> vertices = client.graph().listVertices();
+
+        Assert.assertEquals(3, vertices.size());
+
+        for (Vertex vertex : vertices) {
+            Assert.assertNull(vertex.property("age"));
+            Assert.assertNull(vertex.property("city"));
+        }
+    }
+
     private static String path(String fileName) {
         return Paths.get(PATH_PREFIX, fileName).toString();
     }

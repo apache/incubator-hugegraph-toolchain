@@ -67,6 +67,14 @@ public class VertexSourceDeserializer
             ignored = new HashSet<>();
         }
 
-        return new VertexSource(label, input, id, mapping, ignored);
+        JsonNode nullValuesNode = node.get("null_values");
+        Set<Object> nullValues = null;
+        if (nullValuesNode != null) {
+            nullValues = this.read(nullValuesNode, Set.class);
+        } else {
+            nullValues = new HashSet<>();
+        }
+
+        return new VertexSource(label, input, id, mapping, ignored, nullValues);
     }
 }
