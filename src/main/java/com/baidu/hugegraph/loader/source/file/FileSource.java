@@ -19,7 +19,10 @@
 
 package com.baidu.hugegraph.loader.source.file;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.SourceType;
@@ -38,9 +41,13 @@ public class FileSource implements InputSource {
     @JsonProperty("delimiter")
     private String delimiter;
     @JsonProperty("charset")
-    private String charset = DEFAULT_CHARSET;
+    private String charset;
+    @JsonProperty("comment_symbols")
+    private Set<String> commentSymbols;
 
     public FileSource() {
+        this.charset = DEFAULT_CHARSET;
+        this.commentSymbols = new HashSet<>();
     }
 
     @Override
@@ -57,7 +64,11 @@ public class FileSource implements InputSource {
     }
 
     public List<String> header() {
-        return this.header;
+        if (this.header == null) {
+            return null;
+        } else {
+            return Collections.unmodifiableList(this.header);
+        }
     }
 
     public String delimiter() {
@@ -66,5 +77,10 @@ public class FileSource implements InputSource {
 
     public String charset() {
         return this.charset;
+    }
+
+    public Set<String> commentSymbols() {
+        assert this.commentSymbols != null;
+        return Collections.unmodifiableSet(this.commentSymbols);
     }
 }

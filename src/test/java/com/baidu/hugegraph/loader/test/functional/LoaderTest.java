@@ -573,13 +573,35 @@ public class LoaderTest {
         }
 
         List<Vertex> vertices = client.graph().listVertices();
-
         Assert.assertEquals(3, vertices.size());
 
         for (Vertex vertex : vertices) {
             Assert.assertNull(vertex.property("age"));
             Assert.assertNull(vertex.property("city"));
         }
+    }
+
+    @Test
+    public void testLoadWithFileHasCommentLine() {
+        FileUtil.append(path("vertex_person.csv"),
+                        "# This is a comment",
+                        "marko,29,Beijing",
+                        "// This is also a comment",
+                        "# This is still a comment",
+                        "vadas,27,Hongkong");
+
+        String[] args = new String[] {"-f", path("struct_comment_symbol.json"),
+                                      "-s", path("schema_joint_pk.groovy"),
+                                      "-g", "hugegraph",
+                                      "--test-mode", "true"};
+
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+        List<Vertex> vertices = client.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
     }
 
     private static String path(String fileName) {

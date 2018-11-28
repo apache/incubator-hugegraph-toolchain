@@ -77,6 +77,11 @@ public abstract class FileReader implements InputReader {
                 throw new LoadException("Read next line error", e);
             }
         }
+        // Skip the comment line
+        if (this.nextLine != null && this.isCommentLine(this.nextLine)) {
+            this.nextLine = null;
+            return this.hasNext();
+        }
         return this.nextLine != null;
     }
 
@@ -119,6 +124,10 @@ public abstract class FileReader implements InputReader {
             }
             throw e;
         }
+    }
+
+    private boolean isCommentLine(String line) {
+        return this.source.commentSymbols().stream().anyMatch(line::startsWith);
     }
 
     private static void checkFile(File file) {
