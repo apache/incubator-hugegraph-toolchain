@@ -27,6 +27,7 @@ import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.source.VertexSource;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 
@@ -62,6 +63,11 @@ public class VertexParser extends ElementParser<Vertex> {
     @Override
     protected boolean isIdField(String fieldName) {
         return fieldName.equals(this.source.idField());
+    }
+
+    @Override
+    protected SchemaLabel getSchemaLabel(String label) {
+        return this.getVertexLabel(label);
     }
 
     private void assignIdIfNeed(Vertex vertex, Map<String, Object> keyValues) {

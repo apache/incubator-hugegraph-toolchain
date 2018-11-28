@@ -34,14 +34,18 @@ public abstract class ElementSource {
     private Map<String, String> mappingFields;
     @JsonProperty("ignored")
     private Set<String> ignoredFields;
+    @JsonProperty("null_values")
+    private Set<Object> nullValues;
 
     public ElementSource(String label, InputSource input,
                          Map<String, String> mappingFields,
-                         Set<String> ignoredFields) {
+                         Set<String> ignoredFields,
+                         Set<Object> nullValues) {
         this.label = label;
         this.input = input;
         this.mappingFields = mappingFields;
         this.ignoredFields = ignoredFields;
+        this.nullValues = nullValues;
     }
 
     public String label() {
@@ -66,5 +70,9 @@ public abstract class ElementSource {
 
     public Set<String> ignoredFields() {
         return this.ignoredFields;
+    }
+
+    public Set<Object> nullValues() {
+        return this.nullValues;
     }
 }

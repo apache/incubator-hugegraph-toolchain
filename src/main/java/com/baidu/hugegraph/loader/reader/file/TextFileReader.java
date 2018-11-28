@@ -30,6 +30,8 @@ import com.google.common.base.Splitter;
 
 public class TextFileReader extends FileReader {
 
+    private static final String EMPTY_STR = "";
+
     private static final String DEFAULT_DELIMITER = "\t";
 
     // Default is "\t"
@@ -80,7 +82,9 @@ public class TextFileReader extends FileReader {
     @Override
     public Map<String, Object> transform(String line) {
         List<String> columns = this.split(line);
-        if (columns.size() != this.header.size()) {
+        // Ignore extra separator at the end of line
+        if (columns.size() != this.header.size() &&
+            !this.lastColumnIsEmpty(columns)) {
             throw new ParseException(line,
                       "The column length '%s' doesn't match with " +
                       "header length '%s' on: %s",
@@ -95,5 +99,11 @@ public class TextFileReader extends FileReader {
 
     protected List<String> split(String line) {
         return Splitter.on(this.delimiter).splitToList(line);
+    }
+
+    private boolean lastColumnIsEmpty(List<String> columns) {
+        int last = columns.size() - 1;
+        return columns.size() - 1 == this.header.size() &&
+               columns.get(last).equals(EMPTY_STR);
     }
 }

@@ -13,7 +13,8 @@
         "name": "name",
         "age": "age",
         "city": "city"
-      }
+      },
+      "null_values": ["NULL", "null", ""]
     },
     {
       "label": "software",

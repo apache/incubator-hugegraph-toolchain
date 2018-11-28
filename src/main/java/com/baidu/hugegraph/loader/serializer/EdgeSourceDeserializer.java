@@ -71,6 +71,15 @@ public class EdgeSourceDeserializer
             ignored = new HashSet<>();
         }
 
-        return new EdgeSource(label, input, source, target, mapping, ignored);
+        JsonNode nullValuesNode = node.get("null_values");
+        Set<Object> nullValues = null;
+        if (nullValuesNode != null) {
+            nullValues = this.read(nullValuesNode, Set.class);
+        } else {
+            nullValues = new HashSet<>();
+        }
+
+        return new EdgeSource(label, input, source, target, mapping, ignored,
+                              nullValues);
     }
 }

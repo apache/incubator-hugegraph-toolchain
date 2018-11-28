@@ -28,6 +28,7 @@ import com.baidu.hugegraph.loader.source.EdgeSource;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
+import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 
@@ -75,6 +76,11 @@ public class EdgeParser extends ElementParser<Edge> {
     protected boolean isIdField(String fieldName) {
         return this.source.sourceFields().contains(fieldName) ||
                this.source.targetFields().contains(fieldName);
+    }
+
+    @Override
+    protected SchemaLabel getSchemaLabel(String label) {
+        return this.getEdgeLabel(label);
     }
 
     private Object buildVertexId(VertexLabel vertexLabel,
