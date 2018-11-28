@@ -79,8 +79,8 @@ public class EdgeParser extends ElementParser<Edge> {
     }
 
     @Override
-    protected SchemaLabel getSchemaLabel(String label) {
-        return this.getEdgeLabel(label);
+    protected SchemaLabel getSchemaLabel() {
+        return this.edgeLabel;
     }
 
     private Object buildVertexId(VertexLabel vertexLabel,
@@ -93,9 +93,6 @@ public class EdgeParser extends ElementParser<Edge> {
                 continue;
             }
             Object fieldValue = keyValues.get(fieldName);
-            String key = this.source.mappingField(fieldName);
-            Object value = this.validatePropertyValue(key, fieldValue);
-
             IdStrategy idStrategy = vertexLabel.idStrategy();
             if (isCustomize(idStrategy)) {
                 /*
@@ -104,14 +101,16 @@ public class EdgeParser extends ElementParser<Edge> {
                  * just return when id strategy is CUSTOMIZE_NUMBER
                  */
                 if (idStrategy == IdStrategy.CUSTOMIZE_STRING) {
-                    String id = String.valueOf(fieldValue);
+                    String id = (String) fieldValue;
                     this.checkVertexIdLength(id);
                     return id;
                 } else {
                     assert idStrategy == IdStrategy.CUSTOMIZE_NUMBER;
-                    return fieldValue;
+                    return parseNumberId(fieldValue);
                 }
             } else {
+                String key = this.source.mappingField(fieldName);
+                Object value = this.validatePropertyValue(key, fieldValue);
                 // The id strategy of source/target label must be PRIMARY_KEY
                 if (primaryKeys.contains(key)) {
                     int index = primaryKeys.indexOf(key);

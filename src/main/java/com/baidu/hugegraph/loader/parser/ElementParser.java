@@ -94,7 +94,7 @@ public abstract class ElementParser<GE extends GraphElement>
             keyValues.remove(field);
         }
 
-        SchemaLabel schemaLabel = this.getSchemaLabel(this.source().label());
+        SchemaLabel schemaLabel = this.getSchemaLabel();
         Set<String> nullableKeys = schemaLabel.nullableKeys();
         Set<Object> nullValues = this.source().nullValues();
         if (!nullableKeys.isEmpty() && !nullValues.isEmpty()) {
@@ -167,7 +167,7 @@ public abstract class ElementParser<GE extends GraphElement>
         return (EdgeLabel) schema;
     }
 
-    protected abstract SchemaLabel getSchemaLabel(String label);
+    protected abstract SchemaLabel getSchemaLabel();
 
     protected String spliceVertexId(VertexLabel vertexLabel,
                                     Object[] primaryValues) {
@@ -212,16 +212,28 @@ public abstract class ElementParser<GE extends GraphElement>
         return value;
     }
 
-    public static boolean isAutomatic(IdStrategy idStrategy) {
+    protected static long parseNumberId(Object idValue) {
+        if (idValue instanceof Number) {
+            return ((Number) idValue).longValue();
+        } else if (idValue instanceof String) {
+            return Long.parseLong((String) idValue);
+        } else {
+            throw new IllegalArgumentException(String.format(
+                      "The id value must can be casted to Long, " +
+                      "but got %s(%s)", idValue, idValue.getClass().getName()));
+        }
+    }
+
+    protected static boolean isAutomatic(IdStrategy idStrategy) {
         return idStrategy == IdStrategy.AUTOMATIC;
     }
 
-    public static boolean isCustomize(IdStrategy idStrategy) {
+    protected static boolean isCustomize(IdStrategy idStrategy) {
         return idStrategy == IdStrategy.CUSTOMIZE_STRING ||
                idStrategy == IdStrategy.CUSTOMIZE_NUMBER;
     }
 
-    public static boolean isPrimaryKey(IdStrategy idStrategy) {
+    protected static boolean isPrimaryKey(IdStrategy idStrategy) {
         return idStrategy == IdStrategy.PRIMARY_KEY;
     }
 }

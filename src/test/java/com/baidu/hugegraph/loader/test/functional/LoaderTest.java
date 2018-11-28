@@ -480,10 +480,11 @@ public class LoaderTest {
     }
 
     @Test
-    public void testLoadVerticesWithCustomizedNumberId() {
-        String line = FileUtil.newCSVLine(1, "marko", 29, "Beijing");
-        FileUtil.append(path("vertex_person_number_id.csv"), line);
-
+    public void testLoadWithCustomizedNumberId() {
+        FileUtil.append(path("vertex_person_number_id.csv"),
+                        "1,marko,29,Beijing",
+                        "2,vadas,27,Hongkong");
+        FileUtil.append(path("edge_knows.csv"), "1,2,20160110,0.5");
         String[] args = new String[]{"-f", path("struct_number_id.json"),
                                      "-g", "hugegraph",
                                      "-s", path("schema_number_id.groovy"),
@@ -497,14 +498,10 @@ public class LoaderTest {
         }
 
         List<Vertex> vertices = client.graph().listVertices();
-        Assert.assertEquals(1, vertices.size());
-        Vertex vertex = vertices.get(0);
+        Assert.assertEquals(2, vertices.size());
 
-        Assert.assertEquals(1, vertex.id());
-        Assert.assertEquals("person", vertex.label());
-        Assert.assertEquals("marko", vertex.property("name"));
-        Assert.assertEquals(29, vertex.property("age"));
-        Assert.assertEquals("Beijing", vertex.property("city"));
+        List<Edge> edges = client.graph().listEdges();
+        Assert.assertEquals(1, edges.size());
 
         FileUtil.delete(path("vertex_person_number_id.csv"));
     }
