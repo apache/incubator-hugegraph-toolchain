@@ -66,8 +66,8 @@ public class VertexParser extends ElementParser<Vertex> {
     }
 
     @Override
-    protected SchemaLabel getSchemaLabel(String label) {
-        return this.getVertexLabel(label);
+    protected SchemaLabel getSchemaLabel() {
+        return this.vertexLabel;
     }
 
     private void assignIdIfNeed(Vertex vertex, Map<String, Object> keyValues) {
@@ -80,7 +80,7 @@ public class VertexParser extends ElementParser<Vertex> {
                             this.source.idField());
 
             if (this.vertexLabel.idStrategy() == IdStrategy.CUSTOMIZE_STRING) {
-                String id = String.valueOf(idValue);
+                String id = (String) idValue;
                 this.checkVertexIdLength(id);
                 vertex.id(id);
             } else {
@@ -121,18 +121,6 @@ public class VertexParser extends ElementParser<Vertex> {
             // The id strategy is automatic
             throw new IllegalArgumentException(
                       "Unsupported AUTOMATIC id strategy for hugegraph-loader");
-        }
-    }
-
-    private static long parseNumberId(Object idValue) {
-        if (idValue instanceof Number) {
-            return ((Number) idValue).longValue();
-        } else if (idValue instanceof String) {
-            return Long.parseLong((String) idValue);
-        } else {
-            throw new IllegalArgumentException(String.format(
-                      "The id value must can be casted to Long, " +
-                      "but got %s(%s)", idValue, idValue.getClass().getName()));
         }
     }
 }
