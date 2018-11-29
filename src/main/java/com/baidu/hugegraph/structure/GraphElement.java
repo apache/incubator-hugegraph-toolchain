@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.structure;
 
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +69,7 @@ public abstract class GraphElement extends Element {
         Class<?> clazz = value.getClass();
         E.checkArgument(ReflectionUtil.isSimpleType(clazz) ||
                         clazz.equals(UUID.class) ||
-                        clazz.equals(Timestamp.class) ||
+                        clazz.equals(Date.class) ||
                         value instanceof List ||
                         value instanceof Set,
                         "Invalid property value type: '%s'", clazz);

@@ -47,4 +47,25 @@ public enum IdStrategy {
     public String string() {
         return this.name;
     }
+
+    public boolean isAutomatic() {
+        return this == IdStrategy.AUTOMATIC;
+    }
+
+    public boolean isCustomize() {
+        return this == IdStrategy.CUSTOMIZE_STRING ||
+               this == IdStrategy.CUSTOMIZE_NUMBER;
+    }
+
+    public boolean isCustomizeString() {
+        return this == IdStrategy.CUSTOMIZE_STRING;
+    }
+
+    public boolean isCustomizeNumber() {
+        return this == IdStrategy.CUSTOMIZE_NUMBER;
+    }
+
+    public boolean isPrimaryKey() {
+        return this == IdStrategy.PRIMARY_KEY;
+    }
 }
