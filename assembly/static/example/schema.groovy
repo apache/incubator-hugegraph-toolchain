@@ -4,7 +4,7 @@ schema.propertyKey("age").asInt().ifNotExist().create();
 schema.propertyKey("city").asText().ifNotExist().create();
 schema.propertyKey("weight").asDouble().ifNotExist().create();
 schema.propertyKey("lang").asText().ifNotExist().create();
-schema.propertyKey("date").asText().ifNotExist().create();
+schema.propertyKey("date").asDate().ifNotExist().create();
 schema.propertyKey("price").asDouble().ifNotExist().create();
 
 schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").nullableKeys("age", "city").ifNotExist().create();
@@ -19,6 +19,6 @@ schema.indexLabel("softwareByPrice").onV("software").by("price").range().ifNotEx
 schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
 schema.edgeLabel("created").sourceLabel("person").targetLabel("software").properties("date", "weight").ifNotExist().create();
 
-schema.indexLabel("createdByDate").onE("created").by("date").secondary().ifNotExist().create();
+schema.indexLabel("createdByDate").onE("created").by("date").range().ifNotExist().create();
 schema.indexLabel("createdByWeight").onE("created").by("weight").range().ifNotExist().create();
 schema.indexLabel("knowsByWeight").onE("knows").by("weight").range().ifNotExist().create();

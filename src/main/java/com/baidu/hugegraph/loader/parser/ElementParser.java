@@ -31,12 +31,12 @@ import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.source.ElementSource;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
-import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
@@ -204,7 +204,8 @@ public abstract class ElementParser<GE extends GraphElement>
 
     protected Object validatePropertyValue(String key, Object rawValue) {
         PropertyKey pKey = this.getPropertyKey(key);
-        Object value = DataTypeUtil.convert(rawValue, pKey);
+        InputSource inputSource = this.source().input();
+        Object value = DataTypeUtil.convert(rawValue, pKey, inputSource);
         E.checkArgument(value != null,
                         "The value '%s' can't convert to class %s " +
                         "with cardinality %s",
@@ -222,18 +223,5 @@ public abstract class ElementParser<GE extends GraphElement>
                       "The id value must can be casted to Long, " +
                       "but got %s(%s)", idValue, idValue.getClass().getName()));
         }
-    }
-
-    protected static boolean isAutomatic(IdStrategy idStrategy) {
-        return idStrategy == IdStrategy.AUTOMATIC;
-    }
-
-    protected static boolean isCustomize(IdStrategy idStrategy) {
-        return idStrategy == IdStrategy.CUSTOMIZE_STRING ||
-               idStrategy == IdStrategy.CUSTOMIZE_NUMBER;
-    }
-
-    protected static boolean isPrimaryKey(IdStrategy idStrategy) {
-        return idStrategy == IdStrategy.PRIMARY_KEY;
     }
 }

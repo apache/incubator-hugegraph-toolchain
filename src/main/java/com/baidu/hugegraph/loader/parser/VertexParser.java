@@ -72,23 +72,25 @@ public class VertexParser extends ElementParser<Vertex> {
 
     private void assignIdIfNeed(Vertex vertex, Map<String, Object> keyValues) {
         // The id strategy must be CUSTOMIZE/PRIMARY_KEY via 'checkIdField()'
-        if (isCustomize(this.vertexLabel.idStrategy())) {
+        IdStrategy idStrategy = this.vertexLabel.idStrategy();
+        if (idStrategy.isCustomize()) {
             assert this.source.idField() != null;
             Object idValue = keyValues.get(this.source.idField());
             E.checkArgument(idValue != null,
                             "The value of id field '%s' can't be null",
                             this.source.idField());
 
-            if (this.vertexLabel.idStrategy() == IdStrategy.CUSTOMIZE_STRING) {
+            if (idStrategy.isCustomizeString()) {
                 String id = (String) idValue;
                 this.checkVertexIdLength(id);
                 vertex.id(id);
             } else {
+                assert idStrategy.isCustomizeNumber();
                 Long id = parseNumberId(idValue);
                 vertex.id(id);
             }
         } else {
-            assert isPrimaryKey(this.vertexLabel.idStrategy());
+            assert this.vertexLabel.idStrategy().isPrimaryKey();
             List<String> primaryKeys = this.vertexLabel.primaryKeys();
             Object[] primaryValues = new Object[primaryKeys.size()];
             for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
@@ -109,11 +111,11 @@ public class VertexParser extends ElementParser<Vertex> {
     }
 
     private void checkIdField() {
-        if (isCustomize(this.vertexLabel.idStrategy())) {
+        if (this.vertexLabel.idStrategy().isCustomize()) {
             E.checkState(this.source.idField() != null,
                          "The id field can't be empty or null " +
                          "when id strategy is CUSTOMIZE");
-        } else if (isPrimaryKey(this.vertexLabel.idStrategy())) {
+        } else if (this.vertexLabel.idStrategy().isPrimaryKey()) {
             E.checkState(this.source.idField() == null,
                          "The id field must be empty or null " +
                          "when id strategy is PRIMARY_KEY");

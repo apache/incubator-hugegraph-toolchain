@@ -626,18 +626,18 @@ public class LoaderTest {
     @Test
     public void testLoadWithDirHasThreeFiles() {
         FileUtil.append(path("vertex_dir/vertex_person1.csv"),
-                        "marko,29,Beijing",
-                        "vadas,27,Hongkong",
-                        "josh,32,Beijing");
+                "marko,29,Beijing",
+                "vadas,27,Hongkong",
+                "josh,32,Beijing");
         FileUtil.append(path("vertex_dir/vertex_person2.csv"),
-                        "peter,35,Shanghai",
-                        "\"li,nary\",26,\"Wu,han\"");
+                "peter,35,Shanghai",
+                "\"li,nary\",26,\"Wu,han\"");
         FileUtil.append(path("vertex_dir/vertex_person3.csv"));
 
         String[] args = new String[] {"-f", path("struct_vertex_dir.json"),
-                                      "-s", path("schema.groovy"),
-                                      "-g", "hugegraph",
-                                      "--test-mode", "true"};
+                "-s", path("schema.groovy"),
+                "-g", "hugegraph",
+                "--test-mode", "true"};
 
         try {
             HugeGraphLoader.main(args);
@@ -649,6 +649,47 @@ public class LoaderTest {
         Assert.assertEquals(5, vertices.size());
 
         FileUtil.delete(path("vertex_dir"));
+    }
+
+    @Test
+    public void testLoadWithMathedDatePropertyAndFormat() {
+        FileUtil.append(path("vertex_person_birth_date.csv"),
+                        "marko,1992-10-01,Beijing",
+                        "vadas,2000-01-01,Hongkong");
+
+        // DateFormat is yyyy-MM-dd
+        String[] args = new String[] {"-f", path("struct_date_format.json"),
+                                      "-s", path("schema_date_format.groovy"),
+                                      "-g", "hugegraph",
+                                      "--test-mode", "true"};
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+        List<Vertex> vertices = client.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        FileUtil.delete(path("vertex_person_birth_date.csv"));
+    }
+
+    @Test
+    public void testLoadWithUnMathedDatePropertyAndFormat() {
+        FileUtil.append(path("vertex_person_birth_date.csv"),
+                        "marko,1992/10/01,Beijing",
+                        "vadas,2000/01/01,Hongkong");
+
+        // DateFormat is yyyy-MM-dd
+        String[] args = new String[] {"-f", path("struct_date_format.json"),
+                                      "-s", path("schema_date_format.groovy"),
+                                      "-g", "hugegraph",
+                                      "--test-mode", "true"};
+
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+
+        FileUtil.delete(path("vertex_person_birth_date.csv"));
     }
 
     private static String path(String fileName) {

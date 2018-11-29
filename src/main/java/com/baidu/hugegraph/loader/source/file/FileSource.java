@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class FileSource implements InputSource {
 
     private static final String DEFAULT_CHARSET = "UTF-8";
+    private static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     @JsonProperty("path")
     private String path;
@@ -42,11 +43,14 @@ public class FileSource implements InputSource {
     private String delimiter;
     @JsonProperty("charset")
     private String charset;
+    @JsonProperty("date_format")
+    private String dateFormat;
     @JsonProperty("comment_symbols")
     private Set<String> commentSymbols;
 
     public FileSource() {
         this.charset = DEFAULT_CHARSET;
+        this.dateFormat = DEFAULT_DATE_FORMAT;
         this.commentSymbols = new HashSet<>();
     }
 
@@ -77,6 +81,10 @@ public class FileSource implements InputSource {
 
     public String charset() {
         return this.charset;
+    }
+
+    public String dateFormat() {
+        return this.dateFormat;
     }
 
     public Set<String> commentSymbols() {
