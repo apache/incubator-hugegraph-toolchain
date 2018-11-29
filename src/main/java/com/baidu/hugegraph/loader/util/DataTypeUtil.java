@@ -30,6 +30,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
 
+import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
@@ -37,7 +39,8 @@ import com.baidu.hugegraph.util.E;
 
 public final class DataTypeUtil {
 
-    public static Object convert(Object value, PropertyKey propertyKey) {
+    public static Object convert(Object value, PropertyKey propertyKey,
+                                 InputSource source) {
         if (value == null) {
             return null;
         }
@@ -47,7 +50,12 @@ public final class DataTypeUtil {
             if (dataType.isNumber()) {
                 return valueToNumber(value, dataType);
             } else if (dataType.isDate()) {
-                return valueToDate(value, dataType);
+                E.checkState(source instanceof FileSource,
+                             "Only accept FileSource as an auxiliary when " +
+                             "convert String value to Date, but got '%s'",
+                             source.getClass().getName());
+                String df = ((FileSource) source).dateFormat();
+                return valueToDate(value, dataType, df);
             } else if (dataType.isUUID()) {
                 return valueToUUID(value, dataType);
             }
@@ -60,20 +68,20 @@ public final class DataTypeUtil {
         return null;
     }
 
-    public static boolean isNumber(DataType dataType) {
+    private static boolean isNumber(DataType dataType) {
         return dataType == BYTE || dataType == INT || dataType == LONG ||
                dataType == FLOAT || dataType == DOUBLE;
     }
 
-    public static boolean isDate(DataType dataType) {
+    private static boolean isDate(DataType dataType) {
         return dataType == DataType.DATE;
     }
 
-    public static boolean isUUID(DataType dataType) {
+    private static boolean isUUID(DataType dataType) {
         return dataType == DataType.UUID;
     }
 
-    public static Number valueToNumber(Object value, DataType dataType) {
+    private static Number valueToNumber(Object value, DataType dataType) {
         E.checkState(isNumber(dataType), "The target data type must be number");
 
         if (dataType.clazz().isInstance(value)) {
@@ -110,7 +118,7 @@ public final class DataTypeUtil {
         return number;
     }
 
-    public static Date valueToDate(Object value, DataType dataType) {
+    private static Date valueToDate(Object value, DataType dataType, String df) {
         if (value instanceof Date) {
             return (Date) value;
         }
@@ -119,17 +127,18 @@ public final class DataTypeUtil {
                 return new Date(((Number) value).longValue());
             } else if (value instanceof String) {
                 try {
-                    return DateUtil.parse((String) value);
+                    return DateUtil.parse((String) value, df);
                 } catch (ParseException e) {
-                    E.checkArgument(false, "%s, expect format: %s",
-                                    e.getMessage(), DateUtil.toPattern());
+                    throw new IllegalArgumentException(String.format(
+                              "%s, expect format: %s",
+                              e.getMessage(), DateUtil.toPattern(df)));
                 }
             }
         }
         return null;
     }
 
-    public static UUID valueToUUID(Object value, DataType dataType) {
+    private static UUID valueToUUID(Object value, DataType dataType) {
         if (value instanceof UUID) {
             return (UUID) value;
         }
@@ -139,7 +148,7 @@ public final class DataTypeUtil {
         return null;
     }
 
-    public static boolean checkValue(Object value, PropertyKey propertyKey) {
+    private static boolean checkValue(Object value, PropertyKey propertyKey) {
         boolean valid;
 
         Cardinality cardinality = propertyKey.cardinality();
@@ -164,7 +173,7 @@ public final class DataTypeUtil {
     /**
      * Check type of the value valid
      */
-    public static boolean checkDataType(Object value, DataType dataType) {
+    private static boolean checkDataType(Object value, DataType dataType) {
         if (value instanceof Number) {
             return valueToNumber(value, dataType) != null;
         }
@@ -174,8 +183,8 @@ public final class DataTypeUtil {
     /**
      * Check type of all the values(may be some of list properties) valid
      */
-    public static boolean checkCollectionDataType(Collection<?> values,
-                                                  DataType dataType) {
+    private static boolean checkCollectionDataType(Collection<?> values,
+                                                   DataType dataType) {
         boolean valid = true;
         for (Object value : values) {
             if (!checkDataType(value, dataType)) {

@@ -36,7 +36,8 @@
       "input": {
         "type": "file",
         "path": "example/edge_knows.json",
-        "format": "JSON"
+        "format": "JSON",
+        "date_format": "yyyyMMdd"
       },
       "mapping": {
         "source_name": "name",
@@ -50,7 +51,8 @@
       "input": {
         "type": "file",
         "path": "example/edge_created.json",
-        "format": "JSON"
+        "format": "JSON",
+        "date_format": "yyyy-MM-dd"
       },
       "mapping": {
         "source_name": "name",

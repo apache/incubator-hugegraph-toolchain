@@ -94,18 +94,18 @@ public class EdgeParser extends ElementParser<Edge> {
             }
             Object fieldValue = keyValues.get(fieldName);
             IdStrategy idStrategy = vertexLabel.idStrategy();
-            if (isCustomize(idStrategy)) {
+            if (idStrategy.isCustomize()) {
                 /*
                  * Check vertex id length when the id strategy of
                  * source/target label is CUSTOMIZE_STRING,
                  * just return when id strategy is CUSTOMIZE_NUMBER
                  */
-                if (idStrategy == IdStrategy.CUSTOMIZE_STRING) {
+                if (idStrategy.isCustomizeString()) {
                     String id = (String) fieldValue;
                     this.checkVertexIdLength(id);
                     return id;
                 } else {
-                    assert idStrategy == IdStrategy.CUSTOMIZE_NUMBER;
+                    assert idStrategy.isCustomizeNumber();
                     return parseNumberId(fieldValue);
                 }
             } else {
@@ -125,11 +125,11 @@ public class EdgeParser extends ElementParser<Edge> {
     }
 
     private void checkIdFields(VertexLabel vertexLabel, List<String> fields) {
-        if (isCustomize(vertexLabel.idStrategy())) {
+        if (vertexLabel.idStrategy().isCustomize()) {
             E.checkArgument(fields.size() == 1,
                             "The source/target field can contains only one " +
                             "column when id strategy is CUSTOMIZE");
-        } else if (isPrimaryKey(vertexLabel.idStrategy())) {
+        } else if (vertexLabel.idStrategy().isPrimaryKey()) {
             E.checkArgument(fields.size() >= 1,
                             "The source/target field must contains some " +
                             "columns when id strategy is CUSTOMIZE");

@@ -21,19 +21,42 @@ package com.baidu.hugegraph.loader.util;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.baidu.hugegraph.date.SafeDateFormat;
 
 public final class DateUtil {
 
-    private static final String DF = "yyyy-MM-dd HH:mm:ss.SSS";
-    private static SafeDateFormat DATE_FORMAT = new SafeDateFormat(DF);
+    private static final Map<String, SafeDateFormat> DATE_FORMATS = 
+                                                     new ConcurrentHashMap<>();
 
-    public static Date parse(String source) throws ParseException {
-        return DATE_FORMAT.parse(source);
+    public static Date parse(String source, String df) throws ParseException {
+        SafeDateFormat dateFormat = getDateFormat(df);
+        return dateFormat.parse(source);
     }
 
-    public static Object toPattern() {
-        return DATE_FORMAT.toPattern();
+    private static SafeDateFormat getDateFormat(String df) {
+        SafeDateFormat dateFormat = DATE_FORMATS.get(df);
+        if (dateFormat == null) {
+            dateFormat = new SafeDateFormat(df);
+            /*
+             * Specify whether or not date/time parsing is to be lenient.
+             * With lenient parsing, the parser may use heuristics to interpret
+             * inputs that do not precisely match this object's format.
+             * With strict parsing, inputs must match this object's format.
+             */
+            dateFormat.setLenient(false);
+            SafeDateFormat previous = DATE_FORMATS.putIfAbsent(df, dateFormat);
+            if (previous != null) {
+                dateFormat = previous;
+            }
+        }
+        return dateFormat;
+    }
+
+    public static Object toPattern(String df) {
+        SafeDateFormat dateFormat = getDateFormat(df);
+        return dateFormat.toPattern();
     }
 }

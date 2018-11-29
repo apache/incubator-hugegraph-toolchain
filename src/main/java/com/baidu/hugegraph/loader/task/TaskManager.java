@@ -21,7 +21,6 @@ package com.baidu.hugegraph.loader.task;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -37,6 +36,7 @@ import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.loader.util.LoaderUtil;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.util.ExecutorUtil;
 import com.baidu.hugegraph.util.Log;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -72,11 +72,12 @@ public class TaskManager {
         this.options = options;
         this.batchSemaphore = new Semaphore(options.numThreads);
         this.singleSemaphore = new Semaphore(options.numThreads);
-        // TODO: replace Executors with ExecutorUtil
         this.batchService = MoreExecutors.listeningDecorator(
-                            Executors.newFixedThreadPool(options.numThreads));
+                            ExecutorUtil.newFixedThreadPool(options.numThreads,
+                                                            BATCH_WORKER));
         this.singleService = MoreExecutors.listeningDecorator(
-                             Executors.newFixedThreadPool(options.numThreads));
+                             ExecutorUtil.newFixedThreadPool(options.numThreads,
+                                                             SINGLE_WORKER));
         this.successNum = new LongAdder();
         this.failureNum = new LongAdder();
     }
