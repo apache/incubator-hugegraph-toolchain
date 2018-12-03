@@ -1,12 +1,11 @@
 #!/bin/bash
 
+# TODO: Need to check all command before using?
+
 function command_available() {
     local cmd=$1
-    if [ `command -v $cmd >/dev/null 2>&1` ]; then
-        return 1
-    else
-        return 0
-    fi
+    command -v $cmd >/dev/null 2>&1
+    return $?
 }
 
 # read a property from .properties file
@@ -71,6 +70,8 @@ function check_port() {
         exit 1
     fi
     lsof -i :$port >/dev/null
+    # Centos 7
+    # ss -lnp | grep $port >/dev/null
     if [ $? -eq 0 ]; then
         echo "The port $port has already been used"
         exit 1
@@ -241,14 +242,15 @@ function get_ip() {
 }
 
 function download() {
-    local path=$1
-    local link_url=$2
+    local link_url=$1
+    local path=$2
+    local tar=$3
 
     if command_available "wget"; then
         wget --help | grep -q '\--show-progress' && progress_opt="-q --show-progress" || progress_opt=""
-        wget ${link_url} -P ${path} $progress_opt
+        wget ${link_url} -P ${path} $progress_opt --no-check-certificate
     elif command_available "curl"; then
-        curl ${link_url} -o ${path}/${link_url}
+        curl -L -k ${link_url} -o ${path}/${tar}
     else
         echo "Required wget or curl but they are unavailable"
         exit 1
@@ -259,12 +261,12 @@ function ensure_package_exist() {
     local path=$1
     local dir=$2
     local tar=$3
-    local link=$4
+    local link_url=$4
 
     if [ ! -d ${path}/${dir} ]; then
         if [ ! -f ${path}/${tar} ]; then
             echo "Downloading the compressed package '${tar}'"
-            download ${path} ${link}
+            download ${link_url} ${path} ${tar}
             if [ $? -ne 0 ]; then
                 echo "Failed to download, please ensure the network is available and link is valid"
                 exit 1
