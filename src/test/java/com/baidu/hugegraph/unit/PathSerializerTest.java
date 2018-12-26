@@ -40,9 +40,9 @@ public class PathSerializerTest extends BaseUnitTest {
 
         Edge edge = new Edge("knows");
         edge.id("person:marko>knows>>person:vadas");
-        edge.source("person:marko");
+        edge.sourceId("person:marko");
         edge.sourceLabel("person");
-        edge.target("person:vadas");
+        edge.targetId("person:vadas");
         edge.targetLabel("person");
         edge.property("date", "20160110");
         edge.property("weight", 0.5);

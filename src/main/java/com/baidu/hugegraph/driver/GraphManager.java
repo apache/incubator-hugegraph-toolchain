@@ -177,8 +177,8 @@ public class GraphManager {
     public Edge addEdge(Object sourceId, String label, Object targetId,
                         Object... properties) {
         Edge edge = new Edge(label);
-        edge.source(sourceId);
-        edge.target(targetId);
+        edge.sourceId(sourceId);
+        edge.targetId(targetId);
         this.attachProperties(edge, properties);
         return this.addEdge(edge);
     }
@@ -194,6 +194,10 @@ public class GraphManager {
     }
 
     public List<Edge> addEdges(List<Edge> edges, boolean checkVertex) {
+        for (Edge edge : edges) {
+            edge.sourceId();
+            edge.targetId();
+        }
         List<String> ids = this.edgeAPI.create(edges, checkVertex);
         for (int i = 0; i < edges.size(); i++) {
             Edge edge = edges.get(i);

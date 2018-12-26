@@ -79,8 +79,8 @@ public class Graph {
 
         this.hugeEdges = new ArrayList<>(edges.size());
         for (Edge e : edges) {
-            HugeVertex src = this.hugeVerticesMap.get(e.source());
-            HugeVertex tgt = this.hugeVerticesMap.get(e.target());
+            HugeVertex src = this.hugeVerticesMap.get(e.sourceId());
+            HugeVertex tgt = this.hugeVerticesMap.get(e.targetId());
 
             HugeEdge edge = new HugeEdge(e);
             edge.source(src);
@@ -162,7 +162,7 @@ public class Graph {
 
         @Override
         public String toString() {
-            return String.format("HugeEdge{edge=%s, source=%s, target=%s}",
+            return String.format("HugeEdge{edge=%s, sourceId=%s, targetId=%s}",
                                  this.edge,
                                  this.source.vertex(),
                                  this.target.vertex());

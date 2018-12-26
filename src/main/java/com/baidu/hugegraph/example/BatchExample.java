@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.example;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -119,17 +120,6 @@ public class BatchExample {
         Vertex peter = new Vertex("person").property("name", "peter")
                                            .property("age", 35);
 
-        List<Vertex> vertices = new LinkedList<>();
-        vertices.add(marko);
-        vertices.add(vadas);
-        vertices.add(lop);
-        vertices.add(josh);
-        vertices.add(ripple);
-        vertices.add(peter);
-
-        vertices = graph.addVertices(vertices);
-        vertices.forEach(vertex -> System.out.println(vertex));
-
         Edge markoKnowsVadas = new Edge("knows").source(marko).target(vadas)
                                                 .property("date", "20160110");
         Edge markoKnowsJosh = new Edge("knows").source(marko).target(josh)
@@ -143,13 +133,24 @@ public class BatchExample {
         Edge peterCreateLop = new Edge("created").source(peter).target(lop)
                                                  .property("date", "20170324");
 
-        List<Edge> edges = new LinkedList<>();
+        List<Vertex> vertices = new ArrayList<>();
+        vertices.add(marko);
+        vertices.add(vadas);
+        vertices.add(lop);
+        vertices.add(josh);
+        vertices.add(ripple);
+        vertices.add(peter);
+
+        List<Edge> edges = new ArrayList<>();
         edges.add(markoKnowsVadas);
         edges.add(markoKnowsJosh);
         edges.add(markoCreateLop);
         edges.add(joshCreateRipple);
         edges.add(joshCreateLop);
         edges.add(peterCreateLop);
+
+        vertices = graph.addVertices(vertices);
+        vertices.forEach(vertex -> System.out.println(vertex));
 
         edges = graph.addEdges(edges, false);
         edges.forEach(edge -> System.out.println(edge));

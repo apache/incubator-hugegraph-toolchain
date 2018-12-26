@@ -521,8 +521,8 @@ public class RestResultTest {
 
         Assert.assertEquals("person:peter>created>>software:lop", edge.id());
         Assert.assertEquals("created", edge.label());
-        Assert.assertEquals("person:peter", edge.source());
-        Assert.assertEquals("software:lop", edge.target());
+        Assert.assertEquals("person:peter", edge.sourceId());
+        Assert.assertEquals("software:lop", edge.targetId());
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(ImmutableMap.of("city", "Hongkong",
@@ -575,8 +575,8 @@ public class RestResultTest {
 
         Assert.assertEquals("person:peter>created>>software:lop", edge1.id());
         Assert.assertEquals("created", edge1.label());
-        Assert.assertEquals("person:peter", edge1.source());
-        Assert.assertEquals("software:lop", edge1.target());
+        Assert.assertEquals("person:peter", edge1.sourceId());
+        Assert.assertEquals("software:lop", edge1.targetId());
         Assert.assertEquals("person", edge1.sourceLabel());
         Assert.assertEquals("software", edge1.targetLabel());
         Assert.assertEquals(ImmutableMap.of("city", "Hongkong",
@@ -585,8 +585,8 @@ public class RestResultTest {
 
         Assert.assertEquals("person:peter>knows>>person:marko", edge2.id());
         Assert.assertEquals("knows", edge2.label());
-        Assert.assertEquals("person:peter", edge2.source());
-        Assert.assertEquals("person:marko", edge2.target());
+        Assert.assertEquals("person:peter", edge2.sourceId());
+        Assert.assertEquals("person:marko", edge2.targetId());
         Assert.assertEquals("person", edge2.sourceLabel());
         Assert.assertEquals("person", edge2.targetLabel());
         Assert.assertEquals(ImmutableMap.of("date", "2016-10-18"),
@@ -782,8 +782,8 @@ public class RestResultTest {
 
         Edge created = new Edge("created");
         created.id("person:peter>created>>software:lop");
-        created.source("person:peter");
-        created.target("software:lop");
+        created.sourceId("person:peter");
+        created.targetId("software:lop");
         created.sourceLabel("person");
         created.targetLabel("software");
         created.property("date", "20170324");
@@ -791,8 +791,8 @@ public class RestResultTest {
 
         Edge knows = new Edge("knows");
         knows.id("person:peter>knows>>person:marko");
-        knows.source("person:peter");
-        knows.target("person:marko");
+        knows.sourceId("person:peter");
+        knows.targetId("person:marko");
         knows.sourceLabel("person");
         knows.targetLabel("person");
         knows.property("date", "20160110");
@@ -900,9 +900,9 @@ public class RestResultTest {
 
         Edge edge = new Edge("knows");
         edge.id("person:marko>knows>>person:vadas");
-        edge.source("person:marko");
+        edge.sourceId("person:marko");
         edge.sourceLabel("person");
-        edge.target("person:vadas");
+        edge.targetId("person:vadas");
         edge.targetLabel("person");
         edge.property("date", "20160110");
         edge.property("weight", 0.5);
@@ -1065,8 +1065,8 @@ public class RestResultTest {
 
         Edge created = new Edge("created");
         created.id("person:peter>created>>software:lop");
-        created.source("person:peter");
-        created.target("software:lop");
+        created.sourceId("person:peter");
+        created.targetId("software:lop");
         created.sourceLabel("person");
         created.targetLabel("software");
         created.property("date", "20170324");

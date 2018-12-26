@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.util.E;
@@ -41,6 +42,10 @@ public abstract class GraphElement extends Element {
     protected String type;
     @JsonProperty("properties")
     protected Map<String, Object> properties;
+
+    public GraphElement() {
+        this.properties = new ConcurrentHashMap<>();
+    }
 
     public void attachManager(GraphManager manager) {
         this.manager = manager;

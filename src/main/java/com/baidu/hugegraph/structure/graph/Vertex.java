@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.structure.graph;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
@@ -35,7 +33,6 @@ public class Vertex extends GraphElement {
     @JsonCreator
     public Vertex(@JsonProperty("label") String label) {
         this.label = label;
-        this.properties = new ConcurrentHashMap<>();
         this.type = "vertex";
     }
 
@@ -69,7 +66,7 @@ public class Vertex extends GraphElement {
         Vertex vertex = new Vertex(this.label);
         vertex.id(this.id);
         vertex.property(key, value);
-        // NOTE: append can also b used to update property
+        // NOTE: append can also be used to update property
         vertex = this.manager.appendVertexProperty(vertex);
 
         super.property(key, vertex.property(key));

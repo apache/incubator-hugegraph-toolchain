@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.structure.graph;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
@@ -32,19 +30,27 @@ public class Edge extends GraphElement {
     @JsonProperty("id")
     private String id;
     @JsonProperty("outV")
-    private Object source;
+    private Object sourceId;
     @JsonProperty("inV")
-    private Object target;
+    private Object targetId;
     @JsonProperty("outVLabel")
     private String sourceLabel;
     @JsonProperty("inVLabel")
     private String targetLabel;
 
+    private Vertex source;
+    private Vertex target;
+
     @JsonCreator
     public Edge(@JsonProperty("label") String label) {
         this.label = label;
-        this.properties = new ConcurrentHashMap<>();
         this.type = "edge";
+        this.sourceId = null;
+        this.targetId = null;
+        this.sourceLabel = null;
+        this.targetLabel = null;
+        this.source = null;
+        this.target = null;
     }
 
     public String id() {
@@ -55,36 +61,60 @@ public class Edge extends GraphElement {
         this.id = id;
     }
 
-    public Object source() {
-        return this.source;
+    public Object sourceId() {
+        if (this.sourceId == null && this.source != null) {
+            this.sourceId = this.source.id();
+        }
+        if (this.sourceId == null) {
+            throw new InvalidOperationException(
+                      "Must set source vertex id or add vertices " +
+                      "before add edges");
+        }
+        return this.sourceId;
     }
 
-    public void source(Object source) {
-        this.source = source;
+    public void sourceId(Object sourceId) {
+        E.checkArgumentNotNull(sourceId, "The source vertex id can't be null");
+        this.sourceId = sourceId;
     }
 
     public Edge source(Vertex source) {
-        this.source = source.id();
+        if (source.id() == null) {
+            this.source = source;
+        }
+        this.sourceId = source.id();
         this.sourceLabel = source.label();
         return this;
     }
 
-    public Object target() {
-        return this.target;
+    public Object targetId() {
+        if (this.targetId == null && this.target != null) {
+            this.targetId = this.target.id();
+        }
+        if (this.sourceId == null) {
+            throw new InvalidOperationException(
+                      "Must set source vertex id or add vertices " +
+                      "before add edges");
+        }
+        return this.targetId;
     }
 
-    public void target(Object target) {
-        this.target = target;
+    public void targetId(Object targetId) {
+        E.checkArgumentNotNull(targetId, "The target vertex id can't be null");
+        this.targetId = targetId;
     }
 
     public Edge target(Vertex target) {
-        this.target = target.id();
+        if (target.id() == null) {
+            this.target = target;
+        }
+        this.targetId = target.id();
         this.targetLabel = target.label();
         return this;
     }
 
     public String sourceLabel() {
-        return sourceLabel;
+        return this.sourceLabel;
     }
 
     public void sourceLabel(String sourceLabel) {
@@ -92,7 +122,7 @@ public class Edge extends GraphElement {
     }
 
     public String targetLabel() {
-        return targetLabel;
+        return this.targetLabel;
     }
 
     public void targetLabel(String targetLabel) {
@@ -114,10 +144,10 @@ public class Edge extends GraphElement {
     protected Edge setProperty(String key, Object value) {
         Edge edge = new Edge(this.label);
         edge.id(this.id);
-        edge.source(this.source);
-        edge.target(this.target);
+        edge.sourceId(this.sourceId);
+        edge.targetId(this.targetId);
         edge.property(key, value);
-        // NOTE: append can also b used to update property
+        // NOTE: append can also be used to update property
         edge = this.manager.appendEdgeProperty(edge);
 
         super.property(key, edge.property(key));
@@ -134,8 +164,8 @@ public class Edge extends GraphElement {
         }
         Edge edge = new Edge(this.label);
         edge.id(this.id);
-        edge.source(this.source);
-        edge.target(this.target);
+        edge.sourceId(this.sourceId);
+        edge.targetId(this.targetId);
 
         Object value = this.properties.get(key);
         edge.property(key, value);
@@ -147,11 +177,11 @@ public class Edge extends GraphElement {
 
     @Override
     public String toString() {
-        return String.format("{id=%s, source=%s, sourceLabel=%s, " +
-                             "target=%s, targetLabel=%s, " +
+        return String.format("{id=%s, sourceId=%s, sourceLabel=%s, " +
+                             "targetId=%s, targetLabel=%s, " +
                              "label=%s, properties=%s}",
-                this.id, this.source, this.sourceLabel,
-                this.target, this.targetLabel,
+                this.id, this.sourceId, this.sourceLabel,
+                this.targetId, this.targetLabel,
                 this.label, this.properties);
     }
 }

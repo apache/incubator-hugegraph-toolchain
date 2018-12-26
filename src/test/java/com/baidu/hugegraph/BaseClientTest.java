@@ -254,8 +254,8 @@ public class BaseClientTest {
             Edge edge = new Edge("created");
             edge.sourceLabel("person");
             edge.targetLabel("software");
-            edge.source(person.id() + ":Person-" + i);
-            edge.target(software.id() + ":Software-" + i);
+            edge.sourceId(person.id() + ":Person-" + i);
+            edge.targetId(software.id() + ":Software-" + i);
             edge.property("date", "20170324");
             edge.property("city", "Hongkong");
             edges.add(edge);
@@ -271,8 +271,8 @@ public class BaseClientTest {
             Edge edge = new Edge("knows");
             edge.sourceLabel("person");
             edge.targetLabel("person");
-            edge.source(person.id() + ":Person-" + i);
-            edge.target(person.id() + ":Person-" + (i + 50));
+            edge.sourceId(person.id() + ":Person-" + i);
+            edge.targetId(person.id() + ":Person-" + (i + 50));
             edge.property("date", "20170324");
             edges.add(edge);
         }

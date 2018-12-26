@@ -29,6 +29,7 @@ import org.junit.runners.Suite;
     EdgeLabelTest.class,
     VertexTest.class,
     EdgeTest.class,
+    BatchInsertTest.class,
     GraphManagerTest.class
 })
 public class FuncTestSuite {

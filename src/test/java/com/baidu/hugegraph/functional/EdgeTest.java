@@ -320,7 +320,7 @@ public class EdgeTest extends BaseFuncTest {
         List<Edge> edges = graph().getEdges(markoId, 2);
         Assert.assertEquals(2, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals(markoId, edge.source());
+            Assert.assertEquals(markoId, edge.sourceId());
         }
     }
 
@@ -355,13 +355,13 @@ public class EdgeTest extends BaseFuncTest {
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
             // TODO: Whether need to add direction property in Edge?
-            Assert.assertEquals(joshId, edge.source());
+            Assert.assertEquals(joshId, edge.sourceId());
         }
 
         edges = graph().getEdges(joshId, Direction.IN, 1);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals(joshId, edge.target());
+            Assert.assertEquals(joshId, edge.targetId());
         }
     }
 
@@ -397,14 +397,14 @@ public class EdgeTest extends BaseFuncTest {
                                             "created", 1);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals(joshId, edge.source());
+            Assert.assertEquals(joshId, edge.sourceId());
             Assert.assertEquals("created", edge.label());
         }
 
         edges = graph().getEdges(joshId, Direction.IN, "knows", 1);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals(joshId, edge.target());
+            Assert.assertEquals(joshId, edge.targetId());
             Assert.assertEquals("knows", edge.label());
         }
     }
@@ -441,7 +441,7 @@ public class EdgeTest extends BaseFuncTest {
                                             "created", properties);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals(joshId, edge.source());
+            Assert.assertEquals(joshId, edge.sourceId());
             Assert.assertEquals("created", edge.label());
         }
 
@@ -449,7 +449,7 @@ public class EdgeTest extends BaseFuncTest {
         edges = graph().getEdges(joshId, Direction.IN, "knows", properties);
         Assert.assertEquals(1, edges.size());
         for (Edge edge : edges) {
-            Assert.assertEquals(joshId, edge.target());
+            Assert.assertEquals(joshId, edge.targetId());
             Assert.assertEquals("knows", edge.label());
         }
     }
@@ -460,8 +460,8 @@ public class EdgeTest extends BaseFuncTest {
         Map<String, Object> properties = Utils.asMap(keyValues);
 
         Edge edge = new Edge(label);
-        edge.source(source);
-        edge.target(target);
+        edge.sourceId(source);
+        edge.targetId(target);
         for (String key : properties.keySet()) {
             edge.property(key, properties.get(key));
         }

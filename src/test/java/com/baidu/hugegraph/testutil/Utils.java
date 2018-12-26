@@ -239,10 +239,10 @@ public class Utils {
         if (!left.label().equals(right.label())) {
             return false;
         }
-        if (!left.source().equals(right.source())) {
+        if (!left.sourceId().equals(right.sourceId())) {
             return false;
         }
-        if (!left.target().equals(right.target())) {
+        if (!left.targetId().equals(right.targetId())) {
             return false;
         }
 
