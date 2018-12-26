@@ -58,7 +58,7 @@ public class CrosspointsAPI extends TraversersAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("max_depth", maxDepth);
-        params.put("degree", degree);
+        params.put("max_degree", degree);
         params.put("capacity", capacity);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);

@@ -53,9 +53,9 @@ public class KoutAPI extends TraversersAPI {
         params.put("source", source);
         params.put("direction", direction);
         params.put("label", label);
-        params.put("depth", depth);
+        params.put("max_depth", depth);
         params.put("nearest", nearest);
-        params.put("degree", degree);
+        params.put("max_degree", degree);
         params.put("capacity", capacity);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);

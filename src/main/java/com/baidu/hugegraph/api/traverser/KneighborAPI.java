@@ -51,8 +51,8 @@ public class KneighborAPI extends TraversersAPI {
         params.put("source", source);
         params.put("direction", direction);
         params.put("label", label);
-        params.put("depth", depth);
-        params.put("degree", degree);
+        params.put("max_depth", depth);
+        params.put("max_degree", degree);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readList("vertices", Object.class);

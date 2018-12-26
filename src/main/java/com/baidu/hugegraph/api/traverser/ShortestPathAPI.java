@@ -56,7 +56,7 @@ public class ShortestPathAPI extends TraversersAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("max_depth", maxDepth);
-        params.put("degree", degree);
+        params.put("max_degree", degree);
         params.put("capacity", capacity);
         RestResult result = this.client.get(this.path(), params);
         List<Object> vertices = result.readList("path", Object.class);
