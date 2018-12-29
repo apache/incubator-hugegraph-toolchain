@@ -169,8 +169,8 @@ public class HugeGraphLoader {
                 try {
                     reader.close();
                 } catch (Throwable e) {
-                    LOG.warn("Failed to close reader for vertex source {} " +
-                             "with exception {}", source, e);
+                    LOG.warn("Failed to close reader for {} with exception {}",
+                             source, e);
                 }
             }
         }
@@ -235,8 +235,8 @@ public class HugeGraphLoader {
                 try {
                     reader.close();
                 } catch (Throwable e) {
-                    LOG.warn("Failed to close reader for edge source {} " +
-                             "with exception {}", source, e);
+                    LOG.warn("Failed to close reader for {} with exception {}",
+                             source, e);
                 }
             }
         }

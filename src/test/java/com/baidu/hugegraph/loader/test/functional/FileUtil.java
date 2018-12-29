@@ -74,10 +74,15 @@ public class FileUtil {
         }
     }
 
+    public static void mkdirs(String directory) {
+        FileUtils.getFile(directory).mkdirs();
+    }
+
     private static void checkFileValid(File file, boolean autoCreate) {
         if (!file.exists()) {
             if (autoCreate) {
                 try {
+                    file.getParentFile().mkdirs();
                     file.createNewFile();
                 } catch (IOException e) {
                     throw new RuntimeException(String.format(

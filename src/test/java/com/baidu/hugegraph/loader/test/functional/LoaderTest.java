@@ -48,7 +48,6 @@ import com.google.common.collect.ImmutableList;
 public class LoaderTest {
 
     private static final Charset GBK = Charset.forName("GBK");
-
     private static final String PATH_PREFIX = "src/test/resources";
     private static final String url = "http://127.0.0.1:8080";
     private static final String graph = "hugegraph";
@@ -602,6 +601,54 @@ public class LoaderTest {
         }
         List<Vertex> vertices = client.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
+    }
+
+    @Test
+    public void testLoadWithDirHasNoFile() {
+        FileUtil.mkdirs(path("vertex_dir"));
+        String[] args = new String[] {"-f", path("struct_vertex_dir.json"),
+                                      "-s", path("schema.groovy"),
+                                      "-g", "hugegraph",
+                                      "--test-mode", "true"};
+
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            FileUtil.delete(path("vertex_dir"));
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+        List<Vertex> vertices = client.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
+
+        FileUtil.delete(path("vertex_dir"));
+    }
+
+    @Test
+    public void testLoadWithDirHasThreeFiles() {
+        FileUtil.append(path("vertex_dir/vertex_person1.csv"),
+                        "marko,29,Beijing",
+                        "vadas,27,Hongkong",
+                        "josh,32,Beijing");
+        FileUtil.append(path("vertex_dir/vertex_person2.csv"),
+                        "peter,35,Shanghai",
+                        "\"li,nary\",26,\"Wu,han\"");
+        FileUtil.append(path("vertex_dir/vertex_person3.csv"));
+
+        String[] args = new String[] {"-f", path("struct_vertex_dir.json"),
+                                      "-s", path("schema.groovy"),
+                                      "-g", "hugegraph",
+                                      "--test-mode", "true"};
+
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            FileUtil.delete(path("vertex_dir"));
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+        List<Vertex> vertices = client.graph().listVertices();
+        Assert.assertEquals(5, vertices.size());
+
+        FileUtil.delete(path("vertex_dir"));
     }
 
     private static String path(String fileName) {
