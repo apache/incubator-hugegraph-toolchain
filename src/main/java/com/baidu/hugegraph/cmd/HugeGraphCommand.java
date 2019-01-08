@@ -211,6 +211,19 @@ public class HugeGraphCommand {
                 tasksManager.delete(taskDelete.taskId());
                 Printer.print("Task '%s' is deleted", taskDelete.taskId());
                 break;
+            case "task-cancel":
+                SubCommands.TaskCancel taskCancel = this.subCommand(subCmd);
+                tasksManager = manager(TasksManager.class);
+                tasksManager.cancel(taskCancel.taskId());
+                Printer.print("Task '%s' is cancelled", taskCancel.taskId());
+                break;
+            case "task-clear":
+                SubCommands.TaskClear taskClear = this.subCommand(subCmd);
+                tasksManager = manager(TasksManager.class);
+                tasksManager.clear(taskClear.force());
+                Printer.print("Tasks are cleared[force=%s]",
+                              taskClear.force());
+                break;
             case "help":
                 jCommander.usage();
                 break;

@@ -30,6 +30,8 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.driver.TaskManager;
+import com.baidu.hugegraph.manager.TasksManager;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
@@ -67,6 +69,8 @@ public class SubCommands {
         this.commands.put("task-list", new TaskList());
         this.commands.put("task-get", new TaskGet());
         this.commands.put("task-delete", new TaskDelete());
+        this.commands.put("task-cancel", new TaskCancel());
+        this.commands.put("task-clear", new TaskClear());
         this.commands.put("deploy", new Deploy());
         this.commands.put("start-all", new StartAll());
         this.commands.put("clear", new Clear());
@@ -314,6 +318,31 @@ public class SubCommands {
 
         public long taskId() {
             return this.taskId.taskId;
+        }
+    }
+
+    @Parameters(commandDescription = "Cancel task")
+    public class TaskCancel {
+
+        @ParametersDelegate
+        private TaskId taskId = new TaskId();
+
+        public long taskId() {
+            return this.taskId.taskId;
+        }
+    }
+
+    @Parameters(commandDescription = "Clear completed tasks")
+    public class TaskClear {
+
+        @Parameter(names = "--force",
+                   description = "Force to clear all tasks, " +
+                                 "cancel all uncompleted tasks firstly, " +
+                                 "and delete all completed task")
+        private boolean force = false;
+
+        public boolean force() {
+            return this.force;
         }
     }
 
@@ -633,17 +662,12 @@ public class SubCommands {
 
     public static class TaskStatusValidator implements IParameterValidator {
 
-        private static final Set<String> STATUSES = ImmutableSet.of(
-                "UNKNOWN", "NEW", "QUEUED", "RESTORING", "RUNNING",
-                "SUCCESS", "CANCELLED", "FAILED"
-        );
-
         @Override
         public void validate(String name, String value) {
-            if (!STATUSES.contains(value.toUpperCase())) {
+            if (!TasksManager.TASK_STATUSES.contains(value.toUpperCase())) {
                 throw new ParameterException(String.format(
                           "Invalid --status '%s', valid value is %s",
-                          value, STATUSES));
+                          value, TasksManager.TASK_STATUSES));
             }
         }
     }

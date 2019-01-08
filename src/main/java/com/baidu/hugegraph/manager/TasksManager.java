@@ -20,11 +20,28 @@
 package com.baidu.hugegraph.manager;
 
 import java.util.List;
+import java.util.Set;
 
 import com.baidu.hugegraph.base.ToolManager;
 import com.baidu.hugegraph.structure.Task;
+import com.google.common.collect.ImmutableSet;
 
 public class TasksManager extends ToolManager {
+
+    public static final Set<String> TASK_STATUSES = ImmutableSet.of(
+            "UNKNOWN", "NEW", "QUEUED", "RESTORING", "RUNNING",
+            "SUCCESS", "CANCELLED", "FAILED"
+    );
+
+    private static final Set<String> UNCOMPLETED_STATUSES = ImmutableSet.of(
+            "UNKNOWN", "NEW", "QUEUED", "RESTORING", "RUNNING"
+    );
+
+    private static final Set<String> COMPLETED_STATUSES = ImmutableSet.of(
+            "SUCCESS", "CANCELLED", "FAILED"
+    );
+
+    private static long TASK_LIMIT = 10000;
 
     public TasksManager(String url, String graph) {
         super(url, graph, "tasks");
@@ -45,5 +62,35 @@ public class TasksManager extends ToolManager {
 
     public void delete(long taskId) {
         this.client.tasks().delete(taskId);
+    }
+
+    public void cancel(long taskId) {
+        this.client.tasks().cancel(taskId);
+    }
+
+    public void clear(boolean force) {
+        if (force) {
+            // Cancel all uncompleted tasks
+            for (String status : UNCOMPLETED_STATUSES) {
+                do {
+                    List<Task> tasks = this.list(status, TASK_LIMIT);
+                    tasks.forEach(t -> this.cancel(t.id()));
+                    if (tasks.size() < TASK_LIMIT) {
+                        break;
+                    }
+                } while (true);
+            }
+        }
+
+        // Delete all completed tasks
+        for (String status : COMPLETED_STATUSES) {
+            do {
+                List<Task> tasks = this.list(status, TASK_LIMIT);
+                tasks.forEach(t -> this.delete(t.id()));
+                if (tasks.size() < TASK_LIMIT) {
+                    break;
+                }
+            } while (true);
+        }
     }
 }
