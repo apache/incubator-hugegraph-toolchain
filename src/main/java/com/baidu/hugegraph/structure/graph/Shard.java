@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.structure.graph;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Shard is used for backend storage (like cassandra, hbase) scanning
  * operations. Each shard represents a range of tokens for a node.
@@ -26,12 +28,15 @@ package com.baidu.hugegraph.structure.graph;
  */
 public class Shard {
 
-    // token range start
+    @JsonProperty("start")
     private String start;
-    // token range end
+    @JsonProperty("end")
     private String end;
-    // partitions count in this range
+    @JsonProperty("length")
     private long length;
+
+    public Shard() {
+    }
 
     public Shard(String start, String end, long length) {
         this.start = start;
