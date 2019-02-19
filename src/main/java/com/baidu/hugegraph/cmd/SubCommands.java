@@ -480,7 +480,9 @@ public class SubCommands {
     public class ConfirmMessage {
 
         @Parameter(names = {"--confirm-message", "-c"}, arity = 1,
-                   description = "Confirm message of graph clear",
+                   description = "Confirm message of graph clear is " +
+                                 "\"I'm sure to delete all data\". " +
+                                 "(Note: include \"\")",
                    required = true)
         public String confirmMessage;
     }
