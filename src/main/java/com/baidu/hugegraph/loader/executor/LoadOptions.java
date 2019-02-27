@@ -109,16 +109,13 @@ public class LoadOptions {
 
         @Override
         public void validate(String name, String value) {
-            String regex = "^((http)?://)"
-                    + "?(([0-9a-z_!~*'().&=+$%-]+: )?[0-9a-z_!~*'().&=+$%-]+@)?"
+            String regex = "^(http://)?"
                     + "(([0-9]{1,3}\\.){3}[0-9]{1,3}" // IP URL, like: 10.0.0.1
                     + "|" // Or domain name
-                    + "([0-9a-z_!~*'()-]+\\.)*" // Third level, like: www.
-                    + "([0-9a-z][0-9a-z-]{0,61})?[0-9a-z]\\." // Second level
-                    + "[a-z]{2,6})"; // First level, like: com or museum
+                    + "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
-                          "Invalid value of argument '%s': '%s'", name, value));
+                          "Invalid url value of args '%s': '%s'", name, value));
             }
         }
     }
