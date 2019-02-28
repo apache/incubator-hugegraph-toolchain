@@ -49,9 +49,12 @@ public class LoaderTest {
 
     private static final Charset GBK = Charset.forName("GBK");
     private static final String PATH_PREFIX = "src/test/resources";
-    private static final String url = "http://127.0.0.1:8080";
-    private static final String graph = "hugegraph";
-    private static final HugeClient client = new HugeClient(url, graph);
+    private static final String GRAPH = "hugegraph";
+    private static final String SERVER = "127.0.0.1";
+    private static final String PORT = "8080";
+    private static final String URL = String.format("http://%s:%s",
+                                                    SERVER, PORT);
+    private static final HugeClient CLIENT = new HugeClient(URL, GRAPH);
 
     @BeforeClass
     public static void setUp() {
@@ -91,9 +94,9 @@ public class LoaderTest {
     }
 
     private static void clearServerData() {
-        SchemaManager schema = client.schema();
-        GraphManager graph = client.graph();
-        TaskManager task = client.task();
+        SchemaManager schema = CLIENT.schema();
+        GraphManager graph = CLIENT.graph();
+        TaskManager task = CLIENT.task();
         // Clear edge
         graph.listEdges().forEach(e -> graph.removeEdge(e.id()));
         // Clear vertex
@@ -127,7 +130,8 @@ public class LoaderTest {
     //@Test
     public void testLoadWithAutoCreateSchema() {
         String[] args = new String[]{"-f", "example/struct.json",
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2"};
         try {
             HugeGraphLoader.main(args);
@@ -135,13 +139,13 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<PropertyKey> propertyKeys = client.schema().getPropertyKeys();
+        List<PropertyKey> propertyKeys = CLIENT.schema().getPropertyKeys();
         propertyKeys.forEach(pkey -> {
             Assert.assertEquals(DataType.TEXT, pkey.dataType());
         });
 
-        List<Vertex> vertices = client.graph().listVertices();
-        List<Edge> edges = client.graph().listEdges();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
 
         Assert.assertEquals(7, vertices.size());
         Assert.assertEquals(6, edges.size());
@@ -196,7 +200,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
         try {
@@ -205,8 +210,8 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
-        List<Edge> edges = client.graph().listEdges();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
 
         Assert.assertEquals(7, vertices.size());
         Assert.assertEquals(6, edges.size());
@@ -246,7 +251,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
 
@@ -267,7 +273,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
         // Bytes encoded in utf-8 exceed 128
@@ -283,7 +290,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
 
@@ -299,7 +307,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
 
@@ -316,7 +325,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
 
@@ -332,7 +342,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
 
@@ -342,7 +353,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
         Vertex vertex = vertices.get(0);
         Assert.assertEquals(String.class, vertex.id().getClass());
@@ -357,7 +368,8 @@ public class LoaderTest {
         FileUtil.append(path("vertex_software.csv"), GBK, line);
 
         String[] args = new String[]{"-f", path("struct.json"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "-s", path("schema.groovy"),
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
@@ -367,7 +379,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
         Vertex vertex = vertices.get(0);
         Assert.assertEquals("lop", vertex.property("name"));
@@ -381,7 +393,8 @@ public class LoaderTest {
         FileUtil.append(path("vertex_software.csv"), GBK, line);
 
         String[] args = new String[]{"-f", path("struct_gbk.json"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "-s", path("schema.groovy"),
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
@@ -392,7 +405,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
         Vertex vertex = vertices.get(0);
         Assert.assertEquals("lop", vertex.property("name"));
@@ -401,6 +414,9 @@ public class LoaderTest {
     }
 
     @Test
+    /* TODO: the order of collection's maybe change
+     * (such as time:["2019-05-02 13:12:44","2008-05-02 13:12:44"])
+     */
     public void testLoadWithValueListPorpertyInJsonFile() {
         String line = FileUtil.newCSVLine("marko", 29, "Beijing");
         FileUtil.append(path("vertex_person.csv"), line);
@@ -413,10 +429,11 @@ public class LoaderTest {
         FileUtil.append(path("edge_use.json"), line);
 
         String[] args = new String[]{"-f", path("struct_edge_use.json"),
-                                    "-g", "hugegraph",
-                                    "-s", path("schema.groovy"),
-                                    "--num-threads", "2",
-                                    "--test-mode", "true"};
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
+                                     "-s", path("schema.groovy"),
+                                     "--num-threads", "2",
+                                     "--test-mode", "true"};
 
         try {
             HugeGraphLoader.main(args);
@@ -425,7 +442,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Edge> edges = client.graph().listEdges();
+        List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
         Edge edge = edges.get(0);
 
@@ -435,6 +452,45 @@ public class LoaderTest {
                             edge.property("feel"));
 
         FileUtil.delete(path("edge_use.json"));
+    }
+
+    @Test
+    // TODO : List<Date> is not supported now
+    public void testLoadWithValueListPorpertyInTextFile() {
+        String line = ("jin\t29\tBeijing");
+        FileUtil.append(path("vertex_person.txt"), line);
+        line = ("tom\tChinese\t328");
+        FileUtil.append(path("vertex_software.txt"), GBK, line);
+
+        line = "4,1,5,6\t2019-05-02,2008-05-02";
+        // TODO: when meets '[]',only support string now
+        // line = "[4,6]\t[2019-05-02,2008-05-02]";
+        FileUtil.append(path("edge_use.txt"), line);
+
+        String[] args = new String[]{"-f", path("struct_edge_use_text.json"),
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
+                                     "-s", path("schema_date.groovy"),
+                                     "--num-threads", "2",
+                                     "--test-mode", "true"};
+
+        try {
+            HugeGraphLoader.main(args);
+        } catch (Exception e) {
+            FileUtil.delete(path("edge_use.txt"));
+            Assert.fail("Should not throw exception, but throw " + e);
+        }
+
+        List<Edge> edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(1, edges.size());
+        Edge edge = edges.get(0);
+
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("software", edge.targetLabel());
+        Assert.assertEquals(ImmutableList.of("2019-05-02", "2008-05-02"),
+                            edge.property("time"));
+
+        FileUtil.delete(path("edge_use.txt"));
     }
 
     @Test
@@ -450,7 +506,8 @@ public class LoaderTest {
         FileUtil.append(path("edge_use.json"), line);
 
         String[] args = new String[]{"-f", path("struct_edge_use.json"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "-s", path("schema.groovy"),
                                      "--num-threads", "2",
                                      "--test-mode", "true"};
@@ -462,7 +519,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Edge> edges = client.graph().listEdges();
+        List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
         Edge edge = edges.get(0);
 
@@ -485,7 +542,8 @@ public class LoaderTest {
                         "2,vadas,27,Hongkong");
         FileUtil.append(path("edge_knows.csv"), "1,2,20160110,0.5");
         String[] args = new String[]{"-f", path("struct_number_id.json"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "-s", path("schema_number_id.groovy"),
                                      "--test-mode", "true"};
 
@@ -496,10 +554,10 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
 
-        List<Edge> edges = client.graph().listEdges();
+        List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
 
         FileUtil.delete(path("vertex_person_number_id.csv"));
@@ -512,7 +570,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct_joint_pk.json"),
                                      "-s", path("schema_joint_pk.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--test-mode", "true"};
         try {
             HugeGraphLoader.main(args);
@@ -520,7 +579,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
 
         Assert.assertEquals(1, vertices.size());
         Vertex vertex = vertices.get(0);
@@ -539,7 +598,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct.json"),
                                      "-s", path("schema.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--test-mode", "true"};
         try {
             HugeGraphLoader.main(args);
@@ -547,7 +607,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
 
         Assert.assertEquals(1, vertices.size());
         Vertex vertex = vertices.get(0);
@@ -563,7 +623,8 @@ public class LoaderTest {
 
         String[] args = new String[]{"-f", path("struct_null_value.json"),
                                      "-s", path("schema_null_value.groovy"),
-                                     "-g", "hugegraph",
+                                     "-g", GRAPH,
+                                     "-h", SERVER,
                                      "--test-mode", "true"};
         try {
             HugeGraphLoader.main(args);
@@ -571,7 +632,7 @@ public class LoaderTest {
             Assert.fail("Should not throw exception, but throw " + e);
         }
 
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
 
         for (Vertex vertex : vertices) {
@@ -591,7 +652,8 @@ public class LoaderTest {
 
         String[] args = new String[] {"-f", path("struct_comment_symbol.json"),
                                       "-s", path("schema_joint_pk.groovy"),
-                                      "-g", "hugegraph",
+                                      "-g", GRAPH,
+                                      "-h", SERVER,
                                       "--test-mode", "true"};
 
         try {
@@ -599,7 +661,7 @@ public class LoaderTest {
         } catch (Exception e) {
             Assert.fail("Should not throw exception, but throw " + e);
         }
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
     }
 
@@ -608,7 +670,8 @@ public class LoaderTest {
         FileUtil.mkdirs(path("vertex_dir"));
         String[] args = new String[] {"-f", path("struct_vertex_dir.json"),
                                       "-s", path("schema.groovy"),
-                                      "-g", "hugegraph",
+                                      "-g", GRAPH,
+                                      "-h", SERVER,
                                       "--test-mode", "true"};
 
         try {
@@ -617,7 +680,7 @@ public class LoaderTest {
             FileUtil.delete(path("vertex_dir"));
             Assert.fail("Should not throw exception, but throw " + e);
         }
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(0, vertices.size());
 
         FileUtil.delete(path("vertex_dir"));
@@ -635,9 +698,10 @@ public class LoaderTest {
         FileUtil.append(path("vertex_dir/vertex_person3.csv"));
 
         String[] args = new String[] {"-f", path("struct_vertex_dir.json"),
-                "-s", path("schema.groovy"),
-                "-g", "hugegraph",
-                "--test-mode", "true"};
+                                      "-s", path("schema.groovy"),
+                                      "-g", GRAPH,
+                                      "-h", SERVER,
+                                      "--test-mode", "true"};
 
         try {
             HugeGraphLoader.main(args);
@@ -645,7 +709,7 @@ public class LoaderTest {
             FileUtil.delete(path("vertex_dir"));
             Assert.fail("Should not throw exception, but throw " + e);
         }
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
 
         FileUtil.delete(path("vertex_dir"));
@@ -660,14 +724,15 @@ public class LoaderTest {
         // DateFormat is yyyy-MM-dd
         String[] args = new String[] {"-f", path("struct_date_format.json"),
                                       "-s", path("schema_date_format.groovy"),
-                                      "-g", "hugegraph",
+                                      "-g", GRAPH,
+                                      "-h", SERVER,
                                       "--test-mode", "true"};
         try {
             HugeGraphLoader.main(args);
         } catch (Exception e) {
             Assert.fail("Should not throw exception, but throw " + e);
         }
-        List<Vertex> vertices = client.graph().listVertices();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
 
         FileUtil.delete(path("vertex_person_birth_date.csv"));
@@ -682,7 +747,8 @@ public class LoaderTest {
         // DateFormat is yyyy-MM-dd
         String[] args = new String[] {"-f", path("struct_date_format.json"),
                                       "-s", path("schema_date_format.groovy"),
-                                      "-g", "hugegraph",
+                                      "-g", GRAPH,
+                                      "-h", SERVER,
                                       "--test-mode", "true"};
 
         Assert.assertThrows(ParseException.class, () -> {

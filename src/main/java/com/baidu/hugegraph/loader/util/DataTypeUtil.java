@@ -28,6 +28,8 @@ import static com.baidu.hugegraph.structure.constant.DataType.LONG;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.UUID;
 
 import com.baidu.hugegraph.loader.source.InputSource;
@@ -36,6 +38,7 @@ import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.util.E;
+import com.google.common.base.Splitter;
 
 public final class DataTypeUtil {
 
@@ -46,25 +49,69 @@ public final class DataTypeUtil {
         }
 
         DataType dataType = propertyKey.dataType();
-        if (propertyKey.cardinality() == Cardinality.SINGLE) {
-            if (dataType.isNumber()) {
-                return valueToNumber(value, dataType);
-            } else if (dataType.isDate()) {
-                E.checkState(source instanceof FileSource,
-                             "Only accept FileSource as an auxiliary when " +
-                             "convert String value to Date, but got '%s'",
-                             source.getClass().getName());
-                String df = ((FileSource) source).dateFormat();
-                return valueToDate(value, dataType, df);
-            } else if (dataType.isUUID()) {
-                return valueToUUID(value, dataType);
-            }
+        Cardinality cardinality = propertyKey.cardinality();
+        switch (cardinality) {
+            case SINGLE:
+                return parseSingleValue(dataType, value, source);
+            case SET:
+            case LIST:
+                // TODO: diff SET & LIST (Server should support first)
+                return parseMultiValues(value, dataType, source);
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported cardinality: '%s'", cardinality));
         }
+    }
 
-        if (checkValue(value, propertyKey)) {
+    private static Object parseSingleValue(DataType dataType, Object value,
+                                           InputSource source) {
+        if (dataType.isNumber()) {
+            return valueToNumber(value, dataType);
+        } else if (dataType.isDate()) {
+            E.checkState(source instanceof FileSource,
+                         "Only accept FileSource as an auxiliary when " +
+                         "convert String value to Date, but got '%s'",
+                         source.getClass().getName());
+            String df = ((FileSource) source).dateFormat();
+            return valueToDate(value, dataType, df);
+        } else if (dataType.isUUID()) {
+            return valueToUUID(value, dataType);
+        }
+        if (checkDataType(value, dataType)) {
             return value;
         }
+        return null;
+    }
 
+    /**
+     * collection format:
+     * "obj1,obj2,...,objn" or "[obj1,obj2,...,objn]" ..etc
+     * TODO: After parsing to json, the order of the collection changed in some cases (such as list<date>)
+     **/
+    private static <T> Object parseMultiValues(Object values, DataType dataType,
+                                               InputSource source,
+                                               char... symbols) {
+        // json file should not parse again
+        if (values instanceof Collection &&
+            checkCollectionDataType((Collection<?>) values, dataType)) {
+            return values;
+        }
+
+        E.checkState(values instanceof String, "The value must be String type");
+        String originValue = String.valueOf(values);
+        List<T> valueList = new LinkedList<>();
+        // use custom start&end format :like [obj1,obj2,...,objn]
+        if (symbols != null && symbols.length == 2 && originValue.charAt(0) ==
+            symbols[0] && originValue.charAt(originValue.length()-1) == symbols[1]) {
+            originValue = originValue.substring(1, originValue.length() - 1);
+        }
+        // TODO: Separator should also be customizable
+        Splitter.on(',').splitToList(originValue).forEach(value -> {
+                 valueList.add((T) parseSingleValue(dataType, value, source));
+        });
+        if (checkCollectionDataType(valueList, dataType)) {
+            return  valueList;
+        }
         return null;
     }
 
@@ -148,27 +195,6 @@ public final class DataTypeUtil {
         return null;
     }
 
-    private static boolean checkValue(Object value, PropertyKey propertyKey) {
-        boolean valid;
-
-        Cardinality cardinality = propertyKey.cardinality();
-        DataType dataType = propertyKey.dataType();
-        switch (cardinality) {
-            case SINGLE:
-                valid = checkDataType(value, dataType);
-                break;
-            case SET:
-            case LIST:
-                valid = value instanceof Collection;
-                valid = valid && checkCollectionDataType((Collection<?>) value,
-                                                         dataType);
-                break;
-            default:
-                throw new AssertionError(String.format(
-                          "Unsupported cardinality: '%s'", cardinality));
-        }
-        return valid;
-    }
 
     /**
      * Check type of the value valid
