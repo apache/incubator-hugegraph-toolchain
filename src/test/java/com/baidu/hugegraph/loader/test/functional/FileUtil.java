@@ -73,7 +73,7 @@ public class FileUtil implements IOUtil {
             } catch (IOException | CompressorException e) {
                 throw new RuntimeException(String.format(
                           "Failed to write lines '%s' to file '%s' in '%s' " +
-                          "compression type",
+                          "compression format",
                           Arrays.asList(lines), path, compression), e);
             }
         }

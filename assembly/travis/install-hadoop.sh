@@ -2,34 +2,54 @@
 
 set -ev
 
-TRAVIS_DIR=`dirname $0`
-HADOOP_DOWNLOAD_ADDRESS="http://archive.apache.org/dist/hadoop/core"
-HADOOP_VERSION="2.8.0"
-HADOOP_PACKAGE="hadoop-${HADOOP_VERSION}"
-HADOOP_TAR="${HADOOP_PACKAGE}.tar.gz"
+UBUNTU_VERSION=$(lsb_release -r | awk '{print substr($2,0,2)}')
 
-# install ssh
-ssh-keygen -t rsa -P '' -f ~/.ssh/id_dsa
-cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-# check ssh
-ssh localhost || exit 1
+sudo tee /etc/apt/sources.list.d/hdp.list <<EOF
+deb http://public-repo-1.hortonworks.com/HDP/ubuntu${UBUNTU_VERSION}/2.x/updates/2.6.5.0 HDP main
+EOF
 
-# download hadoop
-if [[ ! -f $HOME/downloads/${HADOOP_TAR} ]]; then
-  sudo wget -q -O $HOME/downloads/${HADOOP_TAR} ${HADOOP_DOWNLOAD_ADDRESS}/${HADOOP_VERSION}/${HADOOP_TAR}
-fi
+sudo apt-get update
 
-# decompress hadoop
-sudo cp $HOME/downloads/${HADOOP_TAR} ${HADOOP_TAR} && tar xzf ${HADOOP_TAR}
+sudo mkdir -p /etc/hadoop/conf
+sudo tee /etc/hadoop/conf/core-site.xml <<EOF
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:8020</value>
+    </property>
+</configuration>
+EOF
 
-# config hadoop
-sudo cp -f ${TRAVIS_DIR}/core-site.xml ${HADOOP_PACKAGE}/etc/hadoop/
-sudo cp -f ${TRAVIS_DIR}/hdfs-site.xml ${HADOOP_PACKAGE}/etc/hadoop/
+sudo tee /etc/hadoop/conf/hdfs-site.xml <<EOF
+<configuration>
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>/opt/hdfs/name</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>/opt/hdfs/data</value>
+    </property>
+    <property>
+        <name>dfs.permissions.superusergroup</name>
+        <value>hadoop</value>
+    </property>
+    <property>
+        <name>dfs.support.append</name>
+        <value>true</value>
+    </property>
+</configuration>
+EOF
 
-# format hdfs
-sudo ${HADOOP_PACKAGE}/bin/hadoop namenode -format
+sudo apt-get install -y --allow-unauthenticated hadoop hadoop-hdfs
 
-# start hadoop service
-sudo ${HADOOP_PACKAGE}/sbin/start-dfs.sh
+sudo mkdir -p /opt/hdfs/data /opt/hdfs/name
+sudo chown -R hdfs:hdfs /opt/hdfs
+sudo -u hdfs hdfs namenode -format -nonInteractive
 
-jps
+sudo adduser travis hadoop
+
+sudo /usr/hdp/current/hadoop-hdfs-datanode/../hadoop/sbin/hadoop-daemon.sh start datanode
+sudo /usr/hdp/current/hadoop-hdfs-namenode/../hadoop/sbin/hadoop-daemon.sh start namenode
+
+hdfs dfsadmin -safemode wait

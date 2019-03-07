@@ -205,7 +205,7 @@ public abstract class AbstractFileReader implements InputReader {
                           "Orc compression should loaded by OrcFileReader " +
                           "instead of AbstractFileReader");
             default:
-                throw new LoadException("Unsupported file compression '%s'",
+                throw new LoadException("Unsupported compression format '%s'",
                                         compression);
         }
     }
