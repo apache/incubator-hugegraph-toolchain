@@ -4,9 +4,10 @@
       "label": "person",
       "input": {
         "type": "${source_type}",
-        "path": "${store_path}/vertex_person.csv",
+        "path": "${store_path}/vertex_person.bz2",
         "format": "CSV",
-        "charset": "UTF-8"
+        "charset": "UTF-8",
+        "compression": "BZ2"
       },
       "mapping": {
         "name": "name",

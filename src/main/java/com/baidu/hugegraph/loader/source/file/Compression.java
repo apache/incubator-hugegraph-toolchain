@@ -23,25 +23,27 @@ public enum Compression {
 
     NONE("none"),
 
-    BZ2("bzip2"),
-
     GZIP("gz"),
 
-    PACK200("pack200"),
+    BZ2("bzip2"),
 
     XZ("xz"),
 
     LZMA("lzma"),
 
-    SNAPPY_FRAMED("snappy-framed"),
+    PACK200("pack200"),
 
     SNAPPY_RAW("snappy-raw"),
+
+    SNAPPY_FRAMED("snappy-framed"),
 
     Z("z"),
 
     DEFLATE("deflate"),
 
-    ZIP("zip"),
+    LZ4_BLOCK("lz4-block"),
+
+    LZ4_FRAMED("lz4-framed"),
 
     ORC("orc");
 

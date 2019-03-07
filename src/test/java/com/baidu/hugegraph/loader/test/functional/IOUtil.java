@@ -19,23 +19,58 @@
 
 package com.baidu.hugegraph.loader.test.functional;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Contains a default store path
- */
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorOutputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+
+import com.baidu.hugegraph.loader.source.file.Compression;
+
 public interface IOUtil {
 
-    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+    public Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+
+    public CompressorStreamFactory FACTORY = new CompressorStreamFactory();
 
     public void mkdirs(String path);
 
-    public void append(String fileName, String... lines);
+    public default void write(String fileName, String... lines) {
+        this.write(fileName, DEFAULT_CHARSET, Compression.NONE, lines);
+    }
 
-    public void append(String fileName, Charset charset, String... lines);
+    public default void write(String fileName, Charset charset,
+                              String... lines) {
+        this.write(fileName, charset, Compression.NONE, lines);
+    }
+
+    public default void write(String fileName, Compression compression,
+                              String... lines) {
+        this.write(fileName, DEFAULT_CHARSET, compression, lines);
+    }
+
+    public void write(String fileName, Charset charset,
+                      Compression compression, String... lines);
 
     public void delete();
 
     public void close();
+
+    public static void compress(OutputStream stream, Charset charset,
+                                Compression compression, String... lines)
+                                throws IOException, CompressorException {
+        BufferedOutputStream bos = new BufferedOutputStream(stream);
+        CompressorOutputStream cos = FACTORY.createCompressorOutputStream(
+                                             compression.string(), bos);
+        for (String line : lines) {
+            cos.write(line.getBytes(charset));
+            cos.write("\n".getBytes(charset));
+        }
+        cos.flush();
+        cos.close();
+    }
 }

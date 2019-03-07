@@ -54,8 +54,8 @@ public class FileReader extends AbstractFileReader {
             assert file.isDirectory();
             File[] subFiles = file.listFiles();
             if (subFiles == null) {
-                throw new LoadException("Error when list files of file '%s'",
-                                        file);
+                throw new LoadException(
+                          "Error when list files of path '%s'", file);
             }
             for (File subFile : subFiles) {
                 readables.add(new ReadableFile(subFile));
@@ -91,7 +91,7 @@ public class FileReader extends AbstractFileReader {
 
         @Override
         public String toString() {
-            return "FILE " + this.file;
+            return "FILE:" + this.file;
         }
     }
 }

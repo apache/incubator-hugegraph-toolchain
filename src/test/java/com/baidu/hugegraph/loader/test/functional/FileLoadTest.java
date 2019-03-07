@@ -42,6 +42,7 @@ import com.baidu.hugegraph.driver.TaskManager;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
+import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -193,27 +194,27 @@ public class FileLoadTest {
 
     @Test
     public void testCustomizedSchema() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,29,Beijing",
-                      "vadas,27,Hongkong",
-                      "josh,32,Beijing",
-                      "peter,35,Shanghai",
-                      "\"li,nary\",26,\"Wu,han\"");
-        ioUtil.append("vertex_software.csv", GBK,
-                      "name,lang,price",
-                      "lop,java,328",
-                      "ripple,java,199");
-        ioUtil.append("edge_knows.csv",
-                      "source_name,target_name,date,weight",
-                      "marko,vadas,20160110,0.5",
-                      "marko,josh,20130220,1.0");
-        ioUtil.append("edge_created.csv",
-                      "source_name,target_name,date,weight",
-                      "marko,lop,20171210,0.4",
-                      "josh,lop,20091111,0.4",
-                      "josh,ripple,20171210,1.0",
-                      "peter,lop,20170324,0.2");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,java,328",
+                     "ripple,java,199");
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,vadas,20160110,0.5",
+                     "marko,josh,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,lop,20171210,0.4",
+                     "josh,lop,20091111,0.4",
+                     "josh,ripple,20171210,1.0",
+                     "peter,lop,20170324,0.2");
 
         String[] args = new String[]{
                 "-f", configPath("customized_schema/struct.json"),
@@ -262,9 +263,9 @@ public class FileLoadTest {
         Arrays.fill(array, 1);
         String tooLongId = StringUtils.join(array);
         String line = StringUtils.join(tooLongId, 29, "Beijing");
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      line);
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     line);
 
         String[] args = new String[]{
                 "-f", configPath("vertex_id_exceed_limit/struct.json"),
@@ -287,9 +288,9 @@ public class FileLoadTest {
                     "啡前壳+极光银后壳+浅灰电池扣+极光银电池组件+深灰天线";
         Assert.assertTrue(pk.length() < 128);
         String line = StringUtils.join(pk, "中文", 328);
-        ioUtil.append("vertex_software.csv", GBK,
-                      "name,lang,price",
-                      line);
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     line);
 
         String[] args = new String[]{
                 "-f", configPath("vertex_id_exceed_limit_in_bytes/struct.json"),
@@ -307,9 +308,9 @@ public class FileLoadTest {
 
     @Test
     public void testTooManyColumns() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,29,Beijing,Extra");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing,Extra");
 
         String[] args = new String[]{
                 "-f", configPath("too_many_columns/struct.json"),
@@ -326,9 +327,9 @@ public class FileLoadTest {
 
     @Test
     public void testTooFewColumns() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,29");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29");
 
         String[] args = new String[]{
                 "-f", configPath("too_few_columns/struct.json"),
@@ -345,9 +346,9 @@ public class FileLoadTest {
 
     @Test
     public void testUnmatchedPropertyDataType() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,Should be number,Beijing");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,Should be number,Beijing");
 
         String[] args = new String[]{
                 "-f", configPath("unmatched_property_datatype/struct.json"),
@@ -364,9 +365,9 @@ public class FileLoadTest {
 
     @Test
     public void testVertexPkContainsSpecicalSymbol() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "mar:ko!,29,Beijing");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "mar:ko!,29,Beijing");
 
         String[] args = new String[]{
                 "-f", configPath("vertex_pk_contains_special_symbol/struct.json"),
@@ -389,9 +390,9 @@ public class FileLoadTest {
 
     @Test
     public void testUnmatchedEncodingCharset() {
-        ioUtil.append("vertex_software.csv", GBK,
-                      "name,lang,price",
-                      "lop,中文,328");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,中文,328");
 
         String[] args = new String[]{
                 "-f", configPath("unmatched_encoding_charset/struct.json"),
@@ -413,9 +414,9 @@ public class FileLoadTest {
 
     @Test
     public void testMatchedEncodingCharset() {
-        ioUtil.append("vertex_software.csv", GBK,
-                      "name,lang,price",
-                      "lop,中文,328");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,中文,328");
 
         String[] args = new String[]{
                 "-f", configPath("matched_encoding_charset/struct.json"),
@@ -441,15 +442,15 @@ public class FileLoadTest {
      */
     @Test
     public void testValueListPropertyInJsonFile() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,29,Beijing");
-        ioUtil.append("vertex_software.csv", GBK,
-                      "name,lang,price",
-                      "lop,中文,328");
-        ioUtil.append("edge_use.json",
-                      "{\"person_name\": \"marko\", \"software_name\": " +
-                      "\"lop\", \"feel\": [\"so so\", \"good\", \"good\"]}");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,中文,328");
+        ioUtil.write("edge_use.json",
+                     "{\"person_name\": \"marko\", \"software_name\": " +
+                     "\"lop\", \"feel\": [\"so so\", \"good\", \"good\"]}");
 
         String[] args = new String[]{
                 "-f", configPath("value_list_property_in_json_file/struct.json"),
@@ -474,12 +475,12 @@ public class FileLoadTest {
     // TODO : List<Date> is not supported now
     @Test
     public void testValueListPropertyInTextFile() {
-        ioUtil.append("vertex_person.txt", "jin\t29\tBeijing");
-        ioUtil.append("vertex_software.txt", GBK, "tom\tChinese\t328");
+        ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
+        ioUtil.write("vertex_software.txt", GBK, "tom\tChinese\t328");
 
         // TODO: when meets '[]',only support string now
         // line = "[4,6]\t[2019-05-02,2008-05-02]";
-        ioUtil.append("edge_use.txt", "4,1,5,6\t2019-05-02,2008-05-02");
+        ioUtil.write("edge_use.txt", "4,1,5,6\t2019-05-02,2008-05-02");
 
         String[] args = new String[]{
                 "-f", configPath("value_list_property_in_text_file/struct.json"),
@@ -503,15 +504,15 @@ public class FileLoadTest {
 
     @Test
     public void testValueSetPorpertyInJsonFile() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,29,Beijing");
-        ioUtil.append("vertex_software.csv", GBK,
-                      "name,lang,price",
-                      "lop,中文,328");
-        ioUtil.append("edge_use.json",
-                      "{\"person_name\": \"marko\", \"software_name\": " +
-                      "\"lop\", \"time\": [\"20171210\", \"20180101\"]}");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,中文,328");
+        ioUtil.write("edge_use.json",
+                     "{\"person_name\": \"marko\", \"software_name\": " +
+                     "\"lop\", \"time\": [\"20171210\", \"20180101\"]}");
 
         String[] args = new String[]{
                 "-f", configPath("value_set_property_in_json_file/struct.json"),
@@ -539,10 +540,10 @@ public class FileLoadTest {
 
     @Test
     public void testCustomizedNumberId() {
-        ioUtil.append("vertex_person_number_id.csv",
-                      "1,marko,29,Beijing",
-                      "2,vadas,27,Hongkong");
-        ioUtil.append("edge_knows.csv", "1,2,20160110,0.5");
+        ioUtil.write("vertex_person_number_id.csv",
+                     "1,marko,29,Beijing",
+                     "2,vadas,27,Hongkong");
+        ioUtil.write("edge_knows.csv", "1,2,20160110,0.5");
 
         String[] args = new String[]{
                 "-f", configPath("customized_number_id/struct.json"),
@@ -562,9 +563,9 @@ public class FileLoadTest {
 
     @Test
     public void testVertexJointPrimaryKeys() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,29,Beijing");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing");
 
         String[] args = new String[]{
                 "-f", configPath("vertex_joint_pks/struct.json"),
@@ -590,9 +591,9 @@ public class FileLoadTest {
     @Test
     public void testIgnoreLastRedundantEmptyColumn() {
         // Has a redundant seperator at the end of line
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,29,Beijing,");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing,");
 
         String[] args = new String[]{
                 "-f", configPath("ignore_last_redudant_empty_column/struct.json"),
@@ -612,11 +613,11 @@ public class FileLoadTest {
 
     @Test
     public void testIgnoreNullValueColumns() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "marko,NULL,null",
-                      "vadas,NULL,",
-                      "josh,,null");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,NULL,null",
+                     "vadas,NULL,",
+                     "josh,,null");
 
         String[] args = new String[]{
                 "-f", configPath("ignore_null_value_columns/struct.json"),
@@ -638,7 +639,7 @@ public class FileLoadTest {
 
     @Test
     public void testFileOnlyHasAnEmptyLine() {
-        ioUtil.append("vertex_person_empty.csv", "");
+        ioUtil.write("vertex_person_empty.csv", "");
 
         String[] args = new String[]{
                 "-f", configPath("file_only_has_empty_line/struct.json"),
@@ -654,12 +655,12 @@ public class FileLoadTest {
 
     @Test
     public void testMultiFilesHaveHeader() {
-        ioUtil.append("vertex_dir/vertex_person_1.csv",
-                      "name,age,city",
-                      "marko,29,Beijing");
-        ioUtil.append("vertex_dir/vertex_person_2.csv",
-                      "name,age,city",
-                      "vadas,27,Hongkong");
+        ioUtil.write("vertex_dir/vertex_person_1.csv",
+                     "name,age,city",
+                     "marko,29,Beijing");
+        ioUtil.write("vertex_dir/vertex_person_2.csv",
+                     "name,age,city",
+                     "vadas,27,Hongkong");
 
         String[] args = new String[]{
                 "-f", configPath("multi_files_have_header/struct.json"),
@@ -676,13 +677,13 @@ public class FileLoadTest {
 
     @Test
     public void testFileHasCommentLine() {
-        ioUtil.append("vertex_person.csv",
-                      "name,age,city",
-                      "# This is a comment",
-                      "marko,29,Beijing",
-                      "// This is also a comment",
-                      "# This is still a comment",
-                      "vadas,27,Hongkong");
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "# This is a comment",
+                     "marko,29,Beijing",
+                     "// This is also a comment",
+                     "# This is still a comment",
+                     "vadas,27,Hongkong");
 
         String[] args = new String[]{
                 "-f", configPath("file_has_comment_line/struct.json"),
@@ -715,14 +716,14 @@ public class FileLoadTest {
 
     @Test
     public void testDirHasMultiFiles() {
-        ioUtil.append("vertex_dir/vertex_person1.csv",
-                      "marko,29,Beijing",
-                      "vadas,27,Hongkong",
-                      "josh,32,Beijing");
-        ioUtil.append("vertex_dir/vertex_person2.csv",
-                      "peter,35,Shanghai",
-                      "\"li,nary\",26,\"Wu,han\"");
-        ioUtil.append("vertex_dir/vertex_person3.csv");
+        ioUtil.write("vertex_dir/vertex_person1.csv",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing");
+        ioUtil.write("vertex_dir/vertex_person2.csv",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_dir/vertex_person3.csv");
 
         String[] args = new String[]{
                 "-f", configPath("dir_has_multi_files/struct.json"),
@@ -739,9 +740,9 @@ public class FileLoadTest {
 
     @Test
     public void testMatchedDatePropertyAndFormat() {
-        ioUtil.append("vertex_person_birth_date.csv",
-                      "marko,1992-10-01,Beijing",
-                      "vadas,2000-01-01,Hongkong");
+        ioUtil.write("vertex_person_birth_date.csv",
+                     "marko,1992-10-01,Beijing",
+                     "vadas,2000-01-01,Hongkong");
 
         // DateFormat is yyyy-MM-dd
         String[] args = new String[]{
@@ -759,9 +760,9 @@ public class FileLoadTest {
 
     @Test
     public void testUnMatchedDatePropertyAndFormat() {
-        ioUtil.append("vertex_person_birth_date.csv",
-                      "marko,1992/10/01,Beijing",
-                      "vadas,2000/01/01,Hongkong");
+        ioUtil.write("vertex_person_birth_date.csv",
+                     "marko,1992/10/01,Beijing",
+                     "vadas,2000/01/01,Hongkong");
 
         // DateFormat is yyyy-MM-dd
         String[] args = new String[]{
@@ -774,5 +775,198 @@ public class FileLoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
+    }
+
+    @Test
+    public void testGZipCompressFile() {
+        ioUtil.write("vertex_person.gz", Compression.GZIP,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("gzip_compress_file/struct.json"),
+                "-s", configPath("gzip_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testBZ2CompressFile() {
+        ioUtil.write("vertex_person.bz2", Compression.BZ2,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("bz2_compress_file/struct.json"),
+                "-s", configPath("bz2_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testXZCompressFile() {
+        ioUtil.write("vertex_person.xz", Compression.XZ,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("xz_compress_file/struct.json"),
+                "-s", configPath("xz_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testLZMACompressFile() {
+        ioUtil.write("vertex_person.lzma", Compression.LZMA,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("lzma_compress_file/struct.json"),
+                "-s", configPath("lzma_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testPack200CompressFile() {
+        ioUtil.write("vertex_person.pack", Compression.PACK200,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("pack200_compress_file/struct.json"),
+                "-s", configPath("pack200_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    /**
+     * Didn't find a way to generate the compression file using code
+     */
+    //@Test
+    public void testSnappyRawCompressFile() {
+        ioUtil.write("vertex_person.snappy", Compression.SNAPPY_RAW,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("snappy_raw_compress_file/struct.json"),
+                "-s", configPath("snappy_raw_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testSnappyFramedCompressFile() {
+        ioUtil.write("vertex_person.snappy", Compression.SNAPPY_FRAMED,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("snappy_framed_compress_file/struct.json"),
+                "-s", configPath("snappy_framed_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    /**
+     * Didn't find a way to generate the compression file using code
+     */
+    //@Test
+    public void testZCompressFile() {
+        ioUtil.write("vertex_person.z", Compression.Z,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("z_compress_file/struct.json"),
+                "-s", configPath("z_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testDeflateCompressFile() {
+        ioUtil.write("vertex_person.deflate", Compression.DEFLATE,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("deflate_compress_file/struct.json"),
+                "-s", configPath("deflate_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testLZ4BlockCompressFile() {
+        ioUtil.write("vertex_person.lz4", Compression.LZ4_BLOCK,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("lz4_block_compress_file/struct.json"),
+                "-s", configPath("lz4_block_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testLZ4FramedCompressFile() {
+        ioUtil.write("vertex_person.lz4", Compression.LZ4_FRAMED,
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("lz4_framed_compress_file/struct.json"),
+                "-s", configPath("lz4_framed_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
     }
 }

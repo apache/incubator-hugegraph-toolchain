@@ -29,13 +29,17 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 
 public class RowFetcher {
+
+    private static final Logger LOG = Log.logger(RowFetcher.class);
 
     private final String database;
     private final String table;
@@ -162,7 +166,11 @@ public class RowFetcher {
         return sqlBuilder.toString();
     }
 
-    public void close() throws SQLException {
-        this.conn.close();
+    public void close() {
+        try {
+            this.conn.close();
+        } catch (SQLException e) {
+            LOG.warn("Failed to close connection", e);
+        }
     }
 }

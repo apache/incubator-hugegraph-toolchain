@@ -54,16 +54,6 @@ public final class DataTypeUtil {
             default:
                 throw new AssertionError(String.format(
                           "Unsupported cardinality: '%s'", cardinality));
-//        } else if (propertyKey.cardinality() == Cardinality.SET) {
-//            if (value instanceof String) {
-//                return JsonUtil.fromJson((String) value, Set.class);
-//            }
-//        } else {
-//            assert propertyKey.cardinality() == Cardinality.LIST;
-//            if (value instanceof String) {
-//                return JsonUtil.fromJson((String) value, List.class);
-//            }
-//>>>>>>> bdd70be... Support load data from HDFS and relational database
         }
     }
 

@@ -27,7 +27,6 @@ import java.io.Reader;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.slf4j.Logger;
@@ -186,28 +185,27 @@ public abstract class AbstractFileReader implements InputReader {
         switch (compression) {
             case NONE:
                 return new InputStreamReader(stream, charset);
-            case BZ2:
             case GZIP:
-            case PACK200:
+            case BZ2:
             case XZ:
             case LZMA:
-            case SNAPPY_FRAMED:
+            case PACK200:
             case SNAPPY_RAW:
+            case SNAPPY_FRAMED:
             case Z:
             case DEFLATE:
+            case LZ4_BLOCK:
+            case LZ4_FRAMED:
                 CompressorStreamFactory factory = new CompressorStreamFactory();
                 CompressorInputStream cis = factory.createCompressorInputStream(
                                             compression.string(), stream);
                 return new InputStreamReader(cis, charset);
-            case ZIP:
-                InputStream zis = new ZipArchiveInputStream(stream);
-                return new InputStreamReader(zis, charset);
             case ORC:
                 throw new LoadException(
                           "Orc compression should loaded by OrcFileReader " +
                           "instead of AbstractFileReader");
             default:
-                throw new LoadException("Unsupported compressed file '%s'",
+                throw new LoadException("Unsupported file compression '%s'",
                                         compression);
         }
     }
@@ -281,7 +279,7 @@ public abstract class AbstractFileReader implements InputReader {
             this.close();
         }
 
-        protected String readNextLine() throws IOException {
+        public String readNextLine() throws IOException {
             // reader is null means there is no file
             if (this.reader == null) {
                 return null;

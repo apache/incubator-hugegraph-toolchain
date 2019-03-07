@@ -26,10 +26,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public abstract class InputSourceDeserializer<E> extends JsonDeserializer<E> {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     protected <T> T read(JsonNode node, Class<T> clazz) {
-        return this.mapper.convertValue(node, clazz);
+        return MAPPER.convertValue(node, clazz);
     }
 
     protected static JsonNode getNode(JsonNode node, String name,

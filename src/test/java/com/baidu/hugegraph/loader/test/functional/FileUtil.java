@@ -21,12 +21,16 @@ package com.baidu.hugegraph.loader.test.functional;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
+
+import com.baidu.hugegraph.loader.source.file.Compression;
 
 public class FileUtil implements IOUtil {
 
@@ -43,12 +47,8 @@ public class FileUtil implements IOUtil {
     }
 
     @Override
-    public void append(String fileName, String... lines) {
-        append(fileName, DEFAULT_CHARSET, lines);
-    }
-
-    @Override
-    public void append(String fileName, Charset charset, String... lines) {
+    public void write(String fileName, Charset charset,
+                      Compression compression, String... lines) {
         String path = Paths.get(this.storePath, fileName).toString();
         File file = org.apache.commons.io.FileUtils.getFile(path);
         try {
@@ -57,13 +57,25 @@ public class FileUtil implements IOUtil {
             throw new RuntimeException(String.format(
                       "Failed to check file '%s' valid", file), e);
         }
-        try {
-            FileUtils.writeLines(file, charset.name(),
-                                 Arrays.asList(lines), true);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to append lines '%s' to file '%s'",
-                      Arrays.asList(lines), path), e);
+
+        if (compression == Compression.NONE) {
+            try {
+                FileUtils.writeLines(file, charset.name(),
+                                     Arrays.asList(lines), true);
+            } catch (IOException e) {
+                throw new RuntimeException(String.format(
+                          "Failed to write lines '%s' to file '%s'",
+                          Arrays.asList(lines), path), e);
+            }
+        } else {
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                IOUtil.compress(fos, charset, compression, lines);
+            } catch (IOException | CompressorException e) {
+                throw new RuntimeException(String.format(
+                          "Failed to write lines '%s' to file '%s' in '%s' " +
+                          "compression type",
+                          Arrays.asList(lines), path, compression), e);
+            }
         }
     }
 

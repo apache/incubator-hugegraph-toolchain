@@ -141,7 +141,7 @@ public class HDFSReader extends AbstractFileReader {
 
         @Override
         public String toString() {
-            return "HDFS" + this.path;
+            return "HDFS:" + this.path;
         }
     }
 }

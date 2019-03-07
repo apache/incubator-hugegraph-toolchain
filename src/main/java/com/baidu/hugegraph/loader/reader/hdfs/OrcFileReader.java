@@ -43,7 +43,8 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 /**
- * TODO: Optimize this class
+ * TODO: Continue to implement the unfinished part, or temporarily don't
+ * support orc compression format
  */
 public class OrcFileReader extends HDFSReader {
 
@@ -81,7 +82,7 @@ public class OrcFileReader extends HDFSReader {
                 this.paths = Arrays.asList(paths).iterator();
             }
         } catch (IOException e) {
-            throw new LoadException("");
+            throw new LoadException("Failed to init orc file reader", e);
         }
 
         this.initNextReader();

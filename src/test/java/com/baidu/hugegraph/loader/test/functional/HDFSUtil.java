@@ -20,18 +20,20 @@
 package com.baidu.hugegraph.loader.test.functional;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.util.Log;
 
 public class HDFSUtil implements IOUtil {
@@ -44,8 +46,8 @@ public class HDFSUtil implements IOUtil {
     public HDFSUtil(String storePath) {
         this.storePath = storePath;
         Configuration config = loadConfiguration();
-        // HDFS doesn't support append by default
-        config.setBoolean("dfs.support.append", true);
+        // HDFS doesn't support write by default
+        config.setBoolean("dfs.support.write", true);
         config.setBoolean("fs.hdfs.impl.disable.cache", true);
         try {
             this.hdfs = FileSystem.get(URI.create(storePath), config);
@@ -82,12 +84,8 @@ public class HDFSUtil implements IOUtil {
     }
 
     @Override
-    public void append(String fileName, String... lines) {
-        append(fileName, DEFAULT_CHARSET, lines);
-    }
-
-    @Override
-    public void append(String fileName, Charset charset, String... lines) {
+    public void write(String fileName, Charset charset,
+                      Compression compression, String... lines) {
         Path path = new Path(this.storePath, fileName);
         try {
             checkPath(path);
@@ -96,18 +94,27 @@ public class HDFSUtil implements IOUtil {
                       "Failed to check path '%s' valid", path), e);
         }
 
-        try {
-            OutputStream out = this.hdfs.append(path);
-            for (String line : lines) {
-                out.write(line.getBytes(charset));
-                out.write("\n".getBytes(charset));
+        if (compression == Compression.NONE) {
+            try (FSDataOutputStream fos = this.hdfs.append(path)) {
+                for (String line : lines) {
+                    fos.write(line.getBytes(charset));
+                    fos.write("\n".getBytes(charset));
+                }
+                fos.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(String.format(
+                        "Failed to write lines '%s' to path '%s'",
+                        Arrays.asList(lines), path), e);
             }
-            out.flush();
-            out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to append lines '%s' to path '%s'",
-                      Arrays.asList(lines), path), e);
+        } else {
+            try (FSDataOutputStream fos = this.hdfs.append(path)) {
+                IOUtil.compress(fos, charset, compression, lines);
+            } catch (IOException | CompressorException e) {
+                throw new RuntimeException(String.format(
+                          "Failed to write lines '%s' to file '%s' in '%s' " +
+                          "compression type",
+                          Arrays.asList(lines), path, compression), e);
+            }
         }
     }
 

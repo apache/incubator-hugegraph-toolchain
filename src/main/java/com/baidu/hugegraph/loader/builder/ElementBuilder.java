@@ -146,12 +146,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
         if (schema == null) {
             schema = this.client.schema().getPropertyKey(name);
         }
-        if (schema == null) {
-            throw new IllegalStateException(
-                      String.format("The property key %s doesn't exist", name));
-        } else {
-            this.schemas.put(HugeType.PROPERTY_KEY, name, schema);
-        }
+        E.checkState(schema != null, "The property key %s doesn't exist", name);
+        this.schemas.put(HugeType.PROPERTY_KEY, name, schema);
         return (PropertyKey) schema;
     }
 
@@ -160,12 +156,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
         if (schema == null) {
             schema = this.client.schema().getVertexLabel(name);
         }
-        if (schema == null) {
-            throw new IllegalStateException(
-                      String.format("The vertex label %s doesn't exist", name));
-        } else {
-            this.schemas.put(HugeType.VERTEX_LABEL, name, schema);
-        }
+        E.checkState(schema != null, "The vertex label %s doesn't exist", name);
+        this.schemas.put(HugeType.VERTEX_LABEL, name, schema);
         return (VertexLabel) schema;
     }
 
@@ -174,12 +166,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
         if (schema == null) {
             schema = this.client.schema().getEdgeLabel(name);
         }
-        if (schema == null) {
-            throw new IllegalStateException(
-                      String.format("The edge label %s doesn't exist", name));
-        } else {
-            this.schemas.put(HugeType.EDGE_LABEL, name, schema);
-        }
+        E.checkState(schema != null, "The edge label %s doesn't exist", name);
+        this.schemas.put(HugeType.EDGE_LABEL, name, schema);
         return (EdgeLabel) schema;
     }
 
