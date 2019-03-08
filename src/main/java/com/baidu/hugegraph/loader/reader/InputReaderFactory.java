@@ -21,10 +21,8 @@ package com.baidu.hugegraph.loader.reader;
 
 import com.baidu.hugegraph.loader.reader.file.FileReader;
 import com.baidu.hugegraph.loader.reader.hdfs.HDFSReader;
-import com.baidu.hugegraph.loader.reader.hdfs.OrcFileReader;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCReader;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
@@ -36,11 +34,7 @@ public class InputReaderFactory {
             case FILE:
                     return new FileReader((FileSource) source);
             case HDFS:
-                if (((FileSource) source).compression() == Compression.ORC) {
-                    return new OrcFileReader((HDFSSource) source);
-                } else {
                     return new HDFSReader((HDFSSource) source);
-                }
             case JDBC:
                 return new JDBCReader((JDBCSource) source);
             default:

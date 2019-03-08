@@ -17,41 +17,15 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source.file;
+package com.baidu.hugegraph.loader.test.functional;
 
-public enum Compression {
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-    NONE("none"),
-
-    GZIP("gz"),
-
-    BZ2("bzip2"),
-
-    XZ("xz"),
-
-    LZMA("lzma"),
-
-    PACK200("pack200"),
-
-    SNAPPY_RAW("snappy-raw"),
-
-    SNAPPY_FRAMED("snappy-framed"),
-
-    Z("z"),
-
-    DEFLATE("deflate"),
-
-    LZ4_BLOCK("lz4-block"),
-
-    LZ4_FRAMED("lz4-framed");
-
-    private String name;
-
-    private Compression(String name) {
-        this.name = name;
-    }
-
-    public String string() {
-        return this.name;
-    }
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+    FileLoadTest.class,
+    JDBCLoadTest.class,
+})
+public class LoadTestSuite {
 }

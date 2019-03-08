@@ -22,8 +22,6 @@ package com.baidu.hugegraph.loader.test.functional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -35,10 +33,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.baidu.hugegraph.driver.GraphManager;
-import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.driver.TaskManager;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
@@ -50,16 +44,9 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableList;
 
-public class FileLoadTest {
+public class FileLoadTest extends LoadTest {
 
     private static final Charset GBK = Charset.forName("GBK");
-    private static final String CONFIG_PATH_PREFIX = "target/test-classes";
-    private static final String GRAPH = "hugegraph";
-    private static final String SERVER = "127.0.0.1";
-    private static final String PORT = "8080";
-    private static final String URL = String.format("http://%s:%s",
-                                                    SERVER, PORT);
-    private static final HugeClient CLIENT = new HugeClient(URL, GRAPH);
 
     private static IOUtil ioUtil;
 
@@ -84,7 +71,7 @@ public class FileLoadTest {
     }
 
     @BeforeClass
-    public static void setUp() throws IOException {
+    public static void setUp() {
         clearFileData();
         clearServerData();
     }
@@ -106,41 +93,6 @@ public class FileLoadTest {
 
     private static void clearFileData() {
         ioUtil.delete();
-    }
-
-    private static void clearServerData() {
-        SchemaManager schema = CLIENT.schema();
-        GraphManager graph = CLIENT.graph();
-        TaskManager task = CLIENT.task();
-        // Clear edge
-        graph.listEdges().forEach(e -> graph.removeEdge(e.id()));
-        // Clear vertex
-        graph.listVertices().forEach(v -> graph.removeVertex(v.id()));
-
-        // Clear schema
-        List<Long> taskIds = new ArrayList<>();
-        schema.getIndexLabels().forEach(il -> {
-            taskIds.add(schema.removeIndexLabelAsync(il.name()));
-        });
-        taskIds.forEach(id -> task.waitUntilTaskCompleted(id, 5L));
-        taskIds.clear();
-        schema.getEdgeLabels().forEach(el -> {
-            taskIds.add(schema.removeEdgeLabelAsync(el.name()));
-        });
-        taskIds.forEach(id -> task.waitUntilTaskCompleted(id, 5L));
-        taskIds.clear();
-        schema.getVertexLabels().forEach(vl -> {
-            taskIds.add(schema.removeVertexLabelAsync(vl.name()));
-        });
-        taskIds.forEach(id -> task.waitUntilTaskCompleted(id, 5L));
-        taskIds.clear();
-        schema.getPropertyKeys().forEach(pk -> {
-            schema.removePropertyKey(pk.name());
-        });
-    }
-
-    private static String configPath(String fileName) {
-        return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();
     }
 
     /**

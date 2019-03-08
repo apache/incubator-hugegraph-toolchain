@@ -130,13 +130,7 @@ public class HDFSReader extends AbstractFileReader {
 
         @Override
         public InputStream open() throws IOException {
-            try {
-                return this.hdfs.open(this.path);
-            } catch (IOException e) {
-                throw new LoadException(
-                          "Failed to create input stream for hdfs file '%s'",
-                          this.path.getName());
-            }
+            return this.hdfs.open(this.path);
         }
 
         @Override

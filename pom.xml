@@ -80,6 +80,40 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>file</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <source_type>file</source_type>
+                <store_path>files</store_path>
+                <test-classes>**/FileLoadTest.java</test-classes>
+            </properties>
+        </profile>
+        <profile>
+            <id>hdfs</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <source_type>hdfs</source_type>
+                <store_path>hdfs://localhost:8020/files</store_path>
+                <test-classes>**/FileLoadTest.java</test-classes>
+            </properties>
+        </profile>
+        <profile>
+            <id>jdbc</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <test-classes>**/JDBCLoadTest.java</test-classes>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -96,7 +130,6 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -204,6 +237,16 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.20</version>
+                <configuration>
+                    <includes>
+                        <include>${test-classes}</include>
+                    </includes>
+                </configuration>
+            </plugin>
         </plugins>
 
         <testResources>
@@ -213,27 +256,4 @@
             </testResource>
         </testResources>
     </build>
-
-    <profiles>
-        <profile>
-            <id>file</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <source_type>file</source_type>
-                <store_path>files</store_path>
-            </properties>
-        </profile>
-        <profile>
-            <id>hdfs</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-                <source_type>hdfs</source_type>
-                <store_path>hdfs://localhost:8020/files</store_path>
-            </properties>
-        </profile>
-    </profiles>
 </project>

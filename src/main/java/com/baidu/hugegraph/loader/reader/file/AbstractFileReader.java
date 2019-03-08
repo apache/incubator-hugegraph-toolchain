@@ -200,10 +200,6 @@ public abstract class AbstractFileReader implements InputReader {
                 CompressorInputStream cis = factory.createCompressorInputStream(
                                             compression.string(), stream);
                 return new InputStreamReader(cis, charset);
-            case ORC:
-                throw new LoadException(
-                          "Orc compression should loaded by OrcFileReader " +
-                          "instead of AbstractFileReader");
             default:
                 throw new LoadException("Unsupported compression format '%s'",
                                         compression);
