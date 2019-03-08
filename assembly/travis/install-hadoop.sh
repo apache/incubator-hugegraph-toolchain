@@ -49,7 +49,7 @@ sudo -u hdfs hdfs namenode -format -nonInteractive
 
 sudo adduser travis hadoop
 
-sudo /usr/hdp/current/hadoop/sbin/hadoop-daemon.sh start datanode
-sudo /usr/hdp/current/hadoop/sbin/hadoop-daemon.sh start namenode
+sudo /usr/hdp/current/hadoop-hdfs-datanode/../hadoop/sbin/hadoop-daemon.sh start datanode
+sudo /usr/hdp/current/hadoop-hdfs-namenode/../hadoop/sbin/hadoop-daemon.sh start namenode
 
 hdfs dfsadmin -safemode wait

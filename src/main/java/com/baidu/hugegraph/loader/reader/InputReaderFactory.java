@@ -32,9 +32,9 @@ public class InputReaderFactory {
     public static InputReader create(InputSource source) {
         switch (source.type()) {
             case FILE:
-                    return new FileReader((FileSource) source);
+                return new FileReader((FileSource) source);
             case HDFS:
-                    return new HDFSReader((HDFSSource) source);
+                return new HDFSReader((HDFSSource) source);
             case JDBC:
                 return new JDBCReader((JDBCSource) source);
             default:
