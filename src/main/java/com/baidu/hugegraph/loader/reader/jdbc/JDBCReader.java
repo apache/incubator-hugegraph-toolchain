@@ -60,7 +60,7 @@ public class JDBCReader implements InputReader {
     @Override
     public void init() {
         try {
-            this.fetcher.readColumns();
+            this.fetcher.readHeader();
         } catch (SQLException e) {
             throw new LoadException("Failed to read column names", e);
         }

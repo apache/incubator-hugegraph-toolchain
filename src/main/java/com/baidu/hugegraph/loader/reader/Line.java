@@ -20,10 +20,12 @@
 package com.baidu.hugegraph.loader.reader;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections.Unmodifiable;
 import org.apache.commons.lang3.StringUtils;
 
 public final class Line {
@@ -36,6 +38,16 @@ public final class Line {
         this.rawLine = rawLine;
         this.names = new ArrayList<>(size);
         this.values = new ArrayList<>(size);
+    }
+
+    public Line(String rawLine, Map<String, Object> keyValues) {
+        this.rawLine = rawLine;
+        this.names = new ArrayList<>(keyValues.size());
+        this.values = new ArrayList<>(keyValues.size());
+        for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
+            this.names.add(entry.getKey());
+            this.values.add(entry.getValue());
+        }
     }
 
     public Line(List<String> names, List<Object> values) {
@@ -57,11 +69,11 @@ public final class Line {
     }
 
     public final List<String> names() {
-        return this.names;
+        return Collections.unmodifiableList(this.names);
     }
 
     public final List<Object> values() {
-        return this.values;
+        return Collections.unmodifiableList(this.values);
     }
 
     public void add(String name, Object value) {

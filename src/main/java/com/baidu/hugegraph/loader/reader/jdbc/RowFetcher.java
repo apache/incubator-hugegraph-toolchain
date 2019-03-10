@@ -92,7 +92,7 @@ public class RowFetcher {
         return DriverManager.getConnection(url, username, password);
     }
 
-    public void readColumns() throws SQLException {
+    public void readHeader() throws SQLException {
         String sql = String.format("SELECT COLUMN_NAME " +
                                    "FROM INFORMATION_SCHEMA.COLUMNS " +
                                    "WHERE TABLE_NAME = '%s' " +

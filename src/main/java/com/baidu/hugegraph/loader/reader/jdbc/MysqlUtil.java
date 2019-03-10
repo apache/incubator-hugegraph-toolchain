@@ -77,38 +77,38 @@ public final class MysqlUtil {
     }
 
     public static boolean isEscapeNeededForString(String sql, int length) {
-        boolean needsHesqlEscape = false;
+        boolean needsEscape = false;
 
         for (int i = 0; i < length; ++i) {
             char c = sql.charAt(i);
             switch (c) {
                 case '\u0000':
-                    needsHesqlEscape = true;
+                    needsEscape = true;
                     break;
                 case '\n':
-                    needsHesqlEscape = true;
+                    needsEscape = true;
                     break;
                 case '\r':
-                    needsHesqlEscape = true;
+                    needsEscape = true;
                     break;
                 case '\u001a':
-                    needsHesqlEscape = true;
+                    needsEscape = true;
                     break;
                 case '\'':
-                    needsHesqlEscape = true;
+                    needsEscape = true;
                     break;
                 case '\\':
-                    needsHesqlEscape = true;
+                    needsEscape = true;
                     break;
                 default:
                     break;
             }
 
-            if (needsHesqlEscape) {
+            if (needsEscape) {
                 break;
             }
         }
 
-        return needsHesqlEscape;
+        return needsEscape;
     }
 }

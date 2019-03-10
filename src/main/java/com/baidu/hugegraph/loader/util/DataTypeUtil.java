@@ -26,6 +26,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.structure.constant.Cardinality;
@@ -50,7 +52,7 @@ public final class DataTypeUtil {
             case SET:
             case LIST:
                 // TODO: diff SET & LIST (Server should support first)
-                return parseMultiValues(value, dataType, source);
+                return parseMultiValues(value, dataType, source, null);
             default:
                 throw new AssertionError(String.format(
                           "Unsupported cardinality: '%s'", cardinality));
@@ -80,12 +82,13 @@ public final class DataTypeUtil {
     /**
      * collection format:
      * "obj1,obj2,...,objn" or "[obj1,obj2,...,objn]" ..etc
-     * TODO: After parsing to json, the order of the collection changed in some cases (such as list<date>)
+     * TODO: After parsing to json, the order of the collection changed
+     * in some cases (such as list<date>)
      **/
     private static Object parseMultiValues(Object values, DataType dataType,
                                            InputSource source,
-                                           char... symbols) {
-        // json file should not parse again
+                                           Pair<Character, Character> symbols) {
+        // JSON file should not parse again
         if (values instanceof Collection &&
             checkCollectionDataType((Collection<?>) values, dataType)) {
             return values;
@@ -94,9 +97,9 @@ public final class DataTypeUtil {
         E.checkState(values instanceof String, "The value must be String type");
         String originValue = String.valueOf(values);
         List<Object> valueList = new LinkedList<>();
-        // use custom start&end format :like [obj1,obj2,...,objn]
-        if (symbols != null && symbols.length == 2 && originValue.charAt(0) ==
-            symbols[0] && originValue.charAt(originValue.length() - 1) == symbols[1]) {
+        // Use custom start&end format like [obj1,obj2,...,objn]
+        if (symbols != null && originValue.charAt(0) == symbols.getLeft() &&
+            originValue.charAt(originValue.length() - 1) == symbols.getRight()) {
             originValue = originValue.substring(1, originValue.length() - 1);
         }
         // TODO: Separator should also be customizable

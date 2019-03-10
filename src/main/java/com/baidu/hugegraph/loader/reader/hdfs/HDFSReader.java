@@ -37,6 +37,7 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public class HDFSReader extends AbstractFileReader {
@@ -74,23 +75,26 @@ public class HDFSReader extends AbstractFileReader {
     protected Readers openReaders() throws IOException {
         Path path = new Path(this.source().path());
 
-        List<Readable> readables = new ArrayList<>();
+        List<Readable> paths = new ArrayList<>();
         if (this.hdfs.isFile(path)) {
-            readables.add(new ReadablePath(this.hdfs, path));
+            paths.add(new ReadablePath(this.hdfs, path));
         } else {
             assert this.hdfs.isDirectory(path);
             FileStatus[] statuses = this.hdfs.listStatus(path);
-            Path[] paths = FileUtil.stat2Paths(statuses);
-            for (Path subPath : paths) {
-                readables.add(new ReadablePath(this.hdfs, subPath));
+            Path[] subPaths = FileUtil.stat2Paths(statuses);
+            for (Path subPath : subPaths) {
+                paths.add(new ReadablePath(this.hdfs, subPath));
             }
         }
-        return new Readers(this.source(), readables);
+        return new Readers(this.source(), paths);
     }
 
     private static Configuration loadConfiguration() {
         Configuration conf = new Configuration();
         String hadoopHome = System.getenv("HADOOP_HOME");
+        E.checkState(hadoopHome != null && !hadoopHome.isEmpty(),
+                     "Please ensure the host executing hugegraph-loader " +
+                     "has installed hadoop");
         LOG.info("Get HADOOP_HOME {}", hadoopHome);
         String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
         conf.addResource(path(path, "/core-site.xml"));

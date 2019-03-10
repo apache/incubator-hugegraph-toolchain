@@ -51,12 +51,7 @@ public class FileUtil implements IOUtil {
                       Compression compression, String... lines) {
         String path = Paths.get(this.storePath, fileName).toString();
         File file = org.apache.commons.io.FileUtils.getFile(path);
-        try {
-            this.checkFile(file);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to check file '%s' valid", file), e);
-        }
+        this.checkFile(file);
 
         if (compression == Compression.NONE) {
             try {
@@ -96,10 +91,15 @@ public class FileUtil implements IOUtil {
         // pass
     }
 
-    private void checkFile(File file) throws IOException {
+    private void checkFile(File file) {
         if (!file.exists()) {
             file.getParentFile().mkdirs();
-            file.createNewFile();
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(String.format(
+                          "Failed to create new file '%s'", file), e);
+            }
         } else {
             if (!file.isFile() || !file.canWrite()) {
                 throw new RuntimeException(String.format(

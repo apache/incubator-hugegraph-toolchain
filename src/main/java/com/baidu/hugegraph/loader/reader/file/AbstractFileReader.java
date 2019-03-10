@@ -102,10 +102,13 @@ public abstract class AbstractFileReader implements InputReader {
 
     @Override
     public void close() throws IOException {
-        this.readers.close();
+        if (this.readers != null) {
+            this.readers.close();
+        }
     }
 
     public String readNextLine() throws IOException {
+        E.checkState(this.readers != null, "The readers shouldn't be null");
         return this.readers.readNextLine();
     }
 
@@ -246,7 +249,7 @@ public abstract class AbstractFileReader implements InputReader {
         private BufferedReader open(int index) {
             assert index < this.readables.size();
             Readable readable = this.readables.get(index);
-            LOG.info("Ready to open '{}'", readable);
+            LOG.debug("Ready to open '{}'", readable);
 
             InputStream stream = null;
             try {

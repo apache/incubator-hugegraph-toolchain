@@ -80,7 +80,7 @@ public class DBUtil {
     }
 
     /**
-     * TODO: insert(table, List<List<Object>> rows)
+     * TODO: insert(String table, String... rows)
      */
     public void insert(String sql) {
         this.execute(sql);

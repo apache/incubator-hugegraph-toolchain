@@ -23,13 +23,13 @@ DROP TABLE IF EXISTS `created`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `created` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `source_name` varchar(11) NOT NULL,
-  `target_id` int(11) NOT NULL,
+  `id` int(10) unsigned NOT NULL,
+  `source_id` int(10) unsigned NOT NULL,
+  `target_id` int(10) unsigned NOT NULL,
   `date` varchar(10) NOT NULL,
   `weight` double(10,2) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -38,7 +38,7 @@ CREATE TABLE `created` (
 
 LOCK TABLES `created` WRITE;
 /*!40000 ALTER TABLE `created` DISABLE KEYS */;
-INSERT INTO `created` VALUES (1,'marko',1,'2017-12-10',0.40),(2,'josh',1,'2009-11-11',0.40),(3,'josh',2,'2017-12-10',1.00),(4,'peter',1,'2017-03-24',0.20);
+INSERT INTO `created` VALUES (1,1,100,'2017-12-10',0.40),(2,3,100,'2009-11-11',0.40),(3,3,200,'2017-12-10',1.00),(4,4,100,'2017-03-24',0.20);
 /*!40000 ALTER TABLE `created` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -50,13 +50,13 @@ DROP TABLE IF EXISTS `knows`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `knows` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `source_name` varchar(10) NOT NULL,
-  `target_name` varchar(10) NOT NULL,
+  `id` int(10) unsigned NOT NULL,
+  `source_id` int(10) unsigned NOT NULL,
+  `target_id` int(10) unsigned NOT NULL,
   `date` varchar(10) NOT NULL,
   `weight` double(10,2) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,7 +65,7 @@ CREATE TABLE `knows` (
 
 LOCK TABLES `knows` WRITE;
 /*!40000 ALTER TABLE `knows` DISABLE KEYS */;
-INSERT INTO `knows` VALUES (1,'marko','vadas','2016-01-10',0.50),(2,'marko','josh','2013-02-20',1.00);
+INSERT INTO `knows` VALUES (1,1,2,'2016-01-10',0.50),(2,1,3,'2013-02-20',1.00);
 /*!40000 ALTER TABLE `knows` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -77,12 +77,12 @@ DROP TABLE IF EXISTS `person`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `person` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL,
   `name` varchar(20) NOT NULL,
   `age` int(3) DEFAULT NULL,
   `city` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -103,13 +103,12 @@ DROP TABLE IF EXISTS `software`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `software` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) unsigned NOT NULL,
   `name` varchar(20) NOT NULL,
   `lang` varchar(10) NOT NULL,
   `price` double(10,2) NOT NULL,
-  `isbn` varchar(21) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -118,7 +117,7 @@ CREATE TABLE `software` (
 
 LOCK TABLES `software` WRITE;
 /*!40000 ALTER TABLE `software` DISABLE KEYS */;
-INSERT INTO `software` VALUES (1,'lop','java',328.00,'ISBN978-7-107-18618-5'),(2,'ripple','java',199.00,'ISBN978-7-100-13678-5');
+INSERT INTO `software` VALUES (100,'lop','java',328.00),(200,'ripple','java',199.00);
 /*!40000 ALTER TABLE `software` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -131,4 +130,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-12-11 19:53:37
+-- Dump completed on 2019-03-10 18:11:20

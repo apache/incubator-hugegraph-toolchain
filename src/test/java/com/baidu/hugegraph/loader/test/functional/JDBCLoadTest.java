@@ -32,6 +32,9 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
 
+/**
+ * TODO: add more test cases
+ */
 public class JDBCLoadTest extends LoadTest {
 
     // JDBC driver name and database URL

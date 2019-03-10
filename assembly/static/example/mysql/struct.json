@@ -12,8 +12,8 @@
         "password": "",
         "batch_size": 500
       },
-      "null_values": ["NULL"],
-      "ignored": ["id"]
+      "id": "id",
+      "null_values": ["NULL"]
     },
     {
       "label": "software",
@@ -27,15 +27,14 @@
         "password": "",
         "batch_size": 500
       },
-      "id": "id",
-      "ignored": ["isbn"]
+      "id": "id"
     }
   ],
   "edges": [
     {
       "label": "knows",
-      "source": ["source_name"],
-      "target": ["target_name"],
+      "source": ["source_id"],
+      "target": ["target_id"],
       "input": {
         "type": "jdbc",
         "driver": "com.mysql.cj.jdbc.Driver",
@@ -46,15 +45,11 @@
         "password": "",
         "batch_size": 500
       },
-      "mapping": {
-        "source_name": "name",
-        "target_name": "name"
-      },
       "ignored": ["id"]
     },
     {
       "label": "created",
-      "source": ["source_name"],
+      "source": ["source_id"],
       "target": ["target_id"],
       "input": {
         "type": "jdbc",
@@ -65,9 +60,6 @@
         "username": "root",
         "password": "",
         "batch_size": 500
-      },
-      "mapping": {
-        "source_name": "name"
       },
       "ignored": ["id"]
     }

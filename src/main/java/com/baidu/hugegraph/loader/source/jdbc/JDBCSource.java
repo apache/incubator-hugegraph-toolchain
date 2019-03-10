@@ -44,9 +44,6 @@ public class JDBCSource implements InputSource {
     @JsonProperty("batch_size")
     private int batchSize = 500;
 
-    public JDBCSource() {
-    }
-
     @Override
     public SourceType type() {
         return SourceType.JDBC;

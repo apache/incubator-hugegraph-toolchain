@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.source.file.Compression;
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public class HDFSUtil implements IOUtil {
@@ -59,6 +60,9 @@ public class HDFSUtil implements IOUtil {
     private static Configuration loadConfiguration() {
         Configuration conf = new Configuration();
         String hadoopHome = System.getenv("HADOOP_HOME");
+        E.checkState(hadoopHome != null && !hadoopHome.isEmpty(),
+                     "Please ensure the host executing hugegraph-loader " +
+                     "has installed hadoop");
         LOG.info("Get HADOOP_HOME {}", hadoopHome);
         String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
         conf.addResource(path(path, "/core-site.xml"));
@@ -87,12 +91,7 @@ public class HDFSUtil implements IOUtil {
     public void write(String fileName, Charset charset,
                       Compression compression, String... lines) {
         Path path = new Path(this.storePath, fileName);
-        try {
-            checkPath(path);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to check path '%s' valid", path), e);
-        }
+        checkPath(path);
 
         if (compression == Compression.NONE) {
             try (FSDataOutputStream fos = this.hdfs.append(path)) {
@@ -103,8 +102,8 @@ public class HDFSUtil implements IOUtil {
                 fos.flush();
             } catch (IOException e) {
                 throw new RuntimeException(String.format(
-                        "Failed to write lines '%s' to path '%s'",
-                        Arrays.asList(lines), path), e);
+                          "Failed to write lines '%s' to path '%s'",
+                          Arrays.asList(lines), path), e);
             }
         } else {
             try (FSDataOutputStream fos = this.hdfs.append(path)) {
@@ -138,16 +137,21 @@ public class HDFSUtil implements IOUtil {
         }
     }
 
-    private void checkPath(Path path) throws IOException {
-        if (!this.hdfs.exists(path)) {
-            this.hdfs.mkdirs(path.getParent());
-            this.hdfs.createNewFile(path);
-        } else {
-            if (!this.hdfs.isFile(path)) {
-                throw new RuntimeException(String.format(
-                          "Please ensure the path '%s' is writable",
-                          path.getName()));
+    private void checkPath(Path path) {
+        try {
+            if (!this.hdfs.exists(path)) {
+                this.hdfs.mkdirs(path.getParent());
+                this.hdfs.createNewFile(path);
+            } else {
+                if (!this.hdfs.isFile(path)) {
+                    throw new RuntimeException(String.format(
+                              "Please ensure the path '%s' is file",
+                              path.getName()));
+                }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                      "Failed to check hdfs path '%s'", path), e);
         }
     }
 }

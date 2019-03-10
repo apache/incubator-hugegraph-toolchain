@@ -105,7 +105,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected abstract boolean isIdField(String fieldName);
 
-    private Map<String, Object> filterFields(Map<String, Object> keyValues) {
+    protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
         for (String field : this.source().ignoredFields()) {
             keyValues.remove(field);
         }

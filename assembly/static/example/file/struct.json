@@ -16,7 +16,7 @@
       "label": "software",
       "input": {
         "type": "file",
-        "path": "example/file/vertex_software.text",
+        "path": "example/file/vertex_software.txt",
         "format": "TEXT",
         "delimiter": "|",
         "charset": "GBK"

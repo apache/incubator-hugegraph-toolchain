@@ -47,9 +47,9 @@ public class FileReader extends AbstractFileReader {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
 
-        List<Readable> readables = new ArrayList<>();
+        List<Readable> files = new ArrayList<>();
         if (file.isFile()) {
-            readables.add(new ReadableFile(file));
+            files.add(new ReadableFile(file));
         } else {
             assert file.isDirectory();
             File[] subFiles = file.listFiles();
@@ -58,10 +58,10 @@ public class FileReader extends AbstractFileReader {
                           "Error when list files of path '%s'", file);
             }
             for (File subFile : subFiles) {
-                readables.add(new ReadableFile(subFile));
+                files.add(new ReadableFile(subFile));
             }
         }
-        return new Readers(this.source(), readables);
+        return new Readers(this.source(), files);
     }
 
     private static void checkExistAndReadable(File file) {
