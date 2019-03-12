@@ -19,38 +19,16 @@
 
 package com.baidu.hugegraph.api.traverser;
 
-import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.util.E;
 
-public class TraversersAPI extends API {
+public class RaysAPI extends SubGraphAPI {
 
-    private static final String PATH = "graphs/%s/traversers/%s";
-
-    public TraversersAPI(RestClient client, String graph) {
-        super(client);
-        this.path(PATH, graph, this.type());
+    public RaysAPI(RestClient client, String graph) {
+        super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "traversers";
-    }
-
-    public static void checkPositive(int value, String name) {
-        E.checkArgument(value > 0,
-                        "%s must be > 0, but got '%s'", name, value);
-    }
-
-    public static void checkDegree(long degree) {
-        checkLimit(degree, "Degree");
-    }
-
-    public static void checkCapacity(long capacity) {
-        checkLimit(capacity, "Capacity");
-    }
-
-    public static void checkLimit(long limit) {
-        checkLimit(limit, "Limit");
+        return "rays";
     }
 }

@@ -78,18 +78,27 @@ public class BaseClientTest {
         // pass
     }
 
-    protected static Object getVertexId(String label, String key, String value) {
+    protected static Object getVertexId(String label, String key,
+                                        String value) {
+        return getVertex(label, key, value).id();
+    }
+
+    protected static Vertex getVertex(String label, String key, String value) {
         Map<String, Object> params = ImmutableMap.of(key, value);
         List<Vertex> vertices = graph().listVertices(label, params);
         assert vertices.size() == 1;
-        return vertices.get(0).id();
+        return vertices.get(0);
     }
 
     protected static String getEdgeId(String label, String key, String value) {
+        return getEdge(label, key, value).id();
+    }
+
+    protected static Edge getEdge(String label, String key, String value) {
         Map<String, Object> params = ImmutableMap.of(key, value);
         List<Edge> edges = graph().listEdges(label, params);
         assert edges.size() == 1;
-        return edges.get(0).id();
+        return edges.get(0);
     }
 
     protected static void initPropertyKey() {

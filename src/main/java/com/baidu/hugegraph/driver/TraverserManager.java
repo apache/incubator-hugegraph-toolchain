@@ -22,12 +22,20 @@ package com.baidu.hugegraph.driver;
 import java.util.List;
 
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
+import com.baidu.hugegraph.api.traverser.CustomizedCrosspointsAPI;
+import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
 import com.baidu.hugegraph.api.traverser.EdgesAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
 import com.baidu.hugegraph.api.traverser.PathsAPI;
+import com.baidu.hugegraph.api.traverser.RaysAPI;
+import com.baidu.hugegraph.api.traverser.RingsAPI;
 import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
+import com.baidu.hugegraph.api.traverser.structure.CrosspointsRequest;
+import com.baidu.hugegraph.api.traverser.structure.CustomizedCrosspoints;
+import com.baidu.hugegraph.api.traverser.structure.CustomizedPaths;
+import com.baidu.hugegraph.api.traverser.structure.PathsRequest;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -44,6 +52,10 @@ public class TraverserManager {
     private CrosspointsAPI crosspointsAPI;
     private KoutAPI koutAPI;
     private KneighborAPI kneighborAPI;
+    private RingsAPI ringsAPI;
+    private RaysAPI raysAPI;
+    private CustomizedPathsAPI customizedPathsAPI;
+    private CustomizedCrosspointsAPI customizedCrosspointsAPI;
     private VerticesAPI verticesAPI;
     private EdgesAPI edgesAPI;
 
@@ -55,6 +67,11 @@ public class TraverserManager {
         this.crosspointsAPI = new CrosspointsAPI(client, graph);
         this.koutAPI = new KoutAPI(client, graph);
         this.kneighborAPI = new KneighborAPI(client, graph);
+        this.ringsAPI = new RingsAPI(client, graph);
+        this.raysAPI = new RaysAPI(client, graph);
+        this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
+        this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client,
+                                                                     graph);
         this.verticesAPI = new VerticesAPI(client, graph);
         this.edgesAPI = new EdgesAPI(client, graph);
     }
@@ -151,6 +168,27 @@ public class TraverserManager {
                                   long degree, long limit) {
         return this.kneighborAPI.get(sourceId, direction, label, depth,
                                      degree, limit);
+    }
+
+    public List<Path> rings(Object sourceId, Direction direction, String label,
+                            int depth, long degree, long capacity, long limit) {
+        return this.ringsAPI.get(sourceId, direction, label, depth, degree,
+                                 capacity, limit);
+    }
+
+    public List<Path> rays(Object sourceId, Direction direction, String label,
+                           int depth, long degree, long capacity, long limit) {
+        return this.raysAPI.get(sourceId, direction, label, depth, degree,
+                                capacity, limit);
+    }
+
+    public CustomizedPaths customizedPaths(PathsRequest request) {
+        return this.customizedPathsAPI.post(request);
+    }
+
+    public CustomizedCrosspoints customizedCrosspointss(
+                                 CrosspointsRequest request) {
+        return this.customizedCrosspointsAPI.post(request);
     }
 
     public List<Shard> vertexShards(long splitSize) {
