@@ -37,7 +37,6 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
-import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public class HDFSReader extends AbstractFileReader {
@@ -92,15 +91,15 @@ public class HDFSReader extends AbstractFileReader {
     private static Configuration loadConfiguration() {
         Configuration conf = new Configuration();
         String hadoopHome = System.getenv("HADOOP_HOME");
-        E.checkState(hadoopHome != null && !hadoopHome.isEmpty(),
-                     "Please ensure the host executing hugegraph-loader " +
-                     "has installed hadoop");
-        LOG.info("Get HADOOP_HOME {}", hadoopHome);
-        String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
-        conf.addResource(path(path, "/core-site.xml"));
-        conf.addResource(path(path, "/hdfs-site.xml"));
-        conf.addResource(path(path, "/mapred-site.xml"));
-        conf.addResource(path(path, "/yarn-site.xml"));
+        // TODO: Add more inspection of the hadoop environment
+        if (hadoopHome != null && !hadoopHome.isEmpty()) {
+            LOG.info("Get HADOOP_HOME {}", hadoopHome);
+            String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
+            conf.addResource(path(path, "/core-site.xml"));
+            conf.addResource(path(path, "/hdfs-site.xml"));
+            conf.addResource(path(path, "/mapred-site.xml"));
+            conf.addResource(path(path, "/yarn-site.xml"));
+        }
         return conf;
     }
 

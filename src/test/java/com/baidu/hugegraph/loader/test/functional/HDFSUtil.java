@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.source.file.Compression;
-import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public class HDFSUtil implements IOUtil {
@@ -60,15 +59,14 @@ public class HDFSUtil implements IOUtil {
     private static Configuration loadConfiguration() {
         Configuration conf = new Configuration();
         String hadoopHome = System.getenv("HADOOP_HOME");
-        E.checkState(hadoopHome != null && !hadoopHome.isEmpty(),
-                     "Please ensure the host executing hugegraph-loader " +
-                     "has installed hadoop");
-        LOG.info("Get HADOOP_HOME {}", hadoopHome);
-        String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
-        conf.addResource(path(path, "/core-site.xml"));
-        conf.addResource(path(path, "/hdfs-site.xml"));
-        conf.addResource(path(path, "/mapred-site.xml"));
-        conf.addResource(path(path, "/yarn-site.xml"));
+        if (hadoopHome != null && !hadoopHome.isEmpty()) {
+            LOG.info("Get HADOOP_HOME {}", hadoopHome);
+            String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
+            conf.addResource(path(path, "/core-site.xml"));
+            conf.addResource(path(path, "/hdfs-site.xml"));
+            conf.addResource(path(path, "/mapred-site.xml"));
+            conf.addResource(path(path, "/yarn-site.xml"));
+        }
         return conf;
     }
 

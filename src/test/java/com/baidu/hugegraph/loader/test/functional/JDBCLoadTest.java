@@ -157,8 +157,8 @@ public class JDBCLoadTest extends LoadTest {
             Assert.assertEquals(Integer.class, vertex.id().getClass());
         }
         for (Edge edge : edges) {
-            Assert.assertEquals(Integer.class, edge.source().getClass());
-            Assert.assertEquals(Integer.class, edge.target().getClass());
+            Assert.assertEquals(Integer.class, edge.sourceId().getClass());
+            Assert.assertEquals(Integer.class, edge.targetId().getClass());
         }
     }
 }

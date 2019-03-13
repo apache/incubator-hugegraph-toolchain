@@ -24,7 +24,7 @@
         <dependency>
             <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>1.6.6</version>
+            <version>1.6.9</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -233,7 +233,7 @@
                         </goals>
                         <configuration>
                             <outputFile>
-                                ${build.testOutputDirectory}/profile.properties
+                                ${project.build.testOutputDirectory}/profile.properties
                             </outputFile>
                         </configuration>
                     </execution>

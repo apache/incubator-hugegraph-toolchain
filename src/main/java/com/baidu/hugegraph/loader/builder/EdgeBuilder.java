@@ -58,10 +58,12 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     protected Edge build(Map<String, Object> keyValues) {
         Edge edge = new Edge(this.source.label());
         // Must add source/target vertex id
-        edge.source(this.buildVertexId(this.sourceLabel,
-                                       this.source.sourceFields(), keyValues));
-        edge.target(this.buildVertexId(this.targetLabel,
-                                       this.source.targetFields(), keyValues));
+        edge.sourceId(this.buildVertexId(this.sourceLabel,
+                                         this.source.sourceFields(),
+                                         keyValues));
+        edge.targetId(this.buildVertexId(this.targetLabel,
+                                         this.source.targetFields(),
+                                         keyValues));
         // Must add source/target vertex label
         edge.sourceLabel(this.sourceLabel.name());
         edge.targetLabel(this.targetLabel.name());

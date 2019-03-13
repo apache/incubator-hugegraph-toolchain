@@ -132,10 +132,10 @@ public class FileLoadTest extends LoadTest {
 
         boolean interestedEdge = false;
         for (Edge edge : edges) {
-            Assert.assertEquals(String.class, edge.source().getClass());
-            Assert.assertEquals(String.class, edge.target().getClass());
-            if (((String) edge.source()).contains("marko") &&
-                ((String) edge.target()).contains("vadas")) {
+            Assert.assertEquals(String.class, edge.sourceId().getClass());
+            Assert.assertEquals(String.class, edge.targetId().getClass());
+            if (((String) edge.sourceId()).contains("marko") &&
+                ((String) edge.targetId()).contains("vadas")) {
                 interestedEdge = true;
                 Assert.assertEquals("20160110", edge.property("date"));
                 Assert.assertEquals("0.5", edge.property("weight"));
@@ -197,10 +197,10 @@ public class FileLoadTest extends LoadTest {
 
         boolean interestedEdge = false;
         for (Edge edge : edges) {
-            Assert.assertEquals(String.class, edge.source().getClass());
-            Assert.assertEquals(String.class, edge.target().getClass());
-            if (((String) edge.source()).contains("marko") &&
-                ((String) edge.target()).contains("vadas")) {
+            Assert.assertEquals(String.class, edge.sourceId().getClass());
+            Assert.assertEquals(String.class, edge.targetId().getClass());
+            if (((String) edge.sourceId()).contains("marko") &&
+                ((String) edge.targetId()).contains("vadas")) {
                 interestedEdge = true;
                 Assert.assertEquals("20160110", edge.property("date"));
                 Assert.assertEquals(0.5, edge.property("weight"));
