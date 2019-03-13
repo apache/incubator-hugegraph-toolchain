@@ -24,9 +24,7 @@ import javax.ws.rs.core.Response;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.serializer.PathDeserializer;
-import com.baidu.hugegraph.serializer.VertexDeserializer;
 import com.baidu.hugegraph.structure.graph.Path;
-import com.baidu.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class RestClient extends com.baidu.hugegraph.rest.RestClient {
@@ -35,7 +33,6 @@ public class RestClient extends com.baidu.hugegraph.rest.RestClient {
 
     static {
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(Vertex.class, new VertexDeserializer());
         module.addDeserializer(Path.class, new PathDeserializer());
         RestResult.registerModule(module);
     }

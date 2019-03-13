@@ -27,12 +27,12 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 public class VertexSerializerTest extends BaseUnitTest {
 
     @Test
     public void testSerializeAndDeserializeVertex() {
-
         Vertex vertex = new Vertex("person");
         vertex.id("person:marko");
         vertex.property("name", "marko");
@@ -53,12 +53,11 @@ public class VertexSerializerTest extends BaseUnitTest {
 
     @Test
     public void testSerializeAndDeserializeVertexWithListProp() {
-
         Vertex vertex = new Vertex("person");
         vertex.id("person:marko");
         vertex.property("name", "marko");
         vertex.property("age", 29);
-        vertex.property("city", ImmutableList.of("Hebei", "Wuhan"));
+        vertex.property("city", ImmutableList.of("Hefei", "Wuhan"));
 
         String json = serialize(vertex);
         Vertex vertexCopy = deserialize(json, Vertex.class);
@@ -66,11 +65,30 @@ public class VertexSerializerTest extends BaseUnitTest {
         Assert.assertEquals("person:marko", vertexCopy.id());
         Assert.assertEquals("person", vertexCopy.label());
         Assert.assertEquals("vertex", vertexCopy.type());
-        Map<String, Object> props = ImmutableMap.of("name", "marko",
-                                                    "age", 29,
-                                                    "city", ImmutableList.of(
-                                                            "Hebei", "Wuhan"));
+        Map<String, Object> props = ImmutableMap.of(
+                                    "name", "marko", "age", 29,
+                                    "city", ImmutableList.of("Hefei", "Wuhan"));
         Assert.assertEquals(props, vertexCopy.properties());
     }
 
+    @Test
+    public void testSerializeAndDeserializeVertexWithSetProp() {
+        Vertex vertex = new Vertex("person");
+        vertex.id("person:marko");
+        vertex.property("name", "marko");
+        vertex.property("age", 29);
+        vertex.property("city", ImmutableSet.of("Hefei", "Wuhan", "Wuhan"));
+
+        String json = serialize(vertex);
+        Vertex vertexCopy = deserialize(json, Vertex.class);
+
+        Assert.assertEquals("person:marko", vertexCopy.id());
+        Assert.assertEquals("person", vertexCopy.label());
+        Assert.assertEquals("vertex", vertexCopy.type());
+        // TODO: Set properties should deserialize to Set instead of List
+        Map<String, Object> props = ImmutableMap.of(
+                                    "name", "marko", "age", 29,
+                                    "city", ImmutableList.of("Hefei", "Wuhan"));
+        Assert.assertEquals(props, vertexCopy.properties());
+    }
 }

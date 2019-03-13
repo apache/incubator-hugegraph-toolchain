@@ -61,12 +61,6 @@ public class BatchExample {
               .ifNotExist()
               .create();
 
-        schema.indexLabel("personByName")
-              .onV("person").by("name")
-              .secondary()
-              .ifNotExist()
-              .create();
-
         schema.indexLabel("softwareByPrice")
               .onV("software").by("price")
               .range()

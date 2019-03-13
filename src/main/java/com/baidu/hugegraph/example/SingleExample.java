@@ -63,13 +63,6 @@ public class SingleExample {
               .ifNotExist()
               .create();
 
-        schema.indexLabel("personByName")
-              .onV("person")
-              .by("name")
-              .secondary()
-              .ifNotExist()
-              .create();
-
         schema.indexLabel("personByCity")
               .onV("person")
               .by("city")

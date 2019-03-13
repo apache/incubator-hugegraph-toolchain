@@ -26,7 +26,6 @@ import java.util.Map;
 
 import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.serializer.PathDeserializer;
-import com.baidu.hugegraph.serializer.VertexDeserializer;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -46,7 +45,6 @@ public class ResultSet {
 
     static {
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(Vertex.class, new VertexDeserializer());
         module.addDeserializer(Path.class, new PathDeserializer());
         mapper.registerModule(module);
     }
