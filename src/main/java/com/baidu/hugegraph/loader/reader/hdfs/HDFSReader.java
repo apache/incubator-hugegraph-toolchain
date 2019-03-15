@@ -47,7 +47,7 @@ public class HDFSReader extends AbstractFileReader {
 
     public HDFSReader(HDFSSource source) {
         super(source);
-        Configuration config = loadConfiguration();
+        Configuration config = this.loadConfiguration();
         LOG.info("Opening readers for hdfs source {}", source);
         try {
             this.hdfs = FileSystem.get(URI.create(source.path()), config);
@@ -60,6 +60,11 @@ public class HDFSReader extends AbstractFileReader {
 
     public FileSystem fileSystem() {
         return this.hdfs;
+    }
+
+    @Override
+    public HDFSSource source() {
+        return (HDFSSource) super.source();
     }
 
     @Override
@@ -88,10 +93,17 @@ public class HDFSReader extends AbstractFileReader {
         return new Readers(this.source(), paths);
     }
 
-    private static Configuration loadConfiguration() {
+    private Configuration loadConfiguration() {
         Configuration conf = new Configuration();
+        String fsDefaultFS = this.source().fsDefaultFS();
+        // Remote hadoop
+        if (fsDefaultFS != null) {
+            // TODO: Support pass more params or specify config files
+            conf.set("fs.defaultFS", fsDefaultFS);
+            return conf;
+        }
+        // Local hadoop
         String hadoopHome = System.getenv("HADOOP_HOME");
-        // TODO: Add more inspection of the hadoop environment
         if (hadoopHome != null && !hadoopHome.isEmpty()) {
             LOG.info("Get HADOOP_HOME {}", hadoopHome);
             String path = Paths.get(hadoopHome, "etc", "hadoop").toString();

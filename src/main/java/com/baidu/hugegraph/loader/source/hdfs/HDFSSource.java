@@ -21,12 +21,20 @@ package com.baidu.hugegraph.loader.source.hdfs;
 
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class HDFSSource extends FileSource {
+
+    @JsonProperty("fs_default_fs")
+    private String fsDefaultFS;
 
     @Override
     public SourceType type() {
         return SourceType.HDFS;
+    }
+
+    public String fsDefaultFS() {
+        return this.fsDefaultFS;
     }
 
     @Override

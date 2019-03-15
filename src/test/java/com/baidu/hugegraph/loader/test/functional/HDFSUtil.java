@@ -57,17 +57,8 @@ public class HDFSUtil implements IOUtil {
     }
 
     private static Configuration loadConfiguration() {
-        Configuration conf = new Configuration();
-        String hadoopHome = System.getenv("HADOOP_HOME");
-        if (hadoopHome != null && !hadoopHome.isEmpty()) {
-            LOG.info("Get HADOOP_HOME {}", hadoopHome);
-            String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
-            conf.addResource(path(path, "/core-site.xml"));
-            conf.addResource(path(path, "/hdfs-site.xml"));
-            conf.addResource(path(path, "/mapred-site.xml"));
-            conf.addResource(path(path, "/yarn-site.xml"));
-        }
-        return conf;
+        // Just use local hadoop with default config in test
+        return new Configuration();
     }
 
     private static Path path(String configPath, String configFile) {
