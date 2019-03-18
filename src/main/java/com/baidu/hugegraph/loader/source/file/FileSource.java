@@ -45,12 +45,15 @@ public class FileSource implements InputSource {
     private String charset;
     @JsonProperty("date_format")
     private String dateFormat;
+    @JsonProperty("compression")
+    private Compression compression;
     @JsonProperty("comment_symbols")
     private Set<String> commentSymbols;
 
     public FileSource() {
         this.charset = DEFAULT_CHARSET;
         this.dateFormat = DEFAULT_DATE_FORMAT;
+        this.compression = Compression.NONE;
         this.commentSymbols = new HashSet<>();
     }
 
@@ -87,8 +90,17 @@ public class FileSource implements InputSource {
         return this.dateFormat;
     }
 
+    public Compression compression() {
+        return this.compression;
+    }
+
     public Set<String> commentSymbols() {
         assert this.commentSymbols != null;
         return Collections.unmodifiableSet(this.commentSymbols);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s with path %s", this.type(), this.path());
     }
 }

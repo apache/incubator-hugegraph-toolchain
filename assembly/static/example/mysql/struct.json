@@ -1,0 +1,67 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "jdbc",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://127.0.0.1:3306",
+        "database": "example",
+        "table": "person",
+        "username": "root",
+        "password": "",
+        "batch_size": 500
+      },
+      "id": "id",
+      "null_values": ["NULL"]
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "jdbc",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://127.0.0.1:3306",
+        "database": "example",
+        "table": "software",
+        "username": "root",
+        "password": "",
+        "batch_size": 500
+      },
+      "id": "id"
+    }
+  ],
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_id"],
+      "target": ["target_id"],
+      "input": {
+        "type": "jdbc",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://127.0.0.1:3306",
+        "database": "example",
+        "table": "knows",
+        "username": "root",
+        "password": "",
+        "batch_size": 500
+      },
+      "ignored": ["id"]
+    },
+    {
+      "label": "created",
+      "source": ["source_id"],
+      "target": ["target_id"],
+      "input": {
+        "type": "jdbc",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://127.0.0.1:3306",
+        "database": "example",
+        "table": "created",
+        "username": "root",
+        "password": "",
+        "batch_size": 500
+      },
+      "ignored": ["id"]
+    }
+  ]
+}

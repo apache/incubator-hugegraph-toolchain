@@ -26,7 +26,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
 public class LoadOptions {
-    
+
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
                description = "The path of the data source description file")

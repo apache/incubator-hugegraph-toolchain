@@ -19,18 +19,14 @@
 
 package com.baidu.hugegraph.loader.util;
 
-import static com.baidu.hugegraph.structure.constant.DataType.BYTE;
-import static com.baidu.hugegraph.structure.constant.DataType.DOUBLE;
-import static com.baidu.hugegraph.structure.constant.DataType.FLOAT;
-import static com.baidu.hugegraph.structure.constant.DataType.INT;
-import static com.baidu.hugegraph.structure.constant.DataType.LONG;
-
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
@@ -56,7 +52,7 @@ public final class DataTypeUtil {
             case SET:
             case LIST:
                 // TODO: diff SET & LIST (Server should support first)
-                return parseMultiValues(value, dataType, source);
+                return parseMultiValues(value, dataType, source, null);
             default:
                 throw new AssertionError(String.format(
                           "Unsupported cardinality: '%s'", cardinality));
@@ -86,12 +82,13 @@ public final class DataTypeUtil {
     /**
      * collection format:
      * "obj1,obj2,...,objn" or "[obj1,obj2,...,objn]" ..etc
-     * TODO: After parsing to json, the order of the collection changed in some cases (such as list<date>)
+     * TODO: After parsing to json, the order of the collection changed
+     * in some cases (such as list<date>)
      **/
-    private static <T> Object parseMultiValues(Object values, DataType dataType,
-                                               InputSource source,
-                                               char... symbols) {
-        // json file should not parse again
+    private static Object parseMultiValues(Object values, DataType dataType,
+                                           InputSource source,
+                                           Pair<Character, Character> symbols) {
+        // JSON file should not parse again
         if (values instanceof Collection &&
             checkCollectionDataType((Collection<?>) values, dataType)) {
             return values;
@@ -99,37 +96,24 @@ public final class DataTypeUtil {
 
         E.checkState(values instanceof String, "The value must be String type");
         String originValue = String.valueOf(values);
-        List<T> valueList = new LinkedList<>();
-        // use custom start&end format :like [obj1,obj2,...,objn]
-        if (symbols != null && symbols.length == 2 && originValue.charAt(0) ==
-            symbols[0] && originValue.charAt(originValue.length()-1) == symbols[1]) {
+        List<Object> valueList = new LinkedList<>();
+        // Use custom start&end format like [obj1,obj2,...,objn]
+        if (symbols != null && originValue.charAt(0) == symbols.getLeft() &&
+            originValue.charAt(originValue.length() - 1) == symbols.getRight()) {
             originValue = originValue.substring(1, originValue.length() - 1);
         }
         // TODO: Separator should also be customizable
         Splitter.on(',').splitToList(originValue).forEach(value -> {
-                 valueList.add((T) parseSingleValue(dataType, value, source));
+            valueList.add(parseSingleValue(dataType, value, source));
         });
         if (checkCollectionDataType(valueList, dataType)) {
-            return  valueList;
+            return valueList;
         }
         return null;
     }
 
-    private static boolean isNumber(DataType dataType) {
-        return dataType == BYTE || dataType == INT || dataType == LONG ||
-               dataType == FLOAT || dataType == DOUBLE;
-    }
-
-    private static boolean isDate(DataType dataType) {
-        return dataType == DataType.DATE;
-    }
-
-    private static boolean isUUID(DataType dataType) {
-        return dataType == DataType.UUID;
-    }
-
     private static Number valueToNumber(Object value, DataType dataType) {
-        E.checkState(isNumber(dataType), "The target data type must be number");
+        E.checkState(dataType.isNumber(), "The target data type must be number");
 
         if (dataType.clazz().isInstance(value)) {
             return (Number) value;
@@ -169,7 +153,7 @@ public final class DataTypeUtil {
         if (value instanceof Date) {
             return (Date) value;
         }
-        if (isDate(dataType)) {
+        if (dataType.isDate()) {
             if (value instanceof Number) {
                 return new Date(((Number) value).longValue());
             } else if (value instanceof String) {
@@ -189,7 +173,7 @@ public final class DataTypeUtil {
         if (value instanceof UUID) {
             return (UUID) value;
         }
-        if (isUUID(dataType) && value instanceof String) {
+        if (dataType.isUUID() && value instanceof String) {
             return UUID.fromString((String) value);
         }
         return null;

@@ -5,24 +5,40 @@ jdk:
 
 sudo: required
 
+cache:
+  directories:
+    - $HOME/.m2
+    - $HOME/downloads
+
 branches:
   only:
   - master
   - /^release-.*$/
   - /^test-.*$/
 
-install: mvn compile -Dmaven.javadoc.skip=true
+install: mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
 before_script:
-  - $TRAVIS_DIR/install-hugegraph.sh $TRAVIS_BRANCH
+  - $TRAVIS_DIR/install-hugegraph.sh $TRAVIS_BRANCH | grep -v "Downloading\|Downloaded"
+  - |
+    if [ "$SOURCE_TYPE" == "hdfs" ]; then
+      $TRAVIS_DIR/install-hadoop.sh
+    fi
+  - |
+    if [ "$SOURCE_TYPE" == "jdbc" ]; then
+      $TRAVIS_DIR/install-mysql.sh
+    fi
 
 script:
-  - mvn test -Dtest=LoaderTest
-  - mvn cobertura:cobertura
+  - mvn test -P${SOURCE_TYPE}
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 env:
+  matrix:
+    - SOURCE_TYPE=file
+    - SOURCE_TYPE=hdfs
+    - SOURCE_TYPE=jdbc
   global:
-  - TRAVIS_DIR=assembly/travis
+    - TRAVIS_DIR=assembly/travis

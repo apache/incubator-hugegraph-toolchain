@@ -19,8 +19,11 @@
 
 package com.baidu.hugegraph.loader.serializer;
 
-import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
@@ -34,15 +37,19 @@ public abstract class ElementSourceDeserializer<E>
     protected InputSource readInputSource(JsonNode node) {
         JsonNode typeNode = getNode(node, FIELD_TYPE, JsonNodeType.STRING);
         String type = typeNode.asText().toUpperCase();
+        SourceType sourceType = SourceType.valueOf(type);
         assert node instanceof ObjectNode;
         ObjectNode objectNode = (ObjectNode) node;
         // The node 'type' doesn't participate in deserialization
         objectNode.remove(FIELD_TYPE);
-        switch (type) {
-            case "FILE":
+        switch (sourceType) {
+            case FILE:
                 return JsonUtil.convert(node, FileSource.class);
+            case HDFS:
+                return JsonUtil.convert(node, HDFSSource.class);
+            case JDBC:
+                return JsonUtil.convert(node, JDBCSource.class);
             default:
-                // TODO: Expand more input sources
                 throw new AssertionError(String.format(
                           "Unsupported input source '%s'", type));
         }

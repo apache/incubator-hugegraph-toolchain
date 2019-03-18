@@ -19,14 +19,9 @@
 
 package com.baidu.hugegraph.loader.reader;
 
-import java.util.Map;
-
 import com.baidu.hugegraph.loader.util.AutoCloseableIterator;
 
-public interface InputReader
-       extends AutoCloseableIterator<Map<String, Object>> {
+public interface InputReader extends AutoCloseableIterator<Line> {
 
     public void init();
-
-    public String line();
 }
