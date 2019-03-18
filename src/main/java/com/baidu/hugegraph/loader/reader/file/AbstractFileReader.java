@@ -123,16 +123,16 @@ public abstract class AbstractFileReader implements InputReader {
             return null;
         }
 
-        // Skip the comment line
-        if (this.isCommentLine(rawLine)) {
+        // Skip the line matched specified regex
+        if (this.needSkipLine(rawLine)) {
             return this.fetch();
         } else {
             return this.parser.parse(rawLine);
         }
     }
 
-    private boolean isCommentLine(String line) {
-        return this.source.commentSymbols().stream().anyMatch(line::startsWith);
+    private boolean needSkipLine(String line) {
+        return line.matches(this.source.skippedLineRegex());
     }
 
     private boolean isDuplicateHeader(String line) {
