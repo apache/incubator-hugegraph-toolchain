@@ -20,9 +20,7 @@
 package com.baidu.hugegraph.loader.source.file;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.SourceType;
@@ -32,6 +30,7 @@ public class FileSource implements InputSource {
 
     private static final String DEFAULT_CHARSET = "UTF-8";
     private static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    private static final String DEFAULT_SKIPPED_LINE_REGEX = "";
 
     @JsonProperty("path")
     private String path;
@@ -45,16 +44,16 @@ public class FileSource implements InputSource {
     private String charset;
     @JsonProperty("date_format")
     private String dateFormat;
+    @JsonProperty("skipped_line_regex")
+    private String skippedLineRegex;
     @JsonProperty("compression")
     private Compression compression;
-    @JsonProperty("comment_symbols")
-    private Set<String> commentSymbols;
 
     public FileSource() {
         this.charset = DEFAULT_CHARSET;
         this.dateFormat = DEFAULT_DATE_FORMAT;
+        this.skippedLineRegex = DEFAULT_SKIPPED_LINE_REGEX;
         this.compression = Compression.NONE;
-        this.commentSymbols = new HashSet<>();
     }
 
     @Override
@@ -90,13 +89,12 @@ public class FileSource implements InputSource {
         return this.dateFormat;
     }
 
-    public Compression compression() {
-        return this.compression;
+    public String skippedLineRegex() {
+        return this.skippedLineRegex;
     }
 
-    public Set<String> commentSymbols() {
-        assert this.commentSymbols != null;
-        return Collections.unmodifiableSet(this.commentSymbols);
+    public Compression compression() {
+        return this.compression;
     }
 
     @Override

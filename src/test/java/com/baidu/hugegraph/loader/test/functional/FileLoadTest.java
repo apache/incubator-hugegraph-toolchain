@@ -590,12 +590,13 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testFileOnlyHasAnEmptyLine() {
-        ioUtil.write("vertex_person_empty.csv", "");
+    public void testFileNoHeader() {
+        ioUtil.write("vertex_person.csv",
+                     "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("file_only_has_empty_line/struct.json"),
-                "-s", configPath("file_only_has_empty_line/schema.groovy"),
+                "-f", configPath("file_no_header/struct.json"),
+                "-s", configPath("file_no_header/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -628,18 +629,39 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testFileHasCommentLine() {
+    public void testFileHasEmptyLine() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,#Beijing",
+                     "",
+                     "vadas,27,//Hongkong");
+
+        String[] args = new String[]{
+                "-f", configPath("file_has_empty_line/struct.json"),
+                "-s", configPath("file_has_empty_line/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+    }
+
+    @Test
+    public void testFileHasSkippedLine() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
                      "# This is a comment",
-                     "marko,29,Beijing",
+                     "marko,29,#Beijing",
                      "// This is also a comment",
                      "# This is still a comment",
-                     "vadas,27,Hongkong");
+                     "vadas,27,//Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("file_has_comment_line/struct.json"),
-                "-s", configPath("file_has_comment_line/schema.groovy"),
+                "-f", configPath("file_has_skipped_line/struct.json"),
+                "-s", configPath("file_has_skipped_line/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
