@@ -25,7 +25,7 @@ import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
-public class LoadOptions {
+public final class LoadOptions {
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
@@ -50,6 +50,10 @@ public class LoadOptions {
                validateWith = {PositiveValidator.class},
                description = "The port of HugeGraphServer")
     public int port = 8080;
+
+    @Parameter(names = {"--token"}, arity = 1,
+               description = "The token of graph for authentication")
+    public String token = null;
 
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
