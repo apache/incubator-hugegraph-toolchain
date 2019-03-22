@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class ResultSet {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @JsonProperty
     private List<Object> data;
@@ -46,7 +46,7 @@ public class ResultSet {
     static {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
-        mapper.registerModule(module);
+        MAPPER.registerModule(module);
     }
 
     public List<Object> data() {
@@ -73,8 +73,8 @@ public class ResultSet {
         }
 
         try {
-            String rawValue = mapper.writeValueAsString(object);
-            return new Result(mapper.readValue(rawValue, clazz));
+            String rawValue = MAPPER.writeValueAsString(object);
+            return new Result(MAPPER.readValue(rawValue, clazz));
         } catch (Exception e) {
             throw new SerializeException(
                       "Failed to deserialize: %s", e, object);

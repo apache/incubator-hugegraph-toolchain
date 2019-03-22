@@ -26,18 +26,12 @@ import org.glassfish.jersey.uri.UriComponent.Type;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.JsonUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 
 public abstract class GraphAPI extends API {
 
     private static final String PATH = "graphs/%s/graph/%s";
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final String batchPath;
 
@@ -73,13 +67,7 @@ public abstract class GraphAPI extends API {
         if (properties == null) {
             return null;
         }
-        String json;
-        try {
-            json = MAPPER.writeValueAsString(properties);
-        } catch (JsonProcessingException e) {
-            throw new ClientException("Failed to serialize properties '%s'",
-                                      properties);
-        }
+        String json = JsonUtil.toJson(properties);
         /*
          * Don't use UrlEncoder.encode, it encoded the space as `+`,
          * which will invalidate the jersey's automatic decoding

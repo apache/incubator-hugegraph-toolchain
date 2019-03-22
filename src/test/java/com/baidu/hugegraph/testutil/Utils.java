@@ -40,7 +40,7 @@ import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert.ThrowableRunnable;
 import com.google.common.collect.ImmutableList;
 
-public class Utils {
+public final class Utils {
 
     public static void assertResponseError(int status, ThrowableRunnable run) {
         Assert.assertThrows(ServerException.class, run, (e) -> {
@@ -57,10 +57,10 @@ public class Utils {
         for (Object object : objects) {
             Assert.assertTrue(object instanceof GraphElement);
             if (object instanceof Vertex) {
-                Utils.contains(vertices, (Vertex) object);
+                Assert.assertTrue(Utils.contains(vertices, (Vertex) object));
             } else {
                 Assert.assertTrue(object instanceof Edge);
-                Utils.contains(edges, (Edge) object);
+                Assert.assertTrue(Utils.contains(edges, (Edge) object));
             }
         }
     }
@@ -285,13 +285,15 @@ public class Utils {
 
     public static Map<String, Object> asMap(Object... keyValues) {
         return Utils.asPairs(keyValues).stream()
-               .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+                    .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
     }
 
     public static List<Pair<String, Object>> asPairs(Object... keyValues) {
         final List<Object> list = Arrays.asList(keyValues);
-        return IntStream.range(1, list.size()).filter(i -> i % 2 != 0)
-               .mapToObj(i -> Pair.of(list.get(i - 1).toString(), list.get(i)))
-               .collect(Collectors.toList());
+        return IntStream.range(1, list.size())
+                        .filter(i -> i % 2 != 0)
+                        .mapToObj(i -> Pair.of(list.get(i - 1).toString(),
+                                               list.get(i)))
+                        .collect(Collectors.toList());
     }
 }

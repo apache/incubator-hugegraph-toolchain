@@ -764,24 +764,9 @@ public class RestResultTest {
                 + "\"label\": \"person\","
                 + "\"type\": \"vertex\","
                 + "\"properties\":{"
-                + "\"city\":["
-                + "{"
-                + "\"id\": \"person:marko>city\","
-                + "\"value\": \"Beijing\""
-                + "}"
-                + "],"
-                + "\"name\":["
-                + "{"
-                + "\"id\": \"person:marko>name\","
-                + "\"value\": \"marko\""
-                + "}"
-                + "],"
-                + "\"age\":["
-                + "{"
-                + "\"id\": \"person:marko>age\","
-                + "\"value\": 29"
-                + "}"
-                + "]"
+                + "\"city\":\"Beijing\","
+                + "\"name\":\"marko\","
+                + "\"age\":29"
                 + "}"
                 + "},"
                 + "{"
@@ -808,7 +793,7 @@ public class RestResultTest {
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
         Mockito.when(this.mockResponse.readEntity(String.class))
-                .thenReturn(json);
+               .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());

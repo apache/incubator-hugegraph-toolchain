@@ -27,20 +27,14 @@ import com.baidu.hugegraph.exception.InvalidResponseException;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public class PathDeserializer extends JsonDeserializer<Path> {
-
-    private final ObjectMapper mapper;
-
-    public PathDeserializer() {
-        this.mapper = new ObjectMapper();
-    }
 
     @Override
     public Path deserialize(JsonParser parser, DeserializationContext ctxt)
@@ -55,7 +49,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
             if (labelsNode.getNodeType() != JsonNodeType.ARRAY) {
                 throw InvalidResponseException.expectField("labels", node);
             }
-            Object labels = this.mapper.convertValue(labelsNode, Object.class);
+            Object labels = JsonUtil.convertValue(labelsNode, Object.class);
             ((List<?>) labels).forEach(path::labels);
         }
 
@@ -74,7 +68,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
             if (typeNode != null) {
                 object = parseTypedNode(objectNode, typeNode);
             } else {
-                object = this.mapper.convertValue(objectNode, Object.class);
+                object = JsonUtil.convertValue(objectNode, Object.class);
             }
             path.objects(object);
         }
@@ -82,7 +76,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
         // Parse node 'crosspoint'
         JsonNode crosspointNode = node.get("crosspoint");
         if (crosspointNode != null) {
-            Object object = this.mapper.convertValue(crosspointNode, Object.class);
+            Object object = JsonUtil.convertValue(crosspointNode, Object.class);
             path.crosspoint(object);
         }
         return path;
@@ -91,9 +85,9 @@ public class PathDeserializer extends JsonDeserializer<Path> {
     private Object parseTypedNode(JsonNode objectNode, JsonNode typeNode) {
         String type = typeNode.asText();
         if (type.equals("vertex")) {
-            return this.mapper.convertValue(objectNode, Vertex.class);
+            return JsonUtil.convertValue(objectNode, Vertex.class);
         } else if (type.equals("edge")) {
-            return this.mapper.convertValue(objectNode, Edge.class);
+            return JsonUtil.convertValue(objectNode, Edge.class);
         } else {
             throw InvalidResponseException.expectField("vertex/edge", type);
         }
