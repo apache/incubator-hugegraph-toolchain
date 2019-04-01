@@ -22,7 +22,6 @@ package com.baidu.hugegraph.loader.test.functional;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import java.util.Arrays;
 
 import org.apache.commons.compress.compressors.CompressorException;
@@ -59,10 +58,6 @@ public class HDFSUtil implements IOUtil {
     private static Configuration loadConfiguration() {
         // Just use local hadoop with default config in test
         return new Configuration();
-    }
-
-    private static Path path(String configPath, String configFile) {
-        return new Path(Paths.get(configPath, configFile).toString());
     }
 
     @Override

@@ -21,19 +21,15 @@ package com.baidu.hugegraph.loader.executor;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
-import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
-import com.baidu.hugegraph.util.Log;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.util.DelegatingScript;
 
 public class GroovyExecutor {
-
-    private static final Logger LOG = Log.logger(GroovyExecutor.class);
 
     private final Binding binding;
 

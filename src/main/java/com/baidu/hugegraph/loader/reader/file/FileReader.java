@@ -27,16 +27,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.util.Log;
 
 public class FileReader extends AbstractFileReader {
-
-    private static final Logger LOG = Log.logger(FileReader.class);
 
     public FileReader(FileSource source) {
         super(source);

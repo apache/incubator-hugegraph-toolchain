@@ -23,17 +23,12 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.slf4j.Logger;
-
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
-import com.baidu.hugegraph.util.Log;
 
 public class JDBCReader implements InputReader {
-
-    private static final Logger LOG = Log.logger(JDBCReader.class);
 
     private final JDBCSource source;
     private final RowFetcher fetcher;
