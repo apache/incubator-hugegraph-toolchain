@@ -51,7 +51,7 @@ public class FileReader extends AbstractFileReader {
             File[] subFiles = file.listFiles();
             if (subFiles == null) {
                 throw new LoadException(
-                          "Error when list files of path '%s'", file);
+                          "Error while listing the files of path '%s'", file);
             }
             for (File subFile : subFiles) {
                 files.add(new ReadableFile(subFile));
@@ -63,7 +63,7 @@ public class FileReader extends AbstractFileReader {
     private static void checkExistAndReadable(File file) {
         if (!file.exists()) {
             throw new LoadException(
-                      "Please ensure the file or directory exist: '%s'", file);
+                      "Please ensure the file or directory exists: '%s'", file);
         }
         if (!file.canRead()) {
             throw new LoadException(
