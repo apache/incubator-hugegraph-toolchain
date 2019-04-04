@@ -27,4 +27,5 @@ public class Traverser {
     public static final long DEFAULT_CROSSPOINT_LIMIT = 10_000L;
     public static final long DEFAULT_SAMPLE = 100L;
     public static final double DEFAULT_WEIGHT = 0.0D;
+    public static final long DEFAULT_PAGE_LIMIT = 100_000L;
 }

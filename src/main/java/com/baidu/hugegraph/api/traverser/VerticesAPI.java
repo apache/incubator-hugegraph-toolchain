@@ -29,6 +29,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
@@ -65,13 +66,16 @@ public class VerticesAPI extends TraversersAPI {
         return result.readList("shards", Shard.class);
     }
 
-    public List<Vertex> scan(Shard shard) {
+    public Vertices scan(Shard shard, String page, long pageLimit) {
+        E.checkArgument(shard != null, "Shard can't be null");
         String path = String.join(PATH_SPLITOR, this.path(), "scan");
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("start", shard.start());
         params.put("end", shard.end());
+        params.put("page", page);
+        params.put("page_limit", pageLimit);
         RestResult result = this.client.get(path, params);
-        return result.readList(this.type(), Vertex.class);
+        return result.readObject(Vertices.class);
     }
 }
 

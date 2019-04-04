@@ -37,14 +37,18 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Edges;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
 
 public class TraverserApiTest extends BaseApiTest {
 
@@ -802,9 +806,37 @@ public class TraverserApiTest extends BaseApiTest {
         List<Shard> shards = verticesAPI.shards(1 * 1024 * 1024);
         List<Vertex> vertices = new LinkedList<>();
         for (Shard shard : shards) {
-            vertices.addAll(ImmutableList.copyOf(verticesAPI.scan(shard)));
+            Vertices results = verticesAPI.scan(shard, null, 0L);
+            vertices.addAll(ImmutableList.copyOf(results.results()));
+            Assert.assertNull(results.page());
         }
         Assert.assertEquals(6, vertices.size());
+    }
+
+    @Test
+    public void testScanVertexInPaging() {
+        List<Shard> shards = verticesAPI.shards(1 * 1024 * 1024);
+        List<Vertex> vertices = new LinkedList<>();
+        for (Shard shard : shards) {
+            String page = "";
+            while (page != null) {
+                Vertices results = verticesAPI.scan(shard, page, DEFAULT_PAGE_LIMIT);
+                vertices.addAll(ImmutableList.copyOf(results.results()));
+                page = results.page();
+            }
+        }
+        Assert.assertEquals(6, vertices.size());
+    }
+
+    @Test
+    public void testScanVertexInPagingWithNegativeLimit() {
+        List<Shard> shards = verticesAPI.shards(1 * 1024 * 1024);
+        for (Shard shard : shards) {
+            String page = "";
+            Assert.assertThrows(ServerException.class, () -> {
+                verticesAPI.scan(shard, page, -1);
+            });
+        }
     }
 
     @Test
@@ -819,9 +851,37 @@ public class TraverserApiTest extends BaseApiTest {
         List<Shard> shards = edgesAPI.shards(1 * 1024 * 1024);
         List<Edge> edges = new LinkedList<>();
         for (Shard shard : shards) {
-            edges.addAll(ImmutableList.copyOf(edgesAPI.scan(shard)));
+            Edges results = edgesAPI.scan(shard, null, 0L);
+            Assert.assertNull(results.page());
+            edges.addAll(ImmutableList.copyOf(results.results()));
         }
         Assert.assertEquals(6, edges.size());
+    }
+
+    @Test
+    public void testScanEdgeInPaging() {
+        List<Shard> shards = edgesAPI.shards(1 * 1024 * 1024);
+        List<Edge> edges = new LinkedList<>();
+        for (Shard shard : shards) {
+            String page = "";
+            while (page != null) {
+                Edges results = edgesAPI.scan(shard, page, DEFAULT_PAGE_LIMIT);
+                edges.addAll(ImmutableList.copyOf(results.results()));
+                page = results.page();
+            }
+        }
+        Assert.assertEquals(6, edges.size());
+    }
+
+    @Test
+    public void testScanEdgeInPagingWithNegativeLimit() {
+        List<Shard> shards = edgesAPI.shards(1 * 1024 * 1024);
+        for (Shard shard : shards) {
+            String page = "";
+            Assert.assertThrows(ServerException.class, () -> {
+                edgesAPI.scan(shard, page, -1);
+            });
+        }
     }
 
     @Test
@@ -872,6 +932,6 @@ public class TraverserApiTest extends BaseApiTest {
         ImmutableList.of(knows1, created1).forEach(edgeLabel -> {
             elTaskIds.add(edgeLabelAPI.delete(edgeLabel.name()));
         });
-        elTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        elTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
     }
 }
