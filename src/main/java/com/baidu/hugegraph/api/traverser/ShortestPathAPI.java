@@ -28,6 +28,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Path;
+import com.baidu.hugegraph.util.E;
 
 public class ShortestPathAPI extends TraversersAPI {
 
@@ -42,13 +43,14 @@ public class ShortestPathAPI extends TraversersAPI {
 
     public Path get(Object sourceId, Object targetId,
                     Direction direction, String label, int maxDepth,
-                    long degree, long capacity) {
+                    long degree, long skipDegree, long capacity) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
 
         checkPositive(maxDepth, "Max depth of shortest path");
         checkDegree(degree);
         checkCapacity(capacity);
+        checkSkipDegree(skipDegree, degree, capacity);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);
@@ -57,9 +59,29 @@ public class ShortestPathAPI extends TraversersAPI {
         params.put("label", label);
         params.put("max_depth", maxDepth);
         params.put("max_degree", degree);
+        params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
         RestResult result = this.client.get(this.path(), params);
         List<Object> vertices = result.readList("path", Object.class);
         return new Path(vertices);
+    }
+
+    private static void checkSkipDegree(long skipDegree, long degree,
+                                        long capacity) {
+        E.checkArgument(skipDegree >= 0L,
+                        "The skipped degree must be >= 0, but got '%s'",
+                        skipDegree);
+        if (capacity != NO_LIMIT) {
+            E.checkArgument(degree != NO_LIMIT && degree < capacity,
+                            "The degree must be < capacity");
+            E.checkArgument(skipDegree < capacity,
+                            "The skipped degree must be < capacity");
+        }
+        if (skipDegree > 0L) {
+            E.checkArgument(degree != NO_LIMIT && skipDegree >= degree,
+                            "The skipped degree must be >= degree, " +
+                            "but got skipped degree '%s' and degree '%s'",
+                            skipDegree, degree);
+        }
     }
 }

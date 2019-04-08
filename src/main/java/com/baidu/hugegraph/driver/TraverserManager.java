@@ -48,6 +48,10 @@ import com.baidu.hugegraph.util.E;
 
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
 
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
+
 public class TraverserManager {
 
     private final GraphManager graphManager;
@@ -89,15 +93,22 @@ public class TraverserManager {
 
     public Path shortestPath(Object sourceId, Object targetId,
                              Direction direction, String label, int maxDepth) {
-        return this.shortestPath(sourceId, targetId, direction,
-                                 label, maxDepth, -1L, -1L);
+        return this.shortestPath(sourceId, targetId, direction, label, maxDepth,
+                                 DEFAULT_DEGREE, DEFAULT_CAPACITY);
     }
 
     public Path shortestPath(Object sourceId, Object targetId,
                              Direction direction, String label, int maxDepth,
                              long degree, long capacity) {
-        return this.shortestPathAPI.get(sourceId, targetId, direction,
-                                        label, maxDepth, degree, capacity);
+        return this.shortestPath(sourceId, targetId, direction, label,
+                                 maxDepth, degree, 0L, capacity);
+    }
+
+    public Path shortestPath(Object sourceId, Object targetId,
+                             Direction direction, String label, int maxDepth,
+                             long degree, long skipDegree, long capacity) {
+        return this.shortestPathAPI.get(sourceId, targetId, direction, label,
+                                        maxDepth, degree, skipDegree, capacity);
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
@@ -109,8 +120,8 @@ public class TraverserManager {
     public List<Path> paths(Object sourceId, Object targetId,
                             Direction direction, String label,
                             int maxDepth, long limit) {
-        return this.paths(sourceId, targetId, direction,
-                          label, maxDepth, -1L, -1L, limit);
+        return this.paths(sourceId, targetId, direction, label, maxDepth,
+                          DEFAULT_DEGREE, DEFAULT_CAPACITY, limit);
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
@@ -129,8 +140,8 @@ public class TraverserManager {
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  Direction direction, String label,
                                  int maxDepth, int limit) {
-        return this.crosspoint(sourceId, targetId, direction,
-                               label, maxDepth, -1L, -1L, limit);
+        return this.crosspoint(sourceId, targetId, direction, label, maxDepth,
+                               DEFAULT_DEGREE, DEFAULT_CAPACITY, limit);
     }
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
@@ -148,7 +159,8 @@ public class TraverserManager {
     public List<Object> kout(Object sourceId, Direction direction,
                              String label, int depth, boolean nearest) {
         return this.kout(sourceId, direction, label, depth, nearest,
-                         -1L, -1L, -1L);
+                         DEFAULT_DEGREE, DEFAULT_CAPACITY,
+                         DEFAULT_ELEMENTS_LIMIT);
     }
 
     public List<Object> kout(Object sourceId, Direction direction,
@@ -165,7 +177,8 @@ public class TraverserManager {
 
     public List<Object> kneighbor(Object sourceId, Direction direction,
                                   String label, int depth) {
-        return this.kneighbor(sourceId, direction, label, depth, -1L, -1L);
+        return this.kneighbor(sourceId, direction, label, depth,
+                              DEFAULT_DEGREE, DEFAULT_ELEMENTS_LIMIT);
     }
 
     public List<Object> kneighbor(Object sourceId, Direction direction,

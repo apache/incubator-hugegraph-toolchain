@@ -36,6 +36,7 @@ import com.baidu.hugegraph.api.traverser.structure.PathsRequest;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Edges;
 import com.baidu.hugegraph.structure.graph.Path;
@@ -69,7 +70,7 @@ public class TraverserApiTest extends BaseApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
 
         Path path = shortestPathAPI.get(markoId, rippleId, Direction.BOTH,
-                                        null, 3, -1L, -1L);
+                                        null, 3, -1L, 0L, -1L);
         Assert.assertEquals(3, path.size());
         Assert.assertEquals(markoId, path.objects().get(0));
         Assert.assertEquals(joshId, path.objects().get(1));
@@ -83,7 +84,174 @@ public class TraverserApiTest extends BaseApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             shortestPathAPI.get(markoId, rippleId, Direction.BOTH,
-                                null, 3, -1L, 1L);
+                                null, 3, 1L, 0L, 2L);
+        });
+    }
+
+    @Test
+    public void testShortestPathWithSkipDegree() {
+        schema().vertexLabel("node")
+                .useCustomizeNumberId()
+                .ifNotExist()
+                .create();
+
+        schema().edgeLabel("link")
+                .sourceLabel("node").targetLabel("node")
+                .ifNotExist()
+                .create();
+
+        Vertex v1 = graph().addVertex(T.label, "node", T.id, 1);
+        Vertex v2 = graph().addVertex(T.label, "node", T.id, 2);
+        Vertex v3 = graph().addVertex(T.label, "node", T.id, 3);
+        Vertex v4 = graph().addVertex(T.label, "node", T.id, 4);
+        Vertex v5 = graph().addVertex(T.label, "node", T.id, 5);
+        Vertex v6 = graph().addVertex(T.label, "node", T.id, 6);
+        Vertex v7 = graph().addVertex(T.label, "node", T.id, 7);
+        Vertex v8 = graph().addVertex(T.label, "node", T.id, 8);
+        Vertex v9 = graph().addVertex(T.label, "node", T.id, 9);
+        Vertex v10 = graph().addVertex(T.label, "node", T.id, 10);
+        Vertex v11 = graph().addVertex(T.label, "node", T.id, 11);
+        Vertex v12 = graph().addVertex(T.label, "node", T.id, 12);
+        Vertex v13 = graph().addVertex(T.label, "node", T.id, 13);
+        Vertex v14 = graph().addVertex(T.label, "node", T.id, 14);
+        Vertex v15 = graph().addVertex(T.label, "node", T.id, 15);
+        Vertex v16 = graph().addVertex(T.label, "node", T.id, 16);
+        Vertex v17 = graph().addVertex(T.label, "node", T.id, 17);
+        Vertex v18 = graph().addVertex(T.label, "node", T.id, 18);
+
+        // Path length 5
+        v1.addEdge("link", v2);
+        v2.addEdge("link", v3);
+        v3.addEdge("link", v4);
+        v4.addEdge("link", v5);
+        v5.addEdge("link", v6);
+
+        // Path length 4
+        v1.addEdge("link", v7);
+        v7.addEdge("link", v8);
+        v8.addEdge("link", v9);
+        v9.addEdge("link", v6);
+
+        // Path length 3
+        v1.addEdge("link", v10);
+        v10.addEdge("link", v11);
+        v11.addEdge("link", v6);
+
+        // Add other 3 neighbor for v7
+        v7.addEdge("link", v12);
+        v7.addEdge("link", v13);
+        v7.addEdge("link", v14);
+
+        // Add other 4 neighbor for v10
+        v10.addEdge("link", v15);
+        v10.addEdge("link", v16);
+        v10.addEdge("link", v17);
+        v10.addEdge("link", v18);
+
+        // Path length 5 with min degree 3(v1 degree is 3)
+        List<Object> path1 = ImmutableList.of(v1.id(), v2.id(), v3.id(),
+                                              v4.id(), v5.id(), v6.id());
+        // Path length 4 with middle degree 4(v7 degree is 4)
+        List<Object> path2 = ImmutableList.of(v1.id(), v7.id(), v8.id(),
+                                              v9.id(), v6.id());
+        // Path length 3 with max degree 5(v10 degree is 5)
+        List<Object> path3 = ImmutableList.of(v1.id(), v10.id(),
+                                              v11.id(), v6.id());
+
+        // (skipped degree == degree) > max degree
+        Path path = shortestPathAPI.get(v1.id(), v6.id(), Direction.OUT,
+                                        null, 5, 6L, 6L, -1L);
+        Assert.assertEquals(4, path.size());
+        Assert.assertEquals(path3, path.objects());
+
+        // (skipped degree == degree) == max degree
+        path = shortestPathAPI.get(v1.id(), v6.id(), Direction.OUT,
+                                   null, 5, 5L, 5L, -1L);
+        Assert.assertEquals(5, path.size());
+        Assert.assertEquals(path2, path.objects());
+
+        // min degree < (skipped degree == degree) == middle degree < max degree
+        path = shortestPathAPI.get(v1.id(), v6.id(), Direction.OUT,
+                                   null, 5, 4L, 4L, -1L);
+        Assert.assertEquals(6, path.size());
+        Assert.assertEquals(path1, path.objects());
+
+        // (skipped degree == degree) <= min degree
+        path = shortestPathAPI.get(v1.id(), v6.id(), Direction.OUT,
+                                   null, 5, 3L, 3L, -1L);
+        Assert.assertEquals(0, path.size());
+
+        // Skipped degree > max degree, degree <= min degree
+        path = shortestPathAPI.get(v1.id(), v6.id(), Direction.OUT,
+                                   null, 5, 3L, 6L, -1L);
+        Assert.assertTrue(path.size() == 4 ||
+                          path.size() == 5 ||
+                          path.size() == 6);
+        List<List<Object>> paths = ImmutableList.of(path1, path2, path3);
+        Assert.assertTrue(paths.contains(path.objects()));
+
+        // Skipped degree > max degree, min degree < degree < max degree
+        path = shortestPathAPI.get(v1.id(), v6.id(), Direction.OUT,
+                                   null, 5, 4L, 6L, -1L);
+        Assert.assertTrue(path.size() == 4 || path.size() == 5);
+        Assert.assertTrue(path2.equals(path.objects()) ||
+                          path3.equals(path.objects()));
+
+        // Skipped degree > max degree, degree >= max degree
+        path = shortestPathAPI.get(v1.id(), v6.id(), Direction.OUT,
+                                   null, 5, 5L, 6L, -1L);
+        Assert.assertEquals(4, path.size());
+        Assert.assertEquals(path3, path.objects());
+
+        waitUntilTaskCompleted(edgeLabelAPI.delete("link"));
+        waitUntilTaskCompleted(vertexLabelAPI.delete("node"));
+    }
+
+    @Test
+    public void testShortestPathWithIllegalArgs() {
+        // The max depth shouldn't be 0 or negative
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, -1, 1L, 0L, 2L);
+        });
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, 0, 1L, 0L, 2L);
+        });
+
+        // The degree shouldn't be 0 or negative but NO_LIMIT(-1)
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, 5, 0L, 0L, 2L);
+        });
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, 5, -3L, 0L, 2L);
+        });
+
+        // The skipped degree shouldn't be negative
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, 5, 1L, -1L, 2L);
+        });
+
+        // The skipped degree shouldn't be >= capacity
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, 5, 1L, 2L, 2L);
+        });
+
+        // The skipped degree shouldn't be < degree
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, 5, 3L, 2L, 10L);
+        });
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            shortestPathAPI.get("a", "b", Direction.BOTH,
+                                null, 5, -1L, 2L, 10L);
         });
     }
 
