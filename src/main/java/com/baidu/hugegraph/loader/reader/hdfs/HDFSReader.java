@@ -48,11 +48,10 @@ public class HDFSReader extends AbstractFileReader {
     public HDFSReader(HDFSSource source) {
         super(source);
         Configuration config = this.loadConfiguration();
-        LOG.info("Opening readers for hdfs source {}", source);
         try {
             this.hdfs = FileSystem.get(URI.create(source.path()), config);
         } catch (IOException e) {
-            throw new LoadException("Failed to create hdfs file system", e);
+            throw new LoadException("Failed to create HDFS file system", e);
         }
         Path path = new Path(source.path());
         checkExist(this.hdfs, path);
@@ -119,12 +118,12 @@ public class HDFSReader extends AbstractFileReader {
         try {
             if (!fs.exists(path)) {
                 throw new LoadException(
-                          "Please ensure the file or directory exist: '%s'",
+                          "Please ensure the file or directory exists: '%s'",
                           path);
             }
         } catch (IOException e) {
             throw new LoadException(
-                      "Some exception occured when check hdfs path '%s' exist",
+                      "An exception occurred while checking HDFS path: '%s'",
                       path);
         }
     }

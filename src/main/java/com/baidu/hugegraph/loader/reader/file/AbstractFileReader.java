@@ -47,7 +47,7 @@ import com.baidu.hugegraph.util.Log;
 
 public abstract class AbstractFileReader implements InputReader {
 
-    private static final Logger LOG = Log.logger(AbstractFileReader.class);
+    protected static final Logger LOG = Log.logger(AbstractFileReader.class);
 
     private static final int BUF_SIZE = 5 * 1024 * 1024;
 
@@ -71,6 +71,7 @@ public abstract class AbstractFileReader implements InputReader {
 
     @Override
     public void init() {
+        LOG.info("Opening source {}", this.source);
         try {
             this.readers = this.openReaders();
         } catch (IOException e) {
@@ -93,7 +94,7 @@ public abstract class AbstractFileReader implements InputReader {
     @Override
     public Line next() {
         if (!this.hasNext()) {
-            throw new NoSuchElementException("Reach end of file");
+            throw new NoSuchElementException("Reached the end of file");
         }
         Line line = this.nextLine;
         this.nextLine = null;
@@ -117,7 +118,7 @@ public abstract class AbstractFileReader implements InputReader {
         try {
             rawLine = this.readNextLine();
         } catch (IOException e) {
-            throw new LoadException("Read next line error", e);
+            throw new LoadException("Error while reading the next line", e);
         }
         if (rawLine == null) {
             return null;
@@ -166,7 +167,7 @@ public abstract class AbstractFileReader implements InputReader {
     private static BufferedReader createBufferedReader(InputStream stream,
                                                        FileSource source)
                                                        throws Exception {
-        E.checkNotNull(stream, "InputStream");
+        E.checkNotNull(stream, "stream");
         try {
             Reader csr = createCompressReader(stream, source);
             return new BufferedReader(csr, BUF_SIZE);

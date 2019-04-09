@@ -68,7 +68,7 @@ public class JDBCReader implements InputReader {
                 this.batch = this.fetcher.nextBatch();
                 this.offset = 0;
             } catch (Exception e) {
-                throw new LoadException("Read next row error", e);
+                throw new LoadException("Error while reading the next row", e);
             }
         }
         return this.batch != null;
@@ -77,7 +77,7 @@ public class JDBCReader implements InputReader {
     @Override
     public Line next() {
         if (!this.hasNext()) {
-            throw new NoSuchElementException("Reach end of table");
+            throw new NoSuchElementException("Reached end of table");
         }
         return this.batch.get(this.offset++);
     }
