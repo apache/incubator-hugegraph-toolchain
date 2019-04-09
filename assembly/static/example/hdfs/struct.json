@@ -16,7 +16,7 @@
       "label": "software",
       "input": {
         "type": "hdfs",
-        "path": "hdfs://localhost:8020/example/vertex_software.text",
+        "path": "hdfs://localhost:8020/example/vertex_software.txt",
         "format": "TEXT",
         "delimiter": "|",
         "charset": "GBK"
