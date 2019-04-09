@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -47,14 +46,11 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.Log;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
 public abstract class ElementBuilder<GE extends GraphElement>
                 implements AutoCloseableIterator<GE> {
-
-    private static final Logger LOG = Log.logger(ElementBuilder.class);
 
     private static final int VERTEX_ID_LIMIT = 128;
     private static final String ID_CHARSET = "UTF-8";
