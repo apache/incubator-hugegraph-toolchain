@@ -21,6 +21,8 @@ package com.baidu.hugegraph.loader.exception;
 
 public class LoadException extends RuntimeException {
 
+    private static final long serialVersionUID = 5504623124963497613L;
+
     public LoadException(String message) {
         super(message);
     }

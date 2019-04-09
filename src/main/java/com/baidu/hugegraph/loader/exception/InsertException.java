@@ -23,6 +23,8 @@ import com.baidu.hugegraph.structure.GraphElement;
 
 public class InsertException extends IllegalArgumentException {
 
+    private static final long serialVersionUID = 2218730111752576867L;
+
     private final GraphElement element;
 
     public InsertException(GraphElement element, String message) {
