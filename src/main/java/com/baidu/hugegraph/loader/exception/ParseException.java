@@ -21,6 +21,8 @@ package com.baidu.hugegraph.loader.exception;
 
 public class ParseException extends IllegalArgumentException {
 
+    private static final long serialVersionUID = 5626071847324807449L;
+
     private final String line;
 
     public ParseException(String line, String message) {
