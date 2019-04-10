@@ -115,10 +115,8 @@ public class HugeGraphCommand {
                 backupManager.backup(backup.types(), backup.directory());
                 break;
             case "restore":
-                SubCommands.GraphModeGet graphModeGet =
-                                         this.subCommand("graph-mode-get");
                 GraphsManager graphsManager = manager(GraphsManager.class);
-                GraphMode mode = graphsManager.mode(graphModeGet.graph());
+                GraphMode mode = graphsManager.mode(this.graph());
                 E.checkState(mode.maintaining(),
                              "Invalid mode '%s' of graph '%s' for restore " +
                              "sub-command", mode, this.graph());
@@ -163,7 +161,7 @@ public class HugeGraphCommand {
                               graphModeSet.graph(), graphModeSet.mode());
                 break;
             case "graph-mode-get":
-                graphModeGet = this.subCommand(subCmd);
+                SubCommands.GraphModeGet graphModeGet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
                 Printer.printKV("Graph mode",
                                 graphsManager.mode(graphModeGet.graph()));
