@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.driver;
 
+import java.io.Closeable;
+
 import javax.ws.rs.ProcessingException;
 
 import com.baidu.hugegraph.client.RestClient;
@@ -26,13 +28,17 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.version.ClientVersion;
 
-public class HugeClient {
+public class HugeClient implements Closeable {
 
     private static final int DEFAULT_TIMEOUT = 20;
+    private static final int DEFAULT_MAX_CONNS = 100;
+    private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 40;
 
     static {
         ClientVersion.check();
     }
+
+    private final RestClient client;
 
     private VersionManager version;
     private GraphsManager graphs;
@@ -49,14 +55,19 @@ public class HugeClient {
     }
 
     public HugeClient(String url, String graph, int timeout) {
-        RestClient client = null;
+        this(url, graph, timeout, DEFAULT_MAX_CONNS,
+             DEFAULT_MAX_CONNS_PER_ROUTE);
+    }
+
+    public HugeClient(String url, String graph, int timeout,
+                      int maxConns, int maxConnsPerRoute) {
         try {
-            client = new RestClient(url, timeout);
+            this.client = new RestClient(url, timeout, maxConns,
+                                         maxConnsPerRoute);
         } catch (ProcessingException e) {
             throw new ServerException("Failed to connect url '%s'", url);
         }
-
-        this.initManagers(client, graph);
+        this.initManagers(this.client, graph);
     }
 
     public HugeClient(String url, String graph,
@@ -67,14 +78,25 @@ public class HugeClient {
     public HugeClient(String url, String graph,
                       String username, String password,
                       int timeout) {
-        RestClient client = null;
+        this(url, graph, username, password, timeout, DEFAULT_MAX_CONNS,
+             DEFAULT_MAX_CONNS_PER_ROUTE);
+    }
+
+    public HugeClient(String url, String graph,
+                      String username, String password,
+                      int timeout, int maxConns, int maxConnsPerRoute) {
         try {
-            client = new RestClient(url, username, password, timeout);
+            this.client = new RestClient(url, username, password, timeout,
+                                         maxConns, maxConnsPerRoute);
         } catch (ProcessingException e) {
             throw new ServerException("Failed to connect url '%s'", url);
         }
+        this.initManagers(this.client, graph);
+    }
 
-        this.initManagers(client, graph);
+    @Override
+    public void close() {
+        this.client.close();
     }
 
     private void initManagers(RestClient client, String graph) {
