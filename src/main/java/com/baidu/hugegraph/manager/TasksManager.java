@@ -22,6 +22,7 @@ package com.baidu.hugegraph.manager;
 import java.util.List;
 import java.util.Set;
 
+import com.baidu.hugegraph.base.ToolClient;
 import com.baidu.hugegraph.base.ToolManager;
 import com.baidu.hugegraph.structure.Task;
 import com.google.common.collect.ImmutableSet;
@@ -43,13 +44,8 @@ public class TasksManager extends ToolManager {
 
     private static long TASK_LIMIT = 10000;
 
-    public TasksManager(String url, String graph) {
-        super(url, graph, "tasks");
-    }
-
-    public TasksManager(String url, String graph,
-                        String username, String password) {
-        super(url, graph, username, password, "tasks");
+    public TasksManager(ToolClient.ConnectionInfo info) {
+        super(info, "tasks");
     }
 
     public List<Task> list(String status, long limit) {

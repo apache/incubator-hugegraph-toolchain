@@ -32,14 +32,13 @@ public class ToolClient {
     private HugeClient client;
     private ObjectMapper mapper;
 
-    public ToolClient(String url, String graph) {
-        this.client = new HugeClient(url, graph);
-        this.mapper = new ObjectMapper();
-    }
-
-    public ToolClient(String url, String graph,
-                      String username, String password) {
-        this.client = new HugeClient(url, graph, username, password);
+    public ToolClient(ConnectionInfo info) {
+        if (info.username != null) {
+            this.client = new HugeClient(info.url, info.graph, info.username,
+                                         info.password, info.timeout);
+        } else {
+            this.client = new HugeClient(info.url, info.graph, info.timeout);
+        }
         this.mapper = new ObjectMapper();
     }
 
@@ -69,5 +68,24 @@ public class ToolClient {
 
     public ObjectMapper mapper() {
         return this.mapper;
+    }
+
+    public static class ConnectionInfo {
+
+        private String url;
+        private String graph;
+        private String username;
+        private String password;
+        private Integer timeout;
+
+        public ConnectionInfo(String url, String graph,
+                              String username, String password,
+                              Integer timeout) {
+            this.url = url;
+            this.graph = graph;
+            this.username = username;
+            this.password = password;
+            this.timeout = timeout;
+        }
     }
 }

@@ -22,18 +22,14 @@ package com.baidu.hugegraph.manager;
 import java.util.Map;
 
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
+import com.baidu.hugegraph.base.ToolClient;
 import com.baidu.hugegraph.base.ToolManager;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 
 public class GremlinManager extends ToolManager {
 
-    public GremlinManager(String url, String graph) {
-        super(url, graph, "gremlin");
-    }
-
-    public GremlinManager(String url, String graph,
-                          String username, String password) {
-        super(url, graph, username, password, "gremlin");
+    public GremlinManager(ToolClient.ConnectionInfo info) {
+        super(info, "gremlin");
     }
 
     public ResultSet execute(String gremlin, Map<String, String> bindings,

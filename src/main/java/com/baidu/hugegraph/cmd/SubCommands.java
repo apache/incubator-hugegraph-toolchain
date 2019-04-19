@@ -25,16 +25,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.api.API;
-import com.baidu.hugegraph.driver.TaskManager;
 import com.baidu.hugegraph.manager.TasksManager;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
+import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.Parameter;
@@ -43,7 +42,6 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
 public class SubCommands {
 
@@ -97,38 +95,34 @@ public class SubCommands {
         public String interval = "0,0,*,*,*";
 
         @Parameter(names = {"--backup-num"}, arity = 1,
-                   validateWith = {UrlValidator.class},
                    description = "The number of latest backups to keep")
         public int num = 3;
 
-        @Parameter(names = {"--directory", "-d"}, arity = 1,
-                   validateWith = {UrlValidator.class}, required = true,
+        @Parameter(names = {"--directory", "-d"}, arity = 1, required = true,
                    description = "The directory of backups stored")
         public String directory;
     }
 
-    @Parameters(commandDescription = "Backup graph schema/data to files")
+    @Parameters(commandDescription = "Backup graph schema/data. If directory " +
+                                     "is on HDFS, use -D to set HDFS params " +
+                                     "if needed. For exmaple:" +
+                                     "-Dfs.default.name=hdfs://localhost:9000")
     public class Backup extends BackupRestore {
 
-        @Parameter(names = {"--directory", "-d"}, arity = 1,
-                   description = "Directory to store graph schema/data")
-        public String directory = "./";
+        @Parameter(names = {"--split-size", "-s"}, arity = 1,
+                   description = "Split size of shard")
+        public long splitSize = 1024 * 1024L;
 
-        public String directory() {
-            return this.directory;
+        public long splitSize() {
+            return this.splitSize;
         }
     }
 
-    @Parameters(commandDescription = "Restore graph schema/data from files")
-    public class Restore extends BackupRestore {
-
-        @ParametersDelegate
-        private ExistDirectory directory = new ExistDirectory();
-
-        public String directory() {
-            return this.directory.directory;
-        }
-    }
+    @Parameters(commandDescription = "Restore graph schema/data. If directory" +
+                                     " is on HDFS, use -D to set HDFS params " +
+                                     "if needed. For exmaple:" +
+                                     "-Dfs.default.name=hdfs://localhost:9000")
+    public class Restore extends BackupRestore {}
 
     @Parameters(commandDescription = "Dump graph to files")
     public class DumpGraph {
@@ -390,11 +384,31 @@ public class SubCommands {
 
     public class BackupRestore {
 
+        @Parameter(names = {"--directory", "-d"}, arity = 1,
+                   description = "Directory of graph schema/data")
+        public String directory = "./";
+
+        @Parameter(names = {"--log", "-l"}, arity = 1,
+                   description = "Directory of log")
+        public String logDir = "./";
+
         @ParametersDelegate
         private HugeTypes types = new HugeTypes();
 
         @ParametersDelegate
         private Retry retry = new Retry();
+
+        @DynamicParameter(names = "-D",
+                          description = "HDFS config parameters")
+        private Map<String, String> hdfsConf = new HashMap<>();
+
+        public String directory() {
+            return this.directory;
+        }
+
+        public String logDir() {
+            return this.logDir;
+        }
 
         public List<HugeType> types() {
             return this.types.types;
@@ -402,6 +416,10 @@ public class SubCommands {
 
         public int retry() {
             return this.retry.retry;
+        }
+
+        public Map<String, String> hdfsConf() {
+            return this.hdfsConf;
         }
     }
 
@@ -432,6 +450,13 @@ public class SubCommands {
         @Parameter(names = {"--password"}, arity = 1,
                    description = "Password of user")
         public String password;
+    }
+
+    public static class Timeout {
+
+        @Parameter(names = {"--timeout"}, arity = 1,
+                   description = "Connection timeout")
+        public int timeout = 30;
     }
 
     public static class GraphName {
@@ -678,17 +703,18 @@ public class SubCommands {
 
         @Override
         public void validate(String name, String value) {
-            String regex = "^((https|http|ftp|rtsp|mms)?://)"
-                    + "?(([0-9a-z_!~*'().&=+$%-]+: )?[0-9a-z_!~*'().&=+$%-]+@)?"
-                    + "(([0-9]{1,3}\\.){3}[0-9]{1,3}" // IP URL, like: 10.0.0.1
-                    + "|" // Or domain name
-                    + "([0-9a-z_!~*'()-]+\\.)*" // Third level, like: www.
-                    + "([0-9a-z][0-9a-z-]{0,61})?[0-9a-z]\\." // Second level
-                    + "[a-z]{2,6})" // First level, like: com or museum
-                    + "(:[0-9]{1,4})?"; // Port, like: 8080
+            String regex = "^(http://)?"
+                    // IP URL, like: 10.0.0.1
+                    + "(((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)"
+                    + "(\\.((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)){3}"
+                    + "|"
+                    // Or domain name
+                    + "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)"
+                    // Port
+                    + ":([0-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-5]{2}[0-3][0-5])$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
-                          "Invalid value of argument '%s': '%s'", name, value));
+                          "Invalid url value of args '%s': '%s'", name, value));
             }
         }
     }

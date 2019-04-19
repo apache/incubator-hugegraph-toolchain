@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.baidu.hugegraph.base.Printer;
+import com.baidu.hugegraph.base.ToolClient;
+import com.baidu.hugegraph.base.ToolClient.ConnectionInfo;
 import com.baidu.hugegraph.base.ToolManager;
 import com.baidu.hugegraph.manager.BackupManager;
 import com.baidu.hugegraph.manager.DumpGraphManager;
@@ -41,6 +43,8 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.ParametersDelegate;
 
+import static com.baidu.hugegraph.manager.BackupManager.BACKUP_DEFAULT_TIMEOUT;
+
 public class HugeGraphCommand {
 
     private SubCommands subCommands;
@@ -56,6 +60,9 @@ public class HugeGraphCommand {
 
     @ParametersDelegate
     private SubCommands.Password password = new SubCommands.Password();
+
+    @ParametersDelegate
+    private SubCommands.Timeout timeout = new SubCommands.Timeout();
 
     public HugeGraphCommand() {
         this.subCommands = new SubCommands();
@@ -86,6 +93,14 @@ public class HugeGraphCommand {
         return this.password.password;
     }
 
+    public int timeout() {
+        return this.timeout.timeout;
+    }
+
+    public void timeout(int timeout) {
+        this.timeout.timeout = timeout;
+    }
+
     public JCommander jCommander() {
         JCommander.Builder builder = JCommander.newBuilder();
 
@@ -108,11 +123,15 @@ public class HugeGraphCommand {
         this.checkMainParams();
         switch (subCmd) {
             case "backup":
+                if (this.timeout() < BACKUP_DEFAULT_TIMEOUT) {
+                    this.timeout(BACKUP_DEFAULT_TIMEOUT);
+                }
                 Printer.print("Graph '%s' start backup!", this.graph());
                 SubCommands.Backup backup = this.subCommand(subCmd);
                 BackupManager backupManager = manager(BackupManager.class);
-                backupManager.retry(backup.retry());
-                backupManager.backup(backup.types(), backup.directory());
+
+                backupManager.init(backup);
+                backupManager.backup(backup.types());
                 break;
             case "restore":
                 GraphsManager graphsManager = manager(GraphsManager.class);
@@ -124,14 +143,16 @@ public class HugeGraphCommand {
                               this.graph(), mode);
                 SubCommands.Restore restore = this.subCommand(subCmd);
                 RestoreManager restoreManager = manager(RestoreManager.class);
-                restoreManager.retry(restore.retry());
+
+                restoreManager.init(restore);
                 restoreManager.mode(mode);
-                restoreManager.restore(restore.types(), restore.directory());
+                restoreManager.restore(restore.types());
                 break;
             case "dump":
                 Printer.print("Graph '%s' start dump!", this.graph());
                 SubCommands.DumpGraph dump = this.subCommand(subCmd);
                 DumpGraphManager dumpManager = manager(DumpGraphManager.class);
+
                 dumpManager.dumpFormatter(dump.formatter());
                 dumpManager.retry(dump.retry());
                 dumpManager.dump(dump.directory());
@@ -239,31 +260,29 @@ public class HugeGraphCommand {
                         "not null at same time");
     }
 
-    @SuppressWarnings("unchecked")
     private <T extends ToolManager> T manager(Class<T> clz) {
         try {
-            if (clz == GraphsManager.class) {
-                if (this.username() != null) {
-                    return (T) new GraphsManager(this.url(), this.username(),
-                                                 this.password());
-                } else {
-                    return (T) new GraphsManager(this.url());
-                }
-            } else {
-                if (this.username() != null) {
-                    return clz.getConstructor(String.class, String.class,
-                                              String.class, String.class)
-                              .newInstance(this.url(), this.graph(),
-                                           this.username(), this.password());
-                } else {
-                    return clz.getConstructor(String.class, String.class)
-                              .newInstance(this.url(), this.graph());
-                }
-            }
+            ConnectionInfo info = new ConnectionInfo(this.url(), this.graph(),
+                                                     this.username(),
+                                                     this.password(),
+                                                     this.timeout());
+            return clz.getConstructor(ToolClient.ConnectionInfo.class)
+                      .newInstance(info);
         } catch (Exception e) {
             throw new RuntimeException(String.format(
                       "Construct manager failed for class '%s'", clz), e);
         }
+    }
+
+    private GraphMode mode() {
+        SubCommands.GraphModeGet graphModeGet =
+                                 this.subCommand("graph-mode-get");
+        GraphsManager graphsManager = manager(GraphsManager.class);
+        GraphMode mode = graphsManager.mode(graphModeGet.graph());
+        E.checkState(mode.maintaining(),
+                     "Invalid mode '%s' of graph '%s' for restore " +
+                     "sub-command", mode, this.graph());
+        return mode;
     }
 
     public static void main(String[] args) {

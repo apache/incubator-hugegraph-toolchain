@@ -27,7 +27,9 @@ import java.util.Collection;
 import java.util.List;
 
 import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.base.LocalDirectory;
 import com.baidu.hugegraph.base.Printer;
+import com.baidu.hugegraph.base.ToolClient;
 import com.baidu.hugegraph.formatter.Formatter;
 import com.baidu.hugegraph.structure.JsonGraph;
 import com.baidu.hugegraph.structure.JsonGraph.JsonVertex;
@@ -43,12 +45,12 @@ public class DumpGraphManager extends BackupManager {
 
     private Formatter dumpFormatter;
 
-    public DumpGraphManager(String url, String graph) {
-        this(url, graph, "JsonFormatter");
+    public DumpGraphManager(ToolClient.ConnectionInfo info) {
+        this(info, "JsonFormatter");
     }
 
-    public DumpGraphManager(String url, String graph, String formatter) {
-        super(url, graph);
+    public DumpGraphManager(ToolClient.ConnectionInfo info, String formatter) {
+        super(info);
         this.graph = new JsonGraph();
         this.dumpFormatter = Formatter.loadFormatter(formatter);
     }
@@ -58,12 +60,12 @@ public class DumpGraphManager extends BackupManager {
     }
 
     public void dump(String outputDir) {
-        ensureDirectoryExist(outputDir);
+        LocalDirectory.ensureDirectoryExist(outputDir);
         this.startTimer();
 
         // Fetch data to JsonGraph
-        this.backupVertices(outputDir);
-        this.backupEdges(outputDir);
+        this.backupVertices();
+        this.backupEdges();
 
         // Dump to file
         for (String table : this.graph.tables()) {

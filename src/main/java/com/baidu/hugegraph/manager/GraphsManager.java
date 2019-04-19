@@ -22,17 +22,14 @@ package com.baidu.hugegraph.manager;
 import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.base.ToolClient;
 import com.baidu.hugegraph.base.ToolManager;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 
 public class GraphsManager extends ToolManager {
 
-    public GraphsManager(String url) {
-        super(url, null, "graphs");
-    }
-
-    public GraphsManager(String url, String username, String password) {
-        super(url, null, username, password, "graphs");
+    public GraphsManager(ToolClient.ConnectionInfo info) {
+        super(info, "graphs");
     }
 
     public List<String> list() {

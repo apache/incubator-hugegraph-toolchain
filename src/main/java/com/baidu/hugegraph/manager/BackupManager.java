@@ -19,64 +19,99 @@
 
 package com.baidu.hugegraph.manager;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.base.Printer;
-import com.baidu.hugegraph.base.RetryManager;
-import com.baidu.hugegraph.concurrent.KeyLock;
+import com.baidu.hugegraph.base.ToolClient;
+import com.baidu.hugegraph.cmd.SubCommands;
+import com.baidu.hugegraph.driver.TraverserManager;
+import com.baidu.hugegraph.exception.ToolsException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Edges;
 import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 
-public class BackupManager extends RetryManager {
+import jersey.repackaged.com.google.common.collect.ImmutableList;
 
-    private static KeyLock locks = new KeyLock();
+public class BackupManager extends BackupRestoreBaseManager {
 
-    public BackupManager(String url, String graph) {
-        super(url, graph, "backup");
+    private static final String ALL_SHARDS = "_all_shards";
+    private static final String TIMEOUT_SHARDS = "_timeout_shards";
+    private static final String LIMIT_EXCEED_SHARDS = "_limit_exceed_shards";
+    private static final String FAILED_SHARDS = "_failed_shards";
+
+    public static final int BACKUP_DEFAULT_TIMEOUT = 120;
+
+    private static final AtomicInteger nextId = new AtomicInteger(0);
+    private static final ThreadLocal<Integer> suffix =
+            ThreadLocal.withInitial(nextId::getAndIncrement);
+
+    private long splitSize;
+
+    public BackupManager(ToolClient.ConnectionInfo info) {
+        super(info, "backup");
     }
 
-    public BackupManager(String url, String graph,
-                         String username, String password) {
-        super(url, graph, username, password, "backup");
+    public void init(SubCommands.Backup backup) {
+        super.init(backup);
+        this.ensureDirectoryExist(true);
+        long splitSize = backup.splitSize();
+        E.checkArgument(splitSize >= 1024 * 1024,
+                        "Split size must >= 1M, but got %s", splitSize);
+        this.splitSize(splitSize);
     }
 
-    public void backup(List<HugeType> types, String outputDir) {
-        ensureDirectoryExist(outputDir);
+    public void splitSize(long splitSize) {
+        this.splitSize = splitSize;
+    }
+
+    public long splitSize() {
+        return this.splitSize;
+    }
+
+    public void backup(List<HugeType> types) {
         this.startTimer();
-
         for (HugeType type : types) {
-            String prefix = Paths.get(outputDir, type.string()).toString();
             switch (type) {
                 case VERTEX:
-                    this.backupVertices(prefix);
+                    this.backupVertices();
                     break;
                 case EDGE:
-                    this.backupEdges(prefix);
+                    this.backupEdges();
                     break;
                 case PROPERTY_KEY:
-                    this.backupPropertyKeys(prefix);
+                    this.backupPropertyKeys();
                     break;
                 case VERTEX_LABEL:
-                    this.backupVertexLabels(prefix);
+                    this.backupVertexLabels();
                     break;
                 case EDGE_LABEL:
-                    this.backupEdgeLabels(prefix);
+                    this.backupEdgeLabels();
                     break;
                 case INDEX_LABEL:
-                    this.backupIndexLabels(prefix);
+                    this.backupIndexLabels();
                     break;
                 default:
                     throw new AssertionError(String.format(
@@ -87,97 +122,282 @@ public class BackupManager extends RetryManager {
         this.printSummary();
     }
 
-    protected void backupVertices(String prefix) {
-        List<Shard> shards = this.client.traverser()
-                                        .vertexShards(SPLIT_SIZE);
-        int i = 0;
+    protected void backupVertices() {
+        List<Shard> shards = retry(() ->
+                             this.client.traverser().vertexShards(splitSize()),
+                             "querying shards of vertices");
+        this.writeShards(this.allShardsLog(HugeType.VERTEX), shards);
         for (Shard shard : shards) {
-            final int j = ++i;
-            this.submit(() -> {
-                List<Vertex> vertices = retry(
-                             () -> this.client.traverser().vertices(shard),
-                             "backing up vertices");
-                if (vertices == null || vertices.isEmpty()) {
-                    return;
-                }
-                this.vertexCounter.getAndAdd(vertices.size());
-                String filename = prefix + (j % threadsNum());
-                this.write(filename, HugeType.VERTEX, vertices);
-            });
+            this.backupVertexShardAsync(shard);
         }
         this.awaitTasks();
+        this.postProcessFailedShard(HugeType.VERTEX);
     }
 
-    protected void backupEdges(String prefix) {
-        List<Shard> shards = this.client.traverser().edgeShards(SPLIT_SIZE);
-        int i = 0;
+    protected void backupEdges() {
+        List<Shard> shards = retry(() ->
+                             this.client.traverser().edgeShards(splitSize()),
+                             "querying shards of edges");
+        this.writeShards(this.allShardsLog(HugeType.EDGE), shards);
         for (Shard shard : shards) {
-            final int j = ++i;
-            this.submit(() -> {
-                List<Edge> edges = retry(
-                        () -> this.client.traverser().edges(shard),
-                        "backing up edges");
-                if (edges == null || edges.isEmpty()) {
-                    return;
-                }
-                this.edgeCounter.getAndAdd(edges.size());
-                String filename = prefix + (j % threadsNum());
-                this.write(filename, HugeType.EDGE, edges);
-            });
+            this.backupEdgeShardAsync(shard);
         }
         this.awaitTasks();
+        this.postProcessFailedShard(HugeType.EDGE);
     }
 
-    protected void backupPropertyKeys(String filename) {
+    protected void backupPropertyKeys() {
         List<PropertyKey> pks = this.client.schema().getPropertyKeys();
         this.propertyKeyCounter.getAndAdd(pks.size());
-        this.write(filename, HugeType.PROPERTY_KEY, pks);
+        this.backup(HugeType.PROPERTY_KEY, pks);
     }
 
-    protected void backupVertexLabels(String filename) {
+    protected void backupVertexLabels() {
         List<VertexLabel> vls = this.client.schema().getVertexLabels();
         this.vertexLabelCounter.getAndAdd(vls.size());
-        this.write(filename, HugeType.VERTEX_LABEL, vls);
+        this.backup(HugeType.VERTEX_LABEL, vls);
     }
 
-    protected void backupEdgeLabels(String filename) {
+    protected void backupEdgeLabels() {
         List<EdgeLabel> els = this.client.schema().getEdgeLabels();
         this.edgeLabelCounter.getAndAdd(els.size());
-        this.write(filename, HugeType.EDGE_LABEL, els);
+        this.backup(HugeType.EDGE_LABEL, els);
     }
 
-    protected void backupIndexLabels(String filename) {
+    protected void backupIndexLabels() {
         List<IndexLabel> ils = this.client.schema().getIndexLabels();
         this.indexLabelCounter.getAndAdd(ils.size());
-        this.write(filename, HugeType.INDEX_LABEL, ils);
+        this.backup(HugeType.INDEX_LABEL, ils);
     }
 
-    protected void write(String file, HugeType type, List<?> list) {
+    private void backupVertexShardAsync(Shard shard) {
+        this.submit(() -> {
+            try {
+                backupVertexShard(shard);
+            } catch (Throwable e) {
+                this.logExceptionWithShard(e, HugeType.VERTEX, shard);
+            }
+        });
+    }
+
+    private void backupEdgeShardAsync(Shard shard) {
+        this.submit(() -> {
+            try {
+                backupEdgeShard(shard);
+            } catch (Throwable e) {
+                this.logExceptionWithShard(e, HugeType.EDGE, shard);
+            }
+        });
+    }
+
+    private void backupVertexShard(Shard shard) {
+        Printer.print("backup vertex shard: " + shard);
+        String desc = String.format("backing up vertices[shard:%s]", shard);
+        Vertices vertices = null;
+        String page = "";
+        TraverserManager g = client.traverser();
+        do {
+            String finalPage = page;
+            try {
+                vertices = retry(() -> g.vertices(shard, finalPage), desc);
+            } catch (ToolsException e) {
+                this.exceptionHandler(e, HugeType.VERTEX, shard);
+            }
+            if (vertices == null) {
+                return;
+            }
+            List<Vertex> vertexList = vertices.results();
+            if (vertexList == null || vertexList.isEmpty()) {
+                return;
+            }
+            this.vertexCounter.getAndAdd(vertexList.size());
+            this.backup(HugeType.VERTEX, suffix.get(), vertexList);
+        } while ((page = vertices.page()) != null);
+    }
+
+    private void backupEdgeShard(Shard shard) {
+        Printer.print("backup edge shard: " + shard);
+        String desc = String.format("backing up edges[shard %s]", shard);
+        Edges edges = null;
+        List<Edge> edgeList;
+        String page = "";
+        do {
+            try {
+                String p = page;
+                edges = retry(() -> client.traverser().edges(shard, p), desc);
+            } catch (ToolsException e) {
+                this.exceptionHandler(e, HugeType.EDGE, shard);
+            }
+            if (edges == null) {
+                return;
+            }
+            edgeList = edges.results();
+            if (edgeList == null || edgeList.isEmpty()) {
+                return;
+            }
+            this.edgeCounter.getAndAdd(edgeList.size());
+            this.backup(HugeType.EDGE, suffix.get(), edgeList);
+        } while ((page = edges.page()) != null);
+    }
+
+    private void backup(HugeType type, List<?> list) {
+        String file = type.string() + this.directory.suffix();
+        this.write(file, type, list);
+    }
+
+    private void backup(HugeType type, int number, List<?> list) {
+        String file = type.string() + number + this.directory.suffix();
+        this.write(file, type, list);
+    }
+
+    private void exceptionHandler(ToolsException e, HugeType type,
+                                  Shard shard) {
+        String message = e.getMessage();
+        switch (type) {
+            case VERTEX:
+                E.checkState(message.contains("backing up vertices"),
+                             "Unexpected exception %s", e);
+                break;
+            case EDGE:
+                E.checkState(message.contains("backing up edges"),
+                             "Unexpected exception %s", e);
+                break;
+            default:
+                throw new AssertionError(String.format(
+                          "Only VERTEX or EDGE exception is expected, " +
+                          "but got '%s' exception", type));
+        }
+        if (isLimitExceedException(e)) {
+            this.logLimitExceedShard(type, shard);
+        } else if (isTimeoutException(e)) {
+            this.logTimeoutShard(type, shard);
+        } else {
+            this.logExceptionWithShard(e, type, shard);
+        }
+    }
+
+    private void logTimeoutShard(HugeType type, Shard shard) {
+        String file = type.string() + TIMEOUT_SHARDS;
+        this.writeShard(Paths.get(this.logDir(), file).toString(), shard);
+    }
+
+    private void logLimitExceedShard(HugeType type, Shard shard) {
+        String file = type.string() + LIMIT_EXCEED_SHARDS;
+        this.writeShard(Paths.get(this.logDir(), file).toString(), shard);
+    }
+
+    private void logExceptionWithShard(Object e, HugeType type, Shard shard) {
+        String fileName = type.string() + FAILED_SHARDS;
+        String filePath = Paths.get(this.logDir(), fileName).toString();
+        try (FileWriter writer = new FileWriter(filePath, true)) {
+            writer.write(shard.toString() + "\n");
+            writer.write(exceptionStackTrace(e) + "\n");
+        } catch (IOException e1) {
+            Printer.print("Failed to write shard '%s' with exception '%s'",
+                          shard, e);
+        }
+    }
+
+    private void postProcessFailedShard(HugeType type) {
+        this.processTimeoutShards(type);
+        this.processLimitExceedShards(type);
+    }
+
+    private void processTimeoutShards(HugeType type) {
+        Path path = Paths.get(this.logDir(), type.string() + TIMEOUT_SHARDS);
+        File shardFile = path.toFile();
+        if (!shardFile.exists() || shardFile.isDirectory()) {
+            return;
+        }
+        Printer.print("Timeout occurs when backup %s shards in file '%s', " +
+                      "try to use global option --timeout to increase " +
+                      "connection timeout(default is 120s for backup) or use " +
+                      "option --split-size to decrease split size",
+                      type, shardFile);
+    }
+
+    private void processLimitExceedShards(HugeType type) {
+        Path path = Paths.get(this.logDir(),
+                              type.string() + LIMIT_EXCEED_SHARDS);
+        File shardFile = path.toFile();
+        if (!shardFile.exists() || shardFile.isDirectory()) {
+            return;
+        }
+        Printer.print("Limit exceed occurs when backup %s shards in file '%s'",
+                      type, shardFile);
+    }
+
+    private List<Shard> readShards(File file) {
+        E.checkArgument(file.exists() && file.isFile() && file.canRead(),
+                        "Need to specify a readable filter file rather than:" +
+                        " %s", file.toString());
+        List<Shard> shards = new ArrayList<>();
+        try (InputStream is = new FileInputStream(file);
+             InputStreamReader isr = new InputStreamReader(is, API.CHARSET);
+             BufferedReader reader = new BufferedReader(isr)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                shards.addAll(this.readList("shards", Shard.class, line));
+            }
+        } catch (IOException e) {
+            throw new ToolsException("IOException occur while reading %s",
+                                     e, file.getName());
+        }
+        return shards;
+    }
+
+    private void writeShard(String file, Shard shard) {
+        this.writeShards(file, ImmutableList.of(shard));
+    }
+
+    private void writeShards(String file, List<Shard> shards) {
+        this.writeLog(file, "shards", shards);
+    }
+
+    private void writeLog(String file, String type, List<?> list) {
         Lock lock = locks.lock(file);
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(LBUF_SIZE);
-             FileOutputStream fos = new FileOutputStream(file, true)) {
-            String key = String.format("{\"%s\": ", type.string());
+             FileOutputStream fos = new FileOutputStream(file, false)) {
+            String key = String.format("{\"%s\": ", type);
             baos.write(key.getBytes(API.CHARSET));
             this.client.mapper().writeValue(baos, list);
             baos.write("}\n".getBytes(API.CHARSET));
             fos.write(baos.toByteArray());
         } catch (Exception e) {
-            Printer.print("Failed to serialize %s: %s", type.string(), e);
+            Printer.print("Failed to serialize %s: %s", type, e);
         } finally {
             lock.unlock();
         }
     }
 
-    protected static void ensureDirectoryExist(String dir) {
-        File file = new File(dir);
-        if (file.exists()) {
-            E.checkState(file.isDirectory(),
-                         "Can't use '%s' as output directory because " +
-                         "a file with same name exists.",
-                         file.getAbsolutePath());
-        } else {
-            E.checkState(file.mkdirs(),
-                         "Directory '%s' not exists and created failed", dir);
+    private String allShardsLog(HugeType type) {
+        String shardsFile = type.string() + ALL_SHARDS;
+        return Paths.get(this.logDir(), shardsFile).toString();
+    }
+
+    private static boolean isTimeoutException(ToolsException e) {
+        return e.getCause() != null && e.getCause().getCause() != null &&
+               e.getCause().getCause().getMessage().contains("Read timed out");
+    }
+
+    private static boolean isLimitExceedException(ToolsException e) {
+        return e.getCause() != null &&
+               e.getCause().getMessage().contains("Too many records");
+    }
+
+    private static String exceptionStackTrace(Object e) {
+        if (!(e instanceof Throwable)) {
+            return e.toString();
         }
+        Throwable t = (Throwable) e;
+        StringBuilder sb = new StringBuilder();
+        sb.append(t.getMessage()).append("\n");
+        if (t.getCause() != null) {
+            sb.append(t.getCause().toString()).append("\n");
+        }
+        for (StackTraceElement element : t.getStackTrace()) {
+            sb.append(element).append("\n");
+        }
+        return sb.toString();
     }
 }

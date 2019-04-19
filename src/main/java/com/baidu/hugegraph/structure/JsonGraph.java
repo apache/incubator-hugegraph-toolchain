@@ -56,7 +56,7 @@ public class JsonGraph {
         // Find source vertex
         Map<Object, JsonVertex> vertices = this.table(edge.sourceLabel());
         assert vertices != null;
-        JsonVertex source = vertices.get(edge.source());
+        JsonVertex source = vertices.get(edge.sourceId());
         if (source == null) {
             // Printer.print("Invalid edge without source vertex: %s", edge);
             return;
@@ -65,7 +65,7 @@ public class JsonGraph {
         // Find target vertex
         vertices = this.table(edge.targetLabel());
         assert vertices != null;
-        JsonVertex target = vertices.get(edge.target());
+        JsonVertex target = vertices.get(edge.targetId());
         if (target == null) {
             // Printer.print("Invalid edge without target vertex: %s", edge);
             return;
@@ -170,8 +170,8 @@ public class JsonGraph {
             JsonEdge edge = new JsonEdge();
             edge.id = e.id();
             edge.label = e.label();
-            edge.source = e.source();
-            edge.target = e.target();
+            edge.source = e.sourceId();
+            edge.target = e.targetId();
             edge.properties = JsonUtil.toJson(e.properties());
             return edge;
         }

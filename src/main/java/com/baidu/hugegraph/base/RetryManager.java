@@ -19,50 +19,28 @@
 
 package com.baidu.hugegraph.base;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.util.E;
-import com.google.common.collect.ImmutableMap;
+import com.baidu.hugegraph.exception.ToolsException;
 
 public class RetryManager extends ToolManager {
 
-    protected int retry = 0;
-
-    protected AtomicLong propertyKeyCounter = new AtomicLong(0);
-    protected AtomicLong vertexLabelCounter = new AtomicLong(0);
-    protected AtomicLong edgeLabelCounter = new AtomicLong(0);
-    protected AtomicLong indexLabelCounter = new AtomicLong(0);
-    protected AtomicLong vertexCounter = new AtomicLong(0);
-    protected AtomicLong edgeCounter = new AtomicLong(0);
-
-    private long startTime = 0L;
-
     private static int threadsNum = Math.min(10,
             Math.max(4, Runtime.getRuntime().availableProcessors() / 2));
-    private ExecutorService pool =
+    private final ExecutorService pool =
             Executors.newFixedThreadPool(threadsNum);
-    private List<Future<?>> futures = new ArrayList<>();
+    private final Queue<Future<?>> futures = new ConcurrentLinkedQueue<>();
+    private int retry = 0;
 
-    protected static final long SPLIT_SIZE = 1024 * 1024L;
-    protected static final int LBUF_SIZE = 1024;
-
-    public RetryManager(String url, String graph, String type) {
-        super(url, graph, type);
-    }
-
-    public RetryManager(String url, String graph,
-                        String username, String password, String type) {
-        super(url, graph, username, password, type);
+    public RetryManager(ToolClient.ConnectionInfo info, String type) {
+        super(info, type);
     }
 
     public <R> R retry(Supplier<R> supplier, String description) {
@@ -73,9 +51,9 @@ public class RetryManager extends ToolManager {
                 r = supplier.get();
             } catch (Exception e) {
                 if (retries == this.retry) {
-                    throw new ClientException(
-                              "Exception occurred while %s",
-                              e, description);
+                    throw new ToolsException(
+                              "Exception occurred while %s(after %s retries)",
+                              e, description, this.retry);
                 }
                 // Ignore exception and retry
                 continue;
@@ -90,14 +68,14 @@ public class RetryManager extends ToolManager {
     }
 
     public void awaitTasks() {
-        for (Future<?> future : this.futures) {
+        Future<?> future;
+        while ((future = this.futures.poll()) != null) {
             try {
                 future.get();
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
         }
-        this.futures.clear();
     }
 
     public void shutdown(String taskType) {
@@ -105,26 +83,9 @@ public class RetryManager extends ToolManager {
         try {
             this.pool.awaitTermination(24, TimeUnit.HOURS);
         } catch (InterruptedException e) {
-            throw new ClientException(
+            throw new ToolsException(
                       "Exception appears in %s threads", e, taskType);
         }
-    }
-
-    protected void printSummary() {
-        this.printSummary(this.type());
-    }
-
-    protected void printSummary(String type) {
-        Map<String, Long> summary = ImmutableMap.<String, Long>builder()
-                .put("property key number", this.propertyKeyCounter.longValue())
-                .put("vertex label number", this.vertexLabelCounter.longValue())
-                .put("edge label number", this.edgeLabelCounter.longValue())
-                .put("index label number", this.indexLabelCounter.longValue())
-                .put("vertex number", this.vertexCounter.longValue())
-                .put("edge number", this.edgeCounter.longValue()).build();
-        Printer.printMap(type + " summary", summary);
-
-        Printer.printKV("cost time(s)", this.elapseSeconds());
     }
 
     public int retry() {
@@ -133,17 +94,6 @@ public class RetryManager extends ToolManager {
 
     public void retry(int retry) {
         this.retry = retry;
-    }
-
-    public void startTimer() {
-        this.startTime = System.currentTimeMillis();
-    }
-
-    public long elapseSeconds() {
-        E.checkState(this.startTime != 0,
-                     "Must call startTimer() to set start time, " +
-                     "before call elapse()");
-        return (System.currentTimeMillis() - this.startTime) / 1000;
     }
 
     public static int threadsNum() {

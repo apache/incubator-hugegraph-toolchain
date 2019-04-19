@@ -19,23 +19,46 @@
 
 package com.baidu.hugegraph.base;
 
+import java.io.IOException;
+import java.util.List;
+
+import com.baidu.hugegraph.rest.SerializeException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ToolManager {
 
     protected final ToolClient client;
     private final String type;
 
-    public ToolManager(String url, String graph, String type) {
-        this.client = new ToolClient(url, graph);
-        this.type = type;
-    }
-
-    public ToolManager(String url, String graph,
-                       String username, String password, String type) {
-        this.client = new ToolClient(url, graph, username, password);
+    public ToolManager(ToolClient.ConnectionInfo info, String type) {
+        this.client = new ToolClient(info);
         this.type = type;
     }
 
     protected String type() {
         return this.type;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected  <T> List<T> readList(String key, Class<T> clazz,
+                                    String content) {
+        ObjectMapper mapper = this.client.mapper();
+        try {
+            JsonNode root = mapper.readTree(content);
+            JsonNode element = root.get(key);
+            if(element == null) {
+                throw new SerializeException(
+                          "Can't find value of the key: %s in json.", key);
+            } else {
+                JavaType t = mapper.getTypeFactory()
+                                   .constructParametricType(List.class, clazz);
+                return (List<T>) mapper.readValue(element.toString(), t);
+            }
+        } catch (IOException e) {
+            throw new SerializeException(
+                      "Failed to deserialize %s", e, content);
+        }
     }
 }
