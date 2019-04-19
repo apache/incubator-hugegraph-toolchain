@@ -32,10 +32,14 @@ import org.junit.runners.Suite;
     EdgeApiTest.class,
     GremlinApiTest.class,
     VariablesApiTest.class,
-    TraverserApiTest.class,
     TaskApiTest.class,
     JobApiTest.class,
-    RestoreApiTest.class
+    RestoreApiTest.class,
+    TraverserApiTest.class,
+    ShortestPathApiTest.class,
+    CustomizedPathsApiTest.class,
+    NeighborRankApiTest.class,
+    PersonalRankApiTest.class
 })
 public class ApiTestSuite {
 }

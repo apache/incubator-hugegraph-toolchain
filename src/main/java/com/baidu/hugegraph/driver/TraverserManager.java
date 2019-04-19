@@ -19,6 +19,11 @@
 
 package com.baidu.hugegraph.driver;
 
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
+
 import java.util.List;
 
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
@@ -27,7 +32,9 @@ import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
 import com.baidu.hugegraph.api.traverser.EdgesAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
+import com.baidu.hugegraph.api.traverser.NeighborRankAPI;
 import com.baidu.hugegraph.api.traverser.PathsAPI;
+import com.baidu.hugegraph.api.traverser.PersonalRankAPI;
 import com.baidu.hugegraph.api.traverser.RaysAPI;
 import com.baidu.hugegraph.api.traverser.RingsAPI;
 import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
@@ -36,6 +43,7 @@ import com.baidu.hugegraph.api.traverser.structure.CrosspointsRequest;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedCrosspoints;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedPaths;
 import com.baidu.hugegraph.api.traverser.structure.PathsRequest;
+import com.baidu.hugegraph.api.traverser.structure.Ranks;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -45,12 +53,6 @@ import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.util.E;
-
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
-
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
 
 public class TraverserManager {
 
@@ -65,6 +67,8 @@ public class TraverserManager {
     private RaysAPI raysAPI;
     private CustomizedPathsAPI customizedPathsAPI;
     private CustomizedCrosspointsAPI customizedCrosspointsAPI;
+    private NeighborRankAPI neighborRankAPI;
+    private PersonalRankAPI personalRankAPI;
     private VerticesAPI verticesAPI;
     private EdgesAPI edgesAPI;
 
@@ -81,6 +85,8 @@ public class TraverserManager {
         this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
         this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client,
                                                                      graph);
+        this.neighborRankAPI = new NeighborRankAPI(client, graph);
+        this.personalRankAPI = new PersonalRankAPI(client, graph);
         this.verticesAPI = new VerticesAPI(client, graph);
         this.edgesAPI = new EdgesAPI(client, graph);
     }
@@ -207,6 +213,14 @@ public class TraverserManager {
     public CustomizedCrosspoints customizedCrosspointss(
                                  CrosspointsRequest request) {
         return this.customizedCrosspointsAPI.post(request);
+    }
+
+    public List<Ranks> neighborRank(NeighborRankAPI.Request request) {
+        return this.neighborRankAPI.post(request);
+    }
+
+    public Ranks personalRank(PersonalRankAPI.Request request) {
+        return this.personalRankAPI.post(request);
     }
 
     public List<Shard> vertexShards(long splitSize) {
