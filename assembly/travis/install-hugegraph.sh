@@ -8,7 +8,7 @@ if [ $# -ne 1 ]; then
 fi
 
 LOADER_BRANCH=$1
-HUGEGRAPH_BRANCH=$LOADER_BRANCH
+HUGEGRAPH_BRANCH=release-0.9
 
 HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
 
