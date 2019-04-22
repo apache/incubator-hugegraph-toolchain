@@ -153,6 +153,7 @@ public class HugeGraphCommand {
                 SubCommands.DumpGraph dump = this.subCommand(subCmd);
                 DumpGraphManager dumpManager = manager(DumpGraphManager.class);
 
+                dumpManager.init(dump);
                 dumpManager.dumpFormatter(dump.formatter());
                 dumpManager.retry(dump.retry());
                 dumpManager.dump(dump.directory());

@@ -125,26 +125,11 @@ public class SubCommands {
     public class Restore extends BackupRestore {}
 
     @Parameters(commandDescription = "Dump graph to files")
-    public class DumpGraph {
-
-        @ParametersDelegate
-        private Retry retry = new Retry();
-
-        @Parameter(names = {"--directory", "-d"}, arity = 1,
-                   description = "Directory to store graph data")
-        public String directory = "./";
+    public class DumpGraph extends Backup {
 
         @Parameter(names = {"--formatter", "-f"}, arity = 1,
                    description = "Formatter to customize format of vertex/edge")
         public String formatter = "JsonFormatter";
-
-        public int retry() {
-            return this.retry.retry;
-        }
-
-        public String directory() {
-            return this.directory;
-        }
 
         public String formatter() {
             return this.formatter;
