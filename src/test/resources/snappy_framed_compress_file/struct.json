@@ -9,7 +9,7 @@
         "charset": "UTF-8",
         "compression": "SNAPPY_FRAMED"
       },
-      "mapping": {
+      "field_mapping": {
         "name": "name",
         "age": "age",
         "city": "city"

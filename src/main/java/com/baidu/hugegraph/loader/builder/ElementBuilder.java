@@ -130,10 +130,13 @@ public abstract class ElementBuilder<GE extends GraphElement>
         for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
             String fieldName = entry.getKey();
             Object fieldValue = entry.getValue();
+            this.checkFieldValue(fieldName, fieldValue);
+
             if (this.isIdField(fieldName)) {
                 continue;
             }
             String key = this.source().mappingField(fieldName);
+            fieldValue = this.mappingFieldValueIfNeed(fieldName, fieldValue);
             Object value = this.validatePropertyValue(key, fieldValue);
 
             element.property(key, value);
@@ -171,6 +174,26 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected abstract SchemaLabel getSchemaLabel();
+
+    protected void checkFieldValue(String fieldName, Object fieldValue) {
+        if (this.source().mappingValues().isEmpty() ||
+            !this.source().mappingValues().containsKey(fieldName)) {
+            return;
+        }
+        E.checkArgument(fieldValue != null, "The field value can't be null");
+        E.checkArgument(DataTypeUtil.isSimpleValue(fieldValue),
+                       "The field value must be Simple type, actual is '%s'",
+                       fieldValue.getClass());
+    }
+
+    protected Object mappingFieldValueIfNeed(String fieldName,
+                                             Object fieldValue) {
+        if (this.source().mappingValues().isEmpty()) {
+            return fieldValue;
+        }
+        String fieldStrValue = String.valueOf(fieldValue);
+        return this.source().mappingValue(fieldName, fieldStrValue);
+    }
 
     protected String spliceVertexId(VertexLabel vertexLabel,
                                     Object[] primaryValues) {

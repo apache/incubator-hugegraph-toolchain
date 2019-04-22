@@ -33,9 +33,17 @@ import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
+import com.baidu.hugegraph.util.ReflectionUtil;
 import com.google.common.base.Splitter;
 
 public final class DataTypeUtil {
+
+    public static boolean isSimpleValue(Object value) {
+        if (value == null) {
+            return false;
+        }
+        return ReflectionUtil.isSimpleType(value.getClass());
+    }
 
     public static Object convert(Object value, PropertyKey propertyKey,
                                  InputSource source) {

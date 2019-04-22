@@ -20,22 +20,36 @@
 package com.baidu.hugegraph.loader.source;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import com.baidu.hugegraph.util.E;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EdgeSource extends ElementSource {
 
+    @JsonProperty("source")
     private final List<String> sourceFields;
+    @JsonProperty("target")
     private final List<String> targetFields;
 
-    public EdgeSource(String label, InputSource input,
-                      List<String> sourceFields, List<String> targetFields,
-                      Map<String, String> mapping,
-                      Set<String> selected, Set<String> ignored,
-                      Set<Object> nullValues) {
-        super(label, input, mapping, selected, ignored, nullValues);
+    @JsonCreator
+    public EdgeSource(@JsonProperty("source") List<String> sourceFields,
+                      @JsonProperty("target") List<String> targetFields) {
         this.sourceFields = sourceFields;
         this.targetFields = targetFields;
+    }
+
+    @Override
+    public void check() throws IllegalArgumentException {
+        super.check();
+        E.checkArgument(this.sourceFields != null &&
+                        !this.sourceFields.isEmpty(),
+                        "The source field of edge label '%s' " +
+                        "can't be null or empty", this.label());
+        E.checkArgument(this.targetFields != null &&
+                        !this.targetFields.isEmpty(),
+                        "The target field of edge label '%s' " +
+                        "can't be null or empty", this.label());
     }
 
     public List<String> sourceFields() {

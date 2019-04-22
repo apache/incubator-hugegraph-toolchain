@@ -61,6 +61,11 @@ public class FileSource extends AbstractSource {
         return SourceType.FILE;
     }
 
+    @Override
+    public void check() throws IllegalArgumentException {
+        // pass
+    }
+
     public String path() {
         return this.path;
     }

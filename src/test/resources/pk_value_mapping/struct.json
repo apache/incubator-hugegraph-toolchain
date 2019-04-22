@@ -6,14 +6,15 @@
         "type": "${source_type}",
         "path": "${store_path}/vertex_person.csv",
         "format": "CSV",
+        "header": ["name", "age", "city"],
         "charset": "UTF-8"
       },
-      "field_mapping": {
-        "name": "name",
-        "age": "age",
-        "city": "city"
-      },
-      "selected": ["name", "age", "city"]
+      "value_mapping": {
+        "name": {
+          "1": "marko",
+          "2": "vadas"
+        }
+      }
     }
   ]
 }

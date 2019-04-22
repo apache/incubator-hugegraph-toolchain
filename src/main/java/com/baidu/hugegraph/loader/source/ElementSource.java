@@ -19,20 +19,26 @@
 
 package com.baidu.hugegraph.loader.source;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.source.file.FileFormat;
+import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class ElementSource {
+public abstract class ElementSource implements Checkable {
 
     @JsonProperty("label")
     private String label;
     @JsonProperty("input")
     private InputSource input;
-    @JsonProperty("mapping")
+    @JsonProperty("field_mapping")
     private Map<String, String> mappingFields;
+    @JsonProperty("value_mapping")
+    private Map<String, Map<String, Object>> mappingValues;
     @JsonProperty("selected")
     private Set<String> selectedFields;
     @JsonProperty("ignored")
@@ -40,21 +46,42 @@ public abstract class ElementSource {
     @JsonProperty("null_values")
     private Set<Object> nullValues;
 
-    public ElementSource(String label, InputSource input,
-                         Map<String, String> mappingFields,
-                         Set<String> selectedFields,
-                         Set<String> ignoredFields,
-                         Set<Object> nullValues) {
-        E.checkArgument(selectedFields.isEmpty() || ignoredFields.isEmpty(),
+    public ElementSource() {
+        this.mappingFields = new HashMap<>();
+        this.mappingValues = new HashMap<>();
+        this.selectedFields = new HashSet<>();
+        this.ignoredFields = new HashSet<>();
+        this.nullValues = new HashSet<>();
+    }
+
+    @Override
+    public void check() throws IllegalArgumentException {
+        E.checkArgument(this.label != null && !this.label.isEmpty(),
+                        "The label can't be null or empty");
+        this.input.check();
+        E.checkArgument(this.selectedFields.isEmpty() ||
+                        this.ignoredFields.isEmpty(),
                         "Not allowed to specify selected(%s) and ignored(%s) " +
                         "fields at the same time, at least one of them " +
                         "must be empty", selectedFields, ignoredFields);
-        this.label = label;
-        this.input = input;
-        this.mappingFields = mappingFields;
-        this.selectedFields = selectedFields;
-        this.ignoredFields = ignoredFields;
-        this.nullValues = nullValues;
+        if (this.input.type() == SourceType.FILE ||
+            this.input.type() == SourceType.HDFS) {
+            FileSource fileSource = (FileSource) this.input;
+            if (fileSource.format() == FileFormat.JSON) {
+                E.checkArgument(this.mappingValues.isEmpty(),
+                                "Not allowed to specify value_mapping when " +
+                                "the format of input source is JSON");
+            }
+        } else if (this.input.type() == SourceType.JDBC) {
+            E.checkArgument(this.mappingValues.isEmpty(),
+                            "Not allowed to specify value_mapping when " +
+                            "the input source is JDBC");
+        }
+        this.mappingValues.values().forEach(m -> {
+            m.values().forEach(value -> {
+                E.checkArgumentNotNull(value, "The mapped value can't be null");
+            });
+        });
     }
 
     public String label() {
@@ -75,6 +102,21 @@ public abstract class ElementSource {
             mappingName = this.mappingFields.get(fieldName);
         }
         return mappingName;
+    }
+
+    public Map<String, Map<String, Object>> mappingValues() {
+        return this.mappingValues;
+    }
+
+    public Object mappingValue(String fieldName, String rawValue) {
+        Object mappingValue = rawValue;
+        if (this.mappingValues.containsKey(fieldName)) {
+            Map<String, Object> values = this.mappingValues.get(fieldName);
+            if (values.containsKey(rawValue)) {
+                mappingValue = values.get(rawValue);
+            }
+        }
+        return mappingValue;
     }
 
     public Set<String> selectedFields() {

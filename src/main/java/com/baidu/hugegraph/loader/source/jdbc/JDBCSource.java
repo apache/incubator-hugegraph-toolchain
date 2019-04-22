@@ -49,6 +49,11 @@ public class JDBCSource extends AbstractSource {
         return SourceType.JDBC;
     }
 
+    @Override
+    public void check() throws IllegalArgumentException {
+        // pass
+    }
+
     public String driver() {
         return this.driver;
     }

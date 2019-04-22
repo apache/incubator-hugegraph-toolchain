@@ -21,12 +21,8 @@ package com.baidu.hugegraph.loader.util;
 
 import java.io.IOException;
 
-import com.baidu.hugegraph.loader.serializer.EdgeSourceDeserializer;
-import com.baidu.hugegraph.loader.serializer.FileSourceDeserializer;
-import com.baidu.hugegraph.loader.serializer.VertexSourceDeserializer;
-import com.baidu.hugegraph.loader.source.EdgeSource;
-import com.baidu.hugegraph.loader.source.VertexSource;
-import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.serializer.InputSourceDeserializer;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,9 +36,7 @@ public final class JsonUtil {
 
     static {
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(VertexSource.class, new VertexSourceDeserializer());
-        module.addDeserializer(EdgeSource.class, new EdgeSourceDeserializer());
-        module.addDeserializer(FileSource.class, new FileSourceDeserializer());
+        module.addDeserializer(InputSource.class, new InputSourceDeserializer());
         registerModule(module);
     }
 

@@ -19,21 +19,56 @@
 
 package com.baidu.hugegraph.loader.serializer;
 
+import java.io.IOException;
+
+import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
+import com.baidu.hugegraph.loader.util.JsonUtil;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public abstract class InputSourceDeserializer<E> extends JsonDeserializer<E> {
+public class InputSourceDeserializer extends JsonDeserializer<InputSource> {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String FIELD_TYPE = "type";
 
-    protected <T> T read(JsonNode node, Class<T> clazz) {
-        return MAPPER.convertValue(node, clazz);
+    @Override
+    public InputSource deserialize(JsonParser parser,
+                                   DeserializationContext context)
+                                   throws IOException {
+        JsonNode node = parser.getCodec().readTree(parser);
+        return readInputSource(node);
     }
 
-    protected static JsonNode getNode(JsonNode node, String name,
-                                      JsonNodeType nodeType) {
+    private static InputSource readInputSource(JsonNode node) {
+        JsonNode typeNode = getNode(node, FIELD_TYPE, JsonNodeType.STRING);
+        String type = typeNode.asText().toUpperCase();
+        SourceType sourceType = SourceType.valueOf(type);
+        assert node instanceof ObjectNode;
+        ObjectNode objectNode = (ObjectNode) node;
+        // The node 'type' doesn't participate in deserialization
+        objectNode.remove(FIELD_TYPE);
+        switch (sourceType) {
+            case FILE:
+                return JsonUtil.convert(node, FileSource.class);
+            case HDFS:
+                return JsonUtil.convert(node, HDFSSource.class);
+            case JDBC:
+                return JsonUtil.convert(node, JDBCSource.class);
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported input source '%s'", type));
+        }
+    }
+
+    private static JsonNode getNode(JsonNode node, String name,
+                                    JsonNodeType nodeType) {
         JsonNode subNode = node.get(name);
         if (subNode == null || subNode.getNodeType() != nodeType) {
             throw DeserializerException.expectField(name, node);

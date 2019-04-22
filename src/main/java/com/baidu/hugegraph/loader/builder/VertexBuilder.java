@@ -94,14 +94,17 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
             for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
                 String fieldName = entry.getKey();
                 Object fieldValue = entry.getValue();
+                this.checkFieldValue(fieldName, fieldValue);
 
                 String key = this.source.mappingField(fieldName);
+                if (!primaryKeys.contains(key)) {
+                    continue;
+                }
+                this.mappingFieldValueIfNeed(fieldName, fieldValue);
                 Object value = this.validatePropertyValue(key, fieldValue);
 
-                if (primaryKeys.contains(key)) {
-                    int index = primaryKeys.indexOf(key);
-                    primaryValues[index] = value;
-                }
+                int index = primaryKeys.indexOf(key);
+                primaryValues[index] = value;
             }
             String id = this.spliceVertexId(this.vertexLabel, primaryValues);
             this.checkVertexIdLength(id);

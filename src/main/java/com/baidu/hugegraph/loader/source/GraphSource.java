@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.source;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,12 +30,12 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class GraphSource {
+public class GraphSource implements Checkable {
 
     @JsonProperty("vertices")
-    private List<VertexSource> vertexSources;
+    private final List<VertexSource> vertexSources;
     @JsonProperty("edges")
-    private List<EdgeSource> edgeSources;
+    private final List<EdgeSource> edgeSources;
 
     public GraphSource() {
         this.vertexSources = new ArrayList<>();
@@ -45,11 +46,19 @@ public class GraphSource {
         try {
             File file = FileUtils.getFile(filePath);
             String json = FileUtils.readFileToString(file, "UTF-8");
-            return JsonUtil.fromJson(json, GraphSource.class);
-        } catch (Exception e) {
+            GraphSource source = JsonUtil.fromJson(json, GraphSource.class);
+            source.check();
+            return source;
+        } catch (IOException | IllegalArgumentException e) {
             throw new LoadException("Read data source file '%s' error",
                                     e, filePath);
         }
+    }
+
+    @Override
+    public void check() throws IllegalArgumentException {
+        this.vertexSources.forEach(VertexSource::check);
+        this.edgeSources.forEach(EdgeSource::check);
     }
 
     public List<VertexSource> vertexSources() {

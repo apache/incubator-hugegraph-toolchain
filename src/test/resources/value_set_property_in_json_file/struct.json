@@ -8,7 +8,7 @@
         "format": "CSV",
         "charset": "UTF-8"
       },
-      "mapping": {
+      "field_mapping": {
         "name": "name",
         "age": "age",
         "city": "city"
@@ -33,7 +33,7 @@
         "path": "${store_path}/edge_use.json",
         "format": "JSON"
       },
-      "mapping": {
+      "field_mapping": {
         "person_name": "name",
         "software_name": "name"
       }

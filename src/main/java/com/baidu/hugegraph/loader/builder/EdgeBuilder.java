@@ -93,6 +93,10 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                 continue;
             }
             Object fieldValue = keyValues.get(fieldName);
+            this.checkFieldValue(fieldName, fieldValue);
+            Object mappedValue = this.mappingFieldValueIfNeed(fieldName,
+                                                              fieldValue);
+
             IdStrategy idStrategy = vertexLabel.idStrategy();
             if (idStrategy.isCustomize()) {
                 /*
@@ -101,16 +105,23 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                  * just return when id strategy is CUSTOMIZE_NUMBER
                  */
                 if (idStrategy.isCustomizeString()) {
-                    String id = (String) fieldValue;
+                    E.checkArgument(mappedValue instanceof String,
+                                    "If there is no value mapping, the field " +
+                                    "value must be String, otherwise it must " +
+                                    "be String type after mapping, " +
+                                    "but got '%s(%s) -> %s(%s)'",
+                                    fieldValue, fieldValue.getClass(),
+                                    mappedValue, mappedValue.getClass());
+                    String id = (String) mappedValue;
                     this.checkVertexIdLength(id);
                     return id;
                 } else {
                     assert idStrategy.isCustomizeNumber();
-                    return parseNumberId(fieldValue);
+                    return parseNumberId(mappedValue);
                 }
             } else {
                 String key = this.source.mappingField(fieldName);
-                Object value = this.validatePropertyValue(key, fieldValue);
+                Object value = this.validatePropertyValue(key, mappedValue);
                 // The id strategy of source/target label must be PRIMARY_KEY
                 if (primaryKeys.contains(key)) {
                     int index = primaryKeys.indexOf(key);

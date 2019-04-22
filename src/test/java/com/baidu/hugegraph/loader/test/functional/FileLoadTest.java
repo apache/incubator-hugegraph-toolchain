@@ -935,6 +935,130 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testValueMapping() throws java.text.ParseException {
+        /*
+         * "age": {"1": 25, "2": 30}
+         * "birth": {"1": "1994-01-01", "2": "1989-01-01"}
+         * "city": "1": "Beijing", "2": "Shanghai"
+         */
+        ioUtil.write("vertex_person.csv",
+                     "marko,1,1,1",
+                     "vadas,2,2,2");
+
+        String[] args = new String[]{
+                "-f", configPath("value_mapping/struct.json"),
+                "-s", configPath("value_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        // TODO: Fix date property be saved as long in client
+        assertContains(vertices, "person", "name", "marko", "age", 25,
+                       "birth",
+                       DateUtil.parse("1994-01-01", "yyyy-MM-dd").getTime(),
+                       "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas", "age", 30,
+                       "birth",
+                       DateUtil.parse("1989-01-01", "yyyy-MM-dd").getTime(),
+                       "city", "Shanghai");
+    }
+
+    @Test
+    public void testPkValueMapping() {
+        /*
+         * "1": "marko"
+         * "2": "vadas"
+         */
+        ioUtil.write("vertex_person.csv",
+                     "1,29,Beijing",
+                     "2,27,Shanghai");
+
+        String[] args = new String[]{
+                "-f", configPath("pk_value_mapping/struct.json"),
+                "-s", configPath("pk_value_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        assertContains(vertices, "person", "name", "marko", "age", 29,
+                       "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas", "age", 27,
+                       "city", "Shanghai");
+    }
+
+    @Test
+    public void testSourceTargetValueMapping() {
+        ioUtil.write("vertex_person.csv",
+                     "id,name,age,city",
+                     "p1,marko,29,Beijing",
+                     "p2,vadas,27,Hongkong");
+        ioUtil.write("vertex_software.csv",
+                     "id,name,lang,price",
+                     "s1,lop,java,328",
+                     "s2,ripple,java,199");
+        ioUtil.write("edge_created.csv",
+                     "source_id,target_id,weight",
+                     "p1,s1,0.8",
+                     "p2,s2,0.6");
+
+        String[] args = new String[]{
+                "-f", configPath("source_target_value_mapping/struct.json"),
+                "-s", configPath("source_target_value_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(4, vertices.size());
+        Assert.assertEquals(2, edges.size());
+
+        assertContains(edges, "created", "person_marko", "software_lop",
+                       "person", "software", "weight", 0.8);
+        assertContains(edges, "created", "person_vadas", "software_ripple",
+                       "person", "software", "weight", 0.6);
+    }
+
+    @Test
+    public void testValueMappingInJsonFile() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing");
+        ioUtil.write("vertex_software.csv",
+                     "name,lang,price",
+                     "lop,java,328");
+        ioUtil.write("edge_use.json",
+                     "{\"person_name\": \"p1\", \"software_name\": " +
+                     "\"s1\", \"time\": [\"20171210\", \"20180101\"]}");
+
+        String[] args = new String[]{
+                "-f", configPath("value_mapping_in_json_file/struct.json"),
+                "-s", configPath("value_mapping_in_json_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+    }
+
+    @Test
     public void testGZipCompressFile() {
         ioUtil.write("vertex_person.gz", Compression.GZIP,
                      "name,age,city",
@@ -1133,6 +1257,25 @@ public class FileLoadTest extends LoadTest {
         for (Vertex v : vertices) {
             if (v.label().equals(label) &&
                 v.properties().equals(toMap(keyValues))) {
+                matched = true;
+                break;
+            }
+        }
+        Assert.assertTrue(matched);
+    }
+
+    private static void assertContains(List<Edge> edges, String label,
+                                       Object sourceId, Object targetId,
+                                       String sourceLabel, String targetLabel,
+                                       Object... keyValues) {
+        boolean matched = false;
+        for (Edge e : edges) {
+            if (e.label().equals(label) &&
+                e.sourceId().equals(sourceId) &&
+                e.targetId().equals(targetId) &&
+                e.sourceLabel().equals(sourceLabel) &&
+                e.targetLabel().equals(targetLabel) &&
+                e.properties().equals(toMap(keyValues))) {
                 matched = true;
                 break;
             }

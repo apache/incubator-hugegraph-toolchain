@@ -4,24 +4,17 @@
       "label": "person",
       "input": {
         "type": "${source_type}",
-        "path": "${store_path}/vertex_person.txt",
-        "format": "TEXT",
-        "header": ["name", "age", "city"],
+        "path": "${store_path}/vertex_person.csv",
+        "format": "CSV",
         "charset": "UTF-8"
-      },
-      "field_mapping": {
-        "name": "name",
-        "age": "age",
-        "city": "city"
       }
     },
     {
       "label": "software",
       "input": {
         "type": "${source_type}",
-        "path": "${store_path}/vertex_software.txt",
-        "header": ["name", "lang", "price"],
-        "format": "TEXT"
+        "path": "${store_path}/vertex_software.csv",
+        "format": "CSV"
       }
     }
   ],
@@ -32,14 +25,20 @@
       "target": ["software_name"],
       "input": {
         "type": "${source_type}",
-        "path": "${store_path}/edge_use.txt",
-        "header": ["person_name", "software_name", "feel", "time"],
-        "format": "TEXT"
+        "path": "${store_path}/edge_use.json",
+        "format": "JSON"
       },
-      "null_values": [""],
       "field_mapping": {
         "person_name": "name",
         "software_name": "name"
+      },
+      "value_mapping": {
+        "person_name": {
+          "p1": "marko"
+        },
+        "software_name": {
+          "s1": "lop"
+        }
       }
     }
   ]
