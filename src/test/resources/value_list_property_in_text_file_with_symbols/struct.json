@@ -1,0 +1,36 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.txt",
+        "format": "TEXT",
+        "header": ["name", "age", "city"],
+        "charset": "UTF-8",
+        "collection_format": {
+          "start_symbol": "<",
+          "end_symbol": "}"
+        }
+      },
+      "mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.txt",
+        "header": ["name", "lang", "price"],
+        "format": "TEXT",
+        "collection_format": {
+          "start_symbol": ",[",
+          "end_symbol": "],"
+        }
+      }
+    }
+  ]
+}

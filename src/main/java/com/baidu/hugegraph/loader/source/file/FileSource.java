@@ -24,6 +24,7 @@ import java.util.List;
 
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FileSource implements InputSource {
@@ -44,6 +45,8 @@ public class FileSource implements InputSource {
     private String charset;
     @JsonProperty("date_format")
     private String dateFormat;
+    @JsonProperty("collection_format")
+    private CollectionFormat collectionFormat;
     @JsonProperty("skipped_line_regex")
     private String skippedLineRegex;
     @JsonProperty("compression")
@@ -52,6 +55,7 @@ public class FileSource implements InputSource {
     public FileSource() {
         this.charset = DEFAULT_CHARSET;
         this.dateFormat = DEFAULT_DATE_FORMAT;
+        this.collectionFormat = new CollectionFormat();
         this.skippedLineRegex = DEFAULT_SKIPPED_LINE_REGEX;
         this.compression = Compression.NONE;
     }
@@ -78,7 +82,20 @@ public class FileSource implements InputSource {
     }
 
     public String delimiter() {
+        // TODO: Choose a better timing check
+        if (this.delimiter != null &&
+            this.delimiter.equals(this.collectionFormat.elemDelimiter())) {
+            throw new IllegalStateException(String.format(
+                      "The delimiter '%s' can't equal with collection " +
+                      "elem delimiter '%s'", this.delimiter,
+                      this.collectionFormat.elemDelimiter()));
+        }
         return this.delimiter;
+    }
+
+    // TODO: any good name?
+    public CollectionFormat collectionFormat() {
+        return this.collectionFormat;
     }
 
     public String charset() {

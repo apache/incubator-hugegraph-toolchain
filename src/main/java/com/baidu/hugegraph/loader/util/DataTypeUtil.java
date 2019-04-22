@@ -20,15 +20,14 @@
 package com.baidu.hugegraph.loader.util;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.file.CollectionFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
@@ -52,7 +51,7 @@ public final class DataTypeUtil {
             case SET:
             case LIST:
                 // TODO: diff SET & LIST (Server should support first)
-                return parseMultiValues(value, dataType, source, null);
+                return parseMultiValues(value, dataType, source);
             default:
                 throw new AssertionError(String.format(
                           "Unsupported cardinality: '%s'", cardinality));
@@ -80,14 +79,12 @@ public final class DataTypeUtil {
     }
 
     /**
-     * collection format:
-     * "obj1,obj2,...,objn" or "[obj1,obj2,...,objn]" ..etc
+     * collection format: "obj1,obj2,...,objn" or "[obj1,obj2,...,objn]" ..etc
      * TODO: After parsing to json, the order of the collection changed
      * in some cases (such as list<date>)
      **/
     private static Object parseMultiValues(Object values, DataType dataType,
-                                           InputSource source,
-                                           Pair<Character, Character> symbols) {
+                                           InputSource source) {
         // JSON file should not parse again
         if (values instanceof Collection &&
             checkCollectionDataType((Collection<?>) values, dataType)) {
@@ -95,16 +92,39 @@ public final class DataTypeUtil {
         }
 
         E.checkState(values instanceof String, "The value must be String type");
-        String originValue = String.valueOf(values);
-        List<Object> valueList = new LinkedList<>();
-        // Use custom start&end format like [obj1,obj2,...,objn]
-        if (symbols != null && originValue.charAt(0) == symbols.getLeft() &&
-            originValue.charAt(originValue.length() - 1) == symbols.getRight()) {
-            originValue = originValue.substring(1, originValue.length() - 1);
+        String rawValue = String.valueOf(values);
+        List<Object> valueList = new ArrayList<>();
+        if (rawValue.isEmpty()) {
+            return valueList;
         }
-        // TODO: Separator should also be customizable
-        Splitter.on(',').splitToList(originValue).forEach(value -> {
-            valueList.add(parseSingleValue(dataType, value, source));
+
+        // TODO: Seems JDBCSource also has column saved collection value
+        E.checkState(source instanceof FileSource,
+                     "Only accept FileSource as an auxiliary when " +
+                     "parse multi values, but got '%s'",
+                     source.getClass().getName());
+        FileSource fileSource = (FileSource) source;
+        CollectionFormat collectionFormat = fileSource.collectionFormat();
+
+        String startSymbol = collectionFormat.startSymbol();
+        String endSymbol = collectionFormat.endSymbol();
+        if (rawValue.length() < startSymbol.length() + endSymbol.length()) {
+            // TODO: throw exception with detailed message
+            return null;
+        }
+
+        if (rawValue.startsWith(startSymbol) && rawValue.endsWith(endSymbol)) {
+            rawValue = rawValue.substring(startSymbol.length(),
+                                rawValue.length() - endSymbol.length());
+        } else {
+            return null;
+        }
+
+        String elemDelimiter = collectionFormat.elemDelimiter();
+        Splitter.on(elemDelimiter).split(rawValue).forEach(value -> {
+            if (!collectionFormat.ignoredElems().contains(value)) {
+                valueList.add(parseSingleValue(dataType, value, source));
+            }
         });
         if (checkCollectionDataType(valueList, dataType)) {
             return valueList;

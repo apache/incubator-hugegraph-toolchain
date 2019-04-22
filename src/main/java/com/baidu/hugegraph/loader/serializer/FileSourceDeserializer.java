@@ -28,7 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 
 public class FileSourceDeserializer extends
-        InputSourceDeserializer<FileSource> {
+       InputSourceDeserializer<FileSource> {
 
     private static final String FIELD_FILE_PATH = "path";
     private static final String FIELD_FILE_FORMAT = "format";

@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
@@ -38,10 +40,12 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.structure.constant.DataType;
+import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableList;
 
 public class FileLoadTest extends LoadTest {
@@ -429,10 +433,7 @@ public class FileLoadTest extends LoadTest {
     public void testValueListPropertyInTextFile() {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", GBK, "tom\tChinese\t328");
-
-        // TODO: when meets '[]',only support string now
-        // line = "[4,6]\t[2019-05-02,2008-05-02]";
-        ioUtil.write("edge_use.txt", "4,1,5,6\t2019-05-02,2008-05-02");
+        ioUtil.write("edge_use.txt", "[4,1,5,6]\t[2019-05-02,2008-05-02]");
 
         String[] args = new String[]{
                 "-f", configPath("value_list_property_in_text_file/struct.json"),
@@ -450,8 +451,85 @@ public class FileLoadTest extends LoadTest {
 
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
+        Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
+                            edge.property("feel"));
         Assert.assertEquals(ImmutableList.of("2019-05-02", "2008-05-02"),
                             edge.property("time"));
+    }
+
+    @Test
+    public void testValueListPropertyInTextFileWithElemDelimiter() {
+        ioUtil.write("vertex_person.txt",
+                     "marko\t29\t[Beijing;Hongkong;Wuhan]");
+
+        String[] args = new String[]{
+                "-f", configPath(
+                "value_list_property_in_text_file_with_elem_delimiter/struct.json"),
+                "-s", configPath(
+                "value_list_property_in_text_file_with_elem_delimiter/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
+        Vertex vertex = vertices.get(0);
+
+        Assert.assertEquals("marko", vertex.property("name"));
+        Assert.assertEquals(29, vertex.property("age"));
+        Assert.assertEquals(ImmutableList.of("Beijing", "Hongkong", "Wuhan"),
+                            vertex.property("city"));
+    }
+
+    @Test
+    public void testValueListPropertyInTextFileWithSymbols() {
+        ioUtil.write("vertex_person.txt",
+                     "marko\t29\t<Beijing,Hongkong,Wuhan}");
+        ioUtil.write("vertex_software.txt",
+                     "lop\tjava\t,[128,228,328],");
+
+        String[] args = new String[]{
+                "-f", configPath(
+                "value_list_property_in_text_file_with_symbols/struct.json"),
+                "-s", configPath(
+                "value_list_property_in_text_file_with_symbols/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        assertContains(vertices, "person", "name", "marko", "age", 29,
+                       "city", ImmutableList.of("Beijing", "Hongkong", "Wuhan"));
+        assertContains(vertices, "software", "name", "lop", "lang", "java",
+                       "price", ImmutableList.of(128.0, 228.0, 328.0));
+    }
+
+    @Test
+    public void testValueListPropertyInCSVFileWithSameDelimiter() {
+        ioUtil.write("vertex_person.csv",
+                     "marko,29,[Beijing,Hongkong,Wuhan]");
+
+        String[] args = new String[]{
+                "-f", configPath(
+                "value_list_property_in_csv_file_with_same_delimiter/struct.json"),
+                "-s", configPath(
+                "value_list_property_in_csv_file_with_same_delimiter/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     @Test
@@ -1045,5 +1123,30 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+    }
+
+    private static void assertContains(List<Vertex> vertices, String label,
+                                       Object... keyValues) {
+        boolean matched = false;
+        for (Vertex v : vertices) {
+            if (v.label().equals(label) &&
+                v.properties().equals(toMap(keyValues))) {
+                matched = true;
+                break;
+            }
+        }
+        Assert.assertTrue(matched);
+    }
+
+    private static Map<String, Object> toMap(Object... properties) {
+        E.checkArgument((properties.length & 0x01) == 0,
+                        "The number of properties must be even");
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < properties.length; i = i + 2) {
+            if (!properties[i].equals(T.id) && !properties[i].equals(T.label)) {
+                map.put((String) properties[i], properties[i + 1]);
+            }
+        }
+        return map;
     }
 }
