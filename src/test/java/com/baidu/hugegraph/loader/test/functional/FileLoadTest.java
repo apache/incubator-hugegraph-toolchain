@@ -541,6 +541,75 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testSelectedFields() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city,redundant",
+                     "marko,29,Beijing,value1",
+                     "vadas,27,Hongkong,value2");
+
+        String[] args = new String[]{
+                "-f", configPath("selected_fields/struct.json"),
+                "-s", configPath("selected_fields/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        for (Vertex vertex : vertices) {
+            Assert.assertEquals(3, vertex.properties().size());
+            Assert.assertFalse(vertex.properties().containsKey("redundant"));
+        }
+    }
+
+    @Test
+    public void testIgnoredFields() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city,redundant",
+                     "marko,29,Beijing,value1",
+                     "vadas,27,Hongkong,value2");
+
+        String[] args = new String[]{
+                "-f", configPath("ignored_fields/struct.json"),
+                "-s", configPath("ignored_fields/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        for (Vertex vertex : vertices) {
+            Assert.assertEquals(3, vertex.properties().size());
+            Assert.assertFalse(vertex.properties().containsKey("redundant"));
+        }
+    }
+
+    @Test
+    public void testSelectedAndIgnoredFields() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city,redundant",
+                     "marko,29,Beijing,value1",
+                     "vadas,27,Hongkong,value2");
+
+        String[] args = new String[]{
+                "-f", configPath("selected_and_ignored_fields/struct.json"),
+                "-s", configPath("selected_and_ignored_fields/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+    }
+
+    @Test
     public void testIgnoreLastRedundantEmptyColumn() {
         // Has a redundant seperator at the end of line
         ioUtil.write("vertex_person.csv",

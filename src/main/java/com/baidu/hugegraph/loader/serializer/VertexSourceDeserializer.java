@@ -59,6 +59,14 @@ public class VertexSourceDeserializer
             mapping = new HashMap<>();
         }
 
+        JsonNode selectedNode = node.get("selected");
+        Set<String> selected = null;
+        if (selectedNode != null) {
+            selected = this.read(selectedNode, Set.class);
+        } else {
+            selected = new HashSet<>();
+        }
+
         JsonNode ignoredNode = node.get("ignored");
         Set<String> ignored = null;
         if (ignoredNode != null) {
@@ -75,6 +83,7 @@ public class VertexSourceDeserializer
             nullValues = new HashSet<>();
         }
 
-        return new VertexSource(label, input, id, mapping, ignored, nullValues);
+        return new VertexSource(label, input, id, mapping,
+                                selected, ignored, nullValues);
     }
 }

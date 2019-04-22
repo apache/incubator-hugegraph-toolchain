@@ -102,8 +102,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
     protected abstract boolean isIdField(String fieldName);
 
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
-        for (String field : this.source().ignoredFields()) {
-            keyValues.remove(field);
+        // Retain selected fileds or remove ignored fields
+        if (!this.source().selectedFields().isEmpty()) {
+            keyValues.keySet().retainAll(this.source().selectedFields());
+        } else if (!this.source().ignoredFields().isEmpty()) {
+            keyValues.keySet().removeAll(this.source().ignoredFields());
         }
 
         SchemaLabel schemaLabel = this.getSchemaLabel();

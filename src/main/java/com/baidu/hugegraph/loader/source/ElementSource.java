@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.source;
 import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class ElementSource {
@@ -32,6 +33,8 @@ public abstract class ElementSource {
     private InputSource input;
     @JsonProperty("mapping")
     private Map<String, String> mappingFields;
+    @JsonProperty("selected")
+    private Set<String> selectedFields;
     @JsonProperty("ignored")
     private Set<String> ignoredFields;
     @JsonProperty("null_values")
@@ -39,11 +42,17 @@ public abstract class ElementSource {
 
     public ElementSource(String label, InputSource input,
                          Map<String, String> mappingFields,
+                         Set<String> selectedFields,
                          Set<String> ignoredFields,
                          Set<Object> nullValues) {
+        E.checkArgument(selectedFields.isEmpty() || ignoredFields.isEmpty(),
+                        "Not allowed to specify selected(%s) and ignored(%s) " +
+                        "fields at the same time, at least one of them " +
+                        "must be empty", selectedFields, ignoredFields);
         this.label = label;
         this.input = input;
         this.mappingFields = mappingFields;
+        this.selectedFields = selectedFields;
         this.ignoredFields = ignoredFields;
         this.nullValues = nullValues;
     }
@@ -66,6 +75,10 @@ public abstract class ElementSource {
             mappingName = this.mappingFields.get(fieldName);
         }
         return mappingName;
+    }
+
+    public Set<String> selectedFields() {
+        return this.selectedFields;
     }
 
     public Set<String> ignoredFields() {
