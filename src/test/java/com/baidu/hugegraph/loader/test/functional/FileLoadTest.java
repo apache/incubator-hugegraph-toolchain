@@ -616,7 +616,7 @@ public class FileLoadTest extends LoadTest {
             } else if (vertex.property("name").equals("vadas")) {
                 Assert.assertNull(vertex.property("age"));
                 Assert.assertEquals("Hongkong", vertex.property("city"));
-            } else if (vertex.property("name").equals("josg")) {
+            } else if (vertex.property("name").equals("josh")) {
                 Assert.assertEquals(30, vertex.property("age"));
                 Assert.assertNull(vertex.property("city"));
             }
