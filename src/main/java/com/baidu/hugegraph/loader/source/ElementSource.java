@@ -47,8 +47,8 @@ public abstract class ElementSource {
                          Set<Object> nullValues) {
         E.checkArgument(selectedFields.isEmpty() || ignoredFields.isEmpty(),
                         "Not allowed to specify selected(%s) and ignored(%s) " +
-                        "fields simultaneously, at least one of which " +
-                        "must be empty");
+                        "fields at the same time, at least one of which " +
+                        "must be empty", selectedFields, ignoredFields);
         this.label = label;
         this.input = input;
         this.mappingFields = mappingFields;
