@@ -113,7 +113,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
             Iterator<Map.Entry<String, Object>> itor = keyValues.entrySet()
                                                                 .iterator();
             itor.forEachRemaining(entry -> {
-                String key = entry.getKey();
+                String key = this.source().mappingField(entry.getKey());
                 Object val = entry.getValue();
                 if (nullableKeys.contains(key) && nullValues.contains(val)) {
                     itor.remove();
