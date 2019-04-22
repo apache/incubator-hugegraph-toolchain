@@ -28,9 +28,10 @@ public class VertexSource extends ElementSource {
     private final String idField;
 
     public VertexSource(String label, InputSource input, String idField,
-                        Map<String, String> mapping, Set<String> ignored,
+                        Map<String, String> mapping,
+                        Set<String> selected, Set<String> ignored,
                         Set<Object> nullValues) {
-        super(label, input, mapping, ignored, nullValues);
+        super(label, input, mapping, selected, ignored, nullValues);
         this.idField = idField;
     }
 

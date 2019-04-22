@@ -20,7 +20,6 @@
 package com.baidu.hugegraph.loader.source;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,9 +46,9 @@ public class GraphSource {
             File file = FileUtils.getFile(filePath);
             String json = FileUtils.readFileToString(file, "UTF-8");
             return JsonUtil.fromJson(json, GraphSource.class);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new LoadException("Read data source file '%s' error",
-                                    filePath);
+                                    e, filePath);
         }
     }
 

@@ -63,6 +63,14 @@ public class EdgeSourceDeserializer
             mapping = new HashMap<>();
         }
 
+        JsonNode selectedNode = node.get("selected");
+        Set<String> selected = null;
+        if (selectedNode != null) {
+            selected = this.read(selectedNode, Set.class);
+        } else {
+            selected = new HashSet<>();
+        }
+
         JsonNode ignoredNode = node.get("ignored");
         Set<String> ignored = null;
         if (ignoredNode != null) {
@@ -79,7 +87,7 @@ public class EdgeSourceDeserializer
             nullValues = new HashSet<>();
         }
 
-        return new EdgeSource(label, input, source, target, mapping, ignored,
-                              nullValues);
+        return new EdgeSource(label, input, source, target, mapping,
+                              selected, ignored, nullValues);
     }
 }

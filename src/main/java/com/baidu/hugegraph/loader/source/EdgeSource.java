@@ -30,9 +30,10 @@ public class EdgeSource extends ElementSource {
 
     public EdgeSource(String label, InputSource input,
                       List<String> sourceFields, List<String> targetFields,
-                      Map<String, String> mapping, Set<String> ignored,
+                      Map<String, String> mapping,
+                      Set<String> selected, Set<String> ignored,
                       Set<Object> nullValues) {
-        super(label, input, mapping, ignored, nullValues);
+        super(label, input, mapping, selected, ignored, nullValues);
         this.sourceFields = sourceFields;
         this.targetFields = targetFields;
     }
