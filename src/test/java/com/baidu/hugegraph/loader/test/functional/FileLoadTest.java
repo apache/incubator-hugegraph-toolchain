@@ -590,6 +590,40 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testMappingIgnoreNullValueColumns() {
+        ioUtil.write("vertex_person.csv",
+                     "姓名,年龄,城市",
+                     "marko,NULL,--",
+                     "vadas,-,Hongkong",
+                     "josh,30,null");
+
+        String[] args = new String[]{
+                "-f", configPath("mapping_ignore_null_value_columns/struct.json"),
+                "-s", configPath("mapping_ignore_null_value_columns/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(3, vertices.size());
+
+        for (Vertex vertex : vertices) {
+            if (vertex.property("name").equals("marko")) {
+                Assert.assertNull(vertex.property("age"));
+                Assert.assertNull(vertex.property("city"));
+            } else if (vertex.property("name").equals("vadas")) {
+                Assert.assertNull(vertex.property("age"));
+                Assert.assertEquals("Hongkong", vertex.property("city"));
+            } else if (vertex.property("name").equals("josg")) {
+                Assert.assertEquals(30, vertex.property("age"));
+                Assert.assertNull(vertex.property("city"));
+            }
+        }
+    }
+
+    @Test
     public void testFileNoHeader() {
         ioUtil.write("vertex_person.csv",
                      "marko,29,Beijing");

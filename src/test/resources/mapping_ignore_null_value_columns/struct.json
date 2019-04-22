@@ -1,0 +1,19 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "mapping": {
+        "姓名": "name",
+        "年龄": "age",
+        "城市": "city"
+      },
+      "null_values": ["", "-", "--", "NULL", "null"]
+    }
+  ]
+}
