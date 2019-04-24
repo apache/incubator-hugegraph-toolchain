@@ -39,6 +39,7 @@ import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.source.file.Compression;
+import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -432,8 +433,9 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testValueListPropertyInTextFile() {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
-        ioUtil.write("vertex_software.txt", GBK, "tom\tChinese\t328");
-        ioUtil.write("edge_use.txt", "[4,1,5,6]\t[2019-05-02,2008-05-02]");
+        ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
+        ioUtil.write("edge_use.txt",
+                     "jin\ttom\t[4,1,5,6]\t[2019-05-02,2008-05-02]");
 
         String[] args = new String[]{
                 "-f", configPath("value_list_property_in_text_file/struct.json"),

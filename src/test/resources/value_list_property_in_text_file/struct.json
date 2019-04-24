@@ -33,7 +33,7 @@
       "input": {
         "type": "${source_type}",
         "path": "${store_path}/edge_use.txt",
-        "header": ["feel", "time"],
+        "header": ["person_name", "software_name", "feel", "time"],
         "format": "TEXT"
       },
       "null_values": [""],

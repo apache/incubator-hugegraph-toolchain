@@ -20,12 +20,12 @@
 package com.baidu.hugegraph.loader.source.file;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
 
-public final class CollectionFormat {
+public final class ListFormat {
 
     private static final String DEFAULT_START_SYMBOL = "[";
     private static final String DEFAULT_END_SYMBOL = "]";
@@ -38,12 +38,13 @@ public final class CollectionFormat {
     @JsonProperty("elem_delimiter")
     private String elemDelimiter;
     @JsonProperty("ignored_elems")
-    private List<String> ignoredElems;
+    private Set<String> ignoredElems;
 
-    public CollectionFormat() {
+    public ListFormat() {
         this.startSymbol = DEFAULT_START_SYMBOL;
         this.endSymbol = DEFAULT_END_SYMBOL;
         this.elemDelimiter = DEFAULT_ELEM_DELIMITER;
+        this.ignoredElems = new HashSet<>();
     }
 
     public String startSymbol() {
@@ -58,11 +59,7 @@ public final class CollectionFormat {
         return this.elemDelimiter;
     }
 
-    public List<String> ignoredElems() {
-        if (this.ignoredElems == null) {
-            return ImmutableList.of();
-        } else {
-            return Collections.unmodifiableList(this.ignoredElems);
-        }
+    public Set<String> ignoredElems() {
+        return Collections.unmodifiableSet(this.ignoredElems);
     }
 }

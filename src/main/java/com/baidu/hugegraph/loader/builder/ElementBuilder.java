@@ -208,12 +208,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
     protected Object validatePropertyValue(String key, Object rawValue) {
         PropertyKey pKey = this.getPropertyKey(key);
         InputSource inputSource = this.source().input();
-        Object value = DataTypeUtil.convert(rawValue, pKey, inputSource);
-        E.checkArgument(value != null,
-                        "The value '%s' can't convert to class %s " +
-                        "with cardinality %s",
-                        rawValue, pKey.dataType().clazz(), pKey.cardinality());
-        return value;
+        return DataTypeUtil.convert(rawValue, pKey, inputSource);
     }
 
     protected static long parseNumberId(Object idValue) {

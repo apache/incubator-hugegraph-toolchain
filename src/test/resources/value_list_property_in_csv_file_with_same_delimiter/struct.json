@@ -9,7 +9,7 @@
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
         "delimiter": ",",
-        "collection_format": {
+        "list_format": {
           "elem_delimiter": ","
         }
       },

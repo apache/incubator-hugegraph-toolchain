@@ -19,11 +19,11 @@
 
 package com.baidu.hugegraph.loader.source.jdbc;
 
-import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class JDBCSource implements InputSource {
+public class JDBCSource extends AbstractSource {
 
     @JsonProperty("driver")
     private String driver;

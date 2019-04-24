@@ -8,7 +8,7 @@
         "format": "TEXT",
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
-        "collection_format": {
+        "list_format": {
           "start_symbol": "<",
           "end_symbol": "}"
         }
@@ -26,7 +26,7 @@
         "path": "${store_path}/vertex_software.txt",
         "header": ["name", "lang", "price"],
         "format": "TEXT",
-        "collection_format": {
+        "list_format": {
           "start_symbol": ",[",
           "end_symbol": "],"
         }

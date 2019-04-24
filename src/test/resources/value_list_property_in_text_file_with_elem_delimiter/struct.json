@@ -8,7 +8,7 @@
         "format": "TEXT",
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
-        "collection_format": {
+        "list_format": {
           "elem_delimiter": ";"
         }
       },
