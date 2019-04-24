@@ -20,7 +20,7 @@
 package com.baidu.hugegraph.loader.task;
 
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.exception.ServerException;
@@ -30,10 +30,10 @@ import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.GraphElement;
 
 public abstract class InsertionTask<E extends GraphElement>
-       implements Callable<Integer> {
+       implements Supplier<Integer> {
 
-    protected static final String ILLEGAL_ARGUMENT_EXCEPTION =
-              "class java.lang.IllegalArgumentException";
+    private static final String ILLEGAL_ARGUMENT_EXCEPTION =
+            "class java.lang.IllegalArgumentException";
 
     private final List<E> batch;
     private final LoadOptions options;
@@ -58,7 +58,7 @@ public abstract class InsertionTask<E extends GraphElement>
     }
 
     @Override
-    public Integer call() {
+    public Integer get() {
         if (this.batch == null || this.batch.isEmpty()) {
             return 0;
         }

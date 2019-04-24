@@ -19,6 +19,9 @@
 
 package com.baidu.hugegraph.loader;
 
+import static com.baidu.hugegraph.loader.util.LoaderUtil.EDGES;
+import static com.baidu.hugegraph.loader.util.LoaderUtil.VERTICES;
+
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
@@ -97,29 +100,19 @@ public class HugeGraphLoader {
         E.checkArgument(!StringUtils.isEmpty(this.options.graph),
                         "Must specified a graph");
         // Check option "-h"
-        if (!this.options.host.startsWith("http://")) {
-            this.options.host = "http://" + this.options.host;
+        String httpPrefix = "http://";
+        if (!this.options.host.startsWith(httpPrefix)) {
+            this.options.host = httpPrefix + this.options.host;
         }
     }
 
     private void load() {
         // Create schema
         this.createSchema();
-
         // Load vertices
-        System.out.print("Vertices has been imported: 0\b");
-        LoadSummary vertexSummary = this.loadVertices();
-        System.out.println(vertexSummary.insertSuccess());
-        // Reset counters
-        this.resetCounters();
-
+        LoadSummary vertexSummary = this.loadWithMetric(VERTICES);
         // Load edges
-        System.out.print("Edges has been imported: 0\b");
-        LoadSummary edgeSummary = this.loadEdges();
-        System.out.println(edgeSummary.insertSuccess());
-        // Reset counters
-        this.resetCounters();
-
+        LoadSummary edgeSummary = this.loadWithMetric(EDGES);
         // Print load summary
         LoaderUtil.printSummary(vertexSummary, edgeSummary);
 
@@ -151,9 +144,31 @@ public class HugeGraphLoader {
         groovyExecutor.execute(script, client);
     }
 
-    private LoadSummary loadVertices() {
+    private LoadSummary loadWithMetric(String type) {
+        LoaderUtil.printProgress(type);
         Instant beginTime = Instant.now();
 
+        if (type.equals(VERTICES)) {
+            this.loadVertices();
+        } else {
+            this.loadEdges();
+        }
+
+        Instant endTime = Instant.now();
+        LoadSummary summary = new LoadSummary(type);
+        Duration duration = Duration.between(beginTime, endTime);
+        summary.parseFailure(this.parseFailureNum);
+        summary.insertFailure(this.taskManager.failureNum());
+        summary.insertSuccess(this.taskManager.successNum());
+        summary.loadTime(duration);
+
+        LoaderUtil.print(summary.insertSuccess());
+        // Reset counters
+        this.resetCounters();
+        return summary;
+    }
+
+    private void loadVertices() {
         // Execute loading tasks
         List<VertexSource> vertexSources = this.graphSource.vertexSources();
         for (VertexSource source : vertexSources) {
@@ -172,17 +187,6 @@ public class HugeGraphLoader {
         }
         // Waiting async worker threads finish
         this.taskManager.waitFinished("vertices");
-
-        Instant endTime = Instant.now();
-
-        LoadSummary summary = new LoadSummary("vertices");
-        Duration duration = Duration.between(beginTime, endTime);
-        summary.parseFailure(this.parseFailureNum);
-        summary.insertFailure(this.taskManager.failureNum());
-        summary.insertSuccess(this.taskManager.successNum());
-        summary.loadTime(duration);
-
-        return summary;
     }
 
     private void loadVertex(VertexBuilder builder) {
@@ -217,9 +221,7 @@ public class HugeGraphLoader {
         }
     }
 
-    private LoadSummary loadEdges() {
-        Instant beginTime = Instant.now();
-
+    private void loadEdges() {
         List<EdgeSource> edgeSources = this.graphSource.edgeSources();
         for (EdgeSource source : edgeSources) {
             LOG.info("Loading edge source '{}'", source.label());
@@ -237,17 +239,6 @@ public class HugeGraphLoader {
         }
         // Waiting async worker threads finish
         this.taskManager.waitFinished("edges");
-
-        Instant endTime = Instant.now();
-
-        LoadSummary summary = new LoadSummary("edges");
-        Duration duration = Duration.between(beginTime, endTime);
-        summary.parseFailure(this.parseFailureNum);
-        summary.insertFailure(this.taskManager.failureNum());
-        summary.insertSuccess(this.taskManager.successNum());
-        summary.loadTime(duration);
-
-        return summary;
     }
 
     private void loadEdge(EdgeBuilder builder) {

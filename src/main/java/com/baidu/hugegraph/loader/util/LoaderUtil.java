@@ -31,15 +31,30 @@ public final class LoaderUtil {
 
     private static final Logger LOG = Log.logger(LoaderUtil.class);
 
+    public static final String VERTICES = "vertices";
+    public static final String EDGES = "edges";
+
     public static void exitWithUsage(JCommander commander, int status) {
         commander.usage();
         System.exit(status);
     }
 
+    public static void print(Object message) {
+        System.out.println(message);
+    }
+
+    public static void printProgress(String type) {
+        if (type.equals(VERTICES)) {
+            System.out.print("vertices has been imported : 0\b");
+        } else {
+            System.out.print("edges has been imported    : 0\b");
+        }
+    }
+
     public static void printError(String message, Object... args) {
         String formattedMsg = String.format(message, args);
         LOG.error(formattedMsg);
-        // Print an empty line.
+        // Print an empty line
         System.err.println();
         System.err.println(formattedMsg);
     }
@@ -48,8 +63,8 @@ public final class LoaderUtil {
         // Print count
         for (LoadSummary summary : summaries) {
             String type = summary.type();
-            logAndPrint("---------------------------------------------");
-            logAndPrint(String.format("%s results:", type));
+            logAndPrint("----------------------------------------------------");
+            logAndPrint(String.format("%s summary:", type));
             logAndPrint(String.format("parse failure %s", type),
                         summary.parseFailure());
             logAndPrint(String.format("insert failure %s", type),
@@ -58,8 +73,8 @@ public final class LoaderUtil {
                         summary.insertSuccess());
         }
         // Print time
-        logAndPrint("---------------------------------------------");
-        logAndPrint("time results:");
+        logAndPrint("----------------------------------------------------");
+        logAndPrint("time summary:");
         for (LoadSummary summary : summaries) {
             String type = summary.type();
             logAndPrint(String.format("%s loading time", type),
