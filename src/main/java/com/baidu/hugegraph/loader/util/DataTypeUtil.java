@@ -155,12 +155,11 @@ public final class DataTypeUtil {
                               "Long, Float, Double, but got %s",
                               dataType.clazz()));
             }
-        } catch (NumberFormatException ignored) {
-            // Unmatched type found
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(String.format(
+                      "Failed to convert value %s(%s) to Number",
+                      value, value.getClass()), e);
         }
-        throw new IllegalArgumentException(String.format(
-                  "Failed to convert value %s(%s) to Number",
-                  value, value.getClass()));
     }
 
     private static Date valueToDate(Object value, String df) {
