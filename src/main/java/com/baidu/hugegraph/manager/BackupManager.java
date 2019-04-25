@@ -123,6 +123,8 @@ public class BackupManager extends BackupRestoreBaseManager {
     }
 
     protected void backupVertices() {
+        Printer.print("Vertices backup started");
+        Printer.printInBackward("Vertices has been backup: ");
         List<Shard> shards = retry(() ->
                              this.client.traverser().vertexShards(splitSize()),
                              "querying shards of vertices");
@@ -132,9 +134,14 @@ public class BackupManager extends BackupRestoreBaseManager {
         }
         this.awaitTasks();
         this.postProcessFailedShard(HugeType.VERTEX);
+        Printer.print("%d", this.vertexCounter.get());
+        Printer.print("Vertices backup finished: %d",
+                      this.vertexCounter.get());
     }
 
     protected void backupEdges() {
+        Printer.print("Edges backup started");
+        Printer.printInBackward("Edges has been backup: ");
         List<Shard> shards = retry(() ->
                              this.client.traverser().edgeShards(splitSize()),
                              "querying shards of edges");
@@ -144,30 +151,44 @@ public class BackupManager extends BackupRestoreBaseManager {
         }
         this.awaitTasks();
         this.postProcessFailedShard(HugeType.EDGE);
+        Printer.print("%d", this.edgeCounter.get());
+        Printer.print("Edges backup finished: %d", this.edgeCounter.get());
     }
 
     protected void backupPropertyKeys() {
+        Printer.print("Property key backup started");
         List<PropertyKey> pks = this.client.schema().getPropertyKeys();
         this.propertyKeyCounter.getAndAdd(pks.size());
         this.backup(HugeType.PROPERTY_KEY, pks);
+        Printer.print("Property key backup finished: %d",
+                      this.propertyKeyCounter.get());
     }
 
     protected void backupVertexLabels() {
+        Printer.print("Vertex label backup started");
         List<VertexLabel> vls = this.client.schema().getVertexLabels();
         this.vertexLabelCounter.getAndAdd(vls.size());
         this.backup(HugeType.VERTEX_LABEL, vls);
+        Printer.print("Vertex label backup finished: %d",
+                      this.vertexLabelCounter.get());
     }
 
     protected void backupEdgeLabels() {
+        Printer.print("Edge label backup started");
         List<EdgeLabel> els = this.client.schema().getEdgeLabels();
         this.edgeLabelCounter.getAndAdd(els.size());
         this.backup(HugeType.EDGE_LABEL, els);
+        Printer.print("Edge label backup finished: %d",
+                      this.edgeLabelCounter.get());
     }
 
     protected void backupIndexLabels() {
+        Printer.print("Index label backup started");
         List<IndexLabel> ils = this.client.schema().getIndexLabels();
         this.indexLabelCounter.getAndAdd(ils.size());
         this.backup(HugeType.INDEX_LABEL, ils);
+        Printer.print("Index label backup finished: %d",
+                      this.indexLabelCounter.get());
     }
 
     private void backupVertexShardAsync(Shard shard) {
@@ -191,7 +212,6 @@ public class BackupManager extends BackupRestoreBaseManager {
     }
 
     private void backupVertexShard(Shard shard) {
-        Printer.print("backup vertex shard: " + shard);
         String desc = String.format("backing up vertices[shard:%s]", shard);
         Vertices vertices = null;
         String page = "";
@@ -210,13 +230,14 @@ public class BackupManager extends BackupRestoreBaseManager {
             if (vertexList == null || vertexList.isEmpty()) {
                 return;
             }
-            this.vertexCounter.getAndAdd(vertexList.size());
             this.backup(HugeType.VERTEX, suffix.get(), vertexList);
+
+            this.vertexCounter.getAndAdd(vertexList.size());
+            Printer.printInBackward(this.vertexCounter.get());
         } while ((page = vertices.page()) != null);
     }
 
     private void backupEdgeShard(Shard shard) {
-        Printer.print("backup edge shard: " + shard);
         String desc = String.format("backing up edges[shard %s]", shard);
         Edges edges = null;
         List<Edge> edgeList;
@@ -235,19 +256,25 @@ public class BackupManager extends BackupRestoreBaseManager {
             if (edgeList == null || edgeList.isEmpty()) {
                 return;
             }
-            this.edgeCounter.getAndAdd(edgeList.size());
             this.backup(HugeType.EDGE, suffix.get(), edgeList);
+
+            this.edgeCounter.getAndAdd(edgeList.size());
+            Printer.printInBackward(this.edgeCounter.get());
         } while ((page = edges.page()) != null);
     }
 
     private void backup(HugeType type, List<?> list) {
-        String file = type.string() + this.directory.suffix();
+        String file = type.string();
         this.write(file, type, list);
     }
 
     private void backup(HugeType type, int number, List<?> list) {
-        String file = type.string() + number + this.directory.suffix();
-        this.write(file, type, list);
+        String file = type.string() + number;
+        int size = list.size();
+        for (int start = 0; start < size; start += BATCH) {
+            int end = Math.min(start + BATCH, size);
+            this.write(file, type, list.subList(start, end));
+        }
     }
 
     private void exceptionHandler(ToolsException e, HugeType type,

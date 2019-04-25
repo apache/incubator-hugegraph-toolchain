@@ -57,4 +57,21 @@ public class Printer {
         }
         System.out.println("}");
     }
+
+    public static void printInBackward(String message) {
+        System.out.print(message);
+        printInBackward(0L);
+    }
+
+    public static void printInBackward(long count) {
+        System.out.print(String.format("%d%s", count, backward(count)));
+    }
+
+    public static String backward(long word) {
+        StringBuilder backward = new StringBuilder();
+        for (int i = 0, len = String.valueOf(word).length(); i < len; i++) {
+            backward.append("\b");
+        }
+        return backward.toString();
+    }
 }

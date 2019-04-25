@@ -163,30 +163,26 @@ public class HugeGraphCommand {
                 Printer.printList("Graphs", graphsManager.list());
                 break;
             case "graph-get":
-                SubCommands.GraphGet graphGet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
                 Printer.printMap("Graph info",
-                                 graphsManager.get(graphGet.graph()));
+                                 graphsManager.get(this.graph()));
                 break;
             case "graph-clear":
                 SubCommands.GraphClear graphClear = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
-                graphsManager.clear(graphClear.graph(),
-                                    graphClear.confirmMessage());
-                Printer.print("Graph '%s' is cleared", graphClear.graph());
+                graphsManager.clear(this.graph(), graphClear.confirmMessage());
+                Printer.print("Graph '%s' is cleared", this.graph());
                 break;
             case "graph-mode-set":
                 SubCommands.GraphModeSet graphModeSet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
-                graphsManager.mode(graphModeSet.graph(), graphModeSet.mode());
+                graphsManager.mode(this.graph(), graphModeSet.mode());
                 Printer.print("Set graph '%s' mode to '%s'",
-                              graphModeSet.graph(), graphModeSet.mode());
+                              this.graph(), graphModeSet.mode());
                 break;
             case "graph-mode-get":
-                SubCommands.GraphModeGet graphModeGet = this.subCommand(subCmd);
                 graphsManager = manager(GraphsManager.class);
-                Printer.printKV("Graph mode",
-                                graphsManager.mode(graphModeGet.graph()));
+                Printer.printKV("Graph mode", graphsManager.mode(this.graph()));
                 break;
             case "gremlin-execute":
                 SubCommands.Gremlin gremlin = this.subCommand(subCmd);
@@ -276,10 +272,8 @@ public class HugeGraphCommand {
     }
 
     private GraphMode mode() {
-        SubCommands.GraphModeGet graphModeGet =
-                                 this.subCommand("graph-mode-get");
         GraphsManager graphsManager = manager(GraphsManager.class);
-        GraphMode mode = graphsManager.mode(graphModeGet.graph());
+        GraphMode mode = graphsManager.mode(this.graph());
         E.checkState(mode.maintaining(),
                      "Invalid mode '%s' of graph '%s' for restore " +
                      "sub-command", mode, this.graph());

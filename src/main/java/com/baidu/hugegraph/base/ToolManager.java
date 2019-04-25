@@ -41,6 +41,10 @@ public class ToolManager {
         return this.type;
     }
 
+    protected String graph() {
+        return this.client.graph().graph();
+    }
+
     @SuppressWarnings("unchecked")
     protected  <T> List<T> readList(String key, Class<T> clazz,
                                     String content) {

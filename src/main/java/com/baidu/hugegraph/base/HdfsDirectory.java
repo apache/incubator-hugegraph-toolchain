@@ -42,7 +42,7 @@ import com.baidu.hugegraph.util.E;
 
 public class HdfsDirectory extends Directory {
 
-    public static final String HDFS_PREFIX = "hdfs://";
+    public static final String HDFS_FS_DEFAULT_NAME = "fs.default.name";
 
     private final Map<String, String> conf;
 
@@ -134,7 +134,7 @@ public class HdfsDirectory extends Directory {
 
     @Override
     public OutputStream outputStream(String file, boolean override) {
-        String path = this.path(file);
+        String path = this.path(file + this.suffix());
         FileSystem fs = this.fileSystem();
         FSDataOutputStream os = null;
         ZipOutputStream zos = null;
@@ -154,6 +154,22 @@ public class HdfsDirectory extends Directory {
             throw new ClientException("Failed to write to %s", e, path);
         }
         return zos;
+    }
+
+    public static HdfsDirectory constructDir(String directory, String graph,
+                                             Map<String, String> hdfsConf) {
+        String hdfsFs = hdfsConf.get(HDFS_FS_DEFAULT_NAME);
+        E.checkArgument(hdfsFs != null && !hdfsFs.isEmpty(),
+                        "'%s' can not be null or empty " +
+                        "when try to backup to HDFS", HDFS_FS_DEFAULT_NAME);
+        if (directory == null || directory.isEmpty()) {
+            if (hdfsFs.endsWith("/")) {
+                directory = hdfsFs + graph;
+            } else {
+                directory = hdfsFs + "/" + graph;
+            }
+        }
+        return new HdfsDirectory(directory, hdfsConf);
     }
 
     private String path(String file) {

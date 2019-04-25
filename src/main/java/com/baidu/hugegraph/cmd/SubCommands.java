@@ -141,28 +141,13 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Get graph info")
-    public class GraphGet {
-
-        @ParametersDelegate
-        private GraphName graph = new GraphName();
-
-        public String graph() {
-            return this.graph.graphName;
-        }
-    }
+    public class GraphGet {}
 
     @Parameters(commandDescription = "Clear graph schema and data")
     public class GraphClear {
 
         @ParametersDelegate
-        private GraphName graph = new GraphName();
-
-        @ParametersDelegate
         private ConfirmMessage message = new ConfirmMessage();
-
-        public String graph() {
-            return this.graph.graphName;
-        }
 
         public String confirmMessage() {
             return this.message.confirmMessage;
@@ -173,14 +158,7 @@ public class SubCommands {
     public class GraphModeSet {
 
         @ParametersDelegate
-        private GraphName graph = new GraphName();
-
-        @ParametersDelegate
         private Mode mode = new Mode();
-
-        public String graph() {
-            return this.graph.graphName;
-        }
 
         public GraphMode mode() {
             return this.mode.mode;
@@ -188,15 +166,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Get graph mode")
-    public class GraphModeGet {
-
-        @ParametersDelegate
-        private GraphName graph = new GraphName();
-
-        public String graph() {
-            return this.graph.graphName;
-        }
-    }
+    public class GraphModeGet {}
 
     @Parameters(commandDescription = "Execute Gremlin statements")
     public class Gremlin extends GremlinJob {
@@ -370,12 +340,14 @@ public class SubCommands {
     public class BackupRestore {
 
         @Parameter(names = {"--directory", "-d"}, arity = 1,
-                   description = "Directory of graph schema/data")
-        public String directory = "./";
+                   description = "Directory of graph schema/data, default is " +
+                                 "'./{graphname}' in local file system " +
+                                 "or '{fs.default.name}/{graphname}' in HDFS")
+        public String directory;
 
         @Parameter(names = {"--log", "-l"}, arity = 1,
                    description = "Directory of log")
-        public String logDir = "./";
+        public String logDir = "./logs";
 
         @ParametersDelegate
         private HugeTypes types = new HugeTypes();
@@ -444,23 +416,17 @@ public class SubCommands {
         public int timeout = 30;
     }
 
-    public static class GraphName {
-
-        @Parameter(names = {"--graph-name"}, arity = 1,
-                   description = "Name of graph")
-        public String graphName = "hugegraph";
-    }
-
     public class HugeTypes {
 
         @Parameter(names = {"--huge-types", "-t"},
                    listConverter = HugeTypeListConverter.class,
-                   required = true,
                    description = "Type of schema/data. " +
                                  "Concat with ',' if more than one. " +
-                                 "'all' means 'vertex,edge,vertex_label," +
+                                 "'all' means all vertices, edges and schema," +
+                                 " in other words, 'all' equals with " +
+                                 "'vertex,edge,vertex_label," +
                                  "edge_label,property_key,index_label'")
-        public List<HugeType> types;
+        public List<HugeType> types = HugeTypeListConverter.ALL_TYPES;
     }
 
     public class ExistDirectory {
@@ -603,18 +569,19 @@ public class SubCommands {
     public static class HugeTypeListConverter
                   implements IStringConverter<List<HugeType>> {
 
+        public static final List<HugeType> ALL_TYPES = ImmutableList.of(
+                HugeType.PROPERTY_KEY, HugeType.VERTEX_LABEL,
+                HugeType.EDGE_LABEL, HugeType.INDEX_LABEL,
+                HugeType.VERTEX, HugeType.EDGE
+        );
+
         @Override
         public List<HugeType> convert(String value) {
             E.checkArgument(value != null && !value.isEmpty(),
                             "HugeType can't be null or empty");
             String[] types = value.split(",");
             if (types.length == 1 && types[0].equalsIgnoreCase("all")) {
-                return ImmutableList.of(HugeType.PROPERTY_KEY,
-                                        HugeType.VERTEX_LABEL,
-                                        HugeType.EDGE_LABEL,
-                                        HugeType.INDEX_LABEL,
-                                        HugeType.VERTEX,
-                                        HugeType.EDGE);
+                return ALL_TYPES;
             }
             List<HugeType> hugeTypes = new ArrayList<>();
             for (String type : types) {
