@@ -22,11 +22,11 @@ package com.baidu.hugegraph.loader.source.file;
 import java.util.Collections;
 import java.util.List;
 
-import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class FileSource implements InputSource {
+public class FileSource extends AbstractSource {
 
     private static final String DEFAULT_CHARSET = "UTF-8";
     private static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
@@ -78,6 +78,14 @@ public class FileSource implements InputSource {
     }
 
     public String delimiter() {
+        // TODO: Choose a better timing check, will be implemnted in 'value mapping' commit
+        if (this.delimiter != null &&
+            this.delimiter.equals(this.listFormat().elemDelimiter())) {
+            throw new IllegalStateException(String.format(
+                      "The delimiter '%s' can't equal with collection " +
+                      "elem delimiter '%s'", this.delimiter,
+                      this.listFormat().elemDelimiter()));
+        }
         return this.delimiter;
     }
 

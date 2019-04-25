@@ -7,7 +7,11 @@
         "path": "${store_path}/vertex_person.txt",
         "format": "TEXT",
         "header": ["name", "age", "city"],
-        "charset": "UTF-8"
+        "charset": "UTF-8",
+        "list_format": {
+          "start_symbol": "<",
+          "end_symbol": "}"
+        }
       },
       "mapping": {
         "name": "name",
@@ -21,25 +25,11 @@
         "type": "${source_type}",
         "path": "${store_path}/vertex_software.txt",
         "header": ["name", "lang", "price"],
-        "format": "TEXT"
-      }
-    }
-  ],
-  "edges": [
-    {
-      "label": "use",
-      "source": ["person_name"],
-      "target": ["software_name"],
-      "input": {
-        "type": "${source_type}",
-        "path": "${store_path}/edge_use.txt",
-        "header": ["person_name", "software_name", "feel", "time"],
-        "format": "TEXT"
-      },
-      "null_values": [""],
-      "mapping": {
-        "person_name": "name",
-        "software_name": "name"
+        "format": "TEXT",
+        "list_format": {
+          "start_symbol": ",[",
+          "end_symbol": "],"
+        }
       }
     }
   ]
