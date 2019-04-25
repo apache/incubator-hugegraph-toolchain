@@ -94,8 +94,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
             }
             Object fieldValue = keyValues.get(fieldName);
             this.checkFieldValue(fieldName, fieldValue);
-            Object mappedValue = this.mappingFieldValueIfNeed(fieldName,
-                                                              fieldValue);
+            Object mappedValue = this.mappingFieldValueIfNeeded(fieldName,
+                                                                fieldValue);
 
             IdStrategy idStrategy = vertexLabel.idStrategy();
             if (idStrategy.isCustomize()) {
@@ -106,10 +106,9 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                  */
                 if (idStrategy.isCustomizeString()) {
                     E.checkArgument(mappedValue instanceof String,
-                                    "If there is no value mapping, the field " +
-                                    "value must be String, otherwise it must " +
-                                    "be String type after mapping, " +
-                                    "but got '%s(%s) -> %s(%s)'",
+                                    "The field value must be String if there " +
+                                    "is no value mapping, same as the value " +
+                                    "after mapping, but got %s(%s) -> %s(%s)",
                                     fieldValue, fieldValue.getClass(),
                                     mappedValue, mappedValue.getClass());
                     String id = (String) mappedValue;

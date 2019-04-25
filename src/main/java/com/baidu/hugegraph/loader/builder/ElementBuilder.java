@@ -136,7 +136,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
                 continue;
             }
             String key = this.source().mappingField(fieldName);
-            fieldValue = this.mappingFieldValueIfNeed(fieldName, fieldValue);
+            fieldValue = this.mappingFieldValueIfNeeded(fieldName, fieldValue);
             Object value = this.validatePropertyValue(key, fieldValue);
 
             element.property(key, value);
@@ -186,8 +186,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
                        fieldValue.getClass());
     }
 
-    protected Object mappingFieldValueIfNeed(String fieldName,
-                                             Object fieldValue) {
+    protected Object mappingFieldValueIfNeeded(String fieldName,
+                                               Object fieldValue) {
         if (this.source().mappingValues().isEmpty()) {
             return fieldValue;
         }

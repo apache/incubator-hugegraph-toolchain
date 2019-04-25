@@ -63,7 +63,12 @@ public class FileSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
-        // pass
+        String elemDelimiter = this.listFormat().elemDelimiter();
+        if (this.delimiter != null && this.delimiter.equals(elemDelimiter)) {
+            throw new IllegalArgumentException(String.format(
+                      "The delimiter '%s' can't equal with list elem " +
+                      "delimiter '%s'", this.delimiter, elemDelimiter));
+        }
     }
 
     public String path() {
@@ -83,14 +88,6 @@ public class FileSource extends AbstractSource {
     }
 
     public String delimiter() {
-        // TODO: Choose a better timing check, will be implemnted in 'value mapping' commit
-        if (this.delimiter != null &&
-            this.delimiter.equals(this.listFormat().elemDelimiter())) {
-            throw new IllegalStateException(String.format(
-                      "The delimiter '%s' can't equal with collection " +
-                      "elem delimiter '%s'", this.delimiter,
-                      this.listFormat().elemDelimiter()));
-        }
         return this.delimiter;
     }
 

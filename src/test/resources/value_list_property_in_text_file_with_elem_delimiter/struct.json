@@ -12,7 +12,7 @@
           "elem_delimiter": ";"
         }
       },
-      "mapping": {
+      "field_mapping": {
         "name": "name",
         "age": "age",
         "city": "city"

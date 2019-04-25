@@ -100,7 +100,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                 if (!primaryKeys.contains(key)) {
                     continue;
                 }
-                this.mappingFieldValueIfNeed(fieldName, fieldValue);
+                this.mappingFieldValueIfNeeded(fieldName, fieldValue);
                 Object value = this.validatePropertyValue(key, fieldValue);
 
                 int index = primaryKeys.indexOf(key);
