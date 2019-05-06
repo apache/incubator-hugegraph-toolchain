@@ -66,8 +66,8 @@ public class FileSource extends AbstractSource {
         String elemDelimiter = this.listFormat().elemDelimiter();
         if (this.delimiter != null && this.delimiter.equals(elemDelimiter)) {
             throw new IllegalArgumentException(String.format(
-                      "The delimiter '%s' can't equal with list elem " +
-                      "delimiter '%s'", this.delimiter, elemDelimiter));
+                      "The delimiter of fields(%s) and list elements(%s) " +
+                      "can't be the same", this.delimiter, elemDelimiter));
         }
     }
 
