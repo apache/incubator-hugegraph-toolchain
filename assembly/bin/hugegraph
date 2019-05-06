@@ -98,7 +98,7 @@ done
 if [ "$JAVA_OPTIONS" = "" ] ; then
     XMX=`calc_xmx $MIN_MEM $MAX_MEM`
     if [ $? -ne 0 ]; then
-        echo "Failed to run bin/hugegraph, requires at least ${MIN_MEM}m free memory" \
+        echo "Failed to run bin/hugegraph, requires at least ${MIN_MEM}m free memory"
         exit 1
     fi
     JAVA_OPTIONS="-Xms${MIN_MEM}m -Xmx${XMX}m"

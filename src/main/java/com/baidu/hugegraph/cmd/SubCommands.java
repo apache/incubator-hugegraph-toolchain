@@ -33,6 +33,7 @@ import com.baidu.hugegraph.manager.TasksManager;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.IStringConverter;
@@ -48,31 +49,36 @@ public class SubCommands {
     private Map<String, Object> commands;
 
     public SubCommands() {
-        this.commands = new HashMap<>();
+        this.commands = InsertionOrderUtil.newMap();
         this.initSubCommands();
     }
 
     private void initSubCommands() {
-        this.commands.put("backup", new Backup());
-        this.commands.put("restore", new Restore());
-        this.commands.put("schedule-backup", new ScheduleBackup());
-        this.commands.put("dump", new DumpGraph());
         this.commands.put("graph-list", new GraphList());
         this.commands.put("graph-get", new GraphGet());
         this.commands.put("graph-clear", new GraphClear());
         this.commands.put("graph-mode-set", new GraphModeSet());
         this.commands.put("graph-mode-get", new GraphModeGet());
-        this.commands.put("gremlin-execute", new Gremlin());
-        this.commands.put("gremlin-schedule", new GremlinJob());
+
         this.commands.put("task-list", new TaskList());
         this.commands.put("task-get", new TaskGet());
         this.commands.put("task-delete", new TaskDelete());
         this.commands.put("task-cancel", new TaskCancel());
         this.commands.put("task-clear", new TaskClear());
+
+        this.commands.put("gremlin-execute", new Gremlin());
+        this.commands.put("gremlin-schedule", new GremlinJob());
+
+        this.commands.put("backup", new Backup());
+        this.commands.put("schedule-backup", new ScheduleBackup());
+        this.commands.put("dump", new DumpGraph());
+        this.commands.put("restore", new Restore());
+
         this.commands.put("deploy", new Deploy());
         this.commands.put("start-all", new StartAll());
         this.commands.put("clear", new Clear());
         this.commands.put("stop-all", new StopAll());
+
         this.commands.put("help", new Help());
     }
 
@@ -240,6 +246,9 @@ public class SubCommands {
         private Limit limit = new Limit();
 
         public String status() {
+            if (this.status.status == null) {
+                return null;
+            }
             return this.status.status.toUpperCase();
         }
 
