@@ -64,6 +64,15 @@ public abstract class ElementSource implements Checkable {
                         "Not allowed to specify selected(%s) and ignored(%s) " +
                         "fields at the same time, at least one of them " +
                         "must be empty", selectedFields, ignoredFields);
+        /*
+         * The json file source will deserialize value in real data class
+         * (1 -> Integer, "1" -> String), but value_mapping can only use
+         * String as key("1": "xxx"), we don't know which value (1 and "1")
+         * should mapped by key "1". This situation will also occur in jdbc.
+         * This situation doesn't appear in the text file, because all value
+         * will be parsed into String(1 -> "1", "1" -> "\"1\""), the key of
+         * value_mapping can distinguish them.
+         */
         if (this.input.type() == SourceType.FILE ||
             this.input.type() == SourceType.HDFS) {
             FileSource fileSource = (FileSource) this.input;
