@@ -19,11 +19,6 @@
 
 package com.baidu.hugegraph.driver;
 
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
-
 import java.util.List;
 
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
@@ -53,6 +48,12 @@ import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.util.E;
+
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
 
 public class TraverserManager {
 
@@ -91,6 +92,11 @@ public class TraverserManager {
         this.edgesAPI = new EdgesAPI(client, graph);
     }
 
+    public Path shortestPath(Object sourceId, Object targetId, int maxDepth) {
+        return this.shortestPath(sourceId, targetId, Direction.BOTH, null,
+                                 maxDepth);
+    }
+
     public Path shortestPath(Object sourceId, Object targetId,
                              Direction direction, int maxDepth) {
         return this.shortestPath(sourceId, targetId, direction, null,
@@ -117,6 +123,11 @@ public class TraverserManager {
                                         maxDepth, degree, skipDegree, capacity);
     }
 
+    public List<Path> paths(Object sourceId, Object targetId, int maxDepth) {
+        return this.paths(sourceId, targetId, Direction.BOTH, null,
+                          maxDepth, DEFAULT_PATHS_LIMIT);
+    }
+
     public List<Path> paths(Object sourceId, Object targetId,
                             Direction direction, int maxDepth, long limit) {
         return this.paths(sourceId, targetId, direction, null,
@@ -138,14 +149,21 @@ public class TraverserManager {
     }
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
-                                 Direction direction, int maxDepth, int limit) {
+                                 int maxDepth) {
+        return this.crosspoint(sourceId, targetId, Direction.BOTH, null,
+                               maxDepth, DEFAULT_PATHS_LIMIT);
+    }
+
+    public List<Path> crosspoint(Object sourceId, Object targetId,
+                                 Direction direction, int maxDepth,
+                                 long limit) {
         return this.crosspoint(sourceId, targetId, direction, null,
                                maxDepth, limit);
     }
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  Direction direction, String label,
-                                 int maxDepth, int limit) {
+                                 int maxDepth, long limit) {
         return this.crosspoint(sourceId, targetId, direction, label, maxDepth,
                                DEFAULT_DEGREE, DEFAULT_CAPACITY, limit);
     }
@@ -156,6 +174,10 @@ public class TraverserManager {
                                  long limit) {
         return this.crosspointsAPI.get(sourceId, targetId, direction, label,
                                        maxDepth, degree, capacity, limit);
+    }
+
+    public List<Object> kout(Object sourceId, int depth) {
+        return this.kout(sourceId, Direction.BOTH, depth);
     }
 
     public List<Object> kout(Object sourceId, Direction direction, int depth) {
@@ -176,6 +198,10 @@ public class TraverserManager {
                                 degree, capacity, limit);
     }
 
+    public List<Object> kneighbor(Object sourceId, int depth) {
+        return this.kneighbor(sourceId, Direction.BOTH, null, depth);
+    }
+
     public List<Object> kneighbor(Object sourceId, Direction direction,
                                   int depth) {
         return this.kneighbor(sourceId, direction, null, depth);
@@ -194,10 +220,21 @@ public class TraverserManager {
                                      degree, limit);
     }
 
+    public List<Path> rings(Object sourceId, int depth) {
+        return this.rings(sourceId, Direction.BOTH, null, depth,
+                          DEFAULT_DEGREE, DEFAULT_CAPACITY,
+                          DEFAULT_ELEMENTS_LIMIT);
+    }
+
     public List<Path> rings(Object sourceId, Direction direction, String label,
                             int depth, long degree, long capacity, long limit) {
         return this.ringsAPI.get(sourceId, direction, label, depth, degree,
                                  capacity, limit);
+    }
+
+    public List<Path> rays(Object sourceId, int depth) {
+        return this.rays(sourceId, Direction.BOTH, null, depth, DEFAULT_DEGREE,
+                         DEFAULT_CAPACITY, DEFAULT_ELEMENTS_LIMIT);
     }
 
     public List<Path> rays(Object sourceId, Direction direction, String label,
