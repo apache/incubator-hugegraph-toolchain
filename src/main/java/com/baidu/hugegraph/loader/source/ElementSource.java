@@ -24,8 +24,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.baidu.hugegraph.loader.source.file.FileFormat;
-import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -64,28 +62,6 @@ public abstract class ElementSource implements Checkable {
                         "Not allowed to specify selected(%s) and ignored(%s) " +
                         "fields at the same time, at least one of them " +
                         "must be empty", selectedFields, ignoredFields);
-        /*
-         * The json file source will deserialize value in real data class
-         * (1 -> Integer, "1" -> String), but value_mapping can only use
-         * String as key("1": "xxx"), we don't know which value (1 and "1")
-         * should mapped by key "1". This situation will also occur in jdbc.
-         * This situation doesn't appear in the text file, because all value
-         * will be parsed into String(1 -> "1", "1" -> "\"1\""), the key of
-         * value_mapping can distinguish them.
-         */
-        if (this.input.type() == SourceType.FILE ||
-            this.input.type() == SourceType.HDFS) {
-            FileSource fileSource = (FileSource) this.input;
-            if (fileSource.format() == FileFormat.JSON) {
-                E.checkArgument(this.mappingValues.isEmpty(),
-                                "Not allowed to specify value_mapping when " +
-                                "the format of input source is JSON");
-            }
-        } else if (this.input.type() == SourceType.JDBC) {
-            E.checkArgument(this.mappingValues.isEmpty(),
-                            "Not allowed to specify value_mapping when " +
-                            "the input source is JDBC");
-        }
         this.mappingValues.values().forEach(m -> {
             m.values().forEach(value -> {
                 E.checkArgumentNotNull(value, "The mapped value can't be null");

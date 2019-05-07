@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
@@ -41,12 +39,10 @@ import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.structure.constant.DataType;
-import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableList;
 
 public class FileLoadTest extends LoadTest {
@@ -1035,15 +1031,10 @@ public class FileLoadTest extends LoadTest {
 
     @Test
     public void testValueMappingInJsonFile() {
-        ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing");
-        ioUtil.write("vertex_software.csv",
-                     "name,lang,price",
-                     "lop,java,328");
-        ioUtil.write("edge_use.json",
-                     "{\"person_name\": \"p1\", \"software_name\": " +
-                     "\"s1\", \"time\": [\"20171210\", \"20180101\"]}");
+        // 1(Integer) and "1"(String) are both mapping
+        ioUtil.write("vertex_person.json",
+                     "{\"name\": \"marko\", \"age\": 29, \"city\": 1}",
+                     "{\"name\": \"vadas\", \"age\": 27, \"city\": \"1\"}");
 
         String[] args = new String[]{
                 "-f", configPath("value_mapping_in_json_file/struct.json"),
@@ -1053,9 +1044,14 @@ public class FileLoadTest extends LoadTest {
                 "--num-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+        assertContains(vertices, "person", "name", "marko",
+                       "age", 29, "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas",
+                       "age", 27, "city", "Beijing");
     }
 
     @Test
@@ -1249,49 +1245,5 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
-    }
-
-    private static void assertContains(List<Vertex> vertices, String label,
-                                       Object... keyValues) {
-        boolean matched = false;
-        for (Vertex v : vertices) {
-            if (v.label().equals(label) &&
-                v.properties().equals(toMap(keyValues))) {
-                matched = true;
-                break;
-            }
-        }
-        Assert.assertTrue(matched);
-    }
-
-    private static void assertContains(List<Edge> edges, String label,
-                                       Object sourceId, Object targetId,
-                                       String sourceLabel, String targetLabel,
-                                       Object... keyValues) {
-        boolean matched = false;
-        for (Edge e : edges) {
-            if (e.label().equals(label) &&
-                e.sourceId().equals(sourceId) &&
-                e.targetId().equals(targetId) &&
-                e.sourceLabel().equals(sourceLabel) &&
-                e.targetLabel().equals(targetLabel) &&
-                e.properties().equals(toMap(keyValues))) {
-                matched = true;
-                break;
-            }
-        }
-        Assert.assertTrue(matched);
-    }
-
-    private static Map<String, Object> toMap(Object... properties) {
-        E.checkArgument((properties.length & 0x01) == 0,
-                        "The number of properties must be even");
-        Map<String, Object> map = new LinkedHashMap<>();
-        for (int i = 0; i < properties.length; i = i + 2) {
-            if (!properties[i].equals(T.id) && !properties[i].equals(T.label)) {
-                map.put((String) properties[i], properties[i + 1]);
-            }
-        }
-        return map;
     }
 }

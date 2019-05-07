@@ -182,8 +182,13 @@ public class JDBCLoadTest extends LoadTest {
                 "--num-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+        assertContains(vertices, "person", "name", "marko",
+                       "age", 29, "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas",
+                       "age", 27, "city", "Shanghai");
     }
 }

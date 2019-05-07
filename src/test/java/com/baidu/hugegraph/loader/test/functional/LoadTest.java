@@ -21,12 +21,19 @@ package com.baidu.hugegraph.loader.test.functional;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.driver.TaskManager;
+import com.baidu.hugegraph.structure.constant.T;
+import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.util.E;
 
 public class LoadTest {
 
@@ -71,5 +78,49 @@ public class LoadTest {
         schema.getPropertyKeys().forEach(pk -> {
             schema.removePropertyKey(pk.name());
         });
+    }
+
+    protected static void assertContains(List<Vertex> vertices, String label,
+                                         Object... keyValues) {
+        boolean matched = false;
+        for (Vertex v : vertices) {
+            if (v.label().equals(label) &&
+                v.properties().equals(toMap(keyValues))) {
+                matched = true;
+                break;
+            }
+        }
+        Assert.assertTrue(matched);
+    }
+
+    protected static void assertContains(List<Edge> edges, String label,
+                                         Object sourceId, Object targetId,
+                                         String sourceLabel, String targetLabel,
+                                         Object... keyValues) {
+        boolean matched = false;
+        for (Edge e : edges) {
+            if (e.label().equals(label) &&
+                e.sourceId().equals(sourceId) &&
+                e.targetId().equals(targetId) &&
+                e.sourceLabel().equals(sourceLabel) &&
+                e.targetLabel().equals(targetLabel) &&
+                e.properties().equals(toMap(keyValues))) {
+                matched = true;
+                break;
+            }
+        }
+        Assert.assertTrue(matched);
+    }
+
+    private static Map<String, Object> toMap(Object... properties) {
+        E.checkArgument((properties.length & 0x01) == 0,
+                        "The number of properties must be even");
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < properties.length; i = i + 2) {
+            if (!properties[i].equals(T.id) && !properties[i].equals(T.label)) {
+                map.put((String) properties[i], properties[i + 1]);
+            }
+        }
+        return map;
     }
 }
