@@ -9,7 +9,7 @@
         "charset": "UTF-8",
         "skipped_line_regex": "(^#|^//).*"
       },
-      "mapping": {
+      "field_mapping": {
         "name": "name",
         "age": "age",
         "city": "city"

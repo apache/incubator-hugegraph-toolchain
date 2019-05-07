@@ -1,0 +1,17 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.json",
+        "format": "JSON"
+      },
+      "value_mapping": {
+        "city": {
+          "1": "Beijing"
+        }
+      }
+    }
+  ]
+}

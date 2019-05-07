@@ -36,7 +36,7 @@
         "format": "JSON",
         "date_format": "yyyyMMdd"
       },
-      "mapping": {
+      "field_mapping": {
         "source_name": "name",
         "target_name": "name"
       }
@@ -51,7 +51,7 @@
         "format": "JSON",
         "date_format": "yyyy-MM-dd"
       },
-      "mapping": {
+      "field_mapping": {
         "source_name": "name"
       }
     }

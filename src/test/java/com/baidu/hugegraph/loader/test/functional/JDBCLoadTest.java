@@ -28,6 +28,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.baidu.hugegraph.loader.HugeGraphLoader;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
@@ -113,6 +114,11 @@ public class JDBCLoadTest extends LoadTest {
     @After
     public void clear() {
         clearServerData();
+
+        dbUtil.execute("TRUNCATE TABLE `person`");
+        dbUtil.execute("TRUNCATE TABLE `software`");
+        dbUtil.execute("TRUNCATE TABLE `knows`");
+        dbUtil.execute("TRUNCATE TABLE `created`");
     }
 
     @Test
@@ -160,5 +166,29 @@ public class JDBCLoadTest extends LoadTest {
             Assert.assertEquals(Integer.class, edge.sourceId().getClass());
             Assert.assertEquals(Integer.class, edge.targetId().getClass());
         }
+    }
+
+    @Test
+    public void testValueMappingInJDBCSource() {
+        dbUtil.insert("INSERT INTO `person` VALUES " +
+                      "(1,'marko',29,'1')," +
+                      "(2,'vadas',27,'2');");
+
+        String[] args = new String[]{
+                "-f", configPath("value_mapping_in_jdbc_source/struct.json"),
+                "-s", configPath("value_mapping_in_jdbc_source/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+        assertContains(vertices, "person", "name", "marko",
+                       "age", 29, "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas",
+                       "age", 27, "city", "Shanghai");
     }
 }

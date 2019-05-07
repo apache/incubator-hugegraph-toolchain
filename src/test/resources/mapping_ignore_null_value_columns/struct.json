@@ -8,7 +8,7 @@
         "format": "CSV",
         "charset": "UTF-8"
       },
-      "mapping": {
+      "field_mapping": {
         "姓名": "name",
         "年龄": "age",
         "城市": "city"

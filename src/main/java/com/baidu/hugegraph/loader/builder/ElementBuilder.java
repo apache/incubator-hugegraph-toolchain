@@ -86,7 +86,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
         Line line = this.reader.next();
         Map<String, Object> keyValues = line.toMap();
         try {
-            return this.build(this.filterFields(keyValues));
+            keyValues = this.filterFields(keyValues);
+            return this.build(keyValues);
         } catch (IllegalArgumentException e) {
             throw new ParseException(line.rawLine(), e.getMessage());
         }
@@ -130,10 +131,13 @@ public abstract class ElementBuilder<GE extends GraphElement>
         for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
             String fieldName = entry.getKey();
             Object fieldValue = entry.getValue();
+            this.checkFieldValue(fieldName, fieldValue);
+
             if (this.isIdField(fieldName)) {
                 continue;
             }
             String key = this.source().mappingField(fieldName);
+            fieldValue = this.mappingFieldValueIfNeeded(fieldName, fieldValue);
             Object value = this.validatePropertyValue(key, fieldValue);
 
             element.property(key, value);
@@ -171,6 +175,27 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected abstract SchemaLabel getSchemaLabel();
+
+    protected void checkFieldValue(String fieldName, Object fieldValue) {
+        if (this.source().mappingValues().isEmpty() ||
+            !this.source().mappingValues().containsKey(fieldName)) {
+            return;
+        }
+        // NOTE: The nullable values has been filtered before this
+        E.checkArgument(fieldValue != null, "The field value can't be null");
+        E.checkArgument(DataTypeUtil.isSimpleValue(fieldValue),
+                        "The field value must be simple type, actual is '%s'",
+                        fieldValue.getClass());
+    }
+
+    protected Object mappingFieldValueIfNeeded(String fieldName,
+                                               Object fieldValue) {
+        if (this.source().mappingValues().isEmpty()) {
+            return fieldValue;
+        }
+        String fieldStrValue = String.valueOf(fieldValue);
+        return this.source().mappingValue(fieldName, fieldStrValue);
+    }
 
     protected String spliceVertexId(VertexLabel vertexLabel,
                                     Object[] primaryValues) {

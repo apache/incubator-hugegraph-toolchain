@@ -24,6 +24,7 @@ import java.util.List;
 
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FileSource extends AbstractSource {
@@ -61,6 +62,14 @@ public class FileSource extends AbstractSource {
         return SourceType.FILE;
     }
 
+    @Override
+    public void check() throws IllegalArgumentException {
+        String elemDelimiter = this.listFormat().elemDelimiter();
+        E.checkArgument(!elemDelimiter.equals(this.delimiter),
+                        "The delimiters of fields(%s) and list elements(%s) " +
+                        "can't be the same", this.delimiter, elemDelimiter);
+    }
+
     public String path() {
         return this.path;
     }
@@ -78,14 +87,6 @@ public class FileSource extends AbstractSource {
     }
 
     public String delimiter() {
-        // TODO: Choose a better timing check, will be implemnted in 'value mapping' commit
-        if (this.delimiter != null &&
-            this.delimiter.equals(this.listFormat().elemDelimiter())) {
-            throw new IllegalStateException(String.format(
-                      "The delimiter '%s' can't equal with collection " +
-                      "elem delimiter '%s'", this.delimiter,
-                      this.listFormat().elemDelimiter()));
-        }
         return this.delimiter;
     }
 

@@ -8,11 +8,7 @@
         "format": "CSV",
         "charset": "UTF-8"
       },
-      "field_mapping": {
-        "name": "name",
-        "age": "age",
-        "city": "city"
-      }
+      "id": "id"
     },
     {
       "label": "software",
@@ -20,22 +16,29 @@
         "type": "${source_type}",
         "path": "${store_path}/vertex_software.csv",
         "format": "CSV"
-      }
+      },
+      "id": "id"
     }
   ],
   "edges": [
     {
-      "label": "use",
-      "source": ["person_name"],
-      "target": ["software_name"],
+      "label": "created",
+      "source": ["source_id"],
+      "target": ["target_id"],
       "input": {
         "type": "${source_type}",
-        "path": "${store_path}/edge_use.json",
-        "format": "JSON"
+        "path": "${store_path}/edge_created.csv",
+        "format": "CSV"
       },
-      "field_mapping": {
-        "person_name": "name",
-        "software_name": "name"
+      "value_mapping": {
+        "source_id": {
+          "p1": "person_marko",
+          "p2": "person_vadas"
+        },
+        "target_id": {
+          "s1": "software_lop",
+          "s2": "software_ripple"
+        }
       }
     }
   ]

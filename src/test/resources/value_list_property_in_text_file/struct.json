@@ -9,7 +9,7 @@
         "header": ["name", "age", "city"],
         "charset": "UTF-8"
       },
-      "mapping": {
+      "field_mapping": {
         "name": "name",
         "age": "age",
         "city": "city"
@@ -37,7 +37,7 @@
         "format": "TEXT"
       },
       "null_values": [""],
-      "mapping": {
+      "field_mapping": {
         "person_name": "name",
         "software_name": "name"
       }

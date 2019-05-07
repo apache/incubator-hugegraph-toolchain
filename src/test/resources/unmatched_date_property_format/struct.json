@@ -10,7 +10,7 @@
         "charset": "UTF-8",
         "date_format": "yyyy-MM-dd"
       },
-      "mapping": {
+      "field_mapping": {
         "name": "name",
         "birth": "birth",
         "city": "city"

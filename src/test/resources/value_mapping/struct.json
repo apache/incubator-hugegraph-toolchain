@@ -1,0 +1,29 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "format": "CSV",
+        "header": ["name", "age", "birth", "city"],
+        "charset": "UTF-8",
+        "date_format": "yyyy-MM-dd"
+      },
+      "value_mapping": {
+        "age": {
+          "1": 25,
+          "2": 30
+        },
+        "birth": {
+          "1": "1994-01-01",
+          "2": "1989-01-01"
+        },
+        "city": {
+          "1": "Beijing",
+          "2": "Shanghai"
+        }
+      }
+    }
+  ]
+}

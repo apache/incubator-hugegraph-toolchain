@@ -35,7 +35,7 @@
         "path": "hdfs://localhost:8020/example/edge_knows.json",
         "format": "JSON"
       },
-      "mapping": {
+      "field_mapping": {
         "source_name": "name",
         "target_name": "name"
       }
@@ -49,7 +49,7 @@
         "path": "hdfs://localhost:8020/example/edge_created.json",
         "format": "JSON"
       },
-      "mapping": {
+      "field_mapping": {
         "source_name": "name"
       }
     }
