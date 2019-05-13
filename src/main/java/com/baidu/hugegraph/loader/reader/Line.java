@@ -51,7 +51,7 @@ public final class Line {
 
     public Line(List<String> names, List<Object> values) {
         assert names.size() == values.size();
-        this.rawLine = StringUtils.join(values, ",");;
+        this.rawLine = StringUtils.join(values, ",");
         this.names = names;
         this.values = values;
     }

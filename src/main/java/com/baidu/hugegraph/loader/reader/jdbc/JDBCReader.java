@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
@@ -53,7 +54,7 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
-    public void init() {
+    public void init(LoadProgress progress) {
         try {
             this.fetcher.readHeader();
         } catch (SQLException e) {

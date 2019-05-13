@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
@@ -60,13 +61,18 @@ public class FileReader extends AbstractFileReader {
                 throw new LoadException(
                           "Error while listing the files of path '%s'", file);
             }
+            Set<String> loadedItems = this.progress().loadedItems();
             for (File subFile : subFiles) {
-                if (filter.reserved(subFile.getName())) {
-                    files.add(new ReadableFile(subFile));
+                if (!filter.reserved(subFile.getName())) {
+                    continue;
                 }
+                if (loadedItems.contains(subFile.getName())) {
+                    continue;
+                }
+                files.add(new ReadableFile(subFile));
             }
         }
-        return new Readers(this.source(), files);
+        return new Readers(this.source(), files, this.progress().loadingItem());
     }
 
     private static void checkExistAndReadable(File file) {
@@ -92,6 +98,11 @@ public class FileReader extends AbstractFileReader {
         @Override
         public InputStream open() throws IOException {
             return new FileInputStream(this.file);
+        }
+
+        @Override
+        public String uniqueKey() {
+            return this.file.getName();
         }
 
         @Override

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.source.VertexSource;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -35,8 +36,9 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     private final VertexSource source;
     private final VertexLabel vertexLabel;
 
-    public VertexBuilder(VertexSource source, LoadOptions options) {
-        super(source, options);
+    public VertexBuilder(VertexSource source, LoadOptions options,
+                         LoadProgress progress) {
+        super(source, options, progress);
         this.source = source;
         this.vertexLabel = this.getVertexLabel(source.label());
         // Ensure the id field is matched with id strategy

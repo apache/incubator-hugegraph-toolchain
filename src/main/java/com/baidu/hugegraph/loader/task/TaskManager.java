@@ -20,7 +20,8 @@
 package com.baidu.hugegraph.loader.task;
 
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -28,23 +29,20 @@ import java.util.concurrent.atomic.LongAdder;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.GraphManager;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadLogger;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.loader.util.LoaderUtil;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.ExecutorUtil;
 import com.baidu.hugegraph.util.Log;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 
-public class TaskManager {
+public final class TaskManager {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
     private static final LoadLogger LOG_VERTEX_INSERT =
@@ -59,25 +57,25 @@ public class TaskManager {
     private static final String SINGLE_WORKER = "single-worker-%d";
 
     private final LoadOptions options;
+    private final LoadProgress progress;
 
     private final Semaphore batchSemaphore;
-    private final ListeningExecutorService batchService;
     private final Semaphore singleSemaphore;
-    private final ListeningExecutorService singleService;
+    private final ExecutorService batchService;
+    private final ExecutorService singleService;
 
     private final LongAdder successNum;
     private final LongAdder failureNum;
 
-    public TaskManager(LoadOptions options) {
+    public TaskManager(LoadOptions options, LoadProgress progress) {
         this.options = options;
+        this.progress = progress;
         this.batchSemaphore = new Semaphore(options.numThreads);
         this.singleSemaphore = new Semaphore(options.numThreads);
-        this.batchService = MoreExecutors.listeningDecorator(
-                            ExecutorUtil.newFixedThreadPool(options.numThreads,
-                                                            BATCH_WORKER));
-        this.singleService = MoreExecutors.listeningDecorator(
-                             ExecutorUtil.newFixedThreadPool(options.numThreads,
-                                                             SINGLE_WORKER));
+        this.batchService = ExecutorUtil.newFixedThreadPool(options.numThreads,
+                                                            BATCH_WORKER);
+        this.singleService = ExecutorUtil.newFixedThreadPool(options.numThreads,
+                                                             SINGLE_WORKER);
         this.successNum = new LongAdder();
         this.failureNum = new LongAdder();
     }
@@ -90,21 +88,26 @@ public class TaskManager {
         return this.failureNum.longValue();
     }
 
-    public boolean waitFinished(String type) {
+    public void waitFinished(ElemType type) {
         try {
             // Wait batch mode task finished
-            this.batchSemaphore.acquire(options.numThreads);
-            LOG.info("Batch-mode tasks of {} finished", type);
+            this.batchSemaphore.acquire(this.options.numThreads);
+            LOG.info("Batch-mode tasks of {} finished", type.string());
+        } catch (InterruptedException e) {
+            LOG.warn("Interrupted while waiting batch-mode tasks");
+        } finally {
+            this.batchSemaphore.release(this.options.numThreads);
+        }
+
+        try {
             // Wait single mode task finished
             this.singleSemaphore.acquire(options.numThreads);
-            LOG.info("Single-mode tasks of {} finished", type);
+            LOG.info("Single-mode tasks of {} finished", type.string());
         } catch (InterruptedException e) {
-            return false;
+            LOG.warn("Interrupted while waiting batch-mode tasks");
         } finally {
-            this.batchSemaphore.release(options.numThreads);
-            this.singleSemaphore.release(options.numThreads);
+            this.singleSemaphore.release(this.options.numThreads);
         }
-        return true;
     }
 
     public void cleanup() {
@@ -141,66 +144,65 @@ public class TaskManager {
     }
 
     public void submitVertexBatch(List<Vertex> batch) {
-        this.ensurePoolAvailable();
-
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
-            throw new LoadException("Interrupted", e);
+            throw new LoadException(
+                      "Interrupted while waiting to submit vertex batch", e);
         }
+        // Update input source loaded item offset
+        this.progress.inputSource().increaseOffset(batch.size());
 
         InsertionTask<Vertex> task = new VertexInsertionTask(batch, this.options);
-        ListenableFuture<Integer> future = this.batchService.submit(task);
-
-        Futures.addCallback(future, new FutureCallback<Integer>() {
-
-            @Override
-            public void onSuccess(Integer size) {
-                successNum.add(size);
-                batchSemaphore.release();
-                printProgress("Vertices", BATCH_PRINT_FREQUENCY, size);
+        CompletableFuture<Integer> future;
+        future = CompletableFuture.supplyAsync(task, this.batchService);
+        future.exceptionally(t -> {
+            LOG.error("Insert vertex failed", t);
+            this.submitVerticesInSingleMode(batch);
+            return 0;
+        }).whenComplete((size, t) -> {
+            if (t == null) {
+                this.successNum.add(size);
+                printProgress(ElemType.VERTEX, BATCH_PRINT_FREQUENCY, size);
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                submitVerticesInSingleMode(batch);
-                batchSemaphore.release();
-            }
+            this.batchSemaphore.release();
         });
     }
 
     public void submitEdgeBatch(List<Edge> batch) {
-        this.ensurePoolAvailable();
-
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
-            throw new LoadException("Interrupted", e);
+            throw new LoadException(
+                      "Interrupted while waiting to submit edge batch", e);
         }
+        // Update input source loaded item offset
+        this.progress.inputSource().increaseOffset(batch.size());
 
         InsertionTask<Edge> task = new EdgeInsertionTask(batch, this.options);
-        ListenableFuture<Integer> future = this.batchService.submit(task);
-
-        Futures.addCallback(future, new FutureCallback<Integer>() {
-
-            @Override
-            public void onSuccess(Integer size) {
-                successNum.add(size);
-                batchSemaphore.release();
-                printProgress("Edges", BATCH_PRINT_FREQUENCY, size);
+        CompletableFuture<Integer> future;
+        future = CompletableFuture.supplyAsync(task, this.batchService);
+        future.exceptionally(t -> {
+            LOG.error("Insert edge failed", t);
+            this.submitEdgesInSingleMode(batch);
+            return 0;
+        }).whenComplete((size, t) -> {
+            if (t == null) {
+                this.successNum.add(size);
+                printProgress(ElemType.EDGE, BATCH_PRINT_FREQUENCY, size);
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                submitEdgesInSingleMode(batch);
-                batchSemaphore.release();
-            }
+            this.batchSemaphore.release();
         });
     }
 
     private void submitVerticesInSingleMode(List<Vertex> vertices) {
-        GraphManager graph = HugeClientWrapper.get(options).graph();
+        try {
+            this.singleSemaphore.acquire();
+        } catch (InterruptedException e) {
+            // TODO: deal with it
+        }
 
+        GraphManager graph = HugeClientWrapper.get(options).graph();
         this.submitInSingleMode(() -> {
             for (Vertex vertex : vertices) {
                 try {
@@ -223,23 +225,28 @@ public class TaskManager {
                     }
                 }
             }
-            printProgress("Vertices", SINGLE_PRINT_FREQUENCY, vertices.size());
-            return null;
+            printProgress(ElemType.VERTEX, SINGLE_PRINT_FREQUENCY,
+                          vertices.size());
         });
     }
 
     private void submitEdgesInSingleMode(List<Edge> edges) {
-        GraphManager graph = HugeClientWrapper.get(options).graph();
+        try {
+            this.singleSemaphore.acquire();
+        } catch (InterruptedException e) {
+            // TODO: deal with it
+        }
 
+        GraphManager graph = HugeClientWrapper.get(this.options).graph();
         this.submitInSingleMode(() -> {
             for (Edge edge : edges) {
                 try {
                     graph.addEdge(edge);
-                    successNum.add(1);
+                    this.successNum.add(1);
                 } catch (Exception e) {
-                    failureNum.add(1);
+                    this.failureNum.add(1);
                     LOG.error("Edge insert error", e);
-                    if (options.testMode) {
+                    if (this.options.testMode) {
                         throw e;
                     }
                     LOG_EDGE_INSERT.error(new InsertException(edge,
@@ -253,48 +260,23 @@ public class TaskManager {
                     }
                 }
             }
-            printProgress("Edges", SINGLE_PRINT_FREQUENCY, edges.size());
-            return null;
+            printProgress(ElemType.EDGE, SINGLE_PRINT_FREQUENCY, edges.size());
         });
     }
 
-    private void submitInSingleMode(Callable<Void> callable) {
-        try {
-            this.singleSemaphore.acquire();
-        } catch (InterruptedException ignored) {}
-
-        ListenableFuture<Void> future = this.singleService.submit(callable);
-
-        Futures.addCallback(future, new FutureCallback<Void>() {
-
-            @Override
-            public void onSuccess(Void result) {
-                singleSemaphore.release();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                singleSemaphore.release();
-            }
+    private void submitInSingleMode(Runnable runnable) {
+        CompletableFuture<Void> future;
+        future = CompletableFuture.runAsync(runnable, this.singleService);
+        future.whenComplete((r, t) -> {
+            this.singleSemaphore.release();
         });
     }
 
-    private void printProgress(String type, long frequency, int batchSize) {
+    private void printProgress(ElemType type, long frequency, int batchSize) {
         long inserted = this.successNum.longValue();
         LoaderUtil.printInBackward(inserted);
         if (inserted % frequency < batchSize) {
-            LOG.info("{} has been imported: {}", type, inserted);
-        }
-    }
-
-    private void ensurePoolAvailable() {
-        if (this.batchService.isShutdown()) {
-            throw new LoadException("The batch-mode thread pool " +
-                                    "has been closed");
-        }
-        if (this.singleService.isShutdown()) {
-            throw new LoadException("The single-mode thread pool " +
-                                    "has been closed");
+            LOG.info("{} has been imported: {}", type.string(), inserted);
         }
     }
 }

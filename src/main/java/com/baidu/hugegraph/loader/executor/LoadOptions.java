@@ -57,6 +57,10 @@ public final class LoadOptions {
                description = "The token of graph for authentication")
     public String token = null;
 
+    @Parameter(names = {"--resume-mode"}, arity = 1,
+              description = "Load data from the breakpoint of last time")
+    public boolean resumeMode = false;
+
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The number of threads to use")

@@ -36,6 +36,7 @@ import com.baidu.hugegraph.loader.parser.CsvLineParser;
 import com.baidu.hugegraph.loader.parser.JsonLineParser;
 import com.baidu.hugegraph.loader.parser.LineParser;
 import com.baidu.hugegraph.loader.parser.TextLineParser;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.Readable;
@@ -47,7 +48,7 @@ import com.baidu.hugegraph.util.Log;
 
 public abstract class AbstractFileReader implements InputReader {
 
-    protected static final Logger LOG = Log.logger(AbstractFileReader.class);
+    private static final Logger LOG = Log.logger(AbstractFileReader.class);
 
     private static final int BUF_SIZE = 5 * 1024 * 1024;
 
@@ -55,6 +56,8 @@ public abstract class AbstractFileReader implements InputReader {
     private Readers readers;
     private LineParser parser;
     private Line nextLine;
+
+    private ReadableProgress progress;
 
     public AbstractFileReader(FileSource source) {
         this.source = source;
@@ -67,10 +70,17 @@ public abstract class AbstractFileReader implements InputReader {
         return this.source;
     }
 
+    public ReadableProgress progress() {
+        return this.progress;
+    }
+
     protected abstract Readers openReaders() throws IOException;
 
     @Override
-    public void init() {
+    public void init(LoadProgress progress) {
+        assert progress.inputSource() == null;
+        this.progress = new ReadableProgress();
+        progress.inputSource(this.progress);
         LOG.info("Opening source {}", this.source);
         try {
             this.readers = this.openReaders();
@@ -232,12 +242,15 @@ public abstract class AbstractFileReader implements InputReader {
 
         private final FileSource source;
         private final List<Readable> readables;
+        private final ReadableProgress.LoadingItem loadingItem;
         private BufferedReader reader;
         private int index;
 
-        public Readers(FileSource source, List<Readable> readables) {
+        public Readers(FileSource source, List<Readable> readables,
+                       ReadableProgress.LoadingItem loadingItem) {
             this.source = source;
             this.readables = readables;
+            this.loadingItem = loadingItem;
             this.index = 0;
             if (readables == null || readables.isEmpty()) {
                 this.reader = null;
@@ -250,12 +263,14 @@ public abstract class AbstractFileReader implements InputReader {
         private BufferedReader open(int index) {
             assert index < this.readables.size();
             Readable readable = this.readables.get(index);
-            LOG.debug("Ready to open '{}'", readable);
+            progress.loadingItem(readable);
+            LOG.info("Ready to open '{}'", readable);
 
             InputStream stream = null;
+            BufferedReader reader;
             try {
                 stream = readable.open();
-                return createBufferedReader(stream, this.source);
+                reader = createBufferedReader(stream, this.source);
             } catch (IOException e) {
                 throw new LoadException("Failed to open stream for '%s'",
                                         e, readable);
@@ -270,11 +285,31 @@ public abstract class AbstractFileReader implements InputReader {
                 throw new LoadException("Failed to create reader for '%s'",
                                         readable);
             }
+            this.skipIfNeeded(readable, reader);
+            return reader;
+        }
+
+        private void skipIfNeeded(Readable readable, BufferedReader reader) {
+            if (readable.uniqueKey().equals(this.loadingItem.name())) {
+                return;
+            }
+
+            long count = this.loadingItem.offset();
+            try {
+                for (int i = 0; i < count; i++) {
+                    reader.readLine();
+                }
+            } catch (IOException e) {
+                throw new LoadException("Failed to skip the first %s lines " +
+                                        "of file %s, please ensure the file " +
+                                        "file must have at least %s lines");
+            }
         }
 
         private void close(int index) throws IOException {
             assert index < this.readables.size();
             Readable readable = this.readables.get(index);
+            progress.loadedItem(readable);
             LOG.info("Ready to close '{}'", readable);
             this.close();
         }

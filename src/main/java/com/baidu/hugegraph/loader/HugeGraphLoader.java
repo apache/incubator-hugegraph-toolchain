@@ -33,12 +33,14 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadLogger;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.executor.LoadSummary;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.source.EdgeSource;
 import com.baidu.hugegraph.loader.source.GraphSource;
 import com.baidu.hugegraph.loader.source.VertexSource;
@@ -57,8 +59,9 @@ public class HugeGraphLoader {
     private static final LoadLogger LOG_PARSE = LoadLogger.logger("parseError");
 
     private final LoadOptions options;
-    private final TaskManager taskManager;
+    private final LoadProgress progress;
     private final GraphSource graphSource;
+    private final TaskManager taskManager;
 
     private long parseFailureNum = 0L;
     private long parseSuccessNum = 0L;
@@ -69,37 +72,59 @@ public class HugeGraphLoader {
     }
 
     private HugeGraphLoader(String[] args) {
-        this.options = new LoadOptions();
-        this.parseAndCheckOptions(args);
-        this.taskManager = new TaskManager(this.options);
+        this.options = parseAndCheckOptions(args);
+        this.progress = parseLoadProgress(this.options);
         this.graphSource = GraphSource.of(this.options.file);
+        this.taskManager = new TaskManager(this.options, this.progress);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                this.progress.write();
+            } catch (IOException e) {
+                LOG.warn("Failed to write load progress");
+            }
+        }));
     }
 
-    private void parseAndCheckOptions(String[] args) {
+    private static LoadOptions parseAndCheckOptions(String[] args) {
+        LoadOptions options = new LoadOptions();
         JCommander commander = JCommander.newBuilder()
-                                         .addObject(this.options)
+                                         .addObject(options)
                                          .build();
         commander.parse(args);
         // Print usage and exit
-        if (this.options.help) {
+        if (options.help) {
             LoaderUtil.exitWithUsage(commander, 0);
         }
         // Check options
         // Check option "-f"
-        E.checkArgument(!StringUtils.isEmpty(this.options.file),
+        E.checkArgument(!StringUtils.isEmpty(options.file),
                         "Must specified entrance groovy file");
-        File scriptFile = new File(this.options.file);
+        File scriptFile = new File(options.file);
         if (!scriptFile.canRead()) {
             LOG.error("Script file must be readable: '{}'",
                       scriptFile.getAbsolutePath());
             LoaderUtil.exitWithUsage(commander, -1);
         }
         // Check option "-g"
-        E.checkArgument(!StringUtils.isEmpty(this.options.graph),
+        E.checkArgument(!StringUtils.isEmpty(options.graph),
                         "Must specified a graph");
         // Check option "-h"
-        if (!this.options.host.startsWith("http://")) {
-            this.options.host = "http://" + this.options.host;
+        String httpPrefix = "http://";
+        if (!options.host.startsWith(httpPrefix)) {
+            options.host = httpPrefix + options.host;
+        }
+        return options;
+    }
+
+    private static LoadProgress parseLoadProgress(LoadOptions options) {
+        if (!options.resumeMode) {
+            return new LoadProgress();
+        }
+
+        try {
+            return LoadProgress.read();
+        } catch (IOException e) {
+            throw new LoadException("Failed to read progress", e);
         }
     }
 
@@ -107,20 +132,15 @@ public class HugeGraphLoader {
         // Create schema
         this.createSchema();
 
-        // Load vertices
-        System.out.print("Vertices has been imported: 0\b");
-        LoadSummary vertexSummary = this.loadVertices();
-        System.out.println(vertexSummary.insertSuccess());
-        // Reset counters
-        this.resetCounters();
-
+        LoadSummary vertexSummary;
+        if (this.progress.loadingElemType().isVertex()) {
+            // Load vertices
+            vertexSummary = this.loadWithMetric(ElemType.VERTEX);
+        } else {
+            vertexSummary = new LoadSummary(ElemType.VERTEX.string());
+        }
         // Load edges
-        System.out.print("Edges has been imported: 0\b");
-        LoadSummary edgeSummary = this.loadEdges();
-        System.out.println(edgeSummary.insertSuccess());
-        // Reset counters
-        this.resetCounters();
-
+        LoadSummary edgeSummary = this.loadWithMetric(ElemType.EDGE);
         // Print load summary
         LoaderUtil.printSummary(vertexSummary, edgeSummary);
 
@@ -153,40 +173,19 @@ public class HugeGraphLoader {
         groovyExecutor.execute(script, client);
     }
 
-    private LoadSummary loadVertices() {
+    private LoadSummary loadWithMetric(ElemType type) {
+        LoaderUtil.printProgress(type);
         Instant beginTime = Instant.now();
 
-        // Execute loading tasks
-        List<VertexSource> vertexSources = this.graphSource.vertexSources();
-        for (VertexSource source : vertexSources) {
-            LOG.info("Start loading vertex source '{}'", source.label());
-            VertexBuilder builder = new VertexBuilder(source, this.options);
-            try {
-                Instant startTime = Instant.now();
-                long parseSuccessPerSource = this.loadVertex(builder);
-                Instant finishTime = Instant.now();
-                long loadTime = Duration.between(startTime, finishTime)
-                                        .getSeconds();
-                LOG.info("Finish loading {} '{}' vertices, " +
-                         "the average speed is {}/s",
-                         parseSuccessPerSource, source.label(),
-                         loadTime == 0 ? 0 : parseSuccessPerSource / loadTime);
-                this.parseSuccessNum += parseSuccessPerSource;
-            } finally {
-                try {
-                    builder.close();
-                } catch (Throwable e) {
-                    LOG.warn("Failed to close builder for {} with exception {}",
-                             source, e);
-                }
-            }
+        if (type.isVertex()) {
+            this.loadVertices();
+        } else {
+            assert type.isEdge();
+            this.loadEdges();
         }
-        // Waiting async worker threads finish
-        this.taskManager.waitFinished("vertices");
 
         Instant endTime = Instant.now();
-
-        LoadSummary summary = new LoadSummary("vertices");
+        LoadSummary summary = new LoadSummary(type.string());
         Duration duration = Duration.between(beginTime, endTime);
         summary.parseFailure(this.parseFailureNum);
         summary.parseSuccess(this.parseSuccessNum);
@@ -195,7 +194,34 @@ public class HugeGraphLoader {
         summary.averageSpeed(this.taskManager.successNum(), duration);
         summary.loadTime(duration);
 
+        LoaderUtil.print(summary.insertSuccess());
+        // Reset counters
+        this.resetCounters();
         return summary;
+    }
+
+    private void loadVertices() {
+        // Update progress
+        progress.loadingElemType(ElemType.VERTEX);
+        // Execute loading tasks
+        List<VertexSource> vertexSources = this.graphSource.vertexSources();
+        for (VertexSource source : vertexSources) {
+            String uniqueKey = source.uniqueKey();
+            // Skip loaded element sources
+            if (progress.loadedElemSources().contains(uniqueKey)) {
+                continue;
+            }
+            // Update loading element source
+            progress.loadingElemSource(source);
+            LOG.info("Loading vertex source '{}'", source.label());
+            try (VertexBuilder builder = new VertexBuilder(source, this.options,
+                                                           this.progress)) {
+                this.loadVertex(builder);
+            }
+            progress.loadedElemSources(source);
+        }
+        // Waiting async worker threads finish
+        this.taskManager.waitFinished(ElemType.VERTEX);
     }
 
     private long loadVertex(VertexBuilder builder) {
@@ -237,48 +263,28 @@ public class HugeGraphLoader {
         return parseSuccess;
     }
 
-    private LoadSummary loadEdges() {
-        Instant beginTime = Instant.now();
-
+    private void loadEdges() {
+        // Update progress
+        progress.loadingElemType(ElemType.EDGE);
+        // Execute loading tasks
         List<EdgeSource> edgeSources = this.graphSource.edgeSources();
         for (EdgeSource source : edgeSources) {
-            LOG.info("Start loading edge source '{}'", source.label());
-            EdgeBuilder builder = new EdgeBuilder(source, this.options);
-            try {
-                Instant startTime = Instant.now();
-                long parseSuccessPerSource = this.loadEdge(builder);
-                Instant finishTime = Instant.now();
-                long loadTime = Duration.between(startTime, finishTime)
-                                        .getSeconds();
-                LOG.info("Finish loading {} '{}' edges, " +
-                         "the average speed is {}/s",
-                         parseSuccessPerSource, source.label(),
-                         loadTime == 0 ? 0 : parseSuccessPerSource / loadTime);
-                this.parseSuccessNum += parseSuccessPerSource;
-            } finally {
-                try {
-                    builder.close();
-                } catch (Throwable e) {
-                    LOG.warn("Failed to close builder for {} with exception {}",
-                             source, e);
-                }
+            String uniqueKey = source.uniqueKey();
+            // Skip loaded element sources
+            if (progress.loadedElemSources().contains(uniqueKey)) {
+                continue;
             }
+            // Update loading element source
+            progress.loadingElemSource(source);
+            LOG.info("Loading edge source '{}'", source.label());
+            try (EdgeBuilder builder = new EdgeBuilder(source, this.options,
+                                                       this.progress)) {
+                this.loadEdge(builder);
+            }
+            progress.loadedElemSources(source);
         }
         // Waiting async worker threads finish
-        this.taskManager.waitFinished("edges");
-
-        Instant endTime = Instant.now();
-
-        LoadSummary summary = new LoadSummary("edges");
-        Duration duration = Duration.between(beginTime, endTime);
-        summary.parseFailure(this.parseFailureNum);
-        summary.parseSuccess(this.parseSuccessNum);
-        summary.insertFailure(this.taskManager.failureNum());
-        summary.insertSuccess(this.taskManager.successNum());
-        summary.averageSpeed(this.taskManager.successNum(), duration);
-        summary.loadTime(duration);
-
-        return summary;
+        this.taskManager.waitFinished(ElemType.EDGE);
     }
 
     private long loadEdge(EdgeBuilder builder) {

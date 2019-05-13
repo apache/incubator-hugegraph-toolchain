@@ -17,12 +17,29 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.constant;
 
-import com.baidu.hugegraph.loader.progress.LoadProgress;
-import com.baidu.hugegraph.loader.util.AutoCloseableIterator;
+public enum ElemType {
 
-public interface InputReader extends AutoCloseableIterator<Line> {
+    VERTEX("vertices"),
 
-    public void init(LoadProgress progress);
+    EDGE("edges");
+
+    private String name;
+
+    private ElemType(String name) {
+        this.name = name;
+    }
+
+    public String string() {
+        return this.name;
+    }
+
+    public boolean isVertex() {
+        return this == VERTEX;
+    }
+
+    public boolean isEdge() {
+        return this == EDGE;
+    }
 }

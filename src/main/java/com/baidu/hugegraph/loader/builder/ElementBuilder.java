@@ -25,8 +25,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -46,11 +48,14 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
 public abstract class ElementBuilder<GE extends GraphElement>
                 implements AutoCloseableIterator<GE> {
+
+    private static final Logger LOG = Log.logger(ElementBuilder.class);
 
     private static final int VERTEX_ID_LIMIT = 128;
     private static final String ID_CHARSET = "UTF-8";
@@ -59,10 +64,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
     private final HugeClient client;
     private final Table<HugeType, String, SchemaElement> schemas;
 
-    public ElementBuilder(ElementSource source, LoadOptions options) {
+    public ElementBuilder(ElementSource source, LoadOptions options,
+                          LoadProgress progress) {
         this.reader = InputReaderFactory.create(source.input());
         try {
-            this.reader.init();
+            this.reader.init(progress);
         } catch (Exception e) {
             throw new LoadException("Failed to init input reader", e);
         }
@@ -94,8 +100,13 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     @Override
-    public void close() throws Exception {
-        this.reader.close();
+    public void close() {
+        try {
+            this.reader.close();
+        } catch (Exception e) {
+            LOG.warn("Failed to close builder for {} with exception {}",
+                     this.source(), e);
+        }
     }
 
     protected abstract GE build(Map<String, Object> keyValues);

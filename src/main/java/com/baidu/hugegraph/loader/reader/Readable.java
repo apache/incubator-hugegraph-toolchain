@@ -22,7 +22,9 @@ package com.baidu.hugegraph.loader.reader;
 import java.io.IOException;
 import java.io.InputStream;
 
-public interface Readable {
+import com.baidu.hugegraph.loader.constant.Unique;
+
+public interface Readable extends Unique<String> {
 
     public InputStream open() throws IOException;
 }

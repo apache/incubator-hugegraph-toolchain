@@ -17,12 +17,9 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.constant;
 
-import com.baidu.hugegraph.loader.progress.LoadProgress;
-import com.baidu.hugegraph.loader.util.AutoCloseableIterator;
+public interface Unique<T> {
 
-public interface InputReader extends AutoCloseableIterator<Line> {
-
-    public void init(LoadProgress progress);
+    public T uniqueKey();
 }

@@ -24,10 +24,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.constant.Unique;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class ElementSource implements Checkable {
+public abstract class ElementSource implements Unique<String>, Checkable {
 
     @JsonProperty("label")
     private String label;
@@ -50,6 +51,11 @@ public abstract class ElementSource implements Checkable {
         this.selectedFields = new HashSet<>();
         this.ignoredFields = new HashSet<>();
         this.nullValues = new HashSet<>();
+    }
+
+    @Override
+    public String uniqueKey() {
+        return this.label;
     }
 
     @Override
