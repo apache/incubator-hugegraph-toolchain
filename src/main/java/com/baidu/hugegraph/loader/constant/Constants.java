@@ -17,26 +17,26 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.serializer;
+package com.baidu.hugegraph.loader.constant;
 
-import com.baidu.hugegraph.loader.exception.LoadException;
+import java.nio.charset.Charset;
 
-public class DeserializerException extends LoadException  {
+import com.google.common.base.Charsets;
 
-    private static final long serialVersionUID = -7837901607110262081L;
+public final class Constants {
 
-    public DeserializerException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    public static final int EXIT_CODE_NORM = 0;
+    public static final int EXIT_CODE_ERROR = -1;
 
-    public DeserializerException(String message, Object... args) {
-        super(message, args);
-    }
+    public static final Charset CHARSET = Charsets.UTF_8;
+    public static final String EMPTY_STR = "";
+    public static final String CSV_DELIMITER = ",";
+    public static final String TEXT_DELIMITER = "\t";
+    public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String SKIPPED_LINE_REGEX = "";
 
-    public static DeserializerException expectField(String expectField,
-                                                    Object parentField) {
-        return new DeserializerException(
-                   "Invalid json, expect '%s' in '%s'",
-                   expectField, parentField);
-    }
+    public static final long BATCH_PRINT_FREQUENCY = 10_000_000L;
+    public static final long SINGLE_PRINT_FREQUENCY = 10_000L;
+    public static final String BATCH_WORKER = "batch-worker-%d";
+    public static final String SINGLE_WORKER = "single-worker-%d";
 }

@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.loader.source;
 
+import com.baidu.hugegraph.loader.constant.Checkable;
+
 /**
  * In addition to file, it will support various types of input sources,
  * such as HDFS, database, Kafka, etc.

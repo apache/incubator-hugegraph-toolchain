@@ -36,7 +36,8 @@ import com.baidu.hugegraph.loader.parser.CsvLineParser;
 import com.baidu.hugegraph.loader.parser.JsonLineParser;
 import com.baidu.hugegraph.loader.parser.LineParser;
 import com.baidu.hugegraph.loader.parser.TextLineParser;
-import com.baidu.hugegraph.loader.progress.LoadProgress;
+import com.baidu.hugegraph.loader.progress.InputItem;
+import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.Readable;
@@ -57,7 +58,8 @@ public abstract class AbstractFileReader implements InputReader {
     private LineParser parser;
     private Line nextLine;
 
-    private ReadableProgress progress;
+    private InputProgress oldProgress;
+    private InputProgress newProgress;
 
     public AbstractFileReader(FileSource source) {
         this.source = source;
@@ -70,26 +72,27 @@ public abstract class AbstractFileReader implements InputReader {
         return this.source;
     }
 
-    public ReadableProgress progress() {
-        return this.progress;
-    }
-
     protected abstract Readers openReaders() throws IOException;
 
     @Override
-    public void init(LoadProgress progress) {
-        assert progress.inputSource() == null;
-        this.progress = new ReadableProgress();
-        progress.inputSource(this.progress);
+    public void init() {
         LOG.info("Opening source {}", this.source);
         try {
             this.readers = this.openReaders();
         } catch (IOException e) {
-            throw new LoadException("Failed to open readers for '%s'",
+            throw new LoadException("Failed to openNext readers for '%s'",
                                     this.source);
         }
         this.parser = createLineParser(this.source);
         this.parser.init(this);
+    }
+
+    @Override
+    public void progress(InputProgress oldProgress, InputProgress newProgress) {
+        E.checkNotNull(this.oldProgress != null, "old progress");
+        E.checkNotNull(this.newProgress != null, "new progress");
+        this.oldProgress = oldProgress;
+        this.newProgress = newProgress;
     }
 
     @Override
@@ -114,7 +117,7 @@ public abstract class AbstractFileReader implements InputReader {
     @Override
     public void close() throws IOException {
         if (this.readers != null) {
-            this.readers.close();
+            this.readers.close(false);
         }
     }
 
@@ -242,35 +245,47 @@ public abstract class AbstractFileReader implements InputReader {
 
         private final FileSource source;
         private final List<Readable> readables;
-        private final ReadableProgress.LoadingItem loadingItem;
-        private BufferedReader reader;
         private int index;
+        private BufferedReader reader;
 
-        public Readers(FileSource source, List<Readable> readables,
-                       ReadableProgress.LoadingItem loadingItem) {
+        public Readers(FileSource source, List<Readable> readables) {
             this.source = source;
             this.readables = readables;
-            this.loadingItem = loadingItem;
             this.index = 0;
             if (readables == null || readables.isEmpty()) {
                 this.reader = null;
             } else {
                 // Open the first one
-                this.reader = this.open(this.index);
+                this.reader = this.openNext();
             }
         }
 
-        private BufferedReader open(int index) {
-            assert index < this.readables.size();
-            Readable readable = this.readables.get(index);
-            progress.loadingItem(readable);
+        private BufferedReader openNext() {
+            if (this.index >= this.readables.size()) {
+                return null;
+            }
+
+            Readable readable = this.readables.get(this.index);
+            InputItem inputItem = readable.toInputItem();
+            InputItem matchedItem = oldProgress.matchLoadedItem(inputItem);
+            if (matchedItem != null) {
+                newProgress.addLoadedItem(matchedItem);
+                this.index++;
+                return this.openNext();
+            }
+            newProgress.addLoadingItem(inputItem);
             LOG.info("Ready to open '{}'", readable);
 
+            BufferedReader reader = this.openReader(readable);
+            this.skipOffsetIfNeeded(reader);
+            return reader;
+        }
+
+        private BufferedReader openReader(Readable readable) {
             InputStream stream = null;
-            BufferedReader reader;
             try {
                 stream = readable.open();
-                reader = createBufferedReader(stream, this.source);
+                return createBufferedReader(stream, this.source);
             } catch (IOException e) {
                 throw new LoadException("Failed to open stream for '%s'",
                                         e, readable);
@@ -285,18 +300,12 @@ public abstract class AbstractFileReader implements InputReader {
                 throw new LoadException("Failed to create reader for '%s'",
                                         readable);
             }
-            this.skipIfNeeded(readable, reader);
-            return reader;
         }
 
-        private void skipIfNeeded(Readable readable, BufferedReader reader) {
-            if (readable.uniqueKey().equals(this.loadingItem.name())) {
-                return;
-            }
-
-            long count = this.loadingItem.offset();
+        private void skipOffsetIfNeeded(BufferedReader reader) {
+            long offset = oldProgress.loadingOffset();
             try {
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < offset; i++) {
                     reader.readLine();
                 }
             } catch (IOException e) {
@@ -304,17 +313,10 @@ public abstract class AbstractFileReader implements InputReader {
                                         "of file %s, please ensure the file " +
                                         "file must have at least %s lines");
             }
+            newProgress.addLoadingOffset(offset);
         }
 
-        private void close(int index) throws IOException {
-            assert index < this.readables.size();
-            Readable readable = this.readables.get(index);
-            progress.loadedItem(readable);
-            LOG.info("Ready to close '{}'", readable);
-            this.close();
-        }
-
-        public String readNextLine() throws IOException {
+        private String readNextLine() throws IOException {
             // reader is null means there is no file
             if (this.reader == null) {
                 return null;
@@ -324,16 +326,19 @@ public abstract class AbstractFileReader implements InputReader {
             String line;
             while ((line = this.reader.readLine()) == null) {
                 // The current file is read at the end, ready to read next one
-                this.close(this.index);
+                this.close(true);
 
-                if (++this.index < this.readables.size()) {
-                    // Open the second or subsequent readables, need
-                    this.reader = this.open(this.index);
-                    openNext = true;
-                } else {
+                if (++this.index >= this.readables.size()) {
                     return null;
                 }
+                // Open the second or subsequent readables, need
+                this.reader = this.openNext();
+                if (this.reader == null) {
+                    return null;
+                }
+                openNext = true;
             }
+            newProgress.increaseLoadingOffset();
             // Determine if need to skip duplicate header
             if (openNext && isDuplicateHeader(line)) {
                 line = this.readNextLine();
@@ -341,7 +346,12 @@ public abstract class AbstractFileReader implements InputReader {
             return line;
         }
 
-        private void close() throws IOException {
+        private void close(boolean updateProgress) throws IOException {
+            if (updateProgress) {
+                newProgress.loadingItemMarkLoaded();
+            }
+            Readable readable = this.readables.get(this.index);
+            LOG.info("Ready to close '{}'", readable);
             if (this.reader != null) {
                 this.reader.close();
             }

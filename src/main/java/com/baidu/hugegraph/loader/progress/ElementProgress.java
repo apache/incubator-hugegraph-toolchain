@@ -17,9 +17,19 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.util;
+package com.baidu.hugegraph.loader.progress;
 
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 
-public interface AutoCloseableIterator<E> extends AutoCloseable, Iterator<E> {
+import com.baidu.hugegraph.loader.source.graph.ElementSource;
+
+public final class ElementProgress extends LinkedHashMap<String, InputProgress> {
+
+    public InputProgress get(ElementSource source) {
+        return this.get(source.uniqueKey());
+    }
+
+    public void addSource(ElementSource source) {
+        this.put(source.uniqueKey(), new InputProgress(source));
+    }
 }

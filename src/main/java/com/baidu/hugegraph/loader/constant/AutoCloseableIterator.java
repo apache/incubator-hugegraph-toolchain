@@ -17,16 +17,9 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.constant;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.Iterator;
 
-import com.baidu.hugegraph.loader.progress.InputItem;
-
-public interface Readable {
-
-    public InputStream open() throws IOException;
-
-    public InputItem toInputItem();
+public interface AutoCloseableIterator<E> extends AutoCloseable, Iterator<E> {
 }

@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.loader.builder;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -28,16 +27,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.loader.progress.LoadProgress;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.progress.ElementProgress;
+import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.source.ElementSource;
+import com.baidu.hugegraph.loader.source.graph.ElementSource;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.util.AutoCloseableIterator;
+import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -58,28 +59,40 @@ public abstract class ElementBuilder<GE extends GraphElement>
     private static final Logger LOG = Log.logger(ElementBuilder.class);
 
     private static final int VERTEX_ID_LIMIT = 128;
-    private static final String ID_CHARSET = "UTF-8";
 
     private final InputReader reader;
     private final HugeClient client;
     private final Table<HugeType, String, SchemaElement> schemas;
 
-    public ElementBuilder(ElementSource source, LoadOptions options,
-                          LoadProgress progress) {
+    public ElementBuilder(ElementSource source, LoadOptions options) {
         this.reader = InputReaderFactory.create(source.input());
-        try {
-            this.reader.init(progress);
-        } catch (Exception e) {
-            throw new LoadException("Failed to init input reader", e);
-        }
         this.client = HugeClientWrapper.get(options);
         this.schemas = HashBasedTable.create();
     }
 
     public abstract ElementSource source();
 
+    public void init() {
+        try {
+            this.reader.init();
+        } catch (Exception e) {
+            throw new LoadException("Failed to init input reader", e);
+        }
+    }
+
     public InputReader reader() {
         return this.reader;
+    }
+
+    public void progress(ElementProgress oldProgress,
+                         ElementProgress newProgress) {
+        ElementSource source = this.source();
+        InputProgress oldInputProgress = oldProgress.get(source);
+        if (oldInputProgress == null) {
+            oldInputProgress = new InputProgress(source);
+        }
+        InputProgress newInputProgress = newProgress.get(source);
+        this.reader.progress(oldInputProgress, newInputProgress);
     }
 
     @Override
@@ -232,13 +245,9 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected void checkVertexIdLength(String id) {
-        try {
-            E.checkArgument(id.getBytes(ID_CHARSET).length <= VERTEX_ID_LIMIT,
-                            "Vertex id length limit is '%s', '%s' exceeds it",
-                            VERTEX_ID_LIMIT, id);
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
-        }
+        E.checkArgument(id.getBytes(Constants.CHARSET).length <= VERTEX_ID_LIMIT,
+                        "Vertex id length limit is '%s', '%s' exceeds it",
+                        VERTEX_ID_LIMIT, id);
     }
 
     protected Object validatePropertyValue(String key, Object rawValue) {

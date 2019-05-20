@@ -26,15 +26,15 @@ import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.util.JsonUtil;
 import com.baidu.hugegraph.util.Log;
 
-public class LoadLogger {
+public class FailureLogger {
 
     private final Logger log;
 
-    public static LoadLogger logger(String name) {
-        return new LoadLogger(name);
+    public static FailureLogger logger(String name) {
+        return new FailureLogger(name);
     }
 
-    private LoadLogger(String name) {
+    private FailureLogger(String name) {
         this.log = Log.logger(name);
     }
 

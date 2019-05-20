@@ -22,16 +22,13 @@ package com.baidu.hugegraph.loader.source.file;
 import java.util.Collections;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FileSource extends AbstractSource {
-
-    private static final String DEFAULT_CHARSET = "UTF-8";
-    private static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    private static final String DEFAULT_SKIPPED_LINE_REGEX = "";
 
     @JsonProperty("path")
     private String path;
@@ -54,9 +51,9 @@ public class FileSource extends AbstractSource {
 
     public FileSource() {
         this.filter = new FileFilter();
-        this.charset = DEFAULT_CHARSET;
-        this.dateFormat = DEFAULT_DATE_FORMAT;
-        this.skippedLineRegex = DEFAULT_SKIPPED_LINE_REGEX;
+        this.charset = Constants.CHARSET.name();
+        this.dateFormat = Constants.DATE_FORMAT;
+        this.skippedLineRegex = Constants.SKIPPED_LINE_REGEX;
         this.compression = Compression.NONE;
     }
 
@@ -67,6 +64,17 @@ public class FileSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
+        if (this.format == FileFormat.CSV) {
+            E.checkArgument(Constants.CSV_DELIMITER.equals(this.delimiter),
+                            "The delimiter must be '%s' when file format " +
+                            "is %s, but got '%s'", Constants.CSV_DELIMITER,
+                            this.format, this.delimiter);
+        }
+        if (this.format == FileFormat.TEXT || this.format == FileFormat.CSV) {
+            E.checkArgument(!this.header.isEmpty(),
+                            "The header must be specified when file format " +
+                            "is %s", this.format);
+        }
         String elemDelimiter = this.listFormat().elemDelimiter();
         E.checkArgument(!elemDelimiter.equals(this.delimiter),
                         "The delimiters of fields(%s) and list elements(%s) " +

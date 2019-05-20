@@ -24,30 +24,57 @@ import java.time.Duration;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.executor.LoadSummary;
+import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.util.Log;
-import com.beust.jcommander.JCommander;
 
-public final class LoaderUtil {
+public final class Printer {
 
-    private static final Logger LOG = Log.logger(LoaderUtil.class);
+    private static final Logger LOG = Log.logger(Printer.class);
 
-    public static void exitWithUsage(JCommander commander, int status) {
-        commander.usage();
-        System.exit(status);
-    }
+    private static final String DIVIDE_LINE =
+            "----------------------------------------------------";
 
     public static void print(Object message) {
         System.out.println(message);
     }
 
-    public static void printProgress(ElemType type) {
+    public static void printElemType(ElemType type) {
         if (type.isVertex()) {
-            System.out.print("vertices has been imported : 0\b");
+            System.out.print("vertices has been loaded     :  0\b");
         } else {
             assert type.isEdge();
-            System.out.print("edges has been imported    : 0\b");
+            System.out.print("edges has been loaded        :  0\b");
         }
+    }
+
+    public static void printSummary(LoadSummary... summaries) {
+        // Print count
+        for (LoadSummary summary : summaries) {
+            String type = summary.type();
+            printAndLog(DIVIDE_LINE);
+            printAndLog(String.format("%s summary:", type));
+            printAndLog(String.format("parse failure %s", type),
+                        summary.parseFailure());
+            printAndLog(String.format("insert failure %s", type),
+                        summary.insertFailure());
+            printAndLog(String.format("insert success %s", type),
+                        summary.insertSuccess());
+            printAndLog("insert speed per second", summary.averageSpeed());
+        }
+        // Print time
+        printAndLog(DIVIDE_LINE);
+        printAndLog("time summary:");
+        for (LoadSummary summary : summaries) {
+            String type = summary.type();
+            printAndLog(String.format("%s loading time", type),
+                        summary.loadTime().getSeconds());
+        }
+        // Print total time
+        Duration totalTime = Duration.ZERO;
+        for (LoadSummary summary : summaries) {
+            totalTime = totalTime.plus(summary.loadTime());
+        }
+        printAndLog("total loading time", totalTime.getSeconds());
     }
 
     public static void printError(String message, Object... args) {
@@ -58,56 +85,23 @@ public final class LoaderUtil {
         System.err.println(formattedMsg);
     }
 
-    public static void printSummary(LoadSummary... summaries) {
-        // Print count
-        for (LoadSummary summary : summaries) {
-            String type = summary.type();
-            logAndPrint("----------------------------------------------------");
-            logAndPrint(String.format("%s summary:", type));
-            logAndPrint(String.format("parse failure %s", type),
-                        summary.parseFailure());
-            logAndPrint(String.format("parse success %s", type),
-                        summary.parseSuccess());
-            logAndPrint(String.format("insert failure %s", type),
-                        summary.insertFailure());
-            logAndPrint(String.format("insert success %s", type),
-                        summary.insertSuccess());
-            logAndPrint("insert speed per second", summary.averageSpeed());
-        }
-        // Print time
-        logAndPrint("----------------------------------------------------");
-        logAndPrint("time summary:");
-        for (LoadSummary summary : summaries) {
-            String type = summary.type();
-            logAndPrint(String.format("%s loading time", type),
-                        summary.loadTime().getSeconds());
-        }
-        // Print total time
-        Duration totalTime = Duration.ZERO;
-        for (LoadSummary summary : summaries) {
-            totalTime = totalTime.plus(summary.loadTime());
-        }
-        logAndPrint("total loading time", totalTime.getSeconds());
-    }
-
-    private static void logAndPrint(String message) {
+    private static void printAndLog(String message) {
         LOG.info(message);
         System.out.println(message);
     }
 
-    private static void logAndPrint(String desc, long value) {
+    private static void printAndLog(String desc, long value) {
         String msg = String.format("\t%-25s:\t%-20d", desc, value);
-        logAndPrint(msg);
+        printAndLog(msg);
     }
 
     public static void printInBackward(long count) {
-        System.out.print(String.format("%d%s", count,
-                         LoaderUtil.backward(count)));
+        System.out.print(String.format("%d%s", count, backward(count)));
     }
 
-    public static String backward(long word) {
+    private static String backward(long count) {
         StringBuilder backward = new StringBuilder();
-        for (int i = 0, len = String.valueOf(word).length(); i < len; i++) {
+        for (int i = 0, len = String.valueOf(count).length(); i < len; i++) {
             backward.append("\b");
         }
         return backward.toString();

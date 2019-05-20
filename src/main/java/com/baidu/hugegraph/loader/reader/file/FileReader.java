@@ -25,11 +25,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.progress.InputItem;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.file.FileSource;
@@ -41,7 +41,7 @@ public class FileReader extends AbstractFileReader {
     }
 
     @Override
-    protected Readers openReaders() throws IOException {
+    protected Readers openReaders() {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
 
@@ -58,41 +58,39 @@ public class FileReader extends AbstractFileReader {
             assert file.isDirectory();
             File[] subFiles = file.listFiles();
             if (subFiles == null) {
-                throw new LoadException(
-                          "Error while listing the files of path '%s'", file);
+                throw new LoadException("Error while listing the files of " +
+                                        "path '%s'", file);
             }
-            Set<String> loadedItems = this.progress().loadedItems();
             for (File subFile : subFiles) {
-                if (!filter.reserved(subFile.getName())) {
-                    continue;
+                if (filter.reserved(subFile.getName())) {
+                    files.add(new ReadableFile(subFile));
                 }
-                if (loadedItems.contains(subFile.getName())) {
-                    continue;
-                }
-                files.add(new ReadableFile(subFile));
             }
         }
-        return new Readers(this.source(), files, this.progress().loadingItem());
+        return new Readers(this.source(), files);
     }
 
     private static void checkExistAndReadable(File file) {
         if (!file.exists()) {
-            throw new LoadException(
-                      "Please ensure the file or directory exists: '%s'", file);
+            throw new LoadException("Please ensure the file or directory " +
+                                    "exists: '%s'", file);
         }
         if (!file.canRead()) {
-            throw new LoadException(
-                      "Please ensure the file or directory is readable: '%s'",
-                      file);
+            throw new LoadException("Please ensure the file or directory " +
+                                    "is readable: '%s'", file);
         }
     }
 
-    private static class ReadableFile implements Readable {
+    protected static class ReadableFile implements Readable {
 
         private final File file;
 
         public ReadableFile(File file) {
             this.file = file;
+        }
+
+        public File file() {
+            return this.file;
         }
 
         @Override
@@ -101,13 +99,13 @@ public class FileReader extends AbstractFileReader {
         }
 
         @Override
-        public String uniqueKey() {
-            return this.file.getName();
+        public InputItem toInputItem() {
+            return new FileItem(this);
         }
 
         @Override
         public String toString() {
-            return "FILE:" + this.file;
+            return "FILE: " + this.file;
         }
     }
 }

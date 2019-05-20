@@ -17,20 +17,29 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source;
+package com.baidu.hugegraph.loader.source.graph;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.util.JsonUtil;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class GraphSource implements Checkable {
+
+    private static final Logger LOG = Log.logger(GraphSource.class);
 
     @JsonProperty("vertices")
     private final List<VertexSource> vertexSources;
@@ -43,22 +52,26 @@ public class GraphSource implements Checkable {
     }
 
     public static GraphSource of(String filePath) {
+        File file = FileUtils.getFile(filePath);
         try {
-            File file = FileUtils.getFile(filePath);
-            String json = FileUtils.readFileToString(file, "UTF-8");
+            String json = FileUtils.readFileToString(file, Constants.CHARSET);
             GraphSource source = JsonUtil.fromJson(json, GraphSource.class);
             source.check();
             return source;
         } catch (IOException | IllegalArgumentException e) {
-            throw new LoadException("Read data source file '%s' error",
+            throw new LoadException("Read graph source file '%s' error",
                                     e, filePath);
         }
     }
 
     @Override
     public void check() throws IllegalArgumentException {
+        LOG.info("Checking vertex sources");
         this.vertexSources.forEach(VertexSource::check);
+        this.checkNoSameSource(this.vertexSources);
+        LOG.info("Checking edge sources");
         this.edgeSources.forEach(EdgeSource::check);
+        this.checkNoSameSource(this.edgeSources);
     }
 
     public List<VertexSource> vertexSources() {
@@ -67,5 +80,12 @@ public class GraphSource implements Checkable {
 
     public List<EdgeSource> edgeSources() {
         return this.edgeSources;
+    }
+
+    private <T extends ElementSource> void checkNoSameSource(List<T> sources) {
+        Set<String> uniqueKeys = sources.stream().map(ElementSource::uniqueKey)
+                                        .collect(Collectors.toSet());
+        E.checkArgument(sources.size() == uniqueKeys.size(),
+                        "Please ensure there is no same source in %s", sources);
     }
 }

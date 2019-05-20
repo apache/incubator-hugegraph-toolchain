@@ -23,8 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.progress.LoadProgress;
-import com.baidu.hugegraph.loader.source.EdgeSource;
+import com.baidu.hugegraph.loader.source.graph.EdgeSource;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -39,9 +38,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(EdgeSource source, LoadOptions options,
-                       LoadProgress progress) {
-        super(source, options, progress);
+    public EdgeBuilder(EdgeSource source, LoadOptions options) {
+        super(source, options);
         this.source = source;
         this.edgeLabel = this.getEdgeLabel(source.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());

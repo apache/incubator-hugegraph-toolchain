@@ -25,7 +25,6 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -35,6 +34,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.progress.InputItem;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
@@ -53,7 +53,7 @@ public class HDFSReader extends AbstractFileReader {
         try {
             this.hdfs = FileSystem.get(URI.create(source.path()), config);
         } catch (IOException e) {
-            throw new LoadException("Failed to create HDFS file system", e);
+            throw new LoadException("Failed to create hdfs file system", e);
         }
         Path path = new Path(source.path());
         checkExist(this.hdfs, path);
@@ -92,18 +92,13 @@ public class HDFSReader extends AbstractFileReader {
             assert this.hdfs.isDirectory(path);
             FileStatus[] statuses = this.hdfs.listStatus(path);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
-            Set<String> loadedItems = this.progress().loadedItems();
             for (Path subPath : subPaths) {
-                if (!filter.reserved(subPath.getName())) {
-                    continue;
+                if (filter.reserved(subPath.getName())) {
+                    paths.add(new ReadablePath(this.hdfs, subPath));
                 }
-                if (loadedItems.contains(subPath.getName())) {
-                    continue;
-                }
-                paths.add(new ReadablePath(this.hdfs, subPath));
             }
         }
-        return new Readers(this.source(), paths, this.progress().loadingItem());
+        return new Readers(this.source(), paths);
     }
 
     private Configuration loadConfiguration() {
@@ -131,14 +126,12 @@ public class HDFSReader extends AbstractFileReader {
     private static void checkExist(FileSystem fs, Path path) {
         try {
             if (!fs.exists(path)) {
-                throw new LoadException(
-                          "Please ensure the file or directory exists: '%s'",
-                          path);
+                throw new LoadException("Please ensure the file or directory " +
+                                        "exists: '%s'", path);
             }
         } catch (IOException e) {
-            throw new LoadException(
-                      "An exception occurred while checking HDFS path: '%s'",
-                      path);
+            throw new LoadException("An exception occurred while checking " +
+                                    "hdfs path: '%s'", path);
         }
     }
 
@@ -146,7 +139,7 @@ public class HDFSReader extends AbstractFileReader {
         return new Path(Paths.get(configPath, configFile).toString());
     }
 
-    private static class ReadablePath implements Readable {
+    protected static class ReadablePath implements Readable {
 
         private final FileSystem hdfs;
         private final Path path;
@@ -156,19 +149,27 @@ public class HDFSReader extends AbstractFileReader {
             this.path = path;
         }
 
+        public FileSystem hdfs() {
+            return this.hdfs;
+        }
+
+        public Path path() {
+            return this.path;
+        }
+
         @Override
         public InputStream open() throws IOException {
             return this.hdfs.open(this.path);
         }
 
         @Override
-        public String uniqueKey() {
-            return this.path.getName();
+        public InputItem toInputItem() {
+            return new PathItem(this);
         }
 
         @Override
         public String toString() {
-            return "HDFS:" + this.path;
+            return "HDFS: " + this.path;
         }
     }
 }

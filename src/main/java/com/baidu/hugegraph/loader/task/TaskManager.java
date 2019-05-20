@@ -19,24 +19,30 @@
 
 package com.baidu.hugegraph.loader.task;
 
+import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQUENCY;
+import static com.baidu.hugegraph.loader.constant.Constants.BATCH_WORKER;
+import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_PRINT_FREQUENCY;
+import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_WORKER;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.LongAdder;
 
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.GraphManager;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.executor.LoadLogger;
+import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.progress.LoadProgress;
+import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
-import com.baidu.hugegraph.loader.util.LoaderUtil;
+import com.baidu.hugegraph.loader.util.LoadUtil;
+import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.ExecutorUtil;
@@ -45,47 +51,28 @@ import com.baidu.hugegraph.util.Log;
 public final class TaskManager {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
-    private static final LoadLogger LOG_VERTEX_INSERT =
-                         LoadLogger.logger("vertexInsertError");
-    private static final LoadLogger LOG_EDGE_INSERT =
-                         LoadLogger.logger("edgeInsertError");
-
-    private static final long BATCH_PRINT_FREQUENCY = 10_000_000L;
-    private static final long SINGLE_PRINT_FREQUENCY = 10_000L;
-
-    private static final String BATCH_WORKER = "batch-worker-%d";
-    private static final String SINGLE_WORKER = "single-worker-%d";
+    private static final FailureLogger LOG_VERTEX_INSERT =
+                         FailureLogger.logger("vertexInsertError");
+    private static final FailureLogger LOG_EDGE_INSERT =
+                         FailureLogger.logger("edgeInsertError");
 
     private final LoadOptions options;
-    private final LoadProgress progress;
+    private final LoadMetrics counter;
 
     private final Semaphore batchSemaphore;
     private final Semaphore singleSemaphore;
     private final ExecutorService batchService;
     private final ExecutorService singleService;
 
-    private final LongAdder successNum;
-    private final LongAdder failureNum;
-
-    public TaskManager(LoadOptions options, LoadProgress progress) {
+    public TaskManager(LoadOptions options, LoadMetrics counter) {
         this.options = options;
-        this.progress = progress;
+        this.counter = counter;
         this.batchSemaphore = new Semaphore(options.numThreads);
         this.singleSemaphore = new Semaphore(options.numThreads);
         this.batchService = ExecutorUtil.newFixedThreadPool(options.numThreads,
                                                             BATCH_WORKER);
         this.singleService = ExecutorUtil.newFixedThreadPool(options.numThreads,
                                                              SINGLE_WORKER);
-        this.successNum = new LongAdder();
-        this.failureNum = new LongAdder();
-    }
-
-    public long successNum() {
-        return this.successNum.longValue();
-    }
-
-    public long failureNum() {
-        return this.failureNum.longValue();
     }
 
     public void waitFinished(ElemType type) {
@@ -108,11 +95,6 @@ public final class TaskManager {
         } finally {
             this.singleSemaphore.release(this.options.numThreads);
         }
-    }
-
-    public void cleanup() {
-        this.successNum.reset();
-        this.failureNum.reset();
     }
 
     public void shutdown(int seconds) {
@@ -147,22 +129,20 @@ public final class TaskManager {
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
-            throw new LoadException(
-                      "Interrupted while waiting to submit vertex batch", e);
+            throw new LoadException("Interrupted while waiting to submit " +
+                                    "vertex batch in batch mode", e);
         }
-        // Update input source loaded item offset
-        this.progress.inputSource().increaseOffset(batch.size());
 
         InsertionTask<Vertex> task = new VertexInsertionTask(batch, this.options);
         CompletableFuture<Integer> future;
         future = CompletableFuture.supplyAsync(task, this.batchService);
-        future.exceptionally(t -> {
-            LOG.error("Insert vertex failed", t);
+        future.exceptionally(error -> {
+            LOG.error("Insert vertex failed", error);
             this.submitVerticesInSingleMode(batch);
             return 0;
-        }).whenComplete((size, t) -> {
-            if (t == null) {
-                this.successNum.add(size);
+        }).whenComplete((size, error) -> {
+            if (error == null) {
+                this.counter.addInsertSuccessNum(size);
                 printProgress(ElemType.VERTEX, BATCH_PRINT_FREQUENCY, size);
             }
             this.batchSemaphore.release();
@@ -173,23 +153,21 @@ public final class TaskManager {
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
-            throw new LoadException(
-                      "Interrupted while waiting to submit edge batch", e);
+            throw new LoadException("Interrupted while waiting to submit " +
+                                    "edge batch in batch mode", e);
         }
-        // Update input source loaded item offset
-        this.progress.inputSource().increaseOffset(batch.size());
 
         InsertionTask<Edge> task = new EdgeInsertionTask(batch, this.options);
         CompletableFuture<Integer> future;
         future = CompletableFuture.supplyAsync(task, this.batchService);
-        future.exceptionally(t -> {
-            LOG.error("Insert edge failed", t);
+        future.exceptionally(error -> {
+            LOG.error("Insert edge failed", error);
             this.submitEdgesInSingleMode(batch);
             return 0;
-        }).whenComplete((size, t) -> {
-            if (t == null) {
-                this.successNum.add(size);
-                printProgress(ElemType.EDGE, BATCH_PRINT_FREQUENCY, size);
+        }).whenComplete((size, error) -> {
+            if (error == null) {
+                this.counter.addInsertSuccessNum(size);
+                this.printProgress(ElemType.EDGE, BATCH_PRINT_FREQUENCY, size);
             }
             this.batchSemaphore.release();
         });
@@ -199,29 +177,30 @@ public final class TaskManager {
         try {
             this.singleSemaphore.acquire();
         } catch (InterruptedException e) {
-            // TODO: deal with it
+            throw new LoadException("Interrupted while waiting to submit " +
+                                    "vertex batch in single mode", e);
         }
 
-        GraphManager graph = HugeClientWrapper.get(options).graph();
+        GraphManager graph = HugeClientWrapper.get(this.options).graph();
         this.submitInSingleMode(() -> {
             for (Vertex vertex : vertices) {
                 try {
                     graph.addVertex(vertex);
-                    successNum.add(1);
+                    this.counter.increaseInsertSuccessNum();
                 } catch (Exception e) {
-                    failureNum.add(1);
+                    this.counter.increaseInsertFailureNum();
                     LOG.error("Vertex insert error", e);
-                    if (options.testMode) {
+                    if (this.options.testMode) {
                         throw e;
                     }
                     LOG_VERTEX_INSERT.error(new InsertException(vertex,
                                             e.getMessage()));
-
-                    if (failureNum.longValue() >= options.maxInsertErrors) {
-                        LoaderUtil.printError("Error: More than %s vertices " +
-                                              "insert error... Stopping",
-                                              options.maxInsertErrors);
-                        System.exit(-1);
+                    if (this.counter.insertFailureNum() >=
+                        options.maxInsertErrors) {
+                        Printer.printError("Error: More than %s vertices " +
+                                           "insert error... stopping",
+                                           options.maxInsertErrors);
+                        LoadUtil.exit(Constants.EXIT_CODE_ERROR);
                     }
                 }
             }
@@ -234,7 +213,8 @@ public final class TaskManager {
         try {
             this.singleSemaphore.acquire();
         } catch (InterruptedException e) {
-            // TODO: deal with it
+            throw new LoadException("Interrupted while waiting to submit " +
+                                    "edge batch in single mode", e);
         }
 
         GraphManager graph = HugeClientWrapper.get(this.options).graph();
@@ -242,9 +222,9 @@ public final class TaskManager {
             for (Edge edge : edges) {
                 try {
                     graph.addEdge(edge);
-                    this.successNum.add(1);
+                    this.counter.increaseInsertSuccessNum();
                 } catch (Exception e) {
-                    this.failureNum.add(1);
+                    this.counter.increaseInsertFailureNum();
                     LOG.error("Edge insert error", e);
                     if (this.options.testMode) {
                         throw e;
@@ -252,11 +232,12 @@ public final class TaskManager {
                     LOG_EDGE_INSERT.error(new InsertException(edge,
                                           e.getMessage()));
 
-                    if (failureNum.longValue() >= options.maxInsertErrors) {
-                        LoaderUtil.printError("Error: More than %s edges " +
-                                              "insert error... Stopping",
-                                              options.maxInsertErrors);
-                        System.exit(-1);
+                    if (this.counter.insertFailureNum() >=
+                        options.maxInsertErrors) {
+                        Printer.printError("Error: More than %s edges " +
+                                           "insert error... stopping",
+                                           options.maxInsertErrors);
+                        LoadUtil.exit(Constants.EXIT_CODE_ERROR);
                     }
                 }
             }
@@ -267,16 +248,16 @@ public final class TaskManager {
     private void submitInSingleMode(Runnable runnable) {
         CompletableFuture<Void> future;
         future = CompletableFuture.runAsync(runnable, this.singleService);
-        future.whenComplete((r, t) -> {
+        future.whenComplete((r, error) -> {
             this.singleSemaphore.release();
         });
     }
 
     private void printProgress(ElemType type, long frequency, int batchSize) {
-        long inserted = this.successNum.longValue();
-        LoaderUtil.printInBackward(inserted);
-        if (inserted % frequency < batchSize) {
-            LOG.info("{} has been imported: {}", type.string(), inserted);
+        long loaded = this.counter.insertSuccessNum();
+        Printer.printInBackward(loaded);
+        if (loaded % frequency < batchSize) {
+            LOG.info("{} has been loaded: {}", type.string(), loaded);
         }
     }
 }

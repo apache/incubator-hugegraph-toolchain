@@ -17,16 +17,18 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.util;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.beust.jcommander.JCommander;
 
-import com.baidu.hugegraph.loader.progress.InputItem;
+public final class LoadUtil {
 
-public interface Readable {
+    public static void exit(int code) {
+        System.exit(code);
+    }
 
-    public InputStream open() throws IOException;
-
-    public InputItem toInputItem();
+    public static void exitWithUsage(JCommander commander, int code) {
+        commander.usage();
+        System.exit(code);
+    }
 }

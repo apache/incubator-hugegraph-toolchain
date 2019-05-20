@@ -21,16 +21,11 @@ package com.baidu.hugegraph.loader.progress;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
-import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.source.ElementSource;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.InsertionOrderUtil;
-import com.baidu.hugegraph.util.JsonUtil;
+import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -40,86 +35,46 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public final class LoadProgress {
 
-    // TODO: How to ensure file path under LOADER_HOME
     private static final String SERIALIZE_FILE_NAME = "progress";
 
-    @JsonProperty("loading_elem_type")
-    private ElemType loadingElemType;
-    @JsonProperty("loaded_elem_sources")
-    private Set<String> loadedElemSources;
-    @JsonProperty("loading_elem_source")
-    private String loadingElemSource;
-    @JsonProperty("input_progress")
-    private InputProgress inputProgress;
+    @JsonProperty("vertex")
+    private final ElementProgress vertexProgress;
+    @JsonProperty("edge")
+    private final ElementProgress edgeProgress;
 
     public LoadProgress() {
-        this.loadingElemType = ElemType.VERTEX;
-        this.loadedElemSources = InsertionOrderUtil.newSet();
-        this.loadingElemSource = null;
-        this.inputProgress = null;
+        this.vertexProgress = new ElementProgress();
+        this.edgeProgress = new ElementProgress();
     }
 
-    public ElemType loadingElemType() {
-        return this.loadingElemType;
+    public ElementProgress vertex() {
+        return this.vertexProgress;
     }
 
-    public void loadingElemType(ElemType elemType) {
-        if (this.loadingElemType.isEdge() && elemType.isVertex()) {
-            throw new IllegalArgumentException("Must load vertex than edge");
-        }
-        if (this.loadingElemType != elemType) {
-            this.loadingElemType = elemType;
-            this.loadedElemSources = InsertionOrderUtil.newSet();
-            this.loadingElemSource = null;
-            this.inputProgress = null;
-        }
+    public ElementProgress edge() {
+        return this.edgeProgress;
     }
 
-    public Set<String> loadedElemSources() {
-        return this.loadedElemSources;
-    }
-
-    public void loadedElemSources(ElementSource source) {
-        E.checkNotNull(source, "loaded element source");
-        E.checkNotNull(source.uniqueKey(), "loaded element source unique key");
-        this.loadedElemSources.add(source.uniqueKey());
-        // If current loading element source finished, reset it
-        if (source.uniqueKey().equals(this.loadingElemSource)) {
-            this.loadingElemSource = null;
-            this.inputProgress = null;
-        }
-    }
-
-    public String loadingElemSource() {
-        return this.loadingElemSource;
-    }
-
-    public void loadingElemSource(ElementSource source) {
-        E.checkNotNull(source, "loading element source");
-        E.checkNotNull(source.uniqueKey(), "loading element source unique key");
-        if (!source.uniqueKey().equals(this.loadingElemSource)) {
-            this.loadingElemSource = source.uniqueKey();
-            this.inputProgress = null;
-        }
-    }
-
-    public InputProgress inputSource() {
-        return inputProgress;
-    }
-
-    public void inputSource(InputProgress source) {
-        this.inputProgress = source;
-    }
-
-    public void write() throws IOException {
-        File file = FileUtils.getFile(SERIALIZE_FILE_NAME);
+    public void write(String structFileName) throws IOException {
+        String fileName = getProgressFileName(structFileName);
+        File file = FileUtils.getFile(fileName);
         String json = JsonUtil.toJson(this);
-        FileUtils.write(file, json, Charset.defaultCharset(), false);
+        FileUtils.write(file, json, Constants.CHARSET, false);
     }
 
-    public static LoadProgress read() throws IOException {
-        File file = FileUtils.getFile(SERIALIZE_FILE_NAME);
-        String json = FileUtils.readFileToString(file, Charset.defaultCharset());
+    public static LoadProgress read(String structFileName) throws IOException {
+        String fileName = getProgressFileName(structFileName);
+        File file = FileUtils.getFile(fileName);
+        if (!file.exists()) {
+            return new LoadProgress();
+        }
+        String json = FileUtils.readFileToString(file, Constants.CHARSET);
         return JsonUtil.fromJson(json, LoadProgress.class);
+    }
+
+    private static String getProgressFileName(String structFileName) {
+        int lastDotIdx = structFileName.lastIndexOf(".");
+        String prefix = structFileName.substring(0, lastDotIdx);
+        return prefix + "-" + SERIALIZE_FILE_NAME;
     }
 }

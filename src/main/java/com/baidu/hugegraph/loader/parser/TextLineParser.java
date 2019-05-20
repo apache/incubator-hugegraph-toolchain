@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.parser;
 import java.io.IOException;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.reader.Line;
@@ -30,10 +31,6 @@ import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.google.common.base.Splitter;
 
 public class TextLineParser implements LineParser {
-
-    private static final String EMPTY_STR = "";
-
-    private static final String DEFAULT_DELIMITER = "\t";
 
     // Default is "\t"
     protected String delimiter;
@@ -61,7 +58,7 @@ public class TextLineParser implements LineParser {
         if (source.delimiter() != null) {
             this.delimiter = source.delimiter();
         } else {
-            this.delimiter = DEFAULT_DELIMITER;
+            this.delimiter = Constants.TEXT_DELIMITER;
         }
     }
 
@@ -70,7 +67,7 @@ public class TextLineParser implements LineParser {
         if (source.header() != null) {
             this.header = source.header();
         } else {
-            String line = null;
+            String line;
             try {
                 line = reader.readNextLine();
             } catch (IOException e) {
@@ -115,6 +112,6 @@ public class TextLineParser implements LineParser {
     private boolean lastColumnIsEmpty(List<String> columns) {
         int last = columns.size() - 1;
         return columns.size() - 1 == this.header.size() &&
-               columns.get(last).equals(EMPTY_STR);
+               columns.get(last).equals(Constants.EMPTY_STR);
     }
 }

@@ -87,7 +87,7 @@ public class RowFetcher {
             // Register JDBC driver
             Class.forName(driverName);
         } catch (ClassNotFoundException e) {
-            throw new LoadException("Invalid driver class '%s'", driverName);
+            throw new LoadException("Invalid driver class '%s'", e, driverName);
         }
         return DriverManager.getConnection(url, username, password);
     }

@@ -17,9 +17,33 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source;
+package com.baidu.hugegraph.loader.source.graph;
 
-public interface Checkable {
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    public void check() throws IllegalArgumentException;
+public class VertexSource extends ElementSource {
+
+    // Be null when id strategy is primary key
+    @JsonProperty("id")
+    private final String idField;
+
+    @JsonCreator
+    public VertexSource(@JsonProperty("id") String idField) {
+        this.idField = idField;
+    }
+
+    @Override
+    public void check() throws IllegalArgumentException {
+        super.check();
+    }
+
+    public String idField() {
+        return this.idField;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("vertex-source(%s)", this.label());
+    }
 }

@@ -20,11 +20,16 @@
 package com.baidu.hugegraph.loader.util;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
 
-import com.baidu.hugegraph.loader.serializer.InputSourceDeserializer;
+import com.baidu.hugegraph.loader.progress.InputProgress;
+import com.baidu.hugegraph.loader.serializer.InputProgressDeser;
+import com.baidu.hugegraph.loader.serializer.InputSourceDeser;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +41,8 @@ public final class JsonUtil {
 
     static {
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(InputSource.class, new InputSourceDeserializer());
+        module.addDeserializer(InputSource.class, new InputSourceDeser());
+        module.addDeserializer(InputProgress.class, new InputProgressDeser());
         registerModule(module);
     }
 
@@ -62,5 +68,17 @@ public final class JsonUtil {
 
     public static <T> T convert(JsonNode node, Class<T> clazz) {
         return MAPPER.convertValue(node, clazz);
+    }
+
+    public static <T> Set<T> convertSet(JsonNode node, Class<T> clazz) {
+        JavaType type = MAPPER.getTypeFactory()
+                              .constructCollectionType(Set.class, clazz);
+        return MAPPER.convertValue(node, type);
+    }
+
+    public static <T> List<T> convertList(JsonNode node, Class<T> clazz) {
+        JavaType type = MAPPER.getTypeFactory()
+                              .constructCollectionType(List.class, clazz);
+        return MAPPER.convertValue(node, type);
     }
 }

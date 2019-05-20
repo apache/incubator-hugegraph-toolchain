@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source;
+package com.baidu.hugegraph.loader.source.graph;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,7 +25,11 @@ import java.util.Map;
 import java.util.Set;
 
 import com.baidu.hugegraph.loader.constant.Unique;
+import com.baidu.hugegraph.loader.constant.Checkable;
+import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.HashUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class ElementSource implements Unique<String>, Checkable {
@@ -55,7 +59,8 @@ public abstract class ElementSource implements Unique<String>, Checkable {
 
     @Override
     public String uniqueKey() {
-        return this.label;
+        String code = HashUtil.hash(JsonUtil.toJson(this));
+        return this.label + "-" + code;
     }
 
     @Override

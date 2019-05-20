@@ -17,16 +17,32 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.progress;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.baidu.hugegraph.loader.progress.InputItem;
+public abstract class InputItem {
 
-public interface Readable {
+    @JsonProperty("offset")
+    private long offset;
 
-    public InputStream open() throws IOException;
+    public InputItem() {
+        this.offset = 0L;
+    }
 
-    public InputItem toInputItem();
+    public long offset() {
+        return this.offset;
+    }
+
+    public void offset(long offset) {
+        this.offset = offset;
+    }
+
+    public void increaseOffset() {
+        this.offset++;
+    }
+
+    public void addOffset(long count) {
+        this.offset += count;
+    }
 }
