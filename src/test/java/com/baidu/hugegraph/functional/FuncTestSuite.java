@@ -30,7 +30,8 @@ import org.junit.runners.Suite;
     VertexTest.class,
     EdgeTest.class,
     BatchInsertTest.class,
-    GraphManagerTest.class
+    GraphManagerTest.class,
+    TraverserManagerTest.class
 })
 public class FuncTestSuite {
 }

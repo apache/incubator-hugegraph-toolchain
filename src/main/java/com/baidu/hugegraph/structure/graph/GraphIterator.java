@@ -68,7 +68,10 @@ public class GraphIterator<T extends GraphElement> implements Iterator<T> {
         this.results = pageable.results();
         this.page = pageable.page();
         this.cursor = 0;
-        if (this.results.size() != this.sizePerPage || this.page == null) {
+        E.checkState(this.results.size() <= this.sizePerPage,
+                     "Server returned unexpected results: %s > %s",
+                     this.results.size(), this.sizePerPage);
+        if (this.results.size() < this.sizePerPage || this.page == null) {
             this.finished = true;
         }
     }

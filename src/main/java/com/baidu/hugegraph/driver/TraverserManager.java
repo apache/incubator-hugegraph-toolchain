@@ -19,6 +19,13 @@
 
 package com.baidu.hugegraph.driver;
 
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
+
+import java.util.Iterator;
 import java.util.List;
 
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
@@ -43,17 +50,12 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Edges;
+import com.baidu.hugegraph.structure.graph.GraphIterator;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.util.E;
-
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
 
 public class TraverserManager {
 
@@ -299,6 +301,12 @@ public class TraverserManager {
         return vertices;
     }
 
+    public Iterator<Vertex> iteratorVertices(Shard shard, int sizePerPage) {
+        return new GraphIterator<>(this.graphManager, sizePerPage, (page) -> {
+            return this.vertices(shard, page, sizePerPage);
+        });
+    }
+
     public List<Edge> edges(List<String> ids) {
         List<Edge> edges = this.edgesAPI.list(ids);
         for (Edge edge : edges) {
@@ -327,5 +335,11 @@ public class TraverserManager {
             edge.attachManager(this.graphManager);
         }
         return edges;
+    }
+
+    public Iterator<Edge> iteratorEdges(Shard shard, int sizePerPage) {
+        return new GraphIterator<>(this.graphManager, sizePerPage, (page) -> {
+            return this.edges(shard, page, sizePerPage);
+        });
     }
 }
