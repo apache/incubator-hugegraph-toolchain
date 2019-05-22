@@ -22,10 +22,9 @@ package com.baidu.hugegraph.loader.serializer;
 import java.io.IOException;
 import java.util.Set;
 
-import com.baidu.hugegraph.loader.progress.InputItem;
+import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
-import com.baidu.hugegraph.loader.reader.file.FileItem;
-import com.baidu.hugegraph.loader.reader.hdfs.PathItem;
+import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonParser;
@@ -59,18 +58,16 @@ public class InputProgressDeser extends JsonDeserializer<InputProgress> {
         JsonNode loadingItemNode = getNode(node, FIELD_LOADING_ITEM,
                                            JsonNodeType.OBJECT,
                                            JsonNodeType.NULL);
-        Set<InputItem> loadedItems;
-        InputItem loadingItem;
+        Set<InputItemProgress> loadedItems;
+        InputItemProgress loadingItem;
         switch (sourceType) {
             case FILE:
-                loadedItems = (Set<InputItem>) (Object) JsonUtil.convertSet(
-                              loadedItemsNode, FileItem.class);
-                loadingItem = JsonUtil.convert(loadingItemNode, FileItem.class);
-                break;
             case HDFS:
-                loadedItems = (Set<InputItem>) (Object) JsonUtil.convertSet(
-                              loadedItemsNode, PathItem.class);
-                loadingItem = JsonUtil.convert(loadingItemNode, PathItem.class);
+                loadedItems = (Set<InputItemProgress>) (Object)
+                              JsonUtil.convertSet(loadedItemsNode,
+                                                  FileItemProgress.class);
+                loadingItem = JsonUtil.convert(loadingItemNode,
+                                               FileItemProgress.class);
                 break;
             case JDBC:
             default:

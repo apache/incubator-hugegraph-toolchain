@@ -17,19 +17,13 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.progress;
+package com.baidu.hugegraph.loader.test.unit;
 
-import java.util.LinkedHashMap;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-import com.baidu.hugegraph.loader.source.graph.ElementSource;
-
-public final class ElementProgress extends LinkedHashMap<String, InputProgress> {
-
-    public InputProgress get(ElementSource source) {
-        return this.get(source.uniqueKey());
-    }
-
-    public void addSource(ElementSource source) {
-        this.put(source.uniqueKey(), new InputProgress(source));
-    }
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+})
+public class UnitTestSuite {
 }

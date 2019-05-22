@@ -30,6 +30,11 @@ public class ParseException extends IllegalArgumentException {
         this.line = line;
     }
 
+    public ParseException(String line, Throwable cause) {
+        super(cause.getMessage(), cause);
+        this.line = line;
+    }
+
     public ParseException(String line, String message, Throwable cause) {
         super(message, cause);
         this.line = line;

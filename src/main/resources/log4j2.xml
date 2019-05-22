@@ -16,21 +16,21 @@
             <PatternLayout charset="${log_charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} %-5r [%t] [%-5p] %c %x - %m%n" />
             <SizeBasedTriggeringPolicy size="100MB"/>
         </RollingFile>
-        <File name="parseErrorFile" fileName="logs/parse_error.data" append="false">
+        <File name="parse-error-file" fileName="logs/parse-error.data" append="false">
             <PatternLayout>
-                <Charset>${log_charset}</Charset>
+                <Charset>${log-charset}</Charset>
                 <Pattern>%m%n</Pattern>
             </PatternLayout>
         </File>
-        <File name="vertexInsertErrorFile" fileName="logs/vertex_insert_error.data" append="false">
+        <File name="vertex-insert-error-file" fileName="logs/vertex-insert-error.data" append="false">
             <PatternLayout>
-                <Charset>${log_charset}</Charset>
+                <Charset>${log-charset}</Charset>
                 <Pattern>%m%n</Pattern>
             </PatternLayout>
         </File>
-        <File name="edgeInsertErrorFile" fileName="logs/edge_insert_error.data" append="false">
+        <File name="edge-insert-error-file" fileName="logs/edge-insert-error.data" append="false">
             <PatternLayout>
-                <Charset>${log_charset}</Charset>
+                <Charset>${log-charset}</Charset>
                 <Pattern>%m%n</Pattern>
             </PatternLayout>
         </File>
@@ -40,29 +40,30 @@
             <appender-ref ref="console"/>
             <appender-ref ref="file"/>
         </root>
-        <logger name="org.apache.cassandra" level="INFO" additivity="false">
+        <logger name="org.apache.cassandra" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="org.apache.hadoop" level="INFO" additivity="false">
+        <logger name="org.apache.hadoop" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="io.netty" level="INFO" additivity="false">
+        <logger name="io.netty" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="org.apache.commons" level="INFO" additivity="false">
+        <logger name="org.apache.commons" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
+
         <logger name="com.baidu.hugegraph" level="INFO" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="parseError" level="INFO" additivity="false">
-            <appender-ref ref="parseErrorFile"/>
+        <logger name="parse-error" level="INFO" additivity="false">
+            <appender-ref ref="parse-error-file"/>
         </logger>
-        <logger name="vertexInsertError" level="INFO" additivity="false">
-            <appender-ref ref="vertexInsertErrorFile"/>
+        <logger name="vertex-insert-error" level="INFO" additivity="false">
+            <appender-ref ref="vertex-insert-error-file"/>
         </logger>
-        <logger name="edgeInsertError" level="INFO" additivity="false">
-            <appender-ref ref="edgeInsertErrorFile"/>
+        <logger name="edge-insert-error" level="INFO" additivity="false">
+            <appender-ref ref="edge-insert-error-file"/>
         </logger>
     </loggers>
 </configuration>

@@ -12,9 +12,9 @@ cache:
 
 branches:
   only:
-  - master
-  - /^release-.*$/
-  - /^test-.*$/
+    - master
+    - /^release-.*$/
+    - /^test-.*$/
 
 install: mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 

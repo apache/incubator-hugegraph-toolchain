@@ -21,12 +21,18 @@ package com.baidu.hugegraph.loader.progress;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class InputItem {
+public abstract class InputItemProgress {
 
+    /**
+     * NOTE: this offset refers to the parsed part in input instead of loaded.
+     * So if a file is completely parsed, but some lines fail to be inserted,
+     * the file will be marked as loaded, and the offset will be the last line
+     * of the file. This file will be skipped when load at next time.
+     */
     @JsonProperty("offset")
     private long offset;
 
-    public InputItem() {
+    public InputItemProgress() {
         this.offset = 0L;
     }
 

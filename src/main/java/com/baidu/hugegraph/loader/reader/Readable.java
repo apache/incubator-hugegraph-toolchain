@@ -22,11 +22,11 @@ package com.baidu.hugegraph.loader.reader;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.baidu.hugegraph.loader.progress.InputItem;
+import com.baidu.hugegraph.loader.progress.InputItemProgress;
 
 public interface Readable {
 
     public InputStream open() throws IOException;
 
-    public InputItem toInputItem();
+    public InputItemProgress inputItemProgress();
 }

@@ -19,52 +19,77 @@
 
 package com.baidu.hugegraph.loader.summary;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.atomic.LongAdder;
+
+import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.util.E;
 
 public final class LoadMetrics {
 
+    private final ElemType type;
+
     // Modified in only one thread
-    private long parseFailureNum;
-    private final LongAdder insertSuccessNum;
-    private final LongAdder insertFailureNum;
+    private long parseFailure;
+    private final LongAdder insertSuccess;
+    private final LongAdder insertFailure;
 
-    public LoadMetrics() {
-        this.parseFailureNum = 0L;
-        this.insertSuccessNum = new LongAdder();
-        this.insertFailureNum = new LongAdder();
+    private Instant begTime;
+    private Instant endTime;
+
+    public LoadMetrics(ElemType type) {
+        this.type = type;
+        this.parseFailure = 0L;
+        this.insertSuccess = new LongAdder();
+        this.insertFailure = new LongAdder();
+        this.begTime = null;
+        this.begTime = null;
     }
 
-    public long parseFailureNum() {
-        return this.parseFailureNum;
+    public ElemType type() {
+        return this.type;
     }
 
-    public long increaseParseFailureNum() {
-        return ++this.parseFailureNum;
+    public void startTimer() {
+        this.begTime = Instant.now();
     }
 
-    public long insertSuccessNum() {
-        return this.insertSuccessNum.longValue();
+    public void stopTimer() {
+        this.endTime = Instant.now();
     }
 
-    public void addInsertSuccessNum(long count) {
-        this.insertSuccessNum.add(count);
+    public Duration duration() {
+        E.checkNotNull(this.begTime, "begTime");
+        E.checkNotNull(this.endTime, "endTime");
+        return Duration.between(begTime, endTime);
     }
 
-    public void increaseInsertSuccessNum() {
-        this.insertSuccessNum.increment();
+    public long parseFailure() {
+        return this.parseFailure;
     }
 
-    public long insertFailureNum() {
-        return this.insertFailureNum.longValue();
+    public long increaseParseFailure() {
+        return ++this.parseFailure;
     }
 
-    public void increaseInsertFailureNum() {
-        this.insertFailureNum.increment();
+    public long insertSuccess() {
+        return this.insertSuccess.longValue();
     }
 
-    public void reset() {
-        this.parseFailureNum = 0L;
-        this.insertSuccessNum.reset();
-        this.insertFailureNum.reset();
+    public void addInsertSuccess(long count) {
+        this.insertSuccess.add(count);
+    }
+
+    public void increaseInsertSuccess() {
+        this.insertSuccess.increment();
+    }
+
+    public long insertFailure() {
+        return this.insertFailure.longValue();
+    }
+
+    public void increaseInsertFailure() {
+        this.insertFailure.increment();
     }
 }

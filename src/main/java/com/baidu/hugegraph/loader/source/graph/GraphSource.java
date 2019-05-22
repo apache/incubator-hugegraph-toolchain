@@ -29,9 +29,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.LoadContext;
+import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.constant.Checkable;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
@@ -51,8 +53,9 @@ public class GraphSource implements Checkable {
         this.edgeSources = new ArrayList<>();
     }
 
-    public static GraphSource of(String filePath) {
-        File file = FileUtils.getFile(filePath);
+    public static GraphSource of(LoadContext context) {
+        LoadOptions options = context.options();
+        File file = FileUtils.getFile(options.file);
         try {
             String json = FileUtils.readFileToString(file, Constants.CHARSET);
             GraphSource source = JsonUtil.fromJson(json, GraphSource.class);
@@ -60,7 +63,7 @@ public class GraphSource implements Checkable {
             return source;
         } catch (IOException | IllegalArgumentException e) {
             throw new LoadException("Read graph source file '%s' error",
-                                    e, filePath);
+                                    e, options.file);
         }
     }
 

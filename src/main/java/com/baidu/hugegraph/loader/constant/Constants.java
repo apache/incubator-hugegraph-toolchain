@@ -35,8 +35,8 @@ public final class Constants {
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String SKIPPED_LINE_REGEX = "";
 
-    public static final long BATCH_PRINT_FREQUENCY = 10_000_000L;
-    public static final long SINGLE_PRINT_FREQUENCY = 10_000L;
+    public static final long BATCH_PRINT_FREQ = 10_000_000L;
+    public static final long SINGLE_PRINT_FREQ = 10_000L;
     public static final String BATCH_WORKER = "batch-worker-%d";
     public static final String SINGLE_WORKER = "single-worker-%d";
 }

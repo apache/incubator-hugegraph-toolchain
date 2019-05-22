@@ -33,21 +33,24 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.progress.InputItem;
+import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
-import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
+import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
+import com.baidu.hugegraph.loader.reader.file.FileReader;
+import com.baidu.hugegraph.loader.reader.file.Readers;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
-import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.hdfs.HdfsSource;
 import com.baidu.hugegraph.util.Log;
 
-public class HDFSReader extends AbstractFileReader {
+public class HdfsFileReader extends FileReader {
 
-    private static final Logger LOG = Log.logger(HDFSReader.class);
+    private static final Logger LOG = Log.logger(HdfsFileReader.class);
 
     private final FileSystem hdfs;
 
-    public HDFSReader(HDFSSource source) {
+    public HdfsFileReader(HdfsSource source) {
         super(source);
         Configuration config = this.loadConfiguration();
         try {
@@ -64,8 +67,8 @@ public class HDFSReader extends AbstractFileReader {
     }
 
     @Override
-    public HDFSSource source() {
-        return (HDFSSource) super.source();
+    public HdfsSource source() {
+        return (HdfsSource) super.source();
     }
 
     @Override
@@ -87,14 +90,14 @@ public class HDFSReader extends AbstractFileReader {
                           "Please check path name and suffix, ensure that " +
                           "at least one path is available for reading");
             }
-            paths.add(new ReadablePath(this.hdfs, path));
+            paths.add(new HdfsFile(this.hdfs, path));
         } else {
             assert this.hdfs.isDirectory(path);
             FileStatus[] statuses = this.hdfs.listStatus(path);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             for (Path subPath : subPaths) {
                 if (filter.reserved(subPath.getName())) {
-                    paths.add(new ReadablePath(this.hdfs, subPath));
+                    paths.add(new HdfsFile(this.hdfs, subPath));
                 }
             }
         }
@@ -139,12 +142,12 @@ public class HDFSReader extends AbstractFileReader {
         return new Path(Paths.get(configPath, configFile).toString());
     }
 
-    protected static class ReadablePath implements Readable {
+    protected static class HdfsFile implements Readable {
 
         private final FileSystem hdfs;
         private final Path path;
 
-        private ReadablePath(FileSystem hdfs, Path path) {
+        private HdfsFile(FileSystem hdfs, Path path) {
             this.hdfs = hdfs;
             this.path = path;
         }
@@ -163,8 +166,25 @@ public class HDFSReader extends AbstractFileReader {
         }
 
         @Override
-        public InputItem toInputItem() {
-            return new PathItem(this);
+        public InputItemProgress inputItemProgress() {
+            String name = this.path.getName();
+            long timestamp;
+            try {
+                timestamp = this.hdfs.getFileStatus(this.path)
+                                     .getModificationTime();
+            } catch (IOException e) {
+                throw new LoadException("Failed to get last modified time " +
+                                        "for hdfs path '%s'", e, this.path);
+            }
+            byte[] bytes;
+            try {
+                bytes = this.hdfs.getFileChecksum(this.path).getBytes();
+            } catch (IOException e) {
+                throw new LoadException("Failed to calculate checksum " +
+                                        "for hdfs path '%s'", e, this.path);
+            }
+            String checkSum = new String(bytes, Constants.CHARSET);
+            return new FileItemProgress(name, timestamp, checkSum);
         }
 
         @Override

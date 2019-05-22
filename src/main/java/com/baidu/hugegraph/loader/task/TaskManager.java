@@ -19,9 +19,9 @@
 
 package com.baidu.hugegraph.loader.task;
 
-import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQUENCY;
+import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
 import static com.baidu.hugegraph.loader.constant.Constants.BATCH_WORKER;
-import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_PRINT_FREQUENCY;
+import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_PRINT_FREQ;
 import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_WORKER;
 
 import java.util.List;
@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.GraphManager;
+import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InsertException;
@@ -40,6 +41,7 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
+import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
@@ -52,23 +54,35 @@ public final class TaskManager {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
     private static final FailureLogger LOG_VERTEX_INSERT =
-                         FailureLogger.logger("vertexInsertError");
+                         FailureLogger.logger("vertex-insert-error");
     private static final FailureLogger LOG_EDGE_INSERT =
-                         FailureLogger.logger("edgeInsertError");
+                         FailureLogger.logger("edge-insert-error");
 
     private final LoadOptions options;
-    private final LoadMetrics counter;
+    private final LoadMetrics vertexMetrics;
+    private final LoadMetrics edgeMetrics;
 
     private final Semaphore batchSemaphore;
     private final Semaphore singleSemaphore;
     private final ExecutorService batchService;
     private final ExecutorService singleService;
 
-    public TaskManager(LoadOptions options, LoadMetrics counter) {
+    public TaskManager(LoadContext context) {
+        this(context.options(), context.summary());
+    }
+
+    public TaskManager(LoadOptions options, LoadSummary summary) {
         this.options = options;
-        this.counter = counter;
+        this.vertexMetrics = summary.vertexMetrics();
+        this.edgeMetrics = summary.edgeMetrics();
         this.batchSemaphore = new Semaphore(options.numThreads);
         this.singleSemaphore = new Semaphore(options.numThreads);
+        /*
+         * In principle, unbounded synchronization queue(which may lead to OOM)
+         * should not be used, but there the task manager uses semaphores to
+         * limit the number of tasks added. When there are no idle threads in
+         * the thread pool, the producer will be blocked, so OOM will not occur.
+         */
         this.batchService = ExecutorUtil.newFixedThreadPool(options.numThreads,
                                                             BATCH_WORKER);
         this.singleService = ExecutorUtil.newFixedThreadPool(options.numThreads,
@@ -97,11 +111,12 @@ public final class TaskManager {
         }
     }
 
-    public void shutdown(int seconds) {
+    public void shutdown() {
+        long timeout = this.options.shutdownTimeout;
         LOG.debug("Attempt to shutdown batch-mode tasks executor");
         try {
             this.batchService.shutdown();
-            this.batchService.awaitTermination(seconds, TimeUnit.SECONDS);
+            this.batchService.awaitTermination(timeout, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             LOG.error("The batch-mode tasks are interrupted");
         } finally {
@@ -114,7 +129,7 @@ public final class TaskManager {
         LOG.debug("Attempt to shutdown single-mode tasks executor");
         try {
             this.singleService.shutdown();
-            this.singleService.awaitTermination(seconds, TimeUnit.SECONDS);
+            this.singleService.awaitTermination(timeout, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             LOG.error("The single-mode task are interrupted");
         } finally {
@@ -137,13 +152,13 @@ public final class TaskManager {
         CompletableFuture<Integer> future;
         future = CompletableFuture.supplyAsync(task, this.batchService);
         future.exceptionally(error -> {
-            LOG.error("Insert vertex failed", error);
+            LOG.warn("Batch insert vertex failed, try single insert", error);
             this.submitVerticesInSingleMode(batch);
             return 0;
         }).whenComplete((size, error) -> {
             if (error == null) {
-                this.counter.addInsertSuccessNum(size);
-                printProgress(ElemType.VERTEX, BATCH_PRINT_FREQUENCY, size);
+                this.vertexMetrics.addInsertSuccess(size);
+                Printer.printProgress(this.vertexMetrics, BATCH_PRINT_FREQ, size);
             }
             this.batchSemaphore.release();
         });
@@ -161,13 +176,13 @@ public final class TaskManager {
         CompletableFuture<Integer> future;
         future = CompletableFuture.supplyAsync(task, this.batchService);
         future.exceptionally(error -> {
-            LOG.error("Insert edge failed", error);
+            LOG.warn("Batch insert edge failed, try single insert", error);
             this.submitEdgesInSingleMode(batch);
             return 0;
         }).whenComplete((size, error) -> {
             if (error == null) {
-                this.counter.addInsertSuccessNum(size);
-                this.printProgress(ElemType.EDGE, BATCH_PRINT_FREQUENCY, size);
+                this.edgeMetrics.addInsertSuccess(size);
+                Printer.printProgress(this.edgeMetrics, BATCH_PRINT_FREQ, size);
             }
             this.batchSemaphore.release();
         });
@@ -186,26 +201,26 @@ public final class TaskManager {
             for (Vertex vertex : vertices) {
                 try {
                     graph.addVertex(vertex);
-                    this.counter.increaseInsertSuccessNum();
+                    this.vertexMetrics.increaseInsertSuccess();
                 } catch (Exception e) {
-                    this.counter.increaseInsertFailureNum();
+                    this.vertexMetrics.increaseInsertFailure();
                     LOG.error("Vertex insert error", e);
                     if (this.options.testMode) {
                         throw e;
                     }
-                    LOG_VERTEX_INSERT.error(new InsertException(vertex,
-                                            e.getMessage()));
-                    if (this.counter.insertFailureNum() >=
-                        options.maxInsertErrors) {
+                    LOG_VERTEX_INSERT.error(new InsertException(vertex, e));
+
+                    if (this.vertexMetrics.insertFailure() >=
+                        this.options.maxInsertErrors) {
                         Printer.printError("Error: More than %s vertices " +
                                            "insert error... stopping",
-                                           options.maxInsertErrors);
+                                           this.options.maxInsertErrors);
                         LoadUtil.exit(Constants.EXIT_CODE_ERROR);
                     }
                 }
             }
-            printProgress(ElemType.VERTEX, SINGLE_PRINT_FREQUENCY,
-                          vertices.size());
+            Printer.printProgress(this.vertexMetrics, SINGLE_PRINT_FREQ,
+                                  vertices.size());
         });
     }
 
@@ -222,26 +237,26 @@ public final class TaskManager {
             for (Edge edge : edges) {
                 try {
                     graph.addEdge(edge);
-                    this.counter.increaseInsertSuccessNum();
+                    this.edgeMetrics.increaseInsertSuccess();
                 } catch (Exception e) {
-                    this.counter.increaseInsertFailureNum();
+                    this.edgeMetrics.increaseInsertFailure();
                     LOG.error("Edge insert error", e);
                     if (this.options.testMode) {
                         throw e;
                     }
-                    LOG_EDGE_INSERT.error(new InsertException(edge,
-                                          e.getMessage()));
+                    LOG_EDGE_INSERT.error(new InsertException(edge, e));
 
-                    if (this.counter.insertFailureNum() >=
-                        options.maxInsertErrors) {
+                    if (this.edgeMetrics.insertFailure() >=
+                        this.options.maxInsertErrors) {
                         Printer.printError("Error: More than %s edges " +
                                            "insert error... stopping",
-                                           options.maxInsertErrors);
+                                           this.options.maxInsertErrors);
                         LoadUtil.exit(Constants.EXIT_CODE_ERROR);
                     }
                 }
             }
-            printProgress(ElemType.EDGE, SINGLE_PRINT_FREQUENCY, edges.size());
+            Printer.printProgress(this.edgeMetrics, SINGLE_PRINT_FREQ,
+                                  edges.size());
         });
     }
 
@@ -251,13 +266,5 @@ public final class TaskManager {
         future.whenComplete((r, error) -> {
             this.singleSemaphore.release();
         });
-    }
-
-    private void printProgress(ElemType type, long frequency, int batchSize) {
-        long loaded = this.counter.insertSuccessNum();
-        Printer.printInBackward(loaded);
-        if (loaded % frequency < batchSize) {
-            LOG.info("{} has been loaded: {}", type.string(), loaded);
-        }
     }
 }

@@ -22,7 +22,8 @@ package com.baidu.hugegraph.loader.builder;
 import java.util.List;
 import java.util.Map;
 
-import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.LoadContext;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.source.graph.EdgeSource;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -38,8 +39,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(EdgeSource source, LoadOptions options) {
-        super(source, options);
+    public EdgeBuilder(EdgeSource source, LoadContext context) {
+        super(source, context);
         this.source = source;
         this.edgeLabel = this.getEdgeLabel(source.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
@@ -47,6 +48,11 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         // Ensure that the source/target id fileds are matched with id strategy
         this.checkIdFields(this.sourceLabel, this.source.sourceFields());
         this.checkIdFields(this.targetLabel, this.source.targetFields());
+    }
+
+    @Override
+    public ElemType type() {
+        return ElemType.EDGE;
     }
 
     @Override

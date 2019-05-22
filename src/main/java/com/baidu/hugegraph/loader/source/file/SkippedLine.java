@@ -17,25 +17,21 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.summary;
+package com.baidu.hugegraph.loader.source.file;
 
-import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.constant.Constants;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public final class LoadSummary {
+public class SkippedLine {
 
-    private final LoadMetrics vertexMetrics;
-    private final LoadMetrics edgeMetrics;
+    @JsonProperty("regex")
+    private final String regex;
 
-    public LoadSummary() {
-        this.vertexMetrics = new LoadMetrics(ElemType.VERTEX);
-        this.edgeMetrics = new LoadMetrics(ElemType.EDGE);
+    public SkippedLine() {
+        this.regex = Constants.SKIPPED_LINE_REGEX;
     }
 
-    public LoadMetrics vertexMetrics() {
-        return this.vertexMetrics;
-    }
-
-    public LoadMetrics edgeMetrics() {
-        return this.edgeMetrics;
+    public String regex() {
+        return this.regex;
     }
 }

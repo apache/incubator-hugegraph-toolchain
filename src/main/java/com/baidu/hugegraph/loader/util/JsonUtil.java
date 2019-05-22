@@ -20,7 +20,9 @@
 package com.baidu.hugegraph.loader.util;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.baidu.hugegraph.loader.progress.InputProgress;
@@ -28,7 +30,9 @@ import com.baidu.hugegraph.loader.serializer.InputProgressDeser;
 import com.baidu.hugegraph.loader.serializer.InputSourceDeser;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.rest.SerializeException;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.Module;
@@ -66,19 +70,47 @@ public final class JsonUtil {
         }
     }
 
+    public static <T> T fromJson(String json, TypeReference<?> typeRef) {
+        E.checkState(json != null, "Json value can't be null for '%s'",
+                     typeRef.getType());
+        try {
+            return MAPPER.readValue(json, typeRef);
+        } catch (IOException e) {
+            throw new SerializeException("Failed to deserialize json", e);
+        }
+    }
+
     public static <T> T convert(JsonNode node, Class<T> clazz) {
         return MAPPER.convertValue(node, clazz);
     }
 
     public static <T> Set<T> convertSet(JsonNode node, Class<T> clazz) {
-        JavaType type = MAPPER.getTypeFactory()
-                              .constructCollectionType(Set.class, clazz);
+        JavaType type = MAPPER.getTypeFactory().constructCollectionType(
+                                                LinkedHashSet.class, clazz);
         return MAPPER.convertValue(node, type);
     }
 
     public static <T> List<T> convertList(JsonNode node, Class<T> clazz) {
         JavaType type = MAPPER.getTypeFactory()
                               .constructCollectionType(List.class, clazz);
+        return MAPPER.convertValue(node, type);
+    }
+
+    public static <K, V> Map<K, V> convertMap(String json, Class<K> kClazz,
+                                              Class<V> vClazz) {
+        JavaType type = MAPPER.getTypeFactory()
+                              .constructMapType(Map.class, kClazz, vClazz);
+        try {
+            return MAPPER.readValue(json, type);
+        } catch (IOException e) {
+            throw new SerializeException("Failed to deserialize json", e);
+        }
+    }
+
+    public static <K, V> Map<K, V> convertMap(JsonNode node, Class<K> kClazz,
+                                              Class<V> vClazz) {
+        JavaType type = MAPPER.getTypeFactory()
+                              .constructMapType(Map.class, kClazz, vClazz);
         return MAPPER.convertValue(node, type);
     }
 }

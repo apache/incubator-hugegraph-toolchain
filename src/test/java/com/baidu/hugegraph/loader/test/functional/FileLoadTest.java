@@ -425,9 +425,9 @@ public class FileLoadTest extends LoadTest {
                             edge.property("feel"));
     }
 
-    // TODO : List<Date> is not supported now
     @Test
-    public void testValueListPropertyInTextFile() {
+    public void testValueListPropertyInTextFile()
+                throws java.text.ParseException {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -451,8 +451,44 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
                             edge.property("feel"));
-        Assert.assertEquals(ImmutableList.of("2019-05-02", "2008-05-02"),
-                            edge.property("time"));
+        List<Long> expectedTimes = ImmutableList.of(
+                DateUtil.parse("2019-05-02", "yyyy-MM-dd").getTime(),
+                DateUtil.parse("2008-05-02", "yyyy-MM-dd").getTime()
+        );
+        Assert.assertEquals(expectedTimes, edge.property("time"));
+    }
+
+    @Test
+    public void testValueSetPropertyInTextFile()
+                throws java.text.ParseException {
+        ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
+        ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
+        ioUtil.write("edge_use.txt",
+                     "jin\ttom\t[4,1,5,6]\t[2019-05-02,2008-05-02]");
+
+        String[] args = new String[]{
+                "-f", configPath("value_set_property_in_text_file/struct.json"),
+                "-s", configPath("value_set_property_in_text_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Edge> edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(1, edges.size());
+        Edge edge = edges.get(0);
+
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("software", edge.targetLabel());
+        Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
+                            edge.property("feel"));
+        List<Long> expectedTimes = ImmutableList.of(
+                DateUtil.parse("2019-05-02", "yyyy-MM-dd").getTime(),
+                DateUtil.parse("2008-05-02", "yyyy-MM-dd").getTime()
+        );
+        Assert.assertEquals(expectedTimes, edge.property("time"));
     }
 
     @Test
@@ -829,7 +865,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testFileHasSkippedLine() {
+    public void testFileHasSkippedLineRegex() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
                      "# This is a comment",
@@ -839,8 +875,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,//Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("file_has_skipped_line/struct.json"),
-                "-s", configPath("file_has_skipped_line/schema.groovy"),
+                "-f", configPath("file_has_skipped_line_regex/struct.json"),
+                "-s", configPath("file_has_skipped_line_regex/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"

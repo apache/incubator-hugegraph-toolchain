@@ -27,18 +27,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.LoadContext;
+import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.progress.ElementProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.source.graph.ElementSource;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
+import com.baidu.hugegraph.loader.source.graph.ElementSource;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -64,15 +65,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
     private final HugeClient client;
     private final Table<HugeType, String, SchemaElement> schemas;
 
-    public ElementBuilder(ElementSource source, LoadOptions options) {
+    public ElementBuilder(ElementSource source, LoadContext context) {
         this.reader = InputReaderFactory.create(source.input());
-        this.client = HugeClientWrapper.get(options);
+        this.client = HugeClientWrapper.get(context.options());
         this.schemas = HashBasedTable.create();
-    }
-
-    public abstract ElementSource source();
-
-    public void init() {
+        this.progress(context);
         try {
             this.reader.init();
         } catch (Exception e) {
@@ -80,18 +77,23 @@ public abstract class ElementBuilder<GE extends GraphElement>
         }
     }
 
+    public abstract ElemType type();
+
+    public abstract ElementSource source();
+
     public InputReader reader() {
         return this.reader;
     }
 
-    public void progress(ElementProgress oldProgress,
-                         ElementProgress newProgress) {
+    private void progress(LoadContext context) {
+        LoadProgress oldProgress = context.oldProgress();
+        LoadProgress newProgress = context.newProgress();
         ElementSource source = this.source();
-        InputProgress oldInputProgress = oldProgress.get(source);
+        InputProgress oldInputProgress = oldProgress.get(this.type(), source);
         if (oldInputProgress == null) {
             oldInputProgress = new InputProgress(source);
         }
-        InputProgress newInputProgress = newProgress.get(source);
+        InputProgress newInputProgress = newProgress.get(this.type(), source);
         this.reader.progress(oldInputProgress, newInputProgress);
     }
 
@@ -108,7 +110,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
             keyValues = this.filterFields(keyValues);
             return this.build(keyValues);
         } catch (IllegalArgumentException e) {
-            throw new ParseException(line.rawLine(), e.getMessage());
+            throw new ParseException(line.rawLine(), e);
         }
     }
 
@@ -200,6 +202,12 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected abstract SchemaLabel getSchemaLabel();
 
+    protected Object validatePropertyValue(String key, Object rawValue) {
+        PropertyKey pKey = this.getPropertyKey(key);
+        InputSource inputSource = this.source().input();
+        return DataTypeUtil.convert(rawValue, pKey, inputSource);
+    }
+
     protected void checkFieldValue(String fieldName, Object fieldValue) {
         if (this.source().mappingValues().isEmpty() ||
             !this.source().mappingValues().containsKey(fieldName)) {
@@ -246,14 +254,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected void checkVertexIdLength(String id) {
         E.checkArgument(id.getBytes(Constants.CHARSET).length <= VERTEX_ID_LIMIT,
-                        "Vertex id length limit is '%s', '%s' exceeds it",
+                        "The vertex id length limit is '%s', '%s' exceeds it",
                         VERTEX_ID_LIMIT, id);
-    }
-
-    protected Object validatePropertyValue(String key, Object rawValue) {
-        PropertyKey pKey = this.getPropertyKey(key);
-        InputSource inputSource = this.source().input();
-        return DataTypeUtil.convert(rawValue, pKey, inputSource);
     }
 
     protected static long parseNumberId(Object idValue) {
@@ -261,10 +263,9 @@ public abstract class ElementBuilder<GE extends GraphElement>
             return ((Number) idValue).longValue();
         } else if (idValue instanceof String) {
             return Long.parseLong((String) idValue);
-        } else {
-            throw new IllegalArgumentException(String.format(
-                      "The id value must can be casted to Long, " +
-                      "but got %s(%s)", idValue, idValue.getClass().getName()));
         }
+        throw new IllegalArgumentException(String.format(
+                  "The id value must can be casted to Long, but got %s(%s)",
+                  idValue, idValue.getClass().getName()));
     }
 }

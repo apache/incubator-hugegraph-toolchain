@@ -64,7 +64,7 @@ public class JDBCReader implements InputReader {
 
     @Override
     public void progress(InputProgress oldProgress, InputProgress newProgress) {
-        throw new UnsupportedOperationException("JDBC progress");
+        // throw new UnsupportedOperationException("JDBC progress");
     }
 
     @Override

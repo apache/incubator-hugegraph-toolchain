@@ -21,8 +21,8 @@ package com.baidu.hugegraph.loader.progress;
 
 import java.util.Set;
 
-import com.baidu.hugegraph.loader.source.graph.ElementSource;
 import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.loader.source.graph.ElementSource;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,14 +32,16 @@ public final class InputProgress {
     @JsonProperty("type")
     private final SourceType type;
     @JsonProperty("loaded_items")
-    private final Set<InputItem> loadedItems;
+    private final Set<InputItemProgress> loadedItems;
     @JsonProperty("loading_item")
-    private InputItem loadingItem;
+    private InputItemProgress loadingItem;
 
     @JsonCreator
     public InputProgress(@JsonProperty("type") SourceType type,
-                         @JsonProperty("loaded_items") Set<InputItem> loadedItems,
-                         @JsonProperty("loading_item") InputItem loadingItem) {
+                         @JsonProperty("loaded_items")
+                         Set<InputItemProgress> loadedItems,
+                         @JsonProperty("loading_item")
+                         InputItemProgress loadingItem) {
         this.type = type;
         this.loadedItems = loadedItems;
         this.loadingItem = loadingItem;
@@ -51,8 +53,8 @@ public final class InputProgress {
         this.loadingItem = null;
     }
 
-    public InputItem matchLoadedItem(InputItem inputItem) {
-        for (InputItem item : this.loadedItems) {
+    public InputItemProgress matchLoadedItem(InputItemProgress inputItem) {
+        for (InputItemProgress item : this.loadedItems) {
             if (item.equals(inputItem)) {
                 return item;
             }
@@ -60,12 +62,12 @@ public final class InputProgress {
         return null;
     }
 
-    public void addLoadedItem(InputItem inputItem) {
-        this.loadedItems.add(inputItem);
+    public void addLoadedItem(InputItemProgress inputItemProgress) {
+        this.loadedItems.add(inputItemProgress);
     }
 
-    public void addLoadingItem(InputItem inputItem) {
-        this.loadingItem = inputItem;
+    public void addLoadingItem(InputItemProgress inputItemProgress) {
+        this.loadingItem = inputItemProgress;
     }
 
     public long loadingOffset() {

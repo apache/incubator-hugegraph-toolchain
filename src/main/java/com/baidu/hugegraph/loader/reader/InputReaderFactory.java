@@ -19,12 +19,12 @@
 
 package com.baidu.hugegraph.loader.reader;
 
-import com.baidu.hugegraph.loader.reader.file.FileReader;
-import com.baidu.hugegraph.loader.reader.hdfs.HDFSReader;
+import com.baidu.hugegraph.loader.reader.file.LocalFileReader;
+import com.baidu.hugegraph.loader.reader.hdfs.HdfsFileReader;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCReader;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.hdfs.HdfsSource;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 
 public class InputReaderFactory {
@@ -32,9 +32,9 @@ public class InputReaderFactory {
     public static InputReader create(InputSource source) {
         switch (source.type()) {
             case FILE:
-                return new FileReader((FileSource) source);
+                return new LocalFileReader((FileSource) source);
             case HDFS:
-                return new HDFSReader((HDFSSource) source);
+                return new HdfsFileReader((HdfsSource) source);
             case JDBC:
                 return new JDBCReader((JDBCSource) source);
             default:

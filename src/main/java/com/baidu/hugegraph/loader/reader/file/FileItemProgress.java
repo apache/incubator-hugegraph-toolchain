@@ -17,53 +17,28 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader.hdfs;
+package com.baidu.hugegraph.loader.reader.file;
 
-import java.io.IOException;
-import java.util.Arrays;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
-import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.progress.InputItem;
+import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PathItem extends InputItem {
+public class FileItemProgress extends InputItemProgress {
 
     @JsonProperty("name")
     private final String name;
     @JsonProperty("last_modified")
     private final long timestamp;
-    @JsonProperty("check_sum")
-    private final byte[] checkSum;
+    @JsonProperty("checksum")
+    private final String checkSum;
 
     @JsonCreator
-    public PathItem(@JsonProperty("name") String name,
-                    @JsonProperty("last_modified") long timestamp,
-                    @JsonProperty("check_sum") byte[] checkSum) {
+    public FileItemProgress(@JsonProperty("name") String name,
+                            @JsonProperty("last_modified") long timestamp,
+                            @JsonProperty("checksum") String checkSum) {
         this.name = name;
         this.timestamp = timestamp;
         this.checkSum = checkSum;
-    }
-
-    public PathItem(HDFSReader.ReadablePath readablePath) {
-        FileSystem hdfs = readablePath.hdfs();
-        Path path = readablePath.path();
-        this.name = path.getName();
-        try {
-            this.timestamp = hdfs.getFileStatus(path).getModificationTime();
-        } catch (IOException e) {
-            throw new LoadException("Failed to get last modified time " +
-                                    "for hdfs path '%s'", e, path);
-        }
-        try {
-            this.checkSum = hdfs.getFileChecksum(path).getBytes();
-        } catch (IOException e) {
-            throw new LoadException("Failed to calculate checksum " +
-                                    "for hdfs path '%s'", e, path);
-        }
     }
 
     @Override
@@ -73,19 +48,19 @@ public class PathItem extends InputItem {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof PathItem)) {
+        if (!(obj instanceof FileItemProgress)) {
             return false;
         }
-        PathItem other = (PathItem) obj;
+        FileItemProgress other = (FileItemProgress) obj;
         return this.name.equals(other.name) &&
                this.timestamp == other.timestamp &&
-               Arrays.equals(this.checkSum, other.checkSum);
+               this.checkSum.equals(other.checkSum);
     }
 
     @Override
     public int hashCode() {
         return this.name.hashCode() ^
                Long.hashCode(this.timestamp) ^
-               Arrays.hashCode(this.checkSum);
+               this.checkSum.hashCode();
     }
 }

@@ -17,25 +17,28 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.summary;
+package com.baidu.hugegraph.loader.source.hdfs;
 
-import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public final class LoadSummary {
+public class HdfsSource extends FileSource {
 
-    private final LoadMetrics vertexMetrics;
-    private final LoadMetrics edgeMetrics;
+    @JsonProperty("fs_default_fs")
+    private String fsDefaultFS;
 
-    public LoadSummary() {
-        this.vertexMetrics = new LoadMetrics(ElemType.VERTEX);
-        this.edgeMetrics = new LoadMetrics(ElemType.EDGE);
+    @Override
+    public SourceType type() {
+        return SourceType.HDFS;
     }
 
-    public LoadMetrics vertexMetrics() {
-        return this.vertexMetrics;
+    public String fsDefaultFS() {
+        return this.fsDefaultFS;
     }
 
-    public LoadMetrics edgeMetrics() {
-        return this.edgeMetrics;
+    @Override
+    public String toString() {
+        return String.format("%s with path %s", this.type(), this.path());
     }
 }

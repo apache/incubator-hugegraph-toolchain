@@ -19,22 +19,35 @@
 
 package com.baidu.hugegraph.loader.parser;
 
-import java.io.IOException;
 import java.util.List;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.google.common.base.Splitter;
 
 public class TextLineParser implements LineParser {
 
+    private final FileSource source;
+
     // Default is "\t"
-    protected String delimiter;
-    protected List<String> header;
+    private final String delimiter;
+    private List<String> header;
+
+    public TextLineParser(FileSource source) {
+        this(source, source.delimiter() != null ?
+                     source.delimiter() :
+                     Constants.TEXT_DELIMITER);
+    }
+
+    public TextLineParser(FileSource source, String delimiter) {
+        this.source = source;
+        this.delimiter = delimiter;
+        if (this.source.header() != null) {
+            this.header = this.source.header();
+        }
+    }
 
     public String delimiter() {
         return this.delimiter;
@@ -45,64 +58,54 @@ public class TextLineParser implements LineParser {
     }
 
     @Override
-    public void init(AbstractFileReader reader) {
-        /*
-         * The delimiter must be initialized before header,
-         * because init header may use it
-         */
-        this.initDelimiter(reader.source());
-        this.initHeader(reader);
-    }
-
-    protected void initDelimiter(FileSource source) {
-        if (source.delimiter() != null) {
-            this.delimiter = source.delimiter();
-        } else {
-            this.delimiter = Constants.TEXT_DELIMITER;
-        }
-    }
-
-    protected void initHeader(AbstractFileReader reader) {
-        FileSource source = reader.source();
-        if (source.header() != null) {
-            this.header = source.header();
-        } else {
-            String line;
-            try {
-                line = reader.readNextLine();
-            } catch (IOException e) {
-                throw new LoadException("Read header line error", e);
-            }
-            // If doesn't specify header, the first line is considered as header
-            if (line != null && !line.isEmpty()) {
-                this.header = this.split(line);
-            } else {
-                throw new LoadException("Can't read header from empty file '%s'",
-                                        source.path());
-            }
-            if (this.header.isEmpty()) {
-                throw new LoadException("The header of file '%s' is empty",
-                                        source.path());
-            }
-        }
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
-    public Line parse(String rawLine) {
-        List<String> columns = this.split(rawLine);
+    public Line parse(String line) {
+        List<String> columns = this.split(line);
         // Ignore extra separator at the end of line
         if (columns.size() != this.header.size()) {
             if (this.lastColumnIsEmpty(columns)) {
                 columns = columns.subList(0, columns.size() - 1);
             } else {
-                throw new ParseException(rawLine,
+                throw new ParseException(line,
                           "The column length '%s' doesn't match with " +
                           "header length '%s' on: %s",
-                          columns.size(), this.header.size(), rawLine);
+                          columns.size(), this.header.size(), line);
             }
         }
-        return new Line(rawLine, this.header, (List<Object>) (Object) columns);
+        return new Line(line, this.header, (List<Object>) (Object) columns);
+    }
+
+    @Override
+    public boolean needHeader() {
+        return this.header == null;
+    }
+
+    @Override
+    public boolean parseHeader(String line) {
+        /*
+         * All lines will be treated as data line if the header is
+         * user specified explicitly
+         */
+        if (this.source.header() != null) {
+            return false;
+        }
+
+        if (line == null || line.isEmpty()) {
+            throw new ParseException("The file header can't be empty " +
+                                     "under path '%s'", this.source.path());
+        }
+
+        // If doesn't specify header, the first line is treated as header
+        List<String> columns = this.split(line);
+        assert !columns.isEmpty();
+        if (this.header == null) {
+            this.header = columns;
+        } else if (!this.header.equals(columns)) {
+            // Has been parsed from the previous file
+            throw new ParseException("The headers of different files must be " +
+                                     "same under path '%s'", this.source.path());
+        }
+        return true;
     }
 
     public List<String> split(String line) {

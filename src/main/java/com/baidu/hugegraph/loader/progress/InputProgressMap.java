@@ -17,28 +17,19 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source.hdfs;
+package com.baidu.hugegraph.loader.progress;
 
-import com.baidu.hugegraph.loader.source.SourceType;
-import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.HashMap;
 
-public class HDFSSource extends FileSource {
+import com.baidu.hugegraph.loader.source.graph.ElementSource;
 
-    @JsonProperty("fs_default_fs")
-    private String fsDefaultFS;
+public final class InputProgressMap extends HashMap<String, InputProgress> {
 
-    @Override
-    public SourceType type() {
-        return SourceType.HDFS;
+    public InputProgress get(ElementSource source) {
+        return this.get(source.uniqueKey());
     }
 
-    public String fsDefaultFS() {
-        return this.fsDefaultFS;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s with path %s", this.type(), this.path());
+    public void addSource(ElementSource source) {
+        this.put(source.uniqueKey(), new InputProgress(source));
     }
 }

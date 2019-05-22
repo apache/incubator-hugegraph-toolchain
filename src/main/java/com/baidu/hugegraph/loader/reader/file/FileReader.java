@@ -19,93 +19,141 @@
 
 package com.baidu.hugegraph.loader.reader.file;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.NoSuchElementException;
 
-import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.progress.InputItem;
-import com.baidu.hugegraph.loader.reader.Readable;
-import com.baidu.hugegraph.loader.source.file.FileFilter;
+import com.baidu.hugegraph.loader.parser.CsvLineParser;
+import com.baidu.hugegraph.loader.parser.JsonLineParser;
+import com.baidu.hugegraph.loader.parser.LineParser;
+import com.baidu.hugegraph.loader.parser.TextLineParser;
+import com.baidu.hugegraph.loader.progress.InputProgress;
+import com.baidu.hugegraph.loader.reader.InputReader;
+import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 
-public class FileReader extends AbstractFileReader {
+public abstract class FileReader implements InputReader {
+
+    private static final Logger LOG = Log.logger(FileReader.class);
+
+    private final FileSource source;
+    private final Readers readers;
+    private final LineParser parser;
+
+    private Line nextLine;
 
     public FileReader(FileSource source) {
-        super(source);
+        this.source = source;
+        LOG.info("Opening source {}", this.source);
+        try {
+            this.readers = this.openReaders();
+        } catch (IOException e) {
+            throw new LoadException("Failed to open readers for '%s'",
+                                    this.source);
+        }
+        this.parser = createLineParser(this.source);
+        this.nextLine = null;
+    }
+
+    public FileSource source() {
+        return this.source;
+    }
+
+    protected abstract Readers openReaders() throws IOException;
+
+    @Override
+    public void init() {
+        String headerLine = this.readers.skipOffsetWithReadHeader();
+        if (this.parser.needHeader()) {
+            if (headerLine != null) {
+                this.parser.parseHeader(headerLine);
+            } else {
+                throw new LoadException("Failed to read header from " +
+                                        "file source '%s'", this.source);
+            }
+        }
     }
 
     @Override
-    protected Readers openReaders() {
-        File file = FileUtils.getFile(this.source().path());
-        checkExistAndReadable(file);
-
-        FileFilter filter = this.source().filter();
-        List<Readable> files = new ArrayList<>();
-        if (file.isFile()) {
-            if (!filter.reserved(file.getName())) {
-                throw new LoadException(
-                          "Please check file name and suffix, ensure that " +
-                          "at least one file is available for reading");
-            }
-            files.add(new ReadableFile(file));
-        } else {
-            assert file.isDirectory();
-            File[] subFiles = file.listFiles();
-            if (subFiles == null) {
-                throw new LoadException("Error while listing the files of " +
-                                        "path '%s'", file);
-            }
-            for (File subFile : subFiles) {
-                if (filter.reserved(subFile.getName())) {
-                    files.add(new ReadableFile(subFile));
-                }
-            }
-        }
-        return new Readers(this.source(), files);
+    public void progress(InputProgress oldProgress, InputProgress newProgress) {
+        this.readers.progress(oldProgress, newProgress);
     }
 
-    private static void checkExistAndReadable(File file) {
-        if (!file.exists()) {
-            throw new LoadException("Please ensure the file or directory " +
-                                    "exists: '%s'", file);
+    @Override
+    public boolean hasNext() {
+        if (this.nextLine != null) {
+            return true;
         }
-        if (!file.canRead()) {
-            throw new LoadException("Please ensure the file or directory " +
-                                    "is readable: '%s'", file);
+        this.nextLine = this.fetch();
+        return this.nextLine != null;
+    }
+
+    @Override
+    public Line next() {
+        if (!this.hasNext()) {
+            throw new NoSuchElementException("Reached the end of file");
+        }
+        Line line = this.nextLine;
+        this.nextLine = null;
+        return line;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (this.readers != null) {
+            this.readers.close(false);
         }
     }
 
-    protected static class ReadableFile implements Readable {
-
-        private final File file;
-
-        public ReadableFile(File file) {
-            this.file = file;
+    protected Line fetch() {
+        int index = this.readers.index();
+        while (true) {
+            String rawLine = this.readNextLine();
+            if (rawLine == null) {
+                return null;
+            }
+            if (this.needSkipLine(rawLine)) {
+                continue;
+            }
+            boolean openNext = index != this.readers.index();
+            index = this.readers.index();
+            if (openNext && this.parser.parseHeader(rawLine)) {
+                continue;
+            }
+            return this.parser.parse(rawLine);
         }
+    }
 
-        public File file() {
-            return this.file;
+    private String readNextLine() {
+        E.checkState(this.readers != null, "The readers shouldn't be null");
+        try {
+            return this.readers.readNextLine();
+        } catch (IOException e) {
+            throw new LoadException("Error while reading the next line", e);
         }
+    }
 
-        @Override
-        public InputStream open() throws IOException {
-            return new FileInputStream(this.file);
-        }
+    private boolean needSkipLine(String line) {
+        return line.matches(this.source.skippedLine().regex());
+    }
 
-        @Override
-        public InputItem toInputItem() {
-            return new FileItem(this);
-        }
-
-        @Override
-        public String toString() {
-            return "FILE: " + this.file;
+    private static LineParser createLineParser(FileSource source) {
+        FileFormat format = source.format();
+        switch (format) {
+            case CSV:
+                return new CsvLineParser(source);
+            case TEXT:
+                return new TextLineParser(source);
+            case JSON:
+                return new JsonLineParser(source);
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported file format '%s'", source));
         }
     }
 }

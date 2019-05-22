@@ -59,7 +59,7 @@ public final class LoadOptions {
 
     @Parameter(names = {"--incremental-mode"}, arity = 1,
               description = "Load data from the breakpoint of last time")
-    public boolean incrementalMode = true;
+    public boolean incrementalMode = false;
 
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
