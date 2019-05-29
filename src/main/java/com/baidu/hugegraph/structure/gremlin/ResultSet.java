@@ -23,9 +23,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
+import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.serializer.PathDeserializer;
+import com.baidu.hugegraph.structure.constant.GraphAttachable;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -38,6 +41,8 @@ public class ResultSet {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private GraphManager graphManager = null;
+
     @JsonProperty
     private List<Object> data;
     @JsonProperty
@@ -47,6 +52,10 @@ public class ResultSet {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
         MAPPER.registerModule(module);
+    }
+
+    public void graphManager(GraphManager graphManager) {
+        this.graphManager = graphManager;
     }
 
     public List<Object> data() {
@@ -68,13 +77,18 @@ public class ResultSet {
         }
 
         Class<?> clazz = this.parseResultClass(object);
+        // Primitive type
         if (clazz.equals(object.getClass())) {
             return new Result(object);
         }
 
         try {
             String rawValue = MAPPER.writeValueAsString(object);
-            return new Result(MAPPER.readValue(rawValue, clazz));
+            object = MAPPER.readValue(rawValue, clazz);
+            if (object instanceof GraphAttachable) {
+                ((GraphAttachable) object).attachManager(graphManager);
+            }
+            return new Result(object);
         } catch (Exception e) {
             throw new SerializeException(
                       "Failed to deserialize: %s", e, object);
@@ -107,6 +121,7 @@ public class ResultSet {
 
     public Iterator<Result> iterator() {
         E.checkState(this.data != null, "Invalid response from server");
+        E.checkState(this.graphManager != null, "Must hold a graph manager");
 
         return new Iterator<Result>() {
 
@@ -119,6 +134,9 @@ public class ResultSet {
 
             @Override
             public Result next() {
+                if (!this.hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 return get(this.index++);
             }
 

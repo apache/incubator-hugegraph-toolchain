@@ -108,7 +108,7 @@ public class HugeClient implements Closeable {
         this.graphs = new GraphsManager(client);
         this.schema = new SchemaManager(client, graph);
         this.graph = new GraphManager(client, graph);
-        this.gremlin = new GremlinManager(client, graph);
+        this.gremlin = new GremlinManager(client, graph, this.graph);
         this.traverser = new TraverserManager(client, this.graph);
         this.variables = new VariablesManager(client, graph);
         this.job = new JobManager(client, graph);

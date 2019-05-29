@@ -27,11 +27,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.baidu.hugegraph.driver.GraphManager;
+import com.baidu.hugegraph.structure.constant.GraphAttachable;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.ReflectionUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class GraphElement extends Element {
+public abstract class GraphElement extends Element implements GraphAttachable {
 
     // Hold a graphManager object to call graphApi
     protected GraphManager manager;
@@ -47,6 +48,7 @@ public abstract class GraphElement extends Element {
         this.properties = new ConcurrentHashMap<>();
     }
 
+    @Override
     public void attachManager(GraphManager manager) {
         this.manager = manager;
     }
@@ -55,6 +57,7 @@ public abstract class GraphElement extends Element {
         return this.label;
     }
 
+    @Override
     public String type() {
         return this.type;
     }

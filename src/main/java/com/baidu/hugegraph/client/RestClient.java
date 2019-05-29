@@ -57,6 +57,7 @@ public class RestClient extends com.baidu.hugegraph.rest.RestClient {
               maxConns, maxConnsPerRoute);
     }
 
+    @Override
     protected void checkStatus(Response response, Response.Status... statuses) {
         boolean match = false;
         for (Response.Status status : statuses) {

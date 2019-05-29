@@ -19,13 +19,22 @@
 
 package com.baidu.hugegraph.api;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
+import com.baidu.hugegraph.structure.constant.GraphAttachable;
+import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Path;
+import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Whitebox;
 
 public class GremlinApiTest extends BaseApiTest {
 
@@ -92,7 +101,6 @@ public class GremlinApiTest extends BaseApiTest {
 
     @Test
     public void testAsyncRemoveAllEdges() {
-
         GremlinRequest request = new GremlinRequest("g.E()");
         ResultSet resultSet = gremlin().execute(request);
         Assert.assertEquals(6, resultSet.size());
@@ -105,5 +113,78 @@ public class GremlinApiTest extends BaseApiTest {
         request = new GremlinRequest("g.E()");
         resultSet = gremlin().execute(request);
         Assert.assertEquals(0, resultSet.size());
+    }
+
+    @Test
+    public void testPrimitiveObject() {
+        GremlinRequest request = new GremlinRequest("1 + 2");
+        ResultSet resultSet = gremlin().execute(request);
+        Assert.assertEquals(1, resultSet.size());
+
+        Iterator<Result> results = resultSet.iterator();
+        while (results.hasNext()) {
+            Result result = results.next();
+            Object object = result.getObject();
+            Assert.assertEquals(Integer.class, object.getClass());
+            Assert.assertEquals(3, object);
+        }
+    }
+
+    @Test
+    public void testIterateEmptyResultSet() {
+        GremlinRequest request = new GremlinRequest("g.V().limit(0)");
+        ResultSet resultSet = gremlin().execute(request);
+        Assert.assertEquals(0, resultSet.size());
+        Assert.assertThrows(NoSuchElementException.class, () -> {
+            resultSet.iterator().next();
+        });
+    }
+
+    @Test
+    public void testAttachedManager() {
+        GremlinRequest request = new GremlinRequest("g.V()");
+        ResultSet resultSet = gremlin().execute(request);
+        Assert.assertEquals(6, resultSet.size());
+
+        Iterator<Result> results = resultSet.iterator();
+        while (results.hasNext()) {
+            Result result = results.next();
+            Object object = result.getObject();
+            Assert.assertEquals(Vertex.class, object.getClass());
+            Vertex vertex = (Vertex) object;
+            Assert.assertNotNull(Whitebox.getInternalState(vertex, "manager"));
+        }
+
+        request = new GremlinRequest("g.E()");
+        resultSet = gremlin().execute(request);
+        Assert.assertEquals(6, resultSet.size());
+
+        results = resultSet.iterator();
+        while (results.hasNext()) {
+            Result result = results.next();
+            Object object = result.getObject();
+            Assert.assertEquals(Edge.class, object.getClass());
+            Edge edge = (Edge) object;
+            Assert.assertNotNull(Whitebox.getInternalState(edge, "manager"));
+        }
+
+        request = new GremlinRequest("g.V().outE().path()");
+        resultSet = gremlin().execute(request);
+        Assert.assertEquals(6, resultSet.size());
+
+        results = resultSet.iterator();
+        while (results.hasNext()) {
+            Result result = results.next();
+            Object object = result.getObject();
+            Assert.assertEquals(Path.class, object.getClass());
+            Path path = (Path) object;
+            Assert.assertNotNull(path.objects());
+            for (Object pathObject : path.objects()) {
+                Assert.assertTrue(pathObject instanceof GraphAttachable);
+                Assert.assertNotNull(Whitebox.getInternalState(pathObject,
+                                                               "manager"));
+            }
+            Assert.assertNull(path.crosspoint());
+        }
     }
 }

@@ -1,3 +1,22 @@
+/*
+ * Copyright 2017 HugeGraph Authors
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.baidu.hugegraph.unit;
 
 import java.util.ArrayList;
@@ -11,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.structure.constant.Cardinality;
@@ -35,15 +55,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-public class RestResultTest {
+public class RestResultTest extends BaseUnitTest {
 
     private javax.ws.rs.core.Response mockResponse;
+    private static GraphManager graphManager;
 
     @BeforeClass
     public static void init() {
+        graphManager = Mockito.mock(GraphManager.class);
+
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
         RestResult.registerModule(module);
+    }
+
+    public static GraphManager graph() {
+        return graphManager;
     }
 
     @Before
@@ -627,6 +654,9 @@ public class RestResultTest {
         Assert.assertNull(restResult.headers());
 
         Response response = restResult.readObject(Response.class);
+        response.graphManager(graph());
+        Assert.assertEquals("b0fd8ead-333f-43ac-97b0-4d78784726ae",
+                            response.requestId());
         Assert.assertEquals(200, response.status().code());
 
         Vertex marko = new Vertex("person");
@@ -712,6 +742,7 @@ public class RestResultTest {
         Assert.assertNull(restResult.headers());
 
         Response response = restResult.readObject(Response.class);
+        response.graphManager(graph());
         Assert.assertEquals(200, response.status().code());
 
         Edge created = new Edge("created");
@@ -799,6 +830,7 @@ public class RestResultTest {
         Assert.assertNull(restResult.headers());
 
         Response response = restResult.readObject(Response.class);
+        response.graphManager(graph());
         Assert.assertEquals(200, response.status().code());
 
         Iterator<Result> results = response.result().iterator();
@@ -856,6 +888,7 @@ public class RestResultTest {
         Assert.assertNull(restResult.headers());
 
         Response response = restResult.readObject(Response.class);
+        response.graphManager(graph());
         Assert.assertEquals(200, response.status().code());
 
         Iterator<Result> results = response.result().iterator();
@@ -900,6 +933,7 @@ public class RestResultTest {
         Assert.assertNull(restResult.headers());
 
         Response response = restResult.readObject(Response.class);
+        response.graphManager(graph());
         Assert.assertEquals(200, response.status().code());
 
         Iterator<Result> results = response.result().iterator();
@@ -959,6 +993,7 @@ public class RestResultTest {
         Assert.assertNull(restResult.headers());
 
         Response response = restResult.readObject(Response.class);
+        response.graphManager(graph());
         Assert.assertEquals(200, response.status().code());
 
         Iterator<Result> results = response.result().iterator();

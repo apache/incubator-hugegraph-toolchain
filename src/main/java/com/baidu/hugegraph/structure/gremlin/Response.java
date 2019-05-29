@@ -21,6 +21,7 @@ package com.baidu.hugegraph.structure.gremlin;
 
 import java.util.Map;
 
+import com.baidu.hugegraph.driver.GraphManager;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Response {
@@ -52,6 +53,10 @@ public class Response {
     private Status status;
     @JsonProperty
     private ResultSet result;
+
+    public void graphManager(GraphManager graphManager) {
+        this.result.graphManager(graphManager);
+    }
 
     public String requestId() {
         return this.requestId;

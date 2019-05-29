@@ -17,17 +17,11 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.unit;
+package com.baidu.hugegraph.structure.constant;
 
-import com.baidu.hugegraph.util.JsonUtil;
+import com.baidu.hugegraph.driver.GraphManager;
 
-public class BaseUnitTest {
+public interface GraphAttachable {
 
-    public static <T> String serialize(T data) {
-        return JsonUtil.toJson(data);
-    }
-
-    public static <T> T deserialize(String json, Class<T> clazz) {
-        return JsonUtil.fromJson(json, clazz);
-    }
+    public void attachManager(GraphManager manager);
 }
