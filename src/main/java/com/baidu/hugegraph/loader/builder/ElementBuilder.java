@@ -69,7 +69,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
         this.reader = InputReaderFactory.create(source.input());
         this.client = HugeClientWrapper.get(context.options());
         this.schemas = HashBasedTable.create();
-        this.progress(context);
+        // NOTE: Must set progress before than init reader
+        this.progress(source, context);
         try {
             this.reader.init();
         } catch (Exception e) {
@@ -85,14 +86,15 @@ public abstract class ElementBuilder<GE extends GraphElement>
         return this.reader;
     }
 
-    private void progress(LoadContext context) {
+    private void progress(ElementSource source, LoadContext context) {
         LoadProgress oldProgress = context.oldProgress();
         LoadProgress newProgress = context.newProgress();
-        ElementSource source = this.source();
         InputProgress oldInputProgress = oldProgress.get(this.type(), source);
         if (oldInputProgress == null) {
             oldInputProgress = new InputProgress(source);
         }
+        // Update loading element source
+        newProgress.addSource(this.type(), source);
         InputProgress newInputProgress = newProgress.get(this.type(), source);
         this.reader.progress(oldInputProgress, newInputProgress);
     }

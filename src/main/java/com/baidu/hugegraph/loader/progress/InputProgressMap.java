@@ -22,14 +22,17 @@ package com.baidu.hugegraph.loader.progress;
 import java.util.HashMap;
 
 import com.baidu.hugegraph.loader.source.graph.ElementSource;
+import com.baidu.hugegraph.util.E;
 
 public final class InputProgressMap extends HashMap<String, InputProgress> {
 
     public InputProgress get(ElementSource source) {
+        E.checkNotNull(source, "element source");
         return this.get(source.uniqueKey());
     }
 
     public void addSource(ElementSource source) {
+        E.checkNotNull(source, "element source");
         this.put(source.uniqueKey(), new InputProgress(source));
     }
 }

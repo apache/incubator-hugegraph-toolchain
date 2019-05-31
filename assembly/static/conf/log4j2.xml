@@ -2,35 +2,35 @@
 
 <configuration status="error">
     <Properties>
-        <property name="log_charset">UTF-8</property>
+        <property name="log-charset">UTF-8</property>
     </Properties>
     <appenders>
         <Console name="console" target="SYSTEM_OUT">
             <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout charset="${log_charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} %-5r [%t] [%-5p] %c %x - %m%n" />
+            <PatternLayout charset="${log-charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} %-5r [%t] [%-5p] %c %x - %m%n" />
         </Console>
 
         <RollingFile name="file" fileName="logs/hugegraph-loader.log"
                      filePattern="logs/hugegraph-loader-%d{yyyy-MM-dd}-%i.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout charset="${log_charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} %-5r [%t] [%-5p] %c %x - %m%n" />
+            <PatternLayout charset="${log-charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} %-5r [%t] [%-5p] %c %x - %m%n" />
             <SizeBasedTriggeringPolicy size="100MB"/>
         </RollingFile>
-        <File name="parse-error-file" fileName="logs/parse_error.data" append="false">
+        <File name="parse-error-file" fileName="logs/parse-error.data" append="false">
             <PatternLayout>
-                <Charset>${log_charset}</Charset>
+                <Charset>${log-charset}</Charset>
                 <Pattern>%m%n</Pattern>
             </PatternLayout>
         </File>
-        <File name="vertex-insert-error-file" fileName="logs/vertex_insert_error.data" append="false">
+        <File name="vertex-insert-error-file" fileName="logs/vertex-insert-error.data" append="false">
             <PatternLayout>
-                <Charset>${log_charset}</Charset>
+                <Charset>${log-charset}</Charset>
                 <Pattern>%m%n</Pattern>
             </PatternLayout>
         </File>
-        <File name="edge-insert-error-file" fileName="logs/edge_insert_error.data" append="false">
+        <File name="edge-insert-error-file" fileName="logs/edge-insert-error.data" append="false">
             <PatternLayout>
-                <Charset>${log_charset}</Charset>
+                <Charset>${log-charset}</Charset>
                 <Pattern>%m%n</Pattern>
             </PatternLayout>
         </File>
@@ -40,18 +40,19 @@
             <appender-ref ref="console"/>
             <appender-ref ref="file"/>
         </root>
-        <logger name="org.apache.cassandra" level="INFO" additivity="false">
+        <logger name="org.apache.cassandra" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="org.apache.hadoop" level="INFO" additivity="false">
+        <logger name="org.apache.hadoop" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="io.netty" level="INFO" additivity="false">
+        <logger name="io.netty" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="org.apache.commons" level="INFO" additivity="false">
+        <logger name="org.apache.commons" level="WARN" additivity="false">
             <appender-ref ref="file"/>
         </logger>
+
         <logger name="com.baidu.hugegraph" level="INFO" additivity="false">
             <appender-ref ref="file"/>
         </logger>

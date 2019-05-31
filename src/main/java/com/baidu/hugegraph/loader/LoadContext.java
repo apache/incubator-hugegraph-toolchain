@@ -37,23 +37,23 @@ import com.beust.jcommander.JCommander;
 
 public final class LoadContext {
 
-    private static final Logger LOG = Log.logger(HugeGraphLoader.class);
+    private static final Logger LOG = Log.logger(LoadContext.class);
 
-    private final LoadOptions loadOptions;
+    private final LoadOptions options;
+    private final LoadSummary summary;
     // The old progress just used to read
     private final LoadProgress oldProgress;
     private final LoadProgress newProgress;
-    private final LoadSummary loadSummary;
 
     public LoadContext(String[] args) {
-        this.loadOptions = parseCheckOptions(args);
-        this.oldProgress = parseLoadProgress(this.loadOptions);
+        this.options = parseCheckOptions(args);
+        this.summary = new LoadSummary();
+        this.oldProgress = parseLoadProgress(this.options);
         this.newProgress = new LoadProgress();
-        this.loadSummary = new LoadSummary();
     }
 
     public LoadOptions options() {
-        return this.loadOptions;
+        return this.options;
     }
 
     public LoadProgress oldProgress() {
@@ -65,7 +65,7 @@ public final class LoadContext {
     }
 
     public LoadSummary summary() {
-        return this.loadSummary;
+        return this.summary;
     }
 
     private static LoadOptions parseCheckOptions(String[] args) {

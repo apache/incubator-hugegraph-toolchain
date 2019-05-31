@@ -66,6 +66,15 @@ public final class LoadProgress {
         }
     }
 
+    public void addSource(ElemType type, ElementSource source) {
+        if (type.isVertex()) {
+            this.vertexProgress.addSource(source);
+        } else {
+            assert type.isEdge();
+            this.edgeProgress.addSource(source);
+        }
+    }
+
     public void write(String structFileName) throws IOException {
         String fileName = getProgressFileName(structFileName);
         File file = FileUtils.getFile(fileName);

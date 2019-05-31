@@ -37,7 +37,6 @@ import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.source.graph.EdgeSource;
 import com.baidu.hugegraph.loader.source.graph.GraphSource;
 import com.baidu.hugegraph.loader.source.graph.VertexSource;
@@ -82,19 +81,19 @@ public final class HugeGraphLoader {
 
     private void load() {
         // Create schema
-        this.createSchema(this.context);
+        this.createSchema();
         // Load vertices
-        this.loadVertices(this.context);
+        this.loadVertices();
         // Load edges
-        this.loadEdges(this.context);
+        this.loadEdges();
         // Print load summary
         Printer.printSummary(this.context);
 
         this.stopLoading(Constants.EXIT_CODE_NORM);
     }
 
-    private void createSchema(LoadContext context) {
-        LoadOptions options = context.options();
+    private void createSchema() {
+        LoadOptions options = this.context.options();
         File schemaFile = FileUtils.getFile(options.schema);
         HugeClient client = HugeClientWrapper.get(options);
         GroovyExecutor groovyExecutor = new GroovyExecutor();
@@ -109,22 +108,17 @@ public final class HugeGraphLoader {
         groovyExecutor.execute(script, client);
     }
 
-    private void loadVertices(LoadContext context) {
-        LoadOptions options = context.options();
-        LoadMetrics metrics = context.summary().vertexMetrics();
-
+    private void loadVertices() {
+        LoadMetrics metrics = this.context.summary().vertexMetrics();
         Printer.printElemType(metrics.type());
         metrics.startTimer();
 
-        InputProgressMap newVertexProgress = context.newProgress().vertex();
         // Execute loading tasks
         List<VertexSource> vertexSources = this.graphSource.vertexSources();
         for (VertexSource source : vertexSources) {
-            // Update loading element source
-            newVertexProgress.addSource(source);
             LOG.info("Loading vertex source '{}'", source.label());
-            try (VertexBuilder builder = new VertexBuilder(source, context)) {
-                this.loadVertex(builder, options, metrics);
+            try (VertexBuilder builder = new VertexBuilder(source, this.context)) {
+                this.loadVertex(builder, this.context.options(), metrics);
             }
         }
         // Waiting async worker threads finish
@@ -170,22 +164,17 @@ public final class HugeGraphLoader {
         }
     }
 
-    private void loadEdges(LoadContext context) {
-        LoadOptions options = context.options();
-        LoadMetrics metrics = context.summary().edgeMetrics();
-
+    private void loadEdges() {
+        LoadMetrics metrics = this.context.summary().edgeMetrics();
         Printer.printElemType(metrics.type());
         metrics.startTimer();
 
-        InputProgressMap newEdgeProgress = context.newProgress().edge();
         // Execute loading tasks
         List<EdgeSource> edgeSources = this.graphSource.edgeSources();
         for (EdgeSource source : edgeSources) {
-            // Update loading element source
-            newEdgeProgress.addSource(source);
             LOG.info("Loading edge source '{}'", source.label());
-            try (EdgeBuilder builder = new EdgeBuilder(source, context)) {
-                this.loadEdge(builder, options, metrics);
+            try (EdgeBuilder builder = new EdgeBuilder(source, this.context)) {
+                this.loadEdge(builder, this.context.options(), metrics);
             }
         }
         // Waiting async worker threads finish

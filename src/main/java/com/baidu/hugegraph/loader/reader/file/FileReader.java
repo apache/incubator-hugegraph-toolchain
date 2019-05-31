@@ -68,8 +68,9 @@ public abstract class FileReader implements InputReader {
 
     @Override
     public void init() {
-        String headerLine = this.readers.skipOffsetWithReadHeader();
-        if (this.parser.needHeader()) {
+        boolean needHeader = this.parser.needHeader();
+        String headerLine = this.readers.skipOffset(needHeader);
+        if (needHeader) {
             if (headerLine != null) {
                 this.parser.parseHeader(headerLine);
             } else {

@@ -42,7 +42,7 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 /**
- * Used to iterate all readable data source, like files, paths
+ * Used to iterate all readable data source, like local files, hdfs paths
  */
 public class Readers {
 
@@ -103,16 +103,20 @@ public class Readers {
         return line;
     }
 
-    public String skipOffsetWithReadHeader() {
+    public String skipOffset(boolean needHeader) {
         if (this.reader == null && (this.reader = this.openNext()) == null) {
             return null;
         }
 
-        String header;
+        String header = null;
         long offset = this.oldProgress.loadingOffset();
+        long start = 0L;
         try {
-            header = this.reader.readLine();
-            for (int i = 1; i < offset; i++) {
+            if (needHeader) {
+                header = this.reader.readLine();
+                start++;
+            }
+            for (long i = start; i < offset; i++) {
                 this.reader.readLine();
             }
         } catch (IOException e) {
@@ -144,20 +148,19 @@ public class Readers {
 
         Readable readable = this.readables.get(this.index);
         InputItemProgress inputItem = readable.inputItemProgress();
-        InputItemProgress matchItem = this.oldProgress.matchLoadedItem(
-                                                       inputItem);
+        InputItemProgress matchItem = this.oldProgress.matchLoadedItem(inputItem);
         // The file has been loaded before and it is not changed
         if (matchItem != null) {
             this.newProgress.addLoadedItem(matchItem);
             return this.openNext();
         }
         this.newProgress.addLoadingItem(inputItem);
-        LOG.info("Ready to open '{}'", readable);
 
         return this.openReader(readable);
     }
 
     private BufferedReader openReader(Readable readable) {
+        LOG.info("Ready to open '{}'", readable);
         InputStream stream = null;
         try {
             stream = readable.open();
