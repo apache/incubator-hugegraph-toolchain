@@ -29,23 +29,23 @@ import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.GraphElement;
 
-public abstract class InsertionTask<E extends GraphElement>
+public abstract class InsertionTask<GE extends GraphElement>
        implements Supplier<Integer> {
 
     private static final String ILLEGAL_ARGUMENT_EXCEPTION =
             "class java.lang.IllegalArgumentException";
 
-    private final List<E> batch;
+    private final List<GE> batch;
     private final LoadOptions options;
     private final HugeClient client;
 
-    public InsertionTask(List<E> batch, LoadOptions options) {
+    public InsertionTask(List<GE> batch, LoadOptions options) {
         this.batch = batch;
         this.options = options;
         this.client = HugeClientWrapper.get(options);
     }
 
-    public List<E> batch() {
+    public List<GE> batch() {
         return this.batch;
     }
 
@@ -81,7 +81,7 @@ public abstract class InsertionTask<E extends GraphElement>
         return this.batch.size();
     }
 
-    protected int waitThenRetry(int retryCount, RuntimeException e) {
+    private int waitThenRetry(int retryCount, RuntimeException e) {
         try {
             Thread.sleep(this.options.retryInterval * 1000);
         } catch (InterruptedException ignored) {

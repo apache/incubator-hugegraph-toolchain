@@ -26,7 +26,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -34,68 +33,56 @@ import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.progress.InputProgress;
-import com.baidu.hugegraph.loader.progress.LoadProgress;
+import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.graph.ElementSource;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
-import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.GraphElement;
-import com.baidu.hugegraph.structure.SchemaElement;
-import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
 
 public abstract class ElementBuilder<GE extends GraphElement>
                 implements AutoCloseableIterator<GE> {
 
     private static final Logger LOG = Log.logger(ElementBuilder.class);
 
-    private static final int VERTEX_ID_LIMIT = 128;
-
+    private final SchemaCache cache;
     private final InputReader reader;
-    private final HugeClient client;
-    private final Table<HugeType, String, SchemaElement> schemas;
 
     public ElementBuilder(ElementSource source, LoadContext context) {
+        this.cache = new SchemaCache(context);
         this.reader = InputReaderFactory.create(source.input());
-        this.client = HugeClientWrapper.get(context.options());
-        this.schemas = HashBasedTable.create();
-        // NOTE: Must set progress before than init reader
-        this.progress(source, context);
-        try {
-            this.reader.init();
-        } catch (Exception e) {
-            throw new LoadException("Failed to init input reader", e);
-        }
+        this.init(source, context);
     }
 
     public abstract ElemType type();
 
     public abstract ElementSource source();
 
-    public InputReader reader() {
-        return this.reader;
+    private void init(ElementSource source, LoadContext context) {
+        this.progress(source, context);
+        try {
+            this.reader.init(context);
+        } catch (Exception e) {
+            throw new LoadException("Failed to init input reader", e);
+        }
     }
 
     private void progress(ElementSource source, LoadContext context) {
-        LoadProgress oldProgress = context.oldProgress();
-        LoadProgress newProgress = context.newProgress();
-        InputProgress oldInputProgress = oldProgress.get(this.type(), source);
+        InputProgressMap oldProgress = context.oldProgress().get(this.type());
+        InputProgressMap newProgress = context.newProgress().get(this.type());
+        InputProgress oldInputProgress = oldProgress.getBySource(source);
         if (oldInputProgress == null) {
             oldInputProgress = new InputProgress(source);
         }
-        // Update loading element source
-        newProgress.addSource(this.type(), source);
-        InputProgress newInputProgress = newProgress.get(this.type(), source);
+        InputProgress newInputProgress = newProgress.getBySource(source);
         this.reader.progress(oldInputProgress, newInputProgress);
     }
 
@@ -125,6 +112,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
                      this.source(), e);
         }
     }
+
+    protected abstract SchemaLabel getSchemaLabel();
 
     protected abstract GE build(Map<String, Object> keyValues);
 
@@ -173,36 +162,16 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected PropertyKey getPropertyKey(String name) {
-        SchemaElement schema = this.schemas.get(HugeType.PROPERTY_KEY, name);
-        if (schema == null) {
-            schema = this.client.schema().getPropertyKey(name);
-        }
-        E.checkState(schema != null, "The property key %s doesn't exist", name);
-        this.schemas.put(HugeType.PROPERTY_KEY, name, schema);
-        return (PropertyKey) schema;
+        return this.cache.getPropertyKey(name);
     }
 
     protected VertexLabel getVertexLabel(String name) {
-        SchemaElement schema = this.schemas.get(HugeType.VERTEX_LABEL, name);
-        if (schema == null) {
-            schema = this.client.schema().getVertexLabel(name);
-        }
-        E.checkState(schema != null, "The vertex label %s doesn't exist", name);
-        this.schemas.put(HugeType.VERTEX_LABEL, name, schema);
-        return (VertexLabel) schema;
+        return this.cache.getVertexLabel(name);
     }
 
     protected EdgeLabel getEdgeLabel(String name) {
-        SchemaElement schema = this.schemas.get(HugeType.EDGE_LABEL, name);
-        if (schema == null) {
-            schema = this.client.schema().getEdgeLabel(name);
-        }
-        E.checkState(schema != null, "The edge label %s doesn't exist", name);
-        this.schemas.put(HugeType.EDGE_LABEL, name, schema);
-        return (EdgeLabel) schema;
+        return this.cache.getEdgeLabel(name);
     }
-
-    protected abstract SchemaLabel getSchemaLabel();
 
     protected Object validatePropertyValue(String key, Object rawValue) {
         PropertyKey pKey = this.getPropertyKey(key);
@@ -231,8 +200,8 @@ public abstract class ElementBuilder<GE extends GraphElement>
         return this.source().mappingValue(fieldName, fieldStrValue);
     }
 
-    protected String spliceVertexId(VertexLabel vertexLabel,
-                                    Object[] primaryValues) {
+    protected static String spliceVertexId(VertexLabel vertexLabel,
+                                           Object[] primaryValues) {
         E.checkArgument(vertexLabel.primaryKeys().size() == primaryValues.length,
                         "Missing some primary key columns, expect %s, " +
                         "but only got %s for vertex label '%s'",
@@ -254,10 +223,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
         return vertexId.toString();
     }
 
-    protected void checkVertexIdLength(String id) {
-        E.checkArgument(id.getBytes(Constants.CHARSET).length <= VERTEX_ID_LIMIT,
+    protected static void checkVertexIdLength(String id) {
+        E.checkArgument(id.getBytes(Constants.CHARSET).length <=
+                        Constants.VERTEX_ID_LIMIT,
                         "The vertex id length limit is '%s', '%s' exceeds it",
-                        VERTEX_ID_LIMIT, id);
+                        Constants.VERTEX_ID_LIMIT, id);
     }
 
     protected static long parseNumberId(Object idValue) {

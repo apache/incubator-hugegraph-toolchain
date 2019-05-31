@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.reader.InputReader;
@@ -54,17 +55,17 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
-    public void init() {
+    public void progress(InputProgress oldProgress, InputProgress newProgress) {
+        // throw new UnsupportedOperationException("JDBC progress");
+    }
+
+    @Override
+    public void init(LoadContext context) {
         try {
             this.fetcher.readHeader();
         } catch (SQLException e) {
             throw new LoadException("Failed to read column names", e);
         }
-    }
-
-    @Override
-    public void progress(InputProgress oldProgress, InputProgress newProgress) {
-        // throw new UnsupportedOperationException("JDBC progress");
     }
 
     @Override

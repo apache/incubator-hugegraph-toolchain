@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.compress.compressors.CompressorInputStream;
@@ -58,13 +59,17 @@ public class Readers {
     private int index;
     private BufferedReader reader;
 
-    public Readers(FileSource source, List<Readable> readables) {
+    public Readers(FileSource source) {
         E.checkNotNull(source, "source");
-        E.checkNotNull(readables, "readables");
         this.source = source;
-        this.readables = readables;
+        this.readables = new ArrayList<>();
         this.index = -1;
         this.reader = null;
+    }
+
+    public void readables(List<Readable> readables) {
+        E.checkNotNull(readables, "readables");
+        this.readables.addAll(readables);
     }
 
     public void progress(InputProgress oldProgress, InputProgress newProgress) {
@@ -130,7 +135,7 @@ public class Readers {
 
     public void close(boolean updateProgress) throws IOException {
         if (updateProgress) {
-            newProgress.loadingItemMarkLoaded();
+            this.newProgress.loadingItemMarkLoaded();
         }
         if (this.index < this.readables.size()) {
             Readable readable = this.readables.get(this.index);

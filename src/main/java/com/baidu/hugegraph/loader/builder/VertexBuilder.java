@@ -55,6 +55,11 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     }
 
     @Override
+    protected SchemaLabel getSchemaLabel() {
+        return this.vertexLabel;
+    }
+
+    @Override
     protected Vertex build(Map<String, Object> keyValues) {
         Vertex vertex = new Vertex(this.source.label());
         // Assign or check id if need
@@ -67,11 +72,6 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     @Override
     protected boolean isIdField(String fieldName) {
         return fieldName.equals(this.source.idField());
-    }
-
-    @Override
-    protected SchemaLabel getSchemaLabel() {
-        return this.vertexLabel;
     }
 
     private void assignIdIfNeed(Vertex vertex, Map<String, Object> keyValues) {

@@ -37,6 +37,7 @@ import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.source.graph.EdgeSource;
 import com.baidu.hugegraph.loader.source.graph.GraphSource;
 import com.baidu.hugegraph.loader.source.graph.VertexSource;
@@ -113,10 +114,13 @@ public final class HugeGraphLoader {
         Printer.printElemType(metrics.type());
         metrics.startTimer();
 
-        // Execute loading tasks
+        InputProgressMap newProgress = this.context.newProgress().vertex();
         List<VertexSource> vertexSources = this.graphSource.vertexSources();
         for (VertexSource source : vertexSources) {
+            // Update loading vertex source
+            newProgress.addSource(source);
             LOG.info("Loading vertex source '{}'", source.label());
+            // Produce batch vertices and execute loading tasks
             try (VertexBuilder builder = new VertexBuilder(source, this.context)) {
                 this.loadVertex(builder, this.context.options(), metrics);
             }
@@ -147,7 +151,7 @@ public final class HugeGraphLoader {
                 LOG_PARSE.error(e);
                 long failureNum = metrics.increaseParseFailure();
                 if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("Error: More than %s vertices " +
+                    Printer.printError("More than %s vertices " +
                                        "parsing error ... stopping",
                                        options.maxParseErrors);
                     this.stopLoading(Constants.EXIT_CODE_ERROR);
@@ -169,10 +173,13 @@ public final class HugeGraphLoader {
         Printer.printElemType(metrics.type());
         metrics.startTimer();
 
-        // Execute loading tasks
+        InputProgressMap newProgress = this.context.newProgress().edge();
         List<EdgeSource> edgeSources = this.graphSource.edgeSources();
         for (EdgeSource source : edgeSources) {
+            // Update loading edge source
+            newProgress.addSource(source);
             LOG.info("Loading edge source '{}'", source.label());
+            // Produce batch vertices and execute loading tasks
             try (EdgeBuilder builder = new EdgeBuilder(source, this.context)) {
                 this.loadEdge(builder, this.context.options(), metrics);
             }
@@ -203,7 +210,7 @@ public final class HugeGraphLoader {
                 LOG_PARSE.error(e);
                 long failureNum = metrics.increaseParseFailure();
                 if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("Error: More than %s edges " +
+                    Printer.printError("More than %s edges " +
                                        "parsing error ... stopping",
                                        options.maxParseErrors);
                     this.stopLoading(Constants.EXIT_CODE_ERROR);

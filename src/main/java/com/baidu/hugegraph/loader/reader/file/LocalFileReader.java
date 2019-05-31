@@ -40,7 +40,7 @@ public class LocalFileReader extends FileReader {
     }
 
     @Override
-    protected Readers openReaders() {
+    protected void openReaders() {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
 
@@ -58,7 +58,7 @@ public class LocalFileReader extends FileReader {
                 files.add(new LocalFile(subFile));
             }
         }
-        return new Readers(this.source(), files);
+        this.readers().readables(files);
     }
 
     private static void checkExistAndReadable(File file) {

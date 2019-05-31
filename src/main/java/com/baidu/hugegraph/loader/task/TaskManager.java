@@ -212,7 +212,7 @@ public final class TaskManager {
 
                     if (this.vertexMetrics.insertFailure() >=
                         this.options.maxInsertErrors) {
-                        Printer.printError("Error: More than %s vertices " +
+                        Printer.printError("More than %s vertices " +
                                            "insert error... stopping",
                                            this.options.maxInsertErrors);
                         LoadUtil.exit(Constants.EXIT_CODE_ERROR);
@@ -248,7 +248,7 @@ public final class TaskManager {
 
                     if (this.edgeMetrics.insertFailure() >=
                         this.options.maxInsertErrors) {
-                        Printer.printError("Error: More than %s edges " +
+                        Printer.printError("More than %s edges " +
                                            "insert error... stopping",
                                            this.options.maxInsertErrors);
                         LoadUtil.exit(Constants.EXIT_CODE_ERROR);

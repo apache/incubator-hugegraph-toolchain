@@ -39,4 +39,6 @@ public final class Constants {
     public static final long SINGLE_PRINT_FREQ = 10_000L;
     public static final String BATCH_WORKER = "batch-worker-%d";
     public static final String SINGLE_WORKER = "single-worker-%d";
+
+    public static final int VERTEX_ID_LIMIT = 128;
 }

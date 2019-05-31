@@ -26,14 +26,13 @@ import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.source.graph.ElementSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * LoadProgress was used to record progress of loading, in order to continue
- * loading when the last work was dropped out halfway.
- * The LoadProgress will only be operated by a single thread
+ * LoadProgress was used to record progress of loading, in order to
+ * continue loading when the last work was dropped out halfway.
+ * The LoadProgress will only be operated by a single thread.
  */
 public final class LoadProgress {
 
@@ -57,21 +56,12 @@ public final class LoadProgress {
         return this.edgeProgress;
     }
 
-    public InputProgress get(ElemType type, ElementSource source) {
+    public InputProgressMap get(ElemType type) {
         if (type.isVertex()) {
-            return this.vertexProgress.get(source);
+            return this.vertexProgress;
         } else {
             assert type.isEdge();
-            return this.edgeProgress.get(source);
-        }
-    }
-
-    public void addSource(ElemType type, ElementSource source) {
-        if (type.isVertex()) {
-            this.vertexProgress.addSource(source);
-        } else {
-            assert type.isEdge();
-            this.edgeProgress.addSource(source);
+            return this.edgeProgress;
         }
     }
 

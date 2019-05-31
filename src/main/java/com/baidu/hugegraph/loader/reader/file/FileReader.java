@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.parser.CsvLineParser;
 import com.baidu.hugegraph.loader.parser.JsonLineParser;
@@ -49,14 +50,8 @@ public abstract class FileReader implements InputReader {
 
     public FileReader(FileSource source) {
         this.source = source;
-        LOG.info("Opening source {}", this.source);
-        try {
-            this.readers = this.openReaders();
-        } catch (IOException e) {
-            throw new LoadException("Failed to open readers for '%s'",
-                                    this.source);
-        }
-        this.parser = createLineParser(this.source);
+        this.readers = new Readers(source);
+        this.parser = createLineParser(source);
         this.nextLine = null;
     }
 
@@ -64,10 +59,27 @@ public abstract class FileReader implements InputReader {
         return this.source;
     }
 
-    protected abstract Readers openReaders() throws IOException;
+    public Readers readers() {
+        return this.readers;
+    }
+
+    protected abstract void openReaders() throws IOException;
 
     @Override
-    public void init() {
+    public void progress(InputProgress oldProgress, InputProgress newProgress) {
+        this.readers.progress(oldProgress, newProgress);
+    }
+
+    @Override
+    public void init(LoadContext context) {
+        LOG.info("Opening source {}", this.source);
+        try {
+            this.openReaders();
+        } catch (IOException e) {
+            throw new LoadException("Failed to open readers for '%s'",
+                                    this.source);
+        }
+
         boolean needHeader = this.parser.needHeader();
         String headerLine = this.readers.skipOffset(needHeader);
         if (needHeader) {
@@ -78,11 +90,6 @@ public abstract class FileReader implements InputReader {
                                         "file source '%s'", this.source);
             }
         }
-    }
-
-    @Override
-    public void progress(InputProgress oldProgress, InputProgress newProgress) {
-        this.readers.progress(oldProgress, newProgress);
     }
 
     @Override

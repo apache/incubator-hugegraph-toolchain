@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.test.functional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -389,6 +390,25 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(328.0, vertex.property("price"));
     }
 
+    @Test
+    public void testCustomizedDelimiterInCsvFile() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko\t29\tBeijing");
+
+        String[] args = new String[]{
+                "-f", configPath("customized_delimiter_in_csv_file/struct.json"),
+                "-s", configPath("customized_delimiter_in_csv_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+    }
+
     /**
      * TODO: the order of collection's maybe change
      * (such as time:["2019-05-02 13:12:44","2008-05-02 13:12:44"])
@@ -484,11 +504,12 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
                             edge.property("feel"));
-        List<Long> expectedTimes = ImmutableList.of(
-                DateUtil.parse("2019-05-02", "yyyy-MM-dd").getTime(),
-                DateUtil.parse("2008-05-02", "yyyy-MM-dd").getTime()
-        );
-        Assert.assertEquals(expectedTimes, edge.property("time"));
+        Assert.assertEquals(ArrayList.class, edge.property("time").getClass());
+        List<?> list = (List<?>) edge.property("time");
+        Assert.assertTrue(list.contains(DateUtil.parse(
+                                        "2019-05-02", "yyyy-MM-dd").getTime()));
+        Assert.assertTrue(list.contains(DateUtil.parse(
+                                        "2008-05-02", "yyyy-MM-dd").getTime()));
     }
 
     @Test

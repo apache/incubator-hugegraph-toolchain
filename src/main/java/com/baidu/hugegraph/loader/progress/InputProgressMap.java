@@ -26,7 +26,7 @@ import com.baidu.hugegraph.util.E;
 
 public final class InputProgressMap extends HashMap<String, InputProgress> {
 
-    public InputProgress get(ElementSource source) {
+    public InputProgress getBySource(ElementSource source) {
         E.checkNotNull(source, "element source");
         return this.get(source.uniqueKey());
     }

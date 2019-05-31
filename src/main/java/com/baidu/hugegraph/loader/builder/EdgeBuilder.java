@@ -61,6 +61,11 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     }
 
     @Override
+    protected SchemaLabel getSchemaLabel() {
+        return this.edgeLabel;
+    }
+
+    @Override
     protected Edge build(Map<String, Object> keyValues) {
         Edge edge = new Edge(this.source.label());
         // Must add source/target vertex id
@@ -82,11 +87,6 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     protected boolean isIdField(String fieldName) {
         return this.source.sourceFields().contains(fieldName) ||
                this.source.targetFields().contains(fieldName);
-    }
-
-    @Override
-    protected SchemaLabel getSchemaLabel() {
-        return this.edgeLabel;
     }
 
     private Object buildVertexId(VertexLabel vertexLabel,

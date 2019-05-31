@@ -97,7 +97,7 @@ public final class Printer {
     }
 
     public static void printError(String message, Object... args) {
-        String formattedMsg = String.format(message, args);
+        String formattedMsg = String.format("Error: " + message, args);
         LOG.error(formattedMsg);
         // Print an empty line
         System.err.println();
