@@ -8,7 +8,7 @@ hugegraph-loader is a customizable command line utility for loading small to med
 
 ## Features
 
-- Multiple data sources, such as local file(path), hdfs file(path), mysql
+- Multiple data sources, such as local file(path), HDFS file(path), MySQL
 - Various input formats, such as json, csv, and text with any delimiters.
 - Diverse options, with which users can manage the data loading intuitively.
 - Detecting schema from data automatically, reduce the complex work of schema management.
