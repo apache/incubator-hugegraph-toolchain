@@ -17,26 +17,32 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source.graph;
+package com.baidu.hugegraph.loader.source.desc;
 
 import java.util.List;
 
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class EdgeSource extends ElementSource {
+public class EdgeDesc extends ElementDesc {
 
-    @JsonProperty("source")
+    @JsonProperty("desc")
     private final List<String> sourceFields;
     @JsonProperty("target")
     private final List<String> targetFields;
 
     @JsonCreator
-    public EdgeSource(@JsonProperty("source") List<String> sourceFields,
-                      @JsonProperty("target") List<String> targetFields) {
+    public EdgeDesc(@JsonProperty("desc") List<String> sourceFields,
+                    @JsonProperty("target") List<String> targetFields) {
         this.sourceFields = sourceFields;
         this.targetFields = targetFields;
+    }
+
+    @Override
+    public ElemType type() {
+        return ElemType.EDGE;
     }
 
     @Override
@@ -44,7 +50,7 @@ public class EdgeSource extends ElementSource {
         super.check();
         E.checkArgument(this.sourceFields != null &&
                         !this.sourceFields.isEmpty(),
-                        "The source field of edge label '%s' " +
+                        "The desc field of edge label '%s' " +
                         "can't be null or empty", this.label());
         E.checkArgument(this.targetFields != null &&
                         !this.targetFields.isEmpty(),
@@ -62,6 +68,6 @@ public class EdgeSource extends ElementSource {
 
     @Override
     public String toString() {
-        return String.format("edge-source(%s)", this.label());
+        return String.format("EdgeDesc(%s)", this.label());
     }
 }

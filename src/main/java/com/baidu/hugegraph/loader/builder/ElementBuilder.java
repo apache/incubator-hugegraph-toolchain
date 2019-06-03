@@ -32,13 +32,11 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.progress.InputProgress;
-import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.source.graph.ElementSource;
+import com.baidu.hugegraph.loader.source.desc.ElementDesc;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -53,37 +51,27 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     private static final Logger LOG = Log.logger(ElementBuilder.class);
 
-    private final SchemaCache cache;
+    private final SchemaCache schema;
     private final InputReader reader;
 
-    public ElementBuilder(ElementSource source, LoadContext context) {
-        this.cache = new SchemaCache(context);
+    public ElementBuilder(LoadContext context, ElementDesc source) {
+        this.schema = new SchemaCache(context);
         this.reader = InputReaderFactory.create(source.input());
         this.init(source, context);
     }
 
-    public abstract ElemType type();
+    public abstract ElementDesc desc();
 
-    public abstract ElementSource source();
+    public ElemType type() {
+        return this.desc().type();
+    }
 
-    private void init(ElementSource source, LoadContext context) {
-        this.progress(source, context);
+    private void init(ElementDesc source, LoadContext context) {
         try {
-            this.reader.init(context);
+            this.reader.init(context, source);
         } catch (Exception e) {
             throw new LoadException("Failed to init input reader", e);
         }
-    }
-
-    private void progress(ElementSource source, LoadContext context) {
-        InputProgressMap oldProgress = context.oldProgress().get(this.type());
-        InputProgressMap newProgress = context.newProgress().get(this.type());
-        InputProgress oldInputProgress = oldProgress.getBySource(source);
-        if (oldInputProgress == null) {
-            oldInputProgress = new InputProgress(source);
-        }
-        InputProgress newInputProgress = newProgress.getBySource(source);
-        this.reader.progress(oldInputProgress, newInputProgress);
     }
 
     @Override
@@ -109,7 +97,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
             this.reader.close();
         } catch (Exception e) {
             LOG.warn("Failed to close builder for {} with exception {}",
-                     this.source(), e);
+                     this.desc(), e);
         }
     }
 
@@ -121,20 +109,20 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
         // Retain selected fileds or remove ignored fields
-        if (!this.source().selectedFields().isEmpty()) {
-            keyValues.keySet().retainAll(this.source().selectedFields());
-        } else if (!this.source().ignoredFields().isEmpty()) {
-            keyValues.keySet().removeAll(this.source().ignoredFields());
+        if (!this.desc().selectedFields().isEmpty()) {
+            keyValues.keySet().retainAll(this.desc().selectedFields());
+        } else if (!this.desc().ignoredFields().isEmpty()) {
+            keyValues.keySet().removeAll(this.desc().ignoredFields());
         }
 
         SchemaLabel schemaLabel = this.getSchemaLabel();
         Set<String> nullableKeys = schemaLabel.nullableKeys();
-        Set<Object> nullValues = this.source().nullValues();
+        Set<Object> nullValues = this.desc().nullValues();
         if (!nullableKeys.isEmpty() && !nullValues.isEmpty()) {
             Iterator<Map.Entry<String, Object>> itor = keyValues.entrySet()
                                                                 .iterator();
             itor.forEachRemaining(entry -> {
-                String key = this.source().mappingField(entry.getKey());
+                String key = this.desc().mappingField(entry.getKey());
                 Object val = entry.getValue();
                 if (nullableKeys.contains(key) && nullValues.contains(val)) {
                     itor.remove();
@@ -153,7 +141,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
             if (this.isIdField(fieldName)) {
                 continue;
             }
-            String key = this.source().mappingField(fieldName);
+            String key = this.desc().mappingField(fieldName);
             fieldValue = this.mappingFieldValueIfNeeded(fieldName, fieldValue);
             Object value = this.validatePropertyValue(key, fieldValue);
 
@@ -162,26 +150,26 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected PropertyKey getPropertyKey(String name) {
-        return this.cache.getPropertyKey(name);
+        return this.schema.getPropertyKey(name);
     }
 
     protected VertexLabel getVertexLabel(String name) {
-        return this.cache.getVertexLabel(name);
+        return this.schema.getVertexLabel(name);
     }
 
     protected EdgeLabel getEdgeLabel(String name) {
-        return this.cache.getEdgeLabel(name);
+        return this.schema.getEdgeLabel(name);
     }
 
     protected Object validatePropertyValue(String key, Object rawValue) {
         PropertyKey pKey = this.getPropertyKey(key);
-        InputSource inputSource = this.source().input();
+        InputSource inputSource = this.desc().input();
         return DataTypeUtil.convert(rawValue, pKey, inputSource);
     }
 
     protected void checkFieldValue(String fieldName, Object fieldValue) {
-        if (this.source().mappingValues().isEmpty() ||
-            !this.source().mappingValues().containsKey(fieldName)) {
+        if (this.desc().mappingValues().isEmpty() ||
+            !this.desc().mappingValues().containsKey(fieldName)) {
             return;
         }
         // NOTE: The nullable values has been filtered before this
@@ -193,11 +181,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected Object mappingFieldValueIfNeeded(String fieldName,
                                                Object fieldValue) {
-        if (this.source().mappingValues().isEmpty()) {
+        if (this.desc().mappingValues().isEmpty()) {
             return fieldValue;
         }
         String fieldStrValue = String.valueOf(fieldValue);
-        return this.source().mappingValue(fieldName, fieldStrValue);
+        return this.desc().mappingValue(fieldName, fieldStrValue);
     }
 
     protected static String spliceVertexId(VertexLabel vertexLabel,

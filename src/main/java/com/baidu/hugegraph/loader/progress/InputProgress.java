@@ -22,7 +22,7 @@ package com.baidu.hugegraph.loader.progress;
 import java.util.Set;
 
 import com.baidu.hugegraph.loader.source.SourceType;
-import com.baidu.hugegraph.loader.source.graph.ElementSource;
+import com.baidu.hugegraph.loader.source.desc.ElementDesc;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,7 +47,7 @@ public final class InputProgress {
         this.loadingItem = loadingItem;
     }
 
-    public InputProgress(ElementSource source) {
+    public InputProgress(ElementDesc source) {
         this.type = source.input().type();
         this.loadedItems = InsertionOrderUtil.newSet();
         this.loadingItem = null;
@@ -84,7 +84,7 @@ public final class InputProgress {
         this.loadingItem.addOffset(increment);
     }
 
-    public void loadingItemMarkLoaded() {
+    public void markLoadingItemLoaded() {
         this.loadedItems.add(this.loadingItem);
         this.loadingItem = null;
     }

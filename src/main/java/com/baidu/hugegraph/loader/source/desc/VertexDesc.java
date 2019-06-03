@@ -17,20 +17,26 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source.graph;
+package com.baidu.hugegraph.loader.source.desc;
 
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class VertexSource extends ElementSource {
+public class VertexDesc extends ElementDesc {
 
     // Be null when id strategy is primary key
     @JsonProperty("id")
     private final String idField;
 
     @JsonCreator
-    public VertexSource(@JsonProperty("id") String idField) {
+    public VertexDesc(@JsonProperty("id") String idField) {
         this.idField = idField;
+    }
+
+    @Override
+    public ElemType type() {
+        return ElemType.VERTEX;
     }
 
     @Override
@@ -44,6 +50,6 @@ public class VertexSource extends ElementSource {
 
     @Override
     public String toString() {
-        return String.format("vertex-source(%s)", this.label());
+        return String.format("VertexDesc(%s)", this.label());
     }
 }

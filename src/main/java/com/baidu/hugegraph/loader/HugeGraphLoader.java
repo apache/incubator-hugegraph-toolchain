@@ -38,9 +38,9 @@ import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
-import com.baidu.hugegraph.loader.source.graph.EdgeSource;
-import com.baidu.hugegraph.loader.source.graph.GraphSource;
-import com.baidu.hugegraph.loader.source.graph.VertexSource;
+import com.baidu.hugegraph.loader.source.desc.EdgeDesc;
+import com.baidu.hugegraph.loader.source.desc.GraphDesc;
+import com.baidu.hugegraph.loader.source.desc.VertexDesc;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
@@ -57,7 +57,7 @@ public final class HugeGraphLoader {
                          FailureLogger.logger("parse-error");
 
     private final LoadContext context;
-    private final GraphSource graphSource;
+    private final GraphDesc graphDesc;
     private final TaskManager taskManager;
 
     public static void main(String[] args) {
@@ -67,7 +67,7 @@ public final class HugeGraphLoader {
 
     private HugeGraphLoader(String[] args) {
         this.context = new LoadContext(args);
-        this.graphSource = GraphSource.of(this.context);
+        this.graphDesc = GraphDesc.of(this.context);
         this.taskManager = new TaskManager(this.context);
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -81,12 +81,19 @@ public final class HugeGraphLoader {
     }
 
     private void load() {
-        // Create schema
-        this.createSchema();
-        // Load vertices
-        this.loadVertices();
-        // Load edges
-        this.loadEdges();
+        try {
+            // Create schema
+            this.createSchema();
+            // Load vertices
+            this.loadVertices();
+            // Load edges
+            this.loadEdges();
+        } catch (Exception e) {
+            Printer.printError("Failed to load due to " + e.getMessage(), e);
+            this.taskManager.shutdown();
+            throw e;
+        }
+
         // Print load summary
         Printer.printSummary(this.context);
 
@@ -115,13 +122,13 @@ public final class HugeGraphLoader {
         metrics.startTimer();
 
         InputProgressMap newProgress = this.context.newProgress().vertex();
-        List<VertexSource> vertexSources = this.graphSource.vertexSources();
-        for (VertexSource source : vertexSources) {
-            // Update loading vertex source
-            newProgress.addSource(source);
-            LOG.info("Loading vertex source '{}'", source.label());
+        List<VertexDesc> vertexDescs = this.graphDesc.vertexDescs();
+        for (VertexDesc desc : vertexDescs) {
+            // Update loading vertex desc
+            newProgress.addDesc(desc);
+            LOG.info("Loading vertex desc '{}'", desc.label());
             // Produce batch vertices and execute loading tasks
-            try (VertexBuilder builder = new VertexBuilder(source, this.context)) {
+            try (VertexBuilder builder = new VertexBuilder(this.context, desc)) {
                 this.loadVertex(builder, this.context.options(), metrics);
             }
         }
@@ -174,13 +181,13 @@ public final class HugeGraphLoader {
         metrics.startTimer();
 
         InputProgressMap newProgress = this.context.newProgress().edge();
-        List<EdgeSource> edgeSources = this.graphSource.edgeSources();
-        for (EdgeSource source : edgeSources) {
-            // Update loading edge source
-            newProgress.addSource(source);
-            LOG.info("Loading edge source '{}'", source.label());
+        List<EdgeDesc> edgeDescs = this.graphDesc.edgeDescs();
+        for (EdgeDesc desc : edgeDescs) {
+            // Update loading edge desc
+            newProgress.addDesc(desc);
+            LOG.info("Loading edge desc '{}'", desc.label());
             // Produce batch vertices and execute loading tasks
-            try (EdgeBuilder builder = new EdgeBuilder(source, this.context)) {
+            try (EdgeBuilder builder = new EdgeBuilder(this.context, desc)) {
                 this.loadEdge(builder, this.context.options(), metrics);
             }
         }

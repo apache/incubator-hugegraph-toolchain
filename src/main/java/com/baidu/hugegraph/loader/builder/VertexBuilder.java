@@ -23,8 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.loader.LoadContext;
-import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.source.graph.VertexSource;
+import com.baidu.hugegraph.loader.source.desc.VertexDesc;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
@@ -33,25 +32,20 @@ import com.baidu.hugegraph.util.E;
 
 public class VertexBuilder extends ElementBuilder<Vertex> {
 
-    private final VertexSource source;
+    private final VertexDesc desc;
     private final VertexLabel vertexLabel;
 
-    public VertexBuilder(VertexSource source, LoadContext context) {
-        super(source, context);
-        this.source = source;
-        this.vertexLabel = this.getVertexLabel(source.label());
+    public VertexBuilder(LoadContext context, VertexDesc desc) {
+        super(context, desc);
+        this.desc = desc;
+        this.vertexLabel = this.getVertexLabel(desc.label());
         // Ensure the id field is matched with id strategy
         this.checkIdField();
     }
 
     @Override
-    public ElemType type() {
-        return ElemType.VERTEX;
-    }
-
-    @Override
-    public VertexSource source() {
-        return this.source;
+    public VertexDesc desc() {
+        return this.desc;
     }
 
     @Override
@@ -61,7 +55,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
     @Override
     protected Vertex build(Map<String, Object> keyValues) {
-        Vertex vertex = new Vertex(this.source.label());
+        Vertex vertex = new Vertex(this.desc.label());
         // Assign or check id if need
         this.assignIdIfNeed(vertex, keyValues);
         // Add properties
@@ -71,18 +65,18 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
     @Override
     protected boolean isIdField(String fieldName) {
-        return fieldName.equals(this.source.idField());
+        return fieldName.equals(this.desc.idField());
     }
 
     private void assignIdIfNeed(Vertex vertex, Map<String, Object> keyValues) {
         // The id strategy must be CUSTOMIZE/PRIMARY_KEY via 'checkIdField()'
         IdStrategy idStrategy = this.vertexLabel.idStrategy();
         if (idStrategy.isCustomize()) {
-            assert this.source.idField() != null;
-            Object idValue = keyValues.get(this.source.idField());
+            assert this.desc.idField() != null;
+            Object idValue = keyValues.get(this.desc.idField());
             E.checkArgument(idValue != null,
                             "The value of id field '%s' can't be null",
-                            this.source.idField());
+                            this.desc.idField());
 
             if (idStrategy.isCustomizeString()) {
                 String id = (String) idValue;
@@ -102,7 +96,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                 Object fieldValue = entry.getValue();
                 this.checkFieldValue(fieldName, fieldValue);
 
-                String key = this.source.mappingField(fieldName);
+                String key = this.desc.mappingField(fieldName);
                 if (!primaryKeys.contains(key)) {
                     continue;
                 }
@@ -120,12 +114,12 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     private void checkIdField() {
         String name = this.vertexLabel.name();
         if (this.vertexLabel.idStrategy().isCustomize()) {
-            E.checkState(this.source.idField() != null,
+            E.checkState(this.desc.idField() != null,
                          "The id field can't be empty or null when " +
                          "id strategy is CUSTOMIZE for vertex label '%s'",
                          name);
         } else if (this.vertexLabel.idStrategy().isPrimaryKey()) {
-            E.checkState(this.source.idField() == null,
+            E.checkState(this.desc.idField() == null,
                          "The id field must be empty or null when " +
                          "id strategy is PRIMARY_KEY for vertex label '%s'",
                          name);

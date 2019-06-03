@@ -20,9 +20,7 @@
 package com.baidu.hugegraph.loader.builder;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.LoadContext;
-import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -45,42 +43,27 @@ public final class SchemaCache {
     public PropertyKey getPropertyKey(String name) {
         SchemaElement schema = this.schemas.get(HugeType.PROPERTY_KEY, name);
         if (schema == null) {
-            try {
-                schema = this.client.schema().getPropertyKey(name);
-            } catch (ServerException e) {
-                throw new LoadException("The property key %s doesn't exist",
-                                        e, name);
-            }
+            schema = this.client.schema().getPropertyKey(name);
+            this.schemas.put(HugeType.PROPERTY_KEY, name, schema);
         }
-        this.schemas.put(HugeType.PROPERTY_KEY, name, schema);
         return (PropertyKey) schema;
     }
 
     public VertexLabel getVertexLabel(String name) {
         SchemaElement schema = this.schemas.get(HugeType.VERTEX_LABEL, name);
         if (schema == null) {
-            try {
-                schema = this.client.schema().getVertexLabel(name);
-            } catch (ServerException e) {
-                throw new LoadException("The vertex label %s doesn't exist",
-                                        e, name);
-            }
+            schema = this.client.schema().getVertexLabel(name);
+            this.schemas.put(HugeType.VERTEX_LABEL, name, schema);
         }
-        this.schemas.put(HugeType.VERTEX_LABEL, name, schema);
         return (VertexLabel) schema;
     }
 
     public EdgeLabel getEdgeLabel(String name) {
         SchemaElement schema = this.schemas.get(HugeType.EDGE_LABEL, name);
         if (schema == null) {
-            try {
-                schema = this.client.schema().getEdgeLabel(name);
-            } catch (ServerException e) {
-                throw new LoadException("The edge label %s doesn't exist",
-                                        e, name);
-            }
+            schema = this.client.schema().getEdgeLabel(name);
+            this.schemas.put(HugeType.EDGE_LABEL, name, schema);
         }
-        this.schemas.put(HugeType.EDGE_LABEL, name, schema);
         return (EdgeLabel) schema;
     }
 }

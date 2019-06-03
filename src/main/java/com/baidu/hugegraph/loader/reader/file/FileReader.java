@@ -25,16 +25,19 @@ import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.LoadContext;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.parser.CsvLineParser;
 import com.baidu.hugegraph.loader.parser.JsonLineParser;
 import com.baidu.hugegraph.loader.parser.LineParser;
 import com.baidu.hugegraph.loader.parser.TextLineParser;
 import com.baidu.hugegraph.loader.progress.InputProgress;
+import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.source.desc.ElementDesc;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
@@ -43,15 +46,14 @@ public abstract class FileReader implements InputReader {
     private static final Logger LOG = Log.logger(FileReader.class);
 
     private final FileSource source;
-    private final Readers readers;
     private final LineParser parser;
-
+    private Readers readers;
     private Line nextLine;
 
     public FileReader(FileSource source) {
         this.source = source;
-        this.readers = new Readers(source);
         this.parser = createLineParser(source);
+        this.readers = null;
         this.nextLine = null;
     }
 
@@ -59,26 +61,18 @@ public abstract class FileReader implements InputReader {
         return this.source;
     }
 
-    public Readers readers() {
-        return this.readers;
-    }
-
-    protected abstract void openReaders() throws IOException;
+    protected abstract Readers openReaders() throws IOException;
 
     @Override
-    public void progress(InputProgress oldProgress, InputProgress newProgress) {
-        this.readers.progress(oldProgress, newProgress);
-    }
-
-    @Override
-    public void init(LoadContext context) {
-        LOG.info("Opening source {}", this.source);
+    public void init(LoadContext context, ElementDesc desc) {
+        LOG.info("Opening desc {}", this.source);
         try {
-            this.openReaders();
+            this.readers = this.openReaders();
         } catch (IOException e) {
             throw new LoadException("Failed to open readers for '%s'",
                                     this.source);
         }
+        this.progress(context, desc);
 
         boolean needHeader = this.parser.needHeader();
         String headerLine = this.readers.skipOffset(needHeader);
@@ -87,9 +81,21 @@ public abstract class FileReader implements InputReader {
                 this.parser.parseHeader(headerLine);
             } else {
                 throw new LoadException("Failed to read header from " +
-                                        "file source '%s'", this.source);
+                                        "file desc '%s'", this.source);
             }
         }
+    }
+
+    private void progress(LoadContext context, ElementDesc desc) {
+        ElemType type = desc.type();
+        InputProgressMap oldProgress = context.oldProgress().get(type);
+        InputProgressMap newProgress = context.newProgress().get(type);
+        InputProgress oldInputProgress = oldProgress.getByDesc(desc);
+        if (oldInputProgress == null) {
+            oldInputProgress = new InputProgress(desc);
+        }
+        InputProgress newInputProgress = newProgress.getByDesc(desc);
+        this.readers.progress(oldInputProgress, newInputProgress);
     }
 
     @Override

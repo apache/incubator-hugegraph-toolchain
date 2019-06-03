@@ -39,6 +39,7 @@ import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.reader.file.FileReader;
+import com.baidu.hugegraph.loader.reader.file.Readers;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HdfsSource;
 import com.baidu.hugegraph.util.Log;
@@ -79,7 +80,7 @@ public class HdfsFileReader extends FileReader {
     }
 
     @Override
-    protected void openReaders() throws IOException {
+    protected Readers openReaders() throws IOException {
         Path path = new Path(this.source().path());
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
@@ -100,7 +101,7 @@ public class HdfsFileReader extends FileReader {
                 }
             }
         }
-        this.readers().readables(paths);
+        return new Readers(this.source(), paths);
     }
 
     private Configuration loadConfiguration() {
@@ -172,7 +173,7 @@ public class HdfsFileReader extends FileReader {
                 timestamp = this.hdfs.getFileStatus(this.path)
                                      .getModificationTime();
             } catch (IOException e) {
-                throw new LoadException("Failed to getBySource last modified time " +
+                throw new LoadException("Failed to get last modified time " +
                                         "for hdfs path '%s'", e, this.path);
             }
             byte[] bytes;

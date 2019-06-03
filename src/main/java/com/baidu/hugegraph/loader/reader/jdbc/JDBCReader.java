@@ -25,9 +25,9 @@ import java.util.NoSuchElementException;
 
 import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.source.desc.ElementDesc;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 
 public class JDBCReader implements InputReader {
@@ -55,12 +55,7 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
-    public void progress(InputProgress oldProgress, InputProgress newProgress) {
-        // throw new UnsupportedOperationException("JDBC progress");
-    }
-
-    @Override
-    public void init(LoadContext context) {
+    public void init(LoadContext context, ElementDesc desc) {
         try {
             this.fetcher.readHeader();
         } catch (SQLException e) {

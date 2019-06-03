@@ -63,7 +63,7 @@ public class InputSourceDeser extends JsonDeserializer<InputSource> {
                 return JsonUtil.convert(node, JDBCSource.class);
             default:
                 throw new AssertionError(String.format(
-                          "Unsupported input source '%s'", type));
+                          "Unsupported input desc '%s'", type));
         }
     }
 

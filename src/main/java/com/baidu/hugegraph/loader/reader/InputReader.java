@@ -21,11 +21,9 @@ package com.baidu.hugegraph.loader.reader;
 
 import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
-import com.baidu.hugegraph.loader.progress.InputProgress;
+import com.baidu.hugegraph.loader.source.desc.ElementDesc;
 
 public interface InputReader extends AutoCloseableIterator<Line> {
 
-    public void progress(InputProgress oldProgress, InputProgress newProgress);
-
-    public void init(LoadContext context);
+    public void init(LoadContext context, ElementDesc source);
 }

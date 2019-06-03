@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source.graph;
+package com.baidu.hugegraph.loader.source.desc;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,56 +39,56 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class GraphSource implements Checkable {
+public class GraphDesc implements Checkable {
 
-    private static final Logger LOG = Log.logger(GraphSource.class);
+    private static final Logger LOG = Log.logger(GraphDesc.class);
 
     @JsonProperty("vertices")
-    private final List<VertexSource> vertexSources;
+    private final List<VertexDesc> vertexDescs;
     @JsonProperty("edges")
-    private final List<EdgeSource> edgeSources;
+    private final List<EdgeDesc> edgeDescs;
 
-    public GraphSource() {
-        this.vertexSources = new ArrayList<>();
-        this.edgeSources = new ArrayList<>();
+    public GraphDesc() {
+        this.vertexDescs = new ArrayList<>();
+        this.edgeDescs = new ArrayList<>();
     }
 
-    public static GraphSource of(LoadContext context) {
+    public static GraphDesc of(LoadContext context) {
         LoadOptions options = context.options();
         File file = FileUtils.getFile(options.file);
         try {
             String json = FileUtils.readFileToString(file, Constants.CHARSET);
-            GraphSource source = JsonUtil.fromJson(json, GraphSource.class);
+            GraphDesc source = JsonUtil.fromJson(json, GraphDesc.class);
             source.check();
             return source;
         } catch (IOException | IllegalArgumentException e) {
-            throw new LoadException("Read graph source file '%s' error",
+            throw new LoadException("Read graph desc file '%s' error",
                                     e, options.file);
         }
     }
 
     @Override
     public void check() throws IllegalArgumentException {
-        LOG.info("Checking vertex sources");
-        this.vertexSources.forEach(VertexSource::check);
-        this.checkNoSameSource(this.vertexSources);
-        LOG.info("Checking edge sources");
-        this.edgeSources.forEach(EdgeSource::check);
-        this.checkNoSameSource(this.edgeSources);
+        LOG.info("Checking vertex descs");
+        this.vertexDescs.forEach(VertexDesc::check);
+        this.checkNoSameSource(this.vertexDescs);
+        LOG.info("Checking edge descs");
+        this.edgeDescs.forEach(EdgeDesc::check);
+        this.checkNoSameSource(this.edgeDescs);
     }
 
-    public List<VertexSource> vertexSources() {
-        return this.vertexSources;
+    public List<VertexDesc> vertexDescs() {
+        return this.vertexDescs;
     }
 
-    public List<EdgeSource> edgeSources() {
-        return this.edgeSources;
+    public List<EdgeDesc> edgeDescs() {
+        return this.edgeDescs;
     }
 
-    private <T extends ElementSource> void checkNoSameSource(List<T> sources) {
-        Set<String> uniqueKeys = sources.stream().map(ElementSource::uniqueKey)
+    private <T extends ElementDesc> void checkNoSameSource(List<T> sources) {
+        Set<String> uniqueKeys = sources.stream().map(ElementDesc::uniqueKey)
                                         .collect(Collectors.toSet());
         E.checkArgument(sources.size() == uniqueKeys.size(),
-                        "Please ensure there is no same source in %s", sources);
+                        "Please ensure there is no same desc in %s", sources);
     }
 }

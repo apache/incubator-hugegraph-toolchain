@@ -31,7 +31,7 @@ public final class LoadOptions {
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
-               description = "The path of the data source description file")
+               description = "The path of the data desc description file")
     public String file;
 
     @Parameter(names = {"-g", "--graph"}, required = true, arity = 1,
