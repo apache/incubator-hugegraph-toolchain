@@ -34,7 +34,7 @@ public final class LoadOptions {
                description = "The path of the data struct description file")
     public String file;
 
-    @Parameter(names = {"-s", "--schema"}, required = true, arity = 1,
+    @Parameter(names = {"-s", "--schema"}, arity = 1,
                validateWith = {FileValidator.class},
                description = "The schema file path which to create manually")
     public String schema;

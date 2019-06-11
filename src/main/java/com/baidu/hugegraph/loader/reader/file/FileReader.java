@@ -81,7 +81,7 @@ public abstract class FileReader implements InputReader {
                 this.parser.parseHeader(headerLine);
             } else {
                 throw new LoadException("Failed to read header from " +
-                                        "file struct '%s'", this.source);
+                                        "file source '%s'", this.source);
             }
         }
     }

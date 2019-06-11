@@ -89,16 +89,6 @@ public final class LoadContext {
             LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
         }
 
-        // Check option "-s"
-        E.checkArgument(!StringUtils.isEmpty(options.schema),
-                        "Must specified schema file");
-        File schemaFile = new File(options.schema);
-        if (!schemaFile.canRead()) {
-            LOG.error("Schema file must be readable: '{}'",
-                      schemaFile.getAbsolutePath());
-            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
-        }
-
         // Check option "-g"
         E.checkArgument(!StringUtils.isEmpty(options.graph),
                         "Must specified a graph");

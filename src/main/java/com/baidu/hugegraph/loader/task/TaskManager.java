@@ -263,8 +263,6 @@ public final class TaskManager {
     private void submitInSingleMode(Runnable runnable) {
         CompletableFuture<Void> future;
         future = CompletableFuture.runAsync(runnable, this.singleService);
-        future.whenComplete((r, error) -> {
-            this.singleSemaphore.release();
-        });
+        future.whenComplete((r, error) -> this.singleSemaphore.release());
     }
 }

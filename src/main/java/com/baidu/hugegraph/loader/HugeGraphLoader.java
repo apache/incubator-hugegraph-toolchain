@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
@@ -105,6 +106,9 @@ public final class HugeGraphLoader {
 
     private void createSchema() {
         LoadOptions options = this.context.options();
+        if (StringUtils.isEmpty(options.schema)) {
+            return;
+        }
         File schemaFile = FileUtils.getFile(options.schema);
         HugeClient client = HugeClientWrapper.get(options);
         GroovyExecutor groovyExecutor = new GroovyExecutor();

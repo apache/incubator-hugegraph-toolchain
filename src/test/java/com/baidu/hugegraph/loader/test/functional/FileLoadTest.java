@@ -34,6 +34,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
@@ -209,6 +210,24 @@ public class FileLoadTest extends LoadTest {
             }
         }
         Assert.assertTrue(interestedEdge);
+    }
+
+    @Test
+    public void testNoSchemaFile() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("no_schema_file/struct.json"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ServerException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     @Test
