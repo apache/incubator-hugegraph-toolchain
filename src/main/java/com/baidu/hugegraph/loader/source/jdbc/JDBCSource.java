@@ -25,6 +25,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JDBCSource extends AbstractSource {
 
+    @JsonProperty("vendor")
+    private DBVendor vendor;
     @JsonProperty("driver")
     private String driver;
     @JsonProperty("url")
@@ -52,6 +54,10 @@ public class JDBCSource extends AbstractSource {
     @Override
     public void check() throws IllegalArgumentException {
         // pass
+    }
+
+    public DBVendor vendor() {
+        return this.vendor;
     }
 
     public String driver() {

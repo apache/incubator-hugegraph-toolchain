@@ -33,10 +33,12 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 public class InputSourceDeser extends JsonDeserializer<InputSource> {
 
     private static final String FIELD_TYPE = "type";
+    private static final String FIELD_VENDOR = "vendor";
 
     @Override
     public InputSource deserialize(JsonParser parser,
@@ -60,6 +62,10 @@ public class InputSourceDeser extends JsonDeserializer<InputSource> {
             case HDFS:
                 return JsonUtil.convert(node, HDFSSource.class);
             case JDBC:
+                JsonNode vendorNode = getNode(node, FIELD_VENDOR,
+                                              JsonNodeType.STRING);
+                vendorNode = TextNode.valueOf(vendorNode.asText().toUpperCase());
+                objectNode.replace(FIELD_VENDOR, vendorNode);
                 return JsonUtil.convert(node, JDBCSource.class);
             default:
                 throw new AssertionError(String.format(

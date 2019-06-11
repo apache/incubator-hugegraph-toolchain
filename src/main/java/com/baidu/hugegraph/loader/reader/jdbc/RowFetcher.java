@@ -41,9 +41,7 @@ public class RowFetcher {
 
     private static final Logger LOG = Log.logger(RowFetcher.class);
 
-    private final String database;
-    private final String table;
-
+    private final JDBCSource source;
     private final Connection conn;
 
     private final int batchSize;
@@ -52,25 +50,24 @@ public class RowFetcher {
     private boolean finished;
 
     public RowFetcher(JDBCSource source) throws SQLException {
-        this.database = source.database();
-        this.table = source.table();
+        this.source = source;
         this.batchSize = source.batchSize();
-        this.conn = this.connect(source);
+        this.conn = this.connect();
         this.columns = null;
         this.finished = false;
     }
 
-    private Connection connect(JDBCSource source) throws SQLException {
-        String url = source.url();
-        String database = source.database();
+    private Connection connect() throws SQLException {
+        String url = this.source.url();
+        String database = this.source.database();
         if (url.endsWith("/")) {
             url = String.format("%s%s", url, database);
         } else {
             url = String.format("%s/%s", url, database);
         }
 
-        int maxTimes = source.reconnectMaxTimes();
-        int interval = source.reconnectInterval();
+        int maxTimes = this.source.reconnectMaxTimes();
+        int interval = this.source.reconnectInterval();
 
         URIBuilder uriBuilder = new URIBuilder();
         uriBuilder.setPath(url)
@@ -81,9 +78,9 @@ public class RowFetcher {
                   .setParameter("maxReconnects", String.valueOf(maxTimes))
                   .setParameter("initialTimeout", String.valueOf(interval));
 
-        String driverName = source.driver();
-        String username = source.username();
-        String password = source.password();
+        String driverName = this.source.driver();
+        String username = this.source.username();
+        String password = this.source.password();
         try {
             // Register JDBC driver
             Class.forName(driverName);
@@ -94,11 +91,10 @@ public class RowFetcher {
     }
 
     public void readHeader() throws SQLException {
-        String sql = String.format("SELECT COLUMN_NAME " +
-                                   "FROM INFORMATION_SCHEMA.COLUMNS " +
-                                   "WHERE TABLE_NAME = '%s' " +
-                                   "AND TABLE_SCHEMA = '%s';",
-                                   this.table, this.database);
+        String database = this.source.database();
+        String table = this.source.table();
+        String sql = this.source.vendor().buildGetHeaderSql(database, table);
+
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
@@ -112,7 +108,7 @@ public class RowFetcher {
         }
         E.checkArgument(this.columns != null && this.columns.length != 0,
                         "The colmuns of the table '%s' shouldn't be empty",
-                        this.table);
+                        table);
     }
 
     public List<Line> nextBatch() throws SQLException {
@@ -156,7 +152,7 @@ public class RowFetcher {
         int limit = this.batchSize + 1;
 
         StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT * FROM ").append(this.table);
+        sqlBuilder.append("SELECT * FROM ").append(this.source.table());
 
         if (this.nextBatchStartRow != null) {
             WhereBuilder where = new WhereBuilder(true);
