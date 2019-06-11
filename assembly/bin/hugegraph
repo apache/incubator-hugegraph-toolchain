@@ -87,7 +87,7 @@ fi
 
 for ((i=1;i<=$#;i++));
 do
-    if [ `eval echo '$'"$i"` == "schedule-backup" ]; then
+    if [ "`eval echo '$'"$i"`" == "schedule-backup" ]; then
         ARGS=${*//schedule-backup/}
         bash $BIN/schedule-backup.sh $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG ${ARGS//'*'/'\*'}
         exit $?
@@ -105,4 +105,4 @@ if [ "$JAVA_OPTIONS" = "" ] ; then
 fi
 
 exec $JAVA $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
-com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $*
+com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG "$@"
