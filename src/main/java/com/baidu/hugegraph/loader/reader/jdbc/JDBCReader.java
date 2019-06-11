@@ -27,7 +27,7 @@ import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.source.desc.ElementDesc;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 
 public class JDBCReader implements InputReader {
@@ -55,7 +55,7 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
-    public void init(LoadContext context, ElementDesc desc) {
+    public void init(LoadContext context, ElementStruct struct) {
         try {
             this.fetcher.readHeader();
         } catch (SQLException e) {

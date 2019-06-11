@@ -31,17 +31,17 @@ public final class LoadOptions {
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
-               description = "The path of the data desc description file")
+               description = "The path of the data struct description file")
     public String file;
-
-    @Parameter(names = {"-g", "--graph"}, required = true, arity = 1,
-               description = "The namespace of the graph to load into")
-    public String graph;
 
     @Parameter(names = {"-s", "--schema"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
                description = "The schema file path which to create manually")
     public String schema;
+
+    @Parameter(names = {"-g", "--graph"}, required = true, arity = 1,
+               description = "The namespace of the graph to load into")
+    public String graph;
 
     @Parameter(names = {"-h", "--host"}, arity = 1,
                validateWith = {UrlValidator.class},

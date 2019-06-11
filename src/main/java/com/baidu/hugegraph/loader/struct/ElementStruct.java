@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source.desc;
+package com.baidu.hugegraph.loader.struct;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,7 +33,7 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.HashUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class ElementDesc implements Unique<String>, Checkable {
+public abstract class ElementStruct implements Unique<String>, Checkable {
 
     @JsonProperty("label")
     private String label;
@@ -50,7 +50,7 @@ public abstract class ElementDesc implements Unique<String>, Checkable {
     @JsonProperty("null_values")
     private Set<Object> nullValues;
 
-    public ElementDesc() {
+    public ElementStruct() {
         this.mappingFields = new HashMap<>();
         this.mappingValues = new HashMap<>();
         this.selectedFields = new HashSet<>();

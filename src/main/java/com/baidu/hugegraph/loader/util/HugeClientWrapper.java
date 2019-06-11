@@ -54,7 +54,7 @@ public final class HugeClientWrapper {
         }
     }
 
-//    Maybe make it unnecessary to distinguish vertex and edge in taskmanager
+//    Maybe unnecessary to distinguish vertex and edge in taskmanager
 //    @SuppressWarnings("unchecked")
 //    public static <GE extends GraphElement> List<GE> addBatch(ElemType type,
 //                                                              List<GE> elements,

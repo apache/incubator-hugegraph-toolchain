@@ -130,8 +130,8 @@ public final class Printer {
         System.out.println(message);
     }
 
-    private static void printAndLog(String desc, long value) {
-        String msg = String.format("    %-24s: %-20d", desc, value);
+    private static void printAndLog(String key, long value) {
+        String msg = String.format("    %-24s: %-20d", key, value);
         printAndLog(msg);
     }
 

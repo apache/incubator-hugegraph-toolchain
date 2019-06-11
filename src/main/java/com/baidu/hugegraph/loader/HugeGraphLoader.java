@@ -38,9 +38,9 @@ import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
-import com.baidu.hugegraph.loader.source.desc.EdgeDesc;
-import com.baidu.hugegraph.loader.source.desc.GraphDesc;
-import com.baidu.hugegraph.loader.source.desc.VertexDesc;
+import com.baidu.hugegraph.loader.struct.EdgeStruct;
+import com.baidu.hugegraph.loader.struct.GraphStruct;
+import com.baidu.hugegraph.loader.struct.VertexStruct;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
@@ -57,7 +57,7 @@ public final class HugeGraphLoader {
                          FailureLogger.logger("parse-error");
 
     private final LoadContext context;
-    private final GraphDesc graphDesc;
+    private final GraphStruct graphStruct;
     private final TaskManager taskManager;
 
     public static void main(String[] args) {
@@ -67,9 +67,12 @@ public final class HugeGraphLoader {
 
     private HugeGraphLoader(String[] args) {
         this.context = new LoadContext(args);
-        this.graphDesc = GraphDesc.of(this.context);
+        this.graphStruct = GraphStruct.of(this.context);
         this.taskManager = new TaskManager(this.context);
-        // Add shutdown hook
+        this.addShutdownHook();
+    }
+
+    private void addShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LoadOptions options = this.context.options();
             try {
@@ -122,13 +125,14 @@ public final class HugeGraphLoader {
         metrics.startTimer();
 
         InputProgressMap newProgress = this.context.newProgress().vertex();
-        List<VertexDesc> vertexDescs = this.graphDesc.vertexDescs();
-        for (VertexDesc desc : vertexDescs) {
-            // Update loading vertex desc
-            newProgress.addDesc(desc);
-            LOG.info("Loading vertex desc '{}'", desc.label());
+        List<VertexStruct> vertexStructs = this.graphStruct.vertexStructs();
+        for (VertexStruct struct : vertexStructs) {
+            // Update loading vertex struct
+            newProgress.addStruct(struct);
+            LOG.info("Loading vertex struct with label {}", struct.label());
             // Produce batch vertices and execute loading tasks
-            try (VertexBuilder builder = new VertexBuilder(this.context, desc)) {
+            try (VertexBuilder builder = new VertexBuilder(this.context,
+                                                           struct)) {
                 this.loadVertex(builder, this.context.options(), metrics);
             }
         }
@@ -181,13 +185,13 @@ public final class HugeGraphLoader {
         metrics.startTimer();
 
         InputProgressMap newProgress = this.context.newProgress().edge();
-        List<EdgeDesc> edgeDescs = this.graphDesc.edgeDescs();
-        for (EdgeDesc desc : edgeDescs) {
-            // Update loading edge desc
-            newProgress.addDesc(desc);
-            LOG.info("Loading edge desc '{}'", desc.label());
+        List<EdgeStruct> edgeStructs = this.graphStruct.edgeStructs();
+        for (EdgeStruct struct : edgeStructs) {
+            // Update loading edge struct
+            newProgress.addStruct(struct);
+            LOG.info("Loading edge struct with label {}", struct.label());
             // Produce batch vertices and execute loading tasks
-            try (EdgeBuilder builder = new EdgeBuilder(this.context, desc)) {
+            try (EdgeBuilder builder = new EdgeBuilder(this.context, struct)) {
                 this.loadEdge(builder, this.context.options(), metrics);
             }
         }

@@ -42,7 +42,7 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 /**
- * Used to iterate all readable data desc, like local files, hdfs paths
+ * Used to iterate all readable data files, like local files, hdfs paths
  */
 public class Readers {
 
@@ -59,7 +59,7 @@ public class Readers {
     private BufferedReader reader;
 
     public Readers(FileSource source, List<Readable> readables) {
-        E.checkNotNull(source, "desc");
+        E.checkNotNull(source, "source");
         E.checkNotNull(readables, "readables");
         this.source = source;
         this.readables = readables;

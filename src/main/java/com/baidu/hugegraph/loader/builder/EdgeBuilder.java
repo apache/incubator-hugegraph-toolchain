@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.loader.LoadContext;
-import com.baidu.hugegraph.loader.source.desc.EdgeDesc;
+import com.baidu.hugegraph.loader.struct.EdgeStruct;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -33,25 +33,25 @@ import com.baidu.hugegraph.util.E;
 
 public class EdgeBuilder extends ElementBuilder<Edge> {
 
-    private final EdgeDesc desc;
+    private final EdgeStruct struct;
     private final EdgeLabel edgeLabel;
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(LoadContext context, EdgeDesc desc) {
-        super(context, desc);
-        this.desc = desc;
-        this.edgeLabel = this.getEdgeLabel(desc.label());
+    public EdgeBuilder(LoadContext context, EdgeStruct struct) {
+        super(context, struct);
+        this.struct = struct;
+        this.edgeLabel = this.getEdgeLabel(struct.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
         this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
         // Ensure that the source/target id fileds are matched with id strategy
-        this.checkIdFields(this.sourceLabel, this.desc.sourceFields());
-        this.checkIdFields(this.targetLabel, this.desc.targetFields());
+        this.checkIdFields(this.sourceLabel, this.struct.sourceFields());
+        this.checkIdFields(this.targetLabel, this.struct.targetFields());
     }
 
     @Override
-    public EdgeDesc desc() {
-        return this.desc;
+    public EdgeStruct struct() {
+        return this.struct;
     }
 
     @Override
@@ -61,13 +61,13 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
 
     @Override
     protected Edge build(Map<String, Object> keyValues) {
-        Edge edge = new Edge(this.desc.label());
+        Edge edge = new Edge(this.struct.label());
         // Must add source/target vertex id
         edge.sourceId(this.buildVertexId(this.sourceLabel,
-                                         this.desc.sourceFields(),
+                                         this.struct.sourceFields(),
                                          keyValues));
         edge.targetId(this.buildVertexId(this.targetLabel,
-                                         this.desc.targetFields(),
+                                         this.struct.targetFields(),
                                          keyValues));
         // Must add source/target vertex label
         edge.sourceLabel(this.sourceLabel.name());
@@ -79,8 +79,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
 
     @Override
     protected boolean isIdField(String fieldName) {
-        return this.desc.sourceFields().contains(fieldName) ||
-               this.desc.targetFields().contains(fieldName);
+        return this.struct.sourceFields().contains(fieldName) ||
+               this.struct.targetFields().contains(fieldName);
     }
 
     private Object buildVertexId(VertexLabel vertexLabel,
@@ -119,7 +119,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                     return parseNumberId(mappedValue);
                 }
             } else {
-                String key = this.desc.mappingField(fieldName);
+                String key = this.struct.mappingField(fieldName);
                 Object value = this.validatePropertyValue(key, mappedValue);
                 // The id strategy of source/target label must be PRIMARY_KEY
                 if (primaryKeys.contains(key)) {

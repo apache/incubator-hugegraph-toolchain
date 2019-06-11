@@ -37,7 +37,7 @@ import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.source.desc.ElementDesc;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
@@ -64,15 +64,15 @@ public abstract class FileReader implements InputReader {
     protected abstract Readers openReaders() throws IOException;
 
     @Override
-    public void init(LoadContext context, ElementDesc desc) {
-        LOG.info("Opening desc {}", this.source);
+    public void init(LoadContext context, ElementStruct struct) {
+        LOG.info("Opening struct {}", this.source);
         try {
             this.readers = this.openReaders();
         } catch (IOException e) {
             throw new LoadException("Failed to open readers for '%s'",
                                     this.source);
         }
-        this.progress(context, desc);
+        this.progress(context, struct);
 
         boolean needHeader = this.parser.needHeader();
         String headerLine = this.readers.skipOffset(needHeader);
@@ -81,20 +81,20 @@ public abstract class FileReader implements InputReader {
                 this.parser.parseHeader(headerLine);
             } else {
                 throw new LoadException("Failed to read header from " +
-                                        "file desc '%s'", this.source);
+                                        "file struct '%s'", this.source);
             }
         }
     }
 
-    private void progress(LoadContext context, ElementDesc desc) {
-        ElemType type = desc.type();
+    private void progress(LoadContext context, ElementStruct struct) {
+        ElemType type = struct.type();
         InputProgressMap oldProgress = context.oldProgress().get(type);
         InputProgressMap newProgress = context.newProgress().get(type);
-        InputProgress oldInputProgress = oldProgress.getByDesc(desc);
+        InputProgress oldInputProgress = oldProgress.getByStruct(struct);
         if (oldInputProgress == null) {
-            oldInputProgress = new InputProgress(desc);
+            oldInputProgress = new InputProgress(struct);
         }
-        InputProgress newInputProgress = newProgress.getByDesc(desc);
+        InputProgress newInputProgress = newProgress.getByStruct(struct);
         this.readers.progress(oldInputProgress, newInputProgress);
     }
 

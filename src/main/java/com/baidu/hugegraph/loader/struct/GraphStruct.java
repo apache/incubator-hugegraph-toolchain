@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source.desc;
+package com.baidu.hugegraph.loader.struct;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,56 +39,58 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class GraphDesc implements Checkable {
+public class GraphStruct implements Checkable {
 
-    private static final Logger LOG = Log.logger(GraphDesc.class);
+    private static final Logger LOG = Log.logger(GraphStruct.class);
 
     @JsonProperty("vertices")
-    private final List<VertexDesc> vertexDescs;
+    private final List<VertexStruct> vertexStructs;
     @JsonProperty("edges")
-    private final List<EdgeDesc> edgeDescs;
+    private final List<EdgeStruct> edgeStructs;
 
-    public GraphDesc() {
-        this.vertexDescs = new ArrayList<>();
-        this.edgeDescs = new ArrayList<>();
+    public GraphStruct() {
+        this.vertexStructs = new ArrayList<>();
+        this.edgeStructs = new ArrayList<>();
     }
 
-    public static GraphDesc of(LoadContext context) {
+    public static GraphStruct of(LoadContext context) {
         LoadOptions options = context.options();
         File file = FileUtils.getFile(options.file);
         try {
             String json = FileUtils.readFileToString(file, Constants.CHARSET);
-            GraphDesc source = JsonUtil.fromJson(json, GraphDesc.class);
-            source.check();
-            return source;
+            GraphStruct struct = JsonUtil.fromJson(json, GraphStruct.class);
+            struct.check();
+            return struct;
         } catch (IOException | IllegalArgumentException e) {
-            throw new LoadException("Read graph desc file '%s' error",
-                                    e, options.file);
+            throw new LoadException(
+                      "Failed to parse graph struct description file '%s'",
+                      e, options.file);
         }
     }
 
     @Override
     public void check() throws IllegalArgumentException {
-        LOG.info("Checking vertex descs");
-        this.vertexDescs.forEach(VertexDesc::check);
-        this.checkNoSameSource(this.vertexDescs);
-        LOG.info("Checking edge descs");
-        this.edgeDescs.forEach(EdgeDesc::check);
-        this.checkNoSameSource(this.edgeDescs);
+        LOG.info("Checking vertex struct descriptions");
+        this.vertexStructs.forEach(VertexStruct::check);
+        this.checkNoSameStruct(this.vertexStructs);
+
+        LOG.info("Checking edge struct descriptions");
+        this.edgeStructs.forEach(EdgeStruct::check);
+        this.checkNoSameStruct(this.edgeStructs);
     }
 
-    public List<VertexDesc> vertexDescs() {
-        return this.vertexDescs;
+    public List<VertexStruct> vertexStructs() {
+        return this.vertexStructs;
     }
 
-    public List<EdgeDesc> edgeDescs() {
-        return this.edgeDescs;
+    public List<EdgeStruct> edgeStructs() {
+        return this.edgeStructs;
     }
 
-    private <T extends ElementDesc> void checkNoSameSource(List<T> sources) {
-        Set<String> uniqueKeys = sources.stream().map(ElementDesc::uniqueKey)
+    private <T extends ElementStruct> void checkNoSameStruct(List<T> structs) {
+        Set<String> uniqueKeys = structs.stream().map(ElementStruct::uniqueKey)
                                         .collect(Collectors.toSet());
-        E.checkArgument(sources.size() == uniqueKeys.size(),
-                        "Please ensure there is no same desc in %s", sources);
+        E.checkArgument(structs.size() == uniqueKeys.size(),
+                        "Please ensure there is no same struct in %s", structs);
     }
 }

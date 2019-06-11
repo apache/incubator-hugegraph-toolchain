@@ -39,7 +39,7 @@ public class InputReaderFactory {
                 return new JDBCReader((JDBCSource) source);
             default:
                 throw new AssertionError(String.format(
-                          "Unsupported input desc '%s'", source.type()));
+                          "Unsupported input source '%s'", source.type()));
         }
     }
 }

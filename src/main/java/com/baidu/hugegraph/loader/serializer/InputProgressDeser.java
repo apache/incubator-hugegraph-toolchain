@@ -72,7 +72,7 @@ public class InputProgressDeser extends JsonDeserializer<InputProgress> {
             case JDBC:
             default:
                 throw new AssertionError(String.format(
-                          "Unsupported input desc '%s'", type));
+                          "Unsupported input source '%s'", type));
         }
         return new InputProgress(sourceType, loadedItems, loadingItem);
     }

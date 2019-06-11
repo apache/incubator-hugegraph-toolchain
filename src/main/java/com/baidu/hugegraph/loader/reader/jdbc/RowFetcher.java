@@ -46,8 +46,8 @@ public class RowFetcher {
 
     private final Connection conn;
 
-    private List<String> columns;
-    private int batchSize;
+    private final List<String> columns;
+    private final int batchSize;
     private Line nextBatchStartRow;
     private boolean finished;
 
@@ -74,6 +74,7 @@ public class RowFetcher {
 
         URIBuilder uriBuilder = new URIBuilder();
         uriBuilder.setPath(url)
+                  .setParameter("characterEncoding", "utf-8")
                   .setParameter("rewriteBatchedStatements", "true")
                   .setParameter("useServerPrepStmts", "false")
                   .setParameter("autoReconnect", "true")

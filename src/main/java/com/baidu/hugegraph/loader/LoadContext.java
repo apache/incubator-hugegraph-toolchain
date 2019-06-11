@@ -81,13 +81,24 @@ public final class LoadContext {
         // Check options
         // Check option "-f"
         E.checkArgument(!StringUtils.isEmpty(options.file),
-                        "Must specified entrance groovy file");
-        File scriptFile = new File(options.file);
-        if (!scriptFile.canRead()) {
-            LOG.error("Script file must be readable: '{}'",
-                      scriptFile.getAbsolutePath());
+                        "Must specified struct description file");
+        File structFile = new File(options.file);
+        if (!structFile.canRead()) {
+            LOG.error("Struct file must be readable: '{}'",
+                      structFile.getAbsolutePath());
             LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
         }
+
+        // Check option "-s"
+        E.checkArgument(!StringUtils.isEmpty(options.schema),
+                        "Must specified schema file");
+        File schemaFile = new File(options.schema);
+        if (!schemaFile.canRead()) {
+            LOG.error("Schema file must be readable: '{}'",
+                      schemaFile.getAbsolutePath());
+            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
+        }
+
         // Check option "-g"
         E.checkArgument(!StringUtils.isEmpty(options.graph),
                         "Must specified a graph");
