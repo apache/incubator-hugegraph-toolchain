@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public final class JsonUtil {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     static {
         SimpleModule module = new SimpleModule();
@@ -41,12 +41,12 @@ public final class JsonUtil {
     }
 
     public static void registerModule(Module module) {
-        mapper.registerModule(module);
+        MAPPER.registerModule(module);
     }
 
     public static String toJson(Object object) {
         try {
-            return mapper.writeValueAsString(object);
+            return MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new SerializeException("Failed to serialize objects", e);
         }
@@ -54,13 +54,13 @@ public final class JsonUtil {
 
     public static <T> T fromJson(String json, Class<T> clazz) {
         try {
-            return mapper.readValue(json, clazz);
+            return MAPPER.readValue(json, clazz);
         } catch (IOException e) {
             throw new SerializeException("Failed to deserialize json", e);
         }
     }
 
     public static <T> T convert(JsonNode node, Class<T> clazz) {
-        return mapper.convertValue(node, clazz);
+        return MAPPER.convertValue(node, clazz);
     }
 }
