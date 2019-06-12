@@ -16,7 +16,13 @@
             <PatternLayout charset="${log-charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} %-5r [%t] [%-5p] %c %x - %m%n" />
             <SizeBasedTriggeringPolicy size="100MB"/>
         </RollingFile>
-        <File name="parse-error-file" fileName="logs/parse-error.data" append="false">
+        <File name="vertex-parse-error-file" fileName="logs/vertex-parse-error.data" append="false">
+            <PatternLayout>
+                <Charset>${log-charset}</Charset>
+                <Pattern>%m%n</Pattern>
+            </PatternLayout>
+        </File>
+        <File name="edge-parse-error-file" fileName="logs/edge-parse-error.data" append="false">
             <PatternLayout>
                 <Charset>${log-charset}</Charset>
                 <Pattern>%m%n</Pattern>
@@ -56,9 +62,14 @@
         <logger name="com.baidu.hugegraph" level="INFO" additivity="false">
             <appender-ref ref="file"/>
         </logger>
-        <logger name="parse-error" level="INFO" additivity="false">
-            <appender-ref ref="parse-error-file"/>
+        <!-- parse error logger -->
+        <logger name="vertex-parse-error" level="INFO" additivity="false">
+            <appender-ref ref="vertex-parse-error-file"/>
         </logger>
+        <logger name="edge-parse-error" level="INFO" additivity="false">
+            <appender-ref ref="edge-parse-error-file"/>
+        </logger>
+        <!-- insert error logger -->
         <logger name="vertex-insert-error" level="INFO" additivity="false">
             <appender-ref ref="vertex-insert-error-file"/>
         </logger>

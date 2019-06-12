@@ -22,51 +22,39 @@ package com.baidu.hugegraph.loader.task;
 import java.util.List;
 import java.util.function.Supplier;
 
-import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.util.E;
 
-public abstract class InsertionTask<GE extends GraphElement>
+public class BatchInsertTask<GE extends GraphElement>
        implements Supplier<Integer> {
 
     private static final String ILLEGAL_ARGUMENT_EXCEPTION =
             "class java.lang.IllegalArgumentException";
 
+    private final ElemType type;
     private final List<GE> batch;
     private final LoadOptions options;
-    private final HugeClient client;
 
-    public InsertionTask(List<GE> batch, LoadOptions options) {
+    public BatchInsertTask(ElemType type, List<GE> batch, LoadOptions options) {
+        E.checkArgument(batch != null && !batch.isEmpty(),
+                        "The batch can't be null or empty");
+        this.type = type;
         this.batch = batch;
         this.options = options;
-        this.client = HugeClientWrapper.get(options);
-    }
-
-    public List<GE> batch() {
-        return this.batch;
-    }
-
-    public LoadOptions options() {
-        return this.options;
-    }
-
-    public HugeClient client() {
-        return this.client;
     }
 
     @Override
     public Integer get() {
-        if (this.batch == null || this.batch.isEmpty()) {
-            return 0;
-        }
-
         int retryCount = 0;
         do {
             try {
-                this.execute();
+                HugeClientWrapper.addBatch(this.type, this.batch,
+                                           this.options.checkVertex);
                 break;
             } catch (ClientException e) {
                 retryCount = this.waitThenRetry(retryCount, e);
@@ -93,6 +81,4 @@ public abstract class InsertionTask<GE extends GraphElement>
         }
         return retryCount;
     }
-
-    protected abstract void execute();
 }

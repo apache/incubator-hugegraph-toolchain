@@ -31,6 +31,15 @@ public final class LoadSummary {
         this.edgeMetrics = new LoadMetrics(ElemType.EDGE);
     }
 
+    public LoadMetrics metrics(ElemType type) {
+        if (type.isVertex()) {
+            return this.vertexMetrics;
+        } else {
+            assert type.isEdge();
+            return this.edgeMetrics;
+        }
+    }
+
     public LoadMetrics vertexMetrics() {
         return this.vertexMetrics;
     }

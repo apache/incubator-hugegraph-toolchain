@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader.executor;
 
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.util.JsonUtil;
@@ -28,23 +29,31 @@ import com.baidu.hugegraph.util.Log;
 
 public class FailureLogger {
 
-    private final Logger log;
+    private final Logger vertexLogger;
+    private final Logger edgeLogger;
 
-    public static FailureLogger logger(String name) {
-        return new FailureLogger(name);
+    public static FailureLogger parse() {
+        return new FailureLogger("parse");
     }
 
-    private FailureLogger(String name) {
-        this.log = Log.logger(name);
+    public static FailureLogger insert() {
+        return new FailureLogger("insert");
     }
 
-    public void error(ParseException e) {
-        this.log.error(">>>> PARSE ERROR: {}", e.getMessage());
-        this.log.error("{}", e.line());
+    private FailureLogger(String infix) {
+        this.vertexLogger = Log.logger("vertex-" + infix + "-error");
+        this.edgeLogger = Log.logger("edge-" + infix + "-error");
     }
 
-    public void error(InsertException e) {
-        this.log.error(">>>> INSERT ERROR: {}", e.getMessage());
-        this.log.error("{}", JsonUtil.toJson(e.element()));
+    public void error(ElemType type, ParseException e) {
+        Logger log = type.isVertex() ? this.vertexLogger : this.edgeLogger;
+        log.error(">>>> PARSE ERROR: {}", e.getMessage());
+        log.error("{}", e.line());
+    }
+
+    public void error(ElemType type, InsertException e) {
+        Logger log = type.isVertex() ? this.vertexLogger : this.edgeLogger;
+        log.error(">>>> INSERT ERROR: {}", e.getMessage());
+        log.error("{}", JsonUtil.toJson(e.element()));
     }
 }

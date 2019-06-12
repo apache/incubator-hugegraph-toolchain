@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.EdgeBuilder;
+import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
@@ -47,15 +48,14 @@ import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.structure.graph.Edge;
-import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.Log;
 
 public final class HugeGraphLoader {
 
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
-    private static final FailureLogger LOG_PARSE =
-                         FailureLogger.logger("parse-error");
+
+    private final FailureLogger failureLogger = FailureLogger.parse();
 
     private final LoadContext context;
     private final GraphStruct graphStruct;
@@ -100,7 +100,6 @@ public final class HugeGraphLoader {
 
         // Print load summary
         Printer.printSummary(this.context);
-
         this.stopLoading(Constants.EXIT_CODE_NORM);
     }
 
@@ -129,15 +128,14 @@ public final class HugeGraphLoader {
         metrics.startTimer();
 
         InputProgressMap newProgress = this.context.newProgress().vertex();
-        List<VertexStruct> vertexStructs = this.graphStruct.vertexStructs();
-        for (VertexStruct struct : vertexStructs) {
+        for (VertexStruct struct : this.graphStruct.vertexStructs()) {
             // Update loading vertex struct
             newProgress.addStruct(struct);
             LOG.info("Loading vertex struct with label {}", struct.label());
             // Produce batch vertices and execute loading tasks
             try (VertexBuilder builder = new VertexBuilder(this.context,
                                                            struct)) {
-                this.loadVertex(builder, this.context.options(), metrics);
+                this.load(builder, this.context.options(), metrics);
             }
         }
         // Waiting async worker threads finish
@@ -147,56 +145,19 @@ public final class HugeGraphLoader {
         Printer.print(metrics.insertSuccess());
     }
 
-    private void loadVertex(VertexBuilder builder, LoadOptions options,
-                            LoadMetrics metrics) {
-        int batchSize = options.batchSize;
-        List<Vertex> batch = new ArrayList<>(batchSize);
-        while (true) {
-            try {
-                if (!builder.hasNext()) {
-                    break;
-                }
-                Vertex vertex = builder.next();
-                batch.add(vertex);
-            } catch (ParseException e) {
-                if (options.testMode) {
-                    throw e;
-                }
-                LOG.error("Vertex parse error", e);
-                LOG_PARSE.error(e);
-                long failureNum = metrics.increaseParseFailure();
-                if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("More than %s vertices " +
-                                       "parsing error ... stopping",
-                                       options.maxParseErrors);
-                    this.stopLoading(Constants.EXIT_CODE_ERROR);
-                }
-                continue;
-            }
-            if (batch.size() >= batchSize) {
-                this.taskManager.submitVertexBatch(batch);
-                batch = new ArrayList<>(batchSize);
-            }
-        }
-        if (!batch.isEmpty()) {
-            this.taskManager.submitVertexBatch(batch);
-        }
-    }
-
     private void loadEdges() {
         LoadMetrics metrics = this.context.summary().edgeMetrics();
         Printer.printElemType(metrics.type());
         metrics.startTimer();
 
         InputProgressMap newProgress = this.context.newProgress().edge();
-        List<EdgeStruct> edgeStructs = this.graphStruct.edgeStructs();
-        for (EdgeStruct struct : edgeStructs) {
+        for (EdgeStruct struct : this.graphStruct.edgeStructs()) {
             // Update loading edge struct
             newProgress.addStruct(struct);
             LOG.info("Loading edge struct with label {}", struct.label());
             // Produce batch vertices and execute loading tasks
             try (EdgeBuilder builder = new EdgeBuilder(this.context, struct)) {
-                this.loadEdge(builder, this.context.options(), metrics);
+                this.load(builder, this.context.options(), metrics);
             }
         }
         // Waiting async worker threads finish
@@ -206,39 +167,37 @@ public final class HugeGraphLoader {
         Printer.print(metrics.insertSuccess());
     }
 
-    private void loadEdge(EdgeBuilder builder, LoadOptions options,
-                          LoadMetrics metrics) {
-        int batchSize = options.batchSize;
-        List<Edge> batch = new ArrayList<>(batchSize);
-        while (true) {
+    private <GE extends GraphElement> void load(ElementBuilder<GE> builder,
+                                                LoadOptions options,
+                                                LoadMetrics metrics) {
+        ElemType type = builder.type();
+        List<GE> batch = new ArrayList<>(options.batchSize);
+        while (builder.hasNext()) {
             try {
-                if (!builder.hasNext()) {
-                    break;
-                }
-                Edge edge = builder.next();
-                batch.add(edge);
+                GE element = builder.next();
+                batch.add(element);
             } catch (ParseException e) {
                 if (options.testMode) {
                     throw e;
                 }
-                LOG.error("Edge parse error", e);
-                LOG_PARSE.error(e);
+                LOG.error("Parse {} error", type, e);
+
+                this.failureLogger.error(type, e);
                 long failureNum = metrics.increaseParseFailure();
                 if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("More than %s edges " +
-                                       "parsing error ... stopping",
-                                       options.maxParseErrors);
+                    Printer.printError("More than %s %s parsing error ... " +
+                                       "stopping", options.maxParseErrors, type);
                     this.stopLoading(Constants.EXIT_CODE_ERROR);
                 }
                 continue;
             }
-            if (batch.size() >= batchSize) {
-                this.taskManager.submitEdgeBatch(batch);
-                batch = new ArrayList<>(batchSize);
+            if (batch.size() >= options.batchSize) {
+                this.taskManager.submitBatch(type, batch);
+                batch = new ArrayList<>(options.batchSize);
             }
         }
         if (!batch.isEmpty()) {
-            this.taskManager.submitEdgeBatch(batch);
+            this.taskManager.submitBatch(type, batch);
         }
     }
 

@@ -19,8 +19,15 @@
 
 package com.baidu.hugegraph.loader.util;
 
+import java.util.List;
+
+import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Vertex;
 
 public final class HugeClientWrapper {
 
@@ -54,29 +61,28 @@ public final class HugeClientWrapper {
         }
     }
 
-//    Maybe unnecessary to distinguish vertex and edge in taskmanager
-//    @SuppressWarnings("unchecked")
-//    public static <GE extends GraphElement> List<GE> addBatch(ElemType type,
-//                                                              List<GE> elements,
-//                                                              boolean check) {
-//        GraphManager graph = instance.graph();
-//        if (type.isVertex()) {
-//            return (List<GE>) graph.addVertices((List<Vertex>) elements);
-//        } else {
-//            assert type.isEdge();
-//            return (List<GE>) graph.addEdges((List<Edge>) elements, check);
-//        }
-//    }
-//
-//    @SuppressWarnings("unchecked")
-//    public static <GE extends GraphElement> GE addSingle(ElemType type,
-//                                                         GE element) {
-//        GraphManager graph = instance.graph();
-//        if (type.isVertex()) {
-//            return (GE) graph.addVertex((Vertex) element);
-//        } else {
-//            assert type.isEdge();
-//            return (GE) graph.addEdge((Edge) element);
-//        }
-//    }
+    @SuppressWarnings("unchecked")
+    public static <GE extends GraphElement> List<GE> addBatch(ElemType type,
+                                                              List<GE> elements,
+                                                              boolean check) {
+        GraphManager graph = instance.graph();
+        if (type.isVertex()) {
+            return (List<GE>) graph.addVertices((List<Vertex>) elements);
+        } else {
+            assert type.isEdge();
+            return (List<GE>) graph.addEdges((List<Edge>) elements, check);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <GE extends GraphElement> GE addSingle(ElemType type,
+                                                         GE element) {
+        GraphManager graph = instance.graph();
+        if (type.isVertex()) {
+            return (GE) graph.addVertex((Vertex) element);
+        } else {
+            assert type.isEdge();
+            return (GE) graph.addEdge((Edge) element);
+        }
+    }
 }

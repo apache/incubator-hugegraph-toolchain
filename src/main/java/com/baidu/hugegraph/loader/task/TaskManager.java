@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
@@ -45,22 +44,18 @@ import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.structure.graph.Edge;
-import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.ExecutorUtil;
 import com.baidu.hugegraph.util.Log;
 
 public final class TaskManager {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
-    private static final FailureLogger LOG_VERTEX_INSERT =
-                         FailureLogger.logger("vertex-insert-error");
-    private static final FailureLogger LOG_EDGE_INSERT =
-                         FailureLogger.logger("edge-insert-error");
+
+    private final FailureLogger failureLogger = FailureLogger.insert();
 
     private final LoadOptions options;
-    private final LoadMetrics vertexMetrics;
-    private final LoadMetrics edgeMetrics;
+    private final LoadSummary summary;
 
     private final Semaphore batchSemaphore;
     private final Semaphore singleSemaphore;
@@ -68,13 +63,8 @@ public final class TaskManager {
     private final ExecutorService singleService;
 
     public TaskManager(LoadContext context) {
-        this(context.options(), context.summary());
-    }
-
-    public TaskManager(LoadOptions options, LoadSummary summary) {
-        this.options = options;
-        this.vertexMetrics = summary.vertexMetrics();
-        this.edgeMetrics = summary.edgeMetrics();
+        this.options = context.options();
+        this.summary = context.summary();
         this.batchSemaphore = new Semaphore(options.numThreads);
         this.singleSemaphore = new Semaphore(options.numThreads);
         /*
@@ -140,129 +130,71 @@ public final class TaskManager {
         }
     }
 
-    public void submitVertexBatch(List<Vertex> batch) {
+    public <GE extends GraphElement> void submitBatch(ElemType type,
+                                                      List<GE> batch) {
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
-            throw new LoadException("Interrupted while waiting to submit " +
-                                    "vertex batch in batch mode", e);
+            throw new LoadException("Interrupted while waiting to submit %s " +
+                                    "batch in batch mode", e, type);
         }
 
-        InsertionTask<Vertex> task = new VertexInsertionTask(batch, this.options);
+        BatchInsertTask<GE> task = new BatchInsertTask<>(type, batch,
+                                                         this.options);
         CompletableFuture<Integer> future;
         future = CompletableFuture.supplyAsync(task, this.batchService);
         future.exceptionally(error -> {
-            LOG.warn("Batch insert vertex failed, try single insert", error);
-            this.submitVerticesInSingleMode(batch);
+            LOG.warn("Batch insert {} error, try single insert", type, error);
+            this.submitInSingleMode(type, batch);
             return 0;
         }).whenComplete((size, error) -> {
             if (error == null) {
-                this.vertexMetrics.addInsertSuccess(size);
-                Printer.printProgress(this.vertexMetrics, BATCH_PRINT_FREQ, size);
+                LoadMetrics metrics = this.summary.metrics(type);
+                metrics.addInsertSuccess(size);
+                Printer.printProgress(metrics, BATCH_PRINT_FREQ, size);
             }
             this.batchSemaphore.release();
         });
     }
 
-    public void submitEdgeBatch(List<Edge> batch) {
-        try {
-            this.batchSemaphore.acquire();
-        } catch (InterruptedException e) {
-            throw new LoadException("Interrupted while waiting to submit " +
-                                    "edge batch in batch mode", e);
-        }
-
-        InsertionTask<Edge> task = new EdgeInsertionTask(batch, this.options);
-        CompletableFuture<Integer> future;
-        future = CompletableFuture.supplyAsync(task, this.batchService);
-        future.exceptionally(error -> {
-            LOG.warn("Batch insert edge failed, try single insert", error);
-            this.submitEdgesInSingleMode(batch);
-            return 0;
-        }).whenComplete((size, error) -> {
-            if (error == null) {
-                this.edgeMetrics.addInsertSuccess(size);
-                Printer.printProgress(this.edgeMetrics, BATCH_PRINT_FREQ, size);
-            }
-            this.batchSemaphore.release();
-        });
-    }
-
-    private void submitVerticesInSingleMode(List<Vertex> vertices) {
+    private <GE extends GraphElement> void submitInSingleMode(ElemType type,
+                                                              List<GE> batch) {
         try {
             this.singleSemaphore.acquire();
         } catch (InterruptedException e) {
-            throw new LoadException("Interrupted while waiting to submit " +
-                                    "vertex batch in single mode", e);
+            throw new LoadException("Interrupted while waiting to submit %s " +
+                                    "batch in single mode", e, type);
         }
 
-        GraphManager graph = HugeClientWrapper.get(this.options).graph();
-        this.submitInSingleMode(() -> {
-            for (Vertex vertex : vertices) {
+        Runnable singleInsertTask = () -> {
+            LoadMetrics metrics = this.summary.metrics(type);
+            for (GE element : batch) {
                 try {
-                    graph.addVertex(vertex);
-                    this.vertexMetrics.increaseInsertSuccess();
+                    HugeClientWrapper.addSingle(type, element);
+                    metrics.increaseInsertSuccess();
                 } catch (Exception e) {
-                    this.vertexMetrics.increaseInsertFailure();
-                    LOG.error("Vertex insert error", e);
+                    metrics.increaseInsertFailure();
+                    LOG.error("Single insert {} error", type, e);
                     if (this.options.testMode) {
                         throw e;
                     }
-                    LOG_VERTEX_INSERT.error(new InsertException(vertex, e));
+                    this.failureLogger.error(type,
+                                             new InsertException(element, e));
 
-                    if (this.vertexMetrics.insertFailure() >=
+                    if (metrics.insertFailure() >=
                         this.options.maxInsertErrors) {
-                        Printer.printError("More than %s vertices " +
-                                           "insert error... stopping",
-                                           this.options.maxInsertErrors);
+                        Printer.printError("More than %s %s insert error... " +
+                                           "stopping",
+                                           this.options.maxInsertErrors, type);
                         LoadUtil.exit(Constants.EXIT_CODE_ERROR);
                     }
                 }
             }
-            Printer.printProgress(this.vertexMetrics, SINGLE_PRINT_FREQ,
-                                  vertices.size());
-        });
-    }
+            Printer.printProgress(metrics, SINGLE_PRINT_FREQ, batch.size());
+        };
 
-    private void submitEdgesInSingleMode(List<Edge> edges) {
-        try {
-            this.singleSemaphore.acquire();
-        } catch (InterruptedException e) {
-            throw new LoadException("Interrupted while waiting to submit " +
-                                    "edge batch in single mode", e);
-        }
-
-        GraphManager graph = HugeClientWrapper.get(this.options).graph();
-        this.submitInSingleMode(() -> {
-            for (Edge edge : edges) {
-                try {
-                    graph.addEdge(edge);
-                    this.edgeMetrics.increaseInsertSuccess();
-                } catch (Exception e) {
-                    this.edgeMetrics.increaseInsertFailure();
-                    LOG.error("Edge insert error", e);
-                    if (this.options.testMode) {
-                        throw e;
-                    }
-                    LOG_EDGE_INSERT.error(new InsertException(edge, e));
-
-                    if (this.edgeMetrics.insertFailure() >=
-                        this.options.maxInsertErrors) {
-                        Printer.printError("More than %s edges " +
-                                           "insert error... stopping",
-                                           this.options.maxInsertErrors);
-                        LoadUtil.exit(Constants.EXIT_CODE_ERROR);
-                    }
-                }
-            }
-            Printer.printProgress(this.edgeMetrics, SINGLE_PRINT_FREQ,
-                                  edges.size());
-        });
-    }
-
-    private void submitInSingleMode(Runnable runnable) {
         CompletableFuture<Void> future;
-        future = CompletableFuture.runAsync(runnable, this.singleService);
+        future = CompletableFuture.runAsync(singleInsertTask, this.singleService);
         future.whenComplete((r, error) -> this.singleSemaphore.release());
     }
 }

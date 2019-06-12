@@ -25,5 +25,5 @@ import com.baidu.hugegraph.loader.struct.ElementStruct;
 
 public interface InputReader extends AutoCloseableIterator<Line> {
 
-    public void init(LoadContext context, ElementStruct source);
+    public void init(LoadContext context, ElementStruct struct);
 }
