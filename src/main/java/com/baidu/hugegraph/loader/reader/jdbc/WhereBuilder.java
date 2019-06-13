@@ -21,17 +21,20 @@ package com.baidu.hugegraph.loader.reader.jdbc;
 
 import java.util.List;
 
+import com.baidu.hugegraph.loader.source.jdbc.JDBCVendor;
 import com.baidu.hugegraph.util.E;
 
 public final class WhereBuilder {
 
-    private StringBuilder builder;
+    private final JDBCVendor vendor;
+    private final StringBuilder builder;
 
-    public WhereBuilder() {
-        this(true);
+    public WhereBuilder(JDBCVendor vendor) {
+        this(vendor, true);
     }
 
-    public WhereBuilder(boolean startWithWhere) {
+    public WhereBuilder(JDBCVendor vendor, boolean startWithWhere) {
+        this.vendor = vendor;
         if (startWithWhere) {
             this.builder = new StringBuilder(" WHERE ");
         } else {
@@ -95,7 +98,8 @@ public final class WhereBuilder {
             this.builder.append(operator);
             Object value = values.get(i);
             if (value instanceof String) {
-                this.builder.append(MysqlUtil.escapeString((String) value));
+                this.builder.append(JDBCUtil.escape(this.vendor,
+                                                    (String) value));
             } else {
                 this.builder.append(value);
             }
@@ -131,7 +135,8 @@ public final class WhereBuilder {
             this.builder.append(operators.get(i));
             Object value = values.get(i);
             if (value instanceof String) {
-                this.builder.append(MysqlUtil.escapeString((String) value));
+                this.builder.append(JDBCUtil.escape(this.vendor,
+                                                    (String) value));
             } else {
                 this.builder.append(value);
             }
@@ -169,7 +174,8 @@ public final class WhereBuilder {
         for (int i = 0, n = values.size(); i < n; i++) {
             Object value = values.get(i);
             if (value instanceof String) {
-                this.builder.append(MysqlUtil.escapeString((String) value));
+                this.builder.append(JDBCUtil.escape(this.vendor,
+                                                    (String) value));
             } else {
                 this.builder.append(value);
             }
@@ -201,7 +207,8 @@ public final class WhereBuilder {
         for (int i = 0, n = values.length; i < n; i++) {
             Object value = values[i];
             if (value instanceof String) {
-                this.builder.append(MysqlUtil.escapeString((String) value));
+                this.builder.append(JDBCUtil.escape(this.vendor,
+                                                    (String) value));
             } else {
                 this.builder.append(value);
             }

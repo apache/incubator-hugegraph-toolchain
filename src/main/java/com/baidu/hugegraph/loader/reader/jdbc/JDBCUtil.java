@@ -19,14 +19,35 @@
 
 package com.baidu.hugegraph.loader.reader.jdbc;
 
-public final class MysqlUtil {
+import java.sql.SQLException;
 
-    public static String escapeString(String value) {
+import org.postgresql.core.Utils;
+
+import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.source.jdbc.JDBCVendor;
+
+public final class JDBCUtil {
+
+    public static String escape(JDBCVendor vendor, String value) {
+        switch (vendor) {
+            case MYSQL:
+                return escapeMysql(value);
+            case POSTGRESQL:
+                return escapePostgresql(value);
+            case ORACLE:
+                return escapeOracle(value);
+            case SQL_SERVER:
+                return escapeSqlserver(value);
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported database vendor '%s'", vendor));
+        }
+    }
+
+    private static String escapeMysql(String value) {
         int length = value.length();
         if (!isEscapeNeededForString(value, length)) {
-            StringBuilder buf = new StringBuilder(length + 2);
-            buf.append('\'').append(value).append('\'');
-            return buf.toString();
+            return '\'' + value + '\'';
         }
 
         StringBuilder buf = new StringBuilder((int) (length * 1.1D));
@@ -76,9 +97,29 @@ public final class MysqlUtil {
         return buf.toString();
     }
 
-    public static boolean isEscapeNeededForString(String sql, int length) {
-        boolean needsEscape = false;
+    private static String escapePostgresql(String value) {
+        StringBuilder builder = new StringBuilder(8 + value.length());
+        builder.append('\'');
+        try {
+            Utils.escapeLiteral(builder, value, false);
+        } catch (SQLException e) {
+            throw new LoadException("Failed to escape '%s'", e, value);
+        }
+        builder.append('\'');
+        return builder.toString();
+    }
 
+    // TODO: check it
+    private static String escapeOracle(String value) {
+        return escapeMysql(value);
+    }
+
+    private static String escapeSqlserver(String value) {
+        return escapeMysql(value);
+    }
+
+    private static boolean isEscapeNeededForString(String sql, int length) {
+        boolean needsEscape = false;
         for (int i = 0; i < length; ++i) {
             char c = sql.charAt(i);
             switch (c) {

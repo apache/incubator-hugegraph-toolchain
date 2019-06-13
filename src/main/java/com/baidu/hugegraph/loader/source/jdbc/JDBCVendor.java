@@ -19,26 +19,19 @@
 
 package com.baidu.hugegraph.loader.source.jdbc;
 
-public enum DBVendor implements SQLBuilder {
+import com.baidu.hugegraph.loader.reader.jdbc.JDBCUtil;
+
+public enum JDBCVendor {
 
     MYSQL {
         @Override
         public String buildGetHeaderSql(String database, String table) {
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM INFORMATION_SCHEMA.COLUMNS " +
-                                 "WHERE TABLE_SCHEMA = '%s' " +
-                                 "AND TABLE_NAME = '%s';",
-                                 database, table);
-        }
-    },
-
-    ORACLE {
-        @Override
-        public String buildGetHeaderSql(String database, String table) {
-            return String.format("SELECT COLUMN_NAME " +
-                                 "FROM USER_TAB_COLUMNS " +
-                                 "WHERE TABLE_NAME = '%s';",
-                                 table);
+                                 "WHERE TABLE_SCHEMA = %s " +
+                                 "AND TABLE_NAME = %s;",
+                                 JDBCUtil.escape(this, database),
+                                 JDBCUtil.escape(this, table));
         }
     },
 
@@ -47,9 +40,20 @@ public enum DBVendor implements SQLBuilder {
         public String buildGetHeaderSql(String database, String table) {
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM INFORMATION_SCHEMA.COLUMNS " +
-                                 "WHERE TABLE_SCHEMA = '%s' " +
-                                 "AND TABLE_NAME = '%s';",
-                                 database, table);
+                                 "WHERE TABLE_CATALOG = %s " +
+                                 "AND TABLE_NAME = %s;",
+                                 JDBCUtil.escape(this, database),
+                                 JDBCUtil.escape(this, table));
+        }
+    },
+
+    ORACLE {
+        @Override
+        public String buildGetHeaderSql(String database, String table) {
+            return String.format("SELECT COLUMN_NAME " +
+                                 "FROM USER_TAB_COLUMNS " +
+                                 "WHERE TABLE_NAME = %s;",
+                                 JDBCUtil.escape(this, table));
         }
     },
 
@@ -58,8 +62,10 @@ public enum DBVendor implements SQLBuilder {
         public String buildGetHeaderSql(String database, String table) {
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM INFORMATION_SCHEMA.COLUMNS " +
-                                 "WHERE TABLE_NAME = N'%s';",
-                                 table);
+                                 "WHERE TABLE_NAME = N%s;",
+                                 JDBCUtil.escape(this, table));
         }
     };
+
+    public abstract String buildGetHeaderSql(String database, String table);
 }

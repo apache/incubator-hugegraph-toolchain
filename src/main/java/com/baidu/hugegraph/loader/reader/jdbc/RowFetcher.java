@@ -43,15 +43,12 @@ public class RowFetcher {
 
     private final JDBCSource source;
     private final Connection conn;
-
-    private final int batchSize;
     private String[] columns;
     private Line nextBatchStartRow;
     private boolean finished;
 
     public RowFetcher(JDBCSource source) throws SQLException {
         this.source = source;
-        this.batchSize = source.batchSize();
         this.conn = this.connect();
         this.columns = null;
         this.finished = false;
@@ -118,7 +115,7 @@ public class RowFetcher {
 
         String select = this.buildSql();
 
-        List<Line> batch = new ArrayList<>(this.batchSize + 1);
+        List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
             while (result.next()) {
@@ -139,7 +136,7 @@ public class RowFetcher {
             throw e;
         }
 
-        if (batch.size() != this.batchSize + 1) {
+        if (batch.size() != this.source.batchSize() + 1) {
             this.finished = true;
         } else {
             // Remove the last one
@@ -149,13 +146,13 @@ public class RowFetcher {
     }
 
     public String buildSql() {
-        int limit = this.batchSize + 1;
+        int limit = this.source.batchSize() + 1;
 
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("SELECT * FROM ").append(this.source.table());
 
         if (this.nextBatchStartRow != null) {
-            WhereBuilder where = new WhereBuilder(true);
+            WhereBuilder where = new WhereBuilder(this.source.vendor(), true);
             where.gte(this.nextBatchStartRow.names(),
                       this.nextBatchStartRow.values());
             sqlBuilder.append(where.build());
