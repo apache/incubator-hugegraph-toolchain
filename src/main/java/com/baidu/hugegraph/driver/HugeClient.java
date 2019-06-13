@@ -30,9 +30,11 @@ import com.baidu.hugegraph.version.ClientVersion;
 
 public class HugeClient implements Closeable {
 
+    private static final int CPUS = Runtime.getRuntime().availableProcessors();
+
     private static final int DEFAULT_TIMEOUT = 20;
-    private static final int DEFAULT_MAX_CONNS = 100;
-    private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 40;
+    private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 2 * CPUS;
+    private static final int DEFAULT_MAX_CONNS = 4 * CPUS;
 
     static {
         ClientVersion.check();
@@ -118,7 +120,7 @@ public class HugeClient implements Closeable {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.38", "0.39",
+        VersionUtil.check(apiVersion, "0.38", "0.40",
                           "hugegraph-api in server");
     }
 

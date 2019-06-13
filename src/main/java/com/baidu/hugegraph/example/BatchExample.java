@@ -148,5 +148,7 @@ public class BatchExample {
 
         edges = graph.addEdges(edges, false);
         edges.forEach(edge -> System.out.println(edge));
+
+        hugeClient.close();
     }
 }

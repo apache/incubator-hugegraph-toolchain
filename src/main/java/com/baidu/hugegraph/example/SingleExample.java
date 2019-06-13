@@ -160,5 +160,7 @@ public class SingleExample {
                 System.out.println(object);
             }
         });
+
+        hugeClient.close();
     }
 }
