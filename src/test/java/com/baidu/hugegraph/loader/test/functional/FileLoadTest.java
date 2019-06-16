@@ -31,9 +31,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -1251,7 +1249,7 @@ public class FileLoadTest extends LoadTest {
 
     @Test
     public void testParserNotThrowException() {
-        // Here are 3 parser errors, and except no exception thrown
+        // Here are 2 parse errors, and expect no exception thrown
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
                      "p1,marko,22,Beijing",
@@ -1264,9 +1262,8 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
-                "--max-parse-errors", "4"
+                "--max-parse-errors", "3"
         };
-        // TODO: Fix the JVM will exit directly if this test throws exception
         HugeGraphLoader.main(args);
     }
 }
