@@ -46,6 +46,8 @@ public class BatchInsertTask<GE extends GraphElement>
         this.type = type;
         this.batch = batch;
         this.options = options;
+        // Ensure internal client initialized
+        HugeClientWrapper.get(options);
     }
 
     @Override

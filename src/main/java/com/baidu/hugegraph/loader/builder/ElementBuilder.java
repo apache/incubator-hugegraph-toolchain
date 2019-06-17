@@ -57,7 +57,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
     public ElementBuilder(LoadContext context, ElementStruct struct) {
         this.schema = new SchemaCache(context);
         this.reader = InputReaderFactory.create(struct.input());
-        this.init(struct, context);
+        this.init(context, struct);
     }
 
     public abstract ElementStruct struct();
@@ -66,7 +66,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
         return this.struct().type();
     }
 
-    private void init(ElementStruct struct, LoadContext context) {
+    private void init(LoadContext context, ElementStruct struct) {
         try {
             this.reader.init(context, struct);
         } catch (Exception e) {

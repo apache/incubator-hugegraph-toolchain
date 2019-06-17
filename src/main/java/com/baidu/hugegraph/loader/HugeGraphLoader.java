@@ -172,8 +172,11 @@ public final class HugeGraphLoader {
                                                 LoadMetrics metrics) {
         ElemType type = builder.type();
         List<GE> batch = new ArrayList<>(options.batchSize);
-        while (builder.hasNext()) {
+        while (true) {
             try {
+                if (!builder.hasNext()) {
+                    break;
+                }
                 GE element = builder.next();
                 batch.add(element);
             } catch (ParseException e) {
