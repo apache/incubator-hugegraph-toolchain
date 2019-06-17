@@ -188,8 +188,11 @@ public class HugeGraphLoader {
     private void loadVertex(VertexBuilder builder) {
         int batchSize = this.options.batchSize;
         List<Vertex> batch = new ArrayList<>(batchSize);
-        while (builder.hasNext()) {
+        while (true) {
             try {
+                if (!builder.hasNext()) {
+                    break;
+                }
                 Vertex vertex = builder.next();
                 batch.add(vertex);
             } catch (ParseException e) {
@@ -253,8 +256,11 @@ public class HugeGraphLoader {
     private void loadEdge(EdgeBuilder builder) {
         int batchSize = this.options.batchSize;
         List<Edge> batch = new ArrayList<>(batchSize);
-        while (builder.hasNext()) {
+        while (true) {
             try {
+                if (!builder.hasNext()) {
+                    break;
+                }
                 Edge edge = builder.next();
                 batch.add(edge);
             } catch (ParseException e) {

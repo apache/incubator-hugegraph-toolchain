@@ -1246,4 +1246,24 @@ public class FileLoadTest extends LoadTest {
         };
         HugeGraphLoader.main(args);
     }
+
+    @Test
+    public void testParserNotThrowException() {
+        // Here are 2 parse errors, and expect no exception thrown
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "p1,marko,22,Beijing",
+                     "tom,24,Hongkong",
+                     "jerry,18");
+
+        String[] args = new String[]{
+                "-f", configPath("too_few_columns/struct.json"),
+                "-s", configPath("too_few_columns/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--max-parse-errors", "3"
+        };
+        HugeGraphLoader.main(args);
+    }
 }
