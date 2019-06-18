@@ -42,12 +42,15 @@ public final class HugeClientWrapper {
     private static HugeClient newHugeClient(LoadOptions options) {
         String address = options.host + ":" + options.port;
         if (options.token == null) {
-            return new HugeClient(address, options.graph, options.timeout);
+            return new HugeClient(address, options.graph, options.timeout,
+                                  options.maxConnections,
+                                  options.maxConnectionsPerRoute);
         } else {
             // The username is same as graph name
-            return new HugeClient(address, options.graph,
-                                  options.graph, options.token,
-                                  options.timeout);
+            return new HugeClient(address, options.graph, options.graph,
+                                  options.token, options.timeout,
+                                  options.maxConnections,
+                                  options.maxConnectionsPerRoute);
         }
     }
 }
