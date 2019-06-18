@@ -27,6 +27,8 @@ import com.beust.jcommander.ParameterException;
 
 public final class LoadOptions {
 
+    private final int CPUS = Runtime.getRuntime().availableProcessors();
+
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
                description = "The path of the data source description file")
@@ -58,7 +60,15 @@ public final class LoadOptions {
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The number of threads to use")
-    public int numThreads = Runtime.getRuntime().availableProcessors();
+    public int numThreads = CPUS;
+
+    @Parameter(names = {"--max-conn"}, arity = 1,
+               description = "Max number of HTTP connections to server")
+    public int maxConnections = CPUS * 4;
+
+    @Parameter(names = {"--max-conn-per-route"}, arity = 1,
+               description = "Max number of HTTP connections to each route")
+    public int maxConnectionsPerRoute = CPUS * 2;
 
     @Parameter(names = {"--batch-size"}, arity = 1,
                validateWith = {PositiveValidator.class},
