@@ -58,8 +58,10 @@ public class JDBCReader implements InputReader {
     public void init(LoadContext context, ElementStruct struct) {
         try {
             this.fetcher.readHeader();
+            this.fetcher.readPrimaryKey();
         } catch (SQLException e) {
-            throw new LoadException("Failed to read column names", e);
+            throw new LoadException("Failed to read columns and primary keys",
+                                    e);
         }
     }
 

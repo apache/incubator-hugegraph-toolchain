@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -43,37 +42,24 @@ public class RowFetcher {
 
     private final JDBCSource source;
     private final Connection conn;
+
     private String[] columns;
-    private Line nextBatchStartRow;
+    private String[] primaryKeys;
+    private Line nextStartRow;
     private boolean finished;
 
     public RowFetcher(JDBCSource source) throws SQLException {
         this.source = source;
         this.conn = this.connect();
         this.columns = null;
+        this.primaryKeys = null;
+        this.nextStartRow = null;
         this.finished = false;
     }
 
     private Connection connect() throws SQLException {
-        String url = this.source.url();
-        String database = this.source.database();
-        if (url.endsWith("/")) {
-            url = String.format("%s%s", url, database);
-        } else {
-            url = String.format("%s/%s", url, database);
-        }
-
-        int maxTimes = this.source.reconnectMaxTimes();
-        int interval = this.source.reconnectInterval();
-
-        URIBuilder uriBuilder = new URIBuilder();
-        uriBuilder.setPath(url)
-                  .setParameter("characterEncoding", "utf-8")
-                  .setParameter("rewriteBatchedStatements", "true")
-                  .setParameter("useServerPrepStmts", "false")
-                  .setParameter("autoReconnect", "true")
-                  .setParameter("maxReconnects", String.valueOf(maxTimes))
-                  .setParameter("initialTimeout", String.valueOf(interval));
+        String url = this.source.vendor().buildUrl(this.source);
+        LOG.info("The jdbc url is {}", url);
 
         String driverName = this.source.driver();
         String username = this.source.username();
@@ -88,10 +74,8 @@ public class RowFetcher {
     }
 
     public void readHeader() throws SQLException {
-        String database = this.source.database();
-        String table = this.source.table();
-        String sql = this.source.vendor().buildGetHeaderSql(database, table);
-
+        String sql = this.source.vendor().buildGetHeaderSql(this.source);
+        LOG.info("The sql for reading columns is: {}", sql);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
@@ -105,7 +89,26 @@ public class RowFetcher {
         }
         E.checkArgument(this.columns != null && this.columns.length != 0,
                         "The colmuns of the table '%s' shouldn't be empty",
-                        table);
+                        this.source.table());
+    }
+
+    public void readPrimaryKey() throws SQLException {
+        String sql = this.source.vendor().buildGetPrimaryKeySql(this.source);
+        LOG.info("The sql for reading primary keys is: {}", sql);
+        try (Statement stmt = this.conn.createStatement();
+             ResultSet result = stmt.executeQuery(sql)) {
+            List<String> columns = new ArrayList<>();
+            while (result.next()) {
+                columns.add(result.getString("COLUMN_NAME"));
+            }
+            this.primaryKeys = columns.toArray(new String[]{});
+        } catch (SQLException e) {
+            this.close();
+            throw e;
+        }
+        E.checkArgument(this.primaryKeys != null && this.primaryKeys.length != 0,
+                        "The primary keys of the table '%s' shouldn't be empty",
+                        this.source.table());
     }
 
     public List<Line> nextBatch() throws SQLException {
@@ -113,8 +116,8 @@ public class RowFetcher {
             return null;
         }
 
-        String select = this.buildSql();
-
+        String select = this.source.vendor().buildSelectSql(this.source,
+                                                            this.nextStartRow);
         List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
@@ -140,26 +143,11 @@ public class RowFetcher {
             this.finished = true;
         } else {
             // Remove the last one
-            this.nextBatchStartRow = batch.remove(batch.size() - 1);
+            Line lastLine = batch.remove(batch.size() - 1);
+            lastLine.retainAll(this.primaryKeys);
+            this.nextStartRow = lastLine;
         }
         return batch;
-    }
-
-    public String buildSql() {
-        int limit = this.source.batchSize() + 1;
-
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT * FROM ").append(this.source.table());
-
-        if (this.nextBatchStartRow != null) {
-            WhereBuilder where = new WhereBuilder(this.source.vendor(), true);
-            where.gte(this.nextBatchStartRow.names(),
-                      this.nextBatchStartRow.values());
-            sqlBuilder.append(where.build());
-        }
-        sqlBuilder.append(" LIMIT ").append(limit);
-        sqlBuilder.append(";");
-        return sqlBuilder.toString();
     }
 
     public void close() {

@@ -19,53 +19,361 @@
 
 package com.baidu.hugegraph.loader.source.jdbc;
 
+import java.util.List;
+
+import org.apache.http.client.utils.URIBuilder;
+
+import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCUtil;
 
 public enum JDBCVendor {
 
     MYSQL {
+
         @Override
-        public String buildGetHeaderSql(String database, String table) {
+        public String defaultDriver() {
+            return "com.mysql.cj.jdbc.Driver";
+        }
+
+        @Override
+        public String defaultSchema(JDBCSource source) {
+            return source.database();
+        }
+
+        @Override
+        public String buildGetHeaderSql(JDBCSource source) {
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM INFORMATION_SCHEMA.COLUMNS " +
                                  "WHERE TABLE_SCHEMA = %s " +
-                                 "AND TABLE_NAME = %s;",
-                                 JDBCUtil.escape(this, database),
-                                 JDBCUtil.escape(this, table));
+                                 "AND TABLE_NAME = %s " +
+                                 "ORDER BY ORDINAL_POSITION;",
+                                 this.escape(source.schema()),
+                                 this.escape(source.table()));
+        }
+
+        @Override
+        public String buildGetPrimaryKeySql(JDBCSource source) {
+            return String.format("SELECT COLUMN_NAME " +
+                                 "FROM INFORMATION_SCHEMA.COLUMNS " +
+                                 "WHERE TABLE_SCHEMA = %s " +
+                                 "AND TABLE_NAME = %s " +
+                                 "AND COLUMN_KEY = 'PRI';",
+                                 this.escape(source.schema()),
+                                 this.escape(source.table()));
+        }
+
+        @Override
+        public String escape(String value) {
+            return JDBCUtil.escapeMysql(value);
         }
     },
 
     POSTGRESQL {
+
         @Override
-        public String buildGetHeaderSql(String database, String table) {
+        public String defaultDriver() {
+            return "org.postgresql.Driver";
+        }
+
+        @Override
+        public String defaultSchema(JDBCSource source) {
+            return "public";
+        }
+
+        @Override
+        public String buildGetHeaderSql(JDBCSource source) {
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM INFORMATION_SCHEMA.COLUMNS " +
                                  "WHERE TABLE_CATALOG = %s " +
-                                 "AND TABLE_NAME = %s;",
-                                 JDBCUtil.escape(this, database),
-                                 JDBCUtil.escape(this, table));
+                                 "AND TABLE_SCHEMA = %s " +
+                                 "AND TABLE_NAME = %s " +
+                                 "ORDER BY ORDINAL_POSITION;",
+                                 this.escape(source.database()),
+                                 this.escape(source.schema()),
+                                 this.escape(source.table()));
+        }
+
+        @Override
+        public String buildGetPrimaryKeySql(JDBCSource source) {
+            return String.format("SELECT a.attname AS COLUMN_NAME " +
+                                 "FROM pg_index i " +
+                                 "JOIN pg_attribute a " +
+                                 "ON a.attrelid = i.indrelid " +
+                                 "AND a.attnum = ANY(i.indkey) " +
+                                 "WHERE i.indrelid = '%s.%s'::regclass " +
+                                 "AND i.indisprimary;",
+                                 source.schema(),
+                                 source.table());
+        }
+
+        @Override
+        public String escape(String value) {
+            return JDBCUtil.escapePostgresql(value);
         }
     },
 
     ORACLE {
+
         @Override
-        public String buildGetHeaderSql(String database, String table) {
+        public String defaultDriver() {
+            return "oracle.jdbc.driver.OracleDriver";
+        }
+
+        @Override
+        public String defaultSchema(JDBCSource source) {
+            return source.username().toUpperCase();
+        }
+
+        @Override
+        public String buildUrl(JDBCSource source) {
+            String url = source.url();
+            if (url.endsWith(":")) {
+                url = String.format("%s%s", url, source.database());
+            } else {
+                url = String.format("%s:%s", url, source.database());
+            }
+            return url;
+        }
+
+        /**
+         * TODO: Not related to schema?
+         */
+        @Override
+        public String buildGetHeaderSql(JDBCSource source) {
+            // NOTE: don't add a semicolon(;) at the end
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM USER_TAB_COLUMNS " +
-                                 "WHERE TABLE_NAME = %s;",
-                                 JDBCUtil.escape(this, table));
+                                 "WHERE TABLE_NAME = %s " +
+                                 "ORDER BY COLUMN_ID",
+                                 this.escape(source.table()));
+        }
+
+        @Override
+        public String buildGetPrimaryKeySql(JDBCSource source) {
+            return String.format("SELECT cols.column_name AS COLUMN_NAME " +
+                                 "FROM all_constraints cons, " +
+                                 "all_cons_columns cols " +
+                                 "WHERE cols.table_name = %s " +
+                                 "AND cons.constraint_type = 'P' " +
+                                 "AND cons.constraint_name = " +
+                                 "cols.constraint_name " +
+                                 "AND cons.owner = cols.owner " +
+                                 "ORDER BY cols.table_name, cols.position",
+                                 this.escape(source.table()));
+        }
+
+        @Override
+        public String buildSelectSql(JDBCSource source, Line nextStartRow) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("SELECT * FROM ")
+                   .append("\"").append(source.schema()).append("\"")
+                   .append(".")
+                   .append("\"").append(source.table()).append("\"");
+            if (nextStartRow != null) {
+                builder.append(this.buildGteWhereClauseInFlattened(nextStartRow))
+                       .append(" AND ");
+            } else {
+                builder.append(" WHERE ");
+            }
+            builder.append("ROWNUM <= ").append(source.batchSize() + 1);
+            return builder.toString();
+        }
+
+        @Override
+        public String escape(String value) {
+            return JDBCUtil.escapeOracle(value);
         }
     },
 
-    SQL_SERVER {
+    SQLSERVER {
+
         @Override
-        public String buildGetHeaderSql(String database, String table) {
+        public String defaultDriver() {
+            return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+        }
+
+        @Override
+        public String defaultSchema(JDBCSource source) {
+            throw new UnsupportedOperationException("SQLSERVER.defaultSchema");
+        }
+
+        @Override
+        public String buildUrl(JDBCSource source) {
+            String url = source.url();
+            String database = source.database();
+            if (url.endsWith(";")) {
+                url = String.format("%sDatabaseName=%s", url, database);
+            } else {
+                url = String.format("%s;DatabaseName=%s", url, database);
+            }
+            return url;
+        }
+
+        @Override
+        public String buildGetHeaderSql(JDBCSource source) {
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM INFORMATION_SCHEMA.COLUMNS " +
-                                 "WHERE TABLE_NAME = N%s;",
-                                 JDBCUtil.escape(this, table));
+                                 "WHERE TABLE_CATALOG = N%s " +
+                                 "AND TABLE_SCHEMA = N%s " +
+                                 "AND TABLE_NAME = N%s " +
+                                 "ORDER BY ORDINAL_POSITION;",
+                                 this.escape(source.database()),
+                                 this.escape(source.schema()),
+                                 this.escape(source.table()));
+        }
+
+        @Override
+        public String buildGetPrimaryKeySql(JDBCSource source) {
+            return String.format("SELECT COLUMN_NAME " +
+                                 "FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE " +
+                                 "WHERE OBJECTPROPERTY(OBJECT_ID(" +
+                                 "CONSTRAINT_SCHEMA + '.' + QUOTENAME(" +
+                                 "CONSTRAINT_NAME)), 'IsPrimaryKey') = 1" +
+                                 "AND TABLE_SCHEMA = N%s " +
+                                 "AND TABLE_NAME = N%s;",
+                                 this.escape(source.schema()),
+                                 this.escape(source.table()));
+        }
+
+        @Override
+        public String buildSelectSql(JDBCSource source, Line nextStartRow) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("SELECT ")
+                   .append("TOP ").append(source.batchSize() + 1)
+                   .append(" * FROM ")
+                   .append(source.schema()).append(".").append(source.table())
+                   .append(this.buildGteWhereClauseInFlattened(nextStartRow))
+                   .append(";");
+            return builder.toString();
+        }
+
+        @Override
+        public String escape(String value) {
+            return JDBCUtil.escapeSqlserver(value);
         }
     };
 
-    public abstract String buildGetHeaderSql(String database, String table);
+    public abstract String defaultDriver();
+
+    public abstract String defaultSchema(JDBCSource source);
+
+    public String buildUrl(JDBCSource source) {
+        String url = source.url();
+        if (url.endsWith("/")) {
+            url = String.format("%s%s", url, source.database());
+        } else {
+            url = String.format("%s/%s", url, source.database());
+        }
+
+        int maxTimes = source.reconnectMaxTimes();
+        int interval = source.reconnectInterval();
+
+        URIBuilder uriBuilder = new URIBuilder();
+        uriBuilder.setPath(url)
+                  .setParameter("rewriteBatchedStatements", "true")
+                  .setParameter("useServerPrepStmts", "false")
+                  .setParameter("autoReconnect", "true")
+                  .setParameter("maxReconnects", String.valueOf(maxTimes))
+                  .setParameter("initialTimeout", String.valueOf(interval));
+        return uriBuilder.toString();
+    }
+
+    public abstract String buildGetHeaderSql(JDBCSource source);
+
+    public abstract String buildGetPrimaryKeySql(JDBCSource source);
+
+    public String buildSelectSql(JDBCSource source, Line nextStartRow) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("SELECT * FROM ")
+               .append(source.schema()).append(".").append(source.table())
+               .append(this.buildGteWhereClauseInCombined(nextStartRow))
+               .append(" LIMIT ").append(source.batchSize() + 1)
+               .append(";");
+        return builder.toString();
+    }
+
+    /**
+     * For database which support to select by where (a, b, c) >= (va, vb, vc)
+     */
+    public String buildGteWhereClauseInCombined(Line nextStartRow) {
+        if (nextStartRow == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder(" WHERE ");
+        List<String> names = nextStartRow.names();
+        List<Object> values = nextStartRow.values();
+        builder.append("(");
+        for (int i = 0, n = names.size(); i < n; i++) {
+            builder.append(names.get(i));
+            if (i != n - 1) {
+                builder.append(", ");
+            }
+        }
+        builder.append(") >= (");
+        for (int i = 0, n = values.size(); i < n; i++) {
+            Object value = values.get(i);
+            builder.append(this.escapeIfNeeded(value));
+            if (i != n - 1) {
+                builder.append(", ");
+            }
+        }
+        builder.append(")");
+        return builder.toString();
+    }
+
+    /**
+     * For database which unsupport to select by where (a, b, c) >= (va, vb, vc)
+     * (a, b, c) >= (va, vb, vc) will be convert as follow:
+     * ("a" = va AND "b" = vb AND "c" >= vc)
+     * OR
+     * ("a" = va AND "b" > vb)
+     * OR
+     * ("a" > va)
+     */
+    public String buildGteWhereClauseInFlattened(Line nextStartRow) {
+        if (nextStartRow == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder(" WHERE ");
+        List<String> names = nextStartRow.names();
+        List<Object> values = nextStartRow.values();
+        for (int i = 0, n = names.size(); i < n; i++) {
+            builder.append("(");
+            for (int j = 0; j < n - i; j++) {
+                String name = names.get(j);
+                Object value = values.get(j);
+                String operator = " = ";
+                boolean appendAnd = true;
+                if (j == n - i - 1) {
+                    appendAnd = false;
+                    if (i == 0) {
+                        operator = " >= ";
+                    } else {
+                        operator = " > ";
+                    }
+                }
+                builder.append("\"").append(name).append("\"")
+                       .append(operator)
+                       .append(this.escapeIfNeeded(value));
+                if (appendAnd) {
+                    builder.append(" AND ");
+                }
+            }
+            builder.append(")");
+            if (i != n - 1) {
+                builder.append(" OR ");
+            }
+        }
+        return builder.toString();
+    }
+
+    public Object escapeIfNeeded(Object value) {
+        if (value instanceof String) {
+            return this.escape((String) value);
+        } else {
+            return value;
+        }
+    }
+
+    public abstract String escape(String value);
 }

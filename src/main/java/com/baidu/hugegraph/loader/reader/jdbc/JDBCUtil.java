@@ -24,27 +24,10 @@ import java.sql.SQLException;
 import org.postgresql.core.Utils;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.source.jdbc.JDBCVendor;
 
 public final class JDBCUtil {
 
-    public static String escape(JDBCVendor vendor, String value) {
-        switch (vendor) {
-            case MYSQL:
-                return escapeMysql(value);
-            case POSTGRESQL:
-                return escapePostgresql(value);
-            case ORACLE:
-                return escapeOracle(value);
-            case SQL_SERVER:
-                return escapeSqlserver(value);
-            default:
-                throw new AssertionError(String.format(
-                          "Unsupported database vendor '%s'", vendor));
-        }
-    }
-
-    private static String escapeMysql(String value) {
+    public static String escapeMysql(String value) {
         int length = value.length();
         if (!isEscapeNeededForString(value, length)) {
             return '\'' + value + '\'';
@@ -97,7 +80,7 @@ public final class JDBCUtil {
         return buf.toString();
     }
 
-    private static String escapePostgresql(String value) {
+    public static String escapePostgresql(String value) {
         StringBuilder builder = new StringBuilder(8 + value.length());
         builder.append('\'');
         try {
@@ -109,12 +92,13 @@ public final class JDBCUtil {
         return builder.toString();
     }
 
-    // TODO: check it
-    private static String escapeOracle(String value) {
+    public static String escapeOracle(String value) {
+        // TODO: check it
         return escapeMysql(value);
     }
 
-    private static String escapeSqlserver(String value) {
+    public static String escapeSqlserver(String value) {
+        // TODO: check it
         return escapeMysql(value);
     }
 

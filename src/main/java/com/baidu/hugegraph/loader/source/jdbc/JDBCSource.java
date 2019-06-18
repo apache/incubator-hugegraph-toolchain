@@ -21,18 +21,21 @@ package com.baidu.hugegraph.loader.source.jdbc;
 
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JDBCSource extends AbstractSource {
 
-    @JsonProperty("vendor")
+    @JsonProperty(value = "vendor")
     private JDBCVendor vendor;
     @JsonProperty("driver")
     private String driver;
-    @JsonProperty("url")
+    @JsonProperty(value = "url")
     private String url;
     @JsonProperty("database")
     private String database;
+    @JsonProperty("schema")
+    private String schema;
     @JsonProperty("table")
     private String table;
     @JsonProperty("username")
@@ -40,9 +43,9 @@ public class JDBCSource extends AbstractSource {
     @JsonProperty("password")
     private String password;
     @JsonProperty("reconnect_max_times")
-    private int reconnectMaxTimes;
+    private int reconnectMaxTimes = 3;
     @JsonProperty("reconnect_interval")
-    private int reconnectInterval;
+    private int reconnectInterval = 3;
     @JsonProperty("batch_size")
     private int batchSize = 500;
 
@@ -53,7 +56,49 @@ public class JDBCSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
-        // pass
+        E.checkArgument(this.vendor != null, "The vendor can't be null");
+        E.checkArgument(this.url != null, "The url can't be null");
+        E.checkArgument(this.database != null, "The database can't be null");
+        E.checkArgument(this.table != null, "The table can't be null");
+        E.checkArgument(this.username != null, "The username can't be null");
+        E.checkArgument(this.password != null, "The password can't be null");
+
+        switch (this.vendor) {
+            case MYSQL:
+                if (this.schema != null) {
+                    E.checkArgument(this.schema.equals(this.database),
+                                    "The schema(%s) is allowed to not " +
+                                    "specified in %s vendor, if specified, " +
+                                    "it must be same as the database(%s)",
+                                    this.schema, this.vendor, this.database);
+                } else {
+                    this.schema = this.vendor.defaultSchema(this);
+                }
+                break;
+            case POSTGRESQL:
+                // The default schema is "public"
+                if (this.schema == null) {
+                    this.schema = this.vendor.defaultSchema(this);
+                }
+                break;
+            case ORACLE:
+                // The default schema is uppercase of username
+                if (this.schema == null) {
+                    this.schema = this.vendor.defaultSchema(this);
+                }
+                break;
+            case SQLSERVER:
+                E.checkArgument(this.schema != null,
+                                "The schema must be specified in %s vendor",
+                                this.vendor);
+                break;
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported database vendor '%s'", vendor));
+        }
+        if (this.driver == null) {
+            this.driver = this.vendor.defaultDriver();
+        }
     }
 
     public JDBCVendor vendor() {
@@ -70,6 +115,10 @@ public class JDBCSource extends AbstractSource {
 
     public String database() {
         return this.database;
+    }
+
+    public String schema() {
+        return this.schema;
     }
 
     public String table() {

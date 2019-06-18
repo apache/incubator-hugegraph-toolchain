@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.reader;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import com.baidu.hugegraph.util.InsertionOrderUtil;
@@ -81,6 +82,10 @@ public final class Line {
             this.keyValues.put(names[i], values[i]);
         }
         return this.keyValues;
+    }
+
+    public void retainAll(String[] names) {
+        this.toMap().keySet().retainAll(Arrays.asList(names));
     }
 
     @Override
