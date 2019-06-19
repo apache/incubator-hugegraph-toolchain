@@ -26,12 +26,12 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.reader.Line;
@@ -119,13 +119,13 @@ public abstract class ElementBuilder<GE extends GraphElement>
         Set<String> nullableKeys = schemaLabel.nullableKeys();
         Set<Object> nullValues = this.struct().nullValues();
         if (!nullableKeys.isEmpty() && !nullValues.isEmpty()) {
-            Iterator<Map.Entry<String, Object>> itor = keyValues.entrySet()
+            Iterator<Map.Entry<String, Object>> iter = keyValues.entrySet()
                                                                 .iterator();
-            itor.forEachRemaining(entry -> {
+            iter.forEachRemaining(entry -> {
                 String key = this.struct().mappingField(entry.getKey());
                 Object val = entry.getValue();
                 if (nullableKeys.contains(key) && nullValues.contains(val)) {
-                    itor.remove();
+                    iter.remove();
                 }
             });
         }

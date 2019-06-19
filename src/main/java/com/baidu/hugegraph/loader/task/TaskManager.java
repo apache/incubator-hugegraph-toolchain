@@ -19,9 +19,7 @@
 
 package com.baidu.hugegraph.loader.task;
 
-import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
 import static com.baidu.hugegraph.loader.constant.Constants.BATCH_WORKER;
-import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_PRINT_FREQ;
 import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_WORKER;
 
 import java.util.List;
@@ -32,18 +30,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.LoadContext;
-import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.executor.FailureLogger;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.summary.LoadMetrics;
-import com.baidu.hugegraph.loader.summary.LoadSummary;
-import com.baidu.hugegraph.loader.util.HugeClientWrapper;
-import com.baidu.hugegraph.loader.util.LoadUtil;
-import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.ExecutorUtil;
 import com.baidu.hugegraph.util.Log;
@@ -52,10 +42,8 @@ public final class TaskManager {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    private final FailureLogger failureLogger = FailureLogger.insert();
-
+    private final LoadContext context;
     private final LoadOptions options;
-    private final LoadSummary summary;
 
     private final Semaphore batchSemaphore;
     private final Semaphore singleSemaphore;
@@ -63,10 +51,11 @@ public final class TaskManager {
     private final ExecutorService singleService;
 
     public TaskManager(LoadContext context) {
+        this.context = context;
         this.options = context.options();
-        this.summary = context.summary();
-        this.batchSemaphore = new Semaphore(options.numThreads);
-        this.singleSemaphore = new Semaphore(options.numThreads);
+        this.batchSemaphore = new Semaphore(this.options.numThreads);
+        // Equivalent to having a buffer queue of length options.numThreads
+        this.singleSemaphore = new Semaphore(2 * this.options.numThreads);
         /*
          * In principle, unbounded synchronization queue(which may lead to OOM)
          * should not be used, but there the task manager uses semaphores to
@@ -92,7 +81,7 @@ public final class TaskManager {
 
         try {
             // Wait single mode task finished
-            this.singleSemaphore.acquire(options.numThreads);
+            this.singleSemaphore.acquire(this.options.numThreads);
             LOG.info("Single-mode tasks of {} finished", type.string());
         } catch (InterruptedException e) {
             LOG.warn("Interrupted while waiting batch-mode tasks");
@@ -139,22 +128,14 @@ public final class TaskManager {
                                     "batch in batch mode", e, type);
         }
 
-        BatchInsertTask<GE> task = new BatchInsertTask<>(type, batch,
-                                                         this.options);
-        CompletableFuture<Integer> future;
-        future = CompletableFuture.supplyAsync(task, this.batchService);
+        InsertTask<GE> task = new BatchInsertTask<>(this.context, type, batch);
+        CompletableFuture<Void> future;
+        future = CompletableFuture.runAsync(task, this.batchService);
         future.exceptionally(error -> {
             LOG.warn("Batch insert {} error, try single insert", type, error);
             this.submitInSingleMode(type, batch);
-            return 0;
-        }).whenComplete((size, error) -> {
-            if (error == null) {
-                LoadMetrics metrics = this.summary.metrics(type);
-                metrics.addInsertSuccess(size);
-                Printer.printProgress(metrics, BATCH_PRINT_FREQ, size);
-            }
-            this.batchSemaphore.release();
-        });
+            return null;
+        }).whenComplete((r, error) -> this.batchSemaphore.release());
     }
 
     private <GE extends GraphElement> void submitInSingleMode(ElemType type,
@@ -166,35 +147,9 @@ public final class TaskManager {
                                     "batch in single mode", e, type);
         }
 
-        Runnable singleInsertTask = () -> {
-            LoadMetrics metrics = this.summary.metrics(type);
-            for (GE element : batch) {
-                try {
-                    HugeClientWrapper.addSingle(type, element);
-                    metrics.increaseInsertSuccess();
-                } catch (Exception e) {
-                    metrics.increaseInsertFailure();
-                    LOG.error("Single insert {} error", type, e);
-                    if (this.options.testMode) {
-                        throw e;
-                    }
-                    this.failureLogger.error(type,
-                                             new InsertException(element, e));
-
-                    if (metrics.insertFailure() >=
-                        this.options.maxInsertErrors) {
-                        Printer.printError("More than %s %s insert error... " +
-                                           "stopping",
-                                           this.options.maxInsertErrors, type);
-                        LoadUtil.exit(Constants.EXIT_CODE_ERROR);
-                    }
-                }
-            }
-            Printer.printProgress(metrics, SINGLE_PRINT_FREQ, batch.size());
-        };
-
+        InsertTask<GE> task = new SingleInsertTask<>(this.context, type, batch);
         CompletableFuture<Void> future;
-        future = CompletableFuture.runAsync(singleInsertTask, this.singleService);
+        future = CompletableFuture.runAsync(task, this.singleService);
         future.whenComplete((r, error) -> this.singleSemaphore.release());
     }
 }

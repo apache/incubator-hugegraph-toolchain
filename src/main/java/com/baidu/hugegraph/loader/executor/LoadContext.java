@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader;
+package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.util.LoadUtil;

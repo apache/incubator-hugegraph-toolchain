@@ -38,6 +38,7 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.struct.EdgeStruct;
@@ -207,6 +208,7 @@ public final class HugeGraphLoader {
     private void stopLoading(int code) {
         // Shutdown task manager
         this.taskManager.shutdown();
+        HugeClientWrapper.close();
         // Exit JVM if the code is not EXIT_CODE_NORM
         if (Constants.EXIT_CODE_NORM != code) {
             LoadUtil.exit(code);

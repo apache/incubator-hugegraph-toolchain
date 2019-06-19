@@ -23,12 +23,12 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 
 public class JDBCReader implements InputReader {
 

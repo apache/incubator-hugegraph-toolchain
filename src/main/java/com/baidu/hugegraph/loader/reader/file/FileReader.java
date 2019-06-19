@@ -24,9 +24,9 @@ import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.parser.CsvLineParser;
 import com.baidu.hugegraph.loader.parser.JsonLineParser;
 import com.baidu.hugegraph.loader.parser.LineParser;

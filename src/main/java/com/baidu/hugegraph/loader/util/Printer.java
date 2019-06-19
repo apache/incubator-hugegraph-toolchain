@@ -26,8 +26,8 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.LoadContext;
 import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.util.Log;

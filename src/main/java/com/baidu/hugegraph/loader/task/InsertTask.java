@@ -17,13 +17,38 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.task;
 
-import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
+import java.util.List;
+
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.util.E;
 
-public interface InputReader extends AutoCloseableIterator<Line> {
+public abstract class InsertTask<GE extends GraphElement> implements Runnable {
 
-    public void init(LoadContext context, ElementStruct struct);
+    private final LoadContext context;
+    private final ElemType type;
+    private final List<GE> batch;
+
+    public InsertTask(LoadContext context, ElemType type, List<GE> batch) {
+        E.checkArgument(batch != null && !batch.isEmpty(),
+                        "The batch can't be null or empty");
+        this.context = context;
+        this.type = type;
+        this.batch = batch;
+    }
+
+    public LoadContext context() {
+        return this.context;
+    }
+
+    public ElemType type() {
+        return this.type;
+    }
+
+    public List<GE> batch() {
+        return this.batch;
+    }
 }

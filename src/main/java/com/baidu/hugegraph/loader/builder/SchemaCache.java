@@ -20,7 +20,7 @@
 package com.baidu.hugegraph.loader.builder;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.loader.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;

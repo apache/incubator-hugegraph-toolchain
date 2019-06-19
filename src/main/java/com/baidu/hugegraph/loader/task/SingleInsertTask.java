@@ -19,83 +19,74 @@
 
 package com.baidu.hugegraph.loader.task;
 
-import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
+import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_PRINT_FREQ;
 
 import java.util.List;
 
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.exception.InsertException;
+import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
+import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.Log;
 
-public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
+public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    private static final String ILLEGAL_ARGUMENT_EXCEPTION =
-            "class java.lang.IllegalArgumentException";
+    private final FailureLogger failureLogger = FailureLogger.insert();
 
-    public BatchInsertTask(LoadContext context, ElemType type, List<GE> batch) {
+    public SingleInsertTask(LoadContext context, ElemType type,
+                            List<GE> batch) {
         super(context, type, batch);
     }
 
     @Override
     public void run() {
-        int retryCount = 0;
+        ElemType type = this.type();
         LoadOptions options = this.context().options();
-        do {
+        LoadMetrics metrics = this.context().summary().metrics(type);
+        for (GE element : this.batch()) {
             try {
-                this.addBatch(this.type(), this.batch(), options.checkVertex);
-                break;
-            } catch (ClientException e) {
-                retryCount = this.waitThenRetry(retryCount, e);
-            } catch (ServerException e) {
-                if (ILLEGAL_ARGUMENT_EXCEPTION.equals(e.exception())) {
+                addSingle(type, element);
+                metrics.increaseInsertSuccess();
+            } catch (Exception e) {
+                metrics.increaseInsertFailure();
+                LOG.error("Single insert {} error", type, e);
+                if (options.testMode) {
                     throw e;
                 }
-                retryCount = this.waitThenRetry(retryCount, e);
-            }
-        } while (retryCount > 0 && retryCount <= options.retryTimes);
+                this.failureLogger.error(type, new InsertException(element, e));
 
-        LoadMetrics metrics = this.context().summary().metrics(this.type());
-        int count = this.batch().size();
-        metrics.addInsertSuccess(count);
-        Printer.printProgress(metrics, BATCH_PRINT_FREQ, count);
+                if (metrics.insertFailure() >= options.maxInsertErrors) {
+                    Printer.printError("More than %s %s insert error... " +
+                                       "stopping",
+                                       options.maxInsertErrors, type);
+                    LoadUtil.exit(Constants.EXIT_CODE_ERROR);
+                }
+            }
+        }
+        Printer.printProgress(metrics, SINGLE_PRINT_FREQ, this.batch().size());
     }
 
-    @SuppressWarnings("unchecked")
-    private void addBatch(ElemType type, List<GE> elements, boolean check) {
+    private void addSingle(ElemType type, GE element) {
         HugeClient client = HugeClientWrapper.get(this.context().options());
         if (type.isVertex()) {
-            client.graph().addVertices((List<Vertex>) elements);
+            client.graph().addVertex((Vertex) element);
         } else {
             assert type.isEdge();
-            client.graph().addEdges((List<Edge>) elements, check);
+            client.graph().addEdge((Edge) element);
         }
-    }
-
-    private int waitThenRetry(int retryCount, RuntimeException e) {
-        LoadOptions options = this.context().options();
-        try {
-            Thread.sleep(options.retryInterval * 1000);
-        } catch (InterruptedException ignored) {
-            // That's fine, just continue.
-        }
-
-        if (++retryCount > options.retryTimes) {
-            throw e;
-        }
-        return retryCount;
     }
 }

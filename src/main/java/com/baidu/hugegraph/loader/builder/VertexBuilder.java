@@ -22,7 +22,7 @@ package com.baidu.hugegraph.loader.builder;
 import java.util.List;
 import java.util.Map;
 
-import com.baidu.hugegraph.loader.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.struct.VertexStruct;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
