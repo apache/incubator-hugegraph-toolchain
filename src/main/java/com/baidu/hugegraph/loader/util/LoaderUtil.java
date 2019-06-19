@@ -53,7 +53,7 @@ public final class LoaderUtil {
             logAndPrint(String.format("parse failure %s", type),
                         summary.parseFailure());
             logAndPrint(String.format("parse success %s", type),
-                        summary.parserSuccess());
+                        summary.parseSuccess());
             logAndPrint(String.format("insert failure %s", type),
                         summary.insertFailure());
             logAndPrint(String.format("insert success %s", type),

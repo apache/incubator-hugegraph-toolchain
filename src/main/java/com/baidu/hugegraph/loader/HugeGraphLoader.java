@@ -62,7 +62,6 @@ public class HugeGraphLoader {
 
     private long parseFailureNum = 0L;
     private long parseSuccessNum = 0L;
-    private long parseSuccessPerSource = 0L;
 
     public static void main(String[] args) {
         HugeGraphLoader loader = new HugeGraphLoader(args);
@@ -164,16 +163,15 @@ public class HugeGraphLoader {
             VertexBuilder builder = new VertexBuilder(source, this.options);
             try {
                 Instant startTime = Instant.now();
-                this.loadVertex(builder);
+                long parseSuccessPerSource = this.loadVertex(builder);
                 Instant finishTime = Instant.now();
                 long loadTime = Duration.between(startTime, finishTime)
                                         .getSeconds();
-                LOG.info("Finish loading vertex source '{}', " +
-                         "the average speed is {}/s", source.label(),
+                LOG.info("Finish loading {} '{}' vertices, " +
+                         "the average speed is {}/s",
+                         parseSuccessPerSource, source.label(),
                          loadTime == 0 ? 0 : parseSuccessPerSource / loadTime);
-                this.parseSuccessNum += this.parseSuccessPerSource;
-                // Reset counter
-                this.parseSuccessPerSource = 0L;
+                this.parseSuccessNum += parseSuccessPerSource;
             } finally {
                 try {
                     builder.close();
@@ -191,7 +189,7 @@ public class HugeGraphLoader {
         LoadSummary summary = new LoadSummary("vertices");
         Duration duration = Duration.between(beginTime, endTime);
         summary.parseFailure(this.parseFailureNum);
-        summary.parserSuccess(this.parseSuccessNum);
+        summary.parseSuccess(this.parseSuccessNum);
         summary.insertFailure(this.taskManager.failureNum());
         summary.insertSuccess(this.taskManager.successNum());
         summary.averageSpeed(this.taskManager.successNum(), duration);
@@ -200,8 +198,9 @@ public class HugeGraphLoader {
         return summary;
     }
 
-    private void loadVertex(VertexBuilder builder) {
+    private long loadVertex(VertexBuilder builder) {
         int batchSize = this.options.batchSize;
+        long parseSuccess = 0L;
         List<Vertex> batch = new ArrayList<>(batchSize);
         while (true) {
             try {
@@ -210,7 +209,6 @@ public class HugeGraphLoader {
                 }
                 Vertex vertex = builder.next();
                 batch.add(vertex);
-                this.parseSuccessPerSource++;
             } catch (ParseException e) {
                 if (this.options.testMode) {
                     throw e;
@@ -227,13 +225,16 @@ public class HugeGraphLoader {
                 continue;
             }
             if (batch.size() >= batchSize) {
+                parseSuccess += batchSize;
                 this.taskManager.submitVertexBatch(batch);
                 batch = new ArrayList<>(batchSize);
             }
         }
         if (batch.size() > 0) {
+            parseSuccess += batch.size();
             this.taskManager.submitVertexBatch(batch);
         }
+        return parseSuccess;
     }
 
     private LoadSummary loadEdges() {
@@ -245,15 +246,15 @@ public class HugeGraphLoader {
             EdgeBuilder builder = new EdgeBuilder(source, this.options);
             try {
                 Instant startTime = Instant.now();
-                this.loadEdge(builder);
+                long parseSuccessPerSource = this.loadEdge(builder);
                 Instant finishTime = Instant.now();
                 long loadTime = Duration.between(startTime, finishTime)
                                         .getSeconds();
-                LOG.info("Finish loading edge source '{}', " +
-                         "the average speed is {}/s", source.label(),
+                LOG.info("Finish loading {} '{}' edges, " +
+                         "the average speed is {}/s",
+                         parseSuccessPerSource, source.label(),
                          loadTime == 0 ? 0 : parseSuccessPerSource / loadTime);
-                this.parseSuccessNum += this.parseSuccessPerSource;
-                this.parseSuccessPerSource = 0L;
+                this.parseSuccessNum += parseSuccessPerSource;
             } finally {
                 try {
                     builder.close();
@@ -271,7 +272,7 @@ public class HugeGraphLoader {
         LoadSummary summary = new LoadSummary("edges");
         Duration duration = Duration.between(beginTime, endTime);
         summary.parseFailure(this.parseFailureNum);
-        summary.parserSuccess(this.parseSuccessNum);
+        summary.parseSuccess(this.parseSuccessNum);
         summary.insertFailure(this.taskManager.failureNum());
         summary.insertSuccess(this.taskManager.successNum());
         summary.averageSpeed(this.taskManager.successNum(), duration);
@@ -280,8 +281,9 @@ public class HugeGraphLoader {
         return summary;
     }
 
-    private void loadEdge(EdgeBuilder builder) {
+    private long loadEdge(EdgeBuilder builder) {
         int batchSize = this.options.batchSize;
+        long parseSuccess = 0L;
         List<Edge> batch = new ArrayList<>(batchSize);
         while (true) {
             try {
@@ -290,7 +292,6 @@ public class HugeGraphLoader {
                 }
                 Edge edge = builder.next();
                 batch.add(edge);
-                this.parseSuccessPerSource++;
             } catch (ParseException e) {
                 if (this.options.testMode) {
                     throw e;
@@ -306,12 +307,15 @@ public class HugeGraphLoader {
                 continue;
             }
             if (batch.size() >= batchSize) {
+                parseSuccess += batchSize;
                 this.taskManager.submitEdgeBatch(batch);
                 batch = new ArrayList<>(batchSize);
             }
         }
         if (batch.size() > 0) {
+            parseSuccess += batch.size();
             this.taskManager.submitEdgeBatch(batch);
         }
+        return parseSuccess;
     }
 }

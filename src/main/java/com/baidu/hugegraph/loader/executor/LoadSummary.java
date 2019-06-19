@@ -26,7 +26,7 @@ public class LoadSummary {
     private final String type;
 
     private long parseFailure;
-    private long parserSuccess;
+    private long parseSuccess;
     private long insertFailure;
     private long insertSuccess;
     private long averageSpeed;
@@ -35,7 +35,7 @@ public class LoadSummary {
     public LoadSummary(String type) {
         this.type = type;
         this.parseFailure = 0L;
-        this.parserSuccess = 0L;
+        this.parseSuccess = 0L;
         this.insertFailure = 0L;
         this.insertSuccess = 0L;
         this.averageSpeed = 0L;
@@ -54,12 +54,12 @@ public class LoadSummary {
         this.parseFailure = count;
     }
 
-    public long parserSuccess() {
-        return parserSuccess;
+    public long parseSuccess() {
+        return parseSuccess;
     }
 
-    public void parserSuccess(long count) {
-        this.parserSuccess = count;
+    public void parseSuccess(long count) {
+        this.parseSuccess = count;
     }
 
     public long insertFailure() {
