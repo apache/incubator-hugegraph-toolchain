@@ -55,9 +55,11 @@ public final class HugeClientWrapper {
     }
 
     public static void close() {
-        if (instance != null) {
-            instance.close();
-            instance = null;
+        synchronized(HugeClientWrapper.class) {
+            if (instance != null) {
+                instance.close();
+                instance = null;
+            }
         }
     }
 }

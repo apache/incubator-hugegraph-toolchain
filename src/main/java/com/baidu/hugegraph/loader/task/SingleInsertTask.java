@@ -32,6 +32,7 @@ import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.loader.util.LoadUtil;
@@ -47,37 +48,37 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     private final FailureLogger failureLogger = FailureLogger.insert();
 
-    public SingleInsertTask(LoadContext context, ElemType type,
+    public SingleInsertTask(LoadContext context, ElementStruct struct,
                             List<GE> batch) {
-        super(context, type, batch);
+        super(context, struct, batch);
     }
 
     @Override
     public void run() {
-        ElemType type = this.type();
+        ElemType type = this.struct().type();
         LoadOptions options = this.context().options();
-        LoadMetrics metrics = this.context().summary().metrics(type);
+        LoadMetrics metrics = this.context().summary().metrics(this.struct());
         for (GE element : this.batch()) {
             try {
                 addSingle(type, element);
-                metrics.increaseInsertSuccess();
+                metrics.increaseLoadSuccess();
             } catch (Exception e) {
-                metrics.increaseInsertFailure();
+                metrics.increaseLoadFailure();
                 LOG.error("Single insert {} error", type, e);
                 if (options.testMode) {
                     throw e;
                 }
                 this.failureLogger.error(type, new InsertException(element, e));
 
-                if (metrics.insertFailure() >= options.maxInsertErrors) {
-                    Printer.printError("More than %s %s insert error... " +
-                                       "stopping",
+                if (metrics.loadFailure() >= options.maxInsertErrors) {
+                    Printer.printError("Exceed %s %s insert error... stopping",
                                        options.maxInsertErrors, type);
                     LoadUtil.exit(Constants.EXIT_CODE_ERROR);
                 }
             }
         }
-        Printer.printProgress(metrics, SINGLE_PRINT_FREQ, this.batch().size());
+        Printer.printProgress(type, metrics.loadSuccess(),
+                              SINGLE_PRINT_FREQ, this.batch().size());
     }
 
     private void addSingle(ElemType type, GE element) {

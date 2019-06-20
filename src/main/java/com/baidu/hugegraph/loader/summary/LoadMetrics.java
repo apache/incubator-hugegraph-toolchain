@@ -19,77 +19,109 @@
 
 package com.baidu.hugegraph.loader.summary;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.atomic.LongAdder;
-
-import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.util.E;
 
 public final class LoadMetrics {
 
-    private final ElemType type;
-
     // Modified in only one thread
+    private long parseTime;
+    private long parseSuccess;
     private long parseFailure;
-    private final LongAdder insertSuccess;
-    private final LongAdder insertFailure;
+    // These metrics are user’s focus
+    private long loadTime;
+    private final LongAdder loadSuccess;
+    private final LongAdder loadFailure;
 
-    private Instant begTime;
-    private Instant endTime;
-
-    public LoadMetrics(ElemType type) {
-        this.type = type;
+    public LoadMetrics() {
+        this.parseTime = 0L;
+        this.parseSuccess = 0L;
         this.parseFailure = 0L;
-        this.insertSuccess = new LongAdder();
-        this.insertFailure = new LongAdder();
-        this.begTime = null;
-        this.begTime = null;
+        this.loadTime = 0L;
+        this.loadSuccess = new LongAdder();
+        this.loadFailure = new LongAdder();
     }
 
-    public ElemType type() {
-        return this.type;
+    public long parseTime() {
+        return this.parseTime;
     }
 
-    public void startTimer() {
-        this.begTime = Instant.now();
+    public void parseTime(long time) {
+        this.parseTime = time;
     }
 
-    public void stopTimer() {
-        this.endTime = Instant.now();
+    public void plusParseTime(long time) {
+        this.parseTime += time;
     }
 
-    public Duration duration() {
-        E.checkNotNull(this.begTime, "begTime");
-        E.checkNotNull(this.endTime, "endTime");
-        return Duration.between(begTime, endTime);
+    public long parseSuccess() {
+        return this.parseSuccess;
+    }
+
+    public void plusParseSuccess(long count) {
+        this.parseSuccess += count;
     }
 
     public long parseFailure() {
         return this.parseFailure;
     }
 
+    public void plusParseFailure(long count) {
+        this.parseFailure += count;
+    }
+
     public long increaseParseFailure() {
         return ++this.parseFailure;
     }
 
-    public long insertSuccess() {
-        return this.insertSuccess.longValue();
+    public long parseRate() {
+        if (this.parseTime() != 0) {
+            return this.parseSuccess() / this.parseTime();
+        } else {
+            return -1L;
+        }
     }
 
-    public void addInsertSuccess(long count) {
-        this.insertSuccess.add(count);
+    public long loadTime() {
+        return this.loadTime;
     }
 
-    public void increaseInsertSuccess() {
-        this.insertSuccess.increment();
+    public void loadTime(long time) {
+        this.loadTime = time;
     }
 
-    public long insertFailure() {
-        return this.insertFailure.longValue();
+    public void plusLoadTime(long time) {
+        this.loadTime += time;
     }
 
-    public void increaseInsertFailure() {
-        this.insertFailure.increment();
+    public long loadSuccess() {
+        return this.loadSuccess.longValue();
+    }
+
+    public void plusLoadSuccess(long count) {
+        this.loadSuccess.add(count);
+    }
+
+    public void increaseLoadSuccess() {
+        this.loadSuccess.increment();
+    }
+
+    public long loadFailure() {
+        return this.loadFailure.longValue();
+    }
+
+    public void plusLoadFailure(long count) {
+        this.loadFailure.add(count);
+    }
+
+    public void increaseLoadFailure() {
+        this.loadFailure.increment();
+    }
+
+    public long loadRate() {
+        if (this.loadTime() != 0) {
+            return this.loadSuccess() / this.loadTime();
+        } else {
+            return -1L;
+        }
     }
 }

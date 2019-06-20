@@ -19,13 +19,10 @@
 
 package com.baidu.hugegraph.loader.util;
 
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
@@ -34,8 +31,9 @@ import com.baidu.hugegraph.util.Log;
 
 public final class Printer {
 
-    private static final Logger LOG = Log.logger(Printer.class);
+    private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
+    private static final String EMPTY_LINE = "";
     private static final String DIVIDE_LINE = StringUtils.repeat('-', 42);
 
     public static void print(Object message) {
@@ -54,46 +52,96 @@ public final class Printer {
     /**
      * The print format like
      *
-     * vertices has been loaded    : 9923
-     * edges has been loaded       : 1000209
      * ------------------------------------------
-     * vertices summary
-     * counter:
+     * vertices metrics
+     *
+     * struct 'user-e6d5731c'
+     * parse:
+     *     parse success           : 6040
      *     parse failure           : 0
-     * 	   insert failure          : 0
-     * 	   insert success          : 9923
-     * timer:
-     * 	   loading time(second)    : 0
+     *     parse time(second)      : 0
+     * load:
+     *     load success            : 6040
+     *     load failure            : 0
+     *     load time(second)       : 0
+     *
+     * struct 'movie-a917bbd1'
+     * parse:
+     *     parse success           : 3883
+     *     parse failure           : 0
+     *     parse time(second)      : 0
+     * load:
+     *     load success            : 3883
+     *     load failure            : 0
+     *     load time(second)       : 0
      * ------------------------------------------
-     * edges summary
-     * counter:
-     * 	   parse failure           : 0
-     * 	   insert failure          : 0
-     * 	   insert success          : 1000209
-     * timer:
-     * 	   loading time(second)    : 18
-     * 	   total loading time      : 18
+     * edges metrics
+     *
+     * struct 'rating-6ec4d883'
+     * parse:
+     *     parse success           : 1000209
+     *     parse failure           : 0
+     *     parse time(second)      : 3
+     *     parse rate              : 333403
+     * load:
+     *     load success            : 1000209
+     *     load failure            : 0
+     *     load time(second)       : 17
+     *     load rate               : 58835
+     * ------------------------------------------
+     * total metrics
+     * parse:
+     *     parse success           : 1010132
+     *     parse failure           : 0
+     *     parse time(second)      : 3
+     *     parse rate              : 336710
+     * load:
+     *     load success            : 1010132
+     *     load failure            : 0
+     *     load time(second)       : 17
+     *     load rate               : 59419
      */
     public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
-        List<LoadMetrics> metricsList = Arrays.asList(summary.vertexMetrics(),
-                                                      summary.edgeMetrics());
-        // Print vertex and edge metrics
-        for (LoadMetrics metrics : metricsList) {
-            printAndLog(DIVIDE_LINE);
-            printAndLog(String.format("%s summary", metrics.type().string()));
-            printAndLog("counter:");
-            printAndLog("parse failure", metrics.parseFailure());
-            printAndLog("insert failure", metrics.insertFailure());
-            printAndLog("insert success", metrics.insertSuccess());
-            printAndLog("timer:");
-            printAndLog("loading time(second)", metrics.duration().getSeconds());
+        // Print vertices and edges metrics
+        printAndLog(DIVIDE_LINE);
+        printAndLog(String.format("%s metrics", ElemType.VERTEX.string()));
+        summary.vertexMetrics().forEach((uniqueKey, metrics) -> {
+            printAndLog(EMPTY_LINE);
+            printAndLog(String.format("struct '%s'", uniqueKey));
+            printMetrics(metrics);
+        });
+        printAndLog(DIVIDE_LINE);
+        printAndLog(String.format("%s metrics", ElemType.EDGE.string()));
+        summary.edgeMetrics().forEach((uniqueKey, metrics) -> {
+            printAndLog(EMPTY_LINE);
+            printAndLog(String.format("struct '%s'", uniqueKey));
+            printMetrics(metrics);
+        });
+
+        // Print total metrics
+        LoadMetrics totalMetrics = summary.accumulateAllMetrics();
+        printAndLog(DIVIDE_LINE);
+        printAndLog("total metrics");
+        printMetrics(totalMetrics);
+    }
+
+    private static void printMetrics(LoadMetrics metrics) {
+        printAndLog("parse:");
+        printAndLog("parse success", metrics.parseSuccess());
+        printAndLog("parse failure", metrics.parseFailure());
+        printAndLog("parse time(second)", metrics.parseTime());
+        if (metrics.parseTime() != 0) {
+            printAndLog("parse rate", metrics.parseRate());
         }
 
-        // Print total time
-        Duration total = metricsList.stream().map(LoadMetrics::duration)
-                                    .reduce(Duration::plus).get();
-        printAndLog("total loading time", total.getSeconds());
+        printAndLog("load:");
+        printAndLog("load success", metrics.loadSuccess());
+        printAndLog("load failure", metrics.loadFailure());
+        printAndLog("load time(second)", metrics.loadTime());
+        if (metrics.loadTime() != 0) {
+            printAndLog("load rate", metrics.loadRate());
+        }
     }
 
     public static void printError(String message, Object... args) {
@@ -112,12 +160,11 @@ public final class Printer {
         System.err.println(formattedMsg);
     }
 
-    public static void printProgress(LoadMetrics metrics, long frequency,
-                                     int batchSize) {
-        long loaded = metrics.insertSuccess();
+    public static void printProgress(ElemType type, long loaded,
+                                     long frequency, int batchSize) {
         Printer.printInBackward(loaded);
         if (loaded % frequency < batchSize) {
-            LOG.info("{} has been loaded: {}", metrics.type().string(), loaded);
+            LOG.info("{} has been loaded: {}", type.string(), loaded);
         }
     }
 

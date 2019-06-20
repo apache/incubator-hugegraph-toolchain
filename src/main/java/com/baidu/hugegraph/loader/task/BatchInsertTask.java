@@ -30,6 +30,7 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.loader.util.Printer;
@@ -46,17 +47,19 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
     private static final String ILLEGAL_ARGUMENT_EXCEPTION =
             "class java.lang.IllegalArgumentException";
 
-    public BatchInsertTask(LoadContext context, ElemType type, List<GE> batch) {
-        super(context, type, batch);
+    public BatchInsertTask(LoadContext context, ElementStruct struct,
+                           List<GE> batch) {
+        super(context, struct, batch);
     }
 
     @Override
     public void run() {
         int retryCount = 0;
+        ElemType type = this.struct().type();
         LoadOptions options = this.context().options();
         do {
             try {
-                this.addBatch(this.type(), this.batch(), options.checkVertex);
+                this.addBatch(type, this.batch(), options.checkVertex);
                 break;
             } catch (ClientException e) {
                 retryCount = this.waitThenRetry(retryCount, e);
@@ -68,10 +71,11 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
             }
         } while (retryCount > 0 && retryCount <= options.retryTimes);
 
-        LoadMetrics metrics = this.context().summary().metrics(this.type());
+        LoadMetrics metrics = this.context().summary().metrics(this.struct());
         int count = this.batch().size();
-        metrics.addInsertSuccess(count);
-        Printer.printProgress(metrics, BATCH_PRINT_FREQ, count);
+        metrics.plusLoadSuccess(count);
+        Printer.printProgress(type, metrics.loadSuccess(),
+                              BATCH_PRINT_FREQ, count);
     }
 
     @SuppressWarnings("unchecked")

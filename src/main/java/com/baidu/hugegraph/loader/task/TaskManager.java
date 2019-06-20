@@ -34,6 +34,7 @@ import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.ExecutorUtil;
 import com.baidu.hugegraph.util.Log;
@@ -119,8 +120,9 @@ public final class TaskManager {
         }
     }
 
-    public <GE extends GraphElement> void submitBatch(ElemType type,
+    public <GE extends GraphElement> void submitBatch(ElementStruct struct,
                                                       List<GE> batch) {
+        ElemType type = struct.type();
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
@@ -128,18 +130,18 @@ public final class TaskManager {
                                     "batch in batch mode", e, type);
         }
 
-        InsertTask<GE> task = new BatchInsertTask<>(this.context, type, batch);
-        CompletableFuture<Void> future;
-        future = CompletableFuture.runAsync(task, this.batchService);
-        future.exceptionally(error -> {
-            LOG.warn("Batch insert {} error, try single insert", type, error);
-            this.submitInSingleMode(type, batch);
+        InsertTask<GE> task = new BatchInsertTask<>(this.context, struct,
+                                                    batch);
+        CompletableFuture.runAsync(task, this.batchService).exceptionally(e -> {
+            LOG.warn("Batch insert {} error, try single insert", type, e);
+            this.submitInSingle(struct, batch);
             return null;
-        }).whenComplete((r, error) -> this.batchSemaphore.release());
+        }).whenComplete((r, e) -> this.batchSemaphore.release());
     }
 
-    private <GE extends GraphElement> void submitInSingleMode(ElemType type,
-                                                              List<GE> batch) {
+    private <GE extends GraphElement> void submitInSingle(ElementStruct struct,
+                                                          List<GE> batch) {
+        ElemType type = struct.type();
         try {
             this.singleSemaphore.acquire();
         } catch (InterruptedException e) {
@@ -147,9 +149,9 @@ public final class TaskManager {
                                     "batch in single mode", e, type);
         }
 
-        InsertTask<GE> task = new SingleInsertTask<>(this.context, type, batch);
-        CompletableFuture<Void> future;
-        future = CompletableFuture.runAsync(task, this.singleService);
-        future.whenComplete((r, error) -> this.singleSemaphore.release());
+        InsertTask<GE> task = new SingleInsertTask<>(this.context, struct,
+                                                     batch);
+        CompletableFuture.runAsync(task, this.singleService)
+                         .whenComplete((r, e) -> this.singleSemaphore.release());
     }
 }

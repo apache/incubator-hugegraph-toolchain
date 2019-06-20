@@ -22,21 +22,22 @@ package com.baidu.hugegraph.loader.task;
 import java.util.List;
 
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
 
 public abstract class InsertTask<GE extends GraphElement> implements Runnable {
 
     private final LoadContext context;
-    private final ElemType type;
+    private final ElementStruct struct;
     private final List<GE> batch;
 
-    public InsertTask(LoadContext context, ElemType type, List<GE> batch) {
+    public InsertTask(LoadContext context, ElementStruct struct,
+                      List<GE> batch) {
         E.checkArgument(batch != null && !batch.isEmpty(),
                         "The batch can't be null or empty");
         this.context = context;
-        this.type = type;
+        this.struct = struct;
         this.batch = batch;
     }
 
@@ -44,8 +45,8 @@ public abstract class InsertTask<GE extends GraphElement> implements Runnable {
         return this.context;
     }
 
-    public ElemType type() {
-        return this.type;
+    public ElementStruct struct() {
+        return this.struct;
     }
 
     public List<GE> batch() {
