@@ -46,7 +46,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    private final FailureLogger failureLogger = FailureLogger.insert();
+    private static final FailureLogger FAILURE_LOGGER = FailureLogger.insert();
 
     public SingleInsertTask(LoadContext context, ElementStruct struct,
                             List<GE> batch) {
@@ -68,7 +68,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                 if (options.testMode) {
                     throw e;
                 }
-                this.failureLogger.error(type, new InsertException(element, e));
+                FAILURE_LOGGER.error(type, new InsertException(element, e));
 
                 if (metrics.loadFailure() >= options.maxInsertErrors) {
                     Printer.printError("Exceed %s %s insert error... stopping",

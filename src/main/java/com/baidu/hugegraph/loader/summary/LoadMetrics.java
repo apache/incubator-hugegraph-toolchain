@@ -74,11 +74,7 @@ public final class LoadMetrics {
     }
 
     public long parseRate() {
-        if (this.parseTime() != 0) {
-            return this.parseSuccess() / this.parseTime();
-        } else {
-            return -1L;
-        }
+        return this.parseTime != 0 ? this.parseSuccess() / this.parseTime : -1L;
     }
 
     public long loadTime() {
@@ -118,10 +114,6 @@ public final class LoadMetrics {
     }
 
     public long loadRate() {
-        if (this.loadTime() != 0) {
-            return this.loadSuccess() / this.loadTime();
-        } else {
-            return -1L;
-        }
+        return this.loadTime != 0 ? this.loadSuccess() / this.loadTime : -1L;
     }
 }

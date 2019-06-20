@@ -23,7 +23,7 @@ import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class HdfsSource extends FileSource {
+public class HDFSSource extends FileSource {
 
     @JsonProperty("fs_default_fs")
     private String fsDefaultFS;

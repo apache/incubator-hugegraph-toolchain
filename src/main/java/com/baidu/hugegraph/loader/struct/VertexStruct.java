@@ -50,6 +50,6 @@ public class VertexStruct extends ElementStruct {
 
     @Override
     public String toString() {
-        return String.format("VertexStruct(%s)", this.label());
+        return String.format("VertexStruct(%s)", this.uniqueKey());
     }
 }

@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -85,6 +86,16 @@ public class GraphStruct implements Checkable {
 
     public List<EdgeStruct> edgeStructs() {
         return this.edgeStructs;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <ES extends ElementStruct> List<ES> structs(ElemType type) {
+        if (type.isVertex()) {
+            return (List<ES>) this.vertexStructs;
+        } else {
+            assert type.isEdge();
+            return (List<ES>) this.edgeStructs;
+        }
     }
 
     private <T extends ElementStruct> void checkNoSameStruct(List<T> structs) {

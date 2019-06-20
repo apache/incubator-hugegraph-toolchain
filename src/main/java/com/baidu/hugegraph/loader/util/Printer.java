@@ -56,28 +56,38 @@ public final class Printer {
      * vertices metrics
      *
      * struct 'user-e6d5731c'
-     * parse:
      *     parse success           : 6040
      *     parse failure           : 0
-     *     parse time(second)      : 0
-     * load:
      *     load success            : 6040
      *     load failure            : 0
-     *     load time(second)       : 0
      *
      * struct 'movie-a917bbd1'
-     * parse:
      *     parse success           : 3883
      *     parse failure           : 0
-     *     parse time(second)      : 0
-     * load:
      *     load success            : 3883
      *     load failure            : 0
-     *     load time(second)       : 0
      * ------------------------------------------
      * edges metrics
      *
      * struct 'rating-6ec4d883'
+     *     parse success           : 1000209
+     *     parse failure           : 0
+     *     load success            : 1000209
+     *     load failure            : 0
+     * ------------------------------------------
+     * total vertex metrics
+     * parse:
+     *     parse success           : 9923
+     *     parse failure           : 0
+     *     parse time(second)      : 0
+     *     parse rate              : -1
+     * load:
+     *     load success            : 9923
+     *     load failure            : 0
+     *     load time(second)       : 0
+     *     load rate               : -1
+     * ------------------------------------------
+     * total edge metrics
      * parse:
      *     parse success           : 1000209
      *     parse failure           : 0
@@ -103,7 +113,7 @@ public final class Printer {
      */
     public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
-        // Print vertices and edges metrics
+        // Print vertices/edges metrics
         printAndLog(DIVIDE_LINE);
         printAndLog(String.format("%s metrics", ElemType.VERTEX.string()));
         summary.vertexMetrics().forEach((uniqueKey, metrics) -> {
@@ -119,29 +129,43 @@ public final class Printer {
             printMetrics(metrics);
         });
 
-        // Print total metrics
+        // Print total vertices/edges metrics
+        LoadMetrics totalVertexMetrics = summary.accumulateMetrics(
+                                                 ElemType.VERTEX);
+        printAndLog(DIVIDE_LINE);
+        printAndLog("total vertex metrics");
+        printTotalMetrics(totalVertexMetrics);
+        LoadMetrics totalEdgeMetrics = summary.accumulateMetrics(ElemType.EDGE);
+        printAndLog(DIVIDE_LINE);
+        printAndLog("total edge metrics");
+        printTotalMetrics(totalEdgeMetrics);
+
         LoadMetrics totalMetrics = summary.accumulateAllMetrics();
         printAndLog(DIVIDE_LINE);
         printAndLog("total metrics");
-        printMetrics(totalMetrics);
+        printTotalMetrics(totalMetrics);
     }
 
     private static void printMetrics(LoadMetrics metrics) {
+        printAndLog("parse success", metrics.parseSuccess());
+        printAndLog("parse failure", metrics.parseFailure());
+        printAndLog("load success", metrics.loadSuccess());
+        printAndLog("load failure", metrics.loadFailure());
+    }
+
+    private static void printTotalMetrics(LoadMetrics metrics) {
         printAndLog("parse:");
+        // Print parse success used to comfirm data integrity
         printAndLog("parse success", metrics.parseSuccess());
         printAndLog("parse failure", metrics.parseFailure());
         printAndLog("parse time(second)", metrics.parseTime());
-        if (metrics.parseTime() != 0) {
-            printAndLog("parse rate", metrics.parseRate());
-        }
+        printAndLog("parse rate", metrics.parseRate());
 
         printAndLog("load:");
         printAndLog("load success", metrics.loadSuccess());
         printAndLog("load failure", metrics.loadFailure());
         printAndLog("load time(second)", metrics.loadTime());
-        if (metrics.loadTime() != 0) {
-            printAndLog("load rate", metrics.loadRate());
-        }
+        printAndLog("load rate", metrics.loadRate());
     }
 
     public static void printError(String message, Object... args) {

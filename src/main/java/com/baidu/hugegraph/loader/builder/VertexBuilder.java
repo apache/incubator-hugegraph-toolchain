@@ -80,7 +80,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
             if (idStrategy.isCustomizeString()) {
                 String id = (String) idValue;
-                this.checkVertexIdLength(id);
+                checkVertexIdLength(id);
                 vertex.id(id);
             } else {
                 assert idStrategy.isCustomizeNumber();
@@ -100,14 +100,15 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                 if (!primaryKeys.contains(key)) {
                     continue;
                 }
-                this.mappingFieldValueIfNeeded(fieldName, fieldValue);
-                Object value = this.validatePropertyValue(key, fieldValue);
+                Object mappedValue = this.mappingFieldValueIfNeeded(fieldName,
+                                                                    fieldValue);
+                Object value = this.validatePropertyValue(key, mappedValue);
 
                 int index = primaryKeys.indexOf(key);
                 primaryValues[index] = value;
             }
-            String id = this.spliceVertexId(this.vertexLabel, primaryValues);
-            this.checkVertexIdLength(id);
+            String id = spliceVertexId(this.vertexLabel, primaryValues);
+            checkVertexIdLength(id);
         }
     }
 

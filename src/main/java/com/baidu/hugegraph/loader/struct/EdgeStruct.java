@@ -68,6 +68,6 @@ public class EdgeStruct extends ElementStruct {
 
     @Override
     public String toString() {
-        return String.format("EdgeStruct(%s)", this.label());
+        return String.format("EdgeStruct(%s)", this.uniqueKey());
     }
 }

@@ -41,16 +41,16 @@ import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.reader.file.FileReader;
 import com.baidu.hugegraph.loader.reader.file.Readers;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
-import com.baidu.hugegraph.loader.source.hdfs.HdfsSource;
+import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.util.Log;
 
-public class HdfsFileReader extends FileReader {
+public class HDFSFileReader extends FileReader {
 
-    private static final Logger LOG = Log.logger(HdfsFileReader.class);
+    private static final Logger LOG = Log.logger(HDFSFileReader.class);
 
     private final FileSystem hdfs;
 
-    public HdfsFileReader(HdfsSource source) {
+    public HDFSFileReader(HDFSSource source) {
         super(source);
         Configuration config = this.loadConfiguration();
         try {
@@ -67,8 +67,8 @@ public class HdfsFileReader extends FileReader {
     }
 
     @Override
-    public HdfsSource source() {
-        return (HdfsSource) super.source();
+    public HDFSSource source() {
+        return (HDFSSource) super.source();
     }
 
     @Override
@@ -90,14 +90,14 @@ public class HdfsFileReader extends FileReader {
                           "Please check path name and suffix, ensure that " +
                           "at least one path is available for reading");
             }
-            paths.add(new HdfsFile(this.hdfs, path));
+            paths.add(new HDFSFile(this.hdfs, path));
         } else {
             assert this.hdfs.isDirectory(path);
             FileStatus[] statuses = this.hdfs.listStatus(path);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             for (Path subPath : subPaths) {
                 if (filter.reserved(subPath.getName())) {
-                    paths.add(new HdfsFile(this.hdfs, subPath));
+                    paths.add(new HDFSFile(this.hdfs, subPath));
                 }
             }
         }
@@ -142,12 +142,12 @@ public class HdfsFileReader extends FileReader {
         return new Path(Paths.get(configPath, configFile).toString());
     }
 
-    protected static class HdfsFile implements Readable {
+    protected static class HDFSFile implements Readable {
 
         private final FileSystem hdfs;
         private final Path path;
 
-        private HdfsFile(FileSystem hdfs, Path path) {
+        private HDFSFile(FileSystem hdfs, Path path) {
             this.hdfs = hdfs;
             this.path = path;
         }

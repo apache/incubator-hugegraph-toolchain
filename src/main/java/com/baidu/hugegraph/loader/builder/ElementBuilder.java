@@ -36,7 +36,9 @@ import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.struct.EdgeStruct;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.struct.VertexStruct;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -58,6 +60,16 @@ public abstract class ElementBuilder<GE extends GraphElement>
         this.schema = new SchemaCache(context);
         this.reader = InputReaderFactory.create(struct.input());
         this.init(context, struct);
+    }
+
+    public static ElementBuilder<?> of(LoadContext context,
+                                       ElementStruct struct) {
+        if (struct.type().isVertex()) {
+            return new VertexBuilder(context, (VertexStruct) struct);
+        } else {
+            assert struct.type().isEdge();
+            return new EdgeBuilder(context, (EdgeStruct) struct);
+        }
     }
 
     public abstract ElementStruct struct();

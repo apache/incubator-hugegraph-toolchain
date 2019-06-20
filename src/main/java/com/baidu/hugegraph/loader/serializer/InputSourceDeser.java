@@ -24,7 +24,7 @@ import java.io.IOException;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.source.hdfs.HdfsSource;
+import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonParser;
@@ -58,7 +58,7 @@ public class InputSourceDeser extends JsonDeserializer<InputSource> {
             case FILE:
                 return JsonUtil.convert(node, FileSource.class);
             case HDFS:
-                return JsonUtil.convert(node, HdfsSource.class);
+                return JsonUtil.convert(node, HDFSSource.class);
             case JDBC:
                 return JsonUtil.convert(node, JDBCSource.class);
             default:

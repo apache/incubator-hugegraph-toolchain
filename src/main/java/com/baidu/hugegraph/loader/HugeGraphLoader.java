@@ -31,9 +31,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
-import com.baidu.hugegraph.loader.builder.VertexBuilder;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -43,10 +41,8 @@ import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
-import com.baidu.hugegraph.loader.struct.EdgeStruct;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.struct.GraphStruct;
-import com.baidu.hugegraph.loader.struct.VertexStruct;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.task.TaskManager;
@@ -60,7 +56,7 @@ public final class HugeGraphLoader {
 
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
-    private final FailureLogger failureLogger = FailureLogger.parse();
+    private static final FailureLogger FAILURE_LOGGER = FailureLogger.parse();
 
     private final LoadContext context;
     private final GraphStruct graphStruct;
@@ -90,13 +86,14 @@ public final class HugeGraphLoader {
     }
 
     private void load() {
+        LOG.info("Start loading");
         try {
             // Create schema
             this.createSchema();
             // Load vertices
-            this.loadVertices();
+            this.load(ElemType.VERTEX);
             // Load edges
-            this.loadEdges();
+            this.load(ElemType.EDGE);
         } catch (Exception e) {
             Printer.printError("Failed to load due to " + e.getMessage(), e);
             this.taskManager.shutdown();
@@ -127,70 +124,46 @@ public final class HugeGraphLoader {
         groovyExecutor.execute(script, client);
     }
 
-    private void loadVertices() {
-        Printer.printElemType(ElemType.VERTEX);
-        StopWatch loadWatch = new StopWatch();
+    private void load(ElemType type) {
+        Printer.printElemType(type);
 
         LoadSummary summary = this.context.summary();
-        InputProgressMap newProgress = this.context.newProgress().vertex();
-        for (VertexStruct struct : this.graphStruct.vertexStructs()) {
-            LoadMetrics metrics = summary.metrics(struct);
-            loadWatch.start();
+        InputProgressMap newProgress = this.context.newProgress().get(type);
+        for (ElementStruct struct : this.graphStruct.structs(type)) {
+            StopWatch loadWatch = StopWatch.createStarted();
 
-            // Update loading vertex struct
+            LoadMetrics metrics = summary.metrics(struct);
+            // Update loading vertex/edge struct
             newProgress.addStruct(struct);
-            // Produce batch vertices and execute loading tasks
-            try (VertexBuilder builder = new VertexBuilder(this.context,
-                                                           struct)) {
+            // Produce batch of vertices/edges and execute loading tasks
+            try (ElementBuilder<?> builder = ElementBuilder.of(this.context,
+                                                               struct)) {
                 this.load(builder, this.context.options(), metrics);
             }
 
+            /*
+             * NOTE: the load task of this struct may not be completed,
+             * so the load rate of each struct is an inaccurate value.
+             */
             loadWatch.stop();
             metrics.loadTime(loadWatch.getTime(TimeUnit.SECONDS));
-            loadWatch.reset();
+            LOG.info("Already loading {} '{}' with average rate: {}/s",
+                     metrics.loadSuccess(), struct, metrics.loadRate());
         }
         // Waiting async worker threads finish
-        this.taskManager.waitFinished(ElemType.VERTEX);
+        this.taskManager.waitFinished(type);
 
-        Printer.print(summary.accumulateMetrics(ElemType.VERTEX).loadSuccess());
-    }
-
-    private void loadEdges() {
-        Printer.printElemType(ElemType.EDGE);
-        StopWatch loadWatch = new StopWatch();
-
-        LoadSummary summary = this.context.summary();
-        InputProgressMap newProgress = this.context.newProgress().edge();
-        for (EdgeStruct struct : this.graphStruct.edgeStructs()) {
-            LoadMetrics metrics = summary.metrics(struct);
-            loadWatch.start();
-
-            // Update loading edge struct
-            newProgress.addStruct(struct);
-            // Produce batch edges and execute loading tasks
-            try (EdgeBuilder builder = new EdgeBuilder(this.context, struct)) {
-                this.load(builder, this.context.options(), metrics);
-            }
-
-            loadWatch.stop();
-            metrics.loadTime(loadWatch.getTime(TimeUnit.SECONDS));
-            loadWatch.reset();
-        }
-        // Waiting async worker threads finish
-        this.taskManager.waitFinished(ElemType.EDGE);
-
-        Printer.print(summary.accumulateMetrics(ElemType.EDGE).loadSuccess());
+        Printer.print(summary.accumulateMetrics(type).loadSuccess());
     }
 
     private <GE extends GraphElement> void load(ElementBuilder<GE> builder,
                                                 LoadOptions options,
                                                 LoadMetrics metrics) {
         ElementStruct struct = builder.struct();
-        ElemType type = struct.type();
-        LOG.info("Start parsing and loading data source for {} '{}'",
-                 type, struct.label());
+        LOG.info("Start parsing and loading '{}'", struct);
         StopWatch parseWatch = StopWatch.createStarted();
 
+        ElemType type = struct.type();
         List<GE> batch = new ArrayList<>(options.batchSize);
         while (true) {
             try {
@@ -205,18 +178,21 @@ public final class HugeGraphLoader {
                 }
                 LOG.error("Parse {} error", type, e);
 
-                this.failureLogger.error(type, e);
+                FAILURE_LOGGER.error(type, e);
                 long failureNum = metrics.increaseParseFailure();
                 if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("More than %s %s parsing error ... " +
-                                       "stopping", options.maxParseErrors, type);
+                    Printer.printError("Exceed %s %s parsing error... stopping",
+                                       options.maxParseErrors, type);
                     this.stopLoading(Constants.EXIT_CODE_ERROR);
                 }
                 continue;
             }
             if (batch.size() >= options.batchSize) {
-                metrics.plusParseSuccess(options.batchSize);
-                // Parse time doesn't include load time
+                metrics.plusParseSuccess(batch.size());
+                /*
+                 * NOTE: parse time doesn't include submit batch time,
+                 * it's accurate
+                 */
                 parseWatch.suspend();
                 this.taskManager.submitBatch(struct, batch);
                 parseWatch.resume();
@@ -232,12 +208,12 @@ public final class HugeGraphLoader {
 
         parseWatch.stop();
         metrics.parseTime(parseWatch.getTime(TimeUnit.SECONDS));
-        LOG.info("Finish parsing {} '{}' {}, the average rate is {}/s",
-                 metrics.parseSuccess(), struct.label(), type.string(),
-                 metrics.parseRate());
+        LOG.info("Finish parsing {} '{}' with average rate: {}/s",
+                 metrics.parseSuccess(), struct, metrics.parseRate());
     }
 
     private void stopLoading(int code) {
+        LOG.info("Stop loading");
         // Shutdown task manager
         this.taskManager.shutdown();
         HugeClientWrapper.close();

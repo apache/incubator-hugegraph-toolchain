@@ -38,7 +38,6 @@ import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public abstract class FileReader implements InputReader {
@@ -65,24 +64,23 @@ public abstract class FileReader implements InputReader {
 
     @Override
     public void init(LoadContext context, ElementStruct struct) {
-        LOG.info("Opening struct {}", this.source);
+        LOG.info("Opening struct '{}'", struct);
         try {
             this.readers = this.openReaders();
         } catch (IOException e) {
-            throw new LoadException("Failed to open readers for '%s'",
-                                    this.source);
+            throw new LoadException("Failed to open readers for struct '%s'",
+                                    struct);
         }
         this.progress(context, struct);
 
         boolean needHeader = this.parser.needHeader();
         String headerLine = this.readers.skipOffset(needHeader);
         if (needHeader) {
-            if (headerLine != null) {
-                this.parser.parseHeader(headerLine);
-            } else {
+            if (headerLine == null) {
                 throw new LoadException("Failed to read header from " +
                                         "file source '%s'", this.source);
             }
+            this.parser.parseHeader(headerLine);
         }
     }
 
@@ -124,7 +122,11 @@ public abstract class FileReader implements InputReader {
         }
     }
 
-    protected Line fetch() {
+    /**
+     * This method will be called multi times, it makes sense to
+     * improve the performance of each of its sub-methods.
+     */
+    private Line fetch() {
         int index = this.readers.index();
         while (true) {
             String rawLine = this.readNextLine();
@@ -144,7 +146,7 @@ public abstract class FileReader implements InputReader {
     }
 
     private String readNextLine() {
-        E.checkState(this.readers != null, "The readers shouldn't be null");
+        assert this.readers != null;
         try {
             return this.readers.readNextLine();
         } catch (IOException e) {

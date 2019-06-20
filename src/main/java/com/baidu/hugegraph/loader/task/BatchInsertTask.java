@@ -98,6 +98,8 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
         }
 
         if (++retryCount > options.retryTimes) {
+            LOG.error("Batch insert has retried exceed {} times",
+                      options.retryTimes);
             throw e;
         }
         return retryCount;
