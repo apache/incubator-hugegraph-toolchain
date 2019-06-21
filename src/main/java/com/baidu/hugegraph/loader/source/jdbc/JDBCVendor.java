@@ -21,6 +21,8 @@ package com.baidu.hugegraph.loader.source.jdbc;
 
 import java.util.List;
 
+import org.apache.http.client.utils.URIBuilder;
+
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCUtil;
 import com.baidu.hugegraph.util.E;
@@ -265,7 +267,14 @@ public enum JDBCVendor {
         } else {
             url = String.format("%s/%s", url, source.database());
         }
-        return url;
+
+        URIBuilder uriBuilder = new URIBuilder();
+        uriBuilder.setPath(url)
+                  .setParameter("useSSL", "false")
+                  .setParameter("rewriteBatchedStatements", "true")
+                  .setParameter("useServerPrepStmts", "false")
+                  .setParameter("autoReconnect", "true");
+        return uriBuilder.toString();
     }
 
     public abstract String buildGetHeaderSql(JDBCSource source);

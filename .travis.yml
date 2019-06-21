@@ -16,6 +16,9 @@ branches:
     - /^release-.*$/
     - /^test-.*$/
 
+# Fix can't download oracle jdbc jar from maven respority
+before_install: mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+
 install: mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
 before_script:
@@ -43,3 +46,4 @@ env:
     - SOURCE_TYPE=jdbc
   global:
     - TRAVIS_DIR=assembly/travis
+    - STATIC_DIR=assembly/static
