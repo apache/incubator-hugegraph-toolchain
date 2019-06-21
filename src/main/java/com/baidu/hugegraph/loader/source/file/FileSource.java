@@ -35,6 +35,8 @@ public class FileSource extends AbstractSource {
 
     @JsonProperty("path")
     private String path;
+    @JsonProperty("filter")
+    private FileFilter filter;
     @JsonProperty("format")
     private FileFormat format;
     @JsonProperty("header")
@@ -51,6 +53,7 @@ public class FileSource extends AbstractSource {
     private Compression compression;
 
     public FileSource() {
+        this.filter = new FileFilter();
         this.charset = DEFAULT_CHARSET;
         this.dateFormat = DEFAULT_DATE_FORMAT;
         this.skippedLineRegex = DEFAULT_SKIPPED_LINE_REGEX;
@@ -72,6 +75,10 @@ public class FileSource extends AbstractSource {
 
     public String path() {
         return this.path;
+    }
+
+    public FileFilter filter() {
+        return this.filter;
     }
 
     public FileFormat format() {

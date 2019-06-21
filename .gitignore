@@ -15,7 +15,7 @@
 .classpath
 .project
 .settings
-demo
+demo*
 logs
 target
 gen-java

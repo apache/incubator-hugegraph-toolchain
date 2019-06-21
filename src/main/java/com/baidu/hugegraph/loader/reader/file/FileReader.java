@@ -30,6 +30,7 @@ import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Readable;
+import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 
 public class FileReader extends AbstractFileReader {
@@ -43,9 +44,12 @@ public class FileReader extends AbstractFileReader {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
 
+        FileFilter filter = this.source().filter();
         List<Readable> files = new ArrayList<>();
         if (file.isFile()) {
-            files.add(new ReadableFile(file));
+            if (filter.reserved(file.getName())) {
+                files.add(new ReadableFile(file));
+            }
         } else {
             assert file.isDirectory();
             File[] subFiles = file.listFiles();
@@ -54,7 +58,9 @@ public class FileReader extends AbstractFileReader {
                           "Error while listing the files of path '%s'", file);
             }
             for (File subFile : subFiles) {
-                files.add(new ReadableFile(subFile));
+                if (filter.reserved(subFile.getName())) {
+                    files.add(new ReadableFile(subFile));
+                }
             }
         }
         return new Readers(this.source(), files);
