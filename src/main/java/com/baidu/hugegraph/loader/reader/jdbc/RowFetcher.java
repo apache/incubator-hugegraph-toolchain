@@ -46,7 +46,7 @@ public class RowFetcher {
     private String[] columns;
     private String[] primaryKeys;
     private Line nextStartRow;
-    private boolean finished;
+    private boolean fullyFetched;
 
     public RowFetcher(JDBCSource source) throws SQLException {
         this.source = source;
@@ -54,7 +54,7 @@ public class RowFetcher {
         this.columns = null;
         this.primaryKeys = null;
         this.nextStartRow = null;
-        this.finished = false;
+        this.fullyFetched = false;
     }
 
     private Connection connect() throws SQLException {
@@ -112,7 +112,7 @@ public class RowFetcher {
     }
 
     public List<Line> nextBatch() throws SQLException {
-        if (this.finished) {
+        if (this.fullyFetched) {
             return null;
         }
 
@@ -140,7 +140,7 @@ public class RowFetcher {
         }
 
         if (batch.size() != this.source.batchSize() + 1) {
-            this.finished = true;
+            this.fullyFetched = true;
         } else {
             // Remove the last one
             Line lastLine = batch.remove(batch.size() - 1);

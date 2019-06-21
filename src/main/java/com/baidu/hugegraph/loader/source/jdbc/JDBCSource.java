@@ -26,11 +26,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JDBCSource extends AbstractSource {
 
-    @JsonProperty(value = "vendor")
+    @JsonProperty("vendor")
     private JDBCVendor vendor;
     @JsonProperty("driver")
     private String driver;
-    @JsonProperty(value = "url")
+    @JsonProperty("url")
     private String url;
     @JsonProperty("database")
     private String database;
@@ -42,10 +42,6 @@ public class JDBCSource extends AbstractSource {
     private String username;
     @JsonProperty("password")
     private String password;
-    @JsonProperty("reconnect_max_times")
-    private int reconnectMaxTimes = 3;
-    @JsonProperty("reconnect_interval")
-    private int reconnectInterval = 3;
     @JsonProperty("batch_size")
     private int batchSize = 500;
 
@@ -63,6 +59,13 @@ public class JDBCSource extends AbstractSource {
         E.checkArgument(this.username != null, "The username can't be null");
         E.checkArgument(this.password != null, "The password can't be null");
 
+        this.checkSchema();
+        if (this.driver == null) {
+            this.driver = this.vendor.defaultDriver();
+        }
+    }
+
+    private void checkSchema() {
         switch (this.vendor) {
             case MYSQL:
                 if (this.schema != null) {
@@ -76,13 +79,11 @@ public class JDBCSource extends AbstractSource {
                 }
                 break;
             case POSTGRESQL:
-                // The default schema is "public"
-                if (this.schema == null) {
-                    this.schema = this.vendor.defaultSchema(this);
-                }
-                break;
             case ORACLE:
-                // The default schema is uppercase of username
+                /*
+                 * The default schema of postgresql is "public",
+                 * and oracle is uppercase of username
+                 */
                 if (this.schema == null) {
                     this.schema = this.vendor.defaultSchema(this);
                 }
@@ -95,9 +96,6 @@ public class JDBCSource extends AbstractSource {
             default:
                 throw new AssertionError(String.format(
                           "Unsupported database vendor '%s'", vendor));
-        }
-        if (this.driver == null) {
-            this.driver = this.vendor.defaultDriver();
         }
     }
 
@@ -131,14 +129,6 @@ public class JDBCSource extends AbstractSource {
 
     public String password() {
         return this.password;
-    }
-
-    public int reconnectMaxTimes() {
-        return this.reconnectMaxTimes;
-    }
-
-    public int reconnectInterval() {
-        return this.reconnectInterval;
     }
 
     public int batchSize() {

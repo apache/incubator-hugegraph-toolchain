@@ -21,10 +21,9 @@ package com.baidu.hugegraph.loader.source.jdbc;
 
 import java.util.List;
 
-import org.apache.http.client.utils.URIBuilder;
-
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCUtil;
+import com.baidu.hugegraph.util.E;
 
 public enum JDBCVendor {
 
@@ -168,12 +167,11 @@ public enum JDBCVendor {
             builder.append("SELECT * FROM ")
                    .append("\"").append(source.schema()).append("\"")
                    .append(".")
-                   .append("\"").append(source.table()).append("\"");
+                   .append("\"").append(source.table()).append("\"")
+                   .append(" WHERE ");
             if (nextStartRow != null) {
-                builder.append(this.buildGteWhereClauseInFlattened(nextStartRow))
+                builder.append(this.buildGteClauseInFlattened(nextStartRow))
                        .append(" AND ");
-            } else {
-                builder.append(" WHERE ");
             }
             builder.append("ROWNUM <= ").append(source.batchSize() + 1);
             return builder.toString();
@@ -241,9 +239,12 @@ public enum JDBCVendor {
             builder.append("SELECT ")
                    .append("TOP ").append(source.batchSize() + 1)
                    .append(" * FROM ")
-                   .append(source.schema()).append(".").append(source.table())
-                   .append(this.buildGteWhereClauseInFlattened(nextStartRow))
-                   .append(";");
+                   .append(source.schema()).append(".").append(source.table());
+            if (nextStartRow != null) {
+                builder.append(" WHERE ")
+                       .append(this.buildGteClauseInFlattened(nextStartRow));
+            }
+            builder.append(";");
             return builder.toString();
         }
 
@@ -264,18 +265,7 @@ public enum JDBCVendor {
         } else {
             url = String.format("%s/%s", url, source.database());
         }
-
-        int maxTimes = source.reconnectMaxTimes();
-        int interval = source.reconnectInterval();
-
-        URIBuilder uriBuilder = new URIBuilder();
-        uriBuilder.setPath(url)
-                  .setParameter("rewriteBatchedStatements", "true")
-                  .setParameter("useServerPrepStmts", "false")
-                  .setParameter("autoReconnect", "true")
-                  .setParameter("maxReconnects", String.valueOf(maxTimes))
-                  .setParameter("initialTimeout", String.valueOf(interval));
-        return uriBuilder.toString();
+        return url;
     }
 
     public abstract String buildGetHeaderSql(JDBCSource source);
@@ -285,9 +275,12 @@ public enum JDBCVendor {
     public String buildSelectSql(JDBCSource source, Line nextStartRow) {
         StringBuilder builder = new StringBuilder();
         builder.append("SELECT * FROM ")
-               .append(source.schema()).append(".").append(source.table())
-               .append(this.buildGteWhereClauseInCombined(nextStartRow))
-               .append(" LIMIT ").append(source.batchSize() + 1)
+               .append(source.schema()).append(".").append(source.table());
+        if (nextStartRow != null) {
+            builder.append(" WHERE ")
+                   .append(this.buildGteClauseInCombined(nextStartRow));
+        }
+        builder.append(" LIMIT ").append(source.batchSize() + 1)
                .append(";");
         return builder.toString();
     }
@@ -295,11 +288,9 @@ public enum JDBCVendor {
     /**
      * For database which support to select by where (a, b, c) >= (va, vb, vc)
      */
-    public String buildGteWhereClauseInCombined(Line nextStartRow) {
-        if (nextStartRow == null) {
-            return "";
-        }
-        StringBuilder builder = new StringBuilder(" WHERE ");
+    public String buildGteClauseInCombined(Line nextStartRow) {
+        E.checkNotNull(nextStartRow, "nextStartRow");
+        StringBuilder builder = new StringBuilder();
         List<String> names = nextStartRow.names();
         List<Object> values = nextStartRow.values();
         builder.append("(");
@@ -330,11 +321,9 @@ public enum JDBCVendor {
      * OR
      * ("a" > va)
      */
-    public String buildGteWhereClauseInFlattened(Line nextStartRow) {
-        if (nextStartRow == null) {
-            return "";
-        }
-        StringBuilder builder = new StringBuilder(" WHERE ");
+    public String buildGteClauseInFlattened(Line nextStartRow) {
+        E.checkNotNull(nextStartRow, "nextStartRow");
+        StringBuilder builder = new StringBuilder();
         List<String> names = nextStartRow.names();
         List<Object> values = nextStartRow.values();
         for (int i = 0, n = names.size(); i < n; i++) {
