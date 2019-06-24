@@ -31,20 +31,20 @@ public class FileFilter {
     private static final String ALL_SUFFIX = "*";
 
     @JsonProperty("suffix")
-    private Set<String> suffix;
+    private Set<String> suffixes;
 
     public FileFilter() {
-        this.suffix = ImmutableSet.of(ALL_SUFFIX);
+        this.suffixes = ImmutableSet.of(ALL_SUFFIX);
     }
 
-    public Set<String> suffix() {
-        return this.suffix;
+    public Set<String> suffixes() {
+        return this.suffixes;
     }
 
     public boolean reserved(String name) {
-        if (this.suffix.size() == 1 && this.suffix.contains(ALL_SUFFIX)) {
+        if (this.suffixes.size() == 1 && this.suffixes.contains(ALL_SUFFIX)) {
             return true;
         }
-        return this.suffix.contains(FilenameUtils.getExtension(name));
+        return this.suffixes.contains(FilenameUtils.getExtension(name));
     }
 }

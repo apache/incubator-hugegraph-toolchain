@@ -47,9 +47,12 @@ public class FileReader extends AbstractFileReader {
         FileFilter filter = this.source().filter();
         List<Readable> files = new ArrayList<>();
         if (file.isFile()) {
-            if (filter.reserved(file.getName())) {
-                files.add(new ReadableFile(file));
+            if (!filter.reserved(file.getName())) {
+                throw new LoadException(
+                          "Please check file name and suffix, ensure that " +
+                          "at least one file is available for reading");
             }
+            files.add(new ReadableFile(file));
         } else {
             assert file.isDirectory();
             File[] subFiles = file.listFiles();

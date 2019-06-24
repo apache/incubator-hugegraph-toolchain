@@ -82,9 +82,12 @@ public class HDFSReader extends AbstractFileReader {
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
         if (this.hdfs.isFile(path)) {
-            if (filter.reserved(path.getName())) {
-                paths.add(new ReadablePath(this.hdfs, path));
+            if (!filter.reserved(path.getName())) {
+                throw new LoadException(
+                          "Please check path name and suffix, ensure that " +
+                          "at least one path is available for reading");
             }
+            paths.add(new ReadablePath(this.hdfs, path));
         } else {
             assert this.hdfs.isDirectory(path);
             FileStatus[] statuses = this.hdfs.listStatus(path);
