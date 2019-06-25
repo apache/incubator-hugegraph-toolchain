@@ -28,23 +28,24 @@ import com.google.common.collect.ImmutableSet;
 
 public class FileFilter {
 
-    private static final String ALL_SUFFIX = "*";
+    private static final String ALL_EXTENSION = "*";
 
-    @JsonProperty("suffix")
-    private Set<String> suffixes;
+    @JsonProperty("extensions")
+    private Set<String> extensions;
 
     public FileFilter() {
-        this.suffixes = ImmutableSet.of(ALL_SUFFIX);
+        this.extensions = ImmutableSet.of(ALL_EXTENSION);
     }
 
-    public Set<String> suffixes() {
-        return this.suffixes;
+    public Set<String> extensions() {
+        return this.extensions;
     }
 
     public boolean reserved(String name) {
-        if (this.suffixes.size() == 1 && this.suffixes.contains(ALL_SUFFIX)) {
+        if (this.extensions.size() == 1 &&
+            this.extensions.contains(ALL_EXTENSION)) {
             return true;
         }
-        return this.suffixes.contains(FilenameUtils.getExtension(name));
+        return this.extensions.contains(FilenameUtils.getExtension(name));
     }
 }

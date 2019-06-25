@@ -5,8 +5,8 @@
       "input": {
         "type": "${source_type}",
         "path": "${store_path}/vertex_dir",
-        "filter": {
-          "suffix": ["csv"]
+        "file_filter": {
+          "extensions": ["csv"]
         },
         "format": "CSV",
         "charset": "UTF-8"

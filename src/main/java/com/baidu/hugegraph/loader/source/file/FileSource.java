@@ -35,7 +35,7 @@ public class FileSource extends AbstractSource {
 
     @JsonProperty("path")
     private String path;
-    @JsonProperty("filter")
+    @JsonProperty("file_filter")
     private FileFilter filter;
     @JsonProperty("format")
     private FileFormat format;
