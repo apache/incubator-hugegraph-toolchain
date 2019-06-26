@@ -106,8 +106,8 @@ public class LocalFileReader extends FileReader {
             try {
                 checkSum = String.valueOf(FileUtils.checksumCRC32(this.file));
             } catch (IOException e) {
-                throw new LoadException("Failed to calculate checksum" +
-                                        "for local file '%s'", e, this.file);
+                throw new LoadException("Failed to calculate checksum for " +
+                                        "local file '%s'", e, this.file);
             }
             return new FileItemProgress(name, timestamp, checkSum);
         }

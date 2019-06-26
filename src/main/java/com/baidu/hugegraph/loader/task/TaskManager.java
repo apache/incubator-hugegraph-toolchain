@@ -55,7 +55,7 @@ public final class TaskManager {
         this.context = context;
         this.options = context.options();
         this.batchSemaphore = new Semaphore(this.options.numThreads);
-        // Equivalent to having a buffer queue of length options.numThreads
+        // Equivalent to have a buffer queue of length options.numThreads
         this.singleSemaphore = new Semaphore(2 * this.options.numThreads);
         /*
          * In principle, unbounded synchronization queue(which may lead to OOM)

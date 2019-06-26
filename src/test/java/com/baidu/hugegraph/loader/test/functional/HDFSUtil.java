@@ -51,7 +51,7 @@ public class HDFSUtil implements IOUtil {
         try {
             this.hdfs = FileSystem.get(URI.create(storePath), config);
         } catch (IOException e) {
-            throw new LoadException("Failed to create hdfs file system", e);
+            throw new LoadException("Failed to create HDFS file system", e);
         }
     }
 
@@ -117,7 +117,7 @@ public class HDFSUtil implements IOUtil {
         try {
             this.hdfs.close();
         } catch (IOException e) {
-            LOG.warn("Failed to close hdfs", e);
+            LOG.warn("Failed to close HDFS file system", e);
         }
     }
 
@@ -135,7 +135,7 @@ public class HDFSUtil implements IOUtil {
             }
         } catch (IOException e) {
             throw new RuntimeException(String.format(
-                      "Failed to check hdfs path '%s'", path), e);
+                      "Failed to check HDFS path '%s'", path), e);
         }
     }
 }
