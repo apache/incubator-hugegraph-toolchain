@@ -50,9 +50,8 @@ public enum JDBCVendor {
                                 "specified in %s vendor, if specified, " +
                                 "it must be same as the database(%s)",
                                 schema, this, source.database());
-
             }
-            return schema;
+            return super.checkSchema(source);
         }
 
         @Override
@@ -282,9 +281,8 @@ public enum JDBCVendor {
     public abstract String defaultSchema(JDBCSource source);
 
     public String checkSchema(JDBCSource source) {
-        return source.schema() == null ?
-               this.defaultSchema(source) :
-               source.schema();
+        String schema = source.schema();
+        return schema == null ? this.defaultSchema(source) : schema;
     }
 
     public String buildUrl(JDBCSource source) {
