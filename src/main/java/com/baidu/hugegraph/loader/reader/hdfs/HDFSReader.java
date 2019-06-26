@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
+import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.util.Log;
 
@@ -78,15 +79,23 @@ public class HDFSReader extends AbstractFileReader {
     protected Readers openReaders() throws IOException {
         Path path = new Path(this.source().path());
 
+        FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
         if (this.hdfs.isFile(path)) {
+            if (!filter.reserved(path.getName())) {
+                throw new LoadException(
+                          "Please check path name and suffix, ensure that " +
+                          "at least one path is available for reading");
+            }
             paths.add(new ReadablePath(this.hdfs, path));
         } else {
             assert this.hdfs.isDirectory(path);
             FileStatus[] statuses = this.hdfs.listStatus(path);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             for (Path subPath : subPaths) {
-                paths.add(new ReadablePath(this.hdfs, subPath));
+                if (filter.reserved(subPath.getName())) {
+                    paths.add(new ReadablePath(this.hdfs, subPath));
+                }
             }
         }
         return new Readers(this.source(), paths);

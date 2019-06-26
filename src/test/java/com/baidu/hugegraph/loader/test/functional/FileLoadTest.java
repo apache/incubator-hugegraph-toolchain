@@ -1055,6 +1055,50 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testFilterFileBySuffix() {
+        // Allowed file suffix is [".csv"]
+        ioUtil.write("vertex_person.dat",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong");
+
+        String[] args = new String[]{
+                "-f", configPath("filter_file_by_suffix/struct.json"),
+                "-s", configPath("filter_file_by_suffix/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+    }
+
+    @Test
+    public void testFilterPathBySuffix() {
+        ioUtil.write("vertex_dir/vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong");
+        ioUtil.write("vertex_dir/vertex_person.dat",
+                     "name,age,city",
+                     "marko1,29,Beijing",
+                     "vadas1,27,Hongkong");
+
+        String[] args = new String[]{
+                "-f", configPath("filter_path_by_suffix/struct.json"),
+                "-s", configPath("filter_path_by_suffix/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+    }
+
+    @Test
     public void testGZipCompressFile() {
         ioUtil.write("vertex_person.gz", Compression.GZIP,
                      "name,age,city",

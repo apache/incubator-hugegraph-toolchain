@@ -1,0 +1,21 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.dat",
+        "file_filter": {
+          "extensions": ["csv"]
+        },
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    }
+  ]
+}
