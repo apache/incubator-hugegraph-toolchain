@@ -60,8 +60,7 @@ public class JDBCReader implements InputReader {
             this.fetcher.readHeader();
             this.fetcher.readPrimaryKey();
         } catch (SQLException e) {
-            throw new LoadException("Failed to read columns and primary keys",
-                                    e);
+            throw new LoadException("Failed to fetch table structure info", e);
         }
     }
 

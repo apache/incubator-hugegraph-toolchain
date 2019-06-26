@@ -75,7 +75,7 @@ public class RowFetcher {
 
     public void readHeader() throws SQLException {
         String sql = this.source.vendor().buildGetHeaderSql(this.source);
-        LOG.info("The sql for reading columns is: {}", sql);
+        LOG.debug("The sql for reading columns is: {}", sql);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
@@ -94,7 +94,7 @@ public class RowFetcher {
 
     public void readPrimaryKey() throws SQLException {
         String sql = this.source.vendor().buildGetPrimaryKeySql(this.source);
-        LOG.info("The sql for reading primary keys is: {}", sql);
+        LOG.debug("The sql for reading primary keys is: {}", sql);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(sql)) {
             List<String> columns = new ArrayList<>();

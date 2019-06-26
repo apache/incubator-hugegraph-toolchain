@@ -59,43 +59,9 @@ public class JDBCSource extends AbstractSource {
         E.checkArgument(this.username != null, "The username can't be null");
         E.checkArgument(this.password != null, "The password can't be null");
 
-        this.checkSchema();
+        this.schema = this.vendor.checkSchema(this);
         if (this.driver == null) {
             this.driver = this.vendor.defaultDriver();
-        }
-    }
-
-    private void checkSchema() {
-        switch (this.vendor) {
-            case MYSQL:
-                if (this.schema != null) {
-                    E.checkArgument(this.schema.equals(this.database),
-                                    "The schema(%s) is allowed to not " +
-                                    "specified in %s vendor, if specified, " +
-                                    "it must be same as the database(%s)",
-                                    this.schema, this.vendor, this.database);
-                } else {
-                    this.schema = this.vendor.defaultSchema(this);
-                }
-                break;
-            case POSTGRESQL:
-            case ORACLE:
-                /*
-                 * The default schema of postgresql is "public",
-                 * and oracle is uppercase of username
-                 */
-                if (this.schema == null) {
-                    this.schema = this.vendor.defaultSchema(this);
-                }
-                break;
-            case SQLSERVER:
-                E.checkArgument(this.schema != null,
-                                "The schema must be specified in %s vendor",
-                                this.vendor);
-                break;
-            default:
-                throw new AssertionError(String.format(
-                          "Unsupported database vendor '%s'", vendor));
         }
     }
 

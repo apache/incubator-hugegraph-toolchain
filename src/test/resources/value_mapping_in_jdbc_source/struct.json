@@ -11,7 +11,7 @@
         "table": "person",
         "username": "root",
         "password": "",
-        "batch_size": 1
+        "batch_size": 2
       },
       "id": "id",
       "null_values": ["NULL"],

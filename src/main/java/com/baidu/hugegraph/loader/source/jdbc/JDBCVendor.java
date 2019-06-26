@@ -42,6 +42,20 @@ public enum JDBCVendor {
         }
 
         @Override
+        public String checkSchema(JDBCSource source) {
+            String schema = source.schema();
+            if (schema != null) {
+                E.checkArgument(schema.equals(source.database()),
+                                "The schema(%s) is allowed to not " +
+                                "specified in %s vendor, if specified, " +
+                                "it must be same as the database(%s)",
+                                schema, this, source.database());
+
+            }
+            return schema;
+        }
+
+        @Override
         public String buildGetHeaderSql(JDBCSource source) {
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM INFORMATION_SCHEMA.COLUMNS " +
@@ -198,6 +212,13 @@ public enum JDBCVendor {
         }
 
         @Override
+        public String checkSchema(JDBCSource source) {
+            E.checkArgument(source.schema() != null,
+                            "The schema must be specified in %s vendor", this);
+            return source.schema();
+        }
+
+        @Override
         public String buildUrl(JDBCSource source) {
             String url = source.url();
             String database = source.database();
@@ -259,6 +280,12 @@ public enum JDBCVendor {
     public abstract String defaultDriver();
 
     public abstract String defaultSchema(JDBCSource source);
+
+    public String checkSchema(JDBCSource source) {
+        return source.schema() == null ?
+               this.defaultSchema(source) :
+               source.schema();
+    }
 
     public String buildUrl(JDBCSource source) {
         String url = source.url();
