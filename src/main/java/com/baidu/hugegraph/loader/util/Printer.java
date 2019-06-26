@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.loader.util;
 
+import java.time.Duration;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -34,7 +36,7 @@ public final class Printer {
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
     private static final String EMPTY_LINE = "";
-    private static final String DIVIDE_LINE = StringUtils.repeat('-', 42);
+    private static final String DIVIDE_LINE = StringUtils.repeat('-', 50);
 
     public static void print(Object message) {
         System.out.println(message);
@@ -52,120 +54,86 @@ public final class Printer {
     /**
      * The print format like
      *
-     * ------------------------------------------
-     * vertices metrics
-     *
-     * struct 'user-e6d5731c'
-     *     parse success           : 6040
-     *     parse failure           : 0
-     *     load success            : 6040
-     *     load failure            : 0
-     *
-     * struct 'movie-a917bbd1'
-     *     parse success           : 3883
-     *     parse failure           : 0
-     *     load success            : 3883
-     *     load failure            : 0
-     * ------------------------------------------
-     * edges metrics
-     *
-     * struct 'rating-6ec4d883'
-     *     parse success           : 1000209
-     *     parse failure           : 0
-     *     load success            : 1000209
-     *     load failure            : 0
-     * ------------------------------------------
+     * --------------------------------------------------
      * total vertex metrics
      * parse:
      *     parse success           : 9923
      *     parse failure           : 0
-     *     parse time(second)      : 0
-     *     parse rate              : -1
+     *     parse time              : 0.239s
+     *     parse rate              : 41518(vertices/s)
      * load:
      *     load success            : 9923
      *     load failure            : 0
-     *     load time(second)       : 0
-     *     load rate               : -1
-     * ------------------------------------------
+     *     load time               : 0.375s
+     *     load rate               : 26461(vertices/s)
+     * --------------------------------------------------
      * total edge metrics
      * parse:
      *     parse success           : 1000209
      *     parse failure           : 0
-     *     parse time(second)      : 3
-     *     parse rate              : 333403
+     *     parse time              : 2.994s
+     *     parse rate              : 334071(edges/s)
      * load:
      *     load success            : 1000209
      *     load failure            : 0
-     *     load time(second)       : 17
-     *     load rate               : 58835
-     * ------------------------------------------
-     * total metrics
-     * parse:
-     *     parse success           : 1010132
-     *     parse failure           : 0
-     *     parse time(second)      : 3
-     *     parse rate              : 336710
-     * load:
-     *     load success            : 1010132
-     *     load failure            : 0
-     *     load time(second)       : 17
-     *     load rate               : 59419
+     *     load time               : 19.688s
+     *     load rate               : 50802(edges/s)
      */
     public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
-        // Print vertices/edges metrics
-        printAndLog(DIVIDE_LINE);
-        printAndLog(String.format("%s metrics", ElemType.VERTEX.string()));
+        // Just log vertices/edges metrics
+        log(DIVIDE_LINE);
+        log("vertices metrics");
         summary.vertexMetrics().forEach((uniqueKey, metrics) -> {
-            printAndLog(EMPTY_LINE);
-            printAndLog(String.format("struct '%s'", uniqueKey));
-            printMetrics(metrics);
+            log(EMPTY_LINE);
+            log(String.format("struct '%s'", uniqueKey));
+            logMetrics(ElemType.VERTEX, metrics);
         });
-        printAndLog(DIVIDE_LINE);
-        printAndLog(String.format("%s metrics", ElemType.EDGE.string()));
+        log(DIVIDE_LINE);
+        log("edges metrics");
         summary.edgeMetrics().forEach((uniqueKey, metrics) -> {
-            printAndLog(EMPTY_LINE);
-            printAndLog(String.format("struct '%s'", uniqueKey));
-            printMetrics(metrics);
+            log(EMPTY_LINE);
+            log(String.format("struct '%s'", uniqueKey));
+            logMetrics(ElemType.EDGE, metrics);
         });
 
-        // Print total vertices/edges metrics
-        LoadMetrics totalVertexMetrics = summary.accumulateMetrics(
-                                                 ElemType.VERTEX);
+        // Print and log total vertices/edges metrics
         printAndLog(DIVIDE_LINE);
         printAndLog("total vertex metrics");
-        printTotalMetrics(totalVertexMetrics);
-        LoadMetrics totalEdgeMetrics = summary.accumulateMetrics(ElemType.EDGE);
+        printMetrics(ElemType.VERTEX, summary.accumulateMetrics(ElemType.VERTEX));
         printAndLog(DIVIDE_LINE);
         printAndLog("total edge metrics");
-        printTotalMetrics(totalEdgeMetrics);
-
-        LoadMetrics totalMetrics = summary.accumulateAllMetrics();
-        printAndLog(DIVIDE_LINE);
-        printAndLog("total metrics");
-        printTotalMetrics(totalMetrics);
+        printMetrics(ElemType.EDGE, summary.accumulateMetrics(ElemType.EDGE));
     }
 
-    private static void printMetrics(LoadMetrics metrics) {
-        printAndLog("parse success", metrics.parseSuccess());
-        printAndLog("parse failure", metrics.parseFailure());
-        printAndLog("load success", metrics.loadSuccess());
-        printAndLog("load failure", metrics.loadFailure());
+    private static void logMetrics(ElemType type, LoadMetrics metrics) {
+        log("parse success", metrics.parseSuccess());
+        log("parse failure", metrics.parseFailure());
+        log("parse time", readableFormat(metrics.parseTime()));
+        log("parse rate", String.format("%s(%s/s)", metrics.parseRate(),
+                                                    type.string()));
+        log("load success", metrics.loadSuccess());
+        log("load failure", metrics.loadFailure());
+        log("load time", readableFormat(metrics.loadTime()));
+        log("load rate", String.format("%s(%s/s)", metrics.averageLoadRate(),
+                                                   type.string()));
     }
 
-    private static void printTotalMetrics(LoadMetrics metrics) {
+    private static void printMetrics(ElemType type, LoadMetrics metrics) {
         printAndLog("parse:");
         // Print parse success used to comfirm data integrity
         printAndLog("parse success", metrics.parseSuccess());
         printAndLog("parse failure", metrics.parseFailure());
-        printAndLog("parse time(second)", metrics.parseTime());
-        printAndLog("parse rate", metrics.parseRate());
+        printAndLog("parse time", readableFormat(metrics.parseTime()));
+        printAndLog("parse rate", String.format("%s(%s/s)", metrics.parseRate(),
+                                                            type.string()));
 
         printAndLog("load:");
         printAndLog("load success", metrics.loadSuccess());
         printAndLog("load failure", metrics.loadFailure());
-        printAndLog("load time(second)", metrics.loadTime());
-        printAndLog("load rate", metrics.loadRate());
+        printAndLog("load time", readableFormat(metrics.loadTime()));
+        printAndLog("load rate", String.format("%s(%s/s)", metrics.loadRate(),
+                                                           type.string()));
     }
 
     public static void printError(String message, Object... args) {
@@ -196,6 +164,20 @@ public final class Printer {
         System.out.print(String.format("%d%s", count, backward(count)));
     }
 
+    private static void log(String message) {
+        LOG.info(message);
+    }
+
+    private static void log(String key, long value) {
+        String msg = String.format("    %-24s: %-20d", key, value);
+        LOG.info(msg);
+    }
+
+    private static void log(String key, String value) {
+        String msg = String.format("    %-24s: %-20s", key, value);
+        LOG.info(msg);
+    }
+
     private static void printAndLog(String message) {
         LOG.info(message);
         System.out.println(message);
@@ -206,11 +188,24 @@ public final class Printer {
         printAndLog(msg);
     }
 
+    private static void printAndLog(String key, String value) {
+        String msg = String.format("    %-24s: %-20s", key, value);
+        printAndLog(msg);
+    }
+
     private static String backward(long count) {
         StringBuilder backward = new StringBuilder();
         for (int i = 0, len = String.valueOf(count).length(); i < len; i++) {
             backward.append("\b");
         }
         return backward.toString();
+    }
+
+    public static String readableFormat(long time) {
+        Duration duration = Duration.ofMillis(time);
+        return duration.toString()
+                       .substring(2)
+                       .replaceAll("(\\d[HMS])(?!$)", "$1 ")
+                       .toLowerCase();
     }
 }

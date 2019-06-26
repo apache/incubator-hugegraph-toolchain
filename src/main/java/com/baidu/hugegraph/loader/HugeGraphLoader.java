@@ -146,9 +146,9 @@ public final class HugeGraphLoader {
              * so the load rate of each struct is an inaccurate value.
              */
             loadWatch.stop();
-            metrics.loadTime(loadWatch.getTime(TimeUnit.SECONDS));
-            LOG.info("Already loading {} '{}' with average rate: {}/s",
-                     metrics.loadSuccess(), struct, metrics.loadRate());
+            metrics.loadTime(loadWatch.getTime(TimeUnit.MILLISECONDS));
+            LOG.info("Loading {} '{}' with average rate: {}/s",
+                     metrics.loadSuccess(), struct, metrics.averageLoadRate());
         }
         // Waiting async worker threads finish
         this.taskManager.waitFinished(type);
@@ -207,8 +207,8 @@ public final class HugeGraphLoader {
         }
 
         parseWatch.stop();
-        metrics.parseTime(parseWatch.getTime(TimeUnit.SECONDS));
-        LOG.info("Finish parsing {} '{}' with average rate: {}/s",
+        metrics.parseTime(parseWatch.getTime(TimeUnit.MILLISECONDS));
+        LOG.info("Parsing {} '{}' with average rate: {}/s",
                  metrics.parseSuccess(), struct, metrics.parseRate());
     }
 

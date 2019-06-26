@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.LongAdder;
 public final class LoadMetrics {
 
     // Modified in only one thread
+    // The parse time and load time unit is ms
     private long parseTime;
     private long parseSuccess;
     private long parseFailure;
@@ -32,6 +33,8 @@ public final class LoadMetrics {
     private final LongAdder loadSuccess;
     private final LongAdder loadFailure;
 
+    private long averageLoadRate;
+
     public LoadMetrics() {
         this.parseTime = 0L;
         this.parseSuccess = 0L;
@@ -39,6 +42,7 @@ public final class LoadMetrics {
         this.loadTime = 0L;
         this.loadSuccess = new LongAdder();
         this.loadFailure = new LongAdder();
+        this.averageLoadRate = 0L;
     }
 
     public long parseTime() {
@@ -74,7 +78,8 @@ public final class LoadMetrics {
     }
 
     public long parseRate() {
-        return this.parseTime != 0 ? this.parseSuccess() / this.parseTime : -1L;
+        return this.parseTime == 0 ? -1L :
+               this.parseSuccess() * 1000 / this.parseTime;
     }
 
     public long loadTime() {
@@ -83,6 +88,11 @@ public final class LoadMetrics {
 
     public void loadTime(long time) {
         this.loadTime = time;
+        /*
+         * The `loadSuccess` may change after that because there may
+         * exist unfinished vertices or edges in the thread pool
+         */
+        this.averageLoadRate = this.loadRate();
     }
 
     public void plusLoadTime(long time) {
@@ -114,6 +124,11 @@ public final class LoadMetrics {
     }
 
     public long loadRate() {
-        return this.loadTime != 0 ? this.loadSuccess() / this.loadTime : -1L;
+        return this.loadTime == 0 ? -1L :
+               this.loadSuccess() * 1000 / this.loadTime;
+    }
+
+    public long averageLoadRate() {
+        return this.averageLoadRate;
     }
 }

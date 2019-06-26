@@ -87,8 +87,8 @@ public class HDFSFileReader extends FileReader {
         if (this.hdfs.isFile(path)) {
             if (!filter.reserved(path.getName())) {
                 throw new LoadException(
-                          "Please check path name and suffix, ensure that " +
-                          "at least one path is available for reading");
+                          "Please check path name and extensions, ensure " +
+                          "that at least one path is available for reading");
             }
             paths.add(new HDFSFile(this.hdfs, path));
         } else {

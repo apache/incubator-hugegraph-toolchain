@@ -134,7 +134,7 @@ public class Readers {
         }
         if (this.index < this.readables.size()) {
             Readable readable = this.readables.get(this.index);
-            LOG.info("Ready to close '{}'", readable);
+            LOG.debug("Ready to close '{}'", readable);
         }
         if (this.reader != null) {
             this.reader.close();
@@ -160,7 +160,7 @@ public class Readers {
     }
 
     private BufferedReader openReader(Readable readable) {
-        LOG.info("Ready to open '{}'", readable);
+        LOG.debug("Ready to open '{}'", readable);
         InputStream stream = null;
         try {
             stream = readable.open();

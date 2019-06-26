@@ -31,6 +31,7 @@ import org.apache.commons.io.FileUtils;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
+import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 
 public class LocalFileReader extends FileReader {
@@ -44,8 +45,14 @@ public class LocalFileReader extends FileReader {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
 
+        FileFilter filter = this.source().filter();
         List<Readable> files = new ArrayList<>();
         if (file.isFile()) {
+            if (!filter.reserved(file.getName())) {
+                throw new LoadException(
+                          "Please check file name and extensions, ensure " +
+                          "that at least one file is available for reading");
+            }
             files.add(new LocalFile(file));
         } else {
             assert file.isDirectory();
@@ -55,7 +62,9 @@ public class LocalFileReader extends FileReader {
                                         "path '%s'", file);
             }
             for (File subFile : subFiles) {
-                files.add(new LocalFile(subFile));
+                if (filter.reserved(subFile.getName())) {
+                    files.add(new LocalFile(subFile));
+                }
             }
         }
         return new Readers(this.source(), files);
