@@ -50,20 +50,26 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     @JsonProperty("null_values")
     private Set<Object> nullValues;
 
+    private transient String uniqueKey;
+
     public ElementStruct() {
         this.mappingFields = new HashMap<>();
         this.mappingValues = new HashMap<>();
         this.selectedFields = new HashSet<>();
         this.ignoredFields = new HashSet<>();
         this.nullValues = new HashSet<>();
+        this.uniqueKey = null;
     }
 
     public abstract ElemType type();
 
     @Override
     public String uniqueKey() {
-        String code = HashUtil.hash(JsonUtil.toJson(this));
-        return this.label + "-" + code;
+        if (this.uniqueKey == null) {
+            String code = HashUtil.hash(JsonUtil.toJson(this));
+            this.uniqueKey = this.label + "-" + code;
+        }
+        return this.uniqueKey;
     }
 
     @Override

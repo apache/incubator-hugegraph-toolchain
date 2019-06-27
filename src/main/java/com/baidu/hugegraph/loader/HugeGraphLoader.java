@@ -172,7 +172,7 @@ public final class HugeGraphLoader {
                                                 LoadMetrics metrics) {
         ElementStruct struct = builder.struct();
         LOG.info("Start parsing and loading '{}'", struct);
-        StopWatch parseTime = StopWatch.createStarted();
+        StopWatch parseWatch = StopWatch.createStarted();
 
         ElemType type = struct.type();
         List<GE> batch = new ArrayList<>(options.batchSize);
@@ -200,23 +200,29 @@ public final class HugeGraphLoader {
             }
             if (batch.size() >= options.batchSize) {
                 metrics.plusParseSuccess(batch.size());
-                /*
-                 * NOTE: parse time doesn't include submit batch time,
-                 * it's accurate
-                 */
-                parseTime.suspend();
-                this.taskManager.submitBatch(struct, batch);
-                parseTime.resume();
+                if (!options.dryRun) {
+                    /*
+                     * NOTE: parse time doesn't include submit batch time,
+                     * it's accurate
+                     */
+                    parseWatch.suspend();
+                    this.taskManager.submitBatch(struct, batch);
+                    parseWatch.resume();
+                }
                 batch = new ArrayList<>(options.batchSize);
             }
         }
-        parseTime.stop();
+        parseWatch.stop();
         if (!batch.isEmpty()) {
             metrics.plusParseSuccess(batch.size());
-            this.taskManager.submitBatch(struct, batch);
+            if (!options.dryRun) {
+                parseWatch.suspend();
+                this.taskManager.submitBatch(struct, batch);
+                parseWatch.resume();
+            }
         }
 
-        metrics.parseTime(parseTime.getTime(TimeUnit.MILLISECONDS));
+        metrics.parseTime(parseWatch.getTime(TimeUnit.MILLISECONDS));
         LOG.info("Parsing {} '{}' with average rate: {}/s",
                  metrics.parseSuccess(), struct, metrics.parseRate());
     }

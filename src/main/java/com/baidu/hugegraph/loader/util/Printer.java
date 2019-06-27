@@ -162,7 +162,8 @@ public final class Printer {
     }
 
     public static void printInBackward(long count) {
-        System.out.print(String.format("%d%s", count, backward(count)));
+        // format "%d%s"
+        System.out.print(count + backward(count));
     }
 
     private static void log(String message) {
@@ -195,10 +196,6 @@ public final class Printer {
     }
 
     private static String backward(long count) {
-        StringBuilder backward = new StringBuilder();
-        for (int i = 0, len = String.valueOf(count).length(); i < len; i++) {
-            backward.append("\b");
-        }
-        return backward.toString();
+        return StringUtils.repeat('\b', String.valueOf(count).length());
     }
 }

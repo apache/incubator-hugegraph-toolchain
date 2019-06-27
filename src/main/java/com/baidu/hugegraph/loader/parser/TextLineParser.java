@@ -25,6 +25,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.google.common.base.Splitter;
 
 public class TextLineParser implements LineParser {
@@ -34,6 +35,7 @@ public class TextLineParser implements LineParser {
     // Default is "\t"
     private final String delimiter;
     private List<String> header;
+    private final Splitter splitter;
 
     public TextLineParser(FileSource source) {
         this(source, source.delimiter() != null ?
@@ -47,6 +49,7 @@ public class TextLineParser implements LineParser {
         if (this.source.header() != null) {
             this.header = this.source.header();
         }
+        this.splitter = Splitter.on(this.delimiter);
     }
 
     public String delimiter() {
@@ -108,13 +111,18 @@ public class TextLineParser implements LineParser {
         return true;
     }
 
+    /**
+     * TODO: return List<CharSequence>
+     */
+    @SuppressWarnings("unchecked")
     public List<String> split(String line) {
-        return Splitter.on(this.delimiter).splitToList(line);
+//        return this.splitter.splitToList(line);
+        return (List<String>) (Object) LoadUtil.split(line, this.delimiter);
     }
 
     private boolean lastColumnIsEmpty(List<String> columns) {
         int last = columns.size() - 1;
         return columns.size() - 1 == this.header.size() &&
-               columns.get(last).equals(Constants.EMPTY_STR);
+               columns.get(last).equals(Constants.EMPTY);
     }
 }

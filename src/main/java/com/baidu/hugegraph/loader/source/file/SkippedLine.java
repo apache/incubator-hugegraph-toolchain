@@ -19,6 +19,9 @@
 
 package com.baidu.hugegraph.loader.source.file;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -27,11 +30,25 @@ public class SkippedLine {
     @JsonProperty("regex")
     private final String regex;
 
+    private transient Matcher matcher;
+
     public SkippedLine() {
         this.regex = Constants.SKIPPED_LINE_REGEX;
+        this.matcher = null;
     }
 
     public String regex() {
         return this.regex;
+    }
+
+    private Matcher matcher() {
+        if (this.matcher == null) {
+            this.matcher = Pattern.compile(this.regex).matcher(Constants.EMPTY);
+        }
+        return this.matcher;
+    }
+
+    public boolean matches(String line) {
+        return this.matcher().reset(line).matches();
     }
 }

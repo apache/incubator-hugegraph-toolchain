@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.builder;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -202,18 +203,21 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected static String spliceVertexId(VertexLabel vertexLabel,
                                            Object[] primaryValues) {
-        E.checkArgument(vertexLabel.primaryKeys().size() == primaryValues.length,
+        List<String> primaryKeys = vertexLabel.primaryKeys();
+        E.checkArgument(primaryKeys.size() == primaryValues.length,
                         "Missing some primary key columns, expect %s, " +
                         "but only got %s for vertex label '%s'",
-                        vertexLabel.primaryKeys(), primaryValues, vertexLabel);
+                        primaryKeys, primaryValues, vertexLabel);
 
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
-        String[] searchList = new String[]{":", "!"};
-        String[] replaceList = new String[]{"`:", "`!"};
         for (Object value : primaryValues) {
             String pkValue = String.valueOf(value);
-            pkValue = StringUtils.replaceEach(pkValue, searchList, replaceList);
+            if (StringUtils.containsAny(pkValue, Constants.SEARCH_LIST)) {
+                pkValue = StringUtils.replaceEach(pkValue,
+                                                  Constants.SEARCH_LIST,
+                                                  Constants.TARGET_LIST);
+            }
             vertexKeysId.append(pkValue);
             vertexKeysId.append("!");
         }

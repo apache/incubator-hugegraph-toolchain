@@ -29,7 +29,7 @@ public final class Constants {
     public static final int EXIT_CODE_ERROR = -1;
 
     public static final Charset CHARSET = Charsets.UTF_8;
-    public static final String EMPTY_STR = "";
+    public static final String EMPTY = "";
     public static final String CSV_DELIMITER = ",";
     public static final String TEXT_DELIMITER = "\t";
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
@@ -41,4 +41,6 @@ public final class Constants {
     public static final String SINGLE_WORKER = "single-worker-%d";
 
     public static final int VERTEX_ID_LIMIT = 128;
+    public static final String[] SEARCH_LIST = new String[]{":", "!"};
+    public static final String[] TARGET_LIST = new String[]{"`:", "`!"};
 }

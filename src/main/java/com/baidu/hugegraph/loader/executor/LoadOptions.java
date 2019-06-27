@@ -115,6 +115,10 @@ public final class LoadOptions {
                description = "Setting the interval time before retrying")
     public int retryInterval = 10;
 
+    @Parameter(names = {"--dry-run"}, arity = 1,
+               description = "Dry run means that only parse but doesn't load")
+    public boolean dryRun = false;
+
     @Parameter(names = {"--test-mode"}, arity = 1,
                description = "Whether the hugegraph-loader work in test mode")
     public boolean testMode = false;
