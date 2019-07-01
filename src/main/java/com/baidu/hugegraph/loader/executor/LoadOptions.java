@@ -31,17 +31,17 @@ public final class LoadOptions {
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
-               description = "The path of the data source description file")
+               description = "The path of the data struct description file")
     public String file;
+
+    @Parameter(names = {"-s", "--schema"}, arity = 1,
+               validateWith = {FileValidator.class},
+               description = "The schema file path which to create manually")
+    public String schema;
 
     @Parameter(names = {"-g", "--graph"}, required = true, arity = 1,
                description = "The namespace of the graph to load into")
     public String graph;
-
-    @Parameter(names = {"-s", "--schema"}, required = true, arity = 1,
-               validateWith = {FileValidator.class},
-               description = "The schema file path which to create manually")
-    public String schema;
 
     @Parameter(names = {"-h", "--host"}, arity = 1,
                validateWith = {UrlValidator.class},
@@ -56,6 +56,10 @@ public final class LoadOptions {
     @Parameter(names = {"--token"}, arity = 1,
                description = "The token of graph for authentication")
     public String token = null;
+
+    @Parameter(names = {"--incremental-mode"}, arity = 1,
+              description = "Load data from the breakpoint of last time")
+    public boolean incrementalMode = false;
 
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},

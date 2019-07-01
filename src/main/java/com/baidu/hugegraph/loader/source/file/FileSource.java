@@ -22,16 +22,13 @@ package com.baidu.hugegraph.loader.source.file;
 import java.util.Collections;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FileSource extends AbstractSource {
-
-    private static final String DEFAULT_CHARSET = "UTF-8";
-    private static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    private static final String DEFAULT_SKIPPED_LINE_REGEX = "";
 
     @JsonProperty("path")
     private String path;
@@ -47,16 +44,17 @@ public class FileSource extends AbstractSource {
     private String charset;
     @JsonProperty("date_format")
     private String dateFormat;
-    @JsonProperty("skipped_line_regex")
-    private String skippedLineRegex;
+    @JsonProperty("skipped_line")
+    private SkippedLine skippedLine;
     @JsonProperty("compression")
     private Compression compression;
 
     public FileSource() {
         this.filter = new FileFilter();
-        this.charset = DEFAULT_CHARSET;
-        this.dateFormat = DEFAULT_DATE_FORMAT;
-        this.skippedLineRegex = DEFAULT_SKIPPED_LINE_REGEX;
+        this.header = null;
+        this.charset = Constants.CHARSET.name();
+        this.dateFormat = Constants.DATE_FORMAT;
+        this.skippedLine = new SkippedLine();
         this.compression = Compression.NONE;
     }
 
@@ -67,6 +65,13 @@ public class FileSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
+        if (this.format == FileFormat.CSV) {
+            E.checkArgument(this.delimiter == null ||
+                            this.delimiter.equals(Constants.CSV_DELIMITER),
+                            "The delimiter must be '%s' when file format " +
+                            "is %s, but got '%s'", Constants.CSV_DELIMITER,
+                            this.format, this.delimiter);
+        }
         String elemDelimiter = this.listFormat().elemDelimiter();
         E.checkArgument(!elemDelimiter.equals(this.delimiter),
                         "The delimiters of fields(%s) and list elements(%s) " +
@@ -86,10 +91,10 @@ public class FileSource extends AbstractSource {
     }
 
     public List<String> header() {
-        if (this.header == null) {
-            return null;
-        } else {
+        if (this.header != null) {
             return Collections.unmodifiableList(this.header);
+        } else {
+            return null;
         }
     }
 
@@ -105,8 +110,8 @@ public class FileSource extends AbstractSource {
         return this.dateFormat;
     }
 
-    public String skippedLineRegex() {
-        return this.skippedLineRegex;
+    public SkippedLine skippedLine() {
+        return this.skippedLine;
     }
 
     public Compression compression() {

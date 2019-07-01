@@ -25,5 +25,5 @@ public enum FileFormat {
 
     TEXT,
 
-    JSON;
+    JSON
 }

@@ -17,26 +17,22 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.serializer;
+package com.baidu.hugegraph.loader.progress;
 
-import com.baidu.hugegraph.loader.exception.LoadException;
+import java.util.HashMap;
 
-public class DeserializerException extends LoadException  {
+import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.util.E;
 
-    private static final long serialVersionUID = -7837901607110262081L;
+public final class InputProgressMap extends HashMap<String, InputProgress> {
 
-    public DeserializerException(String message, Throwable cause) {
-        super(message, cause);
+    public InputProgress getByStruct(ElementStruct struct) {
+        E.checkNotNull(struct, "element struct");
+        return this.get(struct.uniqueKey());
     }
 
-    public DeserializerException(String message, Object... args) {
-        super(message, args);
-    }
-
-    public static DeserializerException expectField(String expectField,
-                                                    Object parentField) {
-        return new DeserializerException(
-                   "Invalid json, expect '%s' in '%s'",
-                   expectField, parentField);
+    public void addStruct(ElementStruct struct) {
+        E.checkNotNull(struct, "element struct");
+        this.put(struct.uniqueKey(), new InputProgress(struct));
     }
 }

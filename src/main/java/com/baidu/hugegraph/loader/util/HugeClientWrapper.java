@@ -53,4 +53,13 @@ public final class HugeClientWrapper {
                                   options.maxConnectionsPerRoute);
         }
     }
+
+    public static void close() {
+        synchronized(HugeClientWrapper.class) {
+            if (instance != null) {
+                instance.close();
+                instance = null;
+            }
+        }
+    }
 }

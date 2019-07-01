@@ -19,61 +19,71 @@
 
 package com.baidu.hugegraph.loader.builder;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 
-import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
+import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.InputReaderFactory;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.source.ElementSource;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.util.AutoCloseableIterator;
+import com.baidu.hugegraph.loader.struct.EdgeStruct;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.struct.VertexStruct;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
-import com.baidu.hugegraph.loader.util.HugeClientWrapper;
 import com.baidu.hugegraph.structure.GraphElement;
-import com.baidu.hugegraph.structure.SchemaElement;
-import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
+import com.baidu.hugegraph.util.Log;
 
 public abstract class ElementBuilder<GE extends GraphElement>
                 implements AutoCloseableIterator<GE> {
 
-    private static final int VERTEX_ID_LIMIT = 128;
-    private static final String ID_CHARSET = "UTF-8";
+    private static final Logger LOG = Log.logger(ElementBuilder.class);
 
+    private final SchemaCache schema;
     private final InputReader reader;
-    private final HugeClient client;
-    private final Table<HugeType, String, SchemaElement> schemas;
 
-    public ElementBuilder(ElementSource source, LoadOptions options) {
-        this.reader = InputReaderFactory.create(source.input());
+    public ElementBuilder(LoadContext context, ElementStruct struct) {
+        this.schema = new SchemaCache(context);
+        this.reader = InputReaderFactory.create(struct.input());
+        this.init(context, struct);
+    }
+
+    public static ElementBuilder<?> of(LoadContext context,
+                                       ElementStruct struct) {
+        if (struct.type().isVertex()) {
+            return new VertexBuilder(context, (VertexStruct) struct);
+        } else {
+            assert struct.type().isEdge();
+            return new EdgeBuilder(context, (EdgeStruct) struct);
+        }
+    }
+
+    public abstract ElementStruct struct();
+
+    public ElemType type() {
+        return this.struct().type();
+    }
+
+    private void init(LoadContext context, ElementStruct struct) {
         try {
-            this.reader.init();
+            this.reader.init(context, struct);
         } catch (Exception e) {
             throw new LoadException("Failed to init input reader", e);
         }
-        this.client = HugeClientWrapper.get(options);
-        this.schemas = HashBasedTable.create();
-    }
-
-    public abstract ElementSource source();
-
-    public InputReader reader() {
-        return this.reader;
     }
 
     @Override
@@ -89,14 +99,21 @@ public abstract class ElementBuilder<GE extends GraphElement>
             keyValues = this.filterFields(keyValues);
             return this.build(keyValues);
         } catch (IllegalArgumentException e) {
-            throw new ParseException(line.rawLine(), e.getMessage());
+            throw new ParseException(line.rawLine(), e);
         }
     }
 
     @Override
-    public void close() throws Exception {
-        this.reader.close();
+    public void close() {
+        try {
+            this.reader.close();
+        } catch (Exception e) {
+            LOG.warn("Failed to close builder for {} with exception {}",
+                     this.struct(), e);
+        }
     }
+
+    protected abstract SchemaLabel getSchemaLabel();
 
     protected abstract GE build(Map<String, Object> keyValues);
 
@@ -104,23 +121,23 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
         // Retain selected fileds or remove ignored fields
-        if (!this.source().selectedFields().isEmpty()) {
-            keyValues.keySet().retainAll(this.source().selectedFields());
-        } else if (!this.source().ignoredFields().isEmpty()) {
-            keyValues.keySet().removeAll(this.source().ignoredFields());
+        if (!this.struct().selectedFields().isEmpty()) {
+            keyValues.keySet().retainAll(this.struct().selectedFields());
+        } else if (!this.struct().ignoredFields().isEmpty()) {
+            keyValues.keySet().removeAll(this.struct().ignoredFields());
         }
 
         SchemaLabel schemaLabel = this.getSchemaLabel();
         Set<String> nullableKeys = schemaLabel.nullableKeys();
-        Set<Object> nullValues = this.source().nullValues();
+        Set<Object> nullValues = this.struct().nullValues();
         if (!nullableKeys.isEmpty() && !nullValues.isEmpty()) {
-            Iterator<Map.Entry<String, Object>> itor = keyValues.entrySet()
+            Iterator<Map.Entry<String, Object>> iter = keyValues.entrySet()
                                                                 .iterator();
-            itor.forEachRemaining(entry -> {
-                String key = this.source().mappingField(entry.getKey());
+            iter.forEachRemaining(entry -> {
+                String key = this.struct().mappingField(entry.getKey());
                 Object val = entry.getValue();
                 if (nullableKeys.contains(key) && nullValues.contains(val)) {
-                    itor.remove();
+                    iter.remove();
                 }
             });
         }
@@ -136,7 +153,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
             if (this.isIdField(fieldName)) {
                 continue;
             }
-            String key = this.source().mappingField(fieldName);
+            String key = this.struct().mappingField(fieldName);
             fieldValue = this.mappingFieldValueIfNeeded(fieldName, fieldValue);
             Object value = this.validatePropertyValue(key, fieldValue);
 
@@ -145,40 +162,26 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected PropertyKey getPropertyKey(String name) {
-        SchemaElement schema = this.schemas.get(HugeType.PROPERTY_KEY, name);
-        if (schema == null) {
-            schema = this.client.schema().getPropertyKey(name);
-        }
-        E.checkState(schema != null, "The property key %s doesn't exist", name);
-        this.schemas.put(HugeType.PROPERTY_KEY, name, schema);
-        return (PropertyKey) schema;
+        return this.schema.getPropertyKey(name);
     }
 
     protected VertexLabel getVertexLabel(String name) {
-        SchemaElement schema = this.schemas.get(HugeType.VERTEX_LABEL, name);
-        if (schema == null) {
-            schema = this.client.schema().getVertexLabel(name);
-        }
-        E.checkState(schema != null, "The vertex label %s doesn't exist", name);
-        this.schemas.put(HugeType.VERTEX_LABEL, name, schema);
-        return (VertexLabel) schema;
+        return this.schema.getVertexLabel(name);
     }
 
     protected EdgeLabel getEdgeLabel(String name) {
-        SchemaElement schema = this.schemas.get(HugeType.EDGE_LABEL, name);
-        if (schema == null) {
-            schema = this.client.schema().getEdgeLabel(name);
-        }
-        E.checkState(schema != null, "The edge label %s doesn't exist", name);
-        this.schemas.put(HugeType.EDGE_LABEL, name, schema);
-        return (EdgeLabel) schema;
+        return this.schema.getEdgeLabel(name);
     }
 
-    protected abstract SchemaLabel getSchemaLabel();
+    protected Object validatePropertyValue(String key, Object rawValue) {
+        PropertyKey pKey = this.getPropertyKey(key);
+        InputSource inputSource = this.struct().input();
+        return DataTypeUtil.convert(rawValue, pKey, inputSource);
+    }
 
     protected void checkFieldValue(String fieldName, Object fieldValue) {
-        if (this.source().mappingValues().isEmpty() ||
-            !this.source().mappingValues().containsKey(fieldName)) {
+        if (this.struct().mappingValues().isEmpty() ||
+            !this.struct().mappingValues().containsKey(fieldName)) {
             return;
         }
         // NOTE: The nullable values has been filtered before this
@@ -190,15 +193,15 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected Object mappingFieldValueIfNeeded(String fieldName,
                                                Object fieldValue) {
-        if (this.source().mappingValues().isEmpty()) {
+        if (this.struct().mappingValues().isEmpty()) {
             return fieldValue;
         }
         String fieldStrValue = String.valueOf(fieldValue);
-        return this.source().mappingValue(fieldName, fieldStrValue);
+        return this.struct().mappingValue(fieldName, fieldStrValue);
     }
 
-    protected String spliceVertexId(VertexLabel vertexLabel,
-                                    Object[] primaryValues) {
+    protected static String spliceVertexId(VertexLabel vertexLabel,
+                                           Object[] primaryValues) {
         E.checkArgument(vertexLabel.primaryKeys().size() == primaryValues.length,
                         "Missing some primary key columns, expect %s, " +
                         "but only got %s for vertex label '%s'",
@@ -220,20 +223,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
         return vertexId.toString();
     }
 
-    protected void checkVertexIdLength(String id) {
-        try {
-            E.checkArgument(id.getBytes(ID_CHARSET).length <= VERTEX_ID_LIMIT,
-                            "Vertex id length limit is '%s', '%s' exceeds it",
-                            VERTEX_ID_LIMIT, id);
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    protected Object validatePropertyValue(String key, Object rawValue) {
-        PropertyKey pKey = this.getPropertyKey(key);
-        InputSource inputSource = this.source().input();
-        return DataTypeUtil.convert(rawValue, pKey, inputSource);
+    protected static void checkVertexIdLength(String id) {
+        E.checkArgument(id.getBytes(Constants.CHARSET).length <=
+                        Constants.VERTEX_ID_LIMIT,
+                        "The vertex id length limit is '%s', '%s' exceeds it",
+                        Constants.VERTEX_ID_LIMIT, id);
     }
 
     protected static long parseNumberId(Object idValue) {
@@ -241,10 +235,9 @@ public abstract class ElementBuilder<GE extends GraphElement>
             return ((Number) idValue).longValue();
         } else if (idValue instanceof String) {
             return Long.parseLong((String) idValue);
-        } else {
-            throw new IllegalArgumentException(String.format(
-                      "The id value must can be casted to Long, " +
-                      "but got %s(%s)", idValue, idValue.getClass().getName()));
         }
+        throw new IllegalArgumentException(String.format(
+                  "The id value must can be casted to Long, but got %s(%s)",
+                  idValue, idValue.getClass().getName()));
     }
 }

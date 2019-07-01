@@ -25,5 +25,5 @@ public enum SourceType {
 
     HDFS,
 
-    JDBC;
+    JDBC
 }

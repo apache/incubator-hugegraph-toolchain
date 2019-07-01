@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.test.functional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -33,6 +34,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
@@ -208,6 +210,24 @@ public class FileLoadTest extends LoadTest {
             }
         }
         Assert.assertTrue(interestedEdge);
+    }
+
+    @Test
+    public void testNoSchemaFile() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", configPath("no_schema_file/struct.json"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ServerException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     @Test
@@ -389,6 +409,25 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(328.0, vertex.property("price"));
     }
 
+    @Test
+    public void testCustomizedDelimiterInCsvFile() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko\t29\tBeijing");
+
+        String[] args = new String[]{
+                "-f", configPath("customized_delimiter_in_csv_file/struct.json"),
+                "-s", configPath("customized_delimiter_in_csv_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+    }
+
     /**
      * TODO: the order of collection's maybe change
      * (such as time:["2019-05-02 13:12:44","2008-05-02 13:12:44"])
@@ -425,9 +464,9 @@ public class FileLoadTest extends LoadTest {
                             edge.property("feel"));
     }
 
-    // TODO : List<Date> is not supported now
     @Test
-    public void testValueListPropertyInTextFile() {
+    public void testValueListPropertyInTextFile()
+                throws java.text.ParseException {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -451,8 +490,45 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
                             edge.property("feel"));
-        Assert.assertEquals(ImmutableList.of("2019-05-02", "2008-05-02"),
-                            edge.property("time"));
+        List<Long> expectedTimes = ImmutableList.of(
+                DateUtil.parse("2019-05-02", "yyyy-MM-dd").getTime(),
+                DateUtil.parse("2008-05-02", "yyyy-MM-dd").getTime()
+        );
+        Assert.assertEquals(expectedTimes, edge.property("time"));
+    }
+
+    @Test
+    public void testValueSetPropertyInTextFile()
+                throws java.text.ParseException {
+        ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
+        ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
+        ioUtil.write("edge_use.txt",
+                     "jin\ttom\t[4,1,5,6]\t[2019-05-02,2008-05-02]");
+
+        String[] args = new String[]{
+                "-f", configPath("value_set_property_in_text_file/struct.json"),
+                "-s", configPath("value_set_property_in_text_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Edge> edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(1, edges.size());
+        Edge edge = edges.get(0);
+
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("software", edge.targetLabel());
+        Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
+                            edge.property("feel"));
+        Assert.assertEquals(ArrayList.class, edge.property("time").getClass());
+        List<?> list = (List<?>) edge.property("time");
+        Assert.assertTrue(list.contains(DateUtil.parse(
+                                        "2019-05-02", "yyyy-MM-dd").getTime()));
+        Assert.assertTrue(list.contains(DateUtil.parse(
+                                        "2008-05-02", "yyyy-MM-dd").getTime()));
     }
 
     @Test
@@ -829,7 +905,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testFileHasSkippedLine() {
+    public void testFileHasSkippedLineRegex() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
                      "# This is a comment",
@@ -839,8 +915,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,//Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("file_has_skipped_line/struct.json"),
-                "-s", configPath("file_has_skipped_line/schema.groovy"),
+                "-f", configPath("file_has_skipped_line_regex/struct.json"),
+                "-s", configPath("file_has_skipped_line_regex/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"

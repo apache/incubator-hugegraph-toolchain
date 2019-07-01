@@ -24,9 +24,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 
 public class JDBCReader implements InputReader {
 
@@ -53,7 +55,7 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
-    public void init() {
+    public void init(LoadContext context, ElementStruct struct) {
         try {
             this.fetcher.readHeader();
         } catch (SQLException e) {
@@ -83,7 +85,7 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         this.fetcher.close();
     }
 }

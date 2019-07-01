@@ -17,15 +17,16 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source;
+package com.baidu.hugegraph.loader.struct;
 
 import java.util.List;
 
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class EdgeSource extends ElementSource {
+public class EdgeStruct extends ElementStruct {
 
     @JsonProperty("source")
     private final List<String> sourceFields;
@@ -33,10 +34,15 @@ public class EdgeSource extends ElementSource {
     private final List<String> targetFields;
 
     @JsonCreator
-    public EdgeSource(@JsonProperty("source") List<String> sourceFields,
+    public EdgeStruct(@JsonProperty("source") List<String> sourceFields,
                       @JsonProperty("target") List<String> targetFields) {
         this.sourceFields = sourceFields;
         this.targetFields = targetFields;
+    }
+
+    @Override
+    public ElemType type() {
+        return ElemType.EDGE;
     }
 
     @Override
@@ -62,6 +68,6 @@ public class EdgeSource extends ElementSource {
 
     @Override
     public String toString() {
-        return String.format("edge-source(%s)", this.label());
+        return String.format("EdgeStruct(%s)", this.uniqueKey());
     }
 }

@@ -32,6 +32,11 @@ public class InsertException extends IllegalArgumentException {
         this.element = element;
     }
 
+    public InsertException(GraphElement element, Throwable cause) {
+        super(cause.getMessage(), cause);
+        this.element = element;
+    }
+
     public InsertException(GraphElement element, String message,
                            Throwable cause) {
         super(message, cause);

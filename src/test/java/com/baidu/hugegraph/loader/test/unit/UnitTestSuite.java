@@ -17,34 +17,13 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.executor;
+package com.baidu.hugegraph.loader.test.unit;
 
-import org.slf4j.Logger;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-import com.baidu.hugegraph.loader.exception.InsertException;
-import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.util.JsonUtil;
-import com.baidu.hugegraph.util.Log;
-
-public class LoadLogger {
-
-    private final Logger log;
-
-    public static LoadLogger logger(String name) {
-        return new LoadLogger(name);
-    }
-
-    private LoadLogger(String name) {
-        this.log = Log.logger(name);
-    }
-
-    public void error(ParseException e) {
-        this.log.error(">>>> PARSE ERROR: {}", e.getMessage());
-        this.log.error("{}", e.line());
-    }
-
-    public void error(InsertException e) {
-        this.log.error(">>>> INSERT ERROR: {}", e.getMessage());
-        this.log.error("{}", JsonUtil.toJson(e.element()));
-    }
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+})
+public class UnitTestSuite {
 }

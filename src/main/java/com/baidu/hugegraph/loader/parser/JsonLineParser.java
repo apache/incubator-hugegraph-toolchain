@@ -23,27 +23,25 @@ import java.util.Map;
 
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
+import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.rest.SerializeException;
-import com.baidu.hugegraph.util.JsonUtil;
 
 public class JsonLineParser implements LineParser {
 
-    @Override
-    public void init(AbstractFileReader reader) {
+    public JsonLineParser(FileSource source) {
         // pass
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Line parse(String rawLine) {
+    public Line parse(String line) {
+        Map<String, Object> keyValues;
         try {
-            Map<String, Object> keyValues = JsonUtil.fromJson(rawLine,
-                                                              Map.class);
-            return new Line(rawLine, keyValues);
+            keyValues = JsonUtil.convertMap(line, String.class, Object.class);
+            return new Line(line, keyValues);
         } catch (SerializeException e) {
-            throw new ParseException(rawLine, "Deserialize line '%s' error",
-                                     e, rawLine);
+            throw new ParseException(line, "Deserialize line '%s' error",
+                                     e, line);
         }
     }
 }

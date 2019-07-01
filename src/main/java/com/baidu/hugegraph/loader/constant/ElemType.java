@@ -17,33 +17,29 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source;
+package com.baidu.hugegraph.loader.constant;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+public enum ElemType {
 
-public class VertexSource extends ElementSource {
+    VERTEX("vertices"),
 
-    // Be null when id strategy is primary key
-    @JsonProperty("id")
-    private final String idField;
+    EDGE("edges");
 
-    @JsonCreator
-    public VertexSource(@JsonProperty("id") String idField) {
-        this.idField = idField;
+    private String name;
+
+    private ElemType(String name) {
+        this.name = name;
     }
 
-    @Override
-    public void check() throws IllegalArgumentException {
-        super.check();
+    public String string() {
+        return this.name;
     }
 
-    public String idField() {
-        return this.idField;
+    public boolean isVertex() {
+        return this == VERTEX;
     }
 
-    @Override
-    public String toString() {
-        return String.format("vertex-source(%s)", this.label());
+    public boolean isEdge() {
+        return this == EDGE;
     }
 }

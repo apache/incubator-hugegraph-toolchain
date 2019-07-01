@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-public class InputSourceDeserializer extends JsonDeserializer<InputSource> {
+public class InputSourceDeser extends JsonDeserializer<InputSource> {
 
     private static final String FIELD_TYPE = "type";
 
@@ -71,7 +71,7 @@ public class InputSourceDeserializer extends JsonDeserializer<InputSource> {
                                     JsonNodeType nodeType) {
         JsonNode subNode = node.get(name);
         if (subNode == null || subNode.getNodeType() != nodeType) {
-            throw DeserializerException.expectField(name, node);
+            throw DeserializeException.expectField(name, node);
         }
         return subNode;
     }

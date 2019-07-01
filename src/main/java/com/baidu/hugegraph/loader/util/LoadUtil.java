@@ -19,7 +19,16 @@
 
 package com.baidu.hugegraph.loader.util;
 
-import java.util.Iterator;
+import com.beust.jcommander.JCommander;
 
-public interface AutoCloseableIterator<E> extends AutoCloseable, Iterator<E> {
+public final class LoadUtil {
+
+    public static void exit(int code) {
+        System.exit(code);
+    }
+
+    public static void exitWithUsage(JCommander commander, int code) {
+        commander.usage();
+        System.exit(code);
+    }
 }

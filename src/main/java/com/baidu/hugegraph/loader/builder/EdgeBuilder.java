@@ -22,8 +22,8 @@ package com.baidu.hugegraph.loader.builder;
 import java.util.List;
 import java.util.Map;
 
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.source.EdgeSource;
+import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.struct.EdgeStruct;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -33,36 +33,41 @@ import com.baidu.hugegraph.util.E;
 
 public class EdgeBuilder extends ElementBuilder<Edge> {
 
-    private final EdgeSource source;
+    private final EdgeStruct struct;
     private final EdgeLabel edgeLabel;
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(EdgeSource source, LoadOptions options) {
-        super(source, options);
-        this.source = source;
-        this.edgeLabel = this.getEdgeLabel(source.label());
+    public EdgeBuilder(LoadContext context, EdgeStruct struct) {
+        super(context, struct);
+        this.struct = struct;
+        this.edgeLabel = this.getEdgeLabel(struct.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
         this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
         // Ensure that the source/target id fileds are matched with id strategy
-        this.checkIdFields(this.sourceLabel, this.source.sourceFields());
-        this.checkIdFields(this.targetLabel, this.source.targetFields());
+        this.checkIdFields(this.sourceLabel, this.struct.sourceFields());
+        this.checkIdFields(this.targetLabel, this.struct.targetFields());
     }
 
     @Override
-    public EdgeSource source() {
-        return this.source;
+    public EdgeStruct struct() {
+        return this.struct;
+    }
+
+    @Override
+    protected SchemaLabel getSchemaLabel() {
+        return this.edgeLabel;
     }
 
     @Override
     protected Edge build(Map<String, Object> keyValues) {
-        Edge edge = new Edge(this.source.label());
+        Edge edge = new Edge(this.struct.label());
         // Must add source/target vertex id
         edge.sourceId(this.buildVertexId(this.sourceLabel,
-                                         this.source.sourceFields(),
+                                         this.struct.sourceFields(),
                                          keyValues));
         edge.targetId(this.buildVertexId(this.targetLabel,
-                                         this.source.targetFields(),
+                                         this.struct.targetFields(),
                                          keyValues));
         // Must add source/target vertex label
         edge.sourceLabel(this.sourceLabel.name());
@@ -74,13 +79,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
 
     @Override
     protected boolean isIdField(String fieldName) {
-        return this.source.sourceFields().contains(fieldName) ||
-               this.source.targetFields().contains(fieldName);
-    }
-
-    @Override
-    protected SchemaLabel getSchemaLabel() {
-        return this.edgeLabel;
+        return this.struct.sourceFields().contains(fieldName) ||
+               this.struct.targetFields().contains(fieldName);
     }
 
     private Object buildVertexId(VertexLabel vertexLabel,
@@ -112,14 +112,14 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                                     fieldValue, fieldValue.getClass(),
                                     mappedValue, mappedValue.getClass());
                     String id = (String) mappedValue;
-                    this.checkVertexIdLength(id);
+                    checkVertexIdLength(id);
                     return id;
                 } else {
                     assert idStrategy.isCustomizeNumber();
                     return parseNumberId(mappedValue);
                 }
             } else {
-                String key = this.source.mappingField(fieldName);
+                String key = this.struct.mappingField(fieldName);
                 Object value = this.validatePropertyValue(key, mappedValue);
                 // The id strategy of source/target label must be PRIMARY_KEY
                 if (primaryKeys.contains(key)) {
@@ -129,8 +129,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
             }
         }
 
-        String id = this.spliceVertexId(vertexLabel, primaryValues);
-        this.checkVertexIdLength(id);
+        String id = spliceVertexId(vertexLabel, primaryValues);
+        checkVertexIdLength(id);
         return id;
     }
 

@@ -21,17 +21,35 @@ package com.baidu.hugegraph.loader.task;
 
 import java.util.List;
 
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.util.E;
 
-public class VertexInsertionTask extends InsertionTask<Vertex> {
+public abstract class InsertTask<GE extends GraphElement> implements Runnable {
 
-    public VertexInsertionTask(List<Vertex> batch, LoadOptions options) {
-        super(batch, options);
+    private final LoadContext context;
+    private final ElementStruct struct;
+    private final List<GE> batch;
+
+    public InsertTask(LoadContext context, ElementStruct struct,
+                      List<GE> batch) {
+        E.checkArgument(batch != null && !batch.isEmpty(),
+                        "The batch can't be null or empty");
+        this.context = context;
+        this.struct = struct;
+        this.batch = batch;
     }
 
-    @Override
-    protected void execute() {
-        this.client().graph().addVertices(this.batch());
+    public LoadContext context() {
+        return this.context;
+    }
+
+    public ElementStruct struct() {
+        return this.struct;
+    }
+
+    public List<GE> batch() {
+        return this.batch;
     }
 }

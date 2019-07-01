@@ -19,9 +19,11 @@
 
 package com.baidu.hugegraph.loader.reader;
 
-import com.baidu.hugegraph.loader.util.AutoCloseableIterator;
+import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
+import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 
 public interface InputReader extends AutoCloseableIterator<Line> {
 
-    public void init();
+    public void init(LoadContext context, ElementStruct struct);
 }

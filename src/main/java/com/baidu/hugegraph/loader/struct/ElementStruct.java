@@ -17,17 +17,23 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source;
+package com.baidu.hugegraph.loader.struct;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.constant.Checkable;
+import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.constant.Unique;
+import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.HashUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class ElementSource implements Checkable {
+public abstract class ElementStruct implements Unique<String>, Checkable {
 
     @JsonProperty("label")
     private String label;
@@ -44,12 +50,20 @@ public abstract class ElementSource implements Checkable {
     @JsonProperty("null_values")
     private Set<Object> nullValues;
 
-    public ElementSource() {
+    public ElementStruct() {
         this.mappingFields = new HashMap<>();
         this.mappingValues = new HashMap<>();
         this.selectedFields = new HashSet<>();
         this.ignoredFields = new HashSet<>();
         this.nullValues = new HashSet<>();
+    }
+
+    public abstract ElemType type();
+
+    @Override
+    public String uniqueKey() {
+        String code = HashUtil.hash(JsonUtil.toJson(this));
+        return this.label + "-" + code;
     }
 
     @Override

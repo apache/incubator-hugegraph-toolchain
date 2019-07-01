@@ -7,7 +7,9 @@
         "path": "${store_path}/vertex_person.csv",
         "format": "CSV",
         "charset": "UTF-8",
-        "skipped_line_regex": "(^#|^//).*"
+        "skipped_line": {
+          "regex": "(^#|^//).*"
+        }
       },
       "field_mapping": {
         "name": "name",

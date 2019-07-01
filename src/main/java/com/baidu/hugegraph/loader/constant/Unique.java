@@ -17,21 +17,9 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.task;
+package com.baidu.hugegraph.loader.constant;
 
-import java.util.List;
+public interface Unique<T> {
 
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.structure.graph.Edge;
-
-public class EdgeInsertionTask extends InsertionTask<Edge> {
-
-    public EdgeInsertionTask(List<Edge> batch, LoadOptions options) {
-        super(batch, options);
-    }
-
-    @Override
-    protected void execute() {
-        this.client().graph().addEdges(this.batch(), this.options().checkVertex);
-    }
+    public T uniqueKey();
 }

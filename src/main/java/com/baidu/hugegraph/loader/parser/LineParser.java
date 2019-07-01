@@ -19,12 +19,17 @@
 
 package com.baidu.hugegraph.loader.parser;
 
-import com.baidu.hugegraph.loader.reader.file.AbstractFileReader;
 import com.baidu.hugegraph.loader.reader.Line;
 
 public interface LineParser {
 
-    public void init(AbstractFileReader reader);
-
     public Line parse(String rawLine);
+
+    public default boolean needHeader() {
+        return false;
+    }
+
+    public default boolean parseHeader(String rawLine) {
+        return false;
+    }
 }
