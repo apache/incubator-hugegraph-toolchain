@@ -122,7 +122,8 @@ public class Readers {
         } catch (IOException e) {
             throw new LoadException("Failed to skip the first %s lines " +
                                     "of file %s, please ensure the file " +
-                                    "file must have at least %s lines");
+                                    "must have at least %s lines", offset,
+                                    this.readables.get(this.index), offset);
         }
         this.newProgress.addLoadingOffset(offset);
         return header;

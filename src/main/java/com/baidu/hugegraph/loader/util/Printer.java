@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.loader.util;
 
-import java.time.Duration;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -30,6 +28,7 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.util.Log;
+import com.baidu.hugegraph.util.TimeUtil;
 
 public final class Printer {
 
@@ -109,12 +108,12 @@ public final class Printer {
     private static void logMetrics(ElemType type, LoadMetrics metrics) {
         log("parse success", metrics.parseSuccess());
         log("parse failure", metrics.parseFailure());
-        log("parse time", readableTime(metrics.parseTime()));
+        log("parse time", TimeUtil.readableTime(metrics.parseTime()));
         log("parse rate", String.format("%s(%s/s)", metrics.parseRate(),
                                                     type.string()));
         log("load success", metrics.loadSuccess());
         log("load failure", metrics.loadFailure());
-        log("load time", readableTime(metrics.loadTime()));
+        log("load time", TimeUtil.readableTime(metrics.loadTime()));
         log("load rate", String.format("%s(%s/s)", metrics.averageLoadRate(),
                                                    type.string()));
     }
@@ -124,14 +123,14 @@ public final class Printer {
         // Print parse success used to comfirm data integrity
         printAndLog("parse success", metrics.parseSuccess());
         printAndLog("parse failure", metrics.parseFailure());
-        printAndLog("parse time", readableTime(metrics.parseTime()));
+        printAndLog("parse time", TimeUtil.readableTime(metrics.parseTime()));
         printAndLog("parse rate", String.format("%s(%s/s)", metrics.parseRate(),
                                                             type.string()));
 
         printAndLog("load:");
         printAndLog("load success", metrics.loadSuccess());
         printAndLog("load failure", metrics.loadFailure());
-        printAndLog("load time", readableTime(metrics.loadTime()));
+        printAndLog("load time", TimeUtil.readableTime(metrics.loadTime()));
         printAndLog("load rate", String.format("%s(%s/s)", metrics.loadRate(),
                                                            type.string()));
     }
@@ -199,14 +198,5 @@ public final class Printer {
             backward.append("\b");
         }
         return backward.toString();
-    }
-
-    // TODO: move to common util
-    public static String readableTime(long time) {
-        Duration duration = Duration.ofMillis(time);
-        return duration.toString()
-                       .substring(2)
-                       .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                       .toLowerCase();
     }
 }

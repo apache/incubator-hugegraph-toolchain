@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.baidu.hugegraph.loader.progress.InputProgress;
+import com.baidu.hugegraph.loader.serializer.DeserializeException;
 import com.baidu.hugegraph.loader.serializer.InputProgressDeser;
 import com.baidu.hugegraph.loader.serializer.InputSourceDeser;
 import com.baidu.hugegraph.loader.source.InputSource;
@@ -76,7 +77,7 @@ public final class JsonUtil {
         try {
             return MAPPER.readValue(json, typeRef);
         } catch (IOException e) {
-            throw new SerializeException("Failed to deserialize json", e);
+            throw new DeserializeException("Failed to deserialize json", e);
         }
     }
 
@@ -103,7 +104,7 @@ public final class JsonUtil {
         try {
             return MAPPER.readValue(json, type);
         } catch (IOException e) {
-            throw new SerializeException("Failed to deserialize json", e);
+            throw new DeserializeException("Failed to deserialize json", e);
         }
     }
 

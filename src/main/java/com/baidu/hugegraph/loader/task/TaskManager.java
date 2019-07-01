@@ -54,9 +54,8 @@ public final class TaskManager {
     public TaskManager(LoadContext context) {
         this.context = context;
         this.options = context.options();
-        this.batchSemaphore = new Semaphore(this.options.numThreads);
-        // Equivalent to have a buffer queue of length options.numThreads
-        this.singleSemaphore = new Semaphore(2 * this.options.numThreads);
+        this.batchSemaphore = new Semaphore(this.options.numThreads + 1);
+        this.singleSemaphore = new Semaphore(this.options.numThreads + 1);
         /*
          * In principle, unbounded synchronization queue(which may lead to OOM)
          * should not be used, but there the task manager uses semaphores to
