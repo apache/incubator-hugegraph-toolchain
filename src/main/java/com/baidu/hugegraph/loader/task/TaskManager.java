@@ -54,8 +54,13 @@ public final class TaskManager {
     public TaskManager(LoadContext context) {
         this.context = context;
         this.options = context.options();
-        this.batchSemaphore = new Semaphore(this.options.numThreads + 1);
-        this.singleSemaphore = new Semaphore(this.options.numThreads + 1);
+        // Try to make all batch threads running and don't wait for producer
+        this.batchSemaphore = new Semaphore(1 + this.options.numThreads);
+        /*
+         * Let batch threads go forward as far as possible and don't wait for
+         * single thread
+         */
+        this.singleSemaphore = new Semaphore(2 * this.options.numThreads);
         /*
          * In principle, unbounded synchronization queue(which may lead to OOM)
          * should not be used, but there the task manager uses semaphores to
