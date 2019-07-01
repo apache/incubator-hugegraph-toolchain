@@ -29,6 +29,7 @@ public final class Constants {
     public static final int EXIT_CODE_ERROR = -1;
 
     public static final Charset CHARSET = Charsets.UTF_8;
+
     public static final String EMPTY = "";
     public static final String CSV_DELIMITER = ",";
     public static final String TEXT_DELIMITER = "\t";

@@ -19,14 +19,13 @@
 
 package com.baidu.hugegraph.loader.parser;
 
-import java.util.List;
+import java.util.Arrays;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.util.LoadUtil;
-import com.google.common.base.Splitter;
+import com.baidu.hugegraph.util.StringUtil;
 
 public class TextLineParser implements LineParser {
 
@@ -34,8 +33,7 @@ public class TextLineParser implements LineParser {
 
     // Default is "\t"
     private final String delimiter;
-    private List<String> header;
-    private final Splitter splitter;
+    private String[] header;
 
     public TextLineParser(FileSource source) {
         this(source, source.delimiter() != null ?
@@ -47,35 +45,34 @@ public class TextLineParser implements LineParser {
         this.source = source;
         this.delimiter = delimiter;
         if (this.source.header() != null) {
-            this.header = this.source.header();
+            this.header = this.source.header().toArray(new String[]{});
         }
-        this.splitter = Splitter.on(this.delimiter);
     }
 
     public String delimiter() {
         return this.delimiter;
     }
 
-    public List<String> header() {
+    public String[] header() {
         return this.header;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Line parse(String line) {
-        List<String> columns = this.split(line);
+        String[] columns = this.split(line);
         // Ignore extra separator at the end of line
-        if (columns.size() != this.header.size()) {
-            if (this.lastColumnIsEmpty(columns)) {
-                columns = columns.subList(0, columns.size() - 1);
-            } else {
+        if (columns.length != this.header.length) {
+            if (!this.lastColumnIsEmpty(columns)) {
                 throw new ParseException(line,
                           "The column length '%s' doesn't match with " +
                           "header length '%s' on: %s",
-                          columns.size(), this.header.size(), line);
+                          columns.length, this.header.length, line);
             }
+            String[] subColumns = new String[columns.length - 1];
+            System.arraycopy(columns, 0, subColumns, 0, columns.length - 1);
+            return new Line(line, this.header, subColumns);
         }
-        return new Line(line, this.header, (List<Object>) (Object) columns);
+        return new Line(line, this.header, columns);
     }
 
     @Override
@@ -99,11 +96,11 @@ public class TextLineParser implements LineParser {
         }
 
         // If doesn't specify header, the first line is treated as header
-        List<String> columns = this.split(line);
-        assert !columns.isEmpty();
+        String[] columns = this.split(line);
+        assert columns.length > 0;
         if (this.header == null) {
             this.header = columns;
-        } else if (!this.header.equals(columns)) {
+        } else if (!Arrays.equals(this.header, columns)) {
             // Has been parsed from the previous file
             throw new ParseException("The headers of different files must be " +
                                      "same under path '%s'", this.source.path());
@@ -111,18 +108,13 @@ public class TextLineParser implements LineParser {
         return true;
     }
 
-    /**
-     * TODO: return List<CharSequence>
-     */
-    @SuppressWarnings("unchecked")
-    public List<String> split(String line) {
-//        return this.splitter.splitToList(line);
-        return (List<String>) (Object) LoadUtil.split(line, this.delimiter);
+    public String[] split(String line) {
+        return StringUtil.split(line, this.delimiter);
     }
 
-    private boolean lastColumnIsEmpty(List<String> columns) {
-        int last = columns.size() - 1;
-        return columns.size() - 1 == this.header.size() &&
-               columns.get(last).equals(Constants.EMPTY);
+    private boolean lastColumnIsEmpty(String[] columns) {
+        int last = columns.length - 1;
+        return columns.length - 1 == this.header.length &&
+               columns[last].equals(Constants.EMPTY);
     }
 }

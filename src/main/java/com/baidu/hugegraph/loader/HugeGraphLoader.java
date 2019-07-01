@@ -172,17 +172,18 @@ public final class HugeGraphLoader {
                                                 LoadMetrics metrics) {
         ElementStruct struct = builder.struct();
         LOG.info("Start parsing and loading '{}'", struct);
-        StopWatch parseWatch = StopWatch.createStarted();
+        StopWatch parseTime = StopWatch.createStarted();
 
         ElemType type = struct.type();
         List<GE> batch = new ArrayList<>(options.batchSize);
-        while (true) {
+        for (boolean finished = false; !finished;) {
             try {
-                if (!builder.hasNext()) {
-                    break;
+                if (builder.hasNext()) {
+                    GE element = builder.next();
+                    batch.add(element);
+                } else {
+                    finished = true;
                 }
-                GE element = builder.next();
-                batch.add(element);
             } catch (ParseException e) {
                 if (options.testMode) {
                     throw e;
@@ -198,33 +199,33 @@ public final class HugeGraphLoader {
                 }
                 continue;
             }
-            if (batch.size() >= options.batchSize) {
-                metrics.plusParseSuccess(batch.size());
-                if (!options.dryRun) {
-                    /*
-                     * NOTE: parse time doesn't include submit batch time,
-                     * it's accurate
-                     */
-                    parseWatch.suspend();
-                    this.taskManager.submitBatch(struct, batch);
-                    parseWatch.resume();
+            if (batch.size() >= options.batchSize ||
+                (finished && !batch.isEmpty())) {
+                this.submit(struct, batch, options, metrics, parseTime);
+                if (!finished) {
+                    batch = new ArrayList<>(options.batchSize);
                 }
-                batch = new ArrayList<>(options.batchSize);
-            }
-        }
-        parseWatch.stop();
-        if (!batch.isEmpty()) {
-            metrics.plusParseSuccess(batch.size());
-            if (!options.dryRun) {
-                parseWatch.suspend();
-                this.taskManager.submitBatch(struct, batch);
-                parseWatch.resume();
             }
         }
 
-        metrics.parseTime(parseWatch.getTime(TimeUnit.MILLISECONDS));
+        parseTime.stop();
+        metrics.parseTime(parseTime.getTime(TimeUnit.MILLISECONDS));
         LOG.info("Parsing {} '{}' with average rate: {}/s",
                  metrics.parseSuccess(), struct, metrics.parseRate());
+    }
+
+    private <GE extends GraphElement> void submit(ElementStruct struct,
+                                                  List<GE> batch,
+                                                  LoadOptions options,
+                                                  LoadMetrics metrics,
+                                                  StopWatch parseTime) {
+        metrics.plusParseSuccess(batch.size());
+        if (!options.dryRun) {
+            // Parse time doesn't include submit time, it's accurate
+            parseTime.suspend();
+            this.taskManager.submitBatch(struct, batch);
+            parseTime.resume();
+        }
     }
 
     private void stopLoading(int code) {

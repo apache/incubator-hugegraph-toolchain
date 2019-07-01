@@ -20,13 +20,19 @@
 package com.baidu.hugegraph.loader.task;
 
 import java.util.List;
+import java.util.Set;
 
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
+import com.google.common.collect.ImmutableSet;
 
 public abstract class InsertTask<GE extends GraphElement> implements Runnable {
+
+    public static final Set<String> UNACCEPTABLE_EXCEPTIONS = ImmutableSet.of(
+            "class java.lang.IllegalArgumentException"
+    );
 
     private final LoadContext context;
     private final ElementStruct struct;

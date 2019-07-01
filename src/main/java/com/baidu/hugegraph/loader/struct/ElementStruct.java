@@ -82,9 +82,14 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
                         "Not allowed to specify selected(%s) and ignored(%s) " +
                         "fields at the same time, at least one of them " +
                         "must be empty", selectedFields, ignoredFields);
+        this.mappingFields.values().forEach(value -> {
+            E.checkArgument(value != null,
+                            "The value in field_mapping can't be null");
+        });
         this.mappingValues.values().forEach(m -> {
             m.values().forEach(value -> {
-                E.checkArgumentNotNull(value, "The mapped value can't be null");
+                E.checkArgument(value != null,
+                                "The value in value_mapping can't be null");
             });
         });
     }
@@ -102,11 +107,8 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     }
 
     public String mappingField(String fieldName) {
-        String mappingName = fieldName;
-        if (this.mappingFields.containsKey(fieldName)) {
-            mappingName = this.mappingFields.get(fieldName);
-        }
-        return mappingName;
+        String mappingName = this.mappingFields.get(fieldName);
+        return mappingName != null ? mappingName : fieldName;
     }
 
     public Map<String, Map<String, Object>> mappingValues() {
@@ -115,10 +117,11 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
 
     public Object mappingValue(String fieldName, String rawValue) {
         Object mappingValue = rawValue;
-        if (this.mappingValues.containsKey(fieldName)) {
-            Map<String, Object> values = this.mappingValues.get(fieldName);
-            if (values.containsKey(rawValue)) {
-                mappingValue = values.get(rawValue);
+        Map<String, Object> values = this.mappingValues.get(fieldName);
+        if (values != null) {
+            Object value = values.get(rawValue);
+            if (value != null) {
+                mappingValue = value;
             }
         }
         return mappingValue;

@@ -19,10 +19,6 @@
 
 package com.baidu.hugegraph.loader.util;
 
-import java.nio.CharBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.beust.jcommander.JCommander;
 
 public final class LoadUtil {
@@ -34,19 +30,5 @@ public final class LoadUtil {
     public static void exitWithUsage(JCommander commander, int code) {
         commander.usage();
         System.exit(code);
-    }
-
-    public static List<CharSequence> split(String line, String delimiter) {
-        int len = delimiter.length();
-        List<CharSequence> results = new ArrayList<>();
-        int fromIndex = 0;
-        int index = line.indexOf(delimiter, fromIndex);
-        while (index != -1) {
-            results.add(CharBuffer.wrap(line, fromIndex, index));
-            fromIndex = index + len;
-            index = line.indexOf(delimiter, fromIndex);
-        }
-        results.add(CharBuffer.wrap(line, fromIndex, line.length()));
-        return results;
     }
 }

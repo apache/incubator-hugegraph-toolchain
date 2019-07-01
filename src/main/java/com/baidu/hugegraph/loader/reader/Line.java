@@ -20,47 +20,42 @@
 package com.baidu.hugegraph.loader.reader;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.baidu.hugegraph.util.InsertionOrderUtil;
+
 public final class Line {
 
     private final String rawLine;
-    private final List<String> names;
-    private final List<Object> values;
-
-    public Line(String rawLine, int size) {
-        this.rawLine = rawLine;
-        this.names = new ArrayList<>(size);
-        this.values = new ArrayList<>(size);
-    }
+    private String[] names;
+    private Object[] values;
+    private Map<String, Object> keyValues;
 
     public Line(String rawLine, Map<String, Object> keyValues) {
         this.rawLine = rawLine;
-        this.names = new ArrayList<>(keyValues.size());
-        this.values = new ArrayList<>(keyValues.size());
-        for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-            this.names.add(entry.getKey());
-            this.values.add(entry.getValue());
-        }
+        this.names = null;
+        this.values = null;
+        this.keyValues = keyValues;
     }
 
     public Line(List<String> names, List<Object> values) {
         assert names.size() == values.size();
         this.rawLine = StringUtils.join(values, ",");
-        this.names = names;
-        this.values = values;
+        this.names = names.toArray(new String[]{});
+        this.values = values.toArray(new Object[]{});
+        this.keyValues = null;
     }
 
-    public Line(String rawLine, List<String> names, List<Object> values) {
-        assert names.size() == values.size();
+    public Line(String rawLine, String[] names, Object[] values) {
+        assert names.length == values.length;
         this.rawLine = rawLine;
         this.names = names;
         this.values = values;
+        this.keyValues = null;
     }
 
     public String rawLine() {
@@ -68,24 +63,35 @@ public final class Line {
     }
 
     public final List<String> names() {
-        return Collections.unmodifiableList(this.names);
+        if (this.names != null) {
+            return Arrays.asList(this.names);
+        } else {
+            assert this.keyValues != null;
+            return new ArrayList<>(this.keyValues.keySet());
+        }
     }
 
     public final List<Object> values() {
-        return Collections.unmodifiableList(this.values);
-    }
-
-    public void add(String name, Object value) {
-        this.names.add(name);
-        this.values.add(value);
+        if (this.values != null) {
+            return Arrays.asList(this.values);
+        } else {
+            assert this.keyValues != null;
+            List<String> names = this.names();
+            List<Object> results = new ArrayList<>(names.size());
+            names.forEach(name -> results.add(this.keyValues.get(name)));
+            return results;
+        }
     }
 
     public Map<String, Object> toMap() {
-        Map<String, Object> result = new LinkedHashMap<>();
-        for (int i = 0; i < this.names.size(); i++) {
-            result.put(this.names.get(i), this.values.get(i));
+        if (this.keyValues != null) {
+            return this.keyValues;
         }
-        return result;
+        this.keyValues = InsertionOrderUtil.newMap();
+        for (int i = 0, n = names.length; i < n; i++) {
+            this.keyValues.put(names[i], values[i]);
+        }
+        return this.keyValues;
     }
 
     @Override

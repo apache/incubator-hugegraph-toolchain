@@ -19,6 +19,10 @@
 
 package com.baidu.hugegraph.loader.builder;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +57,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
                 implements AutoCloseableIterator<GE> {
 
     private static final Logger LOG = Log.logger(ElementBuilder.class);
+
+    private static final CharsetEncoder ENCODER =
+                         Constants.CHARSET.newEncoder();
+    private static final ByteBuffer BUFFER =
+                         ByteBuffer.allocate(Constants.VERTEX_ID_LIMIT);
 
     private final SchemaCache schema;
     private final InputReader reader;
@@ -228,8 +237,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected static void checkVertexIdLength(String id) {
-        E.checkArgument(id.getBytes(Constants.CHARSET).length <=
-                        Constants.VERTEX_ID_LIMIT,
+        ENCODER.reset();
+        BUFFER.clear();
+        CoderResult result = ENCODER.encode(CharBuffer.wrap(id.toCharArray()),
+                                            BUFFER, true);
+        E.checkArgument(result.isUnderflow(),
                         "The vertex id length limit is '%s', '%s' exceeds it",
                         Constants.VERTEX_ID_LIMIT, id);
     }
