@@ -19,9 +19,7 @@
 
 package com.baidu.hugegraph.loader.summary;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
@@ -33,9 +31,14 @@ public final class LoadSummary {
     private final Map<String, LoadMetrics> vertexMetricsMap;
     private final Map<String, LoadMetrics> edgeMetricsMap;
 
+    private long vertexTotalTime;
+    private long edgeTotalTime;
+
     public LoadSummary() {
         this.vertexMetricsMap = InsertionOrderUtil.newMap();
         this.edgeMetricsMap = InsertionOrderUtil.newMap();
+        this.vertexTotalTime = 0L;
+        this.edgeTotalTime = 0L;
     }
 
     public LoadMetrics metrics(ElementStruct struct) {
@@ -59,20 +62,25 @@ public final class LoadSummary {
         return this.edgeMetricsMap;
     }
 
-    public LoadMetrics accumulateMetrics(ElemType type) {
+    public void totalTime(ElemType type, long time) {
         if (type.isVertex()) {
-            return this.accumulateMetrics(this.vertexMetricsMap.values());
+            this.vertexTotalTime = time;
         } else {
-            assert type.isEdge();
-            return this.accumulateMetrics(this.edgeMetricsMap.values());
+            this.edgeTotalTime = time;
         }
     }
 
-    public LoadMetrics accumulateAllMetrics() {
-        List<LoadMetrics> metricsList = new ArrayList<>();
-        metricsList.addAll(this.vertexMetricsMap.values());
-        metricsList.addAll(this.edgeMetricsMap.values());
-        return this.accumulateMetrics(metricsList);
+    public LoadMetrics accumulateMetrics(ElemType type) {
+        LoadMetrics metrics;
+        if (type.isVertex()) {
+            metrics = this.accumulateMetrics(this.vertexMetricsMap.values());
+            metrics.loadTime(this.vertexTotalTime);
+        } else {
+            assert type.isEdge();
+            metrics = this.accumulateMetrics(this.edgeMetricsMap.values());
+            metrics.loadTime(this.edgeTotalTime);
+        }
+        return metrics;
     }
 
     private LoadMetrics accumulateMetrics(Collection<LoadMetrics> metricsList) {

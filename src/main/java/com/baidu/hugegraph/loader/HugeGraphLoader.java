@@ -129,8 +129,9 @@ public final class HugeGraphLoader {
 
         LoadSummary summary = this.context.summary();
         InputProgressMap newProgress = this.context.newProgress().get(type);
+        StopWatch totalTime = StopWatch.createStarted();
         for (ElementStruct struct : this.graphStruct.structs(type)) {
-            StopWatch loadWatch = StopWatch.createStarted();
+            StopWatch loadTime = StopWatch.createStarted();
 
             LoadMetrics metrics = summary.metrics(struct);
             // Update loading vertex/edge struct
@@ -145,13 +146,15 @@ public final class HugeGraphLoader {
              * NOTE: the load task of this struct may not be completed,
              * so the load rate of each struct is an inaccurate value.
              */
-            loadWatch.stop();
-            metrics.loadTime(loadWatch.getTime(TimeUnit.MILLISECONDS));
+            loadTime.stop();
+            metrics.loadTime(loadTime.getTime(TimeUnit.MILLISECONDS));
             LOG.info("Loading {} '{}' with average rate: {}/s",
                      metrics.loadSuccess(), struct, metrics.averageLoadRate());
         }
         // Waiting async worker threads finish
         this.taskManager.waitFinished(type);
+        totalTime.stop();
+        summary.totalTime(type, totalTime.getTime(TimeUnit.MILLISECONDS));
 
         Printer.print(summary.accumulateMetrics(type).loadSuccess());
     }
@@ -161,7 +164,7 @@ public final class HugeGraphLoader {
                                                 LoadMetrics metrics) {
         ElementStruct struct = builder.struct();
         LOG.info("Start parsing and loading '{}'", struct);
-        StopWatch parseWatch = StopWatch.createStarted();
+        StopWatch parseTime = StopWatch.createStarted();
 
         ElemType type = struct.type();
         List<GE> batch = new ArrayList<>(options.batchSize);
@@ -193,21 +196,19 @@ public final class HugeGraphLoader {
                  * NOTE: parse time doesn't include submit batch time,
                  * it's accurate
                  */
-                parseWatch.suspend();
+                parseTime.suspend();
                 this.taskManager.submitBatch(struct, batch);
-                parseWatch.resume();
+                parseTime.resume();
                 batch = new ArrayList<>(options.batchSize);
             }
         }
+        parseTime.stop();
         if (!batch.isEmpty()) {
             metrics.plusParseSuccess(batch.size());
-            parseWatch.suspend();
             this.taskManager.submitBatch(struct, batch);
-            parseWatch.resume();
         }
 
-        parseWatch.stop();
-        metrics.parseTime(parseWatch.getTime(TimeUnit.MILLISECONDS));
+        metrics.parseTime(parseTime.getTime(TimeUnit.MILLISECONDS));
         LOG.info("Parsing {} '{}' with average rate: {}/s",
                  metrics.parseSuccess(), struct, metrics.parseRate());
     }
