@@ -59,4 +59,8 @@ public final class DateUtil {
         SafeDateFormat dateFormat = getDateFormat(df);
         return dateFormat.toPattern();
     }
+
+    public static String now(String df) {
+        return getDateFormat(df).format(new Date());
+    }
 }

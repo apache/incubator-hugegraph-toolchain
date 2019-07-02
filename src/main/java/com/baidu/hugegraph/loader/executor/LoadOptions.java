@@ -63,7 +63,7 @@ public final class LoadOptions {
 
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The number of threads to use")
+               description = "The number of threads to execute loading")
     public int numThreads = CPUS;
 
     @Parameter(names = {"--max-conn"}, arity = 1,

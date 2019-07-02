@@ -26,16 +26,14 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InsertException;
-import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.failure.FailureLogger;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -47,57 +45,58 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    private static final FailureLogger FAILURE_LOGGER = FailureLogger.insert();
-
     public SingleInsertTask(LoadContext context, ElementStruct struct,
-                            List<GE> batch) {
+                            List<Record<GE>> batch) {
         super(context, struct, batch);
     }
 
     @Override
     public void run() {
-        ElemType type = this.struct().type();
-        LoadOptions options = this.context().options();
-        LoadMetrics metrics = this.context().summary().metrics(this.struct());
-        for (GE element : this.batch()) {
+        FailureLogger logger = this.context().failureLogger(this.struct());
+        for (Record<GE> record : this.batch()) {
             try {
                 if (this.struct().updateStrategies().isEmpty()) {
-                    this.addSingle(type, element);
+                    this.addSingle(this.type(), record);
                 } else {
-                    this.updateSingle(type, options, element);
+                    this.updateSingle(this.type(), this.options(), record);
                 }
-                metrics.increaseLoadSuccess();
+                this.metrics().increaseLoadSuccess();
             } catch (Exception e) {
-                metrics.increaseLoadFailure();
-                LOG.error("Single insert {} error", type, e);
-                if (options.testMode) {
+                this.metrics().increaseLoadFailure();
+                LOG.error("Single insert {} error", this.type(), e);
+                if (this.options().testMode) {
                     throw e;
                 }
-                FAILURE_LOGGER.error(type, new InsertException(element, e));
-
-                if (metrics.loadFailure() >= options.maxInsertErrors) {
-                    Printer.printError("Exceed %s %s insert error... stopping",
-                                       options.maxInsertErrors, type);
-                    LoadUtil.exit(Constants.EXIT_CODE_ERROR);
+                // Write to current struct's insert failure log
+                logger.error(new InsertException(record.rawLine(), e));
+                long failureNum = this.metrics().loadFailure();
+                if (failureNum >= this.options().maxInsertErrors) {
+                    Printer.printError("More than %s %s insert error, stop " +
+                                       "parsing and waiting other insert " +
+                                       "tasks finished",
+                                       this.options().maxInsertErrors,
+                                       this.type().string());
+                    this.context().stopLoading();
                 }
             }
         }
-        Printer.printProgress(type, metrics.loadSuccess(),
+        Printer.printProgress(this.type(), this.metrics().loadSuccess(),
                               SINGLE_PRINT_FREQ, this.batch().size());
     }
 
-    private void updateSingle(ElemType type, LoadOptions options, GE element) {
-        // TODO: Adapt single update later
-        this.updateBatch(type, ImmutableList.of(element), options.checkVertex);
-    }
-
-    private void addSingle(ElemType type, GE element) {
+    private void addSingle(ElemType type, Record<GE> record) {
         HugeClient client = HugeClientHolder.get(this.context().options());
         if (type.isVertex()) {
-            client.graph().addVertex((Vertex) element);
+            client.graph().addVertex((Vertex) record.element());
         } else {
             assert type.isEdge();
-            client.graph().addEdge((Edge) element);
+            client.graph().addEdge((Edge) record.element());
         }
+    }
+
+    private void updateSingle(ElemType type, LoadOptions options,
+                              Record<GE> record) {
+        // TODO: Adapt single update later
+        this.updateBatch(type, ImmutableList.of(record), options.checkVertex);
     }
 }

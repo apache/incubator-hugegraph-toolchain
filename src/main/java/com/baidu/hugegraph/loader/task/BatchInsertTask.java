@@ -21,17 +21,18 @@ package com.baidu.hugegraph.loader.task;
 
 import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.rest.ClientException;
@@ -45,21 +46,21 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
     private static final Logger LOG = Log.logger(TaskManager.class);
 
     public BatchInsertTask(LoadContext context, ElementStruct struct,
-                           List<GE> batch) {
+                           List<Record<GE>> batch) {
         super(context, struct, batch);
     }
 
     @Override
     public void run() {
-        ElemType type = this.struct().type();
-        LoadOptions options = this.context().options();
         int retryCount = 0;
         do {
             try {
                 if (this.struct().updateStrategies().isEmpty()) {
-                    this.addBatch(type, this.batch(), options.checkVertex);
+                    this.addBatch(this.type(), this.batch(),
+                                  this.options().checkVertex);
                 } else {
-                    this.updateBatch(type, this.batch(), options.checkVertex);
+                    this.updateBatch(this.type(), this.batch(),
+                                     this.options().checkVertex);
                 }
                 break;
             } catch (ClientException e) {
@@ -72,18 +73,19 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                 }
                 retryCount = this.waitThenRetry(retryCount, e);
             }
-        } while (retryCount > 0 && retryCount <= options.retryTimes);
+        } while (retryCount > 0 && retryCount <= this.options().retryTimes);
 
-        LoadMetrics metrics = this.context().summary().metrics(this.struct());
         int count = this.batch().size();
-        metrics.plusLoadSuccess(count);
-        Printer.printProgress(type, metrics.loadSuccess(),
+        this.metrics().plusLoadSuccess(count);
+        Printer.printProgress(this.type(), this.metrics().loadSuccess(),
                               BATCH_PRINT_FREQ, count);
     }
 
     @SuppressWarnings("unchecked")
-    private void addBatch(ElemType type, List<GE> elements, boolean check) {
+    private void addBatch(ElemType type, List<Record<GE>> batch, boolean check) {
         HugeClient client = HugeClientHolder.get(this.context().options());
+        List<GE> elements = new ArrayList<>(batch.size());
+        batch.forEach(r -> elements.add(r.element()));
         if (type.isVertex()) {
             client.graph().addVertices((List<Vertex>) elements);
         } else {

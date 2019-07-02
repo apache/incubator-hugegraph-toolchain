@@ -19,15 +19,19 @@
 
 package com.baidu.hugegraph.loader.task;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
 import com.baidu.hugegraph.api.graph.structure.BatchVertexRequest;
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -43,10 +47,10 @@ public abstract class InsertTask<GE extends GraphElement> implements Runnable {
 
     private final LoadContext context;
     private final ElementStruct struct;
-    private final List<GE> batch;
+    private final List<Record<GE>> batch;
 
     public InsertTask(LoadContext context, ElementStruct struct,
-                      List<GE> batch) {
+                      List<Record<GE>> batch) {
         E.checkArgument(batch != null && !batch.isEmpty(),
                         "The batch can't be null or empty");
         this.context = context;
@@ -62,13 +66,28 @@ public abstract class InsertTask<GE extends GraphElement> implements Runnable {
         return this.struct;
     }
 
-    public List<GE> batch() {
+    public ElemType type() {
+        return this.struct.type();
+    }
+
+    public LoadOptions options() {
+        return this.context.options();
+    }
+
+    public LoadMetrics metrics() {
+        return this.context.summary().metrics(this.struct);
+    }
+
+    public List<Record<GE>> batch() {
         return this.batch;
     }
 
     @SuppressWarnings("unchecked")
-    protected void updateBatch(ElemType type, List<GE> elements, boolean check) {
+    protected void updateBatch(ElemType type, List<Record<GE>> batch,
+                               boolean check) {
         HugeClient client = HugeClientHolder.get(this.context().options());
+        List<GE> elements = new ArrayList<>(batch.size());
+        batch.forEach(r -> elements.add(r.element()));
         // CreateIfNotExist dose not support false now
         if (type.isVertex()) {
             BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();

@@ -32,14 +32,15 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
+import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.executor.FailureLogger;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.failure.FailureLogger;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.struct.GraphStruct;
@@ -47,7 +48,6 @@ import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.Log;
@@ -55,8 +55,6 @@ import com.baidu.hugegraph.util.Log;
 public final class HugeGraphLoader {
 
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
-
-    private static final FailureLogger FAILURE_LOGGER = FailureLogger.parse();
 
     private final LoadContext context;
     private final GraphStruct graphStruct;
@@ -76,17 +74,11 @@ public final class HugeGraphLoader {
 
     private void addShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LoadOptions options = this.context.options();
-            try {
-                this.context.newProgress().write(options.file);
-            } catch (IOException e) {
-                LOG.warn("Failed to write load progress", e);
-            }
+            this.shutdown();
         }));
     }
 
     private void load() {
-        LOG.info("Start loading");
         try {
             // Create schema
             this.createSchema();
@@ -96,13 +88,12 @@ public final class HugeGraphLoader {
             this.load(ElemType.EDGE);
         } catch (Exception e) {
             Printer.printError("Failed to load due to " + e.getMessage(), e);
-            this.taskManager.shutdown();
+            this.shutdown();
             throw e;
         }
-
         // Print load summary
         Printer.printSummary(this.context);
-        this.stopLoading(Constants.EXIT_CODE_NORM);
+        this.shutdown();
     }
 
     private void createSchema() {
@@ -133,23 +124,25 @@ public final class HugeGraphLoader {
     }
 
     private void load(ElemType type) {
+        LOG.info("Start loading {}", type.string());
         Printer.printRealTimeProgress(type, this.lastLoadedCount(type));
 
+        this.context.loadingType(type);
         LoadSummary summary = this.context.summary();
         InputProgressMap newProgress = this.context.newProgress().get(type);
         StopWatch totalTime = StopWatch.createStarted();
         for (ElementStruct struct : this.graphStruct.structs(type)) {
             StopWatch loadTime = StopWatch.createStarted();
-
             LoadMetrics metrics = summary.metrics(struct);
-            // Update loading vertex/edge struct
-            newProgress.addStruct(struct);
-            // Produce batch of vertices/edges and execute loading tasks
-            try (ElementBuilder<?> builder = ElementBuilder.of(this.context,
-                                                               struct)) {
-                this.load(builder, this.context.options(), metrics);
+            if (!this.context.stopped()) {
+                // Update loading vertex/edge struct
+                newProgress.addStruct(struct);
+                // Produce batch of vertices/edges and execute loading tasks
+                try (ElementBuilder<?> builder = ElementBuilder.of(this.context,
+                                                                   struct)) {
+                    this.load(this.context, builder);
+                }
             }
-
             /*
              * NOTE: the load task of this struct may not be completed,
              * so the load rate of each struct is an inaccurate value.
@@ -167,19 +160,20 @@ public final class HugeGraphLoader {
         Printer.print(summary.accumulateMetrics(type).loadSuccess());
     }
 
-    private <GE extends GraphElement> void load(ElementBuilder<GE> builder,
-                                                LoadOptions options,
-                                                LoadMetrics metrics) {
+    private <GE extends GraphElement> void load(LoadContext context,
+                                                ElementBuilder<GE> builder) {
         ElementStruct struct = builder.struct();
         LOG.info("Start parsing and loading '{}'", struct);
-        StopWatch parseTime = StopWatch.createStarted();
+        LoadOptions options = context.options();
+        LoadMetrics metrics = context.summary().metrics(struct);
+        FailureLogger logger = context.failureLogger(struct);
 
-        ElemType type = struct.type();
-        List<GE> batch = new ArrayList<>(options.batchSize);
+        StopWatch parseTime = StopWatch.createStarted();
+        List<Record<GE>> batch = new ArrayList<>(options.batchSize);
         for (boolean finished = false; !finished;) {
             try {
                 if (builder.hasNext()) {
-                    GE element = builder.next();
+                    Record<GE> element = builder.next();
                     batch.add(element);
                 } else {
                     finished = true;
@@ -188,14 +182,17 @@ public final class HugeGraphLoader {
                 if (options.testMode) {
                     throw e;
                 }
-                LOG.error("Parse {} error", type, e);
-
-                FAILURE_LOGGER.error(type, e);
+                LOG.error("Parse {} error", struct.type(), e);
+                // Write to current struct's parse failure log
+                logger.error(e);
                 long failureNum = metrics.increaseParseFailure();
                 if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("Exceed %s %s parsing error... stopping",
-                                       options.maxParseErrors, type);
-                    this.stopLoading(Constants.EXIT_CODE_ERROR);
+                    Printer.printError("More than %s %s parsing error, stop " +
+                                       "parsing and waiting all insert tasks " +
+                                       "finished",
+                                       options.maxParseErrors,
+                                       struct.type().string());
+                    this.context.stopLoading();
                 }
                 continue;
             }
@@ -215,7 +212,7 @@ public final class HugeGraphLoader {
     }
 
     private <GE extends GraphElement> void submit(ElementStruct struct,
-                                                  List<GE> batch,
+                                                  List<Record<GE>> batch,
                                                   LoadOptions options,
                                                   LoadMetrics metrics,
                                                   StopWatch parseTime) {
@@ -228,14 +225,12 @@ public final class HugeGraphLoader {
         }
     }
 
-    private void stopLoading(int code) {
-        LOG.info("Stop loading");
-        // Shutdown task manager
+    private void shutdown() {
+        LOG.info("Shutdown HugeGraphLoader");
+        this.context.stopLoading();
+        // Wait all insert tasks finished before exit
+        this.taskManager.waitFinished(this.context.loadingType());
         this.taskManager.shutdown();
-        HugeClientHolder.close();
-        // Exit JVM if the code is not EXIT_CODE_NORM
-        if (Constants.EXIT_CODE_NORM != code) {
-            LoadUtil.exit(code);
-        }
+        this.context.close();
     }
 }

@@ -54,7 +54,7 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public abstract class ElementBuilder<GE extends GraphElement>
-                implements AutoCloseableIterator<GE> {
+                implements AutoCloseableIterator<Record<GE>> {
 
     private static final Logger LOG = Log.logger(ElementBuilder.class);
 
@@ -102,12 +102,13 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     @Override
-    public GE next() {
+    public Record<GE> next() {
         Line line = this.reader.next();
         Map<String, Object> keyValues = line.toMap();
         try {
             keyValues = this.filterFields(keyValues);
-            return this.build(keyValues);
+            GE element = this.build(keyValues);
+            return Record.of(line.rawLine(), element);
         } catch (IllegalArgumentException e) {
             throw new ParseException(line.rawLine(), e);
         }

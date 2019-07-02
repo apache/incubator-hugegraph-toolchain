@@ -17,21 +17,30 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.util;
+package com.baidu.hugegraph.loader.builder;
 
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.beust.jcommander.JCommander;
+import com.baidu.hugegraph.structure.GraphElement;
 
-public final class LoadUtil {
+public class Record<GE extends GraphElement> {
 
-    public static String getStructFilePrefix(LoadOptions options) {
-        String structFileName = options.file;
-        int lastDotIdx = structFileName.lastIndexOf(".");
-        return structFileName.substring(0, lastDotIdx);
+    private final String rawLine;
+    private final GE element;
+
+    public static <GE extends GraphElement> Record<GE> of(String rawLine,
+                                                          GE element) {
+        return new Record<>(rawLine, element);
     }
 
-    public static void exitWithUsage(JCommander commander, int code) {
-        commander.usage();
-        System.exit(code);
+    private Record(String rawLine, GE element) {
+        this.rawLine = rawLine;
+        this.element = element;
+    }
+
+    public String rawLine() {
+        return this.rawLine;
+    }
+
+    public GE element() {
+        return this.element;
     }
 }
