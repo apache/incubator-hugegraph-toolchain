@@ -25,11 +25,15 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.structure.graph.Path;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.VersionUtil.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class RestClient extends com.baidu.hugegraph.rest.RestClient {
 
     private static final int SECOND = 1000;
+
+    private Version apiVersion = null;
 
     static {
         SimpleModule module = new SimpleModule();
@@ -55,6 +59,15 @@ public class RestClient extends com.baidu.hugegraph.rest.RestClient {
                       int timeout, int maxConns, int maxConnsPerRoute) {
         super(url, username, password, timeout * SECOND,
               maxConns, maxConnsPerRoute);
+    }
+
+    public void apiVersion(Version version) {
+        E.checkNotNull(version, "api version");
+        this.apiVersion = apiVersion;
+    }
+
+    public Version apiVersion() {
+        return this.apiVersion;
     }
 
     @Override

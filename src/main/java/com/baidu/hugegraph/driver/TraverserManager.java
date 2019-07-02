@@ -223,15 +223,16 @@ public class TraverserManager {
     }
 
     public List<Path> rings(Object sourceId, int depth) {
-        return this.rings(sourceId, Direction.BOTH, null, depth,
+        return this.rings(sourceId, Direction.BOTH, null, depth, true,
                           DEFAULT_DEGREE, DEFAULT_CAPACITY,
                           DEFAULT_ELEMENTS_LIMIT);
     }
 
     public List<Path> rings(Object sourceId, Direction direction, String label,
-                            int depth, long degree, long capacity, long limit) {
-        return this.ringsAPI.get(sourceId, direction, label, depth, degree,
-                                 capacity, limit);
+                            int depth, boolean sourceInRing, long degree,
+                            long capacity, long limit) {
+        return this.ringsAPI.get(sourceId, direction, label, depth,
+                                 sourceInRing, degree, capacity, limit);
     }
 
     public List<Path> rays(Object sourceId, int depth) {

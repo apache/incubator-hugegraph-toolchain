@@ -36,6 +36,7 @@ import org.junit.runners.Suite;
     JobApiTest.class,
     RestoreApiTest.class,
     TraverserApiTest.class,
+    RingsRaysApiTest.class,
     ShortestPathApiTest.class,
     CustomizedPathsApiTest.class,
     NeighborRankApiTest.class,

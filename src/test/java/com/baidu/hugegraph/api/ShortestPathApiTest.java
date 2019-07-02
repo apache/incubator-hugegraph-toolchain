@@ -21,7 +21,6 @@ package com.baidu.hugegraph.api;
 
 import java.util.List;
 
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -96,12 +95,6 @@ public class ShortestPathApiTest extends BaseApiTest {
         v10.addEdge("link", v18);
     }
 
-    @AfterClass
-    public static void clearShortestPathGraph() {
-        waitUntilTaskCompleted(edgeLabelAPI.delete("link"));
-        waitUntilTaskCompleted(vertexLabelAPI.delete("node"));
-    }
-
     @Test
     public void testShortestPath() {
         Path path = shortestPathAPI.get(1, 6, Direction.BOTH,
@@ -122,6 +115,10 @@ public class ShortestPathApiTest extends BaseApiTest {
     public void testShortestPathWithDegree() {
         Path path = shortestPathAPI.get(1, 6, Direction.BOTH,
                                         null, 6, 1L, 0L, -1L);
+        /*
+         * Following results can be guaranteed in RocksDB backend,
+         * but different results exist in table type backend(like Cassandra).
+         */
         Assert.assertEquals(6, path.size());
         Assert.assertEquals(ImmutableList.of(1, 2, 3, 4, 5, 6), path.objects());
     }
