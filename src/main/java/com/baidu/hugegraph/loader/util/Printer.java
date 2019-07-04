@@ -41,13 +41,24 @@ public final class Printer {
         System.out.println(message);
     }
 
-    public static void printElemType(ElemType type) {
+    public static void printElemType(ElemType type, boolean incrementalMode,
+                                     long count) {
+        String lastLoadMsg;
+        String thisLoadMsg;
         if (type.isVertex()) {
-            System.out.print("vertices has been loaded    : 0\b");
+            lastLoadMsg = String.format(
+                          "vertices has been loaded last time : %s\b", count);
+            thisLoadMsg = "vertices has been loaded           : 0\b";
         } else {
             assert type.isEdge();
-            System.out.print("edges has been loaded       : 0\b");
+            lastLoadMsg = String.format(
+                          "edges has been loaded last time    : %s\b", count);
+            thisLoadMsg = "edges has been loaded              : 0\b";
         }
+        if (incrementalMode) {
+            System.out.println(lastLoadMsg);
+        }
+        System.out.print(thisLoadMsg);
     }
 
     /**

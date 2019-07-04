@@ -124,8 +124,17 @@ public final class HugeGraphLoader {
         groovyExecutor.execute(script, client);
     }
 
+    private long lastLoadedCount(ElemType type) {
+        if (this.context.options().incrementalMode) {
+            return this.context.oldProgress().totalLoaded(type);
+        } else {
+            return 0;
+        }
+    }
+
     private void load(ElemType type) {
-        Printer.printElemType(type);
+        Printer.printElemType(type, this.context.options().incrementalMode,
+                              this.lastLoadedCount(type));
 
         LoadSummary summary = this.context.summary();
         InputProgressMap newProgress = this.context.newProgress().get(type);
