@@ -17,15 +17,13 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.failure;
 
-import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
-import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+public enum FailureHandleStrategy {
 
-public interface InputReader extends AutoCloseableIterator<Line> {
+    IGNORE,
 
-    public void init(LoadContext context, ElementStruct struct);
+    LOAD_AT_BEGIN,
 
-    public long confirmOffset();
+    LOAD_AT_END
 }

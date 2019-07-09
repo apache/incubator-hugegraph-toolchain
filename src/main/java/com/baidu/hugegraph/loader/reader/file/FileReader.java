@@ -84,6 +84,11 @@ public abstract class FileReader implements InputReader {
         }
     }
 
+    @Override
+    public long confirmOffset() {
+        return this.readers.confirmOffset();
+    }
+
     private void progress(LoadContext context, ElementStruct struct) {
         ElemType type = struct.type();
         InputProgressMap oldProgress = context.oldProgress().get(type);

@@ -96,4 +96,9 @@ public final class InputProgress {
         this.loadedItems.add(this.loadingItem);
         this.loadingItem = null;
     }
+
+    public long confirmOffset() {
+        assert this.loadingItem != null;
+        return this.loadingItem.confirmOffset();
+    }
 }

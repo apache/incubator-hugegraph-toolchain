@@ -124,6 +124,10 @@ public abstract class ElementBuilder<GE extends GraphElement>
         }
     }
 
+    public long confirmOffset() {
+        return this.reader.confirmOffset();
+    }
+
     protected abstract SchemaLabel getSchemaLabel();
 
     protected abstract GE build(Map<String, Object> keyValues);

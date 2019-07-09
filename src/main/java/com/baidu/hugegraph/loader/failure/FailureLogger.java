@@ -57,7 +57,7 @@ public final class FailureLogger {
     private static String path(String directory, String timestamp,
                                String uniqueKey, String suffix) {
         // The path format is: %s/%s/%s-%s
-        String fileName = uniqueKey + Constants.JOIN_SYMBOL + suffix +
+        String fileName = uniqueKey + Constants.MINUS_STR + suffix +
                           Constants.FAILURE_EXTENSION;
         return Paths.get(directory, timestamp, fileName).toString();
     }

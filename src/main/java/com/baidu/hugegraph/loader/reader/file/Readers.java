@@ -74,6 +74,10 @@ public class Readers {
         this.newProgress = newProgress;
     }
 
+    public long confirmOffset() {
+        return this.newProgress.confirmOffset();
+    }
+
     public int index() {
         return this.index;
     }

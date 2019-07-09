@@ -21,7 +21,9 @@ package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
 
+import com.baidu.hugegraph.loader.failure.FailureHandleStrategy;
 import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
@@ -58,8 +60,16 @@ public final class LoadOptions {
     public String token = null;
 
     @Parameter(names = {"--incremental-mode"}, arity = 1,
-              description = "Load data from the breakpoint of last time")
+               description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
+
+    @Parameter(names = {"--failures-handle-strategy"}, arity = 1,
+               validateWith = {FailureHandleStrategyValidator.class},
+               converter = FailureHandleStrategyConverter.class,
+               description = "The handle strategy for the failure records, " +
+                             "only take effect under incremental mode.")
+    public FailureHandleStrategy failuresHandleStrategy =
+                                 FailureHandleStrategy.IGNORE;
 
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -178,6 +188,25 @@ public final class LoadOptions {
                           "Parameter '%s' should be positive, but got '%s'",
                           name, value));
             }
+        }
+    }
+
+    public static class FailureHandleStrategyValidator
+                  implements IParameterValidator {
+
+        @Override
+        public void validate(String name, String value)
+                throws ParameterException {
+            // TODO:
+        }
+    }
+
+    public static class FailureHandleStrategyConverter
+                  implements IStringConverter<FailureHandleStrategy> {
+
+        @Override
+        public FailureHandleStrategy convert(String value) {
+            return null;
         }
     }
 }

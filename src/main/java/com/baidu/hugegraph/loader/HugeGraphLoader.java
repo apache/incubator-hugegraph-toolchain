@@ -199,6 +199,7 @@ public final class HugeGraphLoader {
             if (batch.size() >= options.batchSize ||
                 (finished && !batch.isEmpty())) {
                 this.submit(struct, batch, options, metrics, parseTime);
+                builder.confirmOffset();
                 if (!finished) {
                     batch = new ArrayList<>(options.batchSize);
                 }
