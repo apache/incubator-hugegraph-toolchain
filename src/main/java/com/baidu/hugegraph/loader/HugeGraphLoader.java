@@ -133,8 +133,7 @@ public final class HugeGraphLoader {
     }
 
     private void load(ElemType type) {
-        Printer.printElemType(type, this.context.options().incrementalMode,
-                              this.lastLoadedCount(type));
+        Printer.printRealTimeProgress(type, this.lastLoadedCount(type));
 
         LoadSummary summary = this.context.summary();
         InputProgressMap newProgress = this.context.newProgress().get(type);

@@ -79,7 +79,9 @@ public final class LoadProgress {
             for (InputItemProgress itemProgress : inputProgress.loadedItems()) {
                 total += itemProgress.offset();
             }
-            total += inputProgress.loadingItem().offset();
+            if (inputProgress.loadingItem() != null) {
+                total += inputProgress.loadingItem().offset();
+            }
         }
         return total;
     }

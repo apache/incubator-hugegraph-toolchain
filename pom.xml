@@ -90,6 +90,15 @@
 
     <profiles>
         <profile>
+            <id>unit</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <test-classes>**/UnitTestSuite.java</test-classes>
+            </properties>
+        </profile>
+        <profile>
             <id>file</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
