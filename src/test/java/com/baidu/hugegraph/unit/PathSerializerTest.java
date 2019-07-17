@@ -44,7 +44,7 @@ public class PathSerializerTest extends BaseUnitTest {
         edge.sourceLabel("person");
         edge.targetId("person:vadas");
         edge.targetLabel("person");
-        edge.property("date", "20160110");
+        edge.property("date", "2016-01-10");
         edge.property("weight", 0.5);
 
         Path path = new Path();

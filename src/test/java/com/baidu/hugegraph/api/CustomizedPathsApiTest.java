@@ -348,12 +348,12 @@ public class CustomizedPathsApiTest extends BaseApiTest {
         Vertex ripple = getVertex("software", "name", "ripple");
         Vertex peter = getVertex("person", "name", "peter");
 
-        marko.addEdge("knows1", vadas, "date", "20160110", "weight", 0.5);
-        marko.addEdge("knows1", josh, "date", "20130220", "weight", 1.0);
-        marko.addEdge("created1", lop, "date", "20171210", "weight", 0.4);
-        josh.addEdge("created1", lop, "date", "20091111", "weight", 0.4);
-        josh.addEdge("created1", ripple, "date", "20171210", "weight", 1.0);
-        peter.addEdge("created1", lop, "date", "20170324", "weight", 0.2);
+        marko.addEdge("knows1", vadas, "date", "2016-01-10", "weight", 0.5);
+        marko.addEdge("knows1", josh, "date", "2013-02-20", "weight", 1.0);
+        marko.addEdge("created1", lop, "date", "2017-12-10", "weight", 0.4);
+        josh.addEdge("created1", lop, "date", "2009-11-11", "weight", 0.4);
+        josh.addEdge("created1", ripple, "date", "2017-12-10", "weight", 1.0);
+        peter.addEdge("created1", lop, "date", "2017-03-24", "weight", 0.2);
     }
 
     private static void removeEdgesWithWeights() {

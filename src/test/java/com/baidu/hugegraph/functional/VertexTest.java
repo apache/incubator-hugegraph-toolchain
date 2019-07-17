@@ -78,7 +78,7 @@ public class VertexTest extends BaseFuncTest {
     @Test
     public void testAddVertexPropertyValueList() {
         schema().propertyKey("time")
-                .asText()
+                .asDate()
                 .valueList()
                 .ifNotExist()
                 .create();
@@ -88,24 +88,25 @@ public class VertexTest extends BaseFuncTest {
                 .append();
 
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
-                                         "age", 19, "time", "20121010");
+                                         "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19,
                                                     "time", ImmutableList.of(
-                                                            "20121010"));
+                                                    Utils.date("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
-        vadas.property("time", "20140214");
+        vadas.property("time", "2014-02-14");
         props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of("20121010", "20140214"));
+                                ImmutableList.of(Utils.date("2012-10-10"),
+                                                 Utils.date("2014-02-14")));
         Assert.assertEquals(props, vadas.properties());
     }
 
     @Test
     public void testAddVertexPropertyValueSet() {
         schema().propertyKey("time")
-                .asText()
+                .asDate()
                 .valueSet()
                 .ifNotExist()
                 .create();
@@ -115,24 +116,25 @@ public class VertexTest extends BaseFuncTest {
                 .append();
 
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
-                                         "age", 19, "time", "20121010");
+                                         "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19,
                                                     "time", ImmutableList.of(
-                                                            "20121010"));
+                                                    Utils.date("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
-        vadas.property("time", "20140214");
+        vadas.property("time", "2014-02-14");
         props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of("20140214", "20121010"));
+                                ImmutableList.of(Utils.date("2012-10-10"),
+                                                 Utils.date("2014-02-14")));
         Assert.assertEquals(props, vadas.properties());
     }
 
     @Test
     public void testAddVertexPropertyValueListWithSameValue() {
         schema().propertyKey("time")
-                .asText()
+                .asDate()
                 .valueList()
                 .ifNotExist()
                 .create();
@@ -142,24 +144,25 @@ public class VertexTest extends BaseFuncTest {
                 .append();
 
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
-                                         "age", 19, "time", "20121010");
+                                         "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19,
                                                     "time", ImmutableList.of(
-                                                    "20121010"));
+                                                    Utils.date("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
-        vadas.property("time", "20121010");
+        vadas.property("time", "2012-10-10");
         props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of("20121010", "20121010"));
+                                ImmutableList.of(Utils.date("2012-10-10"),
+                                                 Utils.date("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
     }
 
     @Test
     public void testAddVertexPropertyValueSetWithSameValue() {
         schema().propertyKey("time")
-                .asText()
+                .asDate()
                 .valueSet()
                 .ifNotExist()
                 .create();
@@ -169,17 +172,17 @@ public class VertexTest extends BaseFuncTest {
                 .append();
 
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
-                                         "age", 19, "time", "20121010");
+                                         "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19,
                                                     "time", ImmutableList.of(
-                                                    "20121010"));
+                                                    Utils.date("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
-        vadas.property("time", "20121010");
+        vadas.property("time", "2012-10-10");
         props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of("20121010"));
+                                ImmutableList.of(Utils.date("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
     }
 

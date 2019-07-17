@@ -113,7 +113,7 @@ public class BaseClientTest {
         schema.propertyKey("age").asInt().ifNotExist().create();
         schema.propertyKey("city").asText().ifNotExist().create();
         schema.propertyKey("lang").asText().ifNotExist().create();
-        schema.propertyKey("date").asText().ifNotExist().create();
+        schema.propertyKey("date").asDate().ifNotExist().create();
         schema.propertyKey("price").asInt().ifNotExist().create();
         schema.propertyKey("weight").asDouble().ifNotExist().create();
     }
@@ -224,16 +224,16 @@ public class BaseClientTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        graph().addEdge(markoId, "knows", vadasId, "date", "20120110");
-        graph().addEdge(markoId, "knows", joshId, "date", "20130110");
+        graph().addEdge(markoId, "knows", vadasId, "date", "2012-01-10");
+        graph().addEdge(markoId, "knows", joshId, "date", "2013-01-10");
         graph().addEdge(markoId, "created", lopId,
-                        "date", "20140110", "city", "Shanghai");
+                        "date", "2014-01-10", "city", "Shanghai");
         graph().addEdge(joshId, "created", rippleId,
-                        "date", "20150110", "city", "Beijing");
+                        "date", "2015-01-10", "city", "Beijing");
         graph().addEdge(joshId, "created", lopId,
-                        "date", "20160110", "city", "Beijing");
+                        "date", "2016-01-10", "city", "Beijing");
         graph().addEdge(peterId, "created", lopId,
-                        "date", "20170110", "city", "Hongkong");
+                        "date", "2017-01-10", "city", "Hongkong");
     }
 
     protected List<Vertex> create100PersonBatch() {
@@ -271,7 +271,7 @@ public class BaseClientTest {
             edge.targetLabel("software");
             edge.sourceId(person.id() + ":Person-" + i);
             edge.targetId(software.id() + ":Software-" + i);
-            edge.property("date", "20170324");
+            edge.property("date", "2017-03-24");
             edge.property("city", "Hongkong");
             edges.add(edge);
         }
@@ -288,7 +288,7 @@ public class BaseClientTest {
             edge.targetLabel("person");
             edge.sourceId(person.id() + ":Person-" + i);
             edge.targetId(person.id() + ":Person-" + (i + 50));
-            edge.property("date", "20170324");
+            edge.property("date", "2017-03-24");
             edges.add(edge);
         }
         return edges;

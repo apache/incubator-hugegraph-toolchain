@@ -20,7 +20,6 @@
 package com.baidu.hugegraph.example;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.baidu.hugegraph.driver.GraphManager;
@@ -41,7 +40,7 @@ public class BatchExample {
         schema.propertyKey("name").asText().ifNotExist().create();
         schema.propertyKey("age").asInt().ifNotExist().create();
         schema.propertyKey("lang").asText().ifNotExist().create();
-        schema.propertyKey("date").asText().ifNotExist().create();
+        schema.propertyKey("date").asDate().ifNotExist().create();
         schema.propertyKey("price").asInt().ifNotExist().create();
 
         schema.vertexLabel("person")
@@ -115,17 +114,20 @@ public class BatchExample {
                                            .property("age", 35);
 
         Edge markoKnowsVadas = new Edge("knows").source(marko).target(vadas)
-                                                .property("date", "20160110");
+                                                .property("date", "2016-01-10");
         Edge markoKnowsJosh = new Edge("knows").source(marko).target(josh)
-                                               .property("date", "20130220");
+                                               .property("date", "2013-02-20");
         Edge markoCreateLop = new Edge("created").source(marko).target(lop)
-                                                 .property("date", "20171210");
+                                                 .property("date",
+                                                           "2017-12-10");
         Edge joshCreateRipple = new Edge("created").source(josh).target(ripple)
-                                                   .property("date", "20171210");
+                                                   .property("date",
+                                                             "2017-12-10");
         Edge joshCreateLop = new Edge("created").source(josh).target(lop)
-                                                .property("date", "20091111");
+                                                .property("date", "2009-11-11");
         Edge peterCreateLop = new Edge("created").source(peter).target(lop)
-                                                 .property("date", "20170324");
+                                                 .property("date",
+                                                           "2017-03-24");
 
         List<Vertex> vertices = new ArrayList<>();
         vertices.add(marko);

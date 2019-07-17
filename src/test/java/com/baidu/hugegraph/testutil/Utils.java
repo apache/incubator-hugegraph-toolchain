@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.testutil;
 
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.baidu.hugegraph.exception.ServerException;
@@ -295,5 +297,18 @@ public final class Utils {
                         .mapToObj(i -> Pair.of(list.get(i - 1).toString(),
                                                list.get(i)))
                         .collect(Collectors.toList());
+    }
+
+    public static long date(String date) {
+        return date(date, "yyyy-MM-dd");
+    }
+
+    public static long date(String date, String pattern) {
+        try {
+            return DateUtils.parseDate(date, pattern).getTime();
+        } catch (ParseException e) {
+            throw new RuntimeException(String.format(
+                      "Failed to parse date '%s'", date));
+        }
     }
 }

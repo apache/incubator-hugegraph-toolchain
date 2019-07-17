@@ -511,7 +511,7 @@ public class RestResultTest extends BaseUnitTest {
                 + "\"inVLabel\": \"software\","
                 + "\"properties\": {"
                 + "\"city\": \"Hongkong\"," 
-                + "\"date\": \"2017-5-18\"" 
+                + "\"date\": 1495036800000"
                 + "}" 
                 + "}";
 
@@ -532,7 +532,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(ImmutableMap.of("city", "Hongkong",
-                                            "date", "2017-5-18"),
+                                            "date", 1495036800000L),
                             edge.properties());
     }
 
@@ -548,7 +548,7 @@ public class RestResultTest extends BaseUnitTest {
                 + "\"inV\": \"software:lop\"," 
                 + "\"outV\": \"person:peter\"," 
                 + "\"properties\": {" 
-                + "\"date\": \"2017-5-18\"," 
+                + "\"date\": 1495036800000,"
                 + "\"city\": \"Hongkong\"" 
                 + "}" 
                 + "},"
@@ -561,7 +561,7 @@ public class RestResultTest extends BaseUnitTest {
                 + "\"inV\": \"person:marko\"," 
                 + "\"outV\": \"person:peter\"," 
                 + "\"properties\": {" 
-                + "\"date\": \"2016-10-18\"" 
+                + "\"date\": 1476720000000"
                 + "}" 
                 + "}" 
                 + "]}";
@@ -586,7 +586,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals("person", edge1.sourceLabel());
         Assert.assertEquals("software", edge1.targetLabel());
         Assert.assertEquals(ImmutableMap.of("city", "Hongkong",
-                                            "date", "2017-5-18"),
+                                            "date", 1495036800000L),
                             edge1.properties());
 
         Assert.assertEquals("person:peter>knows>>person:marko", edge2.id());
@@ -595,7 +595,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals("person:marko", edge2.targetId());
         Assert.assertEquals("person", edge2.sourceLabel());
         Assert.assertEquals("person", edge2.targetLabel());
-        Assert.assertEquals(ImmutableMap.of("date", "2016-10-18"),
+        Assert.assertEquals(ImmutableMap.of("date", 1476720000000L),
                             edge2.properties());
     }
 
@@ -711,7 +711,7 @@ public class RestResultTest extends BaseUnitTest {
                 + "\"inV\": \"software:lop\"," 
                 + "\"outV\": \"person:peter\"," 
                 + "\"properties\": {" 
-                + "\"date\": \"20170324\"," 
+                + "\"date\": 1490284800000,"
                 + "\"weight\": 0.2" 
                 + "}"
                 + "},"
@@ -724,7 +724,7 @@ public class RestResultTest extends BaseUnitTest {
                 + "\"inV\": \"person:marko\"," 
                 + "\"outV\": \"person:peter\"," 
                 + "\"properties\": {" 
-                + "\"date\": \"20160110\"," 
+                + "\"date\": 1452355200000,"
                 + "\"weight\": 0.5" 
                 + "}" 
                 + "}"
@@ -751,7 +751,7 @@ public class RestResultTest extends BaseUnitTest {
         created.targetId("software:lop");
         created.sourceLabel("person");
         created.targetLabel("software");
-        created.property("date", "20170324");
+        created.property("date", 1490284800000L);
         created.property("weight", 0.2);
 
         Edge knows = new Edge("knows");
@@ -760,7 +760,7 @@ public class RestResultTest extends BaseUnitTest {
         knows.targetId("person:marko");
         knows.sourceLabel("person");
         knows.targetLabel("person");
-        knows.property("date", "20160110");
+        knows.property("date", 1452355200000L);
         knows.property("weight", 0.5);
 
         List<Edge> edges = new ArrayList<>(2);
@@ -809,7 +809,7 @@ public class RestResultTest extends BaseUnitTest {
                 + "\"inV\": \"person:vadas\","
                 + "\"outV\": \"person:marko\","
                 + "\"properties\":{"
-                + "\"date\": \"20160110\","
+                + "\"date\": 1452355200000,"
                 + "\"weight\": 0.5"
                 + "}"
                 + "}"
@@ -855,7 +855,7 @@ public class RestResultTest extends BaseUnitTest {
         edge.sourceLabel("person");
         edge.targetId("person:vadas");
         edge.targetLabel("person");
-        edge.property("date", "20160110");
+        edge.property("date", 1452355200000L);
         edge.property("weight", 0.5);
 
         Assert.assertEquals(2, path.objects().size());
@@ -974,7 +974,7 @@ public class RestResultTest extends BaseUnitTest {
                 + "\"inV\": \"software:lop\","
                 + "\"outV\": \"person:peter\","
                 + "\"properties\": {"
-                + "\"date\": \"20170324\","
+                + "\"date\": 1490284800000,"
                 + "\"weight\": 0.2"
                 + "}"
                 + "},"
@@ -1008,7 +1008,7 @@ public class RestResultTest extends BaseUnitTest {
         created.targetId("software:lop");
         created.sourceLabel("person");
         created.targetLabel("software");
-        created.property("date", "20170324");
+        created.property("date", 1490284800000L);
         created.property("weight", 0.2);
         Assert.assertTrue(Utils.contains(ImmutableList.of(created),
                                          result.getEdge()));

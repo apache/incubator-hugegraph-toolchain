@@ -61,7 +61,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.targetLabel("software");
         edge.sourceId(outVId);
         edge.targetId(inVId);
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
 
         edge = edgeAPI.create(edge);
@@ -71,8 +71,9 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(outVId, edge.sourceId());
         Assert.assertEquals(inVId, edge.targetId());
-        Map<String, Object> props = ImmutableMap.of("date", "20170324",
-                                                    "city", "Hongkong");
+        Map<String, Object> props = ImmutableMap.of(
+                                    "date", Utils.date("2017-03-24"),
+                                    "city", "Hongkong");
         Assert.assertEquals(props, edge.properties());
     }
 
@@ -86,7 +87,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.targetLabel("software");
         edge.sourceId(outVId);
         edge.targetId(inVId);
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
 
         Utils.assertResponseError(400, () -> {
@@ -120,7 +121,7 @@ public class EdgeApiTest extends BaseApiTest {
         Edge edge = new Edge("created");
         edge.sourceId(outVId);
         edge.targetId(inVId);
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
 
         edge = edgeAPI.create(edge);
@@ -130,8 +131,9 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(outVId, edge.sourceId());
         Assert.assertEquals(inVId, edge.targetId());
-        Map<String, Object> props = ImmutableMap.of("date", "20170324",
-                                                    "city", "Hongkong");
+        Map<String, Object> props = ImmutableMap.of(
+                                    "date", Utils.date("2017-03-24"),
+                                    "city", "Hongkong");
         Assert.assertEquals(props, edge.properties());
     }
 
@@ -142,7 +144,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.targetLabel("undefined");
         edge.sourceId("person:peter");
         edge.targetId("software:lop");
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
 
         Utils.assertResponseError(400, () -> {
@@ -155,7 +157,7 @@ public class EdgeApiTest extends BaseApiTest {
         Edge edge = new Edge("created");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
 
         Utils.assertResponseError(400, () -> {
@@ -170,7 +172,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.targetId("not-exist-target-id");
         edge.sourceLabel("person");
         edge.targetLabel("software");
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
 
         Utils.assertResponseError(400, () -> {
@@ -188,7 +190,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.targetLabel("software");
         edge.sourceId(outVId);
         edge.targetId(inVId);
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
         edgeAPI.create(edge);
 
@@ -197,7 +199,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.targetLabel("software");
         edge.sourceId(outVId);
         edge.targetId(inVId);
-        edge.property("date", "20170324");
+        edge.property("date", Utils.date("2017-03-24"));
         edge.property("city", "Beijing");
 
         Assert.assertEquals("created", edge.label());
@@ -205,8 +207,9 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(outVId, edge.sourceId());
         Assert.assertEquals(inVId, edge.targetId());
-        Map<String, Object> props = ImmutableMap.of("date", "20170324",
-                                                    "city", "Beijing");
+        Map<String, Object> props = ImmutableMap.of(
+                                    "date", Utils.date("2017-03-24"),
+                                    "city", "Beijing");
         Assert.assertEquals(props, edge.properties());
     }
 
@@ -221,7 +224,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.sourceId(outVId);
         edge.targetId(inVId);
         // Absent prop 'city'
-        edge.property("date", "20170324");
+        edge.property("date", Utils.date("2017-03-24"));
         edgeAPI.create(edge);
 
         Assert.assertEquals("created", edge.label());
@@ -229,7 +232,8 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(outVId, edge.sourceId());
         Assert.assertEquals(inVId, edge.targetId());
-        Map<String, Object> props = ImmutableMap.of("date", "20170324");
+        Map<String, Object> props = ImmutableMap.of("date",
+                                                    Utils.date("2017-03-24"));
         Assert.assertEquals(props, edge.properties());
     }
 
@@ -276,8 +280,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, created.sourceId());
             Assert.assertEquals(software.id() + ":Software-" + i,
                                 created.targetId());
-            Map<String, Object> props = ImmutableMap.of("date", "20170324",
-                                                        "city", "Hongkong");
+            Map<String, Object> props = ImmutableMap.of(
+                                        "date", Utils.date("2017-03-24"),
+                                        "city", "Hongkong");
             Assert.assertEquals(props, created.properties());
         }
 
@@ -289,7 +294,8 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, know.sourceId());
             Assert.assertEquals(person.id() + ":Person-" + (i + 50),
                                 know.targetId());
-            Map<String, Object> props = ImmutableMap.of("date", "20170324");
+            Map<String, Object> props = ImmutableMap.of("date",
+                                                        Utils.date("2017-03-24"));
             Assert.assertEquals(props, know.properties());
         }
     }
@@ -331,7 +337,7 @@ public class EdgeApiTest extends BaseApiTest {
             edge.targetLabel("software");
             edge.sourceId("person:Person-" + i);
             edge.targetId("software:Software-" + i);
-            edge.property("date", "20170824");
+            edge.property("date", "2017-08-24");
             edge.property("city", "Hongkong");
             edges.add(edge);
         }
@@ -368,8 +374,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, created.sourceId());
             Assert.assertEquals(software.id() + ":Software-" + i,
                                 created.targetId());
-            Map<String, Object> props = ImmutableMap.of("date", "20170324",
-                                                        "city", "Hongkong");
+            Map<String, Object> props = ImmutableMap.of(
+                                        "date", Utils.date("2017-03-24"),
+                                        "city", "Hongkong");
             Assert.assertEquals(props, created.properties());
         }
 
@@ -381,7 +388,8 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, know.sourceId());
             Assert.assertEquals(person.id() + ":Person-" + (i + 50),
                                 know.targetId());
-            Map<String, Object> props = ImmutableMap.of("date", "20170324");
+            Map<String, Object> props = ImmutableMap.of("date",
+                                                        Utils.date("2017-03-24"));
             Assert.assertEquals(props, know.properties());
         }
     }
@@ -395,7 +403,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge1.targetLabel("software");
         edge1.sourceId("person:invalid");
         edge1.targetId("software:lop");
-        edge1.property("date", "20170324");
+        edge1.property("date", "2017-03-24");
         edge1.property("city", "Hongkong");
         edges.add(edge1);
 
@@ -404,7 +412,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge2.targetLabel("person");
         edge2.sourceId("person:peter");
         edge2.targetId("person:invalid");
-        edge2.property("date", "20170324");
+        edge2.property("date", "2017-03-24");
         edges.add(edge2);
 
         Utils.assertResponseError(400, () -> {
@@ -419,7 +427,7 @@ public class EdgeApiTest extends BaseApiTest {
         Edge edge1 = new Edge("created");
         edge1.sourceId("person:peter");
         edge1.targetId("software:lop");
-        edge1.property("date", "20170324");
+        edge1.property("date", "2017-03-24");
         edge1.property("city", "Hongkong");
         edges.add(edge1);
 
@@ -428,7 +436,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge2.targetLabel("undefined");
         edge2.sourceId("person:peter");
         edge2.targetId("person:marko");
-        edge2.property("date", "20170324");
+        edge2.property("date", "2017-03-24");
         edges.add(edge2);
 
         Utils.assertResponseError(400, () -> {
@@ -451,7 +459,7 @@ public class EdgeApiTest extends BaseApiTest {
 //        edge1.targetLabel("software");
 //        edge1.sourceId("person:invalid");
 //        edge1.targetId("software:lop");
-//        edge1.property("date", "20170324");
+//        edge1.property("date", "2017-03-24");
 //        edge1.property("city", "Hongkong");
 //        edges.add(edge1);
 //
@@ -460,7 +468,7 @@ public class EdgeApiTest extends BaseApiTest {
 //        edge2.targetLabel("person");
 //        edge2.sourceId("person:peter");
 //        edge2.targetId("person:invalid");
-//        edge2.property("date", "20170324");
+//        edge2.property("date", "2017-03-24");
 //        edges.add(edge2);
 //
 //        List<String> ids = edgeAPI.create(edges, false);
@@ -481,7 +489,7 @@ public class EdgeApiTest extends BaseApiTest {
         Edge edge1 = new Edge("created");
         edge1.sourceId("person:peter");
         edge1.targetId("software:lop");
-        edge1.property("date", "20170324");
+        edge1.property("date", "2017-03-24");
         edge1.property("city", "Hongkong");
         edges.add(edge1);
 
@@ -490,7 +498,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge2.targetLabel("undefined");
         edge2.sourceId("person:peter");
         edge2.targetId("person:marko");
-        edge2.property("date", "20170324");
+        edge2.property("date", "2017-03-24");
         edges.add(edge2);
 
         Utils.assertResponseError(400, () -> {
@@ -508,7 +516,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge1.targetLabel("software");
         edge1.sourceId(outVId);
         edge1.targetId(inVId);
-        edge1.property("date", "20170324");
+        edge1.property("date", "2017-03-24");
         edge1.property("city", "Hongkong");
 
         edge1 = edgeAPI.create(edge1);
@@ -577,7 +585,7 @@ public class EdgeApiTest extends BaseApiTest {
         edge.targetLabel("software");
         edge.sourceId(outVId);
         edge.targetId(inVId);
-        edge.property("date", "20170324");
+        edge.property("date", "2017-03-24");
         edge.property("city", "Hongkong");
 
         edge = edgeAPI.create(edge);

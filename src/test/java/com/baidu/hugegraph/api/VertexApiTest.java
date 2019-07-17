@@ -135,12 +135,13 @@ public class VertexApiTest extends BaseApiTest {
 
         Vertex log = new Vertex("log");
         log.id(123456);
-        log.property("date", "20180101");
+        log.property("date", "2018-01-01");
 
         Vertex vertex = vertexAPI.create(log);
         Assert.assertEquals("log", vertex.label());
         Assert.assertEquals(123456, vertex.id());
-        Map<String, Object> props = ImmutableMap.of("date", "20180101");
+        Map<String, Object> props = ImmutableMap.of("date",
+                                                    Utils.date("2018-01-01"));
         Assert.assertEquals(props, vertex.properties());
     }
 
@@ -266,7 +267,7 @@ public class VertexApiTest extends BaseApiTest {
     public void testGetWithCustomizeNumberId() {
         Vertex vertex1 = new Vertex("log");
         vertex1.id(123456);
-        vertex1.property("date", "20180101");
+        vertex1.property("date", "2018-01-01");
 
         vertex1 = vertexAPI.create(vertex1);
 

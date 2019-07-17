@@ -41,6 +41,7 @@ import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -275,12 +276,12 @@ public class TraverserApiTest extends BaseApiTest {
 
     @Test
     public void testEdges() {
-        String date2012Id = getEdgeId("knows", "date", "20120110");
-        String date2013Id = getEdgeId("knows", "date", "20130110");
-        String date2014Id = getEdgeId("created", "date", "20140110");
-        String date2015Id = getEdgeId("created", "date", "20150110");
-        String date2016Id = getEdgeId("created", "date", "20160110");
-        String date2017Id = getEdgeId("created", "date", "20170110");
+        String date2012Id = getEdgeId("knows", "date", "2012-01-10");
+        String date2013Id = getEdgeId("knows", "date", "2013-01-10");
+        String date2014Id = getEdgeId("created", "date", "2014-01-10");
+        String date2015Id = getEdgeId("created", "date", "2015-01-10");
+        String date2016Id = getEdgeId("created", "date", "2016-01-10");
+        String date2017Id = getEdgeId("created", "date", "2017-01-10");
 
         List<String> ids = ImmutableList.of(date2012Id, date2013Id, date2014Id,
                                             date2015Id, date2016Id, date2017Id);
@@ -296,8 +297,9 @@ public class TraverserApiTest extends BaseApiTest {
         Assert.assertEquals(date2016Id, edges.get(4).id());
         Assert.assertEquals(date2017Id, edges.get(5).id());
 
-        Map<String, Object> props = ImmutableMap.of("date", "20140110",
-                                                    "city", "Shanghai");
+        Map<String, Object> props = ImmutableMap.of(
+                                    "date", Utils.date("2014-01-10"),
+                                    "city", "Shanghai");
         Assert.assertEquals(props, edges.get(2).properties());
     }
 
