@@ -47,7 +47,7 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Override
     @After
-    public void teardown() throws Exception {
+    public void teardown() {
         edgeAPI.list(-1).results().forEach(e -> edgeAPI.delete(e.id()));
     }
 

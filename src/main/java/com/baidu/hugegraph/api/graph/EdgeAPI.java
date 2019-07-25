@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
+import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.NotAllCreatedException;
 import com.baidu.hugegraph.rest.RestResult;
@@ -65,6 +66,14 @@ public class EdgeAPI extends GraphAPI {
                       ids, edges.size(), ids.size());
         }
         return ids;
+    }
+
+    public List<Edge> update(BatchEdgeRequest request) {
+        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+        RestResult result = this.client.put(this.batchPath(), null,
+                                            request, headers);
+        return result.readList(this.type(), Edge.class);
     }
 
     public Edge append(Edge edge) {

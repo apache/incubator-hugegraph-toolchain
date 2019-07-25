@@ -44,7 +44,7 @@ public class VertexApiTest extends BaseApiTest {
 
     @Override
     @After
-    public void teardown() throws Exception {
+    public void teardown() {
         vertexAPI.list(-1).results().forEach(v -> vertexAPI.delete(v.id()));
     }
 

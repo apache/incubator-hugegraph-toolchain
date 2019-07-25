@@ -17,17 +17,21 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.unit;
+package com.baidu.hugegraph.api.graph.structure;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+public enum UpdateStrategy {
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    VertexSerializerTest.class,
-    PathSerializerTest.class,
-    RestResultTest.class,
-    BatchElementRequestTest.class
-})
-public class UnitTestSuite {
+    SUM,
+
+    BIGGER,
+
+    SMALLER,
+
+    UNION,
+
+    INTERSECTION,
+
+    APPEND,
+
+    ELIMINATE
 }

@@ -131,66 +131,79 @@ public class PropertyKey extends SchemaElement {
             this.manager.removePropertyKey(this.propertyKey.name);
         }
 
+        @Override
         public Builder asText() {
             this.propertyKey.dataType = DataType.TEXT;
             return this;
         }
 
+        @Override
         public Builder asInt() {
             this.propertyKey.dataType = DataType.INT;
             return this;
         }
 
+        @Override
         public Builder asDate() {
             this.propertyKey.dataType = DataType.DATE;
             return this;
         }
 
+        @Override
         public Builder asUuid() {
             this.propertyKey.dataType = DataType.UUID;
             return this;
         }
 
+        @Override
         public Builder asBoolean() {
             this.propertyKey.dataType = DataType.BOOLEAN;
             return this;
         }
 
+        @Override
         public Builder asByte() {
             this.propertyKey.dataType = DataType.BYTE;
             return this;
         }
 
+        @Override
         public Builder asBlob() {
             this.propertyKey.dataType = DataType.BLOB;
             return this;
         }
 
+        @Override
         public Builder asDouble() {
             this.propertyKey.dataType = DataType.DOUBLE;
             return this;
         }
 
+        @Override
         public Builder asFloat() {
             this.propertyKey.dataType = DataType.FLOAT;
             return this;
         }
 
+        @Override
         public Builder asLong() {
             this.propertyKey.dataType = DataType.LONG;
             return this;
         }
 
+        @Override
         public Builder valueSingle() {
             this.propertyKey.cardinality = Cardinality.SINGLE;
             return this;
         }
 
+        @Override
         public Builder valueList() {
             this.propertyKey.cardinality = Cardinality.LIST;
             return this;
         }
 
+        @Override
         public Builder valueSet() {
             this.propertyKey.cardinality = Cardinality.SET;
             return this;

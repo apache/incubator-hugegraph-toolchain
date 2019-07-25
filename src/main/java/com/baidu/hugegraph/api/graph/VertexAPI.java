@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
+import com.baidu.hugegraph.api.graph.structure.BatchVertexRequest;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.NotAllCreatedException;
 import com.baidu.hugegraph.rest.RestResult;
@@ -62,6 +63,14 @@ public class VertexAPI extends GraphAPI {
                       ids, vertices.size(), ids.size());
         }
         return ids;
+    }
+
+    public List<Vertex> update(BatchVertexRequest request) {
+        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+        RestResult result = this.client.put(this.batchPath(), null,
+                                            request, headers);
+        return result.readList(this.type(), Vertex.class);
     }
 
     public Vertex append(Vertex vertex) {

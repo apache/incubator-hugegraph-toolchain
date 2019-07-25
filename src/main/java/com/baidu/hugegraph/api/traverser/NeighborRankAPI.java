@@ -182,7 +182,7 @@ public class NeighborRankAPI extends TraversersAPI {
 
                 public Step.Builder top(int top) {
                     E.checkArgument(top > 0 && top <= Traverser.DEFAULT_MAX_TOP,
-                                    "The top of each layer cannot exceed %s",
+                                    "The top of each layer can't exceed %s",
                                     Traverser.DEFAULT_MAX_TOP);
                     this.step.top = top;
                     return this;
@@ -192,7 +192,7 @@ public class NeighborRankAPI extends TraversersAPI {
                     TraversersAPI.checkDegree(this.step.degree);
                     E.checkArgument(this.step.top > 0 &&
                                     this.step.top <= Traverser.DEFAULT_MAX_TOP,
-                                    "The top of each layer cannot exceed %s",
+                                    "The top of each layer can't exceed %s",
                                     Traverser.DEFAULT_MAX_TOP);
                     return this.step;
                 }

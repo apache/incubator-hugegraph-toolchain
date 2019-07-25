@@ -26,6 +26,8 @@ import java.util.Map;
 import com.baidu.hugegraph.annotation.UnimplementedFeature;
 import com.baidu.hugegraph.api.graph.EdgeAPI;
 import com.baidu.hugegraph.api.graph.VertexAPI;
+import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
+import com.baidu.hugegraph.api.graph.structure.BatchVertexRequest;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -145,6 +147,12 @@ public class GraphManager {
 
     public void removeVertex(Object vertexId) {
         this.vertexAPI.delete(vertexId);
+    }
+
+    public List<Vertex> updateVertices(BatchVertexRequest request) {
+        List<Vertex> newVertices = this.vertexAPI.update(request);
+        newVertices.forEach(vertex -> this.attachManager(vertex));
+        return newVertices;
     }
 
     public Vertex appendVertexProperty(Vertex vertex) {
@@ -346,6 +354,12 @@ public class GraphManager {
 
     public void removeEdge(String edgeId) {
         this.edgeAPI.delete(edgeId);
+    }
+
+    public List<Edge> updateEdges(BatchEdgeRequest request) {
+        List<Edge> newEdges = this.edgeAPI.update(request);
+        newEdges.forEach(edge -> this.attachManager(edge));
+        return newEdges;
     }
 
     public Edge appendEdgeProperty(Edge edge) {

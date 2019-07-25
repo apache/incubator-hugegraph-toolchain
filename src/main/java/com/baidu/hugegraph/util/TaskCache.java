@@ -83,7 +83,7 @@ public class TaskCache {
 
     private synchronized void start() {
         if (this.service == null || this.service.isShutdown()) {
-            this.service = Executors.newSingleThreadScheduledExecutor();
+            this.service = ExecutorUtil.newScheduledThreadPool("task-worker");
             // Schedule a query task to query task status every 1 second,
             this.service.scheduleAtFixedRate(this::asyncQueryTask, 0L, 1L,
                                              TimeUnit.SECONDS);

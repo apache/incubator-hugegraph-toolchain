@@ -40,7 +40,8 @@ import org.junit.runners.Suite;
     ShortestPathApiTest.class,
     CustomizedPathsApiTest.class,
     NeighborRankApiTest.class,
-    PersonalRankApiTest.class
+    PersonalRankApiTest.class,
+    BatchUpdateElementApiTest.class
 })
 public class ApiTestSuite {
 }
