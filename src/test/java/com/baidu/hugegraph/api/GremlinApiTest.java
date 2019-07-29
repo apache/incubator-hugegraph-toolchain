@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api;
 
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -27,6 +28,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.GraphAttachable;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
@@ -186,5 +188,36 @@ public class GremlinApiTest extends BaseApiTest {
             }
             Assert.assertNull(path.crosspoint());
         }
+    }
+
+    @Test
+    public void testInvalidGremlin() {
+        Assert.assertThrows(ServerException.class, () -> {
+            client().post("gremlin", "{");
+        }, e -> {
+            String msg = "body could not be parsed";
+            Assert.assertTrue(e.getMessage().contains(msg));
+        });
+
+        GremlinRequest request = new GremlinRequest("g.V2()");
+        Assert.assertThrows(ServerException.class, () -> {
+            gremlin().execute(request);
+        }, e -> {
+            String msg = "No signature of method: org.apache.tinkerpop." +
+                         "gremlin.process.traversal.dsl.graph." +
+                         "GraphTraversalSource.V2()";
+            Assert.assertTrue(e.getMessage().contains(msg));
+        });
+    }
+
+    @Test
+    public void testSecurityOperation() {
+        GremlinRequest request = new GremlinRequest("System.exit(-1)");
+        Assert.assertThrows(ServerException.class, () -> {
+            gremlin().execute(request);
+        }, e -> {
+            String msg = "Not allowed to call System.exit() via Gremlin";
+            Assert.assertTrue(e.getMessage().contains(msg));
+        });
     }
 }

@@ -120,6 +120,10 @@ public class BaseApiTest extends BaseClientTest {
         BaseClientTest.clear();
     }
 
+    protected RestClient client() {
+        return client;
+    }
+
     protected static void clearData() {
         // Clear edge
         edgeAPI.list(-1).results().forEach(edge -> {
