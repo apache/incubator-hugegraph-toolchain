@@ -128,7 +128,7 @@ public final class HugeGraphLoader {
         if (this.context.options().incrementalMode) {
             return this.context.oldProgress().totalLoaded(type);
         } else {
-            return 0;
+            return 0L;
         }
     }
 

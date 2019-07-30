@@ -66,14 +66,9 @@ public final class LoadProgress {
     }
 
     public long totalLoaded(ElemType type) {
-        InputProgressMap lastLoadMap;
-        if (type.isVertex()) {
-            lastLoadMap = this.vertexProgress;
-        } else {
-            assert type.isEdge();
-            lastLoadMap = this.edgeProgress;
-        }
-
+        InputProgressMap lastLoadMap = type.isVertex() ?
+                                       this.vertexProgress :
+                                       this.edgeProgress;
         long total = 0L;
         for (InputProgress inputProgress : lastLoadMap.values()) {
             for (InputItemProgress itemProgress : inputProgress.loadedItems()) {
