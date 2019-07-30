@@ -77,6 +77,8 @@ public final class Line {
         if (this.keyValues != null) {
             return this.keyValues;
         }
+        String[] names = this.names();
+        Object[] values = this.values();
         this.keyValues = InsertionOrderUtil.newMap();
         for (int i = 0, n = names.length; i < n; i++) {
             this.keyValues.put(names[i], values[i]);

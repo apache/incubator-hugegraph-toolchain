@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.loader.source.jdbc;
 
-import java.util.List;
-
 import org.apache.http.client.utils.URIBuilder;
 
 import com.baidu.hugegraph.loader.reader.Line;
@@ -151,10 +149,10 @@ public enum JDBCVendor {
 
         /**
          * TODO: Not related to schema?
+         * NOTE: don't add an semicolon(;) at the end of oracle sql
          */
         @Override
         public String buildGetHeaderSql(JDBCSource source) {
-            // NOTE: don't add a semicolon(;) at the end
             return String.format("SELECT COLUMN_NAME " +
                                  "FROM USER_TAB_COLUMNS " +
                                  "WHERE TABLE_NAME = %s " +
@@ -325,18 +323,18 @@ public enum JDBCVendor {
     public String buildGteClauseInCombined(Line nextStartRow) {
         E.checkNotNull(nextStartRow, "nextStartRow");
         StringBuilder builder = new StringBuilder();
-        List<String> names = nextStartRow.names();
-        List<Object> values = nextStartRow.values();
+        String[] names = nextStartRow.names();
+        Object[] values = nextStartRow.values();
         builder.append("(");
-        for (int i = 0, n = names.size(); i < n; i++) {
-            builder.append(names.get(i));
+        for (int i = 0, n = names.length; i < n; i++) {
+            builder.append(names[i]);
             if (i != n - 1) {
                 builder.append(", ");
             }
         }
         builder.append(") >= (");
-        for (int i = 0, n = values.size(); i < n; i++) {
-            Object value = values.get(i);
+        for (int i = 0, n = values.length; i < n; i++) {
+            Object value = values[i];
             builder.append(this.escapeIfNeeded(value));
             if (i != n - 1) {
                 builder.append(", ");
@@ -358,13 +356,13 @@ public enum JDBCVendor {
     public String buildGteClauseInFlattened(Line nextStartRow) {
         E.checkNotNull(nextStartRow, "nextStartRow");
         StringBuilder builder = new StringBuilder();
-        List<String> names = nextStartRow.names();
-        List<Object> values = nextStartRow.values();
-        for (int i = 0, n = names.size(); i < n; i++) {
+        String[] names = nextStartRow.names();
+        Object[] values = nextStartRow.values();
+        for (int i = 0, n = names.length; i < n; i++) {
             builder.append("(");
             for (int j = 0; j < n - i; j++) {
-                String name = names.get(j);
-                Object value = values.get(j);
+                String name = names[j];
+                Object value = values[j];
                 String operator = " = ";
                 boolean appendAnd = true;
                 if (j == n - i - 1) {
