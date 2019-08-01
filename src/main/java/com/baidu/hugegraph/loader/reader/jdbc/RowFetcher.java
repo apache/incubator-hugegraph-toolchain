@@ -25,9 +25,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
@@ -46,8 +46,8 @@ public class RowFetcher {
 
     private final Connection conn;
 
-    private final List<String> columns;
     private final int batchSize;
+    private String[] columns;
     private Line nextBatchStartRow;
     private boolean finished;
 
@@ -56,7 +56,7 @@ public class RowFetcher {
         this.table = source.table();
         this.batchSize = source.batchSize();
         this.conn = this.connect(source);
-        this.columns = new ArrayList<>();
+        this.columns = null;
         this.finished = false;
     }
 
@@ -101,14 +101,16 @@ public class RowFetcher {
                                    this.table, this.database);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(sql)) {
+            List<String> columns = new ArrayList<>();
             while (result.next()) {
-                this.columns.add(result.getString("COLUMN_NAME"));
+                columns.add(result.getString("COLUMN_NAME"));
             }
+            this.columns = columns.toArray(new String[]{});
         } catch (SQLException e) {
             this.close();
             throw e;
         }
-        E.checkArgument(!this.columns.isEmpty(),
+        E.checkArgument(this.columns.length != 0,
                         "The colmuns of the table '%s' shouldn't be empty",
                         this.table);
     }
@@ -124,16 +126,16 @@ public class RowFetcher {
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
             while (result.next()) {
-                List<Object> values = new ArrayList<>(this.columns.size());
-                for (int i = 1, n = this.columns.size(); i <= n; i++) {
+                Object[] values = new Object[this.columns.length];
+                for (int i = 1, n = this.columns.length; i <= n; i++) {
                     Object value = result.getObject(i);
                     if (value == null) {
                         value = "NULL";
                     }
-                    values.add(value);
+                    values[i - 1] = value;
                 }
-                Line line = new Line(Collections.unmodifiableList(this.columns),
-                                     values);
+                String rawLine = StringUtils.join(values, ",");
+                Line line = new Line(rawLine, this.columns, values);
                 batch.add(line);
             }
         } catch (SQLException e) {

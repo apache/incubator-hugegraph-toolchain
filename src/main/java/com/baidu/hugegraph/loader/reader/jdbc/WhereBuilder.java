@@ -185,21 +185,21 @@ public final class WhereBuilder {
      * @param keys the keys to be concatted with {@code >=} operator
      * @param values the values to be concatted with {@code >=} operator
      */
-    public void gte(List<String> keys, List<Object> values) {
-        E.checkArgument(keys.size() == values.size(),
+    public void gte(String[] keys, Object[] values) {
+        E.checkArgument(keys.length == values.length,
                         "The size of keys '%s' is not equal with " +
                         "values size '%s'",
-                        keys.size(), values.size());
+                        keys.length, values.length);
         this.builder.append("(");
-        for (int i = 0, n = keys.size(); i < n; i++) {
-            this.builder.append(keys.get(i));
+        for (int i = 0, n = keys.length; i < n; i++) {
+            this.builder.append(keys[i]);
             if (i != n - 1) {
                 this.builder.append(", ");
             }
         }
         this.builder.append(") >= (");
-        for (int i = 0, n = values.size(); i < n; i++) {
-            Object value = values.get(i);
+        for (int i = 0, n = values.length; i < n; i++) {
+            Object value = values[i];
             if (value instanceof String) {
                 this.builder.append(MysqlUtil.escapeString((String) value));
             } else {

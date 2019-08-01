@@ -19,12 +19,7 @@
 
 package com.baidu.hugegraph.loader.reader;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 
@@ -42,14 +37,6 @@ public final class Line {
         this.keyValues = keyValues;
     }
 
-    public Line(List<String> names, List<Object> values) {
-        assert names.size() == values.size();
-        this.rawLine = StringUtils.join(values, ",");
-        this.names = names.toArray(new String[]{});
-        this.values = values.toArray(new Object[]{});
-        this.keyValues = null;
-    }
-
     public Line(String rawLine, String[] names, Object[] values) {
         assert names.length == values.length;
         this.rawLine = rawLine;
@@ -62,24 +49,26 @@ public final class Line {
         return this.rawLine;
     }
 
-    public final List<String> names() {
+    public final String[] names() {
         if (this.names != null) {
-            return Arrays.asList(this.names);
+            return this.names;
         } else {
             assert this.keyValues != null;
-            return new ArrayList<>(this.keyValues.keySet());
+            return this.keyValues.keySet().toArray(new String[]{});
         }
     }
 
-    public final List<Object> values() {
+    public final Object[] values() {
         if (this.values != null) {
-            return Arrays.asList(this.values);
+            return this.values;
         } else {
             assert this.keyValues != null;
-            List<String> names = this.names();
-            List<Object> results = new ArrayList<>(names.size());
-            names.forEach(name -> results.add(this.keyValues.get(name)));
-            return results;
+            String[] names = this.names();
+            Object[] values = new Object[names.length];
+            for (int i = 0; i < names.length; i++) {
+                values[i] = this.keyValues.get(names[i]);
+            }
+            return values;
         }
     }
 

@@ -88,7 +88,7 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     private int waitThenRetry(int retryCount, RuntimeException e) {
         LoadOptions options = this.context().options();
-        long times = (1 << retryCount) * options.retryInterval;
+        long interval = (1 << retryCount) * options.retryInterval;
 
         if (++retryCount > options.retryTimes) {
             LOG.error("Batch insert has been retried more than {} times",
@@ -97,9 +97,9 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
         }
 
         LOG.debug("Batch insert will sleep {} seconds then do the {}th retry",
-                  retryCount, times);
+                  interval, retryCount);
         try {
-            Thread.sleep(times * 1000);
+            Thread.sleep(interval * 1000);
         } catch (InterruptedException ignored) {
             // That's fine, just continue.
         }
