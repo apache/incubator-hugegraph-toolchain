@@ -29,7 +29,7 @@
         <dependency>
             <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>1.7.3</version>
+            <version>1.7.4</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -89,6 +89,15 @@
     </dependencies>
 
     <profiles>
+        <profile>
+            <id>unit</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <test-classes>**/UnitTestSuite.java</test-classes>
+            </properties>
+        </profile>
         <profile>
             <id>file</id>
             <activation>

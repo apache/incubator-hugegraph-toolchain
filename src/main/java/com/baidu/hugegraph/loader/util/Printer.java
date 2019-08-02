@@ -41,13 +41,15 @@ public final class Printer {
         System.out.println(message);
     }
 
-    public static void printElemType(ElemType type) {
-        if (type.isVertex()) {
-            System.out.print("vertices has been loaded    : 0\b");
-        } else {
-            assert type.isEdge();
-            System.out.print("edges has been loaded       : 0\b");
+    public static void printRealTimeProgress(ElemType type, long count) {
+        String lastLoadMsg = String.format("%s has been loaded last time : %s",
+                                           type.string(), count);
+        String thisLoadMsg = String.format("%s has been loaded           : 0\b",
+                                           type.string());
+        if (count > 0) {
+            printAndLog(lastLoadMsg);
         }
+        System.out.print(thisLoadMsg);
     }
 
     /**

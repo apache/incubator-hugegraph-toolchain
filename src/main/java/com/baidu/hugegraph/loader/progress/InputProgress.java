@@ -53,6 +53,14 @@ public final class InputProgress {
         this.loadingItem = null;
     }
 
+    public Set<InputItemProgress> loadedItems() {
+        return this.loadedItems;
+    }
+
+    public InputItemProgress loadingItem() {
+        return this.loadingItem;
+    }
+
     public InputItemProgress matchLoadedItem(InputItemProgress inputItem) {
         for (InputItemProgress item : this.loadedItems) {
             if (item.equals(inputItem)) {

@@ -55,12 +55,12 @@ public final class TaskManager {
         this.context = context;
         this.options = context.options();
         // Try to make all batch threads running and don't wait for producer
-        this.batchSemaphore = new Semaphore(1 + this.options.numThreads);
+        this.batchSemaphore = new Semaphore(this.batchSemaphoreNum());
         /*
          * Let batch threads go forward as far as possible and don't wait for
          * single thread
          */
-        this.singleSemaphore = new Semaphore(2 * this.options.numThreads);
+        this.singleSemaphore = new Semaphore(this.singleSemaphoreNum());
         /*
          * In principle, unbounded synchronization queue(which may lead to OOM)
          * should not be used, but there the task manager uses semaphores to
@@ -73,25 +73,33 @@ public final class TaskManager {
                                                              SINGLE_WORKER);
     }
 
+    private int batchSemaphoreNum() {
+        return 1 + this.options.numThreads;
+    }
+
+    private int singleSemaphoreNum() {
+        return 2 * this.options.numThreads;
+    }
+
     public void waitFinished(ElemType type) {
         try {
             // Wait batch mode task finished
-            this.batchSemaphore.acquire(this.options.numThreads);
+            this.batchSemaphore.acquire(this.batchSemaphoreNum());
             LOG.info("Batch-mode tasks of {} finished", type.string());
         } catch (InterruptedException e) {
             LOG.warn("Interrupted while waiting batch-mode tasks");
         } finally {
-            this.batchSemaphore.release(this.options.numThreads);
+            this.batchSemaphore.release(this.batchSemaphoreNum());
         }
 
         try {
             // Wait single mode task finished
-            this.singleSemaphore.acquire(this.options.numThreads);
+            this.singleSemaphore.acquire(this.singleSemaphoreNum());
             LOG.info("Single-mode tasks of {} finished", type.string());
         } catch (InterruptedException e) {
             LOG.warn("Interrupted while waiting batch-mode tasks");
         } finally {
-            this.singleSemaphore.release(this.options.numThreads);
+            this.singleSemaphore.release(this.singleSemaphoreNum());
         }
     }
 

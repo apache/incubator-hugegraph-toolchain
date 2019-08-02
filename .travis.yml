@@ -30,6 +30,7 @@ before_script:
     fi
 
 script:
+  - mvn test -Punit
   - mvn test -P${SOURCE_TYPE}
 
 after_success:

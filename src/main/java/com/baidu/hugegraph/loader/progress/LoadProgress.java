@@ -65,6 +65,22 @@ public final class LoadProgress {
         }
     }
 
+    public long totalLoaded(ElemType type) {
+        InputProgressMap lastLoadMap = type.isVertex() ?
+                                       this.vertexProgress :
+                                       this.edgeProgress;
+        long total = 0L;
+        for (InputProgress inputProgress : lastLoadMap.values()) {
+            for (InputItemProgress itemProgress : inputProgress.loadedItems()) {
+                total += itemProgress.offset();
+            }
+            if (inputProgress.loadingItem() != null) {
+                total += inputProgress.loadingItem().offset();
+            }
+        }
+        return total;
+    }
+
     public void write(String structFileName) throws IOException {
         String fileName = getProgressFileName(structFileName);
         File file = FileUtils.getFile(fileName);
