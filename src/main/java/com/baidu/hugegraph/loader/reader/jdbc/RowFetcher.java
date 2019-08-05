@@ -110,7 +110,7 @@ public class RowFetcher {
             this.close();
             throw e;
         }
-        E.checkArgument(this.columns.length != 0,
+        E.checkArgument(this.columns != null && this.columns.length != 0,
                         "The colmuns of the table '%s' shouldn't be empty",
                         this.table);
     }
