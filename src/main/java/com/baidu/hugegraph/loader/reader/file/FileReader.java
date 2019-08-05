@@ -155,7 +155,7 @@ public abstract class FileReader implements InputReader {
     }
 
     private boolean needSkipLine(String line) {
-        return line.matches(this.source.skippedLine().regex());
+        return this.source.skippedLine().matches(line);
     }
 
     private static LineParser createLineParser(FileSource source) {

@@ -86,6 +86,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private Object buildVertexId(VertexLabel vertexLabel,
                                  List<String> fieldNames,
                                  Map<String, Object> keyValues) {
+        IdStrategy idStrategy = vertexLabel.idStrategy();
         List<String> primaryKeys = vertexLabel.primaryKeys();
         Object[] primaryValues = new Object[primaryKeys.size()];
         for (String fieldName : fieldNames) {
@@ -96,34 +97,28 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
             this.checkFieldValue(fieldName, fieldValue);
             Object mappedValue = this.mappingFieldValueIfNeeded(fieldName,
                                                                 fieldValue);
-
-            IdStrategy idStrategy = vertexLabel.idStrategy();
-            if (idStrategy.isCustomize()) {
-                /*
-                 * Check vertex id length when the id strategy of
-                 * source/target label is CUSTOMIZE_STRING,
-                 * just return when id strategy is CUSTOMIZE_NUMBER
-                 */
-                if (idStrategy.isCustomizeString()) {
-                    E.checkArgument(mappedValue instanceof String,
-                                    "The field value must be String if there " +
-                                    "is no value mapping, same as the value " +
-                                    "after mapping, but got %s(%s) -> %s(%s)",
-                                    fieldValue, fieldValue.getClass(),
-                                    mappedValue, mappedValue.getClass());
-                    String id = (String) mappedValue;
-                    checkVertexIdLength(id);
-                    return id;
-                } else {
-                    assert idStrategy.isCustomizeNumber();
-                    return parseNumberId(mappedValue);
-                }
+            /*
+             * Check vertex id length when the id strategy of source/target
+             * label is CUSTOMIZE_STRING, just return when CUSTOMIZE_NUMBER
+             */
+            if (idStrategy.isCustomizeString()) {
+                E.checkArgument(mappedValue instanceof String,
+                                "The field value must be String if there " +
+                                "is no value mapping, same as the value " +
+                                "after mapping, but got %s(%s) -> %s(%s)",
+                                fieldValue, fieldValue.getClass(),
+                                mappedValue, mappedValue.getClass());
+                String id = (String) mappedValue;
+                checkVertexIdLength(id);
+                return id;
+            } else if (idStrategy.isCustomizeNumber()) {
+                return parseNumberId(mappedValue);
             } else {
-                String key = this.struct.mappingField(fieldName);
-                Object value = this.validatePropertyValue(key, mappedValue);
                 // The id strategy of source/target label must be PRIMARY_KEY
+                String key = this.struct.mappingField(fieldName);
                 if (primaryKeys.contains(key)) {
                     int index = primaryKeys.indexOf(key);
+                    Object value = this.validatePropertyValue(key, mappedValue);
                     primaryValues[index] = value;
                 }
             }

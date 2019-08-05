@@ -19,7 +19,12 @@
 
 package com.baidu.hugegraph.loader.builder;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,6 +57,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
                 implements AutoCloseableIterator<GE> {
 
     private static final Logger LOG = Log.logger(ElementBuilder.class);
+
+    private static final CharsetEncoder ENCODER =
+                         Constants.CHARSET.newEncoder();
+    private static final ByteBuffer BUFFER =
+                         ByteBuffer.allocate(Constants.VERTEX_ID_LIMIT);
 
     private final SchemaCache schema;
     private final InputReader reader;
@@ -202,18 +212,21 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected static String spliceVertexId(VertexLabel vertexLabel,
                                            Object[] primaryValues) {
-        E.checkArgument(vertexLabel.primaryKeys().size() == primaryValues.length,
+        List<String> primaryKeys = vertexLabel.primaryKeys();
+        E.checkArgument(primaryKeys.size() == primaryValues.length,
                         "Missing some primary key columns, expect %s, " +
                         "but only got %s for vertex label '%s'",
-                        vertexLabel.primaryKeys(), primaryValues, vertexLabel);
+                        primaryKeys, primaryValues, vertexLabel);
 
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
-        String[] searchList = new String[]{":", "!"};
-        String[] replaceList = new String[]{"`:", "`!"};
         for (Object value : primaryValues) {
             String pkValue = String.valueOf(value);
-            pkValue = StringUtils.replaceEach(pkValue, searchList, replaceList);
+            if (StringUtils.containsAny(pkValue, Constants.SEARCH_LIST)) {
+                pkValue = StringUtils.replaceEach(pkValue,
+                                                  Constants.SEARCH_LIST,
+                                                  Constants.TARGET_LIST);
+            }
             vertexKeysId.append(pkValue);
             vertexKeysId.append("!");
         }
@@ -224,8 +237,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected static void checkVertexIdLength(String id) {
-        E.checkArgument(id.getBytes(Constants.CHARSET).length <=
-                        Constants.VERTEX_ID_LIMIT,
+        ENCODER.reset();
+        BUFFER.clear();
+        CoderResult result = ENCODER.encode(CharBuffer.wrap(id.toCharArray()),
+                                            BUFFER, true);
+        E.checkArgument(result.isUnderflow(),
                         "The vertex id length limit is '%s', '%s' exceeds it",
                         Constants.VERTEX_ID_LIMIT, id);
     }

@@ -148,8 +148,10 @@ public class Readers {
         }
 
         Readable readable = this.readables.get(this.index);
+        // NOTE: calculate check sum is a bit time consuming
         InputItemProgress inputItem = readable.inputItemProgress();
-        InputItemProgress matchItem = this.oldProgress.matchLoadedItem(inputItem);
+        InputItemProgress matchItem = this.oldProgress.matchLoadedItem(
+                                                       inputItem);
         // The file has been loaded before and it is not changed
         if (matchItem != null) {
             this.newProgress.addLoadedItem(matchItem);

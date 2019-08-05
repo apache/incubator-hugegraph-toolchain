@@ -20,8 +20,6 @@
 package com.baidu.hugegraph.loader.parser;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
@@ -42,9 +40,9 @@ public class CsvLineParser extends TextLineParser {
     }
 
     @Override
-    public List<String> split(String line) {
+    public String[] split(String line) {
         try {
-            return Arrays.asList(this.parser.parseLine(line));
+            return this.parser.parseLine(line);
         } catch (IOException e) {
             throw new ParseException(line, "Parse line '%s' error", e, line);
         }

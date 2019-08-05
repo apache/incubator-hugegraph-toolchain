@@ -44,9 +44,6 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    private static final String ILLEGAL_ARGUMENT_EXCEPTION =
-            "class java.lang.IllegalArgumentException";
-
     public BatchInsertTask(LoadContext context, ElementStruct struct,
                            List<GE> batch) {
         super(context, struct, batch);
@@ -54,9 +51,9 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     @Override
     public void run() {
-        int retryCount = 0;
         ElemType type = this.struct().type();
         LoadOptions options = this.context().options();
+        int retryCount = 0;
         do {
             try {
                 this.addBatch(type, this.batch(), options.checkVertex);
@@ -64,7 +61,7 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
             } catch (ClientException e) {
                 retryCount = this.waitThenRetry(retryCount, e);
             } catch (ServerException e) {
-                if (ILLEGAL_ARGUMENT_EXCEPTION.equals(e.exception())) {
+                if (UNACCEPTABLE_EXCEPTIONS.contains(e.exception())) {
                     throw e;
                 }
                 retryCount = this.waitThenRetry(retryCount, e);
@@ -91,16 +88,20 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     private int waitThenRetry(int retryCount, RuntimeException e) {
         LoadOptions options = this.context().options();
-        try {
-            Thread.sleep(options.retryInterval * 1000);
-        } catch (InterruptedException ignored) {
-            // That's fine, just continue.
-        }
+        long interval = (1L << retryCount) * options.retryInterval;
 
         if (++retryCount > options.retryTimes) {
             LOG.error("Batch insert has been retried more than {} times",
                       options.retryTimes);
             throw e;
+        }
+
+        LOG.debug("Batch insert will sleep {} seconds then do the {}th retry",
+                  interval, retryCount);
+        try {
+            Thread.sleep(interval * 1000L);
+        } catch (InterruptedException ignored) {
+            // That's fine, just continue.
         }
         return retryCount;
     }
