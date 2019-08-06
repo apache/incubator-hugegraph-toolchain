@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.api;
 
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 

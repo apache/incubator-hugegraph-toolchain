@@ -320,6 +320,9 @@ public class CustomizedPathsApiTest extends BaseApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             customizedPathsAPI.post(request);
+        }, e -> {
+            String expect = "Exceed capacity '1' while finding customized paths";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 

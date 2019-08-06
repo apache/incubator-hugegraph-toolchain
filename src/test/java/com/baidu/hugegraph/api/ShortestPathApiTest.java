@@ -132,6 +132,9 @@ public class ShortestPathApiTest extends BaseApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             shortestPathAPI.get(14, 6, Direction.BOTH, null, 6, 1L, 0L, 2L);
+        }, e -> {
+            String expect = "Exceed capacity '2' while finding shortest path";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 

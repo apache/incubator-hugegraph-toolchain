@@ -279,7 +279,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
     }
 
     @Test
-    public void testAppendWithSourceOrTaregtLabel() {
+    public void testAppendWithSourceOrTargetLabel() {
         EdgeLabel edgeLabel1 = schema().edgeLabel("created")
                                        .sourceLabel("person")
                                        .targetLabel("software")

@@ -331,6 +331,9 @@ public class NeighborRankApiTest extends BaseApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             neighborRankAPI.post(request);
+        }, e -> {
+            String expect = "Exceed capacity '1' while finding neighbor rank";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 

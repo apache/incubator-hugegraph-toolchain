@@ -95,6 +95,9 @@ public class TraverserApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             pathsAPI.get(markoId, rippleId, Direction.BOTH,
                          null, 3, -1L, 2L, 1);
+        }, e -> {
+            String expect = "Exceed capacity '2' while finding paths";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 
@@ -126,6 +129,9 @@ public class TraverserApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             crosspointsAPI.get(markoId, peterId, Direction.OUT,
                                null, 3, -1L, 2L, 10);
+        }, e -> {
+            String expect = "Exceed capacity '2' while finding paths";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 
@@ -192,6 +198,10 @@ public class TraverserApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             koutAPI.get(markoId, Direction.BOTH, null,
                         2, false, -1L, -1L, 1L);
+        }, e -> {
+            String expect = "Capacity can't be less than limit, " +
+                            "but got capacity '1' and limit '-1'";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 
@@ -337,6 +347,10 @@ public class TraverserApiTest extends BaseApiTest {
             String page = "";
             Assert.assertThrows(ServerException.class, () -> {
                 verticesAPI.scan(shard, page, -1);
+            }, e -> {
+                String expect = "Invalid limit -1";
+                Assert.assertTrue(e.toString(),
+                                  e.getMessage().contains(expect));
             });
         }
     }
@@ -345,6 +359,10 @@ public class TraverserApiTest extends BaseApiTest {
     public void testScanVertexWithSplitSizeLt1MB() {
         Assert.assertThrows(ServerException.class, () -> {
             verticesAPI.shards(1 * 1024 * 1024 - 1);
+        }, e -> {
+            String expect = "The split-size must be >= 1048576 bytes, " +
+                            "but got 1048575";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 
@@ -382,6 +400,9 @@ public class TraverserApiTest extends BaseApiTest {
             String page = "";
             Assert.assertThrows(ServerException.class, () -> {
                 edgesAPI.scan(shard, page, -1);
+            }, e -> {
+                String expect = "Invalid limit -1";
+                Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
             });
         }
     }

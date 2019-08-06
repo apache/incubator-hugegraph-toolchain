@@ -28,7 +28,10 @@ public enum IndexType {
     RANGE(2, "range"),
 
     // For full-text query (not supported now)
-    SEARCH(3, "search");
+    SEARCH(3, "search"),
+
+    // For prefix + range query
+    SHARD(4, "shard");
 
     private byte code = 0;
     private String name = null;

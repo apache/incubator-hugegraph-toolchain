@@ -533,9 +533,14 @@ public class EdgeApiTest extends BaseApiTest {
 
     @Test
     public void testGetNotExist() {
+        String edgeId = "not-exist-edge-id";
         Assert.assertThrows(ServerException.class, () -> {
             // TODO: id to be modified
-            edgeAPI.get("not-exist-edge-id");
+            edgeAPI.get(edgeId);
+        }, e -> {
+            String expect = String.format("Edge id must be formatted as 4~5" +
+                                          " parts, but got '%s'", edgeId);
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 
@@ -595,6 +600,10 @@ public class EdgeApiTest extends BaseApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             edgeAPI.get(id);
+        }, e -> {
+            String expect = String.format("edge with id '%s' does not exist",
+                                          id);
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 
