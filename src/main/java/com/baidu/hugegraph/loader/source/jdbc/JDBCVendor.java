@@ -389,11 +389,7 @@ public enum JDBCVendor {
     }
 
     public Object escapeIfNeeded(Object value) {
-        if (value instanceof String) {
-            return this.escape((String) value);
-        } else {
-            return value;
-        }
+        return value instanceof String ? this.escape((String) value) : value;
     }
 
     public abstract String escape(String value);
