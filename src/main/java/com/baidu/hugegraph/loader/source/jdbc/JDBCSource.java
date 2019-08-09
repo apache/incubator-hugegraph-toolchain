@@ -21,26 +21,27 @@ package com.baidu.hugegraph.loader.source.jdbc;
 
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class JDBCSource extends AbstractSource {
 
+    @JsonProperty("vendor")
+    private JDBCVendor vendor;
     @JsonProperty("driver")
     private String driver;
     @JsonProperty("url")
     private String url;
     @JsonProperty("database")
     private String database;
+    @JsonProperty("schema")
+    private String schema;
     @JsonProperty("table")
     private String table;
     @JsonProperty("username")
     private String username;
     @JsonProperty("password")
     private String password;
-    @JsonProperty("reconnect_max_times")
-    private int reconnectMaxTimes;
-    @JsonProperty("reconnect_interval")
-    private int reconnectInterval;
     @JsonProperty("batch_size")
     private int batchSize = 500;
 
@@ -51,7 +52,21 @@ public class JDBCSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
-        // pass
+        E.checkArgument(this.vendor != null, "The vendor can't be null");
+        E.checkArgument(this.url != null, "The url can't be null");
+        E.checkArgument(this.database != null, "The database can't be null");
+        E.checkArgument(this.table != null, "The table can't be null");
+        E.checkArgument(this.username != null, "The username can't be null");
+        E.checkArgument(this.password != null, "The password can't be null");
+
+        this.schema = this.vendor.checkSchema(this);
+        if (this.driver == null) {
+            this.driver = this.vendor.defaultDriver();
+        }
+    }
+
+    public JDBCVendor vendor() {
+        return this.vendor;
     }
 
     public String driver() {
@@ -66,6 +81,10 @@ public class JDBCSource extends AbstractSource {
         return this.database;
     }
 
+    public String schema() {
+        return this.schema;
+    }
+
     public String table() {
         return this.table;
     }
@@ -76,14 +95,6 @@ public class JDBCSource extends AbstractSource {
 
     public String password() {
         return this.password;
-    }
-
-    public int reconnectMaxTimes() {
-        return this.reconnectMaxTimes;
-    }
-
-    public int reconnectInterval() {
-        return this.reconnectInterval;
     }
 
     public int batchSize() {

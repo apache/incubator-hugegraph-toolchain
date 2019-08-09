@@ -19,14 +19,18 @@
 
 package com.baidu.hugegraph.loader.reader.jdbc;
 
-public final class MysqlUtil {
+import java.sql.SQLException;
 
-    public static String escapeString(String value) {
+import org.postgresql.core.Utils;
+
+import com.baidu.hugegraph.loader.exception.LoadException;
+
+public final class JDBCUtil {
+
+    public static String escapeMysql(String value) {
         int length = value.length();
         if (!isEscapeNeededForString(value, length)) {
-            StringBuilder buf = new StringBuilder(length + 2);
-            buf.append('\'').append(value).append('\'');
-            return buf.toString();
+            return '\'' + value + '\'';
         }
 
         StringBuilder buf = new StringBuilder((int) (length * 1.1D));
@@ -76,9 +80,30 @@ public final class MysqlUtil {
         return buf.toString();
     }
 
-    public static boolean isEscapeNeededForString(String sql, int length) {
-        boolean needsEscape = false;
+    public static String escapePostgresql(String value) {
+        StringBuilder builder = new StringBuilder(8 + value.length());
+        builder.append('\'');
+        try {
+            Utils.escapeLiteral(builder, value, false);
+        } catch (SQLException e) {
+            throw new LoadException("Failed to escape '%s'", e, value);
+        }
+        builder.append('\'');
+        return builder.toString();
+    }
 
+    public static String escapeOracle(String value) {
+        // TODO: check it
+        return escapeMysql(value);
+    }
+
+    public static String escapeSqlserver(String value) {
+        // TODO: check it
+        return escapeMysql(value);
+    }
+
+    private static boolean isEscapeNeededForString(String sql, int length) {
+        boolean needsEscape = false;
         for (int i = 0; i < length; ++i) {
             char c = sql.charAt(i);
             switch (c) {

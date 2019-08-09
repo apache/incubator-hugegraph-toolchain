@@ -4,13 +4,14 @@
       "label": "person",
       "input": {
         "type": "jdbc",
+        "vendor": "mysql",
         "driver": "com.mysql.cj.jdbc.Driver",
         "url": "jdbc:mysql://127.0.0.1:3306",
         "database": "load_test",
         "table": "person",
         "username": "root",
         "password": "",
-        "batch_size": 500
+        "batch_size": 2
       },
       "id": "id",
       "null_values": ["NULL"],

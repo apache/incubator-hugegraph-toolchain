@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -41,49 +40,30 @@ public class RowFetcher {
 
     private static final Logger LOG = Log.logger(RowFetcher.class);
 
-    private final String database;
-    private final String table;
-
+    private final JDBCSource source;
     private final Connection conn;
 
-    private final int batchSize;
     private String[] columns;
-    private Line nextBatchStartRow;
-    private boolean finished;
+    private String[] primaryKeys;
+    private Line nextStartRow;
+    private boolean fullyFetched;
 
     public RowFetcher(JDBCSource source) throws SQLException {
-        this.database = source.database();
-        this.table = source.table();
-        this.batchSize = source.batchSize();
-        this.conn = this.connect(source);
+        this.source = source;
+        this.conn = this.connect();
         this.columns = null;
-        this.finished = false;
+        this.primaryKeys = null;
+        this.nextStartRow = null;
+        this.fullyFetched = false;
     }
 
-    private Connection connect(JDBCSource source) throws SQLException {
-        String url = source.url();
-        String database = source.database();
-        if (url.endsWith("/")) {
-            url = String.format("%s%s", url, database);
-        } else {
-            url = String.format("%s/%s", url, database);
-        }
+    private Connection connect() throws SQLException {
+        String url = this.source.vendor().buildUrl(this.source);
+        LOG.info("Connect to database {}", url);
 
-        int maxTimes = source.reconnectMaxTimes();
-        int interval = source.reconnectInterval();
-
-        URIBuilder uriBuilder = new URIBuilder();
-        uriBuilder.setPath(url)
-                  .setParameter("characterEncoding", "utf-8")
-                  .setParameter("rewriteBatchedStatements", "true")
-                  .setParameter("useServerPrepStmts", "false")
-                  .setParameter("autoReconnect", "true")
-                  .setParameter("maxReconnects", String.valueOf(maxTimes))
-                  .setParameter("initialTimeout", String.valueOf(interval));
-
-        String driverName = source.driver();
-        String username = source.username();
-        String password = source.password();
+        String driverName = this.source.driver();
+        String username = this.source.username();
+        String password = this.source.password();
         try {
             // Register JDBC driver
             Class.forName(driverName);
@@ -94,11 +74,8 @@ public class RowFetcher {
     }
 
     public void readHeader() throws SQLException {
-        String sql = String.format("SELECT COLUMN_NAME " +
-                                   "FROM INFORMATION_SCHEMA.COLUMNS " +
-                                   "WHERE TABLE_NAME = '%s' " +
-                                   "AND TABLE_SCHEMA = '%s';",
-                                   this.table, this.database);
+        String sql = this.source.vendor().buildGetHeaderSql(this.source);
+        LOG.debug("The sql for reading headers is: {}", sql);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(sql)) {
             List<String> columns = new ArrayList<>();
@@ -112,17 +89,36 @@ public class RowFetcher {
         }
         E.checkArgument(this.columns != null && this.columns.length != 0,
                         "The colmuns of the table '%s' shouldn't be empty",
-                        this.table);
+                        this.source.table());
+    }
+
+    public void readPrimaryKey() throws SQLException {
+        String sql = this.source.vendor().buildGetPrimaryKeySql(this.source);
+        LOG.debug("The sql for reading primary keys is: {}", sql);
+        try (Statement stmt = this.conn.createStatement();
+             ResultSet result = stmt.executeQuery(sql)) {
+            List<String> columns = new ArrayList<>();
+            while (result.next()) {
+                columns.add(result.getString("COLUMN_NAME"));
+            }
+            this.primaryKeys = columns.toArray(new String[]{});
+        } catch (SQLException e) {
+            this.close();
+            throw e;
+        }
+        E.checkArgument(this.primaryKeys != null && this.primaryKeys.length != 0,
+                        "The primary keys of the table '%s' shouldn't be empty",
+                        this.source.table());
     }
 
     public List<Line> nextBatch() throws SQLException {
-        if (this.finished) {
+        if (this.fullyFetched) {
             return null;
         }
 
-        String select = this.buildSql();
-
-        List<Line> batch = new ArrayList<>(this.batchSize + 1);
+        String select = this.source.vendor().buildSelectSql(this.source,
+                                                            this.nextStartRow);
+        List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
             while (result.next()) {
@@ -143,30 +139,15 @@ public class RowFetcher {
             throw e;
         }
 
-        if (batch.size() != this.batchSize + 1) {
-            this.finished = true;
+        if (batch.size() != this.source.batchSize() + 1) {
+            this.fullyFetched = true;
         } else {
             // Remove the last one
-            this.nextBatchStartRow = batch.remove(batch.size() - 1);
+            Line lastLine = batch.remove(batch.size() - 1);
+            lastLine.retainAll(this.primaryKeys);
+            this.nextStartRow = lastLine;
         }
         return batch;
-    }
-
-    public String buildSql() {
-        int limit = this.batchSize + 1;
-
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT * FROM ").append(this.table);
-
-        if (this.nextBatchStartRow != null) {
-            WhereBuilder where = new WhereBuilder(true);
-            where.gte(this.nextBatchStartRow.names(),
-                      this.nextBatchStartRow.values());
-            sqlBuilder.append(where.build());
-        }
-        sqlBuilder.append(" LIMIT ").append(limit);
-        sqlBuilder.append(";");
-        return sqlBuilder.toString();
     }
 
     public void close() {
