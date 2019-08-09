@@ -59,7 +59,7 @@ public class RowFetcher {
 
     private Connection connect() throws SQLException {
         String url = this.source.vendor().buildUrl(this.source);
-        LOG.info("The jdbc url is {}", url);
+        LOG.info("Connect to database {}", url);
 
         String driverName = this.source.driver();
         String username = this.source.username();
