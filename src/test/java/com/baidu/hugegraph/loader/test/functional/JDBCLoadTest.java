@@ -168,6 +168,25 @@ public class JDBCLoadTest extends LoadTest {
     }
 
     @Test
+    public void testEmptyTable() {
+        String[] args = new String[]{
+                "-f", configPath("jdbc_customized_schema/struct.json"),
+                "-s", configPath("jdbc_customized_schema/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(0, edges.size());
+    }
+
+    @Test
     public void testValueMappingInJDBCSource() {
         dbUtil.insert("INSERT INTO `person` VALUES " +
                       "(1,'marko',29,'1')," +
