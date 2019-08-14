@@ -98,7 +98,7 @@ public class SubCommands {
                            " 'd' means month (1 - 12)," +
                            " 'e' means day of week (0 - 6) (Sunday=0)," +
                            " \"*\" means all")
-        public String interval = "0,0,*,*,*";
+        public String interval = "\"0 0 * * *\"";
 
         @Parameter(names = {"--backup-num"}, arity = 1,
                    description = "The number of latest backups to keep")
