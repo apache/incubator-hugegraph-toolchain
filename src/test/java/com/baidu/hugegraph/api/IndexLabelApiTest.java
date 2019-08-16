@@ -76,6 +76,23 @@ public class IndexLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateWithIndexType() {
+        IndexLabel indexLabel = schema().indexLabel("personByAge")
+                                        .onV("person")
+                                        .by("age")
+                                        .indexType(IndexType.RANGE)
+                                        .build();
+
+        Assert.assertEquals("personByAge", indexLabel.name());
+        Assert.assertEquals(HugeType.VERTEX_LABEL, indexLabel.baseType());
+        Assert.assertEquals("person", indexLabel.baseValue());
+        Assert.assertEquals(IndexType.RANGE, indexLabel.indexType());
+        List<String> fields = ImmutableList.of("age");
+        Assert.assertTrue(fields.size() == indexLabel.indexFields().size());
+        Assert.assertTrue(fields.containsAll(indexLabel.indexFields()));
+    }
+
+    @Test
     public void testCreateWithInvalidName() {
         Utils.assertResponseError(400, () -> {
             indexLabelAPI.create(fillIndexLabel.apply(""));

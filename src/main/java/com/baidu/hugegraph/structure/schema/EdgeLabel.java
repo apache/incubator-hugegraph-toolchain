@@ -92,6 +92,8 @@ public class EdgeLabel extends SchemaLabel {
 
         Builder targetLabel(String label);
 
+        Builder frequency(Frequency frequency);
+
         Builder singleTime();
 
         Builder multiTimes();
@@ -178,6 +180,13 @@ public class EdgeLabel extends SchemaLabel {
         @Override
         public Builder targetLabel(String label) {
             this.edgeLabel.targetLabel = label;
+            return this;
+        }
+
+        @Override
+        public Builder frequency(Frequency frequency) {
+            this.checkFrequency();
+            this.edgeLabel.frequency = frequency;
             return this;
         }
 

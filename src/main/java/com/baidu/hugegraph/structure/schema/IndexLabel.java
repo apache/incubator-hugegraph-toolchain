@@ -96,6 +96,8 @@ public class IndexLabel extends SchemaElement {
 
         Builder by(String... fields);
 
+        Builder indexType(IndexType indexType);
+
         Builder secondary();
 
         Builder range();
@@ -165,6 +167,12 @@ public class IndexLabel extends SchemaElement {
                             "Invalid index fields %s, which contains some " +
                             "duplicate properties", indexFields);
             this.indexLabel.fields.addAll(indexFields);
+            return this;
+        }
+
+        @Override
+        public Builder indexType(IndexType indexType) {
+            this.indexLabel.indexType = indexType;
             return this;
         }
 

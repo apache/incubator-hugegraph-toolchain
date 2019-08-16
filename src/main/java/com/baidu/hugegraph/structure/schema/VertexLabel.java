@@ -68,6 +68,8 @@ public class VertexLabel extends SchemaLabel {
 
     public interface Builder extends SchemaBuilder<VertexLabel> {
 
+        Builder idStrategy(IdStrategy idStrategy);
+
         Builder useAutomaticId();
 
         Builder usePrimaryKeyId();
@@ -75,6 +77,8 @@ public class VertexLabel extends SchemaLabel {
         Builder useCustomizeStringId();
 
         Builder useCustomizeNumberId();
+
+        Builder useCustomizeUuid();
 
         Builder properties(String... properties);
 
@@ -125,6 +129,13 @@ public class VertexLabel extends SchemaLabel {
         }
 
         @Override
+        public Builder idStrategy(IdStrategy idStrategy) {
+            this.checkIdStrategy();
+            this.vertexLabel.idStrategy = idStrategy;
+            return this;
+        }
+
+        @Override
         public Builder useAutomaticId() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.AUTOMATIC;
@@ -149,6 +160,13 @@ public class VertexLabel extends SchemaLabel {
         public Builder useCustomizeNumberId() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE_NUMBER;
+            return this;
+        }
+
+        @Override
+        public Builder useCustomizeUuid() {
+            this.checkIdStrategy();
+            this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE_UUID;
             return this;
         }
 

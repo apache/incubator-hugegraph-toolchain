@@ -53,6 +53,34 @@ public class PropertyKeyApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateWithDataType() {
+        PropertyKey propertyKey = schema().propertyKey("name")
+                                          .dataType(DataType.LONG)
+                                          .valueSingle()
+                                          .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("name", propertyKey.name());
+        Assert.assertEquals(DataType.LONG, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, propertyKey.cardinality());
+    }
+
+    @Test
+    public void testCreateWithCardinality() {
+        PropertyKey propertyKey = schema().propertyKey("name")
+                                          .asText()
+                                          .cardinality(Cardinality.SET)
+                                          .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("name", propertyKey.name());
+        Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SET, propertyKey.cardinality());
+    }
+
+    @Test
     public void testCreateWithInvalidName() {
         Utils.assertResponseError(400, () -> {
             propertyKeyAPI.create(new PropertyKey(""));

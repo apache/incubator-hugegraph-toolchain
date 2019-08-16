@@ -83,6 +83,35 @@ public class VertexLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateWithUuidStrategy() {
+        VertexLabel vertexLabel = schema().vertexLabel("person")
+                                          .useCustomizeUuid()
+                                          .properties("name", "age", "city")
+                                          .build();
+
+        vertexLabel = vertexLabelAPI.create(vertexLabel);
+
+        Assert.assertEquals("person", vertexLabel.name());
+        Assert.assertEquals(IdStrategy.CUSTOMIZE_UUID, vertexLabel.idStrategy());
+        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Set<String> props = ImmutableSet.of("name", "age", "city");
+        Assert.assertEquals(props, vertexLabel.properties());
+
+        vertexLabel = schema().vertexLabel("person1")
+                              .idStrategy(IdStrategy.CUSTOMIZE_UUID)
+                              .properties("name", "age", "city")
+                              .build();
+
+        vertexLabel = vertexLabelAPI.create(vertexLabel);
+
+        Assert.assertEquals("person1", vertexLabel.name());
+        Assert.assertEquals(IdStrategy.CUSTOMIZE_UUID, vertexLabel.idStrategy());
+        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        props = ImmutableSet.of("name", "age", "city");
+        Assert.assertEquals(props, vertexLabel.properties());
+    }
+
+    @Test
     public void testCreateWithInvalidName() {
         Utils.assertResponseError(400, () -> {
             vertexLabelAPI.create(new VertexLabel(""));

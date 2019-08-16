@@ -65,6 +65,8 @@ public class PropertyKey extends SchemaElement {
 
     public interface Builder extends SchemaBuilder<PropertyKey> {
 
+        Builder dataType(DataType dataType);
+
         Builder asText();
 
         Builder asInt();
@@ -84,6 +86,8 @@ public class PropertyKey extends SchemaElement {
         Builder asFloat();
 
         Builder asLong();
+
+        Builder cardinality(Cardinality cardinality);
 
         Builder valueSingle();
 
@@ -129,6 +133,12 @@ public class PropertyKey extends SchemaElement {
         @Override
         public void remove() {
             this.manager.removePropertyKey(this.propertyKey.name);
+        }
+
+        @Override
+        public Builder dataType(DataType dataType) {
+            this.propertyKey.dataType = dataType;
+            return this;
         }
 
         @Override
@@ -188,6 +198,12 @@ public class PropertyKey extends SchemaElement {
         @Override
         public Builder asLong() {
             this.propertyKey.dataType = DataType.LONG;
+            return this;
+        }
+
+        @Override
+        public Builder cardinality(Cardinality cardinality) {
+            this.propertyKey.cardinality = cardinality;
             return this;
         }
 

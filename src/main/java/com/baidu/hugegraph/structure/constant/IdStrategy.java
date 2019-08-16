@@ -29,7 +29,9 @@ public enum IdStrategy {
 
     CUSTOMIZE_STRING(3, "customize_string"),
 
-    CUSTOMIZE_NUMBER(4, "customize_number");
+    CUSTOMIZE_NUMBER(4, "customize_number"),
+
+    CUSTOMIZE_UUID(5, "customize_uuid");
 
     private byte code = 0;
     private String name = null;
