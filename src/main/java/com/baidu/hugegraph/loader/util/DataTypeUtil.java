@@ -72,6 +72,15 @@ public final class DataTypeUtil {
         }
     }
 
+    public static long parseLong(String rawValue) {
+        String value = rawValue.trim();
+        if (value.startsWith("-")) {
+            return Long.parseLong(value);
+        } else {
+            return Long.parseUnsignedLong(value);
+        }
+    }
+
     private static Object parseSingleValue(Object value, DataType dataType,
                                            InputSource source) {
         if (dataType.isNumber()) {
@@ -163,7 +172,7 @@ public final class DataTypeUtil {
                 case INT:
                     return Integer.valueOf(value.toString());
                 case LONG:
-                    return Long.valueOf(value.toString());
+                    return parseLong(value.toString());
                 case FLOAT:
                     return Float.valueOf(value.toString());
                 case DOUBLE:
