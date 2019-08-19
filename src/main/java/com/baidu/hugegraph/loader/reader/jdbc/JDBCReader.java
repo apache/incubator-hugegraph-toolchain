@@ -74,7 +74,7 @@ public class JDBCReader implements InputReader {
                 throw new LoadException("Error while reading the next row", e);
             }
         }
-        return this.batch != null;
+        return this.batch != null && !this.batch.isEmpty();
     }
 
     @Override

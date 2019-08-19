@@ -944,6 +944,40 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testEmptyFileWithHeader() {
+        ioUtil.write("vertex_person.csv");
+
+        String[] args = new String[]{
+                "-f", configPath("empty_file_with_header/struct.json"),
+                "-s", configPath("empty_file_with_header/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
+    }
+
+    @Test
+    public void testEmptyFileWithoutHeader() {
+        ioUtil.write("vertex_person.csv");
+
+        String[] args = new String[]{
+                "-f", configPath("empty_file_without_header/struct.json"),
+                "-s", configPath("empty_file_without_header/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+    }
+
+    @Test
     public void testDirHasMultiFiles() {
         ioUtil.write("vertex_dir/vertex_person1.csv",
                      "marko,29,Beijing",
