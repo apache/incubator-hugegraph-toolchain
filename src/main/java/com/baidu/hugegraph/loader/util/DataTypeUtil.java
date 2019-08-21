@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.util;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Set;
 import java.util.UUID;
 
 import com.baidu.hugegraph.loader.source.AbstractSource;
@@ -35,8 +36,13 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.baidu.hugegraph.util.ReflectionUtil;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 
 public final class DataTypeUtil {
+
+    private static final Set<String> ACCEPTABLE_BOOLEANS = ImmutableSet.of(
+            Boolean.TRUE.toString(), Boolean.FALSE.toString()
+    );
 
     public static boolean isSimpleValue(Object value) {
         if (value == null) {
@@ -67,6 +73,8 @@ public final class DataTypeUtil {
                                            InputSource source) {
         if (dataType.isNumber()) {
             return valueToNumber(value, dataType);
+        } else if (dataType == DataType.BOOLEAN) {
+            return valueToBoolean(value);
         } else if (dataType.isDate()) {
             E.checkState(source instanceof FileSource,
                          "Only accept FileSource when convert String value " +
@@ -170,6 +178,22 @@ public final class DataTypeUtil {
         }
     }
 
+    private static Boolean valueToBoolean(Object value) {
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            E.checkArgument(ACCEPTABLE_BOOLEANS.contains(value),
+                            "Failed to convert value %s to Boolean, the "+
+                            "acceptable boolean strings are %s",
+                            value, ACCEPTABLE_BOOLEANS);
+            return Boolean.parseBoolean((String) value);
+        }
+        throw new IllegalArgumentException(String.format(
+                  "Failed to convert value %s(%s) to Boolean",
+                  value, value.getClass()));
+    }
+
     private static Date valueToDate(Object value, String df) {
         if (value instanceof Date) {
             return (Date) value;
@@ -190,7 +214,7 @@ public final class DataTypeUtil {
                   value, value.getClass()));
     }
 
-    private static UUID valueToUUID(Object value) {
+    private static UUID valueToUUID(Object value)   {
         if (value instanceof UUID) {
             return (UUID) value;
         } else if (value instanceof String) {

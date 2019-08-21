@@ -643,6 +643,54 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testValidBooleanProperty() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city,isMale",
+                     "marko,29,Beijing,true",
+                     "vadas,27,Hongkong,True",
+                     "cindy,26,Beijing,False",
+                     "mary,31,Shanghai,FALSE");
+
+        String[] args = new String[]{
+                "-f", configPath("value_boolean_property_in_file/struct.json"),
+                "-s", configPath("value_boolean_property_in_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(4, vertices.size());
+    }
+
+    @Test
+    public void testInvalidBooleanProperty() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city,isMale",
+                     "marko,29,Beijing,NotBoolean",
+                     "vadas,27,Hongkong,666");
+
+        String[] args = new String[]{
+                "-f", configPath("value_boolean_property_in_file/struct.json"),
+                "-s", configPath("value_boolean_property_in_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
+    }
+
+    @Test
     public void testCustomizedNumberId() {
         ioUtil.write("vertex_person_number_id.csv",
                      "1,marko,29,Beijing",
