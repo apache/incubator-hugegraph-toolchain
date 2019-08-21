@@ -106,6 +106,8 @@ public class IndexLabel extends SchemaElement {
 
         Builder shard();
 
+        Builder unique();
+
         Builder ifNotExist();
     }
 
@@ -197,6 +199,12 @@ public class IndexLabel extends SchemaElement {
         @Override
         public Builder shard() {
             this.indexLabel.indexType = IndexType.SHARD;
+            return this;
+        }
+
+        @Override
+        public Builder unique() {
+            this.indexLabel.indexType = IndexType.UNIQUE;
             return this;
         }
 

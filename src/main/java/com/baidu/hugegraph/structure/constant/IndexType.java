@@ -31,7 +31,10 @@ public enum IndexType {
     SEARCH(3, "search"),
 
     // For prefix + range query
-    SHARD(4, "shard");
+    SHARD(4, "shard"),
+
+    // For unique properties
+    UNIQUE(5, "unique");
 
     private byte code = 0;
     private String name = null;

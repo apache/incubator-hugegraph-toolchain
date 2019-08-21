@@ -225,6 +225,22 @@ public class IndexLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateUniqueIndex() {
+        IndexLabel indexLabel = schema().indexLabel("personByCity")
+                                        .onV("person")
+                                        .by("city")
+                                        .unique()
+                                        .create();
+        Assert.assertEquals("personByCity", indexLabel.name());
+        Assert.assertEquals(HugeType.VERTEX_LABEL, indexLabel.baseType());
+        Assert.assertEquals("person", indexLabel.baseValue());
+        Assert.assertEquals(IndexType.UNIQUE, indexLabel.indexType());
+        List<String> fields = ImmutableList.of("city");
+        Assert.assertTrue(fields.size() == indexLabel.indexFields().size());
+        Assert.assertTrue(fields.containsAll(indexLabel.indexFields()));
+    }
+
+    @Test
     public void testGet() {
         IndexLabel indexLabel1 = schema().indexLabel("personByAge")
                                          .onV("person")
