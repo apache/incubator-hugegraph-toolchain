@@ -659,9 +659,7 @@ public class FileLoadTest extends LoadTest {
                 "--num-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
+        HugeGraphLoader.main(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(4, vertices.size());

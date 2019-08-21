@@ -183,11 +183,12 @@ public final class DataTypeUtil {
             return (Boolean) value;
         }
         if (value instanceof String) {
-            E.checkArgument(ACCEPTABLE_BOOLEANS.contains(value),
+            String booleanValue = ((String) value).toLowerCase();
+            E.checkArgument(ACCEPTABLE_BOOLEANS.contains(booleanValue),
                             "Failed to convert value %s to Boolean, the "+
                             "acceptable boolean strings are %s",
                             value, ACCEPTABLE_BOOLEANS);
-            return Boolean.parseBoolean((String) value);
+            return Boolean.parseBoolean(booleanValue);
         }
         throw new IllegalArgumentException(String.format(
                   "Failed to convert value %s(%s) to Boolean",
