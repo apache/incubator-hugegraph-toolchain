@@ -260,7 +260,7 @@ public class FileLoadTest extends LoadTest {
                     "香槟金主镜片+深咖啡色副镜片+琥珀>" +
                     "啡前壳+极光银后壳+浅灰电池扣+极光银电池组件+深灰天线";
         Assert.assertTrue(pk.length() < 128);
-        String line = StringUtils.join(pk, "中文", 328);
+        String line = StringUtils.join(new String[]{pk, "中文", "328"}, ",");
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
                      line);
@@ -288,25 +288,6 @@ public class FileLoadTest extends LoadTest {
         String[] args = new String[]{
                 "-f", configPath("too_many_columns/struct.json"),
                 "-s", configPath("too_many_columns/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--num-threads", "2",
-                "--test-mode", "true"
-        };
-        Assert.assertThrows(ParseException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
-    }
-
-    @Test
-    public void testTooFewColumns() {
-        ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29");
-
-        String[] args = new String[]{
-                "-f", configPath("too_few_columns/struct.json"),
-                "-s", configPath("too_few_columns/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -762,15 +743,15 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testIgnoreLastRedundantEmptyColumn() {
-        // Has a redundant seperator at the end of line
+    public void testIgnoreTailRedundantEmptyColumn() {
+        // Has many redundant seperator at the tail of line
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
-                     "marko,29,Beijing,");
+                     "marko,29,Beijing,,,,");
 
         String[] args = new String[]{
-                "-f", configPath("ignore_last_redudant_empty_column/struct.json"),
-                "-s", configPath("ignore_last_redudant_empty_column/schema.groovy"),
+                "-f", configPath("ignore_tail_redudant_empty_column/struct.json"),
+                "-s", configPath("ignore_tail_redudant_empty_column/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -778,10 +759,30 @@ public class FileLoadTest extends LoadTest {
         HugeGraphLoader.main(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
-
         Assert.assertEquals(1, vertices.size());
         Vertex vertex = vertices.get(0);
         Assert.assertEquals(3, vertex.properties().size());
+    }
+
+    @Test
+    public void testFillMissingColumnWithEmpty() {
+        ioUtil.write("vertex_person.text",
+                     "name|age|city",
+                     "marko|29|",
+                     "vadas|",
+                     "josh");
+
+        String[] args = new String[]{
+                "-f", configPath("fill_missing_column_with_empty/struct.json"),
+                "-s", configPath("fill_missing_column_with_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(3, vertices.size());
     }
 
     @Test

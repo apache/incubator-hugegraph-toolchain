@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.constant.Unique;
 import com.baidu.hugegraph.loader.source.InputSource;
@@ -32,6 +33,7 @@ import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.HashUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableSet;
 
 public abstract class ElementStruct implements Unique<String>, Checkable {
 
@@ -57,7 +59,7 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         this.mappingValues = new HashMap<>();
         this.selectedFields = new HashSet<>();
         this.ignoredFields = new HashSet<>();
-        this.nullValues = new HashSet<>();
+        this.nullValues = ImmutableSet.of(Constants.EMPTY);
         this.uniqueKey = null;
     }
 

@@ -60,17 +60,25 @@ public class TextLineParser implements LineParser {
     @Override
     public Line parse(String line) {
         String[] columns = this.split(line);
-        // Ignore extra separator at the end of line
-        if (columns.length != this.header.length) {
-            if (!this.lastColumnIsEmpty(columns)) {
+        if (columns.length > this.header.length) {
+            // Ignore extra empty string at the tail of line
+            int extra = columns.length - this.header.length;
+            if (!this.tailColumnEmpty(columns, extra)) {
                 throw new ParseException(line,
                           "The column length '%s' doesn't match with " +
                           "header length '%s' on: %s",
                           columns.length, this.header.length, line);
             }
-            String[] subColumns = new String[columns.length - 1];
-            System.arraycopy(columns, 0, subColumns, 0, columns.length - 1);
+            String[] subColumns = new String[this.header.length];
+            System.arraycopy(columns, 0, subColumns, 0, this.header.length);
             return new Line(line, this.header, subColumns);
+        } else if (columns.length < this.header.length) {
+            // Fill with an empty string
+            String[] supColumns = new String[this.header.length];
+            System.arraycopy(columns, 0, supColumns, 0, columns.length);
+            Arrays.fill(supColumns, columns.length, supColumns.length,
+                        Constants.EMPTY);
+            return new Line(line, this.header, supColumns);
         }
         return new Line(line, this.header, columns);
     }
@@ -112,9 +120,13 @@ public class TextLineParser implements LineParser {
         return StringUtil.split(line, this.delimiter);
     }
 
-    private boolean lastColumnIsEmpty(String[] columns) {
-        int last = columns.length - 1;
-        return columns.length - 1 == this.header.length &&
-               columns[last].equals(Constants.EMPTY);
+    private boolean tailColumnEmpty(String[] columns, int count) {
+        for (int i = 0; i < count; i++) {
+            int tailIdx = columns.length - 1 - i;
+            if (!columns[tailIdx].equals(Constants.EMPTY)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
