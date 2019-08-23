@@ -40,8 +40,11 @@ import com.google.common.collect.ImmutableSet;
 
 public final class DataTypeUtil {
 
-    private static final Set<String> ACCEPTABLE_BOOLEANS = ImmutableSet.of(
-            Boolean.TRUE.toString(), Boolean.FALSE.toString()
+    private static final Set<String> ACCEPTABLE_TRUE = ImmutableSet.of(
+            "true", "1", "yes", "y"
+    );
+    private static final Set<String> ACCEPTABLE_FALSE = ImmutableSet.of(
+            "false", "0", "no", "n"
     );
 
     public static boolean isSimpleValue(Object value) {
@@ -183,12 +186,17 @@ public final class DataTypeUtil {
             return (Boolean) value;
         }
         if (value instanceof String) {
-            String booleanValue = ((String) value).toLowerCase();
-            E.checkArgument(ACCEPTABLE_BOOLEANS.contains(booleanValue),
-                            "Failed to convert value %s to Boolean, the "+
-                            "acceptable boolean strings are %s",
-                            value, ACCEPTABLE_BOOLEANS);
-            return Boolean.parseBoolean(booleanValue);
+            String bValue = ((String) value).toLowerCase();
+            if (ACCEPTABLE_TRUE.contains(bValue)) {
+                return true;
+            } else if (ACCEPTABLE_FALSE.contains(bValue)) {
+                return false;
+            } else {
+                throw new IllegalArgumentException(String.format(
+                          "Failed to convert value %s to Boolean, "+
+                          "the acceptable boolean strings are %s or %s",
+                          value, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
+            }
         }
         throw new IllegalArgumentException(String.format(
                   "Failed to convert value %s(%s) to Boolean",
