@@ -646,10 +646,15 @@ public class FileLoadTest extends LoadTest {
     public void testValidBooleanProperty() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city,isMale",
-                     "marko,29,Beijing,true",
-                     "vadas,27,Hongkong,True",
-                     "cindy,26,Beijing,False",
-                     "mary,31,Shanghai,FALSE");
+                     // trim space
+                     "marko,29,Beijing, true",
+                     "vadas,27,Hongkong,True ",
+                     "jack,25,Beijing,1",
+                     "tom,30,Beijing,yes",
+                     "cindy,26,Beijing, False ",
+                     "mary,31,Shanghai,FALSE  ",
+                     "lucy,22,Beijing,0",
+                     "lindy,23,Beijing,no");
 
         String[] args = new String[]{
                 "-f", configPath("value_boolean_property_in_file/struct.json"),
@@ -662,7 +667,7 @@ public class FileLoadTest extends LoadTest {
         HugeGraphLoader.main(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(4, vertices.size());
+        Assert.assertEquals(8, vertices.size());
     }
 
     @Test
@@ -670,7 +675,8 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_person.csv",
                      "name,age,city,isMale",
                      "marko,29,Beijing,NotBoolean",
-                     "vadas,27,Hongkong,666");
+                     "vadas,27,Hongkong,666",
+                     "tom,30,Beijing,T R U E");
 
         String[] args = new String[]{
                 "-f", configPath("value_boolean_property_in_file/struct.json"),

@@ -186,7 +186,7 @@ public final class DataTypeUtil {
             return (Boolean) value;
         }
         if (value instanceof String) {
-            String bValue = ((String) value).toLowerCase();
+            String bValue = ((String) value).toLowerCase().trim();
             if (ACCEPTABLE_TRUE.contains(bValue)) {
                 return true;
             } else if (ACCEPTABLE_FALSE.contains(bValue)) {
