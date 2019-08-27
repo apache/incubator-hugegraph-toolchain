@@ -223,7 +223,7 @@ public final class DataTypeUtil {
                   value, value.getClass()));
     }
 
-    private static UUID valueToUUID(Object value)   {
+    private static UUID valueToUUID(Object value) {
         if (value instanceof UUID) {
             return (UUID) value;
         } else if (value instanceof String) {
