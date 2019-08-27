@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.util;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Set;
 import java.util.UUID;
 
 import com.baidu.hugegraph.loader.source.AbstractSource;
@@ -35,8 +36,16 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.baidu.hugegraph.util.ReflectionUtil;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 
 public final class DataTypeUtil {
+
+    private static final Set<String> ACCEPTABLE_TRUE = ImmutableSet.of(
+            "true", "1", "yes", "y"
+    );
+    private static final Set<String> ACCEPTABLE_FALSE = ImmutableSet.of(
+            "false", "0", "no", "n"
+    );
 
     public static boolean isSimpleValue(Object value) {
         if (value == null) {
@@ -67,6 +76,8 @@ public final class DataTypeUtil {
                                            InputSource source) {
         if (dataType.isNumber()) {
             return valueToNumber(value, dataType);
+        } else if (dataType == DataType.BOOLEAN) {
+            return valueToBoolean(value);
         } else if (dataType.isDate()) {
             E.checkState(source instanceof FileSource,
                          "Only accept FileSource when convert String value " +
@@ -168,6 +179,28 @@ public final class DataTypeUtil {
                       "Failed to convert value %s(%s) to Number",
                       value, value.getClass()), e);
         }
+    }
+
+    private static Boolean valueToBoolean(Object value) {
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            String bValue = ((String) value).toLowerCase().trim();
+            if (ACCEPTABLE_TRUE.contains(bValue)) {
+                return true;
+            } else if (ACCEPTABLE_FALSE.contains(bValue)) {
+                return false;
+            } else {
+                throw new IllegalArgumentException(String.format(
+                          "Failed to convert value %s to Boolean, "+
+                          "the acceptable boolean strings are %s or %s",
+                          value, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
+            }
+        }
+        throw new IllegalArgumentException(String.format(
+                  "Failed to convert value %s(%s) to Boolean",
+                  value, value.getClass()));
     }
 
     private static Date valueToDate(Object value, String df) {
