@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader.source.jdbc;
 
 import org.apache.http.client.utils.URIBuilder;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCUtil;
 import com.baidu.hugegraph.util.E;
@@ -148,7 +149,6 @@ public enum JDBCVendor {
         }
 
         /**
-         * TODO: Not related to schema?
          * NOTE: don't add an semicolon(;) at the end of oracle sql
          */
         @Override
@@ -294,6 +294,7 @@ public enum JDBCVendor {
         URIBuilder uriBuilder = new URIBuilder();
         uriBuilder.setPath(url)
                   .setParameter("useSSL", "false")
+                  .setParameter("characterEncoding", Constants.CHARSET.name())
                   .setParameter("rewriteBatchedStatements", "true")
                   .setParameter("useServerPrepStmts", "false")
                   .setParameter("autoReconnect", "true");

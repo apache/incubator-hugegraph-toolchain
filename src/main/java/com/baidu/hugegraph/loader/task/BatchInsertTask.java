@@ -32,7 +32,7 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
-import com.baidu.hugegraph.loader.util.HugeClientWrapper;
+import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -59,8 +59,10 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                 this.addBatch(type, this.batch(), options.checkVertex);
                 break;
             } catch (ClientException e) {
+                LOG.debug("client exception: {}", e.getMessage());
                 retryCount = this.waitThenRetry(retryCount, e);
             } catch (ServerException e) {
+                LOG.debug("server exception: {}", e.getMessage());
                 if (UNACCEPTABLE_EXCEPTIONS.contains(e.exception())) {
                     throw e;
                 }
@@ -77,7 +79,7 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
     @SuppressWarnings("unchecked")
     private void addBatch(ElemType type, List<GE> elements, boolean check) {
-        HugeClient client = HugeClientWrapper.get(this.context().options());
+        HugeClient client = HugeClientHolder.get(this.context().options());
         if (type.isVertex()) {
             client.graph().addVertices((List<Vertex>) elements);
         } else {

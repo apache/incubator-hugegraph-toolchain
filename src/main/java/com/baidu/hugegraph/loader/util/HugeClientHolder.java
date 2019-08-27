@@ -22,13 +22,13 @@ package com.baidu.hugegraph.loader.util;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 
-public final class HugeClientWrapper {
+public final class HugeClientHolder {
 
     private static volatile HugeClient instance;
 
     public static HugeClient get(LoadOptions options) {
         if (instance == null) {
-            synchronized(HugeClientWrapper.class) {
+            synchronized(HugeClientHolder.class) {
                 if (instance == null) {
                     instance = newHugeClient(options);
                 }
@@ -37,7 +37,7 @@ public final class HugeClientWrapper {
         return instance;
     }
 
-    private HugeClientWrapper() {}
+    private HugeClientHolder() {}
 
     private static HugeClient newHugeClient(LoadOptions options) {
         String address = options.host + ":" + options.port;
@@ -55,7 +55,7 @@ public final class HugeClientWrapper {
     }
 
     public static void close() {
-        synchronized(HugeClientWrapper.class) {
+        synchronized(HugeClientHolder.class) {
             if (instance != null) {
                 instance.close();
                 instance = null;

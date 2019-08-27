@@ -46,7 +46,7 @@ import com.baidu.hugegraph.loader.struct.GraphStruct;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.task.TaskManager;
-import com.baidu.hugegraph.loader.util.HugeClientWrapper;
+import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -111,7 +111,7 @@ public final class HugeGraphLoader {
             return;
         }
         File schemaFile = FileUtils.getFile(options.schema);
-        HugeClient client = HugeClientWrapper.get(options);
+        HugeClient client = HugeClientHolder.get(options);
         GroovyExecutor groovyExecutor = new GroovyExecutor();
         groovyExecutor.bind("schema", client.schema());
         String script;
@@ -232,7 +232,7 @@ public final class HugeGraphLoader {
         LOG.info("Stop loading");
         // Shutdown task manager
         this.taskManager.shutdown();
-        HugeClientWrapper.close();
+        HugeClientHolder.close();
         // Exit JVM if the code is not EXIT_CODE_NORM
         if (Constants.EXIT_CODE_NORM != code) {
             LoadUtil.exit(code);

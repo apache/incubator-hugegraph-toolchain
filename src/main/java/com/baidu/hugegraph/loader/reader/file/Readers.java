@@ -122,7 +122,7 @@ public class Readers {
         } catch (IOException e) {
             throw new LoadException("Failed to skip the first %s lines " +
                                     "of file %s, please ensure the file " +
-                                    "must have at least %s lines", offset,
+                                    "must have at least %s lines", e, offset,
                                     this.readables.get(this.index), offset);
         }
         this.newProgress.addLoadingOffset(offset);
@@ -180,7 +180,7 @@ public class Readers {
                 }
             }
             throw new LoadException("Failed to create reader for '%s'",
-                                    readable);
+                                    e, readable);
         }
     }
 

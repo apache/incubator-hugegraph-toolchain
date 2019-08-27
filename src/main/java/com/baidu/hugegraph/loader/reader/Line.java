@@ -92,6 +92,6 @@ public final class Line {
 
     @Override
     public String toString() {
-        return this.rawLine();
+        return this.rawLine;
     }
 }

@@ -258,13 +258,11 @@ public final class DataTypeUtil {
      */
     private static boolean checkCollectionDataType(Collection<?> values,
                                                    DataType dataType) {
-        boolean valid = true;
         for (Object value : values) {
             if (!checkDataType(value, dataType)) {
-                valid = false;
-                break;
+                return false;
             }
         }
-        return valid;
+        return true;
     }
 }

@@ -43,7 +43,7 @@ public class SkippedLine {
 
     private Matcher matcher() {
         if (this.matcher == null) {
-            this.matcher = Pattern.compile(this.regex).matcher(Constants.EMPTY);
+            this.matcher = Pattern.compile(this.regex).matcher(Constants.EMPTY_STR);
         }
         return this.matcher;
     }

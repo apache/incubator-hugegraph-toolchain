@@ -67,9 +67,9 @@ public class FileSource extends AbstractSource {
     public void check() throws IllegalArgumentException {
         if (this.format == FileFormat.CSV) {
             E.checkArgument(this.delimiter == null ||
-                            this.delimiter.equals(Constants.CSV_DELIMITER),
+                            this.delimiter.equals(Constants.COMMA_STR),
                             "The delimiter must be '%s' when file format " +
-                            "is %s, but got '%s'", Constants.CSV_DELIMITER,
+                            "is %s, but got '%s'", Constants.COMMA_STR,
                             this.format, this.delimiter);
         }
         String elemDelimiter = this.listFormat().elemDelimiter();

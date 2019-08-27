@@ -69,7 +69,7 @@ public abstract class FileReader implements InputReader {
             this.readers = this.openReaders();
         } catch (IOException e) {
             throw new LoadException("Failed to open readers for struct '%s'",
-                                    struct);
+                                    e, struct);
         }
         this.progress(context, struct);
 

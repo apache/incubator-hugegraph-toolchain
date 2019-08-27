@@ -34,7 +34,7 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.summary.LoadMetrics;
-import com.baidu.hugegraph.loader.util.HugeClientWrapper;
+import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -60,7 +60,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
         LoadMetrics metrics = this.context().summary().metrics(this.struct());
         for (GE element : this.batch()) {
             try {
-                addSingle(type, element);
+                this.addSingle(type, element);
                 metrics.increaseLoadSuccess();
             } catch (Exception e) {
                 metrics.increaseLoadFailure();
@@ -82,7 +82,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
     }
 
     private void addSingle(ElemType type, GE element) {
-        HugeClient client = HugeClientWrapper.get(this.context().options());
+        HugeClient client = HugeClientHolder.get(this.context().options());
         if (type.isVertex()) {
             client.graph().addVertex((Vertex) element);
         } else {

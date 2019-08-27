@@ -134,7 +134,7 @@ public class HDFSFileReader extends FileReader {
             }
         } catch (IOException e) {
             throw new LoadException("An exception occurred while checking " +
-                                    "HDFS path: '%s'", path);
+                                    "HDFS path: '%s'", e, path);
         }
     }
 
