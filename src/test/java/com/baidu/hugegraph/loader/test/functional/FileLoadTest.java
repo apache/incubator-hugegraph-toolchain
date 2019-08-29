@@ -743,6 +743,52 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testCustomizedLongId() {
+        ioUtil.write("vertex_person_number_id.csv",
+                     // trim space
+                     " 11620311015184296736,marko,29,Beijing",
+                     "11620311015184296737 ,vadas,27,Hongkong",
+                     "-1, josh,30,Wuhan",
+                     // unsigned long max value, will be parsed to -1
+                     "18446744073709551615,lop,31,HongKong");
+
+        String[] args = new String[]{
+                "-f", configPath("customized_long_id/struct.json"),
+                "-s", configPath("customized_long_id/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(3, vertices.size());
+    }
+
+    @Test
+    public void testLongProperty() {
+        ioUtil.write("vertex_long_property.csv",
+                     // trim space
+                     "marko,29,Beijing, 11620311015184296736",
+                     "vadas,27,Hongkong,11620311015184296737 ",
+                     "josh,30,Wuhan,-1",
+                     // unsigned long max value, will be parsed to -1
+                     "lop,31,HongKong,18446744073709551615");
+
+        String[] args = new String[]{
+                "-f", configPath("long_property/struct.json"),
+                "-s", configPath("long_property/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(4, vertices.size());
+    }
+
+    @Test
     public void testVertexJointPrimaryKeys() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",

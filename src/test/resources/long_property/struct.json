@@ -1,0 +1,14 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_long_property.csv",
+        "format": "CSV",
+        "header": ["name", "age", "city", "weight"],
+        "charset": "UTF-8"
+      }
+    }
+  ]
+}

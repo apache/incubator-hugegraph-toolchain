@@ -250,7 +250,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
         if (idValue instanceof Number) {
             return ((Number) idValue).longValue();
         } else if (idValue instanceof String) {
-            return Long.parseLong((String) idValue);
+            return DataTypeUtil.parseLong((String) idValue);
         }
         throw new IllegalArgumentException(String.format(
                   "The id value must can be casted to Long, but got %s(%s)",
