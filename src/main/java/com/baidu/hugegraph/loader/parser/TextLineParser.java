@@ -38,7 +38,7 @@ public class TextLineParser implements LineParser {
     public TextLineParser(FileSource source) {
         this(source, source.delimiter() != null ?
                      source.delimiter() :
-                     Constants.TABLE_STR);
+                     Constants.TAB_STR);
     }
 
     public TextLineParser(FileSource source, String delimiter) {

@@ -34,7 +34,7 @@ public final class Constants {
     public static final String DOT_STR = ".";
     public static final String MINUS_STR = "-";
     public static final String COMMA_STR = ",";
-    public static final String TABLE_STR = "\t";
+    public static final String TAB_STR = "\t";
     public static final String NULL_STR = "NULL";
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String SKIPPED_LINE_REGEX = "";
