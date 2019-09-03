@@ -27,9 +27,11 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
@@ -87,7 +89,7 @@ public class RowFetcher {
             this.close();
             throw e;
         }
-        E.checkArgument(this.columns != null && this.columns.length != 0,
+        E.checkArgument(ArrayUtils.isNotEmpty(this.columns),
                         "The colmuns of the table '%s' shouldn't be empty",
                         this.source.table());
     }
@@ -106,7 +108,7 @@ public class RowFetcher {
             this.close();
             throw e;
         }
-        E.checkArgument(this.primaryKeys != null && this.primaryKeys.length != 0,
+        E.checkArgument(ArrayUtils.isNotEmpty(this.primaryKeys),
                         "The primary keys of the table '%s' shouldn't be empty",
                         this.source.table());
     }
@@ -126,11 +128,11 @@ public class RowFetcher {
                 for (int i = 1, n = this.columns.length; i <= n; i++) {
                     Object value = result.getObject(i);
                     if (value == null) {
-                        value = "NULL";
+                        value = Constants.NULL_STR;
                     }
                     values[i - 1] = value;
                 }
-                String rawLine = StringUtils.join(values, ",");
+                String rawLine = StringUtils.join(values, Constants.COMMA_STR);
                 Line line = new Line(rawLine, this.columns, values);
                 batch.add(line);
             }

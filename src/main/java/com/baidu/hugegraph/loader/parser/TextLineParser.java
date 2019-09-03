@@ -38,7 +38,7 @@ public class TextLineParser implements LineParser {
     public TextLineParser(FileSource source) {
         this(source, source.delimiter() != null ?
                      source.delimiter() :
-                     Constants.TEXT_DELIMITER);
+                     Constants.TAB_STR);
     }
 
     public TextLineParser(FileSource source, String delimiter) {
@@ -77,7 +77,7 @@ public class TextLineParser implements LineParser {
             String[] supColumns = new String[this.header.length];
             System.arraycopy(columns, 0, supColumns, 0, columns.length);
             Arrays.fill(supColumns, columns.length, supColumns.length,
-                        Constants.EMPTY);
+                        Constants.EMPTY_STR);
             return new Line(line, this.header, supColumns);
         }
         return new Line(line, this.header, columns);
@@ -123,7 +123,7 @@ public class TextLineParser implements LineParser {
     private boolean tailColumnEmpty(String[] columns, int count) {
         for (int i = 0; i < count; i++) {
             int tailIdx = columns.length - 1 - i;
-            if (!columns[tailIdx].equals(Constants.EMPTY)) {
+            if (!columns[tailIdx].equals(Constants.EMPTY_STR)) {
                 return false;
             }
         }

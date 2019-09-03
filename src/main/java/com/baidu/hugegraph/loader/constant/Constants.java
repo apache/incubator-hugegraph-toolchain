@@ -30,16 +30,19 @@ public final class Constants {
 
     public static final Charset CHARSET = Charsets.UTF_8;
 
-    public static final String EMPTY = "";
-    public static final String CSV_DELIMITER = ",";
-    public static final String TEXT_DELIMITER = "\t";
+    public static final String EMPTY_STR = "";
+    public static final String DOT_STR = ".";
+    public static final String MINUS_STR = "-";
+    public static final String COMMA_STR = ",";
+    public static final String TAB_STR = "\t";
+    public static final String NULL_STR = "NULL";
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String SKIPPED_LINE_REGEX = "";
 
-    public static final long BATCH_PRINT_FREQ = 10_000_000L;
-    public static final long SINGLE_PRINT_FREQ = 10_000L;
     public static final String BATCH_WORKER = "batch-worker-%d";
     public static final String SINGLE_WORKER = "single-worker-%d";
+    public static final long BATCH_PRINT_FREQ = 10_000_000L;
+    public static final long SINGLE_PRINT_FREQ = 10_000L;
 
     public static final int VERTEX_ID_LIMIT = 128;
     public static final String[] SEARCH_LIST = new String[]{":", "!"};

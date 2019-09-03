@@ -99,8 +99,8 @@ public final class LoadProgress {
     }
 
     private static String getProgressFileName(String structFileName) {
-        int lastDotIdx = structFileName.lastIndexOf(".");
+        int lastDotIdx = structFileName.lastIndexOf(Constants.DOT_STR);
         String prefix = structFileName.substring(0, lastDotIdx);
-        return prefix + "-" + SERIALIZE_FILE;
+        return prefix + Constants.MINUS_STR + SERIALIZE_FILE;
     }
 }
