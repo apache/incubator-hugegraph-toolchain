@@ -1,5 +1,9 @@
 # hugegraph-hubble
 
+[![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![Build Status](https://travis-ci.org/hugegraph/hugegraph-hubble.svg?branch=master)](https://travis-ci.org/hugegraph/hugegraph-hubble)
+[![codecov](https://codecov.io/gh/hugegraph/hugegraph-hubble/branch/master/graph/badge.svg)](https://codecov.io/gh/hugegraph/hugegraph-hubble)
+
 hugegraph-hubble is a graph management and analysis platform that provides features: graph data load, schema management, graph relationship analysis and graphical display.
 
 ## Features

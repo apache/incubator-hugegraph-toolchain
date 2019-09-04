@@ -1,0 +1,11 @@
+#!/bin/bash
+
+export LANG=zh_CN.UTF-8
+
+java_env_check() {
+    which java >/dev/null 2>&1
+    if [[ $? -ne 0 ]]; then
+        echo "cannot find java in environment."
+        exit 1
+    fi
+}

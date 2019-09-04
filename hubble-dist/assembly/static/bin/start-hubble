@@ -1,0 +1,60 @@
+#!/bin/bash
+
+export LANG=zh_CN.UTF-8
+set -e
+
+HOME_PATH=`dirname $0`
+HOME_PATH=`cd ${HOME_PATH}/.. && pwd`
+BIN_PATH=${HOME_PATH}/bin
+CONF_PATH=${HOME_PATH}/conf
+LIB_PATH=${HOME_PATH}/lib
+LOG_PATH=${HOME_PATH}/logs
+PID_FILE=${BIN_PATH}/pid
+
+. ${BIN_PATH}/common_functions
+
+print_usage() {
+    echo "  usage: start-hugegraph-hubble [options]"
+    echo "  options: "
+    echo "  -d,--debug      Start program in debug mode"
+    echo "  -h,--help       Display help information"
+}
+
+java_env_check
+
+class_path="."
+for jar in `ls ${LIB_PATH}/*.jar`; do
+    class_path=${class_path}:${jar}
+done
+
+java_opts="-Xms512m"
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --help|-help|-h)
+        print_usage
+        exit
+        ;;
+        --debug|-d)
+        java_opts="$java_opts -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y"
+        ;;
+    esac
+    shift
+done
+
+if [[ -f ${PID_FILE} ]] ; then
+    pid=`cat ${PID_FILE}`
+    if kill -0 ${pid} > /dev/null 2>&1; then
+        echo "HugeGraphHubble is running as process ${pid}, please stop it first!"
+        exit
+    else
+        rm ${PID_FILE}
+    fi
+fi
+
+main_class="com.baidu.hugegraph.HugeGraphHubble"
+args=${CONF_PATH}/hugegraph-hubble.properties
+log=${LOG_PATH}/hugegraph-hubble.log
+echo "starting HugeGraphHubble, logging to ${log}"
+
+nohup nice -n 0 java -server ${java_opts} -cp ${class_path} ${main_class} ${args} > ${log} 2>&1 < /dev/null &
+echo $! > ${PID_FILE}

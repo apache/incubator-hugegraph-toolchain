@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baidu.hugegraph.mapper.GraphConnectionMapper">
+
+    <select id="selectByContentInPage"
+            resultType="com.baidu.hugegraph.entity.GraphConnection">
+        SELECT *
+        FROM `graph_connection`
+        WHERE `name` LIKE '%${content}%' OR `graph` LIKE '%${content}%'
+        ORDER BY
+            CASE
+                WHEN `name` LIKE '%${content}%' AND
+                     `graph` LIKE '%${content}%' THEN 0
+                WHEN `name` LIKE '%${content}%' THEN 1
+                WHEN `graph` LIKE '%${content}%' THEN 2
+            END ASC,
+            `create_time` DESC
+    </select>
+
+</mapper>
