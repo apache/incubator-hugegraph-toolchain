@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.api.graph.structure.UpdateStrategy;
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
@@ -51,6 +52,8 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     private Set<String> ignoredFields;
     @JsonProperty("null_values")
     private Set<Object> nullValues;
+    @JsonProperty("update_strategies")
+    private Map<String, UpdateStrategy> updateStrategies;
 
     private transient String uniqueKey;
 
@@ -61,6 +64,7 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
         this.uniqueKey = null;
+        this.updateStrategies = new HashMap<>();
     }
 
     public abstract ElemType type();
@@ -139,5 +143,9 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
 
     public Set<Object> nullValues() {
         return this.nullValues;
+    }
+
+    public Map<String, UpdateStrategy> updateStrategies() {
+        return this.updateStrategies;
     }
 }

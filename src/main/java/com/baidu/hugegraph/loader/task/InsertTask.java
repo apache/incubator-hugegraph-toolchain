@@ -22,9 +22,16 @@ package com.baidu.hugegraph.loader.task;
 import java.util.List;
 import java.util.Set;
 
+import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
+import com.baidu.hugegraph.api.graph.structure.BatchVertexRequest;
+import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableSet;
 
@@ -57,5 +64,28 @@ public abstract class InsertTask<GE extends GraphElement> implements Runnable {
 
     public List<GE> batch() {
         return this.batch;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void updateBatch(ElemType type, List<GE> elements, boolean check) {
+        HugeClient client = HugeClientHolder.get(this.context().options());
+        // CreateIfNotExist dose not support false now
+        if (type.isVertex()) {
+            BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
+            req.vertices((List<Vertex>) elements)
+               .updatingStrategies(this.struct().updateStrategies())
+               .createIfNotExist(true);
+
+            client.graph().updateVertices(req.build());
+        } else {
+            assert type.isEdge();
+            BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
+            req.edges((List<Edge>) elements)
+               .updatingStrategies(this.struct().updateStrategies())
+               .checkVertex(check)
+               .createIfNotExist(true);
+
+            client.graph().updateEdges(req.build());
+        }
     }
 }

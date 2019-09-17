@@ -1563,4 +1563,36 @@ public class FileLoadTest extends LoadTest {
         };
         HugeGraphLoader.main(args);
     }
+
+    @Test
+    public void testBatchUpdateElement() {
+        ioUtil.write("vertex_person.txt",
+                     "tom\t18\t[str1,str2]",
+                     "tom\t25\t[str1,str3]");
+        ioUtil.write("edge_likes.txt",
+                     "tom\ttom\t1\t[3,4]",
+                     "tom\ttom\t2\t[1,2,3]");
+
+        String[] args = new String[]{
+                "-f", configPath("update_by_strategy/struct.json"),
+                "-s", configPath("update_by_strategy/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(vertices.size(), 1);
+        Assert.assertEquals(vertices.get(0).property("age"), 18);
+        Assert.assertEquals(((List) vertices.get(0).property("set")).size(), 3);
+
+        Assert.assertEquals(edges.size(), 1);
+        Assert.assertEquals(edges.get(0).property("age"), 3);
+        Assert.assertEquals(edges.get(0).property("list"),
+                            ImmutableList.of(3, 4, 1, 2, 3));
+    }
 }
