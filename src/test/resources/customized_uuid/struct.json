@@ -1,0 +1,15 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person_uuid.csv",
+        "format": "CSV",
+        "header": ["id", "name", "age", "city"],
+        "charset": "UTF-8"
+      },
+      "id": "id"
+    }
+  ]
+}

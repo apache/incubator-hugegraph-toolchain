@@ -21,9 +21,11 @@ package com.baidu.hugegraph.loader.builder;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.struct.VertexStruct;
+import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
@@ -82,9 +84,12 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                 String id = (String) idValue;
                 checkVertexIdLength(id);
                 vertex.id(id);
+            } else if (idStrategy.isCustomizeNumber()) {
+                Long id = DataTypeUtil.parseNumber(idValue);
+                vertex.id(id);
             } else {
-                assert idStrategy.isCustomizeNumber();
-                Long id = parseNumberId(idValue);
+                assert idStrategy.isCustomizeUUID();
+                UUID id = DataTypeUtil.parseUUID(idValue);
                 vertex.id(id);
             }
         } else {

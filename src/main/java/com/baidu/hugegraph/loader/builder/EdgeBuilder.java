@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.struct.EdgeStruct;
+import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -112,7 +113,9 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                 checkVertexIdLength(id);
                 return id;
             } else if (idStrategy.isCustomizeNumber()) {
-                return parseNumberId(mappedValue);
+                return DataTypeUtil.parseNumber(mappedValue);
+            } else if (idStrategy.isCustomizeUUID()) {
+                return DataTypeUtil.parseUUID(mappedValue);
             } else {
                 // The id strategy of source/target label must be PRIMARY_KEY
                 String key = this.struct.mappingField(fieldName);
