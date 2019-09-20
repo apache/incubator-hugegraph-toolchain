@@ -65,8 +65,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                     this.addSingle(type, element);
                 } else {
                     // TODO: Adapt single update later
-                    this.updateBatch(type, ImmutableList.of(element),
-                                     options.checkVertex);
+                    this.updateSingle(type, options, element);
                 }
                 metrics.increaseLoadSuccess();
             } catch (Exception e) {
@@ -86,6 +85,10 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
         }
         Printer.printProgress(type, metrics.loadSuccess(),
                               SINGLE_PRINT_FREQ, this.batch().size());
+    }
+
+    private void updateSingle(ElemType type, LoadOptions options, GE element) {
+        this.updateBatch(type, ImmutableList.of(element), options.checkVertex);
     }
 
     private void addSingle(ElemType type, GE element) {
