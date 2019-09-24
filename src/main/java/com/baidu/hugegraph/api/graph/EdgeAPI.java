@@ -69,6 +69,7 @@ public class EdgeAPI extends GraphAPI {
     }
 
     public List<Edge> update(BatchEdgeRequest request) {
+        this.client.checkApiVersion("0.41", "batch property update");
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.putSingle("Content-Encoding", BATCH_ENCODING);
         RestResult result = this.client.put(this.batchPath(), null,

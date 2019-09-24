@@ -54,16 +54,8 @@ public class RingsAPI extends TraversersAPI {
         checkLimit(limit);
 
         if (sourceInRing) {
-            Version apiVersion = this.client.apiVersion();
-            if (apiVersion != null &&
-                !VersionUtil.gte(apiVersion.get(), "0.40")) {
-                throw new ClientException("HugeGraphServer API version must " +
-                                          "be >= 0.40 to support " +
-                                          "source_in_ring arg of ring API, " +
-                                          "but current HugeGraphServer " +
-                                          "API version is: %s",
-                                          apiVersion.get());
-            }
+            this.client.checkApiVersion("0.40",
+                                        "source_in_ring arg of ring API");
         }
 
         Map<String, Object> params = new LinkedHashMap<>();

@@ -26,6 +26,7 @@ import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.structure.constant.IndexType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 
 public class IndexLabelAPI extends SchemaAPI {
@@ -40,6 +41,11 @@ public class IndexLabelAPI extends SchemaAPI {
     }
 
     public IndexLabel.CreatedIndexLabel create(IndexLabel indexLabel) {
+        if (indexLabel.indexType() == IndexType.SHARD) {
+            this.client.checkApiVersion("0.43", "shard index");
+        } else if (indexLabel.indexType() == IndexType.UNIQUE) {
+            this.client.checkApiVersion("0.44", "unique index");
+        }
         RestResult result = this.client.post(this.path(), indexLabel);
         return result.readObject(IndexLabel.CreatedIndexLabel.class);
     }

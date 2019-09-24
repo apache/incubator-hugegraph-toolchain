@@ -221,14 +221,14 @@ public class IndexLabel extends SchemaElement {
         private IndexLabel indexLabel;
 
         @JsonProperty("task_id")
-        private long taskid;
+        private long taskId;
 
         public IndexLabel indexLabel() {
             return this.indexLabel;
         }
 
         public long taskId() {
-            return this.taskid;
+            return this.taskId;
         }
     }
 }

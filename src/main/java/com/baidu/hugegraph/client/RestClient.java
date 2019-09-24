@@ -22,10 +22,12 @@ package com.baidu.hugegraph.client;
 import javax.ws.rs.core.Response;
 
 import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.util.VersionUtil.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
@@ -63,11 +65,22 @@ public class RestClient extends com.baidu.hugegraph.rest.RestClient {
 
     public void apiVersion(Version version) {
         E.checkNotNull(version, "api version");
-        this.apiVersion = apiVersion;
+        this.apiVersion = version;
     }
 
     public Version apiVersion() {
         return this.apiVersion;
+    }
+
+    public void checkApiVersion(String minVersion, String message) {
+        String apiVersion = this.apiVersion == null ?
+                            null : this.apiVersion.get();
+        if (apiVersion != null && !VersionUtil.gte(apiVersion, minVersion)) {
+            throw new ClientException(
+                      "HugeGraphServer API version must be >= %s to support " +
+                      "%s, but current HugeGraphServer API version is: %s",
+                      minVersion, message, apiVersion);
+        }
     }
 
     @Override
