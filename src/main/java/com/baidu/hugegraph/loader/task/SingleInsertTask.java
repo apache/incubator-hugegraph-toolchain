@@ -64,7 +64,6 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                 if (this.struct().updateStrategies().isEmpty()) {
                     this.addSingle(type, element);
                 } else {
-                    // TODO: Adapt single update later
                     this.updateSingle(type, options, element);
                 }
                 metrics.increaseLoadSuccess();
@@ -88,6 +87,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
     }
 
     private void updateSingle(ElemType type, LoadOptions options, GE element) {
+        // TODO: Adapt single update later
         this.updateBatch(type, ImmutableList.of(element), options.checkVertex);
     }
 

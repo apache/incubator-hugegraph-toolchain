@@ -43,7 +43,12 @@ public class FileUtil implements IOUtil {
     @Override
     public void mkdirs(String dir) {
         String path = Paths.get(this.storePath, dir).toString();
-        FileUtils.getFile(path).mkdirs();
+        try {
+            FileUtils.forceMkdir(FileUtils.getFile(path));
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                      "Failed to make directory on path '%s'", path), e);
+        }
     }
 
     @Override
@@ -93,7 +98,12 @@ public class FileUtil implements IOUtil {
 
     private void checkFile(File file) {
         if (!file.exists()) {
-            file.getParentFile().mkdirs();
+            try {
+                FileUtils.forceMkdirParent(file);
+            } catch (IOException e) {
+                throw new RuntimeException(String.format(
+                          "Failed to make parent directory '%s'", file), e);
+            }
             try {
                 file.createNewFile();
             } catch (IOException e) {

@@ -1640,9 +1640,12 @@ public class FileLoadTest extends LoadTest {
                 "--num-threads", "2",
                 "--test-mode", "true"
         };
-        
+
         Assert.assertThrows(SerializeException.class, () -> {
             HugeGraphLoader.main(args);
+        }, e -> {
+            String expect = "Failed to deserialize json";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }
 }
