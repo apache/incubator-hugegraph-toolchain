@@ -45,6 +45,10 @@ public class BatchEdgeRequest {
         this.createIfNotExist = true;
     }
 
+    public static Builder createBuilder() {
+        return new Builder();
+    }
+
     @Override
     public String toString() {
         return String.format("BatchEdgeRequest{edges=%s," +

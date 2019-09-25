@@ -72,4 +72,8 @@ public enum DataType {
     public boolean isUUID() {
         return this == DataType.UUID;
     }
+
+    public boolean isBoolean() {
+        return this == BOOLEAN;
+    }
 }

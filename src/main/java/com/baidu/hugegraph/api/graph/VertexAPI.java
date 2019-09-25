@@ -66,7 +66,7 @@ public class VertexAPI extends GraphAPI {
     }
 
     public List<Vertex> update(BatchVertexRequest request) {
-        this.client.checkApiVersion("0.41", "batch property update");
+        this.client.checkApiVersion("0.45", "batch property update");
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.putSingle("Content-Encoding", BATCH_ENCODING);
         RestResult result = this.client.put(this.batchPath(), null,

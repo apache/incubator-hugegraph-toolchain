@@ -83,9 +83,9 @@ public class VertexLabelApiTest extends BaseApiTest {
     }
 
     @Test
-    public void testCreateWithUuidStrategy() {
+    public void testCreateWithUUIDStrategy() {
         VertexLabel vertexLabel = schema().vertexLabel("person")
-                                          .useCustomizeUuid()
+                                          .useCustomizeUUID()
                                           .properties("name", "age", "city")
                                           .build();
 

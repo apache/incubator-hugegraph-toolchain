@@ -84,9 +84,9 @@ public class PathDeserializer extends JsonDeserializer<Path> {
 
     private Object parseTypedNode(JsonNode objectNode, JsonNode typeNode) {
         String type = typeNode.asText();
-        if (type.equals("vertex")) {
+        if ("vertex".equals(type)) {
             return JsonUtil.convertValue(objectNode, Vertex.class);
-        } else if (type.equals("edge")) {
+        } else if ("edge".equals(type)) {
             return JsonUtil.convertValue(objectNode, Edge.class);
         } else {
             throw InvalidResponseException.expectField("vertex/edge", type);

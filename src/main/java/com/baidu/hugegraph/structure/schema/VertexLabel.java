@@ -78,7 +78,7 @@ public class VertexLabel extends SchemaLabel {
 
         Builder useCustomizeNumberId();
 
-        Builder useCustomizeUuid();
+        Builder useCustomizeUUID();
 
         Builder properties(String... properties);
 
@@ -164,7 +164,7 @@ public class VertexLabel extends SchemaLabel {
         }
 
         @Override
-        public Builder useCustomizeUuid() {
+        public Builder useCustomizeUUID() {
             this.checkIdStrategy();
             this.vertexLabel.idStrategy = IdStrategy.CUSTOMIZE_UUID;
             return this;

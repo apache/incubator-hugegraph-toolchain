@@ -174,6 +174,49 @@ public class BatchUpdateElementApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testVertexBatchUpdateStrategyOverride() {
+        BatchVertexRequest req = batchVertexRequest("price", -1, 1,
+                                                    UpdateStrategy.OVERRIDE);
+        assertBatchResponse(vertexAPI.update(req), "price", 1);
+
+        // Construct a specialized test case
+        graph().addVertices(this.createNVertexBatch("object", -1, 2));
+        List<String> list = ImmutableList.of("newStr1", "newStr2");
+
+        Vertex v1 = new Vertex("object");
+        v1.property("name", "tom");
+        v1.property("price", 1);
+        v1.property("list", list);
+
+        Vertex v2 = new Vertex("object");
+        v2.property("name", "tom");
+
+        Map<String, UpdateStrategy> strategies;
+        strategies = ImmutableMap.of("price", UpdateStrategy.OVERRIDE,
+                                     "list", UpdateStrategy.OVERRIDE);
+        req = BatchVertexRequest.createBuilder()
+                                .vertices(ImmutableList.of(v1, v2))
+                                .updatingStrategies(strategies)
+                                .createIfNotExist(true)
+                                .build();
+
+        List<Vertex> vertices = vertexAPI.update(req);
+        Assert.assertEquals(1, vertices.size());
+        Map<String, Object> expectProperties = ImmutableMap.of("name", "tom",
+                                                               "price", 1,
+                                                               "list", list);
+        Assert.assertEquals(vertices.get(0).properties(), expectProperties);
+    }
+
+    @Test
+    public void testVertexBatchUpdateWithNullValues() {
+        BatchVertexRequest req = batchVertexRequest("price", 1, null,
+                                                    UpdateStrategy.OVERRIDE);
+        List<Vertex> vertices = vertexAPI.update(req);
+        assertBatchResponse(vertices, "price", 1);
+    }
+
+    @Test
     public void testVertexBatchUpdateWithInvalidArgs() {
         BatchVertexRequest req1 = batchVertexRequest("set", "old", "old",
                                                      UpdateStrategy.UNION);
@@ -398,6 +441,60 @@ public class BatchUpdateElementApiTest extends BaseApiTest {
         req = batchEdgeRequest("list", "old", "new", UpdateStrategy.ELIMINATE);
         edges = edgeAPI.update(req);
         assertBatchResponse(edges, "list", "old");
+    }
+
+    @Test
+    public void testEdgeBatchUpdateStrategyOverride() {
+        BatchEdgeRequest req = batchEdgeRequest("price", -1, 1,
+                                                UpdateStrategy.OVERRIDE);
+        assertBatchResponse(edgeAPI.update(req), "price", 1);
+
+        // Construct a specialized test case
+        graph().addEdges(this.createNEdgesBatch("object", "updates", -1, 2));
+        List<String> list = ImmutableList.of("newStr1", "newStr2");
+        String vid = "1:a";
+
+        Edge e1 = new Edge("updates");
+        e1.sourceLabel("object");
+        e1.targetLabel("object");
+        e1.sourceId(vid);
+        e1.targetId(vid);
+        e1.property("name", "tom");
+        e1.property("price", 1);
+        e1.property("list", list);
+
+        Edge e2 = new Edge("updates");
+        e2.sourceLabel("object");
+        e2.targetLabel("object");
+        e2.sourceId(vid);
+        e2.targetId(vid);
+        e2.property("name", "tom");
+
+        Map<String, UpdateStrategy> strategies;
+        strategies = ImmutableMap.of("price", UpdateStrategy.OVERRIDE,
+                                     "list", UpdateStrategy.OVERRIDE);
+        req = BatchEdgeRequest.createBuilder()
+                              .edges(ImmutableList.of(e1, e2))
+                              .updatingStrategies(strategies)
+                              .checkVertex(false)
+                              .createIfNotExist(true)
+                              .build();
+
+        List<Edge> edges = edgeAPI.update(req);
+        Assert.assertEquals(1, edges.size());
+        Map<String, Object> expectProperties = ImmutableMap.of("name", "tom",
+                                                               "price", 1,
+                                                               "list", list);
+        Assert.assertEquals(edges.get(0).properties(), expectProperties);
+    }
+
+    @Test
+    public void testEdgeBatchUpdateWithNullValues() {
+        BatchEdgeRequest req = batchEdgeRequest("price", 1, null,
+                                                UpdateStrategy.OVERRIDE);
+
+        List<Edge> edges = edgeAPI.update(req);
+        assertBatchResponse(edges, "price", 1);
     }
 
     @Test
@@ -634,7 +731,7 @@ public class BatchUpdateElementApiTest extends BaseApiTest {
 
     private static void assertBatchResponse(List<? extends GraphElement> list,
                                             String property, int result) {
-        Assert.assertEquals(5, list.size());
+        Assert.assertEquals(BATCH_SIZE, list.size());
         list.forEach(element -> {
             String index = String.valueOf(element.property("name"));
             Object value = element.property(property);
@@ -645,7 +742,7 @@ public class BatchUpdateElementApiTest extends BaseApiTest {
 
     private static void assertBatchResponse(List<? extends GraphElement> list,
                                             String property, String... data) {
-        Assert.assertEquals(5, list.size());
+        Assert.assertEquals(BATCH_SIZE, list.size());
         list.forEach(element -> {
             String index = String.valueOf(element.property("name"));
             Object value = element.property(property);

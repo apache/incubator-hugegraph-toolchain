@@ -33,5 +33,7 @@ public enum UpdateStrategy {
 
     APPEND,
 
-    ELIMINATE
+    ELIMINATE,
+
+    OVERRIDE
 }

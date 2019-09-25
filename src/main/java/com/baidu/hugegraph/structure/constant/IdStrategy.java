@@ -56,7 +56,8 @@ public enum IdStrategy {
 
     public boolean isCustomize() {
         return this == IdStrategy.CUSTOMIZE_STRING ||
-               this == IdStrategy.CUSTOMIZE_NUMBER;
+               this == IdStrategy.CUSTOMIZE_NUMBER ||
+               this == IdStrategy.CUSTOMIZE_UUID;
     }
 
     public boolean isCustomizeString() {
@@ -65,6 +66,10 @@ public enum IdStrategy {
 
     public boolean isCustomizeNumber() {
         return this == IdStrategy.CUSTOMIZE_NUMBER;
+    }
+
+    public boolean isCustomizeUUID() {
+        return this == IdStrategy.CUSTOMIZE_UUID;
     }
 
     public boolean isPrimaryKey() {

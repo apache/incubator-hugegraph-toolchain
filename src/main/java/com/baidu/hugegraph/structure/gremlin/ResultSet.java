@@ -104,9 +104,9 @@ public class ResultSet {
             Map<String, Object> map = (Map<String, Object>) object;
             String type = (String) map.get("type");
             if (type != null) {
-                if (type.equals("vertex")) {
+                if ("vertex".equals(type)) {
                     return Vertex.class;
-                } else if (type.equals("edge")) {
+                } else if ("edge".equals(type)) {
                     return Edge.class;
                 }
             } else {

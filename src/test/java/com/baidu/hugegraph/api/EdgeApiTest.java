@@ -538,8 +538,9 @@ public class EdgeApiTest extends BaseApiTest {
             // TODO: id to be modified
             edgeAPI.get(edgeId);
         }, e -> {
-            String expect = String.format("Edge id must be formatted as 4~5" +
-                                          " parts, but got '%s'", edgeId);
+            String expect = String.format("Edge id must be formatted as 4~5 " +
+                                          "parts, but got 1 parts, '%s'",
+                                          edgeId);
             Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
     }

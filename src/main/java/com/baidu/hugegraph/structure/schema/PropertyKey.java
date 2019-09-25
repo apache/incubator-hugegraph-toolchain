@@ -73,7 +73,7 @@ public class PropertyKey extends SchemaElement {
 
         Builder asDate();
 
-        Builder asUuid();
+        Builder asUUID();
 
         Builder asBoolean();
 
@@ -160,7 +160,7 @@ public class PropertyKey extends SchemaElement {
         }
 
         @Override
-        public Builder asUuid() {
+        public Builder asUUID() {
             this.propertyKey.dataType = DataType.UUID;
             return this;
         }
@@ -233,6 +233,7 @@ public class PropertyKey extends SchemaElement {
             return this;
         }
 
+        @Override
         public Builder ifNotExist() {
             this.propertyKey.checkExist = false;
             return this;
