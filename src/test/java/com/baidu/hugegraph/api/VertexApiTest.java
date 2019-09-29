@@ -22,11 +22,13 @@ package com.baidu.hugegraph.api;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
@@ -133,6 +135,12 @@ public class VertexApiTest extends BaseApiTest {
             vertexAPI.create(person);
         });
 
+        schema().vertexLabel("log")
+                .useCustomizeNumberId()
+                .properties("date")
+                .ifNotExist()
+                .create();
+
         Vertex log = new Vertex("log");
         log.id(123456);
         log.property("date", "2018-01-01");
@@ -143,6 +151,31 @@ public class VertexApiTest extends BaseApiTest {
         Map<String, Object> props = ImmutableMap.of("date",
                                                     Utils.date("2018-01-01"));
         Assert.assertEquals(props, vertex.properties());
+    }
+
+    @Test
+    public void testCreateWithCustomizeUuidId() {
+        schema().vertexLabel("user")
+                .useCustomizeUuidId()
+                .properties("date")
+                .ifNotExist()
+                .create();
+
+        Vertex log = new Vertex("user");
+        log.id("835e1153-9281-4957-8691-cf79258e90eb");
+        log.property("date", "2018-01-01");
+
+        Vertex vertex = vertexAPI.create(log);
+        Assert.assertEquals("user", vertex.label());
+        Assert.assertEquals("835e1153-9281-4957-8691-cf79258e90eb",
+                            vertex.id());
+        Map<String, Object> props = ImmutableMap.of("date",
+                                                    Utils.date("2018-01-01"));
+        Assert.assertEquals(props, vertex.properties());
+
+        // NOTE: must clean here due to type info
+        UUID id = UUID.fromString("835e1153-9281-4957-8691-cf79258e90eb");
+        vertexAPI.delete(id);
     }
 
     @Test
@@ -246,6 +279,7 @@ public class VertexApiTest extends BaseApiTest {
         vertex1 = vertexAPI.create(vertex1);
 
         Vertex vertex2 = vertexAPI.get(vertex1.id());
+        Assert.assertEquals(vertex1.id(), vertex2.id());
         Assert.assertEquals(vertex1.label(), vertex2.label());
         Assert.assertEquals(vertex1.properties(), vertex2.properties());
     }
@@ -259,12 +293,19 @@ public class VertexApiTest extends BaseApiTest {
         vertex1 = vertexAPI.create(vertex1);
 
         Vertex vertex2 = vertexAPI.get("ISBN-123456");
+        Assert.assertEquals(vertex1.id(), vertex2.id());
         Assert.assertEquals(vertex1.label(), vertex2.label());
         Assert.assertEquals(vertex1.properties(), vertex2.properties());
     }
 
     @Test
     public void testGetWithCustomizeNumberId() {
+        schema().vertexLabel("log")
+                .useCustomizeNumberId()
+                .properties("date")
+                .ifNotExist()
+                .create();
+
         Vertex vertex1 = new Vertex("log");
         vertex1.id(123456);
         vertex1.property("date", "2018-01-01");
@@ -272,8 +313,33 @@ public class VertexApiTest extends BaseApiTest {
         vertex1 = vertexAPI.create(vertex1);
 
         Vertex vertex2 = vertexAPI.get(123456);
+        Assert.assertEquals(vertex1.id(), vertex2.id());
         Assert.assertEquals(vertex1.label(), vertex2.label());
         Assert.assertEquals(vertex1.properties(), vertex2.properties());
+    }
+
+    @Test
+    public void testGetWithCustomizeUuidId() {
+        schema().vertexLabel("user")
+                .useCustomizeUuidId()
+                .properties("date")
+                .ifNotExist()
+                .create();
+
+        Vertex vertex1 = new Vertex("user");
+        vertex1.id("835e1153-9281-4957-8691-cf79258e90eb");
+        vertex1.property("date", "2018-01-01");
+
+        vertex1 = vertexAPI.create(vertex1);
+
+        UUID id = UUID.fromString("835e1153-9281-4957-8691-cf79258e90eb");
+        Vertex vertex2 = vertexAPI.get(id);
+        Assert.assertEquals(vertex1.id(), vertex2.id());
+        Assert.assertEquals(vertex1.label(), vertex2.label());
+        Assert.assertEquals(vertex1.properties(), vertex2.properties());
+
+        // NOTE: must clean here due to type info
+        vertexAPI.delete(id);
     }
 
     @Test

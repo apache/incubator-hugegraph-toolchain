@@ -25,12 +25,9 @@ import java.util.Map;
 
 import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Path;
-import com.baidu.hugegraph.util.VersionUtil;
-import com.baidu.hugegraph.util.VersionUtil.Version;
 
 public class RingsAPI extends TraversersAPI {
 

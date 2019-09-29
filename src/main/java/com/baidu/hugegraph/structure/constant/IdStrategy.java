@@ -68,7 +68,7 @@ public enum IdStrategy {
         return this == IdStrategy.CUSTOMIZE_NUMBER;
     }
 
-    public boolean isCustomizeUUID() {
+    public boolean isCustomizeUuid() {
         return this == IdStrategy.CUSTOMIZE_UUID;
     }
 

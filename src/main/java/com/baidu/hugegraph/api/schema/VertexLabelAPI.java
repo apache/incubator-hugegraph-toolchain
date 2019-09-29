@@ -41,6 +41,9 @@ public class VertexLabelAPI extends SchemaAPI {
     }
 
     public VertexLabel create(VertexLabel vertexLabel) {
+        if (vertexLabel.idStrategy().isCustomizeUuid()) {
+            this.client.checkApiVersion("0.46", "customize UUID strategy");
+        }
         RestResult result = this.client.post(this.path(), vertexLabel);
         return result.readObject(VertexLabel.class);
     }

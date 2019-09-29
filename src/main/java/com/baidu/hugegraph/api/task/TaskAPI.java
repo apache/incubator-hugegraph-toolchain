@@ -105,7 +105,7 @@ public class TaskAPI extends API {
                     return task;
                 } else if (task.completed()) {
                     throw new ClientException(
-                              "Task '%s' is '%s', result is '%s'",
+                              "Task '%s' is %s, result is '%s'",
                               taskId, task.status(), task.result());
                 }
                 if (pass >= passes) {

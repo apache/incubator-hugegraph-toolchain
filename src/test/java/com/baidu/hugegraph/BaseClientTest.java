@@ -141,12 +141,6 @@ public class BaseClientTest {
               .nullableKeys("price")
               .ifNotExist()
               .create();
-
-        schema.vertexLabel("log")
-              .useCustomizeNumberId()
-              .properties("date")
-              .ifNotExist()
-              .create();
     }
 
     protected static void initEdgeLabel() {

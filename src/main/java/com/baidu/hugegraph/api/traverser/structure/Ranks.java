@@ -22,4 +22,6 @@ package com.baidu.hugegraph.api.traverser.structure;
 import java.util.LinkedHashMap;
 
 public class Ranks extends LinkedHashMap<Object, Double> {
+
+    private static final long serialVersionUID = -517025731560925613L;
 }

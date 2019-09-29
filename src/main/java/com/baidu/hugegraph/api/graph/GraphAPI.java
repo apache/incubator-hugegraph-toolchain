@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api.graph;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.glassfish.jersey.uri.UriComponent;
 import org.glassfish.jersey.uri.UriComponent.Type;
@@ -57,10 +58,14 @@ public abstract class GraphAPI extends API {
                 return null;
             }
         }
+        boolean uuid = id instanceof UUID;
+        if (uuid) {
+            id = id.toString();
+        }
         E.checkArgument(id instanceof String || id instanceof Number,
                         "The vertex id must be either String or " +
                         "Number, but got '%s'", id);
-        return JsonUtil.toJson(id);
+        return (uuid ? "U" : "") + JsonUtil.toJson(id);
     }
 
     public static String formatProperties(Map<String, Object> properties) {

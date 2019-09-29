@@ -40,6 +40,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         BaseApiTest.initPropertyKey();
     }
 
+    @Override
     @After
     public void teardown() throws Exception {
         List<Long> taskIds = new ArrayList<>();
@@ -83,9 +84,9 @@ public class VertexLabelApiTest extends BaseApiTest {
     }
 
     @Test
-    public void testCreateWithUUIDStrategy() {
+    public void testCreateWithUuidIdStrategy() {
         VertexLabel vertexLabel = schema().vertexLabel("person")
-                                          .useCustomizeUUID()
+                                          .useCustomizeUuidId()
                                           .properties("name", "age", "city")
                                           .build();
 
