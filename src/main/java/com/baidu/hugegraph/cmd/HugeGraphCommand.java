@@ -303,5 +303,6 @@ public class HugeGraphCommand {
         }
 
         cmd.execute(subCommand, jCommander);
+        System.exit(0);
     }
 }

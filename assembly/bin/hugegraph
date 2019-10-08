@@ -5,6 +5,7 @@
 #export HUGEGRAPH_GRAPH=
 #export HUGEGRAPH_USERNAME=
 #export HUGEGRAPH_PASSWORD=
+#export HUGEGRAPH_TIMEOUT=
 
 abs_path() {
     SOURCE="${BASH_SOURCE[0]}"
@@ -85,11 +86,18 @@ else
     PASSWORD_ARG=""
 fi
 
+echo $* | grep "\--timeout" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_TIMEOUT" ]; then
+    TIMEOUT_ARG="--timeout $HUGEGRAPH_TIMEOUT"
+else
+    TIMEOUT_ARG=""
+fi
+
 for ((i=1;i<=$#;i++));
 do
     if [ "`eval echo '$'"$i"`" == "schedule-backup" ]; then
         ARGS=${*//schedule-backup/}
-        bash $BIN/schedule-backup.sh $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG ${ARGS//'*'/'\*'}
+        bash $BIN/schedule-backup.sh $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG ${ARGS//'*'/'\*'}
         exit $?
     fi
 done
@@ -105,4 +113,4 @@ if [ "$JAVA_OPTIONS" = "" ] ; then
 fi
 
 exec $JAVA $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
-com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG "$@"
+com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG "$@"

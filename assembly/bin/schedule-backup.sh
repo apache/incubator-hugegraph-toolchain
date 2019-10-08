@@ -44,6 +44,10 @@ do
             PASSWORD=`eval echo '${'$(($i+1))'}'`
             PASSWORD_ARG="--password "$PASSWORD
             ;;
+        "--timeout")
+            TIMEOUT=`eval echo '${'$(($i+1))'}'`
+            TIMEOUT_ARG="--timeout "$TIMEOUT
+            ;;
         "--interval")
             position=$(($i+1))
             INTERVAL=${@:$position:5}
@@ -101,7 +105,7 @@ if [ -z "$INTERVAL" ]; then
     INTERVAL="0 0 * * *"
 fi
 
-CRONTAB_JOB="$INTERVAL export JAVA_HOME=$JAVA_HOME && bash $BIN/backup.sh $URL_ARG $GRAPH_ARG $USERNAME_ARG $PASSWORD_ARG backup -t all -d $GRAPH_DIR --backup-num $NUM"
+CRONTAB_JOB="$INTERVAL export JAVA_HOME=$JAVA_HOME && bash $BIN/backup.sh $URL_ARG $GRAPH_ARG $USERNAME_ARG $PASSWORD_ARG $TIMEOUT_ARG backup -t all -d $GRAPH_DIR --backup-num $NUM"
 
 . $BIN/util.sh
 

@@ -111,7 +111,7 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Backup graph schema/data. If directory " +
                                      "is on HDFS, use -D to set HDFS params " +
-                                     "if needed. For exmaple:" +
+                                     "if needed. For exmaple: " +
                                      "-Dfs.default.name=hdfs://localhost:9000")
     public class Backup extends BackupRestore {
 
@@ -296,7 +296,7 @@ public class SubCommands {
         @Parameter(names = "--force",
                    description = "Force to clear all tasks, " +
                                  "cancel all uncompleted tasks firstly, " +
-                                 "and delete all completed task")
+                                 "and delete all completed tasks")
         private boolean force = false;
 
         public boolean force() {
@@ -393,7 +393,7 @@ public class SubCommands {
 
         @Parameter(names = {"--url"}, arity = 1,
                    validateWith = {UrlValidator.class},
-                   description = "The URL of HugeGraph-Server url")
+                   description = "The URL of HugeGraph-Server")
         public String url = "http://127.0.0.1:8080";
     }
 
@@ -486,7 +486,7 @@ public class SubCommands {
 
         @Parameter(names = {"--file", "-f"}, arity = 1,
                    converter = FileNameToContentConverter.class,
-                   description = "Gremlin Script file to be executed, UTF-8" +
+                   description = "Gremlin Script file to be executed, UTF-8 " +
                                  "encoded, exclusive to --script")
         public String script;
     }
