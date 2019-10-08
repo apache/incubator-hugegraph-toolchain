@@ -29,6 +29,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -76,6 +77,10 @@ public final class LoadProgress {
             }
         }
         return total;
+    }
+
+    public void markLoadingItemLoaded(ElementStruct struct) {
+        this.get(struct.type()).getByStruct(struct).markLoadingItemLoaded();
     }
 
     public void write(LoadContext context) throws IOException {

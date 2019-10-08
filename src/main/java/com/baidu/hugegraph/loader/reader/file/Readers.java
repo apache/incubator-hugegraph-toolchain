@@ -95,7 +95,7 @@ public class Readers {
         String line;
         while ((line = this.reader.readLine()) == null) {
             // The current file is read at the end, ready to read next one
-            this.close(true);
+            this.close();
             // Open the second or subsequent files
             this.reader = this.openNext();
             if (this.reader == null) {
@@ -133,10 +133,7 @@ public class Readers {
         return header;
     }
 
-    public void close(boolean updateProgress) throws IOException {
-        if (updateProgress) {
-            this.newProgress.markLoadingItemLoaded();
-        }
+    public void close() throws IOException {
         if (this.index < this.readables.size()) {
             Readable readable = this.readables.get(this.index);
             LOG.debug("Ready to close '{}'", readable);

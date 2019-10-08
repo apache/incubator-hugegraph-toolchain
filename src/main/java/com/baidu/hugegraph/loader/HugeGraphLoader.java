@@ -74,7 +74,7 @@ public final class HugeGraphLoader {
 
     private void addShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            this.shutdown();
+            this.stopThenShutdown();
         }));
     }
 
@@ -87,13 +87,13 @@ public final class HugeGraphLoader {
             // Load edges
             this.load(ElemType.EDGE);
         } catch (Exception e) {
-            Printer.printError("Failed to load due to " + e.getMessage(), e);
-            this.shutdown();
+            Printer.printError("Failed to load", e);
+            this.stopThenShutdown();
             throw e;
         }
         // Print load summary
         Printer.printSummary(this.context);
-        this.shutdown();
+        this.stopThenShutdown();
     }
 
     private void createSchema() {
@@ -199,9 +199,12 @@ public final class HugeGraphLoader {
             if (batch.size() >= options.batchSize ||
                 (finished && !batch.isEmpty())) {
                 this.submit(struct, batch, options, metrics, parseTime);
+                // Confirm offset to avoid lost records
                 builder.confirmOffset();
                 if (!finished) {
                     batch = new ArrayList<>(options.batchSize);
+                } else {
+                    context.newProgress().markLoadingItemLoaded(struct);
                 }
             }
         }
@@ -226,8 +229,8 @@ public final class HugeGraphLoader {
         }
     }
 
-    private void shutdown() {
-        LOG.info("Shutdown HugeGraphLoader");
+    private void stopThenShutdown() {
+        LOG.info("Stop loading then shutdown HugeGraphLoader");
         this.context.stopLoading();
         // Wait all insert tasks finished before exit
         this.taskManager.waitFinished(this.context.loadingType());

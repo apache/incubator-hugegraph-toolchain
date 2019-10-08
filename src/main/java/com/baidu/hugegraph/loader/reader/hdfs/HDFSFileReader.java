@@ -184,7 +184,7 @@ public class HDFSFileReader extends FileReader {
                                         "for HDFS path '%s'", e, this.path);
             }
             String checkSum = new String(bytes, Constants.CHARSET);
-            return new FileItemProgress(name, timestamp, checkSum);
+            return new FileItemProgress(name, timestamp, checkSum, 0L);
         }
 
         @Override

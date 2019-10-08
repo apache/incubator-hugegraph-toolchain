@@ -44,7 +44,7 @@ public final class Printer {
     public static void printRealTimeProgress(ElemType type, long count) {
         String lastLoadMsg = String.format("%s has been loaded last time : %s",
                                            type.string(), count);
-        String thisLoadMsg = String.format("%s has been loaded           : 0\b",
+        String thisLoadMsg = String.format("%s has been loaded : 0\b",
                                            type.string());
         if (count > 0) {
             printAndLog(lastLoadMsg);

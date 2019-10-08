@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,14 +46,11 @@ public final class LoadContext {
 
     private static final Logger LOG = Log.logger(LoadContext.class);
 
-    // The time of this loading start, accurate to second unit
+    // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
     private ElemType loadingType;
-    /*
-     * Actually `volatile boolean` is enough, use AtomicBoolean
-     * just for code style consistency
-     */
-    private final AtomicBoolean stopped;
+
+    private volatile boolean stopped;
     private final LoadOptions options;
     private final LoadSummary summary;
     // The old progress just used to read
@@ -66,7 +62,7 @@ public final class LoadContext {
     public LoadContext(String[] args) {
         this.timestamp = DateUtil.now(Constants.DATE_FORMAT);
         this.loadingType = null;
-        this.stopped = new AtomicBoolean(false);
+        this.stopped = false;
         this.options = parseCheckOptions(args);
         this.summary = new LoadSummary();
         this.oldProgress = parseLoadProgress(this.options);
@@ -87,11 +83,11 @@ public final class LoadContext {
     }
 
     public boolean stopped() {
-        return this.stopped.get();
+        return this.stopped;
     }
 
     public void stopLoading() {
-        this.stopped.set(true);
+        this.stopped = true;
     }
 
     public LoadOptions options() {

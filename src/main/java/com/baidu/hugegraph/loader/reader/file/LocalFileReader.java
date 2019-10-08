@@ -109,7 +109,7 @@ public class LocalFileReader extends FileReader {
                 throw new LoadException("Failed to calculate checksum for " +
                                         "local file '%s'", e, this.file);
             }
-            return new FileItemProgress(name, timestamp, checkSum);
+            return new FileItemProgress(name, timestamp, checkSum, 0L);
         }
 
         @Override

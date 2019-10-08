@@ -123,7 +123,7 @@ public abstract class FileReader implements InputReader {
     @Override
     public void close() throws IOException {
         if (this.readers != null) {
-            this.readers.close(false);
+            this.readers.close();
         }
     }
 

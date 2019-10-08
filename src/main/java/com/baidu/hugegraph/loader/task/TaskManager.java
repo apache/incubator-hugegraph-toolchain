@@ -27,7 +27,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 
@@ -53,7 +52,7 @@ public final class TaskManager {
     private final ExecutorService batchService;
     private final ExecutorService singleService;
 
-    private final AtomicBoolean finished;
+    private volatile boolean stopped;
 
     public TaskManager(LoadContext context) {
         this.context = context;
@@ -75,7 +74,7 @@ public final class TaskManager {
                                                             BATCH_WORKER);
         this.singleService = ExecutorUtil.newFixedThreadPool(options.numThreads,
                                                              SINGLE_WORKER);
-        this.finished = new AtomicBoolean(false);
+        this.stopped = false;
     }
 
     private int batchSemaphoreNum() {
@@ -86,10 +85,16 @@ public final class TaskManager {
         return 2 * this.options.numThreads;
     }
 
+    private void stopLoading() {
+        this.stopped = true;
+    }
+
     public void waitFinished(ElemType type) {
-        if (type == null || this.finished.get()) {
+        if (type == null || this.stopped) {
+            System.out.println("xxx");
             return;
         }
+
         LOG.info("Waiting for the insert tasks of {} finish", type.string());
         try {
             // Wait batch mode task finished
@@ -110,10 +115,11 @@ public final class TaskManager {
         } finally {
             this.singleSemaphore.release(this.singleSemaphoreNum());
         }
-        this.finished.compareAndSet(false, true);
     }
 
     public void shutdown() {
+        this.stopLoading();
+
         LOG.debug("Ready to shutdown batch-mode tasks executor");
         long timeout = this.options.shutdownTimeout;
         try {

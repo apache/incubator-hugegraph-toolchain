@@ -136,7 +136,7 @@ public final class FailureLogger {
             }
             if (file.isDirectory()) {
                 throw new LoadException("Please ensure there is no directory " +
-                                        "has same name: '%s'", file);
+                                        "with the same name: '%s'", file);
             } else {
                 if (file.length() > 0) {
                     LOG.warn("The existed file {} will be overwritten", file);
