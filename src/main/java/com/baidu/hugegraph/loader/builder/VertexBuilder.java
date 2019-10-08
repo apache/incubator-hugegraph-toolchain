@@ -88,7 +88,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                 Long id = DataTypeUtil.parseNumber(idValue);
                 vertex.id(id);
             } else {
-                assert idStrategy.isCustomizeUUID();
+                assert idStrategy.isCustomizeUuid();
                 UUID id = DataTypeUtil.parseUUID(idValue);
                 vertex.id(id);
             }

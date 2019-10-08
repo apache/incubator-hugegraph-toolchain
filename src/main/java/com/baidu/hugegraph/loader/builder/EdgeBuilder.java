@@ -114,7 +114,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                 return id;
             } else if (idStrategy.isCustomizeNumber()) {
                 return DataTypeUtil.parseNumber(mappedValue);
-            } else if (idStrategy.isCustomizeUUID()) {
+            } else if (idStrategy.isCustomizeUuid()) {
                 return DataTypeUtil.parseUUID(mappedValue);
             } else {
                 // The id strategy of source/target label must be PRIMARY_KEY

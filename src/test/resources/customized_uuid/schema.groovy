@@ -5,6 +5,6 @@ schema.propertyKey("city").asText().ifNotExist().create();
 schema.propertyKey("weight").asDouble().ifNotExist().create();
 schema.propertyKey("date").asText().ifNotExist().create();
 
-schema.vertexLabel("person").properties("name", "age", "city").useCustomizeUUID().ifNotExist().create();
+schema.vertexLabel("person").properties("name", "age", "city").useCustomizeUuidId().ifNotExist().create();
 
 schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();
