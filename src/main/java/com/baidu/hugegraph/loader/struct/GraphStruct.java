@@ -98,6 +98,16 @@ public class GraphStruct implements Checkable {
         }
     }
 
+    public ElementStruct struct(ElemType type, String uniqueKey) {
+        List<ElementStruct> structs = this.structs(type);
+        for (ElementStruct struct : structs) {
+            if (struct.uniqueKey().equals(uniqueKey)) {
+                return struct;
+            }
+        }
+        throw new LoadException("Can't find element struct '%s'", uniqueKey);
+    }
+
     private <T extends ElementStruct> void checkNoSameStruct(List<T> structs) {
         Set<String> uniqueKeys = structs.stream().map(ElementStruct::uniqueKey)
                                         .collect(Collectors.toSet());

@@ -45,7 +45,7 @@ public class TextLineParser implements LineParser {
         this.source = source;
         this.delimiter = delimiter;
         if (this.source.header() != null) {
-            this.header = this.source.header().toArray(new String[]{});
+            this.header = this.source.header();
         }
     }
 
@@ -53,6 +53,7 @@ public class TextLineParser implements LineParser {
         return this.delimiter;
     }
 
+    @Override
     public String[] header() {
         return this.header;
     }

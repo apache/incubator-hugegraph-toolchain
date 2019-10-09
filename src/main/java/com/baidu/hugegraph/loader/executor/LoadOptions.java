@@ -20,6 +20,8 @@
 package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 import com.baidu.hugegraph.loader.failure.FailureHandleStrategy;
 import com.beust.jcommander.IParameterValidator;
@@ -63,12 +65,12 @@ public final class LoadOptions {
                description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
 
-    @Parameter(names = {"--failures-handle-strategy"}, arity = 1,
+    @Parameter(names = {"--failure-handle-strategy"}, arity = 1,
                validateWith = {FailureHandleStrategyValidator.class},
                converter = FailureHandleStrategyConverter.class,
                description = "The handle strategy for the failure records, " +
                              "only take effect under incremental mode.")
-    public FailureHandleStrategy failuresHandleStrategy =
+    public FailureHandleStrategy failureHandleStrategy =
                                  FailureHandleStrategy.IGNORE;
 
     @Parameter(names = {"--num-threads"}, arity = 1,
@@ -196,8 +198,20 @@ public final class LoadOptions {
 
         @Override
         public void validate(String name, String value)
-               throws ParameterException {
-            // TODO:
+                             throws ParameterException {
+            if (value == null) {
+                return;
+            }
+            List<FailureHandleStrategy> strategies;
+            strategies = Arrays.asList(FailureHandleStrategy.values());
+            for (FailureHandleStrategy strategy : strategies) {
+                if (strategy.name().equalsIgnoreCase(value)) {
+                    return;
+                }
+            }
+            throw new ParameterException(String.format(
+                      "Parameter '%s' should belong to [%s], but got '%s'",
+                      name, strategies, value));
         }
     }
 
@@ -206,7 +220,10 @@ public final class LoadOptions {
 
         @Override
         public FailureHandleStrategy convert(String value) {
-            return null;
+            if (value == null) {
+                return FailureHandleStrategy.IGNORE;
+            }
+            return FailureHandleStrategy.valueOf(value.toUpperCase());
         }
     }
 }

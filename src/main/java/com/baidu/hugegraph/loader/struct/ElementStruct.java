@@ -63,8 +63,8 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         this.selectedFields = new HashSet<>();
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
-        this.uniqueKey = null;
         this.updateStrategies = new HashMap<>();
+        this.uniqueKey = null;
     }
 
     public abstract ElemType type();
@@ -72,8 +72,9 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     @Override
     public String uniqueKey() {
         if (this.uniqueKey == null) {
-            String code = HashUtil.hash(JsonUtil.toJson(this));
-            this.uniqueKey = this.label + Constants.MINUS_STR + code;
+            String hashCode = HashUtil.hash(JsonUtil.toJson(this));
+            this.uniqueKey = this.type().lowerName() + Constants.UNDERLINE_STR +
+                             this.label + Constants.MINUS_STR + hashCode;
         }
         return this.uniqueKey;
     }

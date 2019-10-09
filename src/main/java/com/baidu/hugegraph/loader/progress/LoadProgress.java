@@ -59,7 +59,7 @@ public final class LoadProgress {
         return this.edgeProgress;
     }
 
-    public InputProgressMap get(ElemType type) {
+    public InputProgressMap type(ElemType type) {
         return type.isVertex() ? this.vertexProgress : this.edgeProgress;
     }
 
@@ -80,7 +80,7 @@ public final class LoadProgress {
     }
 
     public void markLoadingItemLoaded(ElementStruct struct) {
-        this.get(struct.type()).getByStruct(struct).markLoadingItemLoaded();
+        this.type(struct.type()).getByStruct(struct).markLoadingItemLoaded();
     }
 
     public void write(LoadContext context) throws IOException {
@@ -90,17 +90,14 @@ public final class LoadProgress {
         FileUtils.write(file, json, Constants.CHARSET, false);
     }
 
-    public static LoadProgress read(String fileName) throws IOException {
-        File file = FileUtils.getFile(fileName);
-        if (!file.exists()) {
-            return new LoadProgress();
-        }
+    public static LoadProgress read(File file) throws IOException {
         String json = FileUtils.readFileToString(file, Constants.CHARSET);
         return JsonUtil.fromJson(json, LoadProgress.class);
     }
 
     public static String format(LoadOptions options, String timestamp) {
         String dir = LoadUtil.getStructFilePrefix(options);
-        return Paths.get(dir, timestamp, Constants.PROGRESS_FILE).toString();
+        String name = Constants.PROGRESS_FILE + Constants.BLANK_STR + timestamp;
+        return Paths.get(dir, name).toString();
     }
 }

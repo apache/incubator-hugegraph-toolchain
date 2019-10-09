@@ -42,7 +42,10 @@ public final class LoadSummary {
     }
 
     public LoadMetrics metrics(ElementStruct struct) {
-        ElemType type = struct.type();
+        return this.metrics(struct.type(), struct.uniqueKey());
+    }
+
+    public LoadMetrics metrics(ElemType type, String uniqueKey) {
         Map<String, LoadMetrics> metricsMap;
         if (type.isVertex()) {
             metricsMap = this.vertexMetricsMap;
@@ -50,8 +53,7 @@ public final class LoadSummary {
             assert type.isEdge();
             metricsMap = this.edgeMetricsMap;
         }
-        return metricsMap.computeIfAbsent(struct.uniqueKey(),
-                                          k -> new LoadMetrics());
+        return metricsMap.computeIfAbsent(uniqueKey, k -> new LoadMetrics());
     }
 
     public Map<String, LoadMetrics> vertexMetrics() {

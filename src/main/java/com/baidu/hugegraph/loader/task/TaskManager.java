@@ -85,13 +85,8 @@ public final class TaskManager {
         return 2 * this.options.numThreads;
     }
 
-    private void stopLoading() {
-        this.stopped = true;
-    }
-
     public void waitFinished(ElemType type) {
         if (type == null || this.stopped) {
-            System.out.println("xxx");
             return;
         }
 
@@ -118,7 +113,7 @@ public final class TaskManager {
     }
 
     public void shutdown() {
-        this.stopLoading();
+        this.stopped = true;
 
         LOG.debug("Ready to shutdown batch-mode tasks executor");
         long timeout = this.options.shutdownTimeout;

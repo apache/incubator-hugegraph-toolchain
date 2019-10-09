@@ -48,8 +48,10 @@ import com.baidu.hugegraph.loader.summary.LoadMetrics;
 import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
+import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public final class HugeGraphLoader {
@@ -82,6 +84,8 @@ public final class HugeGraphLoader {
         try {
             // Create schema
             this.createSchema();
+            // Copy failure files for load
+            this.moveFailureFiles();
             // Load vertices
             this.load(ElemType.VERTEX);
             // Load edges
@@ -115,6 +119,35 @@ public final class HugeGraphLoader {
         groovyExecutor.execute(script, client);
     }
 
+    private void moveFailureFiles() {
+        LoadOptions options = this.context.options();
+        if (!LoadUtil.needHandleFailures(options)) {
+            return;
+        }
+
+        String dir = LoadUtil.getStructFilePrefix(options);
+        File dirFile = FileUtils.getFile(dir);
+
+        File[] subFiles = dirFile.listFiles((d, name) -> {
+            return name.endsWith(Constants.FAILURE_EXTENSION);
+        });
+        if (subFiles == null || subFiles.length == 0) {
+            return;
+        }
+        for (File srcFile : subFiles) {
+            // Rename old failure file to ".xxx.data.updated"
+            String destName = Constants.DOT_STR + srcFile.getName() +
+                              Constants.FAILURE_UPDATED;
+            File destFile = new File(destName);
+            try {
+                FileUtils.moveFile(srcFile, destFile);
+            } catch (IOException e) {
+                throw new LoadException("Failed to move old failure file '%s'",
+                                        e, srcFile);
+            }
+        }
+    }
+
     private long lastLoadedCount(ElemType type) {
         if (this.context.options().incrementalMode) {
             return this.context.oldProgress().totalLoaded(type);
@@ -128,9 +161,16 @@ public final class HugeGraphLoader {
         Printer.printRealTimeProgress(type, this.lastLoadedCount(type));
 
         this.context.loadingType(type);
+        LoadOptions options = context.options();
         LoadSummary summary = this.context.summary();
-        InputProgressMap newProgress = this.context.newProgress().get(type);
+        InputProgressMap newProgress = this.context.newProgress().type(type);
         StopWatch totalTime = StopWatch.createStarted();
+
+        if (options.incrementalMode &&
+            options.failureHandleStrategy.loadAtBegin()) {
+            this.handleFailureRecords();
+        }
+
         for (ElementStruct struct : this.graphStruct.structs(type)) {
             StopWatch loadTime = StopWatch.createStarted();
             LoadMetrics metrics = summary.metrics(struct);
@@ -140,7 +180,7 @@ public final class HugeGraphLoader {
                 // Produce batch of vertices/edges and execute loading tasks
                 try (ElementBuilder<?> builder = ElementBuilder.of(this.context,
                                                                    struct)) {
-                    this.load(this.context, builder);
+                    this.load(builder);
                 }
             }
             /*
@@ -152,6 +192,12 @@ public final class HugeGraphLoader {
             LOG.info("Loading {} '{}' with average rate: {}/s",
                      metrics.loadSuccess(), struct, metrics.averageLoadRate());
         }
+
+        if (options.incrementalMode &&
+            options.failureHandleStrategy.loadAtEnd()) {
+            this.handleFailureRecords();
+        }
+
         // Waiting async worker threads finish
         this.taskManager.waitFinished(type);
         totalTime.stop();
@@ -160,13 +206,52 @@ public final class HugeGraphLoader {
         Printer.print(summary.accumulateMetrics(type).loadSuccess());
     }
 
-    private <GE extends GraphElement> void load(LoadContext context,
-                                                ElementBuilder<GE> builder) {
+    private void handleFailureRecords() {
+        LoadOptions options = this.context.options();
+        if (!LoadUtil.needHandleFailures(options)) {
+            return;
+        }
+
+        String dir = LoadUtil.getStructFilePrefix(options);
+        File dirFile = FileUtils.getFile(dir);
+
+        File[] subFiles = dirFile.listFiles((d, name) -> {
+            return name.endsWith(Constants.FAILURE_UPDATED);
+        });
+        if (subFiles == null || subFiles.length == 0) {
+            return;
+        }
+
+        LoadSummary summary = this.context.summary();
+        for (File file : subFiles) {
+            StopWatch loadTime = StopWatch.createStarted();
+            String[] parts = file.getName().split(Constants.UNDERLINE_STR);
+            E.checkState(parts.length == 3,
+                         "Invalid file name '%s', must have 3 parts",
+                         file.getName());
+            ElemType type = ElemType.valueOf(parts[0]);
+            String uniqueKey = parts[1];
+
+            ElementStruct struct = this.graphStruct.struct(type, uniqueKey);
+            LoadMetrics metrics = summary.metrics(struct);
+            if (!this.context.stopped()) {
+                // Produce batch of vertices/edges and execute loading tasks
+                try (ElementBuilder<?> builder = ElementBuilder.of(this.context,
+                                                                   struct)) {
+                    this.load(builder);
+                }
+            }
+            loadTime.stop();
+            metrics.loadTime(loadTime.getTime(TimeUnit.MILLISECONDS));
+        }
+    }
+
+    private <GE extends GraphElement> void load(ElementBuilder<GE> builder) {
         ElementStruct struct = builder.struct();
         LOG.info("Start parsing and loading '{}'", struct);
-        LoadOptions options = context.options();
-        LoadMetrics metrics = context.summary().metrics(struct);
-        FailureLogger logger = context.failureLogger(struct);
+        LoadOptions options = this.context.options();
+        LoadMetrics metrics = this.context.summary().metrics(struct);
+        FailureLogger logger = this.context.failureLogger(struct);
 
         StopWatch parseTime = StopWatch.createStarted();
         List<Record<GE>> batch = new ArrayList<>(options.batchSize);
@@ -201,10 +286,10 @@ public final class HugeGraphLoader {
                 this.submit(struct, batch, options, metrics, parseTime);
                 // Confirm offset to avoid lost records
                 builder.confirmOffset();
-                if (!finished) {
-                    batch = new ArrayList<>(options.batchSize);
+                if (finished) {
+                    this.context.newProgress().markLoadingItemLoaded(struct);
                 } else {
-                    context.newProgress().markLoadingItemLoaded(struct);
+                    batch = new ArrayList<>(options.batchSize);
                 }
             }
         }

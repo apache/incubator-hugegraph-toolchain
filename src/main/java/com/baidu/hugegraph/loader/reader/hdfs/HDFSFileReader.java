@@ -173,7 +173,7 @@ public class HDFSFileReader extends FileReader {
                 timestamp = this.hdfs.getFileStatus(this.path)
                                      .getModificationTime();
             } catch (IOException e) {
-                throw new LoadException("Failed to get last modified time " +
+                throw new LoadException("Failed to type last modified time " +
                                         "for HDFS path '%s'", e, this.path);
             }
             byte[] bytes;

@@ -31,16 +31,19 @@ public final class Constants {
     public static final Charset CHARSET = Charsets.UTF_8;
 
     public static final String EMPTY_STR = "";
+    public static final String BLANK_STR = " ";
     public static final String DOT_STR = ".";
     public static final String MINUS_STR = "-";
+    public static final String UNDERLINE_STR = "_";
     public static final String COMMA_STR = ",";
     public static final String TAB_STR = "\t";
     public static final String NULL_STR = "NULL";
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    public static final String SKIPPED_LINE_REGEX = "(^#|^//).*";
+    public static final String SKIPPED_LINE_REGEX = "(^#|^//).*|";
     public static final String PARSE_FAILURE_SUFFIX = "parse-error";
     public static final String INSERT_FAILURE_SUFFIX = "insert-error";
     public static final String FAILURE_EXTENSION = ".data";
+    public static final String FAILURE_UPDATED = ".updated";
     public static final String PROGRESS_FILE = "load-progress";
 
     public static final String BATCH_WORKER = "batch-worker-%d";

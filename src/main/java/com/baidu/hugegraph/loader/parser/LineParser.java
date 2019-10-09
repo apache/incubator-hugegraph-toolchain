@@ -29,6 +29,10 @@ public interface LineParser {
         return false;
     }
 
+    public default String[] header() {
+        return new String[0];
+    }
+
     public default boolean parseHeader(String rawLine) {
         return false;
     }

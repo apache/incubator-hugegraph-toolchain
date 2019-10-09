@@ -35,9 +35,11 @@ import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public abstract class FileReader implements InputReader {
@@ -81,6 +83,12 @@ public abstract class FileReader implements InputReader {
                                         "file source '%s'", this.source);
             }
             this.parser.parseHeader(headerLine);
+            InputSource inputSource = struct.input();
+            E.checkState(inputSource instanceof FileSource,
+                         "The InputSource must be FileSource when need header");
+
+            FileSource fileSource = (FileSource) inputSource;
+            fileSource.header(this.parser.header());
         }
     }
 
@@ -91,8 +99,8 @@ public abstract class FileReader implements InputReader {
 
     private void progress(LoadContext context, ElementStruct struct) {
         ElemType type = struct.type();
-        InputProgressMap oldProgress = context.oldProgress().get(type);
-        InputProgressMap newProgress = context.newProgress().get(type);
+        InputProgressMap oldProgress = context.oldProgress().type(type);
+        InputProgressMap newProgress = context.newProgress().type(type);
         InputProgress oldInputProgress = oldProgress.getByStruct(struct);
         if (oldInputProgress == null) {
             oldInputProgress = new InputProgress(struct);

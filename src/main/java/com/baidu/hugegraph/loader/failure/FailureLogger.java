@@ -45,21 +45,25 @@ public final class FailureLogger {
     private final Writer insertWriter;
 
     public FailureLogger(LoadContext context, ElementStruct struct) {
-        String directory = LoadUtil.getStructFilePrefix(context.options());
-        String timestamp = context.timestamp();
+        String dir = LoadUtil.getStructFilePrefix(context.options());
         String uniqueKey = struct.uniqueKey();
-        this.parseWriter = new Writer(path(directory, timestamp, uniqueKey,
-                                           Constants.PARSE_FAILURE_SUFFIX));
-        this.insertWriter = new Writer(path(directory, timestamp, uniqueKey,
-                                            Constants.INSERT_FAILURE_SUFFIX));
+        /*
+         * If user prepare to hanlde failures, new failure record will write
+         * to the new failure file, and the old failure file need to rename
+         */
+        boolean append = context.options().failureHandleStrategy.ignore();
+
+        String path = path(dir, uniqueKey, Constants.PARSE_FAILURE_SUFFIX);
+        this.parseWriter = new Writer(path, append);
+        path = path(dir, uniqueKey, Constants.INSERT_FAILURE_SUFFIX);
+        this.insertWriter = new Writer(path, append);
     }
 
-    private static String path(String directory, String timestamp,
-                               String uniqueKey, String suffix) {
-        // The path format is: %s/%s/%s-%s
-        String fileName = uniqueKey + Constants.MINUS_STR + suffix +
-                          Constants.FAILURE_EXTENSION;
-        return Paths.get(directory, timestamp, fileName).toString();
+    private static String path(String dir, String uniqueKey, String suffix) {
+        // The path format is: %s/%s-%s
+        String fileName = uniqueKey + Constants.UNDERLINE_STR +
+                          suffix + Constants.FAILURE_EXTENSION;
+        return Paths.get(dir, fileName).toString();
     }
 
     public void error(ParseException e) {
@@ -81,37 +85,42 @@ public final class FailureLogger {
         // BufferedWriter is thread safe
         private final BufferedWriter writer;
 
-        public Writer(String name) {
+        public Writer(String name, boolean append) {
             this.file = FileUtils.getFile(name);
             checkFileAvailable(this.file);
+            FileWriter fw;
             try {
-                this.writer = new BufferedWriter(new FileWriter(this.file));
+                fw = new FileWriter(this.file, append);
             } catch (IOException e) {
                 throw new LoadException("Failed to create writer for file '%s'",
                                         e, this.file);
             }
+            this.writer = new BufferedWriter(fw);
         }
 
         public void write(ParseException e) {
             try {
-                this.writer.write("#### PARSE ERROR: " + e.getMessage());
-                this.writer.newLine();
-                this.writer.write(e.line());
-                this.writer.newLine();
+                this.writeLine("#### PARSE ERROR: " + e.getMessage());
+                this.writeLine(e.line());
             } catch (IOException ex) {
-                throw new LoadException("Write parse exception error", ex);
+                throw new LoadException("Failed to write parse error '%s'",
+                                        ex, e.line());
             }
         }
 
         public void write(InsertException e) {
             try {
-                this.writer.write("#### INSERT ERROR: " + e.getMessage());
-                this.writer.newLine();
-                this.writer.write(e.line());
-                this.writer.newLine();
+                this.writeLine("#### INSERT ERROR: " + e.getMessage());
+                this.writeLine(e.line());
             } catch (IOException ex) {
-                throw new LoadException("Write insert exception error", ex);
+                throw new LoadException("Failed to write insert error '%s'",
+                                        ex, e.line());
             }
+        }
+
+        private void writeLine(String line) throws IOException {
+            this.writer.write(line);
+            this.writer.newLine();
         }
 
         public void close() {

@@ -21,6 +21,9 @@ package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -168,25 +171,19 @@ public final class LoadContext {
             return new LoadProgress();
         }
 
-        File[] subDirs = dirFile.listFiles();
-        if (subDirs == null || subDirs.length == 0) {
+        File[] subFiles = dirFile.listFiles((d, name) -> {
+            return name.startsWith(Constants.PROGRESS_FILE);
+        });
+        if (subFiles == null || subFiles.length == 0) {
             return new LoadProgress();
         }
 
-        String lastTime = Constants.EMPTY_STR;
-        for (File subDir : subDirs) {
-            String subDirName = subDir.getName();
-            if (StringUtils.compare(subDirName, lastTime) >= 0) {
-                lastTime = subDirName;
-            }
-        }
-        if (lastTime.equals(Constants.EMPTY_STR)) {
-            return new LoadProgress();
-        }
-
-        String fileName = LoadProgress.format(options, lastTime);
+        // Sort progress files by time, then get the last progress file
+        List<File> progressFiles = Arrays.asList(subFiles);
+        progressFiles.sort(Comparator.comparing(File::getName));
+        File lastProgressFile = progressFiles.get(progressFiles.size() - 1);
         try {
-            return LoadProgress.read(fileName);
+            return LoadProgress.read(lastProgressFile);
         } catch (IOException e) {
             throw new LoadException("Failed to read progress file", e);
         }

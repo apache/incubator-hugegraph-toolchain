@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.loader.source.file;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -90,12 +90,12 @@ public class FileSource extends AbstractSource {
         return this.format;
     }
 
-    public List<String> header() {
-        if (this.header != null) {
-            return Collections.unmodifiableList(this.header);
-        } else {
-            return null;
-        }
+    public String[] header() {
+        return this.header != null ? this.header.toArray(new String[]{}) : null;
+    }
+
+    public void header(String[] header) {
+        this.header = Arrays.asList(header);
     }
 
     public String delimiter() {

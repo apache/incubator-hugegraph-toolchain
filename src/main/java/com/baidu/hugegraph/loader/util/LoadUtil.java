@@ -19,14 +19,36 @@
 
 package com.baidu.hugegraph.loader.util;
 
+import java.io.File;
+
+import org.apache.commons.io.FileUtils;
+
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.beust.jcommander.JCommander;
 
 public final class LoadUtil {
 
+    public static boolean needHandleFailures(LoadOptions options) {
+        if (!options.incrementalMode) {
+            return false;
+        }
+        if (options.failureHandleStrategy.ignore()) {
+            return false;
+        }
+
+        String dir = LoadUtil.getStructFilePrefix(options);
+        File dirFile = FileUtils.getFile(dir);
+        if (!dirFile.exists()) {
+            return false;
+        }
+
+        return true;
+    }
+
     public static String getStructFilePrefix(LoadOptions options) {
         String structFileName = options.file;
-        int lastDotIdx = structFileName.lastIndexOf(".");
+        int lastDotIdx = structFileName.lastIndexOf(Constants.DOT_STR);
         return structFileName.substring(0, lastDotIdx);
     }
 
