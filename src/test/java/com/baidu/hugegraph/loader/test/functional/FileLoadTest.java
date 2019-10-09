@@ -624,6 +624,29 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testLongProperty() {
+        ioUtil.write("vertex_long_property.csv",
+                     // trim space
+                     "marko,29,Beijing, 11620311015184296736",
+                     "vadas,27,Hongkong,11620311015184296737 ",
+                     "josh,30,Wuhan,-1",
+                     // unsigned long max value, will be parsed to -1
+                     "lop,31,HongKong,18446744073709551615");
+
+        String[] args = new String[]{
+                "-f", configPath("long_property/struct.json"),
+                "-s", configPath("long_property/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(4, vertices.size());
+    }
+
+    @Test
     public void testValidBooleanProperty() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city,isMale",
@@ -679,8 +702,8 @@ public class FileLoadTest extends LoadTest {
     public void testValidUUIDProperty() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city,no",
-                     "marko,29,Beijing,91b8dedb-bfb2-49be-a53a-1180338dfc7e",
-                     "vadas,27,Hongkong,5bfde4ca-4e51-4e92-91cd-047becf0fd39");
+                     "marko,29,Beijing, 91b8dedb-bfb2-49be-a53a-1180338dfc7e ",
+                     "vadas,27,Hongkong,5bfde4ca4e514e9291cd047becf0fd39");
 
         String[] args = new String[]{
                 "-f", configPath("value_uuid_property_in_file/struct.json"),
@@ -766,18 +789,16 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testLongProperty() {
-        ioUtil.write("vertex_long_property.csv",
+    public void testCustomizedUUID() {
+        ioUtil.write("vertex_person_uuid.csv",
                      // trim space
-                     "marko,29,Beijing, 11620311015184296736",
-                     "vadas,27,Hongkong,11620311015184296737 ",
-                     "josh,30,Wuhan,-1",
-                     // unsigned long max value, will be parsed to -1
-                     "lop,31,HongKong,18446744073709551615");
+                     " 70cc32db-d321-4914-8df3-1cc5828ce2e5,marko,29,Beijing",
+                     "f2ab4ed4-97e8-4427-bd6b-a253369db125 ,vadas,27,Hongkong",
+                     "34da417730614f30ab3775973a01cb9b, josh,30,Wuhan");
 
         String[] args = new String[]{
-                "-f", configPath("long_property/struct.json"),
-                "-s", configPath("long_property/schema.groovy"),
+                "-f", configPath("customized_uuid/struct.json"),
+                "-s", configPath("customized_uuid/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -785,7 +806,7 @@ public class FileLoadTest extends LoadTest {
         HugeGraphLoader.main(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(4, vertices.size());
+        Assert.assertEquals(3, vertices.size());
     }
 
     @Test
