@@ -72,29 +72,57 @@ public final class DataTypeUtil {
         }
     }
 
-    public static long parseLong(String rawValue) {
-        String value = rawValue.trim();
-        if (value.startsWith("-")) {
-            return Long.parseLong(value);
-        } else {
-            return Long.parseUnsignedLong(value);
+    public static long parseNumber(Object rawValue) {
+        if (rawValue instanceof Number) {
+            return ((Number) rawValue).longValue();
+        } else if (rawValue instanceof String) {
+            return parseLong(((String) rawValue).trim());
         }
+        throw new IllegalArgumentException(String.format(
+                  "The value must can be casted to Long, but got %s(%s)",
+                  rawValue, rawValue.getClass().getName()));
     }
 
-    private static Object parseSingleValue(Object value, DataType dataType,
+    public static UUID parseUUID(Object rawValue) {
+        if (rawValue instanceof UUID) {
+            return (UUID) rawValue;
+        } else if (rawValue instanceof String) {
+            String value = ((String) rawValue).trim();
+            if (value.contains("-")) {
+                return UUID.fromString(value);
+            }
+            // UUID represented by hex string
+            E.checkArgument(value.length() == 32,
+                            "Invalid UUID value: %s", value);
+            String high = value.substring(0, 16);
+            String low = value.substring(16);
+            return new UUID(Long.parseUnsignedLong(high, 16),
+                            Long.parseUnsignedLong(low, 16));
+        }
+        throw new IllegalArgumentException(String.format(
+                  "Failed to convert value %s(%s) to UUID",
+                  rawValue, rawValue.getClass()));
+    }
+
+    private static Object parseSingleValue(Object rawValue, DataType dataType,
                                            InputSource source) {
+        // Trim space if raw value is string
+        Object value = rawValue;
+        if (rawValue instanceof String) {
+            value = ((String) rawValue).trim();
+        }
         if (dataType.isNumber()) {
-            return valueToNumber(value, dataType);
-        } else if (dataType == DataType.BOOLEAN) {
-            return valueToBoolean(value);
+            return parseNumber(value, dataType);
+        } else if (dataType.isBoolean()) {
+            return parseBoolean(value);
         } else if (dataType.isDate()) {
             E.checkState(source instanceof FileSource,
                          "Only accept FileSource when convert String value " +
                          "to Date, but got '%s'", source.getClass().getName());
             String df = ((FileSource) source).dateFormat();
-            return valueToDate(value, df);
+            return parseDate(value, df);
         } else if (dataType.isUUID()) {
-            return valueToUUID(value);
+            return parseUUID(value);
         }
         E.checkArgument(checkDataType(value, dataType),
                         "The value %s(%s) is not match with data type %s " +
@@ -158,13 +186,34 @@ public final class DataTypeUtil {
         return valueColl;
     }
 
-    private static Number valueToNumber(Object value, DataType dataType) {
+    private static Boolean parseBoolean(Object rawValue) {
+        if (rawValue instanceof Boolean) {
+            return (Boolean) rawValue;
+        }
+        if (rawValue instanceof String) {
+            String value = ((String) rawValue).toLowerCase();
+            if (ACCEPTABLE_TRUE.contains(value)) {
+                return true;
+            } else if (ACCEPTABLE_FALSE.contains(value)) {
+                return false;
+            } else {
+                throw new IllegalArgumentException(String.format(
+                          "Failed to convert value %s to Boolean, "+
+                          "the acceptable boolean strings are %s or %s",
+                          rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
+            }
+        }
+        throw new IllegalArgumentException(String.format(
+                  "Failed to convert value %s(%s) to Boolean",
+                  rawValue, rawValue.getClass()));
+    }
+
+    private static Number parseNumber(Object value, DataType dataType) {
         E.checkState(dataType.isNumber(), "The target data type must be number");
 
         if (dataType.clazz().isInstance(value)) {
             return (Number) value;
         }
-
         try {
             switch (dataType) {
                 case BYTE:
@@ -190,29 +239,15 @@ public final class DataTypeUtil {
         }
     }
 
-    private static Boolean valueToBoolean(Object value) {
-        if (value instanceof Boolean) {
-            return (Boolean) value;
+    private static long parseLong(String rawValue) {
+        if (rawValue.startsWith("-")) {
+            return Long.parseLong(rawValue);
+        } else {
+            return Long.parseUnsignedLong(rawValue);
         }
-        if (value instanceof String) {
-            String bValue = ((String) value).toLowerCase().trim();
-            if (ACCEPTABLE_TRUE.contains(bValue)) {
-                return true;
-            } else if (ACCEPTABLE_FALSE.contains(bValue)) {
-                return false;
-            } else {
-                throw new IllegalArgumentException(String.format(
-                          "Failed to convert value %s to Boolean, "+
-                          "the acceptable boolean strings are %s or %s",
-                          value, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
-            }
-        }
-        throw new IllegalArgumentException(String.format(
-                  "Failed to convert value %s(%s) to Boolean",
-                  value, value.getClass()));
     }
 
-    private static Date valueToDate(Object value, String df) {
+    private static Date parseDate(Object value, String df) {
         if (value instanceof Date) {
             return (Date) value;
         }
@@ -232,23 +267,12 @@ public final class DataTypeUtil {
                   value, value.getClass()));
     }
 
-    private static UUID valueToUUID(Object value) {
-        if (value instanceof UUID) {
-            return (UUID) value;
-        } else if (value instanceof String) {
-            return UUID.fromString((String) value);
-        }
-        throw new IllegalArgumentException(String.format(
-                  "Failed to convert value %s(%s) to UUID",
-                  value, value.getClass()));
-    }
-
     /**
      * Check type of the value valid
      */
     private static boolean checkDataType(Object value, DataType dataType) {
         if (value instanceof Number) {
-            return valueToNumber(value, dataType) != null;
+            return parseNumber(value, dataType) != null;
         }
         return dataType.clazz().isInstance(value);
     }

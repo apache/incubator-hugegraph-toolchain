@@ -8,7 +8,9 @@
         "format": "CSV",
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
-        "skipped_line_regex": "(^#|^//).*"
+        "skipped_line": {
+          "regex": "(^#|^//).*"
+        }
       },
       "null_values": ["NULL", "null", ""]
     },

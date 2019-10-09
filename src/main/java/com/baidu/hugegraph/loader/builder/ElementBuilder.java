@@ -245,15 +245,4 @@ public abstract class ElementBuilder<GE extends GraphElement>
                         "The vertex id length limit is '%s', '%s' exceeds it",
                         Constants.VERTEX_ID_LIMIT, id);
     }
-
-    protected static long parseNumberId(Object idValue) {
-        if (idValue instanceof Number) {
-            return ((Number) idValue).longValue();
-        } else if (idValue instanceof String) {
-            return DataTypeUtil.parseLong((String) idValue);
-        }
-        throw new IllegalArgumentException(String.format(
-                  "The id value must can be casted to Long, but got %s(%s)",
-                  idValue, idValue.getClass().getName()));
-    }
 }
