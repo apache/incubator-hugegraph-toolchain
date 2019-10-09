@@ -40,6 +40,7 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
+import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -1583,5 +1584,89 @@ public class FileLoadTest extends LoadTest {
                 "--max-parse-errors", "3"
         };
         HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testBatchUpdateElement() {
+        ioUtil.write("vertex_person.txt",
+                     "tom\t18\t[str1,str2]",
+                     "tom\t25\t[str1,str3]");
+        ioUtil.write("edge_likes.txt",
+                     "tom\ttom\t1\t[3,4]",
+                     "tom\ttom\t2\t[1,2,3]");
+
+        String[] args = new String[]{
+                "-f", configPath("update_by_strategy/struct.json"),
+                "-s", configPath("update_by_strategy/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--check-vertex", "false"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(vertices.size(), 1);
+        Assert.assertEquals(vertices.get(0).property("age"), 18);
+        Assert.assertEquals(((List) vertices.get(0).property("set")).size(), 3);
+
+        Assert.assertEquals(edges.size(), 1);
+        Assert.assertEquals(edges.get(0).property("age"), 3);
+        Assert.assertEquals(edges.get(0).property("list"),
+                            ImmutableList.of(3, 4, 1, 2, 3));
+    }
+
+    @Test
+    public void testBatchUpdateEdgeWithVertexCheck() {
+        ioUtil.write("vertex_person.txt",
+                     "tom\t18\t[str1,str2]",
+                     "tom\t25\t[str1,str3]");
+        ioUtil.write("edge_likes.txt",
+                     "tom\ttom\t3\t[-1,0]",
+                     "jin\ttom\t1\t[3,4]",
+                     "tom\ttom\t2\t[1,2,3]");
+
+        String[] args = new String[]{
+                "-f", configPath("update_by_strategy/struct.json"),
+                "-s", configPath("update_by_strategy/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--check-vertex", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(edges.size(), 1);
+        Assert.assertEquals(edges.get(0).property("age"), 5);
+        Assert.assertEquals(edges.get(0).property("list"),
+                            ImmutableList.of(-1, 0, 1, 2, 3));
+    }
+
+    @Test
+    public void testBatchUpdateElementWithInvalidStrategy() {
+        ioUtil.write("vertex_person.txt",
+                     "tom\t18\t[str1,str2]",
+                     "tom\t25\t[str1,str3]");
+
+        String[] args = new String[]{
+                "-f", configPath("update_by_strategy/" +
+                                 "invalid_strategy_struct.json"),
+                "-s", configPath("update_by_strategy/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+
+        Assert.assertThrows(SerializeException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String expect = "Failed to deserialize json";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
+        });
     }
 }

@@ -41,6 +41,7 @@ import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.Log;
+import com.google.common.collect.ImmutableList;
 
 public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
@@ -60,7 +61,11 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
         LoadMetrics metrics = this.context().summary().metrics(this.struct());
         for (GE element : this.batch()) {
             try {
-                this.addSingle(type, element);
+                if (this.struct().updateStrategies().isEmpty()) {
+                    this.addSingle(type, element);
+                } else {
+                    this.updateSingle(type, options, element);
+                }
                 metrics.increaseLoadSuccess();
             } catch (Exception e) {
                 metrics.increaseLoadFailure();
@@ -79,6 +84,11 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
         }
         Printer.printProgress(type, metrics.loadSuccess(),
                               SINGLE_PRINT_FREQ, this.batch().size());
+    }
+
+    private void updateSingle(ElemType type, LoadOptions options, GE element) {
+        // TODO: Adapt single update later
+        this.updateBatch(type, ImmutableList.of(element), options.checkVertex);
     }
 
     private void addSingle(ElemType type, GE element) {

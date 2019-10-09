@@ -1,0 +1,41 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "update_strategies": {
+        "age": "SMALLER",
+        "set": "UNION"
+      },
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.txt",
+        "format": "TEXT",
+        "header": ["name", "age", "set"],
+        "charset": "UTF-8"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "label": "likes",
+      "source": ["from"],
+      "target": ["to"],
+      "update_strategies": {
+        "age": "SUM",
+        "list": "APPEND"
+      },
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_likes.txt",
+        "header": ["from", "to", "age", "list"],
+        "format": "TEXT",
+        "date_format": "yyyy-MM-dd"
+      },
+      "null_values": [""],
+      "field_mapping": {
+        "from": "name",
+        "to": "name"
+      }
+    }
+  ]
+}
