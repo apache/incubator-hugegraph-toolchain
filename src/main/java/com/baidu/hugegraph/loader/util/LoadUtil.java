@@ -30,14 +30,11 @@ import com.beust.jcommander.JCommander;
 public final class LoadUtil {
 
     public static boolean needHandleFailures(LoadOptions options) {
-        if (!options.incrementalMode) {
-            return false;
-        }
-        if (options.failureHandleStrategy.ignore()) {
+        if (!options.incrementalMode || !options.reloadFailure) {
             return false;
         }
 
-        String dir = LoadUtil.getStructFilePrefix(options);
+        String dir = LoadUtil.getStructDirPrefix(options);
         File dirFile = FileUtils.getFile(dir);
         if (!dirFile.exists()) {
             return false;
@@ -46,7 +43,7 @@ public final class LoadUtil {
         return true;
     }
 
-    public static String getStructFilePrefix(LoadOptions options) {
+    public static String getStructDirPrefix(LoadOptions options) {
         String structFileName = options.file;
         int lastDotIdx = structFileName.lastIndexOf(Constants.DOT_STR);
         return structFileName.substring(0, lastDotIdx);

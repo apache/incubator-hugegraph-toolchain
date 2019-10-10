@@ -63,15 +63,15 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                 this.metrics().increaseLoadSuccess();
             } catch (Exception e) {
                 this.metrics().increaseLoadFailure();
-                LOG.error("Single insert {} error", this.type(), e);
+                LOG.error("Single insert {} write", this.type(), e);
                 if (this.options().testMode) {
                     throw e;
                 }
                 // Write to current struct's insert failure log
-                logger.error(new InsertException(record.rawLine(), e));
+                logger.write(new InsertException(record.rawLine(), e));
                 long failureNum = this.metrics().loadFailure();
                 if (failureNum >= this.options().maxInsertErrors) {
-                    Printer.printError("More than %s %s insert error, stop " +
+                    Printer.printError("More than %s %s insert write, stop " +
                                        "parsing and waiting other insert " +
                                        "tasks finished",
                                        this.options().maxInsertErrors,

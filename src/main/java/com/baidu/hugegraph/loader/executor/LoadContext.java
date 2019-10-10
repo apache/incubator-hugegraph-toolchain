@@ -52,7 +52,6 @@ public final class LoadContext {
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
     private ElemType loadingType;
-    private boolean updateProgress;
 
     private volatile boolean stopped;
     private final LoadOptions options;
@@ -66,7 +65,6 @@ public final class LoadContext {
     public LoadContext(String[] args) {
         this.timestamp = DateUtil.now(Constants.DATE_FORMAT);
         this.loadingType = null;
-        this.updateProgress = true;
         this.stopped = false;
         this.options = parseCheckOptions(args);
         this.summary = new LoadSummary();
@@ -85,14 +83,6 @@ public final class LoadContext {
 
     public void loadingType(ElemType type) {
         this.loadingType = type;
-    }
-
-    public boolean updateProgress() {
-        return this.updateProgress;
-    }
-
-    public void updateProgress(boolean updateProgress) {
-        this.updateProgress = updateProgress;
     }
 
     public boolean stopped() {
@@ -163,9 +153,14 @@ public final class LoadContext {
         E.checkArgument(!StringUtils.isEmpty(options.graph),
                         "Must specified a graph");
         // Check option "-h"
-        String httpPrefix = "http://";
-        if (!options.host.startsWith(httpPrefix)) {
-            options.host = httpPrefix + options.host;
+        if (!options.host.startsWith(Constants.HHTP_PREFIX)) {
+            options.host = Constants.HHTP_PREFIX + options.host;
+        }
+        // Check option --incremental-mode and --reload-failure
+        if (options.reloadFailure) {
+            E.checkArgument(options.incrementalMode,
+                            "Option --reload-failure is only allowed to set " +
+                            "in incremental mode");
         }
         return options;
     }
@@ -175,7 +170,7 @@ public final class LoadContext {
             return new LoadProgress();
         }
 
-        String dir = LoadUtil.getStructFilePrefix(options);
+        String dir = LoadUtil.getStructDirPrefix(options);
         File dirFile = FileUtils.getFile(dir);
         if (!dirFile.exists()) {
             return new LoadProgress();

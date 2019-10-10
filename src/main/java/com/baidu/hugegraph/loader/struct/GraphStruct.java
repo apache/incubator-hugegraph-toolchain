@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader.struct;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +36,10 @@ import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
+import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -80,14 +84,6 @@ public class GraphStruct implements Checkable {
         this.checkNoSameStruct(this.edgeStructs);
     }
 
-    public List<VertexStruct> vertexStructs() {
-        return this.vertexStructs;
-    }
-
-    public List<EdgeStruct> edgeStructs() {
-        return this.edgeStructs;
-    }
-
     @SuppressWarnings("unchecked")
     public <ES extends ElementStruct> List<ES> structs(ElemType type) {
         if (type.isVertex()) {
@@ -98,14 +94,42 @@ public class GraphStruct implements Checkable {
         }
     }
 
-    public ElementStruct struct(ElemType type, String uniqueKey) {
-        List<ElementStruct> structs = this.structs(type);
-        for (ElementStruct struct : structs) {
-            if (struct.uniqueKey().equals(uniqueKey)) {
-                return struct;
+    @SuppressWarnings("unchecked")
+    public <ES extends ElementStruct> List<ES> failureStructs(
+                                               ElemType type,
+                                               LoadOptions options) {
+        List<ES> sourceStructs = (List<ES>) (type.isVertex() ?
+                                             this.vertexStructs :
+                                             this.edgeStructs);
+        List<ES> targetStructs = new ArrayList<>();
+        for (ES struct : sourceStructs) {
+            InputSource inputSource = struct.input();
+            E.checkState(inputSource instanceof FileSource,
+                         "The input source must be instance of FileSource");
+            FileSource fileSource = (FileSource) inputSource;
+
+            String dir = LoadUtil.getStructDirPrefix(options);
+            String path = Paths.get(dir, Constants.FAILURE_HISTORY_DIR,
+                                    struct.uniqueKey()).toString();
+            File pathDir = FileUtils.getFile(path);
+            // path dir unexist means that no failure data
+            if (!pathDir.exists()) {
+                continue;
             }
+            if (!pathDir.isDirectory()) {
+                throw new LoadException("The path '%s' used as input path of " +
+                                        "failure struct must be directory",
+                                        path);
+            }
+
+            // Set failure data path
+            fileSource.path(path);
+            // In order to distinguish from the normal loaded strcut
+            struct.resetUniqueKey();
+
+            targetStructs.add(struct);
         }
-        throw new LoadException("Can't find element struct '%s'", uniqueKey);
+        return targetStructs;
     }
 
     private <T extends ElementStruct> void checkNoSameStruct(List<T> structs) {

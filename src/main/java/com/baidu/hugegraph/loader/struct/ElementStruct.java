@@ -73,10 +73,13 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     public String uniqueKey() {
         if (this.uniqueKey == null) {
             String hashCode = HashUtil.hash(JsonUtil.toJson(this));
-            this.uniqueKey = this.type().lowerName() + Constants.UNDERLINE_STR +
-                             this.label + Constants.MINUS_STR + hashCode;
+            this.uniqueKey = this.label + Constants.MINUS_STR + hashCode;
         }
         return this.uniqueKey;
+    }
+
+    public void resetUniqueKey() {
+        this.uniqueKey = null;
     }
 
     @Override

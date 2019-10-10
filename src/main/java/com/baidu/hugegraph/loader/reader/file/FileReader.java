@@ -62,14 +62,13 @@ public abstract class FileReader implements InputReader {
         return this.source;
     }
 
-    protected abstract Readers openReaders(boolean updateProgress)
-                                           throws IOException;
+    protected abstract Readers openReaders() throws IOException;
 
     @Override
     public void init(LoadContext context, ElementStruct struct) {
         LOG.info("Opening struct '{}'", struct);
         try {
-            this.readers = this.openReaders(context.updateProgress());
+            this.readers = this.openReaders();
         } catch (IOException e) {
             throw new LoadException("Failed to open readers for struct '%s'",
                                     e, struct);

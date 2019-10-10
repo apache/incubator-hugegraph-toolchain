@@ -156,7 +156,7 @@ public final class TaskManager {
         InsertTask<GE> task = new BatchInsertTask<>(this.context, struct,
                                                     batch);
         CompletableFuture.runAsync(task, this.batchService).exceptionally(e -> {
-            LOG.warn("Batch insert {} error, try single insert", type, e);
+            LOG.warn("Batch insert {} write, try single insert", type, e);
             this.submitInSingle(struct, batch);
             return null;
         }).whenComplete((r, e) -> this.batchSemaphore.release());

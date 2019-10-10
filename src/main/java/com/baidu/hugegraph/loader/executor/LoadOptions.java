@@ -20,12 +20,8 @@
 package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
 
-import com.baidu.hugegraph.loader.failure.FailureHandleStrategy;
 import com.beust.jcommander.IParameterValidator;
-import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
@@ -65,13 +61,9 @@ public final class LoadOptions {
                description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
 
-    @Parameter(names = {"--failure-handle-strategy"}, arity = 1,
-               validateWith = {FailureHandleStrategyValidator.class},
-               converter = FailureHandleStrategyConverter.class,
-               description = "The handle strategy for the failure records, " +
-                             "only take effect under incremental mode.")
-    public FailureHandleStrategy failureHandleStrategy =
-                                 FailureHandleStrategy.IGNORE;
+    @Parameter(names = {"--reload-failure"}, arity = 1,
+               description = "Whether to reload the previously failure record")
+    public boolean reloadFailure = false;
 
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -102,13 +94,13 @@ public final class LoadOptions {
 
     @Parameter(names = {"--max-parse-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The maximum number of rows that parse error " +
+               description = "The maximum number of rows that parse write " +
                              "before exiting")
     public int maxParseErrors = 1;
 
     @Parameter(names = {"--max-insert-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The maximum number of rows that insert error " +
+               description = "The maximum number of rows that insert write " +
                              "before exiting")
     public int maxInsertErrors = 500;
 
@@ -190,40 +182,6 @@ public final class LoadOptions {
                           "Parameter '%s' should be positive, but got '%s'",
                           name, value));
             }
-        }
-    }
-
-    public static class FailureHandleStrategyValidator
-                  implements IParameterValidator {
-
-        @Override
-        public void validate(String name, String value)
-                             throws ParameterException {
-            if (value == null) {
-                return;
-            }
-            List<FailureHandleStrategy> strategies;
-            strategies = Arrays.asList(FailureHandleStrategy.values());
-            for (FailureHandleStrategy strategy : strategies) {
-                if (strategy.name().equalsIgnoreCase(value)) {
-                    return;
-                }
-            }
-            throw new ParameterException(String.format(
-                      "Parameter '%s' should belong to [%s], but got '%s'",
-                      name, strategies, value));
-        }
-    }
-
-    public static class FailureHandleStrategyConverter
-                  implements IStringConverter<FailureHandleStrategy> {
-
-        @Override
-        public FailureHandleStrategy convert(String value) {
-            if (value == null) {
-                return FailureHandleStrategy.IGNORE;
-            }
-            return FailureHandleStrategy.valueOf(value.toUpperCase());
         }
     }
 }

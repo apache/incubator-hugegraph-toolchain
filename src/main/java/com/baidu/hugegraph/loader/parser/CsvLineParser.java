@@ -44,7 +44,7 @@ public class CsvLineParser extends TextLineParser {
         try {
             return this.parser.parseLine(line);
         } catch (IOException e) {
-            throw new ParseException(line, "Parse line '%s' error", e, line);
+            throw new ParseException(line, "Parse line '%s' write", e, line);
         }
     }
 }

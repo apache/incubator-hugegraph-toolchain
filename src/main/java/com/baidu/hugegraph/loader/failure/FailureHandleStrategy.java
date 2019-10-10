@@ -23,19 +23,13 @@ public enum FailureHandleStrategy {
 
     IGNORE,
 
-    LOAD_AT_BEGIN,
-
-    LOAD_AT_END;
+    RELOAD;
 
     public boolean ignore() {
         return this == IGNORE;
     }
 
-    public boolean loadAtBegin() {
-        return this == LOAD_AT_BEGIN;
-    }
-
-    public boolean loadAtEnd() {
-        return this == LOAD_AT_END;
+    public boolean reload() {
+        return this == RELOAD;
     }
 }

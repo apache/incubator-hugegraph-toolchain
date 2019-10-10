@@ -86,6 +86,10 @@ public class FileSource extends AbstractSource {
         return this.path;
     }
 
+    public void path(String path) {
+        this.path = path;
+    }
+
     public FileFilter filter() {
         return this.filter;
     }

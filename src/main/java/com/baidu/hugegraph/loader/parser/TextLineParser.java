@@ -34,14 +34,12 @@ public class TextLineParser implements LineParser {
     private final String delimiter;
 
     public TextLineParser(FileSource source) {
-        this(source.header(), source.delimiter() != null ?
-                              source.delimiter() :
-                              Constants.TAB_STR);
+        this(source.header(), source.delimiter());
     }
 
     public TextLineParser(String[] header, String delimiter) {
         this.header = header;
-        this.delimiter = delimiter;
+        this.delimiter = delimiter != null ? delimiter : Constants.TAB_STR;
     }
 
     public String delimiter() {

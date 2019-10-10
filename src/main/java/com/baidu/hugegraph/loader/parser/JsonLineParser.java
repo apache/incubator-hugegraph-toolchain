@@ -40,7 +40,7 @@ public class JsonLineParser implements LineParser {
             keyValues = JsonUtil.convertMap(line, String.class, Object.class);
             return new Line(line, keyValues);
         } catch (SerializeException e) {
-            throw new ParseException(line, "Deserialize line '%s' error",
+            throw new ParseException(line, "Deserialize line '%s' write",
                                      e, line);
         }
     }

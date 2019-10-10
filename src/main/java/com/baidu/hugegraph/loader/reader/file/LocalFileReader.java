@@ -41,7 +41,7 @@ public class LocalFileReader extends FileReader {
     }
 
     @Override
-    protected Readers openReaders(boolean updateProgress) {
+    protected Readers openReaders() {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
 
@@ -67,7 +67,7 @@ public class LocalFileReader extends FileReader {
                 }
             }
         }
-        return new Readers(this.source(), files, updateProgress);
+        return new Readers(this.source(), files);
     }
 
     private static void checkExistAndReadable(File file) {

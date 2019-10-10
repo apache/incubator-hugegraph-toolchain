@@ -96,7 +96,7 @@ public final class LoadProgress {
     }
 
     public static String format(LoadOptions options, String timestamp) {
-        String dir = LoadUtil.getStructFilePrefix(options);
+        String dir = LoadUtil.getStructDirPrefix(options);
         String name = Constants.PROGRESS_FILE + Constants.BLANK_STR + timestamp;
         return Paths.get(dir, name).toString();
     }

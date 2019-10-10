@@ -109,12 +109,12 @@ public final class HugeGraphLoader {
         File schemaFile = FileUtils.getFile(options.schema);
         HugeClient client = HugeClientHolder.get(options);
         GroovyExecutor groovyExecutor = new GroovyExecutor();
-        groovyExecutor.bind("schema", client.schema());
+        groovyExecutor.bind(Constants.GROOVY_SCHEMA, client.schema());
         String script;
         try {
             script = FileUtils.readFileToString(schemaFile, Constants.CHARSET);
         } catch (IOException e) {
-            throw new LoadException("Read schema file '%s' error",
+            throw new LoadException("Read schema file '%s' write",
                                     e, options.schema);
         }
         groovyExecutor.execute(script, client);
@@ -126,23 +126,32 @@ public final class HugeGraphLoader {
             return;
         }
 
-        String dir = LoadUtil.getStructFilePrefix(options);
-        File dirFile = FileUtils.getFile(dir);
-
-        File[] subFiles = dirFile.listFiles((d, name) -> {
+        String dir = LoadUtil.getStructDirPrefix(options);
+        File structDir = FileUtils.getFile(dir);
+        File currentDir = FileUtils.getFile(structDir,
+                                            Constants.FAILURE_CURRENT_DIR);
+        File[] subFiles = currentDir.listFiles((d, name) -> {
             return name.endsWith(Constants.FAILURE_EXTENSION);
         });
         if (subFiles == null || subFiles.length == 0) {
             return;
         }
         for (File srcFile : subFiles) {
-            // Rename old failure file to ".xxx.data.updated"
-            String destName = Constants.DOT_STR + srcFile.getName() +
-                              Constants.FAILURE_UPDATED;
-            String fileName = Paths.get(dir, destName).toString();
-            File destFile = new File(fileName);
+            String[] parts = srcFile.getName().split(Constants.UNDERLINE_STR);
+            E.checkState(parts.length == 2,
+                         "Invalid file name '%s', must have 2 parts",
+                         srcFile.getName());
+            // person-5117b102
+            String uniqueKey = parts[0];
+            // insert-write.data
+            String fileSuffix = parts[1];
+
+            String fileName = this.context.timestamp() + Constants.BLANK_STR +
+                              fileSuffix;
+            String destName = Paths.get(dir, Constants.FAILURE_HISTORY_DIR,
+                                        uniqueKey, fileName).toString();
+            File destFile = new File(destName);
             try {
-                FileUtils.deleteQuietly(destFile);
                 FileUtils.moveFile(srcFile, destFile);
             } catch (IOException e) {
                 throw new LoadException("Failed to move old failure file '%s'",
@@ -163,19 +172,30 @@ public final class HugeGraphLoader {
         LOG.info("Start loading {}", type.string());
         Printer.printRealTimeProgress(type, this.lastLoadedCount(type));
 
-        this.context.updateProgress(true);
         this.context.loadingType(type);
         LoadOptions options = context.options();
         LoadSummary summary = this.context.summary();
-        InputProgressMap newProgress = this.context.newProgress().type(type);
         StopWatch totalTime = StopWatch.createStarted();
 
-        if (options.incrementalMode &&
-            options.failureHandleStrategy.loadAtBegin()) {
-            this.handleFailureRecords();
+        // Load normal data
+        this.load(type, this.graphStruct.structs(type));
+        // Load failure data
+        if (options.incrementalMode && options.reloadFailure) {
+            this.load(type, this.graphStruct.failureStructs(type, options));
         }
 
-        for (ElementStruct struct : this.graphStruct.structs(type)) {
+        // Waiting async worker threads finish
+        this.taskManager.waitFinished(type);
+        totalTime.stop();
+        summary.totalTime(type, totalTime.getTime(TimeUnit.MILLISECONDS));
+
+        Printer.print(summary.accumulateMetrics(type).loadSuccess());
+    }
+
+    private void load(ElemType type, List<ElementStruct> structs) {
+        LoadSummary summary = this.context.summary();
+        InputProgressMap newProgress = this.context.newProgress().type(type);
+        for (ElementStruct struct : structs) {
             StopWatch loadTime = StopWatch.createStarted();
             LoadMetrics metrics = summary.metrics(struct);
             if (!this.context.stopped()) {
@@ -195,61 +215,6 @@ public final class HugeGraphLoader {
             metrics.loadTime(loadTime.getTime(TimeUnit.MILLISECONDS));
             LOG.info("Loading {} '{}' with average rate: {}/s",
                      metrics.loadSuccess(), struct, metrics.averageLoadRate());
-        }
-
-        if (options.incrementalMode &&
-            options.failureHandleStrategy.loadAtEnd()) {
-            this.handleFailureRecords();
-        }
-
-        // Waiting async worker threads finish
-        this.taskManager.waitFinished(type);
-        totalTime.stop();
-        summary.totalTime(type, totalTime.getTime(TimeUnit.MILLISECONDS));
-
-        Printer.print(summary.accumulateMetrics(type).loadSuccess());
-    }
-
-    private void handleFailureRecords() {
-        this.context.updateProgress(false);
-
-        LoadOptions options = this.context.options();
-        if (!LoadUtil.needHandleFailures(options)) {
-            return;
-        }
-
-        String dir = LoadUtil.getStructFilePrefix(options);
-        File dirFile = FileUtils.getFile(dir);
-
-        File[] subFiles = dirFile.listFiles((d, name) -> {
-            return name.endsWith(Constants.FAILURE_UPDATED);
-        });
-        if (subFiles == null || subFiles.length == 0) {
-            return;
-        }
-
-        LoadSummary summary = this.context.summary();
-        for (File file : subFiles) {
-            StopWatch loadTime = StopWatch.createStarted();
-            String[] parts = file.getName().split(Constants.UNDERLINE_STR);
-            E.checkState(parts.length == 3,
-                         "Invalid file name '%s', must have 3 parts",
-                         file.getName());
-            String typeValue = parts[0].substring(Constants.DOT_STR.length());
-            ElemType type = ElemType.valueOf(typeValue.toUpperCase());
-            String uniqueKey = typeValue + Constants.UNDERLINE_STR + parts[1];
-
-            ElementStruct struct = this.graphStruct.struct(type, uniqueKey);
-            LoadMetrics metrics = summary.metrics(struct);
-            if (!this.context.stopped()) {
-                // Produce batch of vertices/edges and execute loading tasks
-                try (ElementBuilder<?> builder = ElementBuilder.of(this.context,
-                                                                   struct)) {
-                    this.load(builder);
-                }
-            }
-            loadTime.stop();
-            metrics.loadTime(loadTime.getTime(TimeUnit.MILLISECONDS));
         }
     }
 
@@ -274,12 +239,12 @@ public final class HugeGraphLoader {
                 if (options.testMode) {
                     throw e;
                 }
-                LOG.error("Parse {} error", struct.type(), e);
+                LOG.error("Parse {} write", struct.type(), e);
                 // Write to current struct's parse failure log
-                logger.error(e);
+                logger.write(e);
                 long failureNum = metrics.increaseParseFailure();
                 if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("More than %s %s parsing error, stop " +
+                    Printer.printError("More than %s %s parsing write, stop " +
                                        "parsing and waiting all insert tasks " +
                                        "finished",
                                        options.maxParseErrors,
@@ -294,9 +259,7 @@ public final class HugeGraphLoader {
                 // Confirm offset to avoid lost records
                 builder.confirmOffset();
                 if (finished) {
-                    if (this.context.updateProgress()) {
-                        this.context.newProgress().markLoadingItemLoaded(struct);
-                    }
+                    this.context.newProgress().markLoadingItemLoaded(struct);
                 } else {
                     batch = new ArrayList<>(options.batchSize);
                 }

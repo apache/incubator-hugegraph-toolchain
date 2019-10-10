@@ -55,32 +55,27 @@ public class Readers {
 
     private final FileSource source;
     private final List<Readable> readables;
-    private final boolean updateProgress;
     private int index;
     private BufferedReader reader;
 
-    public Readers(FileSource source, List<Readable> readables,
-                   boolean updateProgress) {
+    public Readers(FileSource source, List<Readable> readables) {
         E.checkNotNull(source, "source");
         E.checkNotNull(readables, "readables");
         this.source = source;
         this.readables = readables;
-        this.updateProgress = updateProgress;
         this.index = -1;
         this.reader = null;
     }
 
     public void progress(InputProgress oldProgress, InputProgress newProgress) {
         E.checkNotNull(oldProgress, "old progress");
-        if (this.updateProgress) {
-            E.checkNotNull(newProgress, "new progress");
-        }
+        E.checkNotNull(newProgress, "new progress");
         this.oldProgress = oldProgress;
         this.newProgress = newProgress;
     }
 
     public long confirmOffset() {
-        return this.updateProgress ? this.newProgress.confirmOffset() : 0L;
+        return this.newProgress.confirmOffset();
     }
 
     public int index() {
@@ -108,9 +103,7 @@ public class Readers {
             }
         }
 
-        if (this.updateProgress) {
-            this.newProgress.increaseLoadingOffset();
-        }
+        this.newProgress.increaseLoadingOffset();
         return line;
     }
 
@@ -132,9 +125,7 @@ public class Readers {
                                     this.readables.get(this.index), offset);
         }
 
-        if (this.updateProgress) {
-            this.newProgress.addLoadingOffset(offset);
-        }
+        this.newProgress.addLoadingOffset(offset);
     }
 
     public void close() throws IOException {
@@ -159,14 +150,10 @@ public class Readers {
                                                        inputItem);
         // The file has been loaded before and it is not changed
         if (matchItem != null) {
-            if (this.updateProgress) {
-                this.newProgress.addLoadedItem(matchItem);
-            }
+            this.newProgress.addLoadedItem(matchItem);
             return this.openNext();
         } else {
-            if (this.updateProgress) {
-                this.newProgress.addLoadingItem(inputItem);
-            }
+            this.newProgress.addLoadingItem(inputItem);
         }
 
         return this.openReader(readable);

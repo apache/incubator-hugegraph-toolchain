@@ -45,13 +45,13 @@ public final class FailureLogger {
     private final Writer insertWriter;
 
     public FailureLogger(LoadContext context, ElementStruct struct) {
-        String dir = LoadUtil.getStructFilePrefix(context.options());
+        String dir = LoadUtil.getStructDirPrefix(context.options());
         String uniqueKey = struct.uniqueKey();
         /*
          * If user prepare to hanlde failures, new failure record will write
          * to the new failure file, and the old failure file need to rename
          */
-        boolean append = context.options().failureHandleStrategy.ignore();
+        boolean append = !context.options().reloadFailure;
 
         String path = path(dir, uniqueKey, Constants.PARSE_FAILURE_SUFFIX);
         this.parseWriter = new Writer(path, append);
@@ -60,17 +60,17 @@ public final class FailureLogger {
     }
 
     private static String path(String dir, String uniqueKey, String suffix) {
-        // The path format is: %s/%s-%s
-        String fileName = uniqueKey + Constants.UNDERLINE_STR +
-                          suffix + Constants.FAILURE_EXTENSION;
-        return Paths.get(dir, fileName).toString();
+        // The path format is: struct/current/person-f17h1220_parse-error.data
+        String name = uniqueKey + Constants.UNDERLINE_STR +
+                      suffix + Constants.FAILURE_EXTENSION;
+        return Paths.get(dir, Constants.FAILURE_CURRENT_DIR, name).toString();
     }
 
-    public void error(ParseException e) {
+    public void write(ParseException e) {
         this.parseWriter.write(e);
     }
 
-    public void error(InsertException e) {
+    public void write(InsertException e) {
         this.insertWriter.write(e);
     }
 
@@ -103,7 +103,7 @@ public final class FailureLogger {
                 this.writeLine("#### PARSE ERROR: " + e.getMessage());
                 this.writeLine(e.line());
             } catch (IOException ex) {
-                throw new LoadException("Failed to write parse error '%s'",
+                throw new LoadException("Failed to write parse write '%s'",
                                         ex, e.line());
             }
         }
@@ -113,7 +113,7 @@ public final class FailureLogger {
                 this.writeLine("#### INSERT ERROR: " + e.getMessage());
                 this.writeLine(e.line());
             } catch (IOException ex) {
-                throw new LoadException("Failed to write insert error '%s'",
+                throw new LoadException("Failed to write insert write '%s'",
                                         ex, e.line());
             }
         }
@@ -129,6 +129,10 @@ public final class FailureLogger {
                 this.writer.close();
             } catch (IOException e) {
                 LOG.error("Failed to close writer for file '{}'", file);
+            }
+            if (this.file.length() == 0) {
+                LOG.debug("file {} is empty, delete it", this.file);
+                this.file.delete();
             }
         }
 
