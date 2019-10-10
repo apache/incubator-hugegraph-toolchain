@@ -32,7 +32,7 @@ public class CsvLineParser extends TextLineParser {
     private final CSVParser parser;
 
     public CsvLineParser(FileSource source) {
-        super(source, Constants.COMMA_STR);
+        super(source.header(), Constants.COMMA_STR);
         char separator = this.delimiter().charAt(0);
         this.parser = new CSVParserBuilder().withSeparator(separator)
                                             .withIgnoreQuotations(false)

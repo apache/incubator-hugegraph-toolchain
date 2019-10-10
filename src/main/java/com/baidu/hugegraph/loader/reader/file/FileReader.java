@@ -62,34 +62,20 @@ public abstract class FileReader implements InputReader {
         return this.source;
     }
 
-    protected abstract Readers openReaders() throws IOException;
+    protected abstract Readers openReaders(boolean updateProgress)
+                                           throws IOException;
 
     @Override
     public void init(LoadContext context, ElementStruct struct) {
         LOG.info("Opening struct '{}'", struct);
         try {
-            this.readers = this.openReaders();
+            this.readers = this.openReaders(context.updateProgress());
         } catch (IOException e) {
             throw new LoadException("Failed to open readers for struct '%s'",
                                     e, struct);
         }
         this.progress(context, struct);
-
-        boolean needHeader = this.parser.needHeader();
-        String headerLine = this.readers.skipOffset(needHeader);
-        if (needHeader) {
-            if (headerLine == null) {
-                throw new LoadException("Failed to read header from " +
-                                        "file source '%s'", this.source);
-            }
-            this.parser.parseHeader(headerLine);
-            InputSource inputSource = struct.input();
-            E.checkState(inputSource instanceof FileSource,
-                         "The InputSource must be FileSource when need header");
-
-            FileSource fileSource = (FileSource) inputSource;
-            fileSource.header(this.parser.header());
-        }
+        this.readers.skipOffset();
     }
 
     @Override
@@ -151,7 +137,7 @@ public abstract class FileReader implements InputReader {
             }
             boolean openNext = index != this.readers.index();
             index = this.readers.index();
-            if (openNext && this.parser.parseHeader(rawLine)) {
+            if (openNext) {
                 continue;
             }
             return this.parser.parse(rawLine);

@@ -29,31 +29,25 @@ import com.baidu.hugegraph.util.StringUtil;
 
 public class TextLineParser implements LineParser {
 
-    private final FileSource source;
-
+    private final String[] header;
     // Default is "\t"
     private final String delimiter;
-    private String[] header;
 
     public TextLineParser(FileSource source) {
-        this(source, source.delimiter() != null ?
-                     source.delimiter() :
-                     Constants.TAB_STR);
+        this(source.header(), source.delimiter() != null ?
+                              source.delimiter() :
+                              Constants.TAB_STR);
     }
 
-    public TextLineParser(FileSource source, String delimiter) {
-        this.source = source;
+    public TextLineParser(String[] header, String delimiter) {
+        this.header = header;
         this.delimiter = delimiter;
-        if (this.source.header() != null) {
-            this.header = this.source.header();
-        }
     }
 
     public String delimiter() {
         return this.delimiter;
     }
 
-    @Override
     public String[] header() {
         return this.header;
     }
@@ -82,39 +76,6 @@ public class TextLineParser implements LineParser {
             return new Line(line, this.header, supColumns);
         }
         return new Line(line, this.header, columns);
-    }
-
-    @Override
-    public boolean needHeader() {
-        return this.header == null;
-    }
-
-    @Override
-    public boolean parseHeader(String line) {
-        /*
-         * All lines will be treated as data line if the header is
-         * user specified explicitly
-         */
-        if (this.source.header() != null) {
-            return false;
-        }
-
-        if (line == null || line.isEmpty()) {
-            throw new ParseException("The file header can't be empty " +
-                                     "under path '%s'", this.source.path());
-        }
-
-        // If doesn't specify header, the first line is treated as header
-        String[] columns = this.split(line);
-        assert columns.length > 0;
-        if (this.header == null) {
-            this.header = columns;
-        } else if (!Arrays.equals(this.header, columns)) {
-            // Has been parsed from the previous file
-            throw new ParseException("The headers of different files must be " +
-                                     "same under path '%s'", this.source.path());
-        }
-        return true;
     }
 
     public String[] split(String line) {

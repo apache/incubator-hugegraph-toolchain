@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -138,8 +139,10 @@ public final class HugeGraphLoader {
             // Rename old failure file to ".xxx.data.updated"
             String destName = Constants.DOT_STR + srcFile.getName() +
                               Constants.FAILURE_UPDATED;
-            File destFile = new File(destName);
+            String fileName = Paths.get(dir, destName).toString();
+            File destFile = new File(fileName);
             try {
+                FileUtils.deleteQuietly(destFile);
                 FileUtils.moveFile(srcFile, destFile);
             } catch (IOException e) {
                 throw new LoadException("Failed to move old failure file '%s'",
@@ -160,6 +163,7 @@ public final class HugeGraphLoader {
         LOG.info("Start loading {}", type.string());
         Printer.printRealTimeProgress(type, this.lastLoadedCount(type));
 
+        this.context.updateProgress(true);
         this.context.loadingType(type);
         LoadOptions options = context.options();
         LoadSummary summary = this.context.summary();
@@ -207,6 +211,8 @@ public final class HugeGraphLoader {
     }
 
     private void handleFailureRecords() {
+        this.context.updateProgress(false);
+
         LoadOptions options = this.context.options();
         if (!LoadUtil.needHandleFailures(options)) {
             return;
@@ -229,8 +235,9 @@ public final class HugeGraphLoader {
             E.checkState(parts.length == 3,
                          "Invalid file name '%s', must have 3 parts",
                          file.getName());
-            ElemType type = ElemType.valueOf(parts[0]);
-            String uniqueKey = parts[1];
+            String typeValue = parts[0].substring(Constants.DOT_STR.length());
+            ElemType type = ElemType.valueOf(typeValue.toUpperCase());
+            String uniqueKey = typeValue + Constants.UNDERLINE_STR + parts[1];
 
             ElementStruct struct = this.graphStruct.struct(type, uniqueKey);
             LoadMetrics metrics = summary.metrics(struct);
@@ -287,7 +294,9 @@ public final class HugeGraphLoader {
                 // Confirm offset to avoid lost records
                 builder.confirmOffset();
                 if (finished) {
-                    this.context.newProgress().markLoadingItemLoaded(struct);
+                    if (this.context.updateProgress()) {
+                        this.context.newProgress().markLoadingItemLoaded(struct);
+                    }
                 } else {
                     batch = new ArrayList<>(options.batchSize);
                 }

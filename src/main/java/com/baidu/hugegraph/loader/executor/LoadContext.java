@@ -52,6 +52,7 @@ public final class LoadContext {
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
     private ElemType loadingType;
+    private boolean updateProgress;
 
     private volatile boolean stopped;
     private final LoadOptions options;
@@ -65,6 +66,7 @@ public final class LoadContext {
     public LoadContext(String[] args) {
         this.timestamp = DateUtil.now(Constants.DATE_FORMAT);
         this.loadingType = null;
+        this.updateProgress = true;
         this.stopped = false;
         this.options = parseCheckOptions(args);
         this.summary = new LoadSummary();
@@ -83,6 +85,14 @@ public final class LoadContext {
 
     public void loadingType(ElemType type) {
         this.loadingType = type;
+    }
+
+    public boolean updateProgress() {
+        return this.updateProgress;
+    }
+
+    public void updateProgress(boolean updateProgress) {
+        this.updateProgress = updateProgress;
     }
 
     public boolean stopped() {

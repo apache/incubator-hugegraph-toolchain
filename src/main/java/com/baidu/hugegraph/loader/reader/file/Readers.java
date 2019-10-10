@@ -55,27 +55,32 @@ public class Readers {
 
     private final FileSource source;
     private final List<Readable> readables;
+    private final boolean updateProgress;
     private int index;
     private BufferedReader reader;
 
-    public Readers(FileSource source, List<Readable> readables) {
+    public Readers(FileSource source, List<Readable> readables,
+                   boolean updateProgress) {
         E.checkNotNull(source, "source");
         E.checkNotNull(readables, "readables");
         this.source = source;
         this.readables = readables;
+        this.updateProgress = updateProgress;
         this.index = -1;
         this.reader = null;
     }
 
     public void progress(InputProgress oldProgress, InputProgress newProgress) {
-        E.checkNotNull(oldProgress != null, "old progress");
-        E.checkNotNull(newProgress != null, "new progress");
+        E.checkNotNull(oldProgress, "old progress");
+        if (this.updateProgress) {
+            E.checkNotNull(newProgress, "new progress");
+        }
         this.oldProgress = oldProgress;
         this.newProgress = newProgress;
     }
 
     public long confirmOffset() {
-        return this.newProgress.confirmOffset();
+        return this.updateProgress ? this.newProgress.confirmOffset() : 0L;
     }
 
     public int index() {
@@ -103,23 +108,20 @@ public class Readers {
             }
         }
 
-        this.newProgress.increaseLoadingOffset();
+        if (this.updateProgress) {
+            this.newProgress.increaseLoadingOffset();
+        }
         return line;
     }
 
-    public String skipOffset(boolean needHeader) {
+    public void skipOffset() {
         if (this.reader == null && (this.reader = this.openNext()) == null) {
-            return null;
+            return;
         }
 
-        String header = null;
         long offset = this.oldProgress.loadingOffset();
         long start = 0L;
         try {
-            if (needHeader) {
-                header = this.reader.readLine();
-                start++;
-            }
             for (long i = start; i < offset; i++) {
                 this.reader.readLine();
             }
@@ -129,8 +131,10 @@ public class Readers {
                                     "must have at least %s lines", e, offset,
                                     this.readables.get(this.index), offset);
         }
-        this.newProgress.addLoadingOffset(offset);
-        return header;
+
+        if (this.updateProgress) {
+            this.newProgress.addLoadingOffset(offset);
+        }
     }
 
     public void close() throws IOException {
@@ -155,10 +159,15 @@ public class Readers {
                                                        inputItem);
         // The file has been loaded before and it is not changed
         if (matchItem != null) {
-            this.newProgress.addLoadedItem(matchItem);
+            if (this.updateProgress) {
+                this.newProgress.addLoadedItem(matchItem);
+            }
             return this.openNext();
+        } else {
+            if (this.updateProgress) {
+                this.newProgress.addLoadingItem(inputItem);
+            }
         }
-        this.newProgress.addLoadingItem(inputItem);
 
         return this.openReader(readable);
     }

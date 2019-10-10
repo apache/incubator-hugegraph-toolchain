@@ -80,7 +80,7 @@ public class HDFSFileReader extends FileReader {
     }
 
     @Override
-    protected Readers openReaders() throws IOException {
+    protected Readers openReaders(boolean updateProgress) throws IOException {
         Path path = new Path(this.source().path());
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
@@ -101,7 +101,7 @@ public class HDFSFileReader extends FileReader {
                 }
             }
         }
-        return new Readers(this.source(), paths);
+        return new Readers(this.source(), paths, updateProgress);
     }
 
     private Configuration loadConfiguration() {
