@@ -35,10 +35,6 @@ public enum ElemType {
         return this.name;
     }
 
-    public String lowerName() {
-        return this.name().toLowerCase();
-    }
-
     public boolean isVertex() {
         return this == VERTEX;
     }

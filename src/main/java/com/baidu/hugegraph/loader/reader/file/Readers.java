@@ -22,10 +22,12 @@ package com.baidu.hugegraph.loader.reader.file;
 import static com.baidu.hugegraph.util.Bytes.MB;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.compress.compressors.CompressorInputStream;
@@ -62,6 +64,8 @@ public class Readers {
         E.checkNotNull(source, "source");
         E.checkNotNull(readables, "readables");
         this.source = source;
+        // sort readable files by name
+        readables.sort(Comparator.comparing(Readable::name));
         this.readables = readables;
         this.index = -1;
         this.reader = null;
@@ -80,6 +84,50 @@ public class Readers {
 
     public int index() {
         return this.index;
+    }
+
+    public String readHeader() {
+        E.checkArgument(this.readables.size() > 0,
+                        "Must contain at least one readable file");
+        for (Readable readable : this.readables) {
+            BufferedReader reader = this.openReader(readable);
+            try {
+                String line = reader.readLine();
+                reader.close();
+                if (line != null) {
+                    return line;
+                }
+            } catch (IOException e) {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {
+                    LOG.warn("Failed to close reader of '{}'", readable);
+                }
+                throw new LoadException("Failed to read header from '%s'",
+                                        e, readable);
+            }
+        }
+        return null;
+    }
+
+    public void skipOffset() {
+        if (this.reader == null && (this.reader = this.openNext()) == null) {
+            return;
+        }
+
+        long offset = this.oldProgress.loadingOffset();
+        try {
+            for (long i = 0L; i < offset; i++) {
+                this.reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new LoadException("Failed to skip the first %s lines " +
+                                    "of file %s, please ensure the file " +
+                                    "must have at least %s lines", e, offset,
+                                    this.readables.get(this.index), offset);
+        }
+
+        this.newProgress.addLoadingOffset(offset);
     }
 
     /**
@@ -105,27 +153,6 @@ public class Readers {
 
         this.newProgress.increaseLoadingOffset();
         return line;
-    }
-
-    public void skipOffset() {
-        if (this.reader == null && (this.reader = this.openNext()) == null) {
-            return;
-        }
-
-        long offset = this.oldProgress.loadingOffset();
-        long start = 0L;
-        try {
-            for (long i = start; i < offset; i++) {
-                this.reader.readLine();
-            }
-        } catch (IOException e) {
-            throw new LoadException("Failed to skip the first %s lines " +
-                                    "of file %s, please ensure the file " +
-                                    "must have at least %s lines", e, offset,
-                                    this.readables.get(this.index), offset);
-        }
-
-        this.newProgress.addLoadingOffset(offset);
     }
 
     public void close() throws IOException {
@@ -210,7 +237,6 @@ public class Readers {
             case BZ2:
             case XZ:
             case LZMA:
-            case PACK200:
             case SNAPPY_RAW:
             case SNAPPY_FRAMED:
             case Z:

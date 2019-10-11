@@ -94,13 +94,13 @@ public final class LoadOptions {
 
     @Parameter(names = {"--max-parse-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The maximum number of rows that parse write " +
+               description = "The maximum number of rows that parse error " +
                              "before exiting")
     public int maxParseErrors = 1;
 
     @Parameter(names = {"--max-insert-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The maximum number of rows that insert write " +
+               description = "The maximum number of rows that insert error " +
                              "before exiting")
     public int maxInsertErrors = 500;
 

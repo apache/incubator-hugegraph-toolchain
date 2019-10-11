@@ -74,6 +74,22 @@ public abstract class FileReader implements InputReader {
                                     e, struct);
         }
         this.progress(context, struct);
+
+        if (this.parser.needHeader()) {
+            String headerLine = this.readers.readHeader();
+            if (headerLine == null) {
+                throw new LoadException("Failed to read header from " +
+                                                "file source '%s'", this.source);
+            }
+            this.parser.parseHeader(headerLine);
+            InputSource inputSource = struct.input();
+            E.checkState(inputSource instanceof FileSource,
+                         "The InputSource must be FileSource when need header");
+
+            FileSource fileSource = (FileSource) inputSource;
+            fileSource.header(this.parser.header());
+        }
+
         this.readers.skipOffset();
     }
 
@@ -125,7 +141,7 @@ public abstract class FileReader implements InputReader {
      * improve the performance of each of its sub-methods.
      */
     private Line fetch() {
-        int index = this.readers.index();
+        int index = -1;
         while (true) {
             String rawLine = this.readNextLine();
             if (rawLine == null) {
@@ -136,7 +152,7 @@ public abstract class FileReader implements InputReader {
             }
             boolean openNext = index != this.readers.index();
             index = this.readers.index();
-            if (openNext) {
+            if (openNext && this.parser.matchHeader(rawLine)) {
                 continue;
             }
             return this.parser.parse(rawLine);

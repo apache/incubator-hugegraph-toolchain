@@ -103,7 +103,7 @@ public final class FailureLogger {
                 this.writeLine("#### PARSE ERROR: " + e.getMessage());
                 this.writeLine(e.line());
             } catch (IOException ex) {
-                throw new LoadException("Failed to write parse write '%s'",
+                throw new LoadException("Failed to write parse error '%s'",
                                         ex, e.line());
             }
         }
@@ -113,7 +113,7 @@ public final class FailureLogger {
                 this.writeLine("#### INSERT ERROR: " + e.getMessage());
                 this.writeLine(e.line());
             } catch (IOException ex) {
-                throw new LoadException("Failed to write insert write '%s'",
+                throw new LoadException("Failed to write insert error '%s'",
                                         ex, e.line());
             }
         }
@@ -131,7 +131,7 @@ public final class FailureLogger {
                 LOG.error("Failed to close writer for file '{}'", file);
             }
             if (this.file.length() == 0) {
-                LOG.debug("file {} is empty, delete it", this.file);
+                LOG.debug("The file {} is empty, delete it", this.file);
                 this.file.delete();
             }
         }

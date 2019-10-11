@@ -112,14 +112,13 @@ public class GraphStruct implements Checkable {
             String path = Paths.get(dir, Constants.FAILURE_HISTORY_DIR,
                                     struct.uniqueKey()).toString();
             File pathDir = FileUtils.getFile(path);
-            // path dir unexist means that no failure data
+            // It means no failure data if the path directory does not exist
             if (!pathDir.exists()) {
                 continue;
             }
             if (!pathDir.isDirectory()) {
-                throw new LoadException("The path '%s' used as input path of " +
-                                        "failure struct must be directory",
-                                        path);
+                throw new LoadException("The path '%s' of failure struct " +
+                                        "must be directory", path);
             }
 
             // Set failure data path

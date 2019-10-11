@@ -1388,6 +1388,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test
@@ -1405,6 +1408,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test
@@ -1422,6 +1428,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test
@@ -1439,23 +1448,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
-    }
 
-    @Test
-    public void testPack200CompressFile() {
-        ioUtil.write("vertex_person.pack", Compression.PACK200,
-                     "name,age,city",
-                     "marko,29,Beijing");
-
-        String[] args = new String[]{
-                "-f", configPath("pack200_compress_file/struct.json"),
-                "-s", configPath("pack200_compress_file/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--num-threads", "2",
-                "--test-mode", "true"
-        };
-        HugeGraphLoader.main(args);
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     /**
@@ -1476,6 +1471,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test
@@ -1493,6 +1491,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     /**
@@ -1513,6 +1514,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test
@@ -1530,6 +1534,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test
@@ -1547,6 +1554,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test
@@ -1564,6 +1574,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 
     @Test

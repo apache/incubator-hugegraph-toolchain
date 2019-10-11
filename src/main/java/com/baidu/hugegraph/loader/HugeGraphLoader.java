@@ -114,7 +114,7 @@ public final class HugeGraphLoader {
         try {
             script = FileUtils.readFileToString(schemaFile, Constants.CHARSET);
         } catch (IOException e) {
-            throw new LoadException("Read schema file '%s' write",
+            throw new LoadException("Read schema file '%s' error",
                                     e, options.schema);
         }
         groovyExecutor.execute(script, client);
@@ -143,7 +143,7 @@ public final class HugeGraphLoader {
                          srcFile.getName());
             // person-5117b102
             String uniqueKey = parts[0];
-            // insert-write.data
+            // insert-error.data
             String fileSuffix = parts[1];
 
             String fileName = this.context.timestamp() + Constants.BLANK_STR +
@@ -230,8 +230,8 @@ public final class HugeGraphLoader {
         for (boolean finished = false; !finished;) {
             try {
                 if (builder.hasNext()) {
-                    Record<GE> element = builder.next();
-                    batch.add(element);
+                    Record<GE> record = builder.next();
+                    batch.add(record);
                 } else {
                     finished = true;
                 }
@@ -239,12 +239,12 @@ public final class HugeGraphLoader {
                 if (options.testMode) {
                     throw e;
                 }
-                LOG.error("Parse {} write", struct.type(), e);
+                LOG.error("Parse {} error", struct.type(), e);
                 // Write to current struct's parse failure log
                 logger.write(e);
                 long failureNum = metrics.increaseParseFailure();
                 if (failureNum >= options.maxParseErrors) {
-                    Printer.printError("More than %s %s parsing write, stop " +
+                    Printer.printError("More than %s %s parsing error, stop " +
                                        "parsing and waiting all insert tasks " +
                                        "finished",
                                        options.maxParseErrors,

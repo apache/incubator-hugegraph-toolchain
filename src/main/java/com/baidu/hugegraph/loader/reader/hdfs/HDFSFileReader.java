@@ -161,6 +161,11 @@ public class HDFSFileReader extends FileReader {
         }
 
         @Override
+        public String name() {
+            return this.path.getName();
+        }
+
+        @Override
         public InputStream open() throws IOException {
             return this.hdfs.open(this.path);
         }

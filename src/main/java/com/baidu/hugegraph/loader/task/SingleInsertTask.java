@@ -63,7 +63,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                 this.metrics().increaseLoadSuccess();
             } catch (Exception e) {
                 this.metrics().increaseLoadFailure();
-                LOG.error("Single insert {} write", this.type(), e);
+                LOG.error("Single insert {} error", this.type(), e);
                 if (this.options().testMode) {
                     throw e;
                 }
@@ -71,7 +71,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                 logger.write(new InsertException(record.rawLine(), e));
                 long failureNum = this.metrics().loadFailure();
                 if (failureNum >= this.options().maxInsertErrors) {
-                    Printer.printError("More than %s %s insert write, stop " +
+                    Printer.printError("More than %s %s insert error, stop " +
                                        "parsing and waiting other insert " +
                                        "tasks finished",
                                        this.options().maxInsertErrors,

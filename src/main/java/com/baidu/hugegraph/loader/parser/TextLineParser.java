@@ -29,23 +29,31 @@ import com.baidu.hugegraph.util.StringUtil;
 
 public class TextLineParser implements LineParser {
 
-    private final String[] header;
+    private final FileSource source;
+
     // Default is "\t"
     private final String delimiter;
+    private String[] header;
 
     public TextLineParser(FileSource source) {
-        this(source.header(), source.delimiter());
+        this(source, source.delimiter() != null ?
+                     source.delimiter() :
+                     Constants.TAB_STR);
     }
 
-    public TextLineParser(String[] header, String delimiter) {
-        this.header = header;
-        this.delimiter = delimiter != null ? delimiter : Constants.TAB_STR;
+    public TextLineParser(FileSource source, String delimiter) {
+        this.source = source;
+        this.delimiter = delimiter;
+        if (this.source.header() != null) {
+            this.header = this.source.header();
+        }
     }
 
     public String delimiter() {
         return this.delimiter;
     }
 
+    @Override
     public String[] header() {
         return this.header;
     }
@@ -74,6 +82,38 @@ public class TextLineParser implements LineParser {
             return new Line(line, this.header, supColumns);
         }
         return new Line(line, this.header, columns);
+    }
+
+    @Override
+    public boolean needHeader() {
+        return this.header == null;
+    }
+
+    @Override
+    public void parseHeader(String line) {
+        if (line == null || line.isEmpty()) {
+            throw new ParseException("The file header can't be empty " +
+                                     "under path '%s'", this.source.path());
+        }
+
+        // If doesn't specify header, the first line is treated as header
+        String[] columns = this.split(line);
+        assert columns.length > 0;
+        if (this.header == null) {
+            this.header = columns;
+        }
+    }
+
+    @Override
+    public boolean matchHeader(String line) {
+        if (line == null || line.isEmpty()) {
+            throw new ParseException("The file header can't be empty " +
+                                     "under path '%s'", this.source.path());
+        }
+
+        assert this.header != null;
+        String[] columns = this.split(line);
+        return Arrays.equals(this.header, columns);
     }
 
     public String[] split(String line) {

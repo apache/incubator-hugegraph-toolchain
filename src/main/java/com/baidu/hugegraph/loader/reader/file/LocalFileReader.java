@@ -94,6 +94,11 @@ public class LocalFileReader extends FileReader {
         }
 
         @Override
+        public String name() {
+            return this.file.getName();
+        }
+
+        @Override
         public InputStream open() throws IOException {
             return new FileInputStream(this.file);
         }

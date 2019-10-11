@@ -24,4 +24,20 @@ import com.baidu.hugegraph.loader.reader.Line;
 public interface LineParser {
 
     public Line parse(String rawLine);
+
+    public default boolean needHeader() {
+        return false;
+    }
+
+    public default String[] header() {
+        return new String[0];
+    }
+
+    public default void parseHeader(String rawLine) {
+        // pass
+    }
+
+    public default boolean matchHeader(String rawLine) {
+        return false;
+    }
 }

@@ -65,10 +65,6 @@ public class FileSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
-        if (this.format == FileFormat.TEXT || this.format == FileFormat.CSV) {
-            E.checkArgument(this.header != null && !this.header.isEmpty(),
-                            "The header of '%s' can't be null or empty", this);
-        }
         if (this.format == FileFormat.CSV) {
             E.checkArgument(this.delimiter == null ||
                             this.delimiter.equals(Constants.COMMA_STR),
@@ -99,7 +95,7 @@ public class FileSource extends AbstractSource {
     }
 
     public String[] header() {
-        return this.header.toArray(new String[]{});
+        return this.header != null ? this.header.toArray(new String[]{}) : null;
     }
 
     public void header(String[] header) {
