@@ -32,6 +32,7 @@ import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -79,8 +80,10 @@ public final class LoadProgress {
         return total;
     }
 
-    public void markLoadingItemLoaded(ElementStruct struct) {
-        this.type(struct.type()).getByStruct(struct).markLoadingItemLoaded();
+    public void markLoaded(ElementStruct struct, boolean markAll) {
+        InputProgress progress = this.type(struct.type()).getByStruct(struct);
+        E.checkArgumentNotNull(progress, "Invalid struct '%s'", struct);
+        progress.markLoaded(markAll);
     }
 
     public void write(LoadContext context) throws IOException {

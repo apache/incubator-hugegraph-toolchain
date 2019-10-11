@@ -22,7 +22,6 @@ package com.baidu.hugegraph.loader.reader.file;
 import static com.baidu.hugegraph.util.Bytes.MB;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -126,8 +125,6 @@ public class Readers {
                                     "must have at least %s lines", e, offset,
                                     this.readables.get(this.index), offset);
         }
-
-        this.newProgress.addLoadingOffset(offset);
     }
 
     /**
@@ -172,17 +169,20 @@ public class Readers {
 
         Readable readable = this.readables.get(this.index);
         // NOTE: calculate check sum is a bit time consuming
-        InputItemProgress inputItem = readable.inputItemProgress();
-        InputItemProgress matchItem = this.oldProgress.matchLoadedItem(
-                                                       inputItem);
+        InputItemProgress input = readable.inputItemProgress();
+        InputItemProgress loaded = this.oldProgress.matchLoadedItem(input);
         // The file has been loaded before and it is not changed
-        if (matchItem != null) {
-            this.newProgress.addLoadedItem(matchItem);
+        if (loaded != null) {
+            this.newProgress.addLoadedItem(loaded);
             return this.openNext();
-        } else {
-            this.newProgress.addLoadingItem(inputItem);
         }
 
+        InputItemProgress loading = this.oldProgress.matchLoadingItem(input);
+        if (loading != null) {
+            this.newProgress.addLoadingItem(loading);
+        } else {
+            this.newProgress.addLoadingItem(input);
+        }
         return this.openReader(readable);
     }
 

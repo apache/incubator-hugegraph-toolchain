@@ -79,7 +79,7 @@ public abstract class FileReader implements InputReader {
             String headerLine = this.readers.readHeader();
             if (headerLine == null) {
                 throw new LoadException("Failed to read header from " +
-                                                "file source '%s'", this.source);
+                                        "file source '%s'", this.source);
             }
             this.parser.parseHeader(headerLine);
             InputSource inputSource = struct.input();
@@ -107,6 +107,7 @@ public abstract class FileReader implements InputReader {
             oldInputProgress = new InputProgress(struct);
         }
         InputProgress newInputProgress = newProgress.getByStruct(struct);
+        assert newInputProgress != null;
         this.readers.progress(oldInputProgress, newInputProgress);
     }
 

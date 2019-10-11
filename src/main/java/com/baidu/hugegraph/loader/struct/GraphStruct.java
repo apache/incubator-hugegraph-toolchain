@@ -40,6 +40,7 @@ import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
+import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -95,7 +96,7 @@ public class GraphStruct implements Checkable {
     }
 
     @SuppressWarnings("unchecked")
-    public <ES extends ElementStruct> List<ES> failureStructs(
+    public <ES extends ElementStruct> List<ES> structsForFailure(
                                                ElemType type,
                                                LoadOptions options) {
         List<ES> sourceStructs = (List<ES>) (type.isVertex() ?
@@ -103,11 +104,6 @@ public class GraphStruct implements Checkable {
                                              this.edgeStructs);
         List<ES> targetStructs = new ArrayList<>();
         for (ES struct : sourceStructs) {
-            InputSource inputSource = struct.input();
-            E.checkState(inputSource instanceof FileSource,
-                         "The input source must be instance of FileSource");
-            FileSource fileSource = (FileSource) inputSource;
-
             String dir = LoadUtil.getStructDirPrefix(options);
             String path = Paths.get(dir, Constants.FAILURE_HISTORY_DIR,
                                     struct.uniqueKey()).toString();
@@ -121,17 +117,19 @@ public class GraphStruct implements Checkable {
                                         "must be directory", path);
             }
 
+            InputSource inputSource = struct.input();
+            FileSource fileSource = inputSource.asFileSource();
             // Set failure data path
             fileSource.path(path);
+            struct.input(fileSource);
             // In order to distinguish from the normal loaded strcut
-            struct.resetUniqueKey();
-
+            struct.setFailureUniqueKey();
             targetStructs.add(struct);
         }
         return targetStructs;
     }
 
-    private <T extends ElementStruct> void checkNoSameStruct(List<T> structs) {
+    private <ES extends ElementStruct> void checkNoSameStruct(List<ES> structs) {
         Set<String> uniqueKeys = structs.stream().map(ElementStruct::uniqueKey)
                                         .collect(Collectors.toSet());
         E.checkArgument(structs.size() == uniqueKeys.size(),

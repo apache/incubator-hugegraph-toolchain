@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader.source.jdbc;
 
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -99,5 +100,14 @@ public class JDBCSource extends AbstractSource {
 
     public int batchSize() {
         return this.batchSize;
+    }
+
+    @Override
+    public FileSource asFileSource() {
+        FileSource source = new FileSource();
+        source.header(this.header());
+        source.charset(this.charset());
+        source.listFormat(this.listFormat());
+        return source;
     }
 }

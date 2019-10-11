@@ -110,7 +110,7 @@ public final class LoadContext {
     }
 
     public FailureLogger failureLogger(ElementStruct struct) {
-        return this.loggers.computeIfAbsent(struct.uniqueKey(), k -> {
+        return this.loggers.computeIfAbsent(struct.uniqueKeyForFile(), k -> {
             LOG.info("Create failure logger for struct '{}'", struct);
             return new FailureLogger(this, struct);
         });
@@ -141,7 +141,10 @@ public final class LoadContext {
         // Check options
         // Check option "-f"
         E.checkArgument(!StringUtils.isEmpty(options.file),
-                        "Must specified struct description file");
+                        "The struct description file must be specified");
+        E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
+                        "The struct description file name must be end with %s",
+                        Constants.JSON_SUFFIX);
         File structFile = new File(options.file);
         if (!structFile.canRead()) {
             LOG.error("Struct file must be readable: '{}'",
@@ -153,8 +156,8 @@ public final class LoadContext {
         E.checkArgument(!StringUtils.isEmpty(options.graph),
                         "Must specified a graph");
         // Check option "-h"
-        if (!options.host.startsWith(Constants.HHTP_PREFIX)) {
-            options.host = Constants.HHTP_PREFIX + options.host;
+        if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
+            options.host = Constants.HTTP_PREFIX + options.host;
         }
         // Check option --incremental-mode and --reload-failure
         if (options.reloadFailure) {

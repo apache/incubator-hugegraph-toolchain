@@ -43,6 +43,10 @@ public class FileItemProgress extends InputItemProgress {
         this.checkSum = checkSum;
     }
 
+    public String name() {
+        return this.name;
+    }
+
     @Override
     public String toString() {
         return this.name;

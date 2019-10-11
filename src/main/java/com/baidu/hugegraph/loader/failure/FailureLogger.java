@@ -21,8 +21,11 @@ package com.baidu.hugegraph.loader.failure;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
@@ -41,28 +44,28 @@ public final class FailureLogger {
 
     private static final Logger LOG = Log.logger(FailureLogger.class);
 
-    private final Writer parseWriter;
-    private final Writer insertWriter;
+    private final FailureWriter parseWriter;
+    private final FailureWriter insertWriter;
 
     public FailureLogger(LoadContext context, ElementStruct struct) {
         String dir = LoadUtil.getStructDirPrefix(context.options());
-        String uniqueKey = struct.uniqueKey();
+        String prefix = struct.uniqueKeyForFile();
+        String charset = struct.input().charset();
         /*
          * If user prepare to hanlde failures, new failure record will write
          * to the new failure file, and the old failure file need to rename
          */
         boolean append = !context.options().reloadFailure;
 
-        String path = path(dir, uniqueKey, Constants.PARSE_FAILURE_SUFFIX);
-        this.parseWriter = new Writer(path, append);
-        path = path(dir, uniqueKey, Constants.INSERT_FAILURE_SUFFIX);
-        this.insertWriter = new Writer(path, append);
+        String path = path(dir, prefix, Constants.PARSE_FAILURE_SUFFIX);
+        this.parseWriter = new FailureWriter(path, charset, append);
+        path = path(dir, prefix, Constants.INSERT_FAILURE_SUFFIX);
+        this.insertWriter = new FailureWriter(path, charset, append);
     }
 
-    private static String path(String dir, String uniqueKey, String suffix) {
-        // The path format is: struct/current/person-f17h1220_parse-error.data
-        String name = uniqueKey + Constants.UNDERLINE_STR +
-                      suffix + Constants.FAILURE_EXTENSION;
+    private static String path(String dir, String prefix, String suffix) {
+        // The path format like: struct/current/person-f17h1220.parse-error
+        String name = prefix + Constants.DOT_STR + suffix;
         return Paths.get(dir, Constants.FAILURE_CURRENT_DIR, name).toString();
     }
 
@@ -79,23 +82,23 @@ public final class FailureLogger {
         this.insertWriter.close();
     }
 
-    private static final class Writer {
+    private static final class FailureWriter {
 
         private final File file;
         // BufferedWriter is thread safe
         private final BufferedWriter writer;
 
-        public Writer(String name, boolean append) {
+        public FailureWriter(String name, String charset, boolean append) {
             this.file = FileUtils.getFile(name);
             checkFileAvailable(this.file);
-            FileWriter fw;
             try {
-                fw = new FileWriter(this.file, append);
+                OutputStream stream = new FileOutputStream(this.file, append);
+                Writer streamWriter = new OutputStreamWriter(stream, charset);
+                this.writer = new BufferedWriter(streamWriter);
             } catch (IOException e) {
                 throw new LoadException("Failed to create writer for file '%s'",
                                         e, this.file);
             }
-            this.writer = new BufferedWriter(fw);
         }
 
         public void write(ParseException e) {

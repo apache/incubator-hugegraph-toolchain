@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.test.functional;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -26,7 +27,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -36,8 +39,13 @@ import org.junit.Test;
 
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
+import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.progress.InputItemProgress;
+import com.baidu.hugegraph.loader.progress.InputProgressMap;
+import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.rest.SerializeException;
@@ -46,6 +54,7 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Whitebox;
 import com.google.common.collect.ImmutableList;
 
 public class FileLoadTest extends LoadTest {
@@ -1681,5 +1690,439 @@ public class FileLoadTest extends LoadTest {
             String expect = "Failed to deserialize json";
             Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
+    }
+
+    @Test
+    public void testLoadIncrementalMode() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing,REDUNDANT",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_software.csv",
+                     "name,lang,price",
+                     "office,C#,999",
+                     "lop,java,328,多余的",
+                     "ripple,java,199");
+
+        String[] args = new String[]{
+                "-f", configPath("incremental_mode/struct.json"),
+                "-s", configPath("incremental_mode/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--max-parse-errors", "2",
+                "--test-mode", "false"
+        };
+        HugeGraphLoader loader = new HugeGraphLoader(args);
+        loader.load();
+        LoadContext context = Whitebox.getInternalState(loader, "context");
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(5, vertices.size());
+
+        InputProgressMap progresses = context.newProgress().vertex();
+        progresses.forEach((key, value) -> {
+            if (key.startsWith("person")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_person.csv", fileItem.name());
+                // Reached last line: "li,nary",26,"Wu,han"
+                Assert.assertEquals(6, fileItem.offset());
+            } else if (key.startsWith("software")) {
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNotNull(loadingItem);
+
+                Assert.assertTrue(loadingItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadingItem;
+                Assert.assertEquals("vertex_software.csv", fileItem.name());
+                // Reached line: lop,java,328,多余的
+                Assert.assertEquals(3, fileItem.offset());
+            }
+        });
+
+        args = new String[]{
+                "-f", configPath("incremental_mode/struct.json"),
+                "-s", configPath("incremental_mode/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--incremental-mode", "true",
+                "--num-threads", "2",
+                "--max-parse-errors", "2",
+                "--test-mode", "false"
+        };
+        loader = new HugeGraphLoader(args);
+        loader.load();
+        context = Whitebox.getInternalState(loader, "context");
+
+        vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(6, vertices.size());
+
+        progresses = context.newProgress().vertex();
+        progresses.forEach((key, value) -> {
+            if (key.startsWith("person")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_person.csv", fileItem.name());
+                // Reached last line: "li,nary",26,"Wu,han"
+                Assert.assertEquals(6, fileItem.offset());
+            } else if (key.startsWith("software")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNull(loadingItem);
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_software.csv", fileItem.name());
+                // Reached last line: ripple,java,199
+                Assert.assertEquals(4, fileItem.offset());
+            }
+        });
+    }
+
+    @Test
+    public void testLoadIncrementalModeAndReloadFailure()
+           throws IOException, InterruptedException {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing,REDUNDANT",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "office,C#,999",
+                     "lop,java,应该是数字",
+                     "ripple,java,199");
+
+        // 1st time
+        String[] args = new String[] {
+                "-f",
+                configPath("incremental_mode_and_reload_failure/struct.json"),
+                "-s",
+                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--max-parse-errors", "2",
+                "--test-mode", "false"
+        };
+        HugeGraphLoader loader = new HugeGraphLoader(args);
+        loader.load();
+        LoadContext context = Whitebox.getInternalState(loader, "context");
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(5, vertices.size());
+
+        InputProgressMap progresses = context.newProgress().vertex();
+        progresses.forEach((key, value) -> {
+            if (key.startsWith("person")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_person.csv", fileItem.name());
+                // Reached last line: "li,nary",26,"Wu,han"
+                Assert.assertEquals(6, fileItem.offset());
+            } else if (key.startsWith("software")) {
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNotNull(loadingItem);
+
+                Assert.assertTrue(loadingItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadingItem;
+                Assert.assertEquals("vertex_software.csv", fileItem.name());
+                // Reached line: lop,java,328,多余的
+                Assert.assertEquals(3, fileItem.offset());
+            }
+        });
+
+        File structDir = FileUtils.getFile(configPath(
+                "incremental_mode_and_reload_failure/struct"));
+        File currentDir = FileUtils.getFile(configPath(
+                "incremental_mode_and_reload_failure/struct/current/"));
+        File[] files = currentDir.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(2, files.length);
+
+        File personFailureFile;
+        File softwareFailureFile;
+        if (files[0].getName().startsWith("person")) {
+            personFailureFile = files[0];
+            softwareFailureFile = files[1];
+        } else {
+            softwareFailureFile = files[0];
+            personFailureFile = files[1];
+        }
+        List<String> personFailureLines = FileUtils.readLines(personFailureFile,
+                                                              Constants.CHARSET);
+        Assert.assertEquals(2, personFailureLines.size());
+        Assert.assertEquals("marko,29,Beijing,REDUNDANT",
+                            personFailureLines.get(1));
+
+        List<String> softwareFailureLines = FileUtils.readLines(
+                                            softwareFailureFile, GBK);
+        Assert.assertEquals(2, softwareFailureLines.size());
+        Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(1));
+
+        // 2nd time
+        args = new String[]{
+                "-f",
+                configPath("incremental_mode_and_reload_failure/struct.json"),
+                "-s",
+                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--incremental-mode", "true",
+                "--reload-failure", "true",
+                "--num-threads", "2",
+                "--max-parse-errors", "2",
+                "--test-mode", "false"
+        };
+        loader = new HugeGraphLoader(args);
+        loader.load();
+        context = Whitebox.getInternalState(loader, "context");
+
+        vertices = CLIENT.graph().listVertices();
+        // ripple,java,199 has been loaded
+        Assert.assertEquals(6, vertices.size());
+
+        progresses = context.newProgress().vertex();
+        progresses.forEach((key, value) -> {
+            if (key.startsWith("person") && key.endsWith("failure")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertTrue(fileItem.name().endsWith(
+                                  Constants.PARSE_FAILURE_SUFFIX));
+                // Has readed the end of failure file and marked as loaded
+                Assert.assertEquals(2, fileItem.offset());
+            } else if (key.startsWith("person")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_person.csv", fileItem.name());
+                // Reached last line: "li,nary",26,"Wu,han"
+                Assert.assertEquals(6, fileItem.offset());
+            } else if (key.startsWith("software") && key.endsWith("failure")) {
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNotNull(loadingItem);
+
+                Assert.assertTrue(loadingItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadingItem;
+                Assert.assertTrue(fileItem.name().endsWith(
+                                  Constants.PARSE_FAILURE_SUFFIX));
+                // Has readed the end of failure file but still as loading
+                Assert.assertEquals(2, fileItem.offset());
+            } else if (key.startsWith("software")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNull(loadingItem);
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_software.csv", fileItem.name());
+                // Reached last line: ripple,java,199
+                Assert.assertEquals(4, fileItem.offset());
+            }
+        });
+
+        Thread.sleep(1000);
+        // modify person failure file
+        personFailureLines.remove(1);
+        personFailureLines.add("marko,29,Beijing");
+        FileUtils.writeLines(personFailureFile, personFailureLines, false);
+        // 3rd time
+        args = new String[]{
+                "-f",
+                configPath("incremental_mode_and_reload_failure/struct.json"),
+                "-s",
+                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--incremental-mode", "true",
+                "--reload-failure", "true",
+                "--num-threads", "2",
+                "--max-parse-errors", "2",
+                "--test-mode", "false"
+        };
+        loader = new HugeGraphLoader(args);
+        loader.load();
+        context = Whitebox.getInternalState(loader, "context");
+
+        vertices = CLIENT.graph().listVertices();
+        // marko,29,Beijing has been loaded
+        Assert.assertEquals(7, vertices.size());
+
+        progresses = context.newProgress().vertex();
+        progresses.forEach((key, value) -> {
+            if (key.startsWith("person") && key.endsWith("failure")) {
+                /*
+                 * history dir has two person failure files,
+                 * the last one is correct
+                 */
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(2, loadedItems.size());
+
+                for (InputItemProgress loadedItem : loadedItems) {
+                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                    Assert.assertTrue(fileItem.name().endsWith(
+                                      Constants.PARSE_FAILURE_SUFFIX));
+                    Assert.assertEquals(2, fileItem.offset());
+                }
+            } else if (key.startsWith("person")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_person.csv", fileItem.name());
+                // Reached last line: "li,nary",26,"Wu,han"
+                Assert.assertEquals(6, fileItem.offset());
+            } else if (key.startsWith("software") && key.endsWith("failure")) {
+                /*
+                 * history dir has two software failure files,
+                 * they are all incorrect
+                 */
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(2, loadedItems.size());
+
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNull(loadingItem);
+
+                for (InputItemProgress loadedItem : loadedItems) {
+                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                    Assert.assertTrue(fileItem.name().endsWith(
+                                      Constants.PARSE_FAILURE_SUFFIX));
+                    Assert.assertEquals(2, fileItem.offset());
+                }
+            } else if (key.startsWith("software")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNull(loadingItem);
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_software.csv", fileItem.name());
+                // Reached last line: ripple,java,199
+                Assert.assertEquals(4, fileItem.offset());
+            }
+        });
+
+        Thread.sleep(1000);
+        // modify software failure file
+        softwareFailureLines.remove(1);
+        softwareFailureLines.add("lop,java,328");
+        FileUtils.writeLines(softwareFailureFile, softwareFailureLines, false);
+        // 4th time
+        args = new String[]{
+                "-f",
+                configPath("incremental_mode_and_reload_failure/struct.json"),
+                "-s",
+                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--incremental-mode", "true",
+                "--reload-failure", "true",
+                "--num-threads", "2",
+                "--max-parse-errors", "2",
+                "--test-mode", "false"
+        };
+        loader = new HugeGraphLoader(args);
+        loader.load();
+        context = Whitebox.getInternalState(loader, "context");
+
+        vertices = CLIENT.graph().listVertices();
+        // lop,java,328 has been loaded
+        Assert.assertEquals(8, vertices.size());
+
+        progresses = context.newProgress().vertex();
+        progresses.forEach((key, value) -> {
+            if (key.startsWith("person") && key.endsWith("failure")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(2, loadedItems.size());
+
+                for (InputItemProgress loadedItem : loadedItems) {
+                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                    Assert.assertTrue(fileItem.name().endsWith(
+                                      Constants.PARSE_FAILURE_SUFFIX));
+                    Assert.assertEquals(2, fileItem.offset());
+                }
+            } else if (key.startsWith("person")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_person.csv", fileItem.name());
+                // Reached last line: "li,nary",26,"Wu,han"
+                Assert.assertEquals(6, fileItem.offset());
+            } else if (key.startsWith("software") && key.endsWith("failure")) {
+                /*
+                 * history dir has three software failure files,
+                 * the last one is correct
+                 */
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(3, loadedItems.size());
+
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNull(loadingItem);
+
+                for (InputItemProgress loadedItem : loadedItems) {
+                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                    Assert.assertTrue(fileItem.name().endsWith(
+                                      Constants.PARSE_FAILURE_SUFFIX));
+                    Assert.assertEquals(2, fileItem.offset());
+                }
+            } else if (key.startsWith("software")) {
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
+
+                InputItemProgress loadingItem = value.loadingItem();
+                Assert.assertNull(loadingItem);
+
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                Assert.assertTrue(loadedItem instanceof FileItemProgress);
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("vertex_software.csv", fileItem.name());
+                // Reached last line: ripple,java,199
+                Assert.assertEquals(4, fileItem.offset());
+            }
+        });
+
+        FileUtils.forceDeleteOnExit(structDir);
     }
 }

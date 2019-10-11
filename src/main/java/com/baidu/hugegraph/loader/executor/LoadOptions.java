@@ -62,7 +62,7 @@ public final class LoadOptions {
     public boolean incrementalMode = false;
 
     @Parameter(names = {"--reload-failure"}, arity = 1,
-               description = "Whether to reload the previously failure record")
+               description = "Whether to reload the previous failure records")
     public boolean reloadFailure = false;
 
     @Parameter(names = {"--num-threads"}, arity = 1,

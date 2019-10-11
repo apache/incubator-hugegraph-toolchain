@@ -72,6 +72,28 @@ public final class LoadSummary {
         }
     }
 
+    public long totalParseFailures() {
+        long total = 0L;
+        for (LoadMetrics metrics : this.vertexMetricsMap.values()) {
+            total += metrics.parseFailure();
+        }
+        for (LoadMetrics metrics : this.edgeMetricsMap.values()) {
+            total += metrics.parseFailure();
+        }
+        return total;
+    }
+
+    public long totalInsertFailures() {
+        long total = 0L;
+        for (LoadMetrics metrics : this.vertexMetricsMap.values()) {
+            total += metrics.loadFailure();
+        }
+        for (LoadMetrics metrics : this.edgeMetricsMap.values()) {
+            total += metrics.loadFailure();
+        }
+        return total;
+    }
+
     public LoadMetrics accumulateMetrics(ElemType type) {
         LoadMetrics metrics;
         if (type.isVertex()) {

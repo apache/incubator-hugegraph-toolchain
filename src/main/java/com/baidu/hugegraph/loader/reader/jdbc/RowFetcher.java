@@ -75,7 +75,7 @@ public class RowFetcher {
         return DriverManager.getConnection(url, username, password);
     }
 
-    public void readHeader() throws SQLException {
+    public String[] readHeader() throws SQLException {
         String sql = this.source.vendor().buildGetHeaderSql(this.source);
         LOG.debug("The sql for reading headers is: {}", sql);
         try (Statement stmt = this.conn.createStatement();
@@ -92,6 +92,7 @@ public class RowFetcher {
         E.checkArgument(ArrayUtils.isNotEmpty(this.columns),
                         "The colmuns of the table '%s' shouldn't be empty",
                         this.source.table());
+        return this.columns;
     }
 
     public void readPrimaryKey() throws SQLException {

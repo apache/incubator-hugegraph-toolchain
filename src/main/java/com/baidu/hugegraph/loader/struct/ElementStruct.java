@@ -30,6 +30,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.constant.Unique;
 import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.HashUtil;
@@ -78,8 +79,20 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         return this.uniqueKey;
     }
 
-    public void resetUniqueKey() {
-        this.uniqueKey = null;
+    public String uniqueKeyForFile() {
+        String key = this.uniqueKey();
+        if (key.endsWith(Constants.FAILURE)) {
+            // "-failure" => ""
+            return key.replace(Constants.MINUS_STR + Constants.FAILURE,
+                               Constants.EMPTY_STR);
+        } else {
+            return key;
+        }
+    }
+
+    public void setFailureUniqueKey() {
+        this.uniqueKey = this.uniqueKey() + Constants.MINUS_STR +
+                         Constants.FAILURE;
     }
 
     @Override
@@ -110,6 +123,10 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
 
     public InputSource input() {
         return this.input;
+    }
+
+    public void input(InputSource input) {
+        this.input = input;
     }
 
     public Map<String, String> mappingFields() {

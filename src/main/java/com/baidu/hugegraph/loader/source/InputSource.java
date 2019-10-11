@@ -20,8 +20,15 @@
 package com.baidu.hugegraph.loader.source;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
+import com.baidu.hugegraph.loader.source.file.FileSource;
 
 public interface InputSource extends Checkable {
 
     public SourceType type();
+
+    public String[] header();
+
+    public String charset();
+
+    public FileSource asFileSource();
 }

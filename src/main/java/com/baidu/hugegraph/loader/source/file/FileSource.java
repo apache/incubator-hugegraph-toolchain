@@ -19,9 +19,6 @@
 
 package com.baidu.hugegraph.loader.source.file;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
@@ -36,12 +33,8 @@ public class FileSource extends AbstractSource {
     private FileFilter filter;
     @JsonProperty("format")
     private FileFormat format;
-    @JsonProperty("header")
-    private List<String> header;
     @JsonProperty("delimiter")
     private String delimiter;
-    @JsonProperty("charset")
-    private String charset;
     @JsonProperty("date_format")
     private String dateFormat;
     @JsonProperty("skipped_line")
@@ -50,9 +43,10 @@ public class FileSource extends AbstractSource {
     private Compression compression;
 
     public FileSource() {
+        this.path = null;
         this.filter = new FileFilter();
-        this.header = null;
-        this.charset = Constants.CHARSET.name();
+        this.format = FileFormat.CSV;
+        this.delimiter = Constants.COMMA_STR;
         this.dateFormat = Constants.DATE_FORMAT;
         this.skippedLine = new SkippedLine();
         this.compression = Compression.NONE;
@@ -72,10 +66,13 @@ public class FileSource extends AbstractSource {
                             "is %s, but got '%s'", Constants.COMMA_STR,
                             this.format, this.delimiter);
         }
-        String elemDelimiter = this.listFormat().elemDelimiter();
-        E.checkArgument(!elemDelimiter.equals(this.delimiter),
-                        "The delimiters of fields(%s) and list elements(%s) " +
-                        "can't be the same", this.delimiter, elemDelimiter);
+        if (this.listFormat() != null) {
+            String elemDelimiter = this.listFormat().elemDelimiter();
+            E.checkArgument(!elemDelimiter.equals(this.delimiter),
+                            "The delimiters of fields(%s) and " +
+                            "list elements(%s) can't be the same",
+                            this.delimiter, elemDelimiter);
+        }
     }
 
     public String path() {
@@ -94,20 +91,12 @@ public class FileSource extends AbstractSource {
         return this.format;
     }
 
-    public String[] header() {
-        return this.header != null ? this.header.toArray(new String[]{}) : null;
-    }
-
-    public void header(String[] header) {
-        this.header = Arrays.asList(header);
-    }
-
     public String delimiter() {
         return this.delimiter;
     }
 
-    public String charset() {
-        return this.charset;
+    public void delimiter(String delimiter) {
+        this.delimiter = delimiter;
     }
 
     public String dateFormat() {
@@ -120,6 +109,22 @@ public class FileSource extends AbstractSource {
 
     public Compression compression() {
         return this.compression;
+    }
+
+    @Override
+    public FileSource asFileSource() {
+        FileSource source = new FileSource();
+        source.header(this.header());
+        source.charset(this.charset());
+        source.listFormat(this.listFormat());
+        source.path = this.path;
+        source.filter = this.filter;
+        source.format = this.format;
+        source.delimiter = this.delimiter;
+        source.dateFormat = this.dateFormat;
+        source.skippedLine = this.skippedLine;
+        source.compression = this.compression;
+        return source;
     }
 
     @Override
