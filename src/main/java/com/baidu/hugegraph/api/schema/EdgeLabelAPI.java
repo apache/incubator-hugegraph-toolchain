@@ -27,6 +27,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
+import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
 public class EdgeLabelAPI extends SchemaAPI {
@@ -66,6 +67,15 @@ public class EdgeLabelAPI extends SchemaAPI {
 
     public List<EdgeLabel> list() {
         RestResult result = this.client.get(this.path());
+        return result.readList(this.type(), EdgeLabel.class);
+    }
+
+    public List<EdgeLabel> list(List<String> names) {
+        this.client.checkApiVersion("0.48", "getting schema by names");
+        E.checkArgument(names != null && !names.isEmpty(),
+                        "The edge label names can't be null or empty");
+        Map<String, Object> params = ImmutableMap.of("names", names);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), EdgeLabel.class);
     }
 

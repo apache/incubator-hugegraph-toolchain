@@ -32,6 +32,7 @@ import com.baidu.hugegraph.structure.constant.Frequency;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class EdgeLabelApiTest extends BaseApiTest {
@@ -281,7 +282,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                        .singleTime()
                                        .properties("date")
                                        .build();
-        
+
         edgeLabel1 = edgeLabelAPI.create(edgeLabel1);
 
         Assert.assertEquals("created", edgeLabel1.name());
@@ -395,6 +396,40 @@ public class EdgeLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testListByNames() {
+        EdgeLabel created = schema().edgeLabel("created")
+                                    .sourceLabel("person")
+                                    .targetLabel("software")
+                                    .singleTime()
+                                    .properties("date", "city")
+                                    .build();
+        created = edgeLabelAPI.create(created);
+
+        EdgeLabel knows = schema().edgeLabel("knows")
+                                  .sourceLabel("person")
+                                  .targetLabel("person")
+                                  .singleTime()
+                                  .properties("date")
+                                  .build();
+        knows = edgeLabelAPI.create(knows);
+
+        List<EdgeLabel> edgeLabels;
+
+        edgeLabels = edgeLabelAPI.list(ImmutableList.of("created"));
+        Assert.assertEquals(1, edgeLabels.size());
+        assertContains(edgeLabels, created);
+
+        edgeLabels = edgeLabelAPI.list(ImmutableList.of("knows"));
+        Assert.assertEquals(1, edgeLabels.size());
+        assertContains(edgeLabels, knows);
+
+        edgeLabels = edgeLabelAPI.list(ImmutableList.of("created", "knows"));
+        Assert.assertEquals(2, edgeLabels.size());
+        assertContains(edgeLabels, created);
+        assertContains(edgeLabels, knows);
+    }
+
+    @Test
     public void testDelete() {
         EdgeLabel edgeLabel = schema().edgeLabel("created")
                                       .sourceLabel("person")
@@ -448,10 +483,5 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals(1, write.userdata().size());
         Assert.assertEquals("many-to-many",
                             write.userdata().get("multiplicity"));
-    }
-
-    private static void assertContains(List<EdgeLabel> edgeLabels,
-                                       EdgeLabel edgeLabel) {
-        Assert.assertTrue(Utils.contains(edgeLabels, edgeLabel));
     }
 }

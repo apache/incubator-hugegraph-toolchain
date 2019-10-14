@@ -51,6 +51,17 @@ public class EdgeTest extends BaseFuncTest {
     }
 
     @Test
+    public void testLinkedVertex() {
+        Object peterId = getVertexId("person", "name", "peter");
+        Object lopId = getVertexId("software", "name", "lop");
+
+        Edge created = graph().addEdge(peterId, "created", lopId,
+                                       "date", "2017-03-24");
+        Assert.assertTrue(created.linkedVertex(peterId));
+        Assert.assertTrue(created.linkedVertex(lopId));
+    }
+
+    @Test
     public void testAddEdgeProperty() {
         Object peterId = getVertexId("person", "name", "peter");
         Object lopId = getVertexId("software", "name", "lop");
@@ -261,7 +272,7 @@ public class EdgeTest extends BaseFuncTest {
         Object peterId = getVertexId("person", "name", "peter");
         Object lopId = getVertexId("software", "name", "lop");
         Object rippleId = getVertexId("software", "name", "ripple");
-        
+
         List<Edge> edges = graph().listEdges();
         Assert.assertEquals(6, edges.size());
         assertContains(edges, markoId, "knows", vadasId,
@@ -471,7 +482,7 @@ public class EdgeTest extends BaseFuncTest {
             Assert.assertEquals("knows", edge.label());
         }
     }
-    
+
     private static void assertContains(List<Edge> edges, Object source,
                                        String label, Object target,
                                        Object... keyValues) {

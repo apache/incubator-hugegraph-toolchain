@@ -27,6 +27,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
 public class VertexLabelAPI extends SchemaAPI {
@@ -71,6 +72,15 @@ public class VertexLabelAPI extends SchemaAPI {
 
     public List<VertexLabel> list() {
         RestResult result = this.client.get(this.path());
+        return result.readList(this.type(), VertexLabel.class);
+    }
+
+    public List<VertexLabel> list(List<String> names) {
+        this.client.checkApiVersion("0.48", "getting schema by names");
+        E.checkArgument(names != null && !names.isEmpty(),
+                        "The vertex label names can't be null or empty");
+        Map<String, Object> params = ImmutableMap.of("names", names);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), VertexLabel.class);
     }
 

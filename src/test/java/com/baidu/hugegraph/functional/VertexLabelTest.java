@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +29,7 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;
+import com.google.common.collect.ImmutableList;
 
 public class VertexLabelTest extends BaseFuncTest {
 
@@ -119,6 +122,30 @@ public class VertexLabelTest extends BaseFuncTest {
         long taskId = schema.removeVertexLabelAsync("player");
         Task task = task().waitUntilTaskCompleted(taskId, 10);
         Assert.assertTrue(task.completed());
+    }
+
+    @Test
+    public void testListByNames() {
+        SchemaManager schema = schema();
+
+        VertexLabel player = schema.vertexLabel("player").create();
+        VertexLabel runner = schema.vertexLabel("runner").create();
+
+        List<VertexLabel> vertexLabels;
+
+        vertexLabels = schema.getVertexLabels(ImmutableList.of("player"));
+        Assert.assertEquals(1, vertexLabels.size());
+        assertContains(vertexLabels, player);
+
+        vertexLabels = schema.getVertexLabels(ImmutableList.of("runner"));
+        Assert.assertEquals(1, vertexLabels.size());
+        assertContains(vertexLabels, runner);
+
+        vertexLabels = schema.getVertexLabels(ImmutableList.of("player",
+                                                               "runner"));
+        Assert.assertEquals(2, vertexLabels.size());
+        assertContains(vertexLabels, player);
+        assertContains(vertexLabels, runner);
     }
 
     @Test

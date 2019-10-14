@@ -31,6 +31,7 @@ import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class VertexLabelApiTest extends BaseApiTest {
@@ -368,6 +369,37 @@ public class VertexLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testListByNames() {
+        VertexLabel person = schema().vertexLabel("person")
+                                     .useAutomaticId()
+                                     .properties("name", "age", "city")
+                                     .build();
+        person = vertexLabelAPI.create(person);
+
+        VertexLabel software = schema().vertexLabel("software")
+                                       .useCustomizeStringId()
+                                       .properties("name", "lang", "price")
+                                       .build();
+        software = vertexLabelAPI.create(software);
+
+        List<VertexLabel> vertexLabels;
+
+        vertexLabels = vertexLabelAPI.list(ImmutableList.of("person"));
+        Assert.assertEquals(1, vertexLabels.size());
+        assertContains(vertexLabels, person);
+
+        vertexLabels = vertexLabelAPI.list(ImmutableList.of("software"));
+        Assert.assertEquals(1, vertexLabels.size());
+        assertContains(vertexLabels, software);
+
+        vertexLabels = vertexLabelAPI.list(ImmutableList.of("person",
+                                                            "software"));
+        Assert.assertEquals(2, vertexLabels.size());
+        assertContains(vertexLabels, person);
+        assertContains(vertexLabels, software);
+    }
+
+    @Test
     public void testDelete() {
         VertexLabel vertexLabel = schema().vertexLabel("person")
                                           .useAutomaticId()
@@ -409,10 +441,5 @@ public class VertexLabelApiTest extends BaseApiTest {
         // The same key user data will be overwritten
         Assert.assertEquals(1, runner.userdata().size());
         Assert.assertEquals("player", runner.userdata().get("super_vl"));
-    }
-
-    private static void assertContains(List<VertexLabel> vertexLabels,
-                                       VertexLabel vertexLabel) {
-        Assert.assertTrue(Utils.contains(vertexLabels, vertexLabel));
     }
 }

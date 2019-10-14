@@ -66,6 +66,11 @@ public class EdgeLabel extends SchemaLabel {
         return this.targetLabel;
     }
 
+    public boolean linkedVertexLabel(String vertexLabel) {
+        return this.sourceLabel.equals(vertexLabel) ||
+               this.targetLabel.equals(vertexLabel);
+    }
+
     public List<String> sortKeys() {
         return this.sortKeys;
     }

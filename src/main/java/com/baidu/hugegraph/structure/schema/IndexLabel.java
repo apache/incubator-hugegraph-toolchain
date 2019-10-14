@@ -90,6 +90,8 @@ public class IndexLabel extends SchemaElement {
 
     public interface Builder extends SchemaBuilder<IndexLabel> {
 
+        Builder on(boolean isVertex, String baseValue);
+
         Builder onV(String baseValue);
 
         Builder onE(String baseValue);
@@ -144,6 +146,11 @@ public class IndexLabel extends SchemaElement {
         @Override
         public void remove() {
             this.manager.removeIndexLabel(this.indexLabel.name);
+        }
+
+        @Override
+        public Builder on(boolean isVertex, String baseValue) {
+            return isVertex ? this.onV(baseValue) : this.onE(baseValue);
         }
 
         @Override

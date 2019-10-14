@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
@@ -20,7 +19,12 @@ import com.baidu.hugegraph.driver.TraverserManager;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.schema.EdgeLabel;
+import com.baidu.hugegraph.structure.schema.IndexLabel;
+import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableMap;
 
 public class BaseClientTest {
@@ -105,6 +109,26 @@ public class BaseClientTest {
         List<Edge> edges = graph().listEdges(label, params);
         assert edges.size() == 1;
         return edges.get(0);
+    }
+
+    protected static void assertContains(List<PropertyKey> propertyKeys,
+                                         PropertyKey propertyKey) {
+        Assert.assertTrue(Utils.contains(propertyKeys, propertyKey));
+    }
+
+    protected static void assertContains(List<VertexLabel> vertexLabels,
+                                         VertexLabel vertexLabel) {
+        Assert.assertTrue(Utils.contains(vertexLabels, vertexLabel));
+    }
+
+    protected static void assertContains(List<EdgeLabel> edgeLabels,
+                                         EdgeLabel edgeLabel) {
+        Assert.assertTrue(Utils.contains(edgeLabels, edgeLabel));
+    }
+
+    protected static void assertContains(List<IndexLabel> indexLabels,
+                                         IndexLabel indexLabel) {
+        Assert.assertTrue(Utils.contains(indexLabels, indexLabel));
     }
 
     protected static void initPropertyKey() {

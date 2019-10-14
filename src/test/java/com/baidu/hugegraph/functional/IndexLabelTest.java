@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +28,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.testutil.Assert;
+import com.google.common.collect.ImmutableList;
 
 public class IndexLabelTest extends BaseFuncTest {
 
@@ -47,7 +50,7 @@ public class IndexLabelTest extends BaseFuncTest {
               .properties("name", "age")
               .create();
         IndexLabel playerByName = schema.indexLabel("playerByName")
-                                        .onV("player")
+                                        .on(true, "player")
                                         .by("name")
                                         .create();
 
@@ -79,6 +82,37 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertNotNull(playerByName);
         // Remove index label async
         schema.removeIndexLabelAsync("playerByName");
+    }
+
+    @Test
+    public void testListByNames() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("player").properties("name", "age").create();
+        IndexLabel playerByName = schema.indexLabel("playerByName")
+                                        .onV("player")
+                                        .by("name")
+                                        .create();
+        IndexLabel playerByAge = schema.indexLabel("playerByAge")
+                                       .onV("player")
+                                       .by("age")
+                                       .create();
+
+        List<IndexLabel> indexLabels;
+
+        indexLabels = schema.getIndexLabels(ImmutableList.of("playerByName"));
+        Assert.assertEquals(1, indexLabels.size());
+        assertContains(indexLabels, playerByName);
+
+        indexLabels = schema.getIndexLabels(ImmutableList.of("playerByAge"));
+        Assert.assertEquals(1, indexLabels.size());
+        assertContains(indexLabels, playerByAge);
+
+        indexLabels = schema.getIndexLabels(ImmutableList.of("playerByName",
+                                                             "playerByAge"));
+        Assert.assertEquals(2, indexLabels.size());
+        assertContains(indexLabels, playerByName);
+        assertContains(indexLabels, playerByAge);
     }
 
     @Test

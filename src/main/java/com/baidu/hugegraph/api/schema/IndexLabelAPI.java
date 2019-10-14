@@ -28,6 +28,8 @@ import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
+import com.baidu.hugegraph.util.E;
+import com.google.common.collect.ImmutableMap;
 
 public class IndexLabelAPI extends SchemaAPI {
 
@@ -57,6 +59,15 @@ public class IndexLabelAPI extends SchemaAPI {
 
     public List<IndexLabel> list() {
         RestResult result = this.client.get(this.path());
+        return result.readList(this.type(), IndexLabel.class);
+    }
+
+    public List<IndexLabel> list(List<String> names) {
+        this.client.checkApiVersion("0.48", "getting schema by names");
+        E.checkArgument(names != null && !names.isEmpty(),
+                        "The index label names can't be null or empty");
+        Map<String, Object> params = ImmutableMap.of("names", names);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), IndexLabel.class);
     }
 

@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +29,7 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.testutil.Assert;
+import com.google.common.collect.ImmutableList;
 
 public class EdgeLabelTest extends BaseFuncTest {
 
@@ -39,6 +42,39 @@ public class EdgeLabelTest extends BaseFuncTest {
     @After
     public void teardown() throws Exception {
         BaseFuncTest.clearData();
+    }
+
+    @Test
+    public void testLinkedVertexLabel() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("person")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .nullableKeys("city")
+              .ifNotExist()
+              .create();
+
+        schema.vertexLabel("book")
+              .properties("name")
+              .primaryKeys("name")
+              .ifNotExist()
+              .create();
+
+        EdgeLabel father = schema.edgeLabel("father").link("person", "person")
+                                 .properties("weight")
+                                 .userdata("multiplicity", "one-to-many")
+                                 .create();
+        EdgeLabel write = schema.edgeLabel("write").link("person", "book")
+                                .properties("date", "weight")
+                                .userdata("multiplicity", "one-to-many")
+                                .userdata("multiplicity", "many-to-many")
+                                .create();
+
+        Assert.assertTrue(father.linkedVertexLabel("person"));
+        Assert.assertFalse(father.linkedVertexLabel("book"));
+        Assert.assertTrue(write.linkedVertexLabel("person"));
+        Assert.assertTrue(write.linkedVertexLabel("book"));
     }
 
     @Test
@@ -199,6 +235,34 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertTrue(task.completed());
     }
 
+    @Test
+    public void testListByNames() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("person").ifNotExist().create();
+        schema.vertexLabel("book").ifNotExist().create();
+
+        EdgeLabel father = schema.edgeLabel("father").link("person", "person")
+                                 .create();
+
+        EdgeLabel write = schema.edgeLabel("write").link("person", "book")
+                                .create();
+
+        List<EdgeLabel> edgeLabels;
+
+        edgeLabels = schema.getEdgeLabels(ImmutableList.of("father"));
+        Assert.assertEquals(1, edgeLabels.size());
+        assertContains(edgeLabels, father);
+
+        edgeLabels = schema.getEdgeLabels(ImmutableList.of("write"));
+        Assert.assertEquals(1, edgeLabels.size());
+        assertContains(edgeLabels, write);
+
+        edgeLabels = schema.getEdgeLabels(ImmutableList.of("father", "write"));
+        Assert.assertEquals(2, edgeLabels.size());
+        assertContains(edgeLabels, father);
+        assertContains(edgeLabels, write);
+    }
 
     @Test
     public void testResetVertexLabelId() {

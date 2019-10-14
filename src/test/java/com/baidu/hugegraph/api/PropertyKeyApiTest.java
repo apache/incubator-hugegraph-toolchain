@@ -249,6 +249,30 @@ public class PropertyKeyApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testListByNames() {
+        PropertyKey name = schema().propertyKey("name").asText().build();
+        name = propertyKeyAPI.create(name);
+
+        PropertyKey age = schema().propertyKey("age").asInt().build();
+        age = propertyKeyAPI.create(age);
+
+        List<PropertyKey> propertyKeys;
+
+        propertyKeys = propertyKeyAPI.list(ImmutableList.of("name"));
+        Assert.assertEquals(1, propertyKeys.size());
+        assertContains(propertyKeys, name);
+
+        propertyKeys = propertyKeyAPI.list(ImmutableList.of("age"));
+        Assert.assertEquals(1, propertyKeys.size());
+        assertContains(propertyKeys, age);
+
+        propertyKeys = propertyKeyAPI.list(ImmutableList.of("name", "age"));
+        Assert.assertEquals(2, propertyKeys.size());
+        assertContains(propertyKeys, name);
+        assertContains(propertyKeys, age);
+    }
+
+    @Test
     public void testDelete() {
         PropertyKey propertyKey = schema().propertyKey("name")
                                           .asText()
@@ -297,10 +321,5 @@ public class PropertyKeyApiTest extends BaseApiTest {
         Assert.assertEquals(1, sex.userdata().size());
         Assert.assertEquals(ImmutableList.of("male", "female"),
                             sex.userdata().get("range"));
-    }
-
-    private static void assertContains(List<PropertyKey> propertyKeys,
-                                       PropertyKey propertyKey) {
-        Assert.assertTrue(Utils.contains(propertyKeys, propertyKey));
     }
 }

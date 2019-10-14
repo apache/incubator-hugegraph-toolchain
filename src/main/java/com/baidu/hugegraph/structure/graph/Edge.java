@@ -113,6 +113,15 @@ public class Edge extends GraphElement {
         return this;
     }
 
+    public boolean linkedVertex(Object vertexId) {
+        return this.sourceId.equals(vertexId) ||
+               this.targetId.equals(vertexId);
+    }
+
+    public boolean linkedVertex(Vertex vertex) {
+        return this.linkedVertex(vertex.id());
+    }
+
     public String sourceLabel() {
         return this.sourceLabel;
     }

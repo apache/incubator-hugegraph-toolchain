@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,6 +105,29 @@ public class PropertyKeyTest extends BaseFuncTest {
                     .eliminate();
         Assert.assertEquals(1, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
+    }
+
+    @Test
+    public void testListByNames() {
+        SchemaManager schema = schema();
+
+        PropertyKey age = schema.propertyKey("age").create();
+        PropertyKey id = schema.propertyKey("id").create();
+
+        List<PropertyKey> propertyKeys;
+
+        propertyKeys = schema.getPropertyKeys(ImmutableList.of("age"));
+        Assert.assertEquals(1, propertyKeys.size());
+        assertContains(propertyKeys, age);
+
+        propertyKeys = schema.getPropertyKeys(ImmutableList.of("id"));
+        Assert.assertEquals(1, propertyKeys.size());
+        assertContains(propertyKeys, id);
+
+        propertyKeys = schema.getPropertyKeys(ImmutableList.of("age", "id"));
+        Assert.assertEquals(2, propertyKeys.size());
+        assertContains(propertyKeys, age);
+        assertContains(propertyKeys, id);
     }
 
     @Test

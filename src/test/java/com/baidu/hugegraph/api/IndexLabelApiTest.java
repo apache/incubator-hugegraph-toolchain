@@ -287,6 +287,35 @@ public class IndexLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testListByNames() {
+        IndexLabel personByAge = fillIndexLabel.apply("personByAge");
+        personByAge = indexLabelAPI.create(personByAge).indexLabel();
+
+        IndexLabel personByCity = schema().indexLabel("personByCity")
+                                          .onV("person")
+                                          .by("city")
+                                          .secondary()
+                                          .build();
+        personByCity = indexLabelAPI.create(personByCity).indexLabel();
+
+        List<IndexLabel> indexLabels;
+
+        indexLabels = indexLabelAPI.list(ImmutableList.of("personByAge"));
+        Assert.assertEquals(1, indexLabels.size());
+        assertContains(indexLabels, personByAge);
+
+        indexLabels = indexLabelAPI.list(ImmutableList.of("personByCity"));
+        Assert.assertEquals(1, indexLabels.size());
+        assertContains(indexLabels, personByCity);
+
+        indexLabels = indexLabelAPI.list(ImmutableList.of("personByAge",
+                                                          "personByCity"));
+        Assert.assertEquals(2, indexLabels.size());
+        assertContains(indexLabels, personByAge);
+        assertContains(indexLabels, personByCity);
+    }
+
+    @Test
     public void testDelete() {
         String name = "personByAge";
         indexLabelAPI.create(fillIndexLabel.apply(name));
@@ -308,10 +337,5 @@ public class IndexLabelApiTest extends BaseApiTest {
         Utils.assertResponseError(404, () -> {
             indexLabelAPI.delete("not-exist-il");
         });
-    }
-
-    private static void assertContains(List<IndexLabel> indexLabels,
-                                       IndexLabel indexLabel) {
-        Assert.assertTrue(Utils.contains(indexLabels, indexLabel));
     }
 }
