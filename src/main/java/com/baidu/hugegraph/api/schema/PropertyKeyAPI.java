@@ -26,6 +26,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
+import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
 public class PropertyKeyAPI extends SchemaAPI {
@@ -40,7 +41,15 @@ public class PropertyKeyAPI extends SchemaAPI {
     }
 
     public PropertyKey create(PropertyKey propertyKey) {
-        RestResult result = this.client.post(this.path(), propertyKey);
+        Object pkey = propertyKey;
+        if (this.client.apiVersionLt("0.47")) {
+            E.checkArgument(propertyKey.aggregateType().isNone(),
+                            "Not support aggregate property until " +
+                            "api version 0.47");
+            pkey = propertyKey.switchV46();
+        }
+
+        RestResult result = this.client.post(this.path(), pkey);
         return result.readObject(PropertyKey.class);
     }
 

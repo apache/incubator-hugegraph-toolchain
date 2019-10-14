@@ -27,7 +27,8 @@ import org.junit.runners.Suite;
     VertexSerializerTest.class,
     PathSerializerTest.class,
     RestResultTest.class,
-    BatchElementRequestTest.class
+    BatchElementRequestTest.class,
+    PropertyKeyTest.class
 })
 public class UnitTestSuite {
 }

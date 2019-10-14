@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Test;
 
+import com.baidu.hugegraph.structure.constant.AggregateType;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
@@ -78,6 +79,106 @@ public class PropertyKeyApiTest extends BaseApiTest {
         Assert.assertEquals("name", propertyKey.name());
         Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
         Assert.assertEquals(Cardinality.SET, propertyKey.cardinality());
+    }
+
+    @Test
+    public void testCreateWithAggregateType() {
+        PropertyKey propertyKey = schema().propertyKey("name")
+                                          .asText().valueSingle()
+                                          .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("name", propertyKey.name());
+        Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, propertyKey.cardinality());
+        Assert.assertEquals(AggregateType.NONE, propertyKey.aggregateType());
+        Assert.assertTrue(propertyKey.aggregateType().isNone());
+        Assert.assertFalse(propertyKey.aggregateType().isNumber());
+        Assert.assertTrue(propertyKey.aggregateType().isIndexable());
+
+        propertyKey = schema().propertyKey("no")
+                              .asText().valueSingle()
+                              .calcOld()
+                              .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("no", propertyKey.name());
+        Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, propertyKey.cardinality());
+        Assert.assertEquals(AggregateType.OLD, propertyKey.aggregateType());
+        Assert.assertTrue(propertyKey.aggregateType().isOld());
+        Assert.assertTrue(propertyKey.aggregateType().isIndexable());
+        Assert.assertFalse(propertyKey.aggregateType().isNumber());
+
+        propertyKey = schema().propertyKey("max")
+                              .asInt().valueSingle()
+                              .calcMax()
+                              .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("max", propertyKey.name());
+        Assert.assertEquals(DataType.INT, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, propertyKey.cardinality());
+        Assert.assertEquals(AggregateType.MAX, propertyKey.aggregateType());
+        Assert.assertTrue(propertyKey.aggregateType().isMax());
+        Assert.assertTrue(propertyKey.aggregateType().isIndexable());
+        Assert.assertTrue(propertyKey.aggregateType().isNumber());
+
+        propertyKey = schema().propertyKey("min")
+                              .asInt().valueSingle()
+                              .calcMin()
+                              .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("min", propertyKey.name());
+        Assert.assertEquals(DataType.INT, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, propertyKey.cardinality());
+        Assert.assertEquals(AggregateType.MIN, propertyKey.aggregateType());
+        Assert.assertTrue(propertyKey.aggregateType().isMin());
+        Assert.assertTrue(propertyKey.aggregateType().isIndexable());
+        Assert.assertTrue(propertyKey.aggregateType().isNumber());
+
+        propertyKey = schema().propertyKey("sum")
+                              .asInt().valueSingle()
+                              .calcSum()
+                              .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("sum", propertyKey.name());
+        Assert.assertEquals(DataType.INT, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, propertyKey.cardinality());
+        Assert.assertEquals(AggregateType.SUM, propertyKey.aggregateType());
+        Assert.assertTrue(propertyKey.aggregateType().isSum());
+        Assert.assertFalse(propertyKey.aggregateType().isIndexable());
+        Assert.assertTrue(propertyKey.aggregateType().isNumber());
+
+        propertyKey = schema().propertyKey("total")
+                              .asInt().valueSingle()
+                              .aggregateType(AggregateType.SUM)
+                              .build();
+
+        propertyKey = propertyKeyAPI.create(propertyKey);
+
+        Assert.assertEquals("total", propertyKey.name());
+        Assert.assertEquals(DataType.INT, propertyKey.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, propertyKey.cardinality());
+        Assert.assertEquals(AggregateType.SUM, propertyKey.aggregateType());
+        Assert.assertTrue(propertyKey.aggregateType().isSum());
+        Assert.assertFalse(propertyKey.aggregateType().isIndexable());
+        Assert.assertTrue(propertyKey.aggregateType().isNumber());
+
+        propertyKey = schema().propertyKey("nameV46")
+                              .asText().valueSingle()
+                              .build();
+        PropertyKey.PropertyKeyV46 pk = propertyKey.switchV46();
+        Assert.assertEquals("nameV46", pk.name());
+        Assert.assertEquals(DataType.TEXT, pk.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, pk.cardinality());
     }
 
     @Test
