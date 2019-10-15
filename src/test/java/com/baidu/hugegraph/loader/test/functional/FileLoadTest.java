@@ -1724,6 +1724,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(5, vertices.size());
 
         InputProgressMap progresses = context.newProgress().vertex();
+        Assert.assertEquals(2, progresses.size());
         progresses.forEach((key, value) -> {
             if (key.startsWith("person")) {
                 Set<InputItemProgress> loadedItems = value.loadedItems();
@@ -1765,6 +1766,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(6, vertices.size());
 
         progresses = context.newProgress().vertex();
+        Assert.assertEquals(2, progresses.size());
         progresses.forEach((key, value) -> {
             if (key.startsWith("person")) {
                 Set<InputItemProgress> loadedItems = value.loadedItems();
@@ -1829,6 +1831,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(5, vertices.size());
 
         InputProgressMap progresses = context.newProgress().vertex();
+        Assert.assertEquals(2, progresses.size());
         progresses.forEach((key, value) -> {
             if (key.startsWith("person")) {
                 Set<InputItemProgress> loadedItems = value.loadedItems();
@@ -1903,6 +1906,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(6, vertices.size());
 
         progresses = context.newProgress().vertex();
+        Assert.assertEquals(4, progresses.size());
         progresses.forEach((key, value) -> {
             if (key.startsWith("person") && key.endsWith("failure")) {
                 Set<InputItemProgress> loadedItems = value.loadedItems();
@@ -1979,6 +1983,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(7, vertices.size());
 
         progresses = context.newProgress().vertex();
+        Assert.assertEquals(4, progresses.size());
         progresses.forEach((key, value) -> {
             if (key.startsWith("person") && key.endsWith("failure")) {
                 /*
@@ -2067,6 +2072,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(8, vertices.size());
 
         progresses = context.newProgress().vertex();
+        Assert.assertEquals(4, progresses.size());
         progresses.forEach((key, value) -> {
             if (key.startsWith("person") && key.endsWith("failure")) {
                 Set<InputItemProgress> loadedItems = value.loadedItems();

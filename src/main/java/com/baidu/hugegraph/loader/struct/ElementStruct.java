@@ -82,7 +82,7 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     public String uniqueKeyForFile() {
         String key = this.uniqueKey();
         if (key.endsWith(Constants.FAILURE)) {
-            // "-failure" => ""
+            // Delete suffix "-failure" from uniqueKey
             return key.replace(Constants.MINUS_STR + Constants.FAILURE,
                                Constants.EMPTY_STR);
         } else {

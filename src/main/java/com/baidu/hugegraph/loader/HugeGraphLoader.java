@@ -238,8 +238,11 @@ public final class HugeGraphLoader {
         if (!this.context.options().dryRun && !batch.isEmpty()) {
             // Parse time doesn't include submit time, it's accurate
             parseTimer.suspend();
-            this.taskManager.submitBatch(struct, batch);
-            parseTimer.resume();
+            try {
+                this.taskManager.submitBatch(struct, batch);
+            } finally {
+                parseTimer.resume();
+            }
         }
     }
 
