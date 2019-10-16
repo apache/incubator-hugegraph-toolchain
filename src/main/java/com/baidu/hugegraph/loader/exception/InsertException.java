@@ -19,43 +19,39 @@
 
 package com.baidu.hugegraph.loader.exception;
 
-import com.baidu.hugegraph.structure.GraphElement;
-
 public class InsertException extends IllegalArgumentException {
 
     private static final long serialVersionUID = 2218730111752576867L;
 
-    private final GraphElement element;
+    private final String line;
 
-    public InsertException(GraphElement element, String message) {
+    public InsertException(String line, String message) {
         super(message);
-        this.element = element;
+        this.line = line;
     }
 
-    public InsertException(GraphElement element, Throwable cause) {
+    public InsertException(String line, Throwable cause) {
         super(cause.getMessage(), cause);
-        this.element = element;
+        this.line = line;
     }
 
-    public InsertException(GraphElement element, String message,
-                           Throwable cause) {
+    public InsertException(String line, String message, Throwable cause) {
         super(message, cause);
-        this.element = element;
+        this.line = line;
     }
 
-    public InsertException(GraphElement element, String message,
-                           Object... args) {
+    public InsertException(String line, String message, Object... args) {
         super(String.format(message, args));
-        this.element = element;
+        this.line = line;
     }
 
-    public InsertException(GraphElement element, String message,
-                           Throwable cause, Object... args) {
+    public InsertException(String line, String message, Throwable cause,
+                           Object... args) {
         super(String.format(message, args), cause);
-        this.element = element;
+        this.line = line;
     }
 
-    public GraphElement element() {
-        return this.element;
+    public String line() {
+        return this.line;
     }
 }

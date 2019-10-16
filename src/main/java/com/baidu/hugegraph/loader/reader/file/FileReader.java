@@ -35,9 +35,11 @@ import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public abstract class FileReader implements InputReader {
@@ -73,26 +75,39 @@ public abstract class FileReader implements InputReader {
         }
         this.progress(context, struct);
 
-        boolean needHeader = this.parser.needHeader();
-        String headerLine = this.readers.skipOffset(needHeader);
-        if (needHeader) {
+        if (this.parser.needHeader()) {
+            String headerLine = this.readers.readHeader();
             if (headerLine == null) {
                 throw new LoadException("Failed to read header from " +
                                         "file source '%s'", this.source);
             }
             this.parser.parseHeader(headerLine);
+            InputSource inputSource = struct.input();
+            E.checkState(inputSource instanceof FileSource,
+                         "The InputSource must be FileSource when need header");
+
+            FileSource fileSource = (FileSource) inputSource;
+            fileSource.header(this.parser.header());
         }
+
+        this.readers.skipOffset();
+    }
+
+    @Override
+    public long confirmOffset() {
+        return this.readers.confirmOffset();
     }
 
     private void progress(LoadContext context, ElementStruct struct) {
         ElemType type = struct.type();
-        InputProgressMap oldProgress = context.oldProgress().get(type);
-        InputProgressMap newProgress = context.newProgress().get(type);
+        InputProgressMap oldProgress = context.oldProgress().type(type);
+        InputProgressMap newProgress = context.newProgress().type(type);
         InputProgress oldInputProgress = oldProgress.getByStruct(struct);
         if (oldInputProgress == null) {
             oldInputProgress = new InputProgress(struct);
         }
         InputProgress newInputProgress = newProgress.getByStruct(struct);
+        assert newInputProgress != null;
         this.readers.progress(oldInputProgress, newInputProgress);
     }
 
@@ -118,7 +133,7 @@ public abstract class FileReader implements InputReader {
     @Override
     public void close() throws IOException {
         if (this.readers != null) {
-            this.readers.close(false);
+            this.readers.close();
         }
     }
 
@@ -127,7 +142,7 @@ public abstract class FileReader implements InputReader {
      * improve the performance of each of its sub-methods.
      */
     private Line fetch() {
-        int index = this.readers.index();
+        int index = -1;
         while (true) {
             String rawLine = this.readNextLine();
             if (rawLine == null) {
@@ -138,7 +153,7 @@ public abstract class FileReader implements InputReader {
             }
             boolean openNext = index != this.readers.index();
             index = this.readers.index();
-            if (openNext && this.parser.parseHeader(rawLine)) {
+            if (openNext && this.parser.matchHeader(rawLine)) {
                 continue;
             }
             return this.parser.parse(rawLine);

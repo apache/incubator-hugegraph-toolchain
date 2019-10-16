@@ -35,8 +35,8 @@ public class JDBCReader implements InputReader {
     private final JDBCSource source;
     private final RowFetcher fetcher;
 
-    private int offset;
     private List<Line> batch;
+    private int offsetInBatch;
 
     public JDBCReader(JDBCSource source) {
         this.source = source;
@@ -46,8 +46,8 @@ public class JDBCReader implements InputReader {
             throw new LoadException("Failed to connect database via '%s'",
                                     e, source.url());
         }
-        this.offset = 0;
         this.batch = null;
+        this.offsetInBatch = 0;
     }
 
     public JDBCSource source() {
@@ -57,7 +57,7 @@ public class JDBCReader implements InputReader {
     @Override
     public void init(LoadContext context, ElementStruct struct) {
         try {
-            this.fetcher.readHeader();
+            this.source.header(this.fetcher.readHeader());
             this.fetcher.readPrimaryKey();
         } catch (SQLException e) {
             throw new LoadException("Failed to fetch table structure info", e);
@@ -65,11 +65,16 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
+    public long confirmOffset() {
+        return -1L;
+    }
+
+    @Override
     public boolean hasNext() {
-        if (this.batch == null || this.offset >= this.batch.size()) {
+        if (this.batch == null || this.offsetInBatch >= this.batch.size()) {
             try {
                 this.batch = this.fetcher.nextBatch();
-                this.offset = 0;
+                this.offsetInBatch = 0;
             } catch (Exception e) {
                 throw new LoadException("Error while reading the next row", e);
             }
@@ -82,7 +87,7 @@ public class JDBCReader implements InputReader {
         if (!this.hasNext()) {
             throw new NoSuchElementException("Reached end of table");
         }
-        return this.batch.get(this.offset++);
+        return this.batch.get(this.offsetInBatch++);
     }
 
     @Override

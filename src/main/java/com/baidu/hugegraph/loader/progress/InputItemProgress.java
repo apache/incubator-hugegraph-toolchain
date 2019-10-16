@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.progress;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class InputItemProgress {
@@ -29,19 +30,19 @@ public abstract class InputItemProgress {
      * the file will be marked as loaded, and the offset will be the last line
      * of the file. This file will be skipped when load at next time.
      */
-    @JsonProperty("offset")
-    private long offset;
+    private transient long offset;
 
-    public InputItemProgress() {
-        this.offset = 0L;
+    @JsonProperty("offset")
+    private long confirmOffset;
+
+    @JsonCreator
+    public InputItemProgress(@JsonProperty("offset") long offset) {
+        this.offset = offset;
+        this.confirmOffset = offset;
     }
 
     public long offset() {
-        return this.offset;
-    }
-
-    public void offset(long offset) {
-        this.offset = offset;
+        return this.confirmOffset;
     }
 
     public void increaseOffset() {
@@ -50,5 +51,10 @@ public abstract class InputItemProgress {
 
     public void addOffset(long count) {
         this.offset += count;
+    }
+
+    public long confirmOffset() {
+        this.confirmOffset = this.offset;
+        return this.confirmOffset;
     }
 }

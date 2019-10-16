@@ -45,7 +45,7 @@ public class TextLineParser implements LineParser {
         this.source = source;
         this.delimiter = delimiter;
         if (this.source.header() != null) {
-            this.header = this.source.header().toArray(new String[]{});
+            this.header = this.source.header();
         }
     }
 
@@ -53,6 +53,7 @@ public class TextLineParser implements LineParser {
         return this.delimiter;
     }
 
+    @Override
     public String[] header() {
         return this.header;
     }
@@ -89,15 +90,7 @@ public class TextLineParser implements LineParser {
     }
 
     @Override
-    public boolean parseHeader(String line) {
-        /*
-         * All lines will be treated as data line if the header is
-         * user specified explicitly
-         */
-        if (this.source.header() != null) {
-            return false;
-        }
-
+    public void parseHeader(String line) {
         if (line == null || line.isEmpty()) {
             throw new ParseException("The file header can't be empty " +
                                      "under path '%s'", this.source.path());
@@ -108,12 +101,19 @@ public class TextLineParser implements LineParser {
         assert columns.length > 0;
         if (this.header == null) {
             this.header = columns;
-        } else if (!Arrays.equals(this.header, columns)) {
-            // Has been parsed from the previous file
-            throw new ParseException("The headers of different files must be " +
-                                     "same under path '%s'", this.source.path());
         }
-        return true;
+    }
+
+    @Override
+    public boolean matchHeader(String line) {
+        if (line == null || line.isEmpty()) {
+            throw new ParseException("The file header can't be empty " +
+                                     "under path '%s'", this.source.path());
+        }
+
+        assert this.header != null;
+        String[] columns = this.split(line);
+        return Arrays.equals(this.header, columns);
     }
 
     public String[] split(String line) {

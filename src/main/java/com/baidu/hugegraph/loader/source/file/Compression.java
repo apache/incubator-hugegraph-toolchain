@@ -31,8 +31,6 @@ public enum Compression {
 
     LZMA("lzma"),
 
-    PACK200("pack200"),
-
     SNAPPY_RAW("snappy-raw"),
 
     SNAPPY_FRAMED("snappy-framed"),

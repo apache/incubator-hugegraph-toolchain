@@ -17,27 +17,30 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.parser;
+package com.baidu.hugegraph.loader.builder;
 
-import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.structure.GraphElement;
 
-public interface LineParser {
+public class Record<GE extends GraphElement> {
 
-    public Line parse(String rawLine);
+    private final String rawLine;
+    private final GE element;
 
-    public default boolean needHeader() {
-        return false;
+    public static <GE extends GraphElement> Record<GE> of(String rawLine,
+                                                          GE element) {
+        return new Record<>(rawLine, element);
     }
 
-    public default String[] header() {
-        return new String[0];
+    private Record(String rawLine, GE element) {
+        this.rawLine = rawLine;
+        this.element = element;
     }
 
-    public default void parseHeader(String rawLine) {
-        // pass
+    public String rawLine() {
+        return this.rawLine;
     }
 
-    public default boolean matchHeader(String rawLine) {
-        return false;
+    public GE element() {
+        return this.element;
     }
 }

@@ -161,6 +161,11 @@ public class HDFSFileReader extends FileReader {
         }
 
         @Override
+        public String name() {
+            return this.path.getName();
+        }
+
+        @Override
         public InputStream open() throws IOException {
             return this.hdfs.open(this.path);
         }
@@ -184,7 +189,7 @@ public class HDFSFileReader extends FileReader {
                                         "for HDFS path '%s'", e, this.path);
             }
             String checkSum = new String(bytes, Constants.CHARSET);
-            return new FileItemProgress(name, timestamp, checkSum);
+            return new FileItemProgress(name, timestamp, checkSum, 0L);
         }
 
         @Override

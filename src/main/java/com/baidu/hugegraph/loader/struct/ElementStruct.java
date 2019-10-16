@@ -30,6 +30,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.constant.Unique;
 import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.HashUtil;
@@ -63,8 +64,8 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         this.selectedFields = new HashSet<>();
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
-        this.uniqueKey = null;
         this.updateStrategies = new HashMap<>();
+        this.uniqueKey = null;
     }
 
     public abstract ElemType type();
@@ -72,10 +73,26 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     @Override
     public String uniqueKey() {
         if (this.uniqueKey == null) {
-            String code = HashUtil.hash(JsonUtil.toJson(this));
-            this.uniqueKey = this.label + Constants.MINUS_STR + code;
+            String hashCode = HashUtil.hash(JsonUtil.toJson(this));
+            this.uniqueKey = this.label + Constants.MINUS_STR + hashCode;
         }
         return this.uniqueKey;
+    }
+
+    public String uniqueKeyForFile() {
+        String key = this.uniqueKey();
+        if (key.endsWith(Constants.FAILURE)) {
+            // Delete suffix "-failure" from uniqueKey
+            return key.replace(Constants.MINUS_STR + Constants.FAILURE,
+                               Constants.EMPTY_STR);
+        } else {
+            return key;
+        }
+    }
+
+    public void setFailureUniqueKey() {
+        this.uniqueKey = this.uniqueKey() + Constants.MINUS_STR +
+                         Constants.FAILURE;
     }
 
     @Override
@@ -106,6 +123,10 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
 
     public InputSource input() {
         return this.input;
+    }
+
+    public void input(InputSource input) {
+        this.input = input;
     }
 
     public Map<String, String> mappingFields() {

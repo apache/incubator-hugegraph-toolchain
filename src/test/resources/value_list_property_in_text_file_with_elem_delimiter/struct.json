@@ -6,9 +6,12 @@
         "type": "${source_type}",
         "path": "${store_path}/vertex_person.txt",
         "format": "TEXT",
+        "delimiter": "\t",
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
         "list_format": {
+          "start_symbol": "[",
+          "end_symbol": "]",
           "elem_delimiter": ";"
         }
       },

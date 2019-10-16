@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
@@ -51,6 +52,8 @@ public final class TaskManager {
     private final ExecutorService batchService;
     private final ExecutorService singleService;
 
+    private volatile boolean stopped;
+
     public TaskManager(LoadContext context) {
         this.context = context;
         this.options = context.options();
@@ -58,7 +61,7 @@ public final class TaskManager {
         this.batchSemaphore = new Semaphore(this.batchSemaphoreNum());
         /*
          * Let batch threads go forward as far as possible and don't wait for
-         * single thread
+         * single thread pool
          */
         this.singleSemaphore = new Semaphore(this.singleSemaphoreNum());
         /*
@@ -71,6 +74,7 @@ public final class TaskManager {
                                                             BATCH_WORKER);
         this.singleService = ExecutorUtil.newFixedThreadPool(options.numThreads,
                                                              SINGLE_WORKER);
+        this.stopped = false;
     }
 
     private int batchSemaphoreNum() {
@@ -82,12 +86,17 @@ public final class TaskManager {
     }
 
     public void waitFinished(ElemType type) {
+        if (type == null || this.stopped) {
+            return;
+        }
+
+        LOG.info("Waiting for the insert tasks of {} finish", type.string());
         try {
             // Wait batch mode task finished
             this.batchSemaphore.acquire(this.batchSemaphoreNum());
-            LOG.info("Batch-mode tasks of {} finished", type.string());
+            LOG.info("The batch-mode tasks finished");
         } catch (InterruptedException e) {
-            LOG.warn("Interrupted while waiting batch-mode tasks");
+            LOG.error("Interrupted while waiting batch-mode tasks");
         } finally {
             this.batchSemaphore.release(this.batchSemaphoreNum());
         }
@@ -95,17 +104,19 @@ public final class TaskManager {
         try {
             // Wait single mode task finished
             this.singleSemaphore.acquire(this.singleSemaphoreNum());
-            LOG.info("Single-mode tasks of {} finished", type.string());
+            LOG.info("The single-mode tasks finished");
         } catch (InterruptedException e) {
-            LOG.warn("Interrupted while waiting batch-mode tasks");
+            LOG.error("Interrupted while waiting single-mode tasks");
         } finally {
             this.singleSemaphore.release(this.singleSemaphoreNum());
         }
     }
 
     public void shutdown() {
+        this.stopped = true;
+
+        LOG.debug("Ready to shutdown batch-mode tasks executor");
         long timeout = this.options.shutdownTimeout;
-        LOG.debug("Attempt to shutdown batch-mode tasks executor");
         try {
             this.batchService.shutdown();
             this.batchService.awaitTermination(timeout, TimeUnit.SECONDS);
@@ -113,27 +124,27 @@ public final class TaskManager {
             LOG.error("The batch-mode tasks are interrupted");
         } finally {
             if (!this.batchService.isTerminated()) {
-                LOG.error("Cancel unfinished batch-mode tasks");
+                LOG.error("The unfinished batch-mode tasks will be cancelled");
             }
             this.batchService.shutdownNow();
         }
 
-        LOG.debug("Attempt to shutdown single-mode tasks executor");
+        LOG.debug("Ready to shutdown single-mode tasks executor");
         try {
             this.singleService.shutdown();
             this.singleService.awaitTermination(timeout, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOG.error("The single-mode task are interrupted");
+            LOG.error("The single-mode tasks are interrupted");
         } finally {
             if (!this.singleService.isTerminated()) {
-                LOG.error("Cancel unfinished single-mode tasks");
+                LOG.error("The unfinished single-mode tasks will be cancelled");
             }
             this.singleService.shutdownNow();
         }
     }
 
     public <GE extends GraphElement> void submitBatch(ElementStruct struct,
-                                                      List<GE> batch) {
+                                                      List<Record<GE>> batch) {
         ElemType type = struct.type();
         try {
             this.batchSemaphore.acquire();
@@ -152,7 +163,7 @@ public final class TaskManager {
     }
 
     private <GE extends GraphElement> void submitInSingle(ElementStruct struct,
-                                                          List<GE> batch) {
+                                                          List<Record<GE>> batch) {
         ElemType type = struct.type();
         try {
             this.singleSemaphore.acquire();

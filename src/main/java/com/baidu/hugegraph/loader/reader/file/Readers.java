@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.compress.compressors.CompressorInputStream;
@@ -62,20 +63,68 @@ public class Readers {
         E.checkNotNull(source, "source");
         E.checkNotNull(readables, "readables");
         this.source = source;
+        // sort readable files by name
+        readables.sort(Comparator.comparing(Readable::name));
         this.readables = readables;
         this.index = -1;
         this.reader = null;
     }
 
     public void progress(InputProgress oldProgress, InputProgress newProgress) {
-        E.checkNotNull(oldProgress != null, "old progress");
-        E.checkNotNull(newProgress != null, "new progress");
+        E.checkNotNull(oldProgress, "old progress");
+        E.checkNotNull(newProgress, "new progress");
         this.oldProgress = oldProgress;
         this.newProgress = newProgress;
     }
 
+    public long confirmOffset() {
+        return this.newProgress.confirmOffset();
+    }
+
     public int index() {
         return this.index;
+    }
+
+    public String readHeader() {
+        E.checkArgument(this.readables.size() > 0,
+                        "Must contain at least one readable file");
+        for (Readable readable : this.readables) {
+            BufferedReader reader = this.openReader(readable);
+            try {
+                String line = reader.readLine();
+                reader.close();
+                if (line != null) {
+                    return line;
+                }
+            } catch (IOException e) {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {
+                    LOG.warn("Failed to close reader of '{}'", readable);
+                }
+                throw new LoadException("Failed to read header from '%s'",
+                                        e, readable);
+            }
+        }
+        return null;
+    }
+
+    public void skipOffset() {
+        if (this.reader == null && (this.reader = this.openNext()) == null) {
+            return;
+        }
+
+        long offset = this.oldProgress.loadingOffset();
+        try {
+            for (long i = 0L; i < offset; i++) {
+                this.reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new LoadException("Failed to skip the first %s lines " +
+                                    "of file %s, please ensure the file " +
+                                    "must have at least %s lines", e, offset,
+                                    this.readables.get(this.index), offset);
+        }
     }
 
     /**
@@ -91,7 +140,7 @@ public class Readers {
         String line;
         while ((line = this.reader.readLine()) == null) {
             // The current file is read at the end, ready to read next one
-            this.close(true);
+            this.close();
             // Open the second or subsequent files
             this.reader = this.openNext();
             if (this.reader == null) {
@@ -103,36 +152,7 @@ public class Readers {
         return line;
     }
 
-    public String skipOffset(boolean needHeader) {
-        if (this.reader == null && (this.reader = this.openNext()) == null) {
-            return null;
-        }
-
-        String header = null;
-        long offset = this.oldProgress.loadingOffset();
-        long start = 0L;
-        try {
-            if (needHeader) {
-                header = this.reader.readLine();
-                start++;
-            }
-            for (long i = start; i < offset; i++) {
-                this.reader.readLine();
-            }
-        } catch (IOException e) {
-            throw new LoadException("Failed to skip the first %s lines " +
-                                    "of file %s, please ensure the file " +
-                                    "must have at least %s lines", e, offset,
-                                    this.readables.get(this.index), offset);
-        }
-        this.newProgress.addLoadingOffset(offset);
-        return header;
-    }
-
-    public void close(boolean updateProgress) throws IOException {
-        if (updateProgress) {
-            this.newProgress.markLoadingItemLoaded();
-        }
+    public void close() throws IOException {
         if (this.index < this.readables.size()) {
             Readable readable = this.readables.get(this.index);
             LOG.debug("Ready to close '{}'", readable);
@@ -149,16 +169,20 @@ public class Readers {
 
         Readable readable = this.readables.get(this.index);
         // NOTE: calculate check sum is a bit time consuming
-        InputItemProgress inputItem = readable.inputItemProgress();
-        InputItemProgress matchItem = this.oldProgress.matchLoadedItem(
-                                                       inputItem);
+        InputItemProgress input = readable.inputItemProgress();
+        InputItemProgress loaded = this.oldProgress.matchLoadedItem(input);
         // The file has been loaded before and it is not changed
-        if (matchItem != null) {
-            this.newProgress.addLoadedItem(matchItem);
+        if (loaded != null) {
+            this.newProgress.addLoadedItem(loaded);
             return this.openNext();
         }
-        this.newProgress.addLoadingItem(inputItem);
 
+        InputItemProgress loading = this.oldProgress.matchLoadingItem(input);
+        if (loading != null) {
+            this.newProgress.addLoadingItem(loading);
+        } else {
+            this.newProgress.addLoadingItem(input);
+        }
         return this.openReader(readable);
     }
 
@@ -213,7 +237,6 @@ public class Readers {
             case BZ2:
             case XZ:
             case LZMA:
-            case PACK200:
             case SNAPPY_RAW:
             case SNAPPY_FRAMED:
             case Z:

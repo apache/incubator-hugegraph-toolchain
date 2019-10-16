@@ -42,7 +42,10 @@ public final class LoadSummary {
     }
 
     public LoadMetrics metrics(ElementStruct struct) {
-        ElemType type = struct.type();
+        return this.metrics(struct.type(), struct.uniqueKey());
+    }
+
+    public LoadMetrics metrics(ElemType type, String uniqueKey) {
         Map<String, LoadMetrics> metricsMap;
         if (type.isVertex()) {
             metricsMap = this.vertexMetricsMap;
@@ -50,8 +53,7 @@ public final class LoadSummary {
             assert type.isEdge();
             metricsMap = this.edgeMetricsMap;
         }
-        return metricsMap.computeIfAbsent(struct.uniqueKey(),
-                                          k -> new LoadMetrics());
+        return metricsMap.computeIfAbsent(uniqueKey, k -> new LoadMetrics());
     }
 
     public Map<String, LoadMetrics> vertexMetrics() {
@@ -68,6 +70,28 @@ public final class LoadSummary {
         } else {
             this.edgeTotalTime = time;
         }
+    }
+
+    public long totalParseFailures() {
+        long total = 0L;
+        for (LoadMetrics metrics : this.vertexMetricsMap.values()) {
+            total += metrics.parseFailure();
+        }
+        for (LoadMetrics metrics : this.edgeMetricsMap.values()) {
+            total += metrics.parseFailure();
+        }
+        return total;
+    }
+
+    public long totalInsertFailures() {
+        long total = 0L;
+        for (LoadMetrics metrics : this.vertexMetricsMap.values()) {
+            total += metrics.loadFailure();
+        }
+        for (LoadMetrics metrics : this.edgeMetricsMap.values()) {
+            total += metrics.loadFailure();
+        }
+        return total;
     }
 
     public LoadMetrics accumulateMetrics(ElemType type) {

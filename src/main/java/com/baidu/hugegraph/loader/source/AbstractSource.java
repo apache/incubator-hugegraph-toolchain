@@ -19,19 +19,56 @@
 
 package com.baidu.hugegraph.loader.source;
 
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
+
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.file.ListFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class AbstractSource implements InputSource {
 
+    @JsonProperty("header")
+    private List<String> header;
+    @JsonProperty("charset")
+    private String charset;
     @JsonProperty("list_format")
     private ListFormat listFormat;
 
     public AbstractSource() {
-        this.listFormat = new ListFormat();
+        this.header = null;
+        this.charset = Constants.CHARSET.name();
+        this.listFormat = null;
+    }
+
+    @Override
+    public String[] header() {
+        return this.header != null ? this.header.toArray(new String[]{}) : null;
+    }
+
+    public void header(String[] header) {
+        this.header = Arrays.asList(header);
+    }
+
+    @Override
+    public String charset() {
+        return this.charset;
+    }
+
+    public void charset(Charset charset) {
+        this.charset = charset.name();
+    }
+
+    public void charset(String charset) {
+        this.charset = charset;
     }
 
     public ListFormat listFormat() {
         return this.listFormat;
+    }
+
+    public void listFormat(ListFormat listFormat) {
+        this.listFormat = listFormat;
     }
 }

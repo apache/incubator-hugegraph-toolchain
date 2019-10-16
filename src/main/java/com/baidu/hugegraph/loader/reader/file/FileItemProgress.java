@@ -35,10 +35,16 @@ public class FileItemProgress extends InputItemProgress {
     @JsonCreator
     public FileItemProgress(@JsonProperty("name") String name,
                             @JsonProperty("last_modified") long timestamp,
-                            @JsonProperty("checksum") String checkSum) {
+                            @JsonProperty("checksum") String checkSum,
+                            @JsonProperty("offset") long offset) {
+        super(offset);
         this.name = name;
         this.timestamp = timestamp;
         this.checkSum = checkSum;
+    }
+
+    public String name() {
+        return this.name;
     }
 
     @Override

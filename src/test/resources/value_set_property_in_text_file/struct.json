@@ -6,6 +6,7 @@
         "type": "${source_type}",
         "path": "${store_path}/vertex_person.txt",
         "format": "TEXT",
+        "delimiter": "\t",
         "header": ["name", "age", "city"],
         "charset": "UTF-8"
       },
@@ -21,7 +22,8 @@
         "type": "${source_type}",
         "path": "${store_path}/vertex_software.txt",
         "header": ["name", "lang", "price"],
-        "format": "TEXT"
+        "format": "TEXT",
+        "delimiter": "\t"
       }
     }
   ],
@@ -35,7 +37,13 @@
         "path": "${store_path}/edge_use.txt",
         "header": ["person_name", "software_name", "feel", "time"],
         "format": "TEXT",
-        "date_format": "yyyy-MM-dd"
+        "delimiter": "\t",
+        "date_format": "yyyy-MM-dd",
+        "list_format": {
+          "start_symbol": "[",
+          "end_symbol": "]",
+          "elem_delimiter": ","
+        }
       },
       "null_values": [""],
       "field_mapping": {

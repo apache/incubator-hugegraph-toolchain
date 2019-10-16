@@ -36,6 +36,8 @@ public final class InputProgress {
     @JsonProperty("loading_item")
     private InputItemProgress loadingItem;
 
+    private transient final Set<InputItemProgress> loadingItems;
+
     @JsonCreator
     public InputProgress(@JsonProperty("type") SourceType type,
                          @JsonProperty("loaded_items")
@@ -45,12 +47,14 @@ public final class InputProgress {
         this.type = type;
         this.loadedItems = loadedItems;
         this.loadingItem = loadingItem;
+        this.loadingItems = InsertionOrderUtil.newSet();
     }
 
     public InputProgress(ElementStruct struct) {
         this.type = struct.input().type();
         this.loadedItems = InsertionOrderUtil.newSet();
         this.loadingItem = null;
+        this.loadingItems = InsertionOrderUtil.newSet();
     }
 
     public Set<InputItemProgress> loadedItems() {
@@ -70,11 +74,21 @@ public final class InputProgress {
         return null;
     }
 
+    public InputItemProgress matchLoadingItem(InputItemProgress inputItem) {
+        if (this.loadingItem != null && this.loadingItem.equals(inputItem)) {
+            return this.loadingItem;
+        }
+        return null;
+    }
+
     public void addLoadedItem(InputItemProgress inputItemProgress) {
         this.loadedItems.add(inputItemProgress);
     }
 
     public void addLoadingItem(InputItemProgress inputItemProgress) {
+        if (this.loadingItem != null) {
+            this.loadingItems.add(this.loadingItem);
+        }
         this.loadingItem = inputItemProgress;
     }
 
@@ -87,13 +101,24 @@ public final class InputProgress {
         this.loadingItem.increaseOffset();
     }
 
-    public void addLoadingOffset(long increment) {
-        assert this.loadingItem != null;
-        this.loadingItem.addOffset(increment);
+    public void markLoaded(boolean markAll) {
+        if (!this.loadingItems.isEmpty()) {
+            this.loadedItems.addAll(this.loadingItems);
+            this.loadingItems.clear();
+        }
+        if (markAll && this.loadingItem != null) {
+            this.loadedItems.add(this.loadingItem);
+            this.loadingItem = null;
+        }
     }
 
-    public void markLoadingItemLoaded() {
-        this.loadedItems.add(this.loadingItem);
-        this.loadingItem = null;
+    public long confirmOffset() {
+        for (InputItemProgress item : this.loadingItems) {
+            item.confirmOffset();
+        }
+        if (this.loadingItem != null) {
+            return this.loadingItem.confirmOffset();
+        }
+        return -1L;
     }
 }

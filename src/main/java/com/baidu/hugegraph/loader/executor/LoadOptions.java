@@ -58,12 +58,16 @@ public final class LoadOptions {
     public String token = null;
 
     @Parameter(names = {"--incremental-mode"}, arity = 1,
-              description = "Load data from the breakpoint of last time")
+               description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
+
+    @Parameter(names = {"--reload-failure"}, arity = 1,
+               description = "Whether to reload the previous failure records")
+    public boolean reloadFailure = false;
 
     @Parameter(names = {"--num-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The number of threads to use")
+               description = "The number of threads to execute loading")
     public int numThreads = CPUS;
 
     @Parameter(names = {"--max-conn"}, arity = 1,

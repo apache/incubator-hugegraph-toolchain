@@ -6,11 +6,13 @@
         "type": "${source_type}",
         "path": "${store_path}/vertex_person.txt",
         "format": "TEXT",
+        "delimiter": "\t",
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
         "list_format": {
           "start_symbol": "<",
-          "end_symbol": "}"
+          "end_symbol": "}",
+          "elem_delimiter": ","
         }
       },
       "field_mapping": {
@@ -26,9 +28,11 @@
         "path": "${store_path}/vertex_software.txt",
         "header": ["name", "lang", "price"],
         "format": "TEXT",
+        "delimiter": "\t",
         "list_format": {
           "start_symbol": ",[",
-          "end_symbol": "],"
+          "end_symbol": "],",
+          "elem_delimiter": ","
         }
       }
     }
