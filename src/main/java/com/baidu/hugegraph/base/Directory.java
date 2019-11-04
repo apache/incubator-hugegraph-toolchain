@@ -46,6 +46,8 @@ public abstract class Directory {
 
     public abstract void ensureDirectoryExist(boolean create);
 
+    public abstract void removeDirectory();
+
     public abstract InputStream inputStream(String path);
 
     public abstract OutputStream outputStream(String path, boolean override);

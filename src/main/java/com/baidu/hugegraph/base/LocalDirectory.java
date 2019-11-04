@@ -32,6 +32,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.io.FileUtils;
+
 import com.baidu.hugegraph.exception.ToolsException;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.util.E;
@@ -58,6 +60,11 @@ public class LocalDirectory extends Directory {
             }
         }
         return fileList;
+    }
+
+    @Override
+    public void removeDirectory() {
+        removeDirectory(this.directory());
     }
 
     @Override
@@ -146,12 +153,25 @@ public class LocalDirectory extends Directory {
         } else {
             if (create) {
                 E.checkState(file.mkdirs(),
-                             "Directory '%s' not exists and created failed",
-                             file.getAbsolutePath());
+                             "The directory does not exist and created " +
+                             "failed: '%s'", file.getAbsolutePath());
             } else {
-                throw new ToolsException("Directory '%s' not exists",
-                                         file.getAbsolutePath());
+                E.checkState(false, "The directory does not exist: '%s'",
+                             file.getAbsolutePath());
             }
+        }
+    }
+
+    private static void removeDirectory(String directory) {
+        File dir = new File(directory);
+        E.checkState(dir.exists() && dir.isDirectory(),
+                     "The directory does not exist: '%s'",
+                     dir.getAbsolutePath());
+        try {
+            FileUtils.deleteDirectory(dir);
+        } catch (IOException e) {
+            throw new ToolsException("Failed to delete directory '%s'",
+                                     dir.getAbsolutePath());
         }
     }
 }

@@ -73,6 +73,7 @@ public class SubCommands {
         this.commands.put("schedule-backup", new ScheduleBackup());
         this.commands.put("dump", new DumpGraph());
         this.commands.put("restore", new Restore());
+        this.commands.put("migrate", new Migrate());
 
         this.commands.put("deploy", new Deploy());
         this.commands.put("start-all", new StartAll());
@@ -87,7 +88,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Schedule backup task")
-    public class ScheduleBackup {
+    public static class ScheduleBackup {
 
         @Parameter(names = {"--interval"}, arity = 1,
                    description =
@@ -113,7 +114,7 @@ public class SubCommands {
                                      "is on HDFS, use -D to set HDFS params " +
                                      "if needed. For exmaple: " +
                                      "-Dfs.default.name=hdfs://localhost:9000")
-    public class Backup extends BackupRestore {
+    public static class Backup extends BackupRestore {
 
         @Parameter(names = {"--split-size", "-s"}, arity = 1,
                    description = "Split size of shard")
@@ -122,16 +123,33 @@ public class SubCommands {
         public long splitSize() {
             return this.splitSize;
         }
+
+        public void splitSize(long splitSize) {
+            this.splitSize = splitSize;
+        }
     }
 
     @Parameters(commandDescription = "Restore graph schema/data. If directory" +
                                      " is on HDFS, use -D to set HDFS params " +
                                      "if needed. For exmaple:" +
                                      "-Dfs.default.name=hdfs://localhost:9000")
-    public class Restore extends BackupRestore {}
+    public static class Restore extends BackupRestore {
+        @Parameter(names = {"--clean"},
+                   description = "Whether to remove the directory of " +
+                                 "graph data after restored")
+        public boolean clean = false;
+
+        public boolean clean() {
+            return this.clean;
+        }
+
+        public void clean(boolean clean) {
+            this.clean = clean;
+        }
+    }
 
     @Parameters(commandDescription = "Dump graph to files")
-    public class DumpGraph extends Backup {
+    public static class DumpGraph extends Backup {
 
         @Parameter(names = {"--formatter", "-f"}, arity = 1,
                    description = "Formatter to customize format of vertex/edge")
@@ -142,15 +160,71 @@ public class SubCommands {
         }
     }
 
+    @Parameters(commandDescription = "Migrate graph")
+    public static class Migrate extends Backup {
+
+        @Parameter(names = {"--source-url"}, arity = 1,
+                   validateWith = {UrlValidator.class},
+                   description = "The source graph url to migrate")
+        public String sourceUrl = "http://127.0.0.1:8080";
+
+        @Parameter(names = {"--source-graph"}, arity = 1,
+                   description = "The source graph to migrate")
+        public String sourceGraph = "hugegraph";
+
+        @Parameter(names = {"--target-url"}, arity = 1,
+                   description = "The target graph url to migrate")
+        public String targetUrl = "http://127.0.0.1:8081";
+
+        @Parameter(names = {"--target-graph"}, arity = 1,
+                   description = "The target graph to migrate")
+        public String targetGraph = "hugegraph";
+
+        @Parameter(names = {"--graph-mode", "-m"}, arity = 1,
+                   converter = GraphModeConverter.class,
+                   description = "Mode used when migrating to target graph, " +
+                                 "include: [RESTORING, MERGING]")
+        public GraphMode mode = GraphMode.RESTORING;
+
+        @Parameter(names = {"--clean"},
+                   description = "Whether to remove the directory of " +
+                                 "graph data after restored")
+        public boolean clean = true;
+
+        public String sourceUrl() {
+            return this.sourceUrl;
+        }
+
+        public String sourceGraph() {
+            return this.sourceGraph;
+        }
+
+        public String targetUrl() {
+            return this.targetUrl;
+        }
+
+        public String targetGraph() {
+            return this.targetGraph;
+        }
+
+        public GraphMode mode() {
+            return this.mode;
+        }
+
+        public boolean clean() {
+            return this.clean;
+        }
+    }
+
     @Parameters(commandDescription = "List all graphs")
-    public class GraphList {
+    public static class GraphList {
     }
 
     @Parameters(commandDescription = "Get graph info")
-    public class GraphGet {}
+    public static class GraphGet {}
 
     @Parameters(commandDescription = "Clear graph schema and data")
-    public class GraphClear {
+    public static class GraphClear {
 
         @ParametersDelegate
         private ConfirmMessage message = new ConfirmMessage();
@@ -161,7 +235,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Set graph mode")
-    public class GraphModeSet {
+    public static class GraphModeSet {
 
         @ParametersDelegate
         private Mode mode = new Mode();
@@ -172,10 +246,10 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Get graph mode")
-    public class GraphModeGet {}
+    public static class GraphModeGet {}
 
     @Parameters(commandDescription = "Execute Gremlin statements")
-    public class Gremlin extends GremlinJob {
+    public static class Gremlin extends GremlinJob {
 
         @ParametersDelegate
         private Aliases aliases = new Aliases();
@@ -187,7 +261,7 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Execute Gremlin statements as " +
                                      "asynchronous job")
-    public class GremlinJob {
+    public static class GremlinJob {
 
         @ParametersDelegate
         private FileScript fileScript = new FileScript();
@@ -237,7 +311,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "List tasks")
-    public class TaskList {
+    public static class TaskList {
 
         @ParametersDelegate
         private TaskStatus status = new TaskStatus();
@@ -258,7 +332,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Get task info")
-    public class TaskGet {
+    public static class TaskGet {
 
         @ParametersDelegate
         private TaskId taskId = new TaskId();
@@ -269,7 +343,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Delete task")
-    public class TaskDelete {
+    public static class TaskDelete {
 
         @ParametersDelegate
         private TaskId taskId = new TaskId();
@@ -280,7 +354,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Cancel task")
-    public class TaskCancel {
+    public static class TaskCancel {
 
         @ParametersDelegate
         private TaskId taskId = new TaskId();
@@ -291,7 +365,7 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Clear completed tasks")
-    public class TaskClear {
+    public static class TaskClear {
 
         @Parameter(names = "--force",
                    description = "Force to clear all tasks, " +
@@ -306,7 +380,7 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Install HugeGraph-Server and " +
                                      "HugeGraph-Studio")
-    public class Deploy {
+    public static class Deploy {
 
         @ParametersDelegate
         private Version version = new Version();
@@ -320,7 +394,7 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Start HugeGraph-Server and " +
                                      "HugeGraph-Studio")
-    public class StartAll {
+    public static class StartAll {
 
         @ParametersDelegate
         private Version version = new Version();
@@ -331,7 +405,7 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Clear HugeGraph-Server and " +
                                      "HugeGraph-Studio")
-    public class Clear {
+    public static class Clear {
 
         @ParametersDelegate
         public InstallPath path = new InstallPath();
@@ -339,14 +413,14 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Stop HugeGraph-Server and " +
                                      "HugeGraph-Studio")
-    public class StopAll {
+    public static class StopAll {
     }
 
     @Parameters(commandDescription = "Print usage")
-    public class Help {
+    public static class Help {
     }
 
-    public class BackupRestore {
+    public static class BackupRestore {
 
         @Parameter(names = {"--directory", "-d"}, arity = 1,
                    description = "Directory of graph schema/data, default is " +
@@ -387,6 +461,26 @@ public class SubCommands {
         public Map<String, String> hdfsConf() {
             return this.hdfsConf;
         }
+
+        public void directory(String directory) {
+            this.directory = directory;
+        }
+
+        public void logDir(String logDir) {
+            this.logDir = logDir;
+        }
+
+        public void types(List<HugeType> types) {
+            this.types.types = types;
+        }
+
+        public void retry(int retry) {
+            this.retry.retry = retry;
+        }
+
+        public void hdfsConf(Map<String, String> hdfsConf) {
+            this.hdfsConf = hdfsConf;
+        }
     }
 
     public static class Url {
@@ -425,7 +519,7 @@ public class SubCommands {
         public int timeout = 30;
     }
 
-    public class HugeTypes {
+    public static class HugeTypes {
 
         @Parameter(names = {"--huge-types", "-t"},
                    listConverter = HugeTypeListConverter.class,
@@ -438,7 +532,7 @@ public class SubCommands {
         public List<HugeType> types = HugeTypeListConverter.ALL_TYPES;
     }
 
-    public class ExistDirectory {
+    public static class ExistDirectory {
 
         @Parameter(names = {"--directory", "-d"}, arity = 1,
                    validateWith = {DirectoryValidator.class},
@@ -446,7 +540,7 @@ public class SubCommands {
         public String directory = "./";
     }
 
-    public class InstallPath {
+    public static class InstallPath {
 
         @Parameter(names = {"-p"}, arity = 1, required = true,
                    description = "Install path of HugeGraph-Server and " +
@@ -454,7 +548,7 @@ public class SubCommands {
         public String directory = null;
     }
 
-    public class DownloadURL {
+    public static class DownloadURL {
 
         @Parameter(names = {"-u"}, arity = 1,
                    description = "Download url prefix path of " +
@@ -462,7 +556,7 @@ public class SubCommands {
         public String url = null;
     }
 
-    public class ConfirmMessage {
+    public static class ConfirmMessage {
 
         @Parameter(names = {"--confirm-message", "-c"}, arity = 1,
                    description = "Confirm message of graph clear is " +
@@ -472,7 +566,7 @@ public class SubCommands {
         public String confirmMessage;
     }
 
-    public class Mode {
+    public static class Mode {
 
         @Parameter(names = {"--graph-mode", "-m"}, arity = 1,
                    converter = GraphModeConverter.class,
@@ -482,7 +576,7 @@ public class SubCommands {
         public GraphMode mode;
     }
 
-    public class FileScript {
+    public static class FileScript {
 
         @Parameter(names = {"--file", "-f"}, arity = 1,
                    converter = FileNameToContentConverter.class,
@@ -491,7 +585,7 @@ public class SubCommands {
         public String script;
     }
 
-    public class GremlinScript {
+    public static class GremlinScript {
 
         @Parameter(names = {"--script", "-s"}, arity = 1,
                    description = "Gremlin script to be executed, " +
@@ -499,14 +593,14 @@ public class SubCommands {
         public String script;
     }
 
-    public class Language {
+    public static class Language {
 
         @Parameter(names = {"--language", "-l"}, arity = 1,
                    description = "Gremlin script language")
         public String language = "gremlin-groovy";
     }
 
-    public class Bindings {
+    public static class Bindings {
 
         @Parameter(names = {"--bindings", "-b"}, arity = 1,
                    converter = MapConverter.class,
@@ -515,7 +609,7 @@ public class SubCommands {
         public Map<String, String> bindings = ImmutableMap.of();
     }
 
-    public class Aliases {
+    public static class Aliases {
 
         @Parameter(names = {"--aliases", "-a"}, arity = 1,
                    converter = MapConverter.class,
@@ -524,7 +618,7 @@ public class SubCommands {
         public Map<String, String> aliases = ImmutableMap.of();
     }
 
-    public class Version {
+    public static class Version {
 
         @Parameter(names = {"-v"}, arity = 1, required = true,
                    description = "Version of HugeGraph-Server and " +
@@ -532,7 +626,7 @@ public class SubCommands {
         public String version;
     }
 
-    public class Retry {
+    public static class Retry {
 
         @Parameter(names = {"--retry"}, arity = 1,
                    validateWith = {PositiveValidator.class},
@@ -540,7 +634,7 @@ public class SubCommands {
         public int retry = 3;
     }
 
-    public class Limit {
+    public static class Limit {
 
         @Parameter(names = {"--limit"}, arity = 1,
                    validateWith = {PositiveValidator.class},
@@ -548,7 +642,7 @@ public class SubCommands {
         public long limit = -1;
     }
 
-    public class TaskStatus {
+    public static class TaskStatus {
 
         @Parameter(names = {"--status"}, arity = 1,
                    validateWith = TaskStatusValidator.class,
@@ -556,7 +650,7 @@ public class SubCommands {
         public String status = null;
     }
 
-    public class TaskId {
+    public static class TaskId {
 
         @Parameter(names = {"--task-id"}, arity = 1, required = true,
                    validateWith = {PositiveValidator.class},

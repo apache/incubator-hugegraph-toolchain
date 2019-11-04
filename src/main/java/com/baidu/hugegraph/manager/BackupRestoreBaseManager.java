@@ -92,8 +92,16 @@ public class BackupRestoreBaseManager extends RetryManager {
         return this.logDir;
     }
 
+    public Directory directory() {
+        return this.directory;
+    }
+
     protected void ensureDirectoryExist(boolean create) {
         this.directory.ensureDirectoryExist(create);
+    }
+
+    protected void removeDirectory() {
+        this.directory.removeDirectory();
     }
 
     protected void write(String path, HugeType type, List<?> list) {

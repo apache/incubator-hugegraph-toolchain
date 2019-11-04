@@ -81,8 +81,16 @@ public class HugeGraphCommand {
         return this.url.url;
     }
 
+    private void url(String url) {
+        this.url.url = url;
+    }
+
     public String graph() {
         return this.graph.graph;
+    }
+
+    private void graph(String graph) {
+        this.graph.graph = graph;
     }
 
     public String username() {
@@ -147,6 +155,47 @@ public class HugeGraphCommand {
                 restoreManager.init(restore);
                 restoreManager.mode(mode);
                 restoreManager.restore(restore.types());
+                break;
+            case "migrate":
+                SubCommands.Migrate migrate = this.subCommand(subCmd);
+                Printer.print("Migrate graph '%s' from '%s' to '%s' as '%s'",
+                              migrate.sourceGraph(), migrate.sourceUrl(),
+                              migrate.targetUrl(), migrate.targetGraph());
+
+                // Backup source graph
+                if (this.timeout() < BACKUP_DEFAULT_TIMEOUT) {
+                    this.timeout(BACKUP_DEFAULT_TIMEOUT);
+                }
+                this.url(migrate.sourceUrl());
+                this.graph(migrate.sourceGraph());
+                backup = convMigrate2Backup(migrate);
+                backupManager = manager(BackupManager.class);
+                backupManager.init(backup);
+                backupManager.backup(backup.types());
+
+                // Restore source graph to target graph
+                this.url(migrate.targetUrl());
+                this.graph(migrate.targetGraph());
+                graphsManager = manager(GraphsManager.class);
+                GraphMode origin = graphsManager.mode(this.graph());
+                // Set target graph mode
+                mode = migrate.mode();
+                E.checkState(mode.maintaining(),
+                             "Invalid mode '%s' of graph '%s' for restore",
+                             mode, migrate.targetGraph());
+                graphsManager.mode(migrate.targetGraph(), mode);
+                // Restore
+                Printer.print("Graph '%s' start restore in mode '%s'!",
+                              migrate.targetGraph(), migrate.mode());
+                String directory = backupManager.directory().directory();
+                restore = convMigrate2Restore(migrate, directory);
+                restoreManager = manager(RestoreManager.class);
+                restoreManager.init(restore);
+                restoreManager.mode(mode);
+
+                restoreManager.restore(restore.types());
+                // Restore target graph mode
+                graphsManager.mode(migrate.targetGraph(), origin);
                 break;
             case "dump":
                 Printer.print("Graph '%s' start dump!", this.graph());
@@ -269,6 +318,31 @@ public class HugeGraphCommand {
             throw new RuntimeException(String.format(
                       "Construct manager failed for class '%s'", clz), e);
         }
+    }
+
+    private static SubCommands.Backup convMigrate2Backup(
+                                      SubCommands.Migrate migrate) {
+        SubCommands.Backup backup = new SubCommands.Backup();
+        backup.splitSize(migrate.splitSize());
+        backup.directory(migrate.directory());
+        backup.logDir(migrate.logDir());
+        backup.types(migrate.types());
+        backup.retry(migrate.retry());
+        backup.hdfsConf(migrate.hdfsConf());
+        return backup;
+    }
+
+    private static SubCommands.Restore convMigrate2Restore(
+                                       SubCommands.Migrate migrate,
+                                       String directory) {
+        SubCommands.Restore restore = new SubCommands.Restore();
+        restore.clean(migrate.clean());
+        restore.directory(directory);
+        restore.logDir(migrate.logDir());
+        restore.types(migrate.types());
+        restore.retry(migrate.retry());
+        restore.hdfsConf(migrate.hdfsConf());
+        return restore;
     }
 
     private GraphMode mode() {
