@@ -1630,14 +1630,51 @@ public class FileLoadTest extends LoadTest {
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
 
-        Assert.assertEquals(vertices.size(), 1);
-        Assert.assertEquals(vertices.get(0).property("age"), 18);
-        Assert.assertEquals(((List) vertices.get(0).property("set")).size(), 3);
+        Assert.assertEquals(1, vertices.size());
+        Assert.assertEquals(18, vertices.get(0).property("age"));
+        Assert.assertEquals(3, ((List) vertices.get(0).property("set")).size());
 
-        Assert.assertEquals(edges.size(), 1);
-        Assert.assertEquals(edges.get(0).property("age"), 3);
-        Assert.assertEquals(edges.get(0).property("list"),
-                            ImmutableList.of(3, 4, 1, 2, 3));
+        Assert.assertEquals(1, edges.size());
+        Assert.assertEquals(3, edges.get(0).property("age"));
+        Assert.assertEquals(ImmutableList.of(3, 4, 1, 2, 3),
+                            edges.get(0).property("list"));
+    }
+
+    @Test
+    public void testBatchUpdateElementWithoutSymbol() {
+        ioUtil.write("vertex_person.txt",
+                     "tom\t18\tstr1",
+                     "tom\t19\tstr2",
+                     "tom\t20\tstr1",
+                     "tom\t21\tstr3");
+        ioUtil.write("edge_likes.txt",
+                     "tom\ttom\t1\t3",
+                     "tom\ttom\t1\t4",
+                     "tom\ttom\t2\t1",
+                     "tom\ttom\t2\t2",
+                     "tom\ttom\t2\t3");
+
+        String[] args = new String[]{
+                "-f", configPath("update_by_strategy_without_symbol/struct.json"),
+                "-s", configPath("update_by_strategy_without_symbol/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--check-vertex", "false"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(1, vertices.size());
+        Assert.assertEquals(18, vertices.get(0).property("age"));
+        Assert.assertEquals(3, ((List) vertices.get(0).property("set")).size());
+
+        Assert.assertEquals(1, edges.size());
+        Assert.assertEquals(8, edges.get(0).property("age"));
+        Assert.assertEquals(ImmutableList.of(3, 4, 1, 2, 3),
+                            edges.get(0).property("list"));
     }
 
     @Test
@@ -1662,10 +1699,10 @@ public class FileLoadTest extends LoadTest {
 
         List<Edge> edges = CLIENT.graph().listEdges();
 
-        Assert.assertEquals(edges.size(), 1);
-        Assert.assertEquals(edges.get(0).property("age"), 5);
-        Assert.assertEquals(edges.get(0).property("list"),
-                            ImmutableList.of(-1, 0, 1, 2, 3));
+        Assert.assertEquals(1, edges.size());
+        Assert.assertEquals(5, edges.get(0).property("age"));
+        Assert.assertEquals(ImmutableList.of(-1, 0, 1, 2, 3),
+                            edges.get(0).property("list"));
     }
 
     @Test
