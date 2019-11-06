@@ -1655,8 +1655,10 @@ public class FileLoadTest extends LoadTest {
                      "tom\ttom\t2\t3");
 
         String[] args = new String[]{
-                "-f", configPath("update_by_strategy_without_symbol/struct.json"),
-                "-s", configPath("update_by_strategy_without_symbol/schema.groovy"),
+                "-f", configPath(
+                "update_by_strategy_without_symbol/struct.json"),
+                "-s", configPath(
+                "update_by_strategy_without_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1675,6 +1677,40 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(8, edges.get(0).property("age"));
         Assert.assertEquals(ImmutableList.of(3, 4, 1, 2, 3),
                             edges.get(0).property("list"));
+    }
+
+    @Test
+    public void testBatchUpdateElementWithoutSymbolNoListFormat() {
+        ioUtil.write("vertex_person.txt",
+                     "tom\t18\tstr1",
+                     "tom\t19\tstr2",
+                     "tom\t20\tstr1",
+                     "tom\t21\tstr3");
+        ioUtil.write("edge_likes.txt",
+                     "tom\ttom\t1\t3",
+                     "tom\ttom\t1\t4",
+                     "tom\ttom\t2\t1",
+                     "tom\ttom\t2\t2",
+                     "tom\ttom\t2\t3");
+
+        String[] args = new String[]{
+                "-f", configPath(
+                "update_by_strategy_without_symbol/no_list_format_struct.json"),
+                "-s", configPath(
+                "update_by_strategy_without_symbol/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--check-vertex", "false",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String expect = "The list_format must be set when " +
+                            "parse list or set values";
+            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
+        });
     }
 
     @Test
