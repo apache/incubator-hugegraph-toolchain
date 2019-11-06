@@ -158,6 +158,8 @@ public final class DataTypeUtil {
                      "Only accept AbstractSource when parse multi values, " +
                      "but got '%s'", source.getClass().getName());
         ListFormat listFormat = ((AbstractSource) source).listFormat();
+        E.checkArgumentNotNull(listFormat, "The list_format must be set when " +
+                                           "parse list or set values");
 
         String startSymbol = listFormat.startSymbol();
         String endSymbol = listFormat.endSymbol();
