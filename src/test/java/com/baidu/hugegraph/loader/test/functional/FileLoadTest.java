@@ -241,6 +241,51 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testSkipStruct() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,java,328",
+                     "ripple,java,199");
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,vadas,20160110,0.5",
+                     "marko,josh,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,lop,20171210,0.4",
+                     "josh,lop,20091111,0.4",
+                     "josh,ripple,20171210,1.0",
+                     "peter,lop,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f", configPath("skip_struct/struct.json"),
+                "-s", configPath("skip_struct/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(7, vertices.size());
+        Assert.assertEquals(4, edges.size());
+
+        for (Edge edge : edges) {
+            Assert.assertEquals("created", edge.label());
+        }
+    }
+
+    @Test
     public void testVertexIdExceedLimit() {
         Integer[] array = new Integer[129];
         Arrays.fill(array, 1);

@@ -30,7 +30,6 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.constant.Unique;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.HashUtil;
@@ -41,6 +40,8 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
 
     @JsonProperty("label")
     private String label;
+    @JsonProperty("skip")
+    private boolean skip;
     @JsonProperty("input")
     private InputSource input;
     @JsonProperty("field_mapping")
@@ -59,6 +60,7 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     private transient String uniqueKey;
 
     public ElementStruct() {
+        this.skip = false;
         this.mappingFields = new HashMap<>();
         this.mappingValues = new HashMap<>();
         this.selectedFields = new HashSet<>();
@@ -119,6 +121,10 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
 
     public String label() {
         return this.label;
+    }
+
+    public boolean skip() {
+        return this.skip;
     }
 
     public InputSource input() {
