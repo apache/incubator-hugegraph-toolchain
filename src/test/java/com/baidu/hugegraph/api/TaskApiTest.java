@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +29,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
+import com.baidu.hugegraph.api.task.TasksWithPage;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
@@ -50,7 +52,7 @@ public class TaskApiTest extends BaseApiTest {
     }
 
     @Test
-    public void testList() {
+    public void testListAll() {
         IndexLabel personByCity = schema().getIndexLabel("personByCity");
         IndexLabel personByAge = schema().getIndexLabel("personByAge");
         IndexLabel knowsByDate = schema().getIndexLabel("knowsByDate");
@@ -63,6 +65,7 @@ public class TaskApiTest extends BaseApiTest {
         taskIds.add(rebuildAPI.rebuild(createdByDate));
 
         List<Task> tasks = taskAPI.list(null, -1);
+
         Assert.assertEquals(4, tasks.size());
 
         Set<Long> listedTaskIds = new HashSet<>();
@@ -73,10 +76,109 @@ public class TaskApiTest extends BaseApiTest {
         Assert.assertTrue(taskIds.containsAll(listedTaskIds));
 
         taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
+
         taskIds.forEach(id -> taskAPI.delete(id));
 
         tasks = taskAPI.list(null, -1);
         Assert.assertEquals(0, tasks.size());
+    }
+
+    @Test
+    public void testListByIds() {
+        IndexLabel personByCity = schema().getIndexLabel("personByCity");
+        IndexLabel personByAge = schema().getIndexLabel("personByAge");
+        IndexLabel knowsByDate = schema().getIndexLabel("knowsByDate");
+        IndexLabel createdByDate = schema().getIndexLabel("createdByDate");
+
+        List<Long> taskIds = new ArrayList<>();
+        taskIds.add(rebuildAPI.rebuild(personByCity));
+        taskIds.add(rebuildAPI.rebuild(personByAge));
+        taskIds.add(rebuildAPI.rebuild(knowsByDate));
+        taskIds.add(rebuildAPI.rebuild(createdByDate));
+
+        taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
+
+        List<Task> tasks = taskAPI.list(taskIds);
+
+        Assert.assertEquals(4, tasks.size());
+        Set<Long> listedTaskIds = new HashSet<>();
+        for (Task task : tasks) {
+            listedTaskIds.add(task.id());
+        }
+        Assert.assertEquals(taskIds.size(), listedTaskIds.size());
+        Assert.assertTrue(taskIds.containsAll(listedTaskIds));
+    }
+
+    @Test
+    public void testListByStatus() {
+        IndexLabel personByCity = schema().getIndexLabel("personByCity");
+        IndexLabel personByAge = schema().getIndexLabel("personByAge");
+        IndexLabel knowsByDate = schema().getIndexLabel("knowsByDate");
+        IndexLabel createdByDate = schema().getIndexLabel("createdByDate");
+
+        Set<Long> taskIds = new HashSet<>();
+        taskIds.add(rebuildAPI.rebuild(personByCity));
+        taskIds.add(rebuildAPI.rebuild(personByAge));
+        taskIds.add(rebuildAPI.rebuild(knowsByDate));
+        taskIds.add(rebuildAPI.rebuild(createdByDate));
+
+        taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
+
+        List<Task> tasks = taskAPI.list("SUCCESS", -1);
+
+        Assert.assertEquals(4, tasks.size());
+        Set<Long> listedTaskIds = new HashSet<>();
+        for (Task task : tasks) {
+            listedTaskIds.add(task.id());
+        }
+        Assert.assertEquals(taskIds.size(), listedTaskIds.size());
+        Assert.assertTrue(taskIds.containsAll(listedTaskIds));
+
+        tasks = taskAPI.list("SUCCESS", 3);
+
+        Assert.assertEquals(3, tasks.size());
+        Set<Long> listedTaskIds1 = new HashSet<>();
+        for (Task task : tasks) {
+            listedTaskIds1.add(task.id());
+        }
+        Assert.assertEquals(3, listedTaskIds1.size());
+        Assert.assertTrue(taskIds.containsAll(listedTaskIds));
+    }
+
+    @Test
+    public void testListByStatusAndPage() {
+        IndexLabel personByCity = schema().getIndexLabel("personByCity");
+        IndexLabel personByAge = schema().getIndexLabel("personByAge");
+        IndexLabel knowsByDate = schema().getIndexLabel("knowsByDate");
+        IndexLabel createdByDate = schema().getIndexLabel("createdByDate");
+
+        Set<Long> taskIds = new HashSet<>();
+        taskIds.add(rebuildAPI.rebuild(personByCity));
+        taskIds.add(rebuildAPI.rebuild(personByAge));
+        taskIds.add(rebuildAPI.rebuild(knowsByDate));
+        taskIds.add(rebuildAPI.rebuild(createdByDate));
+
+        taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
+
+        TasksWithPage tasksWithPage = taskAPI.list("SUCCESS", "", 2);
+
+        List<Task> tasks = tasksWithPage.tasks();
+        Assert.assertEquals(2, tasks.size());
+        Set<Long> listedTaskIds = new HashSet<>();
+        for (Task task : tasks) {
+            listedTaskIds.add(task.id());
+        }
+
+        tasksWithPage = taskAPI.list("SUCCESS", tasksWithPage.page(), 2);
+
+        List<Task> tasks1 = tasksWithPage.tasks();
+        Assert.assertEquals(2, tasks1.size());
+        Assert.assertNull(tasksWithPage.page());
+        for (Task task : tasks1) {
+            listedTaskIds.add(task.id());
+        }
+        Assert.assertEquals(taskIds.size(), listedTaskIds.size());
+        Assert.assertTrue(taskIds.containsAll(listedTaskIds));
     }
 
     @Test
@@ -155,8 +257,8 @@ public class TaskApiTest extends BaseApiTest {
             }
         }
         // Cancel async task
-        boolean cancelled = taskAPI.cancel(taskId);
-        Assert.assertTrue(cancelled);
+        Task task = taskAPI.cancel(taskId);
+        Assert.assertTrue(task.cancelled());
 
         resultSet = gremlin().execute(request);
         Assert.assertTrue(resultSet.size() < 10);

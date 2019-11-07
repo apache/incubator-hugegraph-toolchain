@@ -125,6 +125,10 @@ public class Task {
                            .contains(this.status);
     }
 
+    public boolean cancelled() {
+        return "cancelled".equals(this.status);
+    }
+
     public boolean success() {
         return "success".equals(this.status);
     }

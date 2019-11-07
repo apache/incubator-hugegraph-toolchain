@@ -22,6 +22,7 @@ package com.baidu.hugegraph.driver;
 import java.util.List;
 
 import com.baidu.hugegraph.api.task.TaskAPI;
+import com.baidu.hugegraph.api.task.TasksWithPage;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.Task;
 
@@ -41,12 +42,20 @@ public class TaskManager {
         return this.taskAPI.list(null, limit);
     }
 
+    public List<Task> list(List<Long> ids) {
+        return this.taskAPI.list(ids);
+    }
+
     public List<Task> list(String status) {
         return this.list(status, -1L);
     }
 
     public List<Task> list(String status, long limit) {
         return this.taskAPI.list(status, limit);
+    }
+
+    public TasksWithPage list(String status, String page, long limit) {
+        return this.taskAPI.list(status, page, limit);
     }
 
     public Task get(long id) {
@@ -57,7 +66,7 @@ public class TaskManager {
         this.taskAPI.delete(id);
     }
 
-    public boolean cancel(long id) {
+    public Task cancel(long id) {
         return this.taskAPI.cancel(id);
     }
 

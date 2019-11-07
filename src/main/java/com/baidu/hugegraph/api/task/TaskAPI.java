@@ -67,6 +67,19 @@ public class TaskAPI extends API {
         return result.readList(TASKS, Task.class);
     }
 
+    public TasksWithPage list(String status, String page, long limit) {
+        E.checkArgument(page != null, "The page can not be null");
+        this.client.checkApiVersion("0.48", "getting tasks by paging");
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("limit", limit);
+        params.put("page", page);
+        if (status != null) {
+            params.put("status", status);
+        }
+        RestResult result = this.client.get(this.path(), params);
+        return result.readObject(TasksWithPage.class);
+    }
+
     public List<Task> list(List<Long> ids) {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("ids", ids);
@@ -83,17 +96,11 @@ public class TaskAPI extends API {
         this.client.delete(path(), String.valueOf(id));
     }
 
-    public boolean cancel(long id) {
+    public Task cancel(long id) {
         Map<String, Object> params = ImmutableMap.of("action", "cancel");
         RestResult result = this.client.put(path(), String.valueOf(id),
                                             ImmutableMap.of(), params);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> response = result.readObject(Map.class);
-        Object cancelled = response.get("cancelled");
-        E.checkState(cancelled instanceof Boolean,
-                     "Invalid task-cancel response, expect format is " +
-                     "{\"cancelled\": [true|false]}, but got '%s'", response);
-        return (Boolean) cancelled;
+        return result.readObject(Task.class);
     }
 
     public Task waitUntilTaskSuccess(long taskId, long seconds) {
