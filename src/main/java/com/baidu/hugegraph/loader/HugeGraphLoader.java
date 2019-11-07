@@ -147,6 +147,9 @@ public final class HugeGraphLoader {
         LoadSummary summary = this.context.summary();
         InputProgressMap newProgress = this.context.newProgress().type(type);
         for (ElementStruct struct : structs) {
+            if (struct.skip()) {
+                continue;
+            }
             StopWatch loadTimer = StopWatch.createStarted();
             LoadMetrics metrics = summary.metrics(struct);
             if (!this.context.stopped()) {
