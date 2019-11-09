@@ -113,18 +113,31 @@ public class HDFSFileReader extends FileReader {
             conf.set("fs.defaultFS", fsDefaultFS);
             return conf;
         }
+
+        Path coreSitePath = this.coreSiteConfPath();
+        if (coreSitePath != null) {
+            conf.addResource(coreSitePath);
+        }
+        return conf;
+    }
+
+    private Path coreSiteConfPath() {
+        // HDFS core-site.xml path
+        String coreSitePath = this.source().coreSitePath();
+        if (coreSitePath != null) {
+            return path(coreSitePath);
+        }
+
         // Local hadoop
         String hadoopHome = System.getenv("HADOOP_HOME");
         if (hadoopHome != null && !hadoopHome.isEmpty()) {
             LOG.info("Get HADOOP_HOME {}", hadoopHome);
             String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
-            conf.addResource(path(path, "/core-site.xml"));
-            conf.addResource(path(path, "/hdfs-site.xml"));
-            conf.addResource(path(path, "/mapred-site.xml"));
-            conf.addResource(path(path, "/yarn-site.xml"));
+            return path(path, "/core-site.xml");
         }
-        return conf;
+        return null;
     }
+
 
     private static void checkExist(FileSystem fs, Path path) {
         try {
@@ -136,6 +149,10 @@ public class HDFSFileReader extends FileReader {
             throw new LoadException("An exception occurred while checking " +
                                     "HDFS path: '%s'", e, path);
         }
+    }
+
+    private static Path path(String configPath) {
+        return new Path(Paths.get(configPath).toString());
     }
 
     private static Path path(String configPath, String configFile) {
