@@ -53,6 +53,7 @@ public class HDFSFileReader extends FileReader {
     public HDFSFileReader(HDFSSource source) {
         super(source);
         Configuration config = this.loadConfiguration();
+        System.out.println("==> defaultUri: " + FileSystem.getDefaultUri(config));
         try {
             this.hdfs = FileSystem.get(URI.create(source.path()), config);
         } catch (IOException e) {
@@ -114,15 +115,16 @@ public class HDFSFileReader extends FileReader {
             return conf;
         }
         // Local hadoop
-        String hadoopHome = System.getenv("HADOOP_HOME");
-        if (hadoopHome != null && !hadoopHome.isEmpty()) {
-            LOG.info("Get HADOOP_HOME {}", hadoopHome);
-            String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
-            conf.addResource(path(path, "/core-site.xml"));
-            conf.addResource(path(path, "/hdfs-site.xml"));
-            conf.addResource(path(path, "/mapred-site.xml"));
-            conf.addResource(path(path, "/yarn-site.xml"));
-        }
+//        String hadoopHome = System.getenv("HADOOP_HOME");
+//        System.out.println("HADOOP_HOME: " + hadoopHome);
+//        if (hadoopHome != null && !hadoopHome.isEmpty()) {
+//            LOG.info("HADOOP_HOME: {}", hadoopHome);
+//            String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
+//            conf.addResource(path(path, "/core-site.xml"));
+//            conf.addResource(path(path, "/hdfs-site.xml"));
+//            conf.addResource(path(path, "/mapred-site.xml"));
+//            conf.addResource(path(path, "/yarn-site.xml"));
+//        }
         return conf;
     }
 
