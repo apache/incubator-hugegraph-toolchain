@@ -43,12 +43,12 @@ public class HDFSSource extends FileSource {
         if (this.fsDefaultFS != null) {
             E.checkArgument(!this.fsDefaultFS.isEmpty(),
                             "The fs_default_fs can't be empty when " +
-                            "configurated it");
+                            "configured it");
         }
         if (this.coreSitePath != null) {
             E.checkArgument(!this.coreSitePath.isEmpty(),
                             "The core_site_path can't be empty when " +
-                            "configurated it");
+                            "configured it");
         }
     }
 

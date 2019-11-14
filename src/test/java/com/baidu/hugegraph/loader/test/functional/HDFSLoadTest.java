@@ -1,3 +1,22 @@
+/*
+ * Copyright 2017 HugeGraph Authors
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.baidu.hugegraph.loader.test.functional;
 
 import com.baidu.hugegraph.loader.HugeGraphLoader;
@@ -58,7 +77,6 @@ public class HDFSLoadTest extends LoadTest {
         ioUtil.delete();
     }
 
-
     @Test
     public void testHDFSWithDefaultFs() {
         ioUtil.write("vertex_person.csv",
@@ -86,12 +104,12 @@ public class HDFSLoadTest extends LoadTest {
     @Test
     public void testHDFSWithDefaultFsEmpty() {
         ioUtil.write("vertex_person.csv",
-                "name,age,city",
-                "marko,29,Beijing",
-                "vadas,27,Hongkong",
-                "josh,32,Beijing",
-                "peter,35,Shanghai",
-                "\"li,nary\",26,\"Wu,han\"");
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
                 "-f", configPath("hdfs_with_default_fs_empty/struct.json"),
@@ -102,33 +120,9 @@ public class HDFSLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         });
-    }
-
-    @Test
-    public void testHDFSWithDefaultCoreSite() {
-        ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing",
-                     "vadas,27,Hongkong",
-                     "josh,32,Beijing",
-                     "peter,35,Shanghai",
-                     "\"li,nary\",26,\"Wu,han\"");
-
-        String[] args = new String[]{
-                "-f", configPath("hdfs_with_default_core_site/struct.json"),
-                "-s", configPath("hdfs_with_default_core_site/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--num-threads", "2",
-                "--test-mode", "true"
-        };
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(5, vertices.size());
     }
 
     @Test
@@ -157,12 +151,12 @@ public class HDFSLoadTest extends LoadTest {
     @Test
     public void testHDFSWithCoreSitePathEmpty() {
         ioUtil.write("vertex_person.csv",
-                "name,age,city",
-                "marko,29,Beijing",
-                "vadas,27,Hongkong",
-                "josh,32,Beijing",
-                "peter,35,Shanghai",
-                "\"li,nary\",26,\"Wu,han\"");
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
                 "-f", configPath("hdfs_with_core_site_path_empty/struct.json"),
@@ -172,7 +166,7 @@ public class HDFSLoadTest extends LoadTest {
                 "--num-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -180,12 +174,12 @@ public class HDFSLoadTest extends LoadTest {
     @Test
     public void testHDFSWithInvalidCoreSitePath() {
         ioUtil.write("vertex_person.csv",
-                "name,age,city",
-                "marko,29,Beijing",
-                "vadas,27,Hongkong",
-                "josh,32,Beijing",
-                "peter,35,Shanghai",
-                "\"li,nary\",26,\"Wu,han\"");
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
                 "-f", configPath("hdfs_with_invalid_core_site_path/struct.json"),
@@ -197,6 +191,8 @@ public class HDFSLoadTest extends LoadTest {
         };
         Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
+        }, e -> {
+            Assert.assertTrue(e.getCause().getMessage().contains("Wrong FS"));
         });
     }
 
@@ -211,8 +207,8 @@ public class HDFSLoadTest extends LoadTest {
                      "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
-                "-f", configPath("hdfs_with_defaultfs_core_site_path/struct.json" ),
-                "-s", configPath("hdfs_with_defaultfs_core_site_path/schema.groovy" ),
+                "-f", configPath("hdfs_with_default_fs_core_site_path/struct.json" ),
+                "-s", configPath("hdfs_with_default_fs_core_site_path/schema.groovy" ),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",

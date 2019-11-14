@@ -54,7 +54,7 @@ public class HDFSFileReader extends FileReader {
         super(source);
         Configuration config = this.loadConfiguration();
         try {
-            this.hdfs = FileSystem.get(URI.create(source.path()), config);
+            this.hdfs = FileSystem.get(config);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
@@ -106,38 +106,14 @@ public class HDFSFileReader extends FileReader {
 
     private Configuration loadConfiguration() {
         Configuration conf = new Configuration();
-        String fsDefaultFS = this.source().fsDefaultFS();
-        // Remote hadoop
-        if (fsDefaultFS != null) {
+        if (this.source().fsDefaultFS() != null) {
             // TODO: Support pass more params or specify config files
-            conf.set("fs.defaultFS", fsDefaultFS);
-            return conf;
-        }
-
-        Path coreSitePath = this.coreSiteConfPath();
-        if (coreSitePath != null) {
-            conf.addResource(coreSitePath);
+            conf.set("fs.defaultFS", this.source().fsDefaultFS());
+        } else if (this.source().coreSitePath() != null) {
+            conf.addResource(new Path(this.source().coreSitePath()));
         }
         return conf;
     }
-
-    private Path coreSiteConfPath() {
-        // HDFS core-site.xml path
-        String coreSitePath = this.source().coreSitePath();
-        if (coreSitePath != null) {
-            return path(coreSitePath);
-        }
-
-        // Local hadoop
-        String hadoopHome = System.getenv("HADOOP_HOME");
-        if (hadoopHome != null && !hadoopHome.isEmpty()) {
-            LOG.info("Get HADOOP_HOME {}", hadoopHome);
-            String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
-            return path(path, "/core-site.xml");
-        }
-        return null;
-    }
-
 
     private static void checkExist(FileSystem fs, Path path) {
         try {
@@ -145,7 +121,7 @@ public class HDFSFileReader extends FileReader {
                 throw new LoadException("Please ensure the file or directory " +
                                         "exists: '%s'", path);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new LoadException("An exception occurred while checking " +
                                     "HDFS path: '%s'", e, path);
         }

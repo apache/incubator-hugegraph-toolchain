@@ -5,7 +5,7 @@
       "input": {
         "type": "hdfs",
         "path": "${store_path}/vertex_person.csv",
-        "core_site_path": "src/test/resources/hdfs_with_invalid_core_site_path/invalid-core-site.xml",
+        "core_site_path": "src/test/resources/hdfs_with_invalid_core_site_path/core-site.xml",
         "format": "CSV",
         "charset": "UTF-8"
       },
