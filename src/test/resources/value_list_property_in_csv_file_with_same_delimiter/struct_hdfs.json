@@ -1,0 +1,24 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "TEXT",
+        "header": ["name", "age", "city"],
+        "charset": "UTF-8",
+        "delimiter": ",",
+        "list_format": {
+          "elem_delimiter": ","
+        }
+      },
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    }
+  ]
+}

@@ -23,106 +23,30 @@ import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
-import org.junit.After;
-import org.junit.AfterClass;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.List;
-import java.util.Properties;
 
-public class HDFSLoadTest extends LoadTest {
+public class HDFSLoadTest extends FileLoadTest {
 
-    private static IOUtil ioUtil;
-
-    static {
-        String path = "/profile.properties";
-        // Read properties defined in maven profile
-        try (InputStream is = FileLoadTest.class.getResourceAsStream(path)) {
-            Properties properties = new Properties();
-            properties.load(is);
-            String storePath = properties.getProperty("store_path");
-            ioUtil = new HDFSUtil(storePath);
-        } catch (IOException e) {
-            throw new RuntimeException(
-                      "Failed to read properties defined in maven profile", e);
+    @Override
+    public String structPath(String fileName) {
+        if (fileName.contains("struct")) {
+            int idx = fileName.indexOf("/");
+            String preifx = fileName.substring(0, idx);
+            String suffix = fileName.substring(idx + 1);
+            suffix = StringUtils.replace(suffix, "struct", "struct_hdfs");
+            fileName = preifx + "/" + suffix;
         }
-    }
-
-    @BeforeClass
-    public static void setUp() {
-        clearFileData();
-        clearServerData();
-    }
-
-    @AfterClass
-    public static void tearDown() {
-        ioUtil.close();
+        return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();
     }
 
     @Before
     public void init() {
-    }
-
-    @After
-    public void clear() {
-        clearFileData();
-        clearServerData();
-    }
-
-    private static void clearFileData() {
-        ioUtil.delete();
-    }
-
-    @Test
-    public void testHDFSWithDefaultFs() {
-        ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing",
-                     "vadas,27,Hongkong",
-                     "josh,32,Beijing",
-                     "peter,35,Shanghai",
-                     "\"li,nary\",26,\"Wu,han\"");
-
-        String[] args = new String[]{
-                "-f", configPath("hdfs_with_default_fs/struct.json"),
-                "-s", configPath("hdfs_with_default_fs/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--num-threads", "2",
-                "--test-mode", "true"
-        };
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(5, vertices.size());
-    }
-
-    @Test
-    public void testHDFSWithDefaultFsEmpty() {
-        ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing",
-                     "vadas,27,Hongkong",
-                     "josh,32,Beijing",
-                     "peter,35,Shanghai",
-                     "\"li,nary\",26,\"Wu,han\"");
-
-        String[] args = new String[]{
-                "-f", configPath("hdfs_with_default_fs_empty/struct.json"),
-                "-s", configPath("hdfs_with_default_fs_empty/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--num-threads", "2",
-                "--test-mode", "true"
-        };
-
-        Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
+        this.ioUtil = new HDFSUtil("hdfs://localhost:8020/files");
     }
 
     @Test
@@ -194,29 +118,5 @@ public class HDFSLoadTest extends LoadTest {
         }, e -> {
             Assert.assertTrue(e.getCause().getMessage().contains("Wrong FS"));
         });
-    }
-
-    @Test
-    public void testHDFSWithDefaultFsAndCoreSitePath() {
-        ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing",
-                     "vadas,27,Hongkong",
-                     "josh,32,Beijing",
-                     "peter,35,Shanghai",
-                     "\"li,nary\",26,\"Wu,han\"");
-
-        String[] args = new String[]{
-                "-f", configPath("hdfs_with_default_fs_core_site_path/struct.json" ),
-                "-s", configPath("hdfs_with_default_fs_core_site_path/schema.groovy" ),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--num-threads", "2",
-                "--test-mode", "true"
-        };
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(5, vertices.size());
     }
 }

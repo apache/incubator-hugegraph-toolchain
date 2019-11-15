@@ -1,0 +1,48 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "id": "id"
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      },
+      "id": "id"
+    }
+  ],
+  "edges": [
+    {
+      "label": "created",
+      "source": ["source_id"],
+      "target": ["target_id"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_created.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      },
+      "value_mapping": {
+        "source_id": {
+          "p1": "person_marko",
+          "p2": "person_vadas"
+        },
+        "target_id": {
+          "s1": "software_lop",
+          "s2": "software_ripple"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person_number_id.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "header": ["id", "name", "age", "city"],
+        "charset": "UTF-8"
+      },
+      "id": "id"
+    }
+  ],
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "${source_type}",
+        "header": ["source_name", "target_name", "date", "weight"],
+        "path": "${store_path}/edge_knows.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      }
+    }
+  ]
+}

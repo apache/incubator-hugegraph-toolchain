@@ -1,0 +1,45 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "label": "use",
+      "source": ["person_name"],
+      "target": ["software_name"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_use.json",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "JSON"
+      },
+      "field_mapping": {
+        "person_name": "name",
+        "software_name": "name"
+      }
+    }
+  ]
+}

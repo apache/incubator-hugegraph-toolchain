@@ -3,9 +3,9 @@
     {
       "label": "person",
       "input": {
-        "type": "hdfs",
+        "type": "${source_type}",
         "path": "${store_path}/vertex_person.csv",
-        "fs_default_fs": "hdfs://localhost:8020",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
         "format": "CSV",
         "charset": "UTF-8"
       },
@@ -13,7 +13,9 @@
         "name": "name",
         "age": "age",
         "city": "city"
-      }
+      },
+      "selected": ["name", "age", "city"],
+      "ignored": ["redundant"]
     }
   ]
 }

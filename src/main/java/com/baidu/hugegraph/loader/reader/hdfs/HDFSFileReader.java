@@ -19,20 +19,6 @@
 
 package com.baidu.hugegraph.loader.reader.hdfs;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.fs.Path;
-import org.slf4j.Logger;
-
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
@@ -43,6 +29,19 @@ import com.baidu.hugegraph.loader.reader.file.Readers;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.util.Log;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HDFSFileReader extends FileReader {
 
@@ -106,12 +105,7 @@ public class HDFSFileReader extends FileReader {
 
     private Configuration loadConfiguration() {
         Configuration conf = new Configuration();
-        if (this.source().fsDefaultFS() != null) {
-            // TODO: Support pass more params or specify config files
-            conf.set("fs.defaultFS", this.source().fsDefaultFS());
-        } else if (this.source().coreSitePath() != null) {
-            conf.addResource(new Path(this.source().coreSitePath()));
-        }
+        conf.addResource(new Path(this.source().coreSitePath()));
         return conf;
     }
 

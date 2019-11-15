@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,41 +62,15 @@ public class FileLoadTest extends LoadTest {
 
     private static final Charset GBK = Charset.forName("GBK");
 
-    private static IOUtil ioUtil;
+    protected IOUtil ioUtil ;
 
-    static {
-        String path = "/profile.properties";
-        // Read properties defined in maven profile
-        try (InputStream is = FileLoadTest.class.getResourceAsStream(path)) {
-            Properties properties = new Properties();
-            properties.load(is);
-            String sourceType = properties.getProperty("source_type");
-            String storePath = properties.getProperty("store_path");
-            if (sourceType.equals("file")) {
-                ioUtil = new FileUtil(storePath);
-            } else {
-                assert sourceType.equals("hdfs");
-                ioUtil = new HDFSUtil(storePath);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(
-                      "Failed to read properties defined in maven profile", e);
-        }
-    }
-
-    @BeforeClass
-    public static void setUp() {
-        clearFileData();
-        clearServerData();
-    }
-
-    @AfterClass
-    public static void tearDown() {
-        ioUtil.close();
+    public String structPath(String fileName) {
+        return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();
     }
 
     @Before
     public void init() {
+        this.ioUtil = new FileUtil("files");
     }
 
     @After
@@ -104,8 +79,8 @@ public class FileLoadTest extends LoadTest {
         clearServerData();
     }
 
-    private static void clearFileData() {
-        ioUtil.delete();
+    protected void clearFileData() {
+        this.ioUtil.delete();
     }
 
     /**
@@ -119,6 +94,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--num-threads", "2"
         };
+
         HugeGraphLoader.main(args);
 
         List<PropertyKey> propertyKeys = CLIENT.schema().getPropertyKeys();
@@ -182,13 +158,15 @@ public class FileLoadTest extends LoadTest {
                      "peter,lop,20170324,0.2");
 
         String[] args = new String[]{
-                "-f", configPath("customized_schema/struct.json"),
-                "-s", configPath("customized_schema/schema.groovy"),
+                "-f", structPath("customized_schema/struct.json"),
+                "-s", structPath("customized_schema/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
                 "--test-mode", "true"
         };
+        System.out.println(structPath("customized_schema/struct.json"));
+
         HugeGraphLoader.main(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -229,7 +207,7 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("no_schema_file/struct.json"),
+                "-f", structPath("no_schema_file/struct.json"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -265,8 +243,8 @@ public class FileLoadTest extends LoadTest {
                      "peter,lop,20170324,0.2");
 
         String[] args = new String[]{
-                "-f", configPath("skip_struct/struct.json"),
-                "-s", configPath("skip_struct/schema.groovy"),
+                "-f", structPath("skip_struct/struct.json"),
+                "-s", structPath("skip_struct/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -296,8 +274,8 @@ public class FileLoadTest extends LoadTest {
                      line);
 
         String[] args = new String[]{
-                "-f", configPath("vertex_id_exceed_limit/struct.json"),
-                "-s", configPath("vertex_id_exceed_limit/schema.groovy"),
+                "-f", structPath("vertex_id_exceed_limit/struct.json"),
+                "-s", structPath("vertex_id_exceed_limit/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -305,6 +283,8 @@ public class FileLoadTest extends LoadTest {
         };
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
+        }, e -> {
+            System.out.println(e);
         });
     }
 
@@ -321,8 +301,8 @@ public class FileLoadTest extends LoadTest {
                      line);
 
         String[] args = new String[]{
-                "-f", configPath("vertex_id_exceed_limit_in_bytes/struct.json"),
-                "-s", configPath("vertex_id_exceed_limit_in_bytes/schema.groovy"),
+                "-f", structPath("vertex_id_exceed_limit_in_bytes/struct.json"),
+                "-s", structPath("vertex_id_exceed_limit_in_bytes/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -341,8 +321,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing,Extra");
 
         String[] args = new String[]{
-                "-f", configPath("too_many_columns/struct.json"),
-                "-s", configPath("too_many_columns/schema.groovy"),
+                "-f", structPath("too_many_columns/struct.json"),
+                "-s", structPath("too_many_columns/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -360,8 +340,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,Should be number,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("unmatched_property_datatype/struct.json"),
-                "-s", configPath("unmatched_property_datatype/schema.groovy"),
+                "-f", structPath("unmatched_property_datatype/struct.json"),
+                "-s", structPath("unmatched_property_datatype/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -379,8 +359,8 @@ public class FileLoadTest extends LoadTest {
                      "mar:ko!,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("vertex_pk_contains_special_symbol/struct.json"),
-                "-s", configPath("vertex_pk_contains_special_symbol/schema.groovy"),
+                "-f", structPath("vertex_pk_contains_special_symbol/struct.json"),
+                "-s", structPath("vertex_pk_contains_special_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -404,8 +384,8 @@ public class FileLoadTest extends LoadTest {
                      "lop,中文,328");
 
         String[] args = new String[]{
-                "-f", configPath("unmatched_encoding_charset/struct.json"),
-                "-s", configPath("unmatched_encoding_charset/schema.groovy"),
+                "-f", structPath("unmatched_encoding_charset/struct.json"),
+                "-s", structPath("unmatched_encoding_charset/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -428,8 +408,8 @@ public class FileLoadTest extends LoadTest {
                      "lop,中文,328");
 
         String[] args = new String[]{
-                "-f", configPath("matched_encoding_charset/struct.json"),
-                "-s", configPath("matched_encoding_charset/schema.groovy"),
+                "-f", structPath("matched_encoding_charset/struct.json"),
+                "-s", structPath("matched_encoding_charset/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -452,8 +432,8 @@ public class FileLoadTest extends LoadTest {
                      "marko\t29\tBeijing");
 
         String[] args = new String[]{
-                "-f", configPath("customized_delimiter_in_csv_file/struct.json"),
-                "-s", configPath("customized_delimiter_in_csv_file/schema.groovy"),
+                "-f", structPath("customized_delimiter_in_csv_file/struct.json"),
+                "-s", structPath("customized_delimiter_in_csv_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -481,8 +461,8 @@ public class FileLoadTest extends LoadTest {
                      "\"lop\", \"feel\": [\"so so\", \"good\", \"good\"]}");
 
         String[] args = new String[]{
-                "-f", configPath("value_list_property_in_json_file/struct.json"),
-                "-s", configPath("value_list_property_in_json_file/schema.groovy"),
+                "-f", structPath("value_list_property_in_json_file/struct.json"),
+                "-s", structPath("value_list_property_in_json_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -509,8 +489,8 @@ public class FileLoadTest extends LoadTest {
                      "jin\ttom\t[4,1,5,6]\t[2019-05-02,2008-05-02]");
 
         String[] args = new String[]{
-                "-f", configPath("value_list_property_in_text_file/struct.json"),
-                "-s", configPath("value_list_property_in_text_file/schema.groovy"),
+                "-f", structPath("value_list_property_in_text_file/struct.json"),
+                "-s", structPath("value_list_property_in_text_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -542,8 +522,8 @@ public class FileLoadTest extends LoadTest {
                      "jin\ttom\t[4,1,5,6]\t[2019-05-02,2008-05-02]");
 
         String[] args = new String[]{
-                "-f", configPath("value_set_property_in_text_file/struct.json"),
-                "-s", configPath("value_set_property_in_text_file/schema.groovy"),
+                "-f", structPath("value_set_property_in_text_file/struct.json"),
+                "-s", structPath("value_set_property_in_text_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -573,9 +553,9 @@ public class FileLoadTest extends LoadTest {
                      "marko\t29\t[Beijing;Hongkong;Wuhan]");
 
         String[] args = new String[]{
-                "-f", configPath(
+                "-f", structPath(
                 "value_list_property_in_text_file_with_elem_delimiter/struct.json"),
-                "-s", configPath(
+                "-s", structPath(
                 "value_list_property_in_text_file_with_elem_delimiter/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -602,9 +582,9 @@ public class FileLoadTest extends LoadTest {
                      "lop\tjava\t,[128,228,328],");
 
         String[] args = new String[]{
-                "-f", configPath(
+                "-f", structPath(
                 "value_list_property_in_text_file_with_symbols/struct.json"),
-                "-s", configPath(
+                "-s", structPath(
                 "value_list_property_in_text_file_with_symbols/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -628,9 +608,9 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,[Beijing,Hongkong,Wuhan]");
 
         String[] args = new String[]{
-                "-f", configPath(
+                "-f", structPath(
                 "value_list_property_in_csv_file_with_same_delimiter/struct.json"),
-                "-s", configPath(
+                "-s", structPath(
                 "value_list_property_in_csv_file_with_same_delimiter/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -655,8 +635,8 @@ public class FileLoadTest extends LoadTest {
                      "\"lop\", \"time\": [\"20171210\", \"20180101\"]}");
 
         String[] args = new String[]{
-                "-f", configPath("value_set_property_in_json_file/struct.json"),
-                "-s", configPath("value_set_property_in_json_file/schema.groovy"),
+                "-f", structPath("value_set_property_in_json_file/struct.json"),
+                "-s", structPath("value_set_property_in_json_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -689,8 +669,8 @@ public class FileLoadTest extends LoadTest {
                      "lop,31,HongKong,18446744073709551615");
 
         String[] args = new String[]{
-                "-f", configPath("long_property/struct.json"),
-                "-s", configPath("long_property/schema.groovy"),
+                "-f", structPath("long_property/struct.json"),
+                "-s", structPath("long_property/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -716,8 +696,8 @@ public class FileLoadTest extends LoadTest {
                      "lindy,23,Beijing,no");
 
         String[] args = new String[]{
-                "-f", configPath("value_boolean_property_in_file/struct.json"),
-                "-s", configPath("value_boolean_property_in_file/schema.groovy"),
+                "-f", structPath("value_boolean_property_in_file/struct.json"),
+                "-s", structPath("value_boolean_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -738,8 +718,8 @@ public class FileLoadTest extends LoadTest {
                      "tom,30,Beijing,T R U E");
 
         String[] args = new String[]{
-                "-f", configPath("value_boolean_property_in_file/struct.json"),
-                "-s", configPath("value_boolean_property_in_file/schema.groovy"),
+                "-f", structPath("value_boolean_property_in_file/struct.json"),
+                "-s", structPath("value_boolean_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -761,8 +741,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,Hongkong,5bfde4ca4e514e9291cd047becf0fd39");
 
         String[] args = new String[]{
-                "-f", configPath("value_uuid_property_in_file/struct.json"),
-                "-s", configPath("value_uuid_property_in_file/schema.groovy"),
+                "-f", structPath("value_uuid_property_in_file/struct.json"),
+                "-s", structPath("value_uuid_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -782,8 +762,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,Hongkong,5bfde4ca_4e51+4e92-91cd-047becf0fd39");
 
         String[] args = new String[]{
-                "-f", configPath("value_uuid_property_in_file/struct.json"),
-                "-s", configPath("value_uuid_property_in_file/schema.groovy"),
+                "-f", structPath("value_uuid_property_in_file/struct.json"),
+                "-s", structPath("value_uuid_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -805,8 +785,8 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("edge_knows.csv", "1,2,20160110,0.5");
 
         String[] args = new String[]{
-                "-f", configPath("customized_number_id/struct.json"),
-                "-s", configPath("customized_number_id/schema.groovy"),
+                "-f", structPath("customized_number_id/struct.json"),
+                "-s", structPath("customized_number_id/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -831,8 +811,8 @@ public class FileLoadTest extends LoadTest {
                      "18446744073709551615,lop,31,HongKong");
 
         String[] args = new String[]{
-                "-f", configPath("customized_long_id/struct.json"),
-                "-s", configPath("customized_long_id/schema.groovy"),
+                "-f", structPath("customized_long_id/struct.json"),
+                "-s", structPath("customized_long_id/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -852,8 +832,8 @@ public class FileLoadTest extends LoadTest {
                      "34da417730614f30ab3775973a01cb9b, josh,30,Wuhan");
 
         String[] args = new String[]{
-                "-f", configPath("customized_uuid/struct.json"),
-                "-s", configPath("customized_uuid/schema.groovy"),
+                "-f", structPath("customized_uuid/struct.json"),
+                "-s", structPath("customized_uuid/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -871,8 +851,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("vertex_joint_pks/struct.json"),
-                "-s", configPath("vertex_joint_pks/schema.groovy"),
+                "-f", structPath("vertex_joint_pks/struct.json"),
+                "-s", structPath("vertex_joint_pks/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -899,8 +879,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,Hongkong,value2");
 
         String[] args = new String[]{
-                "-f", configPath("selected_fields/struct.json"),
-                "-s", configPath("selected_fields/schema.groovy"),
+                "-f", structPath("selected_fields/struct.json"),
+                "-s", structPath("selected_fields/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -924,8 +904,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,Hongkong,value2");
 
         String[] args = new String[]{
-                "-f", configPath("ignored_fields/struct.json"),
-                "-s", configPath("ignored_fields/schema.groovy"),
+                "-f", structPath("ignored_fields/struct.json"),
+                "-s", structPath("ignored_fields/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -949,8 +929,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,Hongkong,value2");
 
         String[] args = new String[]{
-                "-f", configPath("selected_and_ignored_fields/struct.json"),
-                "-s", configPath("selected_and_ignored_fields/schema.groovy"),
+                "-f", structPath("selected_and_ignored_fields/struct.json"),
+                "-s", structPath("selected_and_ignored_fields/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -968,8 +948,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing,,,,");
 
         String[] args = new String[]{
-                "-f", configPath("ignore_tail_redudant_empty_column/struct.json"),
-                "-s", configPath("ignore_tail_redudant_empty_column/schema.groovy"),
+                "-f", structPath("ignore_tail_redudant_empty_column/struct.json"),
+                "-s", structPath("ignore_tail_redudant_empty_column/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -991,8 +971,8 @@ public class FileLoadTest extends LoadTest {
                      "josh");
 
         String[] args = new String[]{
-                "-f", configPath("fill_missing_column_with_empty/struct.json"),
-                "-s", configPath("fill_missing_column_with_empty/schema.groovy"),
+                "-f", structPath("fill_missing_column_with_empty/struct.json"),
+                "-s", structPath("fill_missing_column_with_empty/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1012,8 +992,8 @@ public class FileLoadTest extends LoadTest {
                      "josh,,null");
 
         String[] args = new String[]{
-                "-f", configPath("ignore_null_value_columns/struct.json"),
-                "-s", configPath("ignore_null_value_columns/schema.groovy"),
+                "-f", structPath("ignore_null_value_columns/struct.json"),
+                "-s", structPath("ignore_null_value_columns/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1038,8 +1018,8 @@ public class FileLoadTest extends LoadTest {
                      "josh,30,null");
 
         String[] args = new String[]{
-                "-f", configPath("mapping_ignore_null_value_columns/struct.json"),
-                "-s", configPath("mapping_ignore_null_value_columns/schema.groovy"),
+                "-f", structPath("mapping_ignore_null_value_columns/struct.json"),
+                "-s", structPath("mapping_ignore_null_value_columns/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1069,8 +1049,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("file_no_header/struct.json"),
-                "-s", configPath("file_no_header/schema.groovy"),
+                "-f", structPath("file_no_header/struct.json"),
+                "-s", structPath("file_no_header/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1090,8 +1070,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("multi_files_have_header/struct.json"),
-                "-s", configPath("multi_files_have_header/schema.groovy"),
+                "-f", structPath("multi_files_have_header/struct.json"),
+                "-s", structPath("multi_files_have_header/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1111,8 +1091,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,//Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("file_has_empty_line/struct.json"),
-                "-s", configPath("file_has_empty_line/schema.groovy"),
+                "-f", structPath("file_has_empty_line/struct.json"),
+                "-s", structPath("file_has_empty_line/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1134,8 +1114,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,//Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("file_has_skipped_line_regex/struct.json"),
-                "-s", configPath("file_has_skipped_line_regex/schema.groovy"),
+                "-f", structPath("file_has_skipped_line_regex/struct.json"),
+                "-s", structPath("file_has_skipped_line_regex/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1150,8 +1130,8 @@ public class FileLoadTest extends LoadTest {
     public void testDirHasNoFile() {
         ioUtil.mkdirs("vertex_dir");
         String[] args = new String[]{
-                "-f", configPath("dir_has_no_file/struct.json"),
-                "-s", configPath("dir_has_no_file/schema.groovy"),
+                "-f", structPath("dir_has_no_file/struct.json"),
+                "-s", structPath("dir_has_no_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1167,8 +1147,8 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_person.csv");
 
         String[] args = new String[]{
-                "-f", configPath("empty_file_with_header/struct.json"),
-                "-s", configPath("empty_file_with_header/schema.groovy"),
+                "-f", structPath("empty_file_with_header/struct.json"),
+                "-s", structPath("empty_file_with_header/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1184,8 +1164,8 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_person.csv");
 
         String[] args = new String[]{
-                "-f", configPath("empty_file_without_header/struct.json"),
-                "-s", configPath("empty_file_without_header/schema.groovy"),
+                "-f", structPath("empty_file_without_header/struct.json"),
+                "-s", structPath("empty_file_without_header/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1208,8 +1188,8 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_dir/vertex_person3.csv");
 
         String[] args = new String[]{
-                "-f", configPath("dir_has_multi_files/struct.json"),
-                "-s", configPath("dir_has_multi_files/schema.groovy"),
+                "-f", structPath("dir_has_multi_files/struct.json"),
+                "-s", structPath("dir_has_multi_files/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1228,8 +1208,8 @@ public class FileLoadTest extends LoadTest {
 
         // DateFormat is yyyy-MM-dd
         String[] args = new String[]{
-                "-f", configPath("matched_date_property_format/struct.json"),
-                "-s", configPath("matched_date_property_format/schema.groovy"),
+                "-f", structPath("matched_date_property_format/struct.json"),
+                "-s", structPath("matched_date_property_format/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1243,13 +1223,13 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testUnMatchedDatePropertyAndFormat() {
         ioUtil.write("vertex_person_birth_date.csv",
-                     "marko,1992/10/01,Beijing",
-                     "vadas,2000/01/01,Hongkong");
+                "marko,1992/10/01,Beijing",
+                "vadas,2000/01/01,Hongkong");
 
         // DateFormat is yyyy-MM-dd
         String[] args = new String[]{
-                "-f", configPath("unmatched_date_property_format/struct.json"),
-                "-s", configPath("unmatched_date_property_format/schema.groovy"),
+                "-f", structPath("unmatched_date_property_format/struct.json"),
+                "-s", structPath("unmatched_date_property_format/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1271,8 +1251,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,2,2,2");
 
         String[] args = new String[]{
-                "-f", configPath("value_mapping/struct.json"),
-                "-s", configPath("value_mapping/schema.groovy"),
+                "-f", structPath("value_mapping/struct.json"),
+                "-s", structPath("value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1304,8 +1284,8 @@ public class FileLoadTest extends LoadTest {
                      "2,27,Shanghai");
 
         String[] args = new String[]{
-                "-f", configPath("pk_value_mapping/struct.json"),
-                "-s", configPath("pk_value_mapping/schema.groovy"),
+                "-f", structPath("pk_value_mapping/struct.json"),
+                "-s", structPath("pk_value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1337,8 +1317,8 @@ public class FileLoadTest extends LoadTest {
                      "p2,s2,0.6");
 
         String[] args = new String[]{
-                "-f", configPath("source_target_value_mapping/struct.json"),
-                "-s", configPath("source_target_value_mapping/schema.groovy"),
+                "-f", structPath("source_target_value_mapping/struct.json"),
+                "-s", structPath("source_target_value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1366,8 +1346,8 @@ public class FileLoadTest extends LoadTest {
                      "{\"name\": \"vadas\", \"age\": 27, \"city\": \"1\"}");
 
         String[] args = new String[]{
-                "-f", configPath("value_mapping_in_json_file/struct.json"),
-                "-s", configPath("value_mapping_in_json_file/schema.groovy"),
+                "-f", structPath("value_mapping_in_json_file/struct.json"),
+                "-s", structPath("value_mapping_in_json_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1392,8 +1372,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas,27,Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("filter_file_by_suffix/struct.json"),
-                "-s", configPath("filter_file_by_suffix/schema.groovy"),
+                "-f", structPath("filter_file_by_suffix/struct.json"),
+                "-s", structPath("filter_file_by_suffix/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1415,8 +1395,8 @@ public class FileLoadTest extends LoadTest {
                      "vadas1,27,Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("filter_path_by_suffix/struct.json"),
-                "-s", configPath("filter_path_by_suffix/schema.groovy"),
+                "-f", structPath("filter_path_by_suffix/struct.json"),
+                "-s", structPath("filter_path_by_suffix/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--test-mode", "true"
@@ -1434,8 +1414,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("gzip_compress_file/struct.json"),
-                "-s", configPath("gzip_compress_file/schema.groovy"),
+                "-f", structPath("gzip_compress_file/struct.json"),
+                "-s", structPath("gzip_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1454,8 +1434,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("bz2_compress_file/struct.json"),
-                "-s", configPath("bz2_compress_file/schema.groovy"),
+                "-f", structPath("bz2_compress_file/struct.json"),
+                "-s", structPath("bz2_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1474,8 +1454,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("xz_compress_file/struct.json"),
-                "-s", configPath("xz_compress_file/schema.groovy"),
+                "-f", structPath("xz_compress_file/struct.json"),
+                "-s", structPath("xz_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1494,8 +1474,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("lzma_compress_file/struct.json"),
-                "-s", configPath("lzma_compress_file/schema.groovy"),
+                "-f", structPath("lzma_compress_file/struct.json"),
+                "-s", structPath("lzma_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1517,8 +1497,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("snappy_raw_compress_file/struct.json"),
-                "-s", configPath("snappy_raw_compress_file/schema.groovy"),
+                "-f", structPath("snappy_raw_compress_file/struct.json"),
+                "-s", structPath("snappy_raw_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1537,8 +1517,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("snappy_framed_compress_file/struct.json"),
-                "-s", configPath("snappy_framed_compress_file/schema.groovy"),
+                "-f", structPath("snappy_framed_compress_file/struct.json"),
+                "-s", structPath("snappy_framed_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1560,8 +1540,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("z_compress_file/struct.json"),
-                "-s", configPath("z_compress_file/schema.groovy"),
+                "-f", structPath("z_compress_file/struct.json"),
+                "-s", structPath("z_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1580,8 +1560,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("deflate_compress_file/struct.json"),
-                "-s", configPath("deflate_compress_file/schema.groovy"),
+                "-f", structPath("deflate_compress_file/struct.json"),
+                "-s", structPath("deflate_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1600,8 +1580,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("lz4_block_compress_file/struct.json"),
-                "-s", configPath("lz4_block_compress_file/schema.groovy"),
+                "-f", structPath("lz4_block_compress_file/struct.json"),
+                "-s", structPath("lz4_block_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1620,8 +1600,8 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
 
         String[] args = new String[]{
-                "-f", configPath("lz4_framed_compress_file/struct.json"),
-                "-s", configPath("lz4_framed_compress_file/schema.groovy"),
+                "-f", structPath("lz4_framed_compress_file/struct.json"),
+                "-s", structPath("lz4_framed_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1643,8 +1623,8 @@ public class FileLoadTest extends LoadTest {
                      "jerry,18");
 
         String[] args = new String[]{
-                "-f", configPath("too_few_columns/struct.json"),
-                "-s", configPath("too_few_columns/schema.groovy"),
+                "-f", structPath("too_few_columns/struct.json"),
+                "-s", structPath("too_few_columns/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1663,8 +1643,8 @@ public class FileLoadTest extends LoadTest {
                      "tom\ttom\t2\t[1,2,3]");
 
         String[] args = new String[]{
-                "-f", configPath("update_by_strategy/struct.json"),
-                "-s", configPath("update_by_strategy/schema.groovy"),
+                "-f", structPath("update_by_strategy/struct.json"),
+                "-s", structPath("update_by_strategy/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1700,9 +1680,9 @@ public class FileLoadTest extends LoadTest {
                      "tom\ttom\t2\t3");
 
         String[] args = new String[]{
-                "-f", configPath(
+                "-f", structPath(
                 "update_by_strategy_without_symbol/struct.json"),
-                "-s", configPath(
+                "-s", structPath(
                 "update_by_strategy_without_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -1739,9 +1719,9 @@ public class FileLoadTest extends LoadTest {
                      "tom\ttom\t2\t3");
 
         String[] args = new String[]{
-                "-f", configPath(
+                "-f", structPath(
                 "update_by_strategy_without_symbol/no_list_format_struct.json"),
-                "-s", configPath(
+                "-s", structPath(
                 "update_by_strategy_without_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -1769,8 +1749,8 @@ public class FileLoadTest extends LoadTest {
                      "tom\ttom\t2\t[1,2,3]");
 
         String[] args = new String[]{
-                "-f", configPath("update_by_strategy/struct.json"),
-                "-s", configPath("update_by_strategy/schema.groovy"),
+                "-f", structPath("update_by_strategy/struct.json"),
+                "-s", structPath("update_by_strategy/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1793,9 +1773,9 @@ public class FileLoadTest extends LoadTest {
                      "tom\t25\t[str1,str3]");
 
         String[] args = new String[]{
-                "-f", configPath("update_by_strategy/" +
+                "-f", structPath("update_by_strategy/" +
                                  "invalid_strategy_struct.json"),
-                "-s", configPath("update_by_strategy/schema.groovy"),
+                "-s", structPath("update_by_strategy/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1826,8 +1806,8 @@ public class FileLoadTest extends LoadTest {
                      "ripple,java,199");
 
         String[] args = new String[]{
-                "-f", configPath("incremental_mode/struct.json"),
-                "-s", configPath("incremental_mode/schema.groovy"),
+                "-f", structPath("incremental_mode/struct.json"),
+                "-s", structPath("incremental_mode/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1867,8 +1847,8 @@ public class FileLoadTest extends LoadTest {
         });
 
         args = new String[]{
-                "-f", configPath("incremental_mode/struct.json"),
-                "-s", configPath("incremental_mode/schema.groovy"),
+                "-f", structPath("incremental_mode/struct.json"),
+                "-s", structPath("incremental_mode/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
@@ -1932,9 +1912,9 @@ public class FileLoadTest extends LoadTest {
         // 1st time
         String[] args = new String[] {
                 "-f",
-                configPath("incremental_mode_and_reload_failure/struct.json"),
+                structPath("incremental_mode_and_reload_failure/struct.json"),
                 "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                structPath("incremental_mode_and_reload_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",
@@ -1973,9 +1953,9 @@ public class FileLoadTest extends LoadTest {
             }
         });
 
-        File structDir = FileUtils.getFile(configPath(
+        File structDir = FileUtils.getFile(structPath(
                 "incremental_mode_and_reload_failure/struct"));
-        File currentDir = FileUtils.getFile(configPath(
+        File currentDir = FileUtils.getFile(structPath(
                 "incremental_mode_and_reload_failure/struct/current/"));
         File[] files = currentDir.listFiles();
         Assert.assertNotNull(files);
@@ -2004,9 +1984,9 @@ public class FileLoadTest extends LoadTest {
         // 2nd time
         args = new String[]{
                 "-f",
-                configPath("incremental_mode_and_reload_failure/struct.json"),
+                structPath("incremental_mode_and_reload_failure/struct.json"),
                 "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                structPath("incremental_mode_and_reload_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
@@ -2081,9 +2061,9 @@ public class FileLoadTest extends LoadTest {
         // 3rd time
         args = new String[]{
                 "-f",
-                configPath("incremental_mode_and_reload_failure/struct.json"),
+                structPath("incremental_mode_and_reload_failure/struct.json"),
                 "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                structPath("incremental_mode_and_reload_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
@@ -2170,9 +2150,9 @@ public class FileLoadTest extends LoadTest {
         // 4th time
         args = new String[]{
                 "-f",
-                configPath("incremental_mode_and_reload_failure/struct.json"),
+                structPath("incremental_mode_and_reload_failure/struct.json"),
                 "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                structPath("incremental_mode_and_reload_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
