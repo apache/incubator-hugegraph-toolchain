@@ -19,6 +19,18 @@
 
 package com.baidu.hugegraph.loader.reader.hdfs;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
@@ -29,19 +41,6 @@ import com.baidu.hugegraph.loader.reader.file.Readers;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.util.Log;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.fs.Path;
-import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 public class HDFSFileReader extends FileReader {
 
@@ -119,14 +118,6 @@ public class HDFSFileReader extends FileReader {
             throw new LoadException("An exception occurred while checking " +
                                     "HDFS path: '%s'", e, path);
         }
-    }
-
-    private static Path path(String configPath) {
-        return new Path(Paths.get(configPath).toString());
-    }
-
-    private static Path path(String configPath, String configFile) {
-        return new Path(Paths.get(configPath, configFile).toString());
     }
 
     protected static class HDFSFile implements Readable {

@@ -19,16 +19,17 @@
 
 package com.baidu.hugegraph.loader.test.functional;
 
-import com.baidu.hugegraph.loader.HugeGraphLoader;
-import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.testutil.Assert;
+import java.nio.file.Paths;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.file.Paths;
-import java.util.List;
+import com.baidu.hugegraph.loader.HugeGraphLoader;
+import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.testutil.Assert;
 
 public class HDFSLoadTest extends FileLoadTest {
 
@@ -60,7 +61,7 @@ public class HDFSLoadTest extends FileLoadTest {
                      "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
-                "-f", configPath("hdfs_with_core_site_path/struct.json"),
+                "-f", structPath("hdfs_with_core_site_path/struct.json"),
                 "-s", configPath("hdfs_with_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -83,7 +84,7 @@ public class HDFSLoadTest extends FileLoadTest {
                      "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
-                "-f", configPath("hdfs_with_core_site_path_empty/struct.json"),
+                "-f", structPath("hdfs_with_core_site_path_empty/struct.json"),
                 "-s", configPath("hdfs_with_core_site_path_empty/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -106,7 +107,7 @@ public class HDFSLoadTest extends FileLoadTest {
                      "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
-                "-f", configPath("hdfs_with_invalid_core_site_path/struct.json"),
+                "-f", structPath("hdfs_with_invalid_core_site_path/struct.json"),
                 "-s", configPath("hdfs_with_invalid_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -116,7 +117,8 @@ public class HDFSLoadTest extends FileLoadTest {
         Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
-            Assert.assertTrue(e.getCause().getMessage().contains("Wrong FS"));
+            String message = "An exception occurred while checking HDFS path";
+            Assert.assertTrue(e.getMessage().contains(message));
         });
     }
 }
