@@ -84,8 +84,8 @@ public class HDFSLoadTest extends FileLoadTest {
                      "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
-                "-f", structPath("hdfs_with_core_site_path_empty/struct.json"),
-                "-s", configPath("hdfs_with_core_site_path_empty/schema.groovy"),
+                "-f", structPath("hdfs_with_empty_core_site_path/struct.json"),
+                "-s", configPath("hdfs_with_empty_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--num-threads", "2",

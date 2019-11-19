@@ -61,7 +61,7 @@ public class FileLoadTest extends LoadTest {
     protected IOUtil ioUtil ;
 
     public String structPath(String fileName) {
-        return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();
+        return configPath(fileName);
     }
 
     @Before
@@ -161,8 +161,6 @@ public class FileLoadTest extends LoadTest {
                 "--num-threads", "2",
                 "--test-mode", "true"
         };
-        System.out.println(structPath("customized_schema/struct.json"));
-
         HugeGraphLoader.main(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -279,8 +277,6 @@ public class FileLoadTest extends LoadTest {
         };
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
-        }, e -> {
-            System.out.println(e);
         });
     }
 
@@ -1219,8 +1215,8 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testUnMatchedDatePropertyAndFormat() {
         ioUtil.write("vertex_person_birth_date.csv",
-                "marko,1992/10/01,Beijing",
-                "vadas,2000/01/01,Hongkong");
+                     "marko,1992/10/01,Beijing",
+                     "vadas,2000/01/01,Hongkong");
 
         // DateFormat is yyyy-MM-dd
         String[] args = new String[]{

@@ -109,14 +109,18 @@ public class HDFSFileReader extends FileReader {
     }
 
     private static void checkExist(FileSystem fs, Path path) {
+        LoadException e = null;
         try {
             if (!fs.exists(path)) {
-                throw new LoadException("Please ensure the file or directory " +
-                                        "exists: '%s'", path);
+                e = new LoadException("Please ensure the file or directory " +
+                                      "exists: '%s'", path);
             }
-        } catch (Exception e) {
-            throw new LoadException("An exception occurred while checking " +
-                                    "HDFS path: '%s'", e, path);
+        } catch (IOException ex) {
+            e = new LoadException("An exception occurred while checking " +
+                                  "HDFS path: '%s'", ex, path);
+        }
+        if (e != null) {
+            throw e;
         }
     }
 
