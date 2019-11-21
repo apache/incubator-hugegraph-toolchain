@@ -23,6 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.reader.Line;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SkippedLine {

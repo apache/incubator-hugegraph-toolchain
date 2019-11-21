@@ -43,4 +43,9 @@ public class Record<GE extends GraphElement> {
     public GE element() {
         return this.element;
     }
+
+    @Override
+    public String toString() {
+        return this.rawLine;
+    }
 }

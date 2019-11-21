@@ -104,17 +104,17 @@ public class TextLineParser implements LineParser {
         }
     }
 
-    @Override
-    public boolean matchHeader(String line) {
-        if (line == null || line.isEmpty()) {
-            throw new ParseException("The file header can't be empty " +
-                                     "under path '%s'", this.source.path());
-        }
-
-        assert this.header != null;
-        String[] columns = this.split(line);
-        return Arrays.equals(this.header, columns);
-    }
+//    @Override
+//    public boolean matchHeader(Line line) {
+//        if (line == null ) {
+//            throw new ParseException("The file header can't be empty " +
+//                                     "under path '%s'", this.source.path());
+//        }
+//
+//        assert this.header != null;
+//
+//        return Arrays.equals(this.header, line.values());
+//    }
 
     public String[] split(String line) {
         return StringUtil.split(line, this.delimiter);

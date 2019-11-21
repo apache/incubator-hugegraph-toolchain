@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.reader.file.OrcReaders;
+import com.baidu.hugegraph.loader.source.file.Compression;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -98,6 +100,10 @@ public class HDFSFileReader extends FileReader {
                     paths.add(new HDFSFile(this.hdfs, subPath));
                 }
             }
+        }
+
+        if (Compression.ORC == this.source().compression()) {
+            return new OrcReaders(this.source(), paths);
         }
         return new Readers(this.source(), paths);
     }

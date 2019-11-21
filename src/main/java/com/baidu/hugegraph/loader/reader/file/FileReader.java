@@ -20,17 +20,15 @@
 package com.baidu.hugegraph.loader.reader.file;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 
+import com.baidu.hugegraph.loader.exception.ParseException;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.parser.CsvLineParser;
-import com.baidu.hugegraph.loader.parser.JsonLineParser;
-import com.baidu.hugegraph.loader.parser.LineParser;
-import com.baidu.hugegraph.loader.parser.TextLineParser;
 import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
@@ -47,14 +45,15 @@ public abstract class FileReader implements InputReader {
     private static final Logger LOG = Log.logger(FileReader.class);
 
     private final FileSource source;
-    private final LineParser parser;
+
     private Readers readers;
+    private String[] headerLine;
     private Line nextLine;
 
     public FileReader(FileSource source) {
         this.source = source;
-        this.parser = createLineParser(source);
         this.readers = null;
+        this.headerLine = null;
         this.nextLine = null;
     }
 
@@ -75,19 +74,20 @@ public abstract class FileReader implements InputReader {
         }
         this.progress(context, struct);
 
-        if (this.parser.needHeader()) {
-            String headerLine = this.readers.readHeader();
-            if (headerLine == null) {
+        if (this.readers.needHeader()) {
+            this.headerLine = this.readers.readHeader();
+            if (this.headerLine == null) {
                 throw new LoadException("Failed to read header from " +
                                         "file source '%s'", this.source);
             }
-            this.parser.parseHeader(headerLine);
             InputSource inputSource = struct.input();
             E.checkState(inputSource instanceof FileSource,
                          "The InputSource must be FileSource when need header");
 
             FileSource fileSource = (FileSource) inputSource;
-            fileSource.header(this.parser.header());
+            fileSource.header(this.headerLine);
+        } else {
+            this.headerLine = this.readers.headerLine();
         }
 
         this.readers.skipOffset();
@@ -142,25 +142,25 @@ public abstract class FileReader implements InputReader {
      * improve the performance of each of its sub-methods.
      */
     private Line fetch() {
-        int index = -1;
+        int index = this.readers.index();
         while (true) {
-            String rawLine = this.readNextLine();
+            Line rawLine = this.readNextLine();
             if (rawLine == null) {
                 return null;
             }
             if (this.needSkipLine(rawLine)) {
                 continue;
             }
-            boolean openNext = index != this.readers.index();
+            boolean openNext = (index != this.readers.index());
             index = this.readers.index();
-            if (openNext && this.parser.matchHeader(rawLine)) {
+            if (openNext && this.matchHeader(rawLine)) {
                 continue;
             }
-            return this.parser.parse(rawLine);
+            return rawLine;
         }
     }
 
-    private String readNextLine() {
+    private Line readNextLine() {
         assert this.readers != null;
         try {
             return this.readers.readNextLine();
@@ -169,22 +169,20 @@ public abstract class FileReader implements InputReader {
         }
     }
 
-    private boolean needSkipLine(String line) {
-        return this.source.skippedLine().matches(line);
+    private boolean needSkipLine(Line line) {
+        return this.source.skippedLine().matches(line.toString());
     }
 
-    private static LineParser createLineParser(FileSource source) {
-        FileFormat format = source.format();
-        switch (format) {
-            case CSV:
-                return new CsvLineParser(source);
-            case TEXT:
-                return new TextLineParser(source);
-            case JSON:
-                return new JsonLineParser(source);
-            default:
-                throw new AssertionError(String.format(
-                          "Unsupported file format '%s'", source));
+    private boolean matchHeader(Line line) {
+        if (this.source.format() == FileFormat.JSON) {
+            return false;
         }
+        if (line == null ) {
+            throw new ParseException("The file header can't be empty " +
+                                     "under path '%s'", this.source.path());
+        }
+
+        assert this.headerLine != null;
+        return Arrays.equals(this.headerLine, line.values());
     }
 }
