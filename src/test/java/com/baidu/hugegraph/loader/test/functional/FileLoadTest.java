@@ -1231,6 +1231,64 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testDefaultTimeZoneGMT8() throws java.text.ParseException {
+        ioUtil.write("vertex_person_birth_date.csv",
+                     "marko,1992-10-01 12:00:00,Beijing",
+                     "vadas,2000-01-01 13:00:00,Hongkong");
+
+        String[] args = new String[]{
+                "-f", configPath("default_timezone_gmt8/struct.json"),
+                "-s", configPath("default_timezone_gmt8/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        Vertex marko = CLIENT.graph().getVertex("1:marko");
+        Assert.assertEquals(DateUtil.parse("1992-10-01 12:00:00",
+                                           Constants.DATE_FORMAT).getTime(),
+                            marko.property("birth"));
+
+        Vertex vadas = CLIENT.graph().getVertex("1:vadas");
+        Assert.assertEquals(DateUtil.parse("2000-01-01 13:00:00",
+                                           Constants.DATE_FORMAT).getTime(),
+                            vadas.property("birth"));
+    }
+
+    @Test
+    public void testCustomizedTimeZoneGMT0() throws java.text.ParseException {
+        ioUtil.write("vertex_person_birth_date.csv",
+                     "marko,1992-10-01 12:00:00,Beijing",
+                     "vadas,2000-01-01 13:00:00,Hongkong");
+
+        String[] args = new String[]{
+                "-f", configPath("customized_timezone_gmt0/struct.json"),
+                "-s", configPath("customized_timezone_gmt0/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        Vertex marko = CLIENT.graph().getVertex("1:marko");
+        Assert.assertEquals(DateUtil.parse("1992-10-01 20:00:00",
+                                           Constants.DATE_FORMAT).getTime(),
+                            marko.property("birth"));
+
+        Vertex vadas = CLIENT.graph().getVertex("1:vadas");
+        Assert.assertEquals(DateUtil.parse("2000-01-01 21:00:00",
+                                           Constants.DATE_FORMAT).getTime(),
+                            vadas.property("birth"));
+    }
+
+    @Test
     public void testValueMapping() throws java.text.ParseException {
         /*
          * "age": {"1": 25, "2": 30}

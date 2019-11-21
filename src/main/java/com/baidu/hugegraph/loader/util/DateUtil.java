@@ -22,17 +22,26 @@ package com.baidu.hugegraph.loader.util;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.baidu.hugegraph.date.SafeDateFormat;
+import com.baidu.hugegraph.loader.constant.Constants;
 
 public final class DateUtil {
 
-    private static final Map<String, SafeDateFormat> DATE_FORMATS = 
+    private static final Map<String, SafeDateFormat> DATE_FORMATS =
                                                      new ConcurrentHashMap<>();
 
     public static Date parse(String source, String df) throws ParseException {
+        return parse(source, df, Constants.TIME_ZONE);
+    }
+
+    public static Date parse(String source, String df, String timeZone)
+                             throws ParseException {
         SafeDateFormat dateFormat = getDateFormat(df);
+        // parse date with specified timezone
+        dateFormat.setTimeZone(TimeZone.getTimeZone(timeZone));
         return dateFormat.parse(source);
     }
 
@@ -62,5 +71,19 @@ public final class DateUtil {
 
     public static String now(String df) {
         return getDateFormat(df).format(new Date());
+    }
+
+    public static boolean checkTimeZone(String timeZone) {
+        final String DEFAULT_GMT_TIMEZONE = "GMT";
+        if (timeZone.equals(DEFAULT_GMT_TIMEZONE)) {
+            return true;
+        } else {
+            /*
+             * Time zone id returned is always "GMT" by default
+             * if custom time zone is invalid
+             */
+            String id = TimeZone.getTimeZone(timeZone).getID();
+            return !id.equals(DEFAULT_GMT_TIMEZONE);
+        }
     }
 }

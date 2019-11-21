@@ -1,0 +1,20 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person_birth_date.csv",
+        "format": "CSV",
+        "header": ["name", "birth", "city"],
+        "charset": "UTF-8",
+        "date_format": "yyyy-MM-dd HH:mm:ss"
+      },
+      "field_mapping": {
+        "name": "name",
+        "birth": "birth",
+        "city": "city"
+      }
+    }
+  ]
+}
