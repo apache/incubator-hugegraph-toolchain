@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.source.file.Compression;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -66,6 +67,10 @@ public class LocalFileReader extends FileReader {
                     files.add(new LocalFile(subFile));
                 }
             }
+        }
+
+        if (Compression.ORC == this.source().compression()) {
+            return new OrcReaders(this.source(), files);
         }
         return new Readers(this.source(), files);
     }

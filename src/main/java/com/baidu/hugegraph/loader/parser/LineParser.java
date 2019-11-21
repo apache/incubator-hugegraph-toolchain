@@ -37,7 +37,7 @@ public interface LineParser {
         // pass
     }
 
-    public default boolean matchHeader(String rawLine) {
-        return false;
-    }
+//    public default boolean matchHeader(Line rawLine) {
+//        return false;
+//    }
 }

@@ -29,8 +29,16 @@ import java.io.Reader;
 import java.util.Comparator;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.parser.CsvLineParser;
+import com.baidu.hugegraph.loader.parser.JsonLineParser;
+import com.baidu.hugegraph.loader.parser.LineParser;
+import com.baidu.hugegraph.loader.parser.TextLineParser;
+import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.source.file.FileFormat;
+import com.baidu.hugegraph.structure.Task;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.hadoop.hdfs.client.HdfsClientConfigKeys;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -51,13 +59,14 @@ public class Readers {
 
     private static final long BUF_SIZE = 4 * MB;
 
-    private InputProgress oldProgress;
-    private InputProgress newProgress;
+    protected InputProgress oldProgress;
+    protected InputProgress newProgress;
 
-    private final FileSource source;
-    private final List<Readable> readables;
-    private int index;
-    private BufferedReader reader;
+    protected final FileSource source;
+    protected final List<Readable> readables;
+    protected int index;
+    protected BufferedReader reader;
+    private final LineParser parser;
 
     public Readers(FileSource source, List<Readable> readables) {
         E.checkNotNull(source, "source");
@@ -68,6 +77,7 @@ public class Readers {
         this.readables = readables;
         this.index = -1;
         this.reader = null;
+        this.parser = createLineParser(source);
     }
 
     public void progress(InputProgress oldProgress, InputProgress newProgress) {
@@ -85,16 +95,32 @@ public class Readers {
         return this.index;
     }
 
-    public String readHeader() {
+    public void resetIndex() {
+        this.index = -1;
+    }
+
+    public boolean needHeader() {
+        return this.parser.needHeader();
+    }
+
+    public String[] headerLine() {
+        return this.parser.header();
+    }
+
+    public String[] readHeader() {
         E.checkArgument(this.readables.size() > 0,
                         "Must contain at least one readable file");
+
+        String[] header = null;
         for (Readable readable : this.readables) {
             BufferedReader reader = this.openReader(readable);
             try {
                 String line = reader.readLine();
                 reader.close();
                 if (line != null) {
-                    return line;
+                    this.parser.parseHeader(line);
+                    header = this.parser.header();
+                    break;
                 }
             } catch (IOException e) {
                 try {
@@ -106,15 +132,19 @@ public class Readers {
                                         e, readable);
             }
         }
-        return null;
+        this.resetIndex();
+        return header;
     }
 
     public void skipOffset() {
+        long offset = this.oldProgress.loadingOffset();
+        if (offset <= 0) {
+            return;
+        }
         if (this.reader == null && (this.reader = this.openNext()) == null) {
             return;
         }
 
-        long offset = this.oldProgress.loadingOffset();
         try {
             for (long i = 0L; i < offset; i++) {
                 this.reader.readLine();
@@ -131,7 +161,7 @@ public class Readers {
      * Read next line in the files(actual are readable, called as file just for
      * convenience), open a new file to read when the previous was read to end
      */
-    public String readNextLine() throws IOException {
+    public Line readNextLine() throws IOException {
         // Open the first file need to read
         if (this.reader == null && (this.reader = this.openNext()) == null) {
             return null;
@@ -149,7 +179,11 @@ public class Readers {
         }
 
         this.newProgress.increaseLoadingOffset();
-        return line;
+        return this.parser.parse(line);
+    }
+
+    public Line parse(String line ) {
+        return this.parser.parse(line);
     }
 
     public void close() throws IOException {
@@ -168,13 +202,20 @@ public class Readers {
         }
 
         Readable readable = this.readables.get(this.index);
+        if (this.checkLoaded(readable)) {
+            return this.openNext();
+        }
+        return this.openReader(readable);
+    }
+
+    protected boolean checkLoaded(Readable readable) {
         // NOTE: calculate check sum is a bit time consuming
         InputItemProgress input = readable.inputItemProgress();
         InputItemProgress loaded = this.oldProgress.matchLoadedItem(input);
         // The file has been loaded before and it is not changed
         if (loaded != null) {
             this.newProgress.addLoadedItem(loaded);
-            return this.openNext();
+            return true;
         }
 
         InputItemProgress loading = this.oldProgress.matchLoadingItem(input);
@@ -183,7 +224,7 @@ public class Readers {
         } else {
             this.newProgress.addLoadingItem(input);
         }
-        return this.openReader(readable);
+         return false;
     }
 
     private BufferedReader openReader(Readable readable) {
@@ -250,6 +291,21 @@ public class Readers {
             default:
                 throw new LoadException("Unsupported compression format '%s'",
                                         compression);
+        }
+    }
+
+    private static LineParser createLineParser(FileSource source) {
+        FileFormat format = source.format();
+        switch (format) {
+            case CSV:
+                return new CsvLineParser(source);
+            case TEXT:
+                return new TextLineParser(source);
+            case JSON:
+                return new JsonLineParser(source);
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported file format '%s'", source));
         }
     }
 }
