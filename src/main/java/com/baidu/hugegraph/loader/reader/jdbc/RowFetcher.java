@@ -121,6 +121,8 @@ public class RowFetcher {
 
         String select = this.source.vendor().buildSelectSql(this.source,
                                                             this.nextStartRow);
+        LOG.debug("The sql for select is: {}", select);
+
         List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {

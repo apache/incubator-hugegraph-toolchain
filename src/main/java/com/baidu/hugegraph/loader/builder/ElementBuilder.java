@@ -104,7 +104,7 @@ public abstract class ElementBuilder<GE extends GraphElement>
     @Override
     public Record<GE> next() {
         Line line = this.reader.next();
-        Map<String, Object> keyValues = line.toMap();
+        Map<String, Object> keyValues = line.keyValues();
         try {
             keyValues = this.filterFields(keyValues);
             GE element = this.build(keyValues);
