@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.reader;
 import java.util.Arrays;
 import java.util.Map;
 
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 
 public final class Line {
@@ -29,21 +30,30 @@ public final class Line {
     private final String rawLine;
     private String[] names;
     private Object[] values;
-    private Map<String, Object> keyValues;
+    private final Map<String, Object> keyValues;
 
     public Line(String rawLine, Map<String, Object> keyValues) {
+        E.checkArgumentNotNull(rawLine, "The rawLine can't be null");
+        E.checkArgumentNotNull(keyValues, "The keyValues can't be null");
         this.rawLine = rawLine;
-        this.names = null;
-        this.values = null;
         this.keyValues = keyValues;
+        this.names = getNames(keyValues);
+        this.values = getValues(keyValues, this.names);
     }
 
     public Line(String rawLine, String[] names, Object[] values) {
-        assert names.length == values.length;
+        E.checkArgumentNotNull(rawLine, "The rawLine can't be null");
+        E.checkArgumentNotNull(names, "The names can't be null");
+        E.checkArgumentNotNull(values, "The values can't be null");
+        E.checkArgument(names.length == values.length,
+                        "The length of names %s should be same as values %s");
         this.rawLine = rawLine;
         this.names = names;
         this.values = values;
-        this.keyValues = null;
+        this.keyValues = InsertionOrderUtil.newMap();
+        for (int i = 0; i < this.names.length; i++) {
+            this.keyValues.put(this.names[i], this.values[i]);
+        }
     }
 
     public String rawLine() {
@@ -51,43 +61,34 @@ public final class Line {
     }
 
     public final String[] names() {
-        if (this.names != null) {
-            return this.names;
-        } else {
-            assert this.keyValues != null;
-            return this.keyValues.keySet().toArray(new String[]{});
-        }
+        return this.names;
     }
 
     public final Object[] values() {
-        if (this.values != null) {
-            return this.values;
-        } else {
-            assert this.keyValues != null;
-            String[] names = this.names();
-            Object[] values = new Object[names.length];
-            for (int i = 0; i < names.length; i++) {
-                values[i] = this.keyValues.get(names[i]);
-            }
-            return values;
-        }
+        return this.values;
     }
 
-    public Map<String, Object> toMap() {
-        if (this.keyValues != null) {
-            return this.keyValues;
-        }
-        String[] names = this.names();
-        Object[] values = this.values();
-        this.keyValues = InsertionOrderUtil.newMap();
-        for (int i = 0, n = names.length; i < n; i++) {
-            this.keyValues.put(names[i], values[i]);
-        }
+    public Map<String, Object> keyValues() {
         return this.keyValues;
     }
 
     public void retainAll(String[] names) {
-        this.toMap().keySet().retainAll(Arrays.asList(names));
+        this.keyValues.keySet().retainAll(Arrays.asList(names));
+        this.names = getNames(keyValues);
+        this.values = getValues(keyValues, this.names);
+    }
+
+    private static String[] getNames(Map<String, Object> keyValues) {
+        return keyValues.keySet().toArray(new String[]{});
+    }
+
+    private static Object[] getValues(Map<String, Object> keyValues,
+                                      String[] names) {
+        Object[] values = new Object[names.length];
+        for (int i = 0; i < names.length; i++) {
+            values[i] = keyValues.get(names[i]);
+        }
+        return values;
     }
 
     @Override
