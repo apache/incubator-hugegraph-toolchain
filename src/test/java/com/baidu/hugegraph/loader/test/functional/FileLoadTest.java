@@ -547,7 +547,7 @@ public class FileLoadTest extends LoadTest {
         String[] args = new String[]{
                 "-f", structPath(
                 "value_list_property_in_text_file_with_elem_delimiter/struct.json"),
-                "-s", structPath(
+                "-s", configPath(
                 "value_list_property_in_text_file_with_elem_delimiter/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -576,7 +576,7 @@ public class FileLoadTest extends LoadTest {
         String[] args = new String[]{
                 "-f", structPath(
                 "value_list_property_in_text_file_with_symbols/struct.json"),
-                "-s", structPath(
+                "-s", configPath(
                 "value_list_property_in_text_file_with_symbols/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -602,7 +602,7 @@ public class FileLoadTest extends LoadTest {
         String[] args = new String[]{
                 "-f", structPath(
                 "value_list_property_in_csv_file_with_same_delimiter/struct.json"),
-                "-s", structPath(
+                "-s", configPath(
                 "value_list_property_in_csv_file_with_same_delimiter/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -1674,7 +1674,7 @@ public class FileLoadTest extends LoadTest {
         String[] args = new String[]{
                 "-f", structPath(
                 "update_by_strategy_without_symbol/struct.json"),
-                "-s", structPath(
+                "-s", configPath(
                 "update_by_strategy_without_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -1713,7 +1713,7 @@ public class FileLoadTest extends LoadTest {
         String[] args = new String[]{
                 "-f", structPath(
                 "update_by_strategy_without_symbol/no_list_format_struct.json"),
-                "-s", structPath(
+                "-s", configPath(
                 "update_by_strategy_without_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
