@@ -1,0 +1,7 @@
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <!-- invalid namenode port -->
+        <value>hdfs://localhost:8030</value>
+    </property>
+</configuration>

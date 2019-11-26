@@ -1,0 +1,58 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.txt",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "TEXT",
+        "delimiter": "\t",
+        "header": ["name", "age", "city"],
+        "charset": "UTF-8"
+      },
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.txt",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "header": ["name", "lang", "price"],
+        "format": "TEXT",
+        "delimiter": "\t"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "label": "use",
+      "source": ["person_name"],
+      "target": ["software_name"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_use.txt",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "header": ["person_name", "software_name", "feel", "time"],
+        "format": "TEXT",
+        "delimiter": "\t",
+        "date_format": "yyyy-MM-dd",
+        "list_format": {
+          "start_symbol": "[",
+          "end_symbol": "]",
+          "elem_delimiter": ","
+        }
+      },
+      "null_values": [""],
+      "field_mapping": {
+        "person_name": "name",
+        "software_name": "name"
+      }
+    }
+  ]
+}

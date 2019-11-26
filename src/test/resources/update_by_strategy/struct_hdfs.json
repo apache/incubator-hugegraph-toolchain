@@ -1,0 +1,55 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "update_strategies": {
+        "age": "SMALLER",
+        "set": "UNION"
+      },
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.txt",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "TEXT",
+        "delimiter": "\t",
+        "header": ["name", "age", "set"],
+        "charset": "UTF-8",
+        "list_format": {
+          "start_symbol": "[",
+          "end_symbol": "]",
+          "elem_delimiter": ","
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "label": "likes",
+      "source": ["from"],
+      "target": ["to"],
+      "update_strategies": {
+        "age": "SUM",
+        "list": "APPEND"
+      },
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_likes.txt",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "header": ["from", "to", "age", "list"],
+        "format": "TEXT",
+        "delimiter": "\t",
+        "date_format": "yyyy-MM-dd",
+        "list_format": {
+          "start_symbol": "[",
+          "end_symbol": "]",
+          "elem_delimiter": ","
+        }
+      },
+      "null_values": [""],
+      "field_mapping": {
+        "from": "name",
+        "to": "name"
+      }
+    }
+  ]
+}

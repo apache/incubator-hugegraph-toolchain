@@ -1,0 +1,60 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_knows.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      },
+      "field_mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    },
+    {
+      "label": "created",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_created.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      },
+      "field_mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    }
+  ]
+}

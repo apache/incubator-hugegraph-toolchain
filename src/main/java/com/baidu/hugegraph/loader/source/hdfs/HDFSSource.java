@@ -21,20 +21,29 @@ package com.baidu.hugegraph.loader.source.hdfs;
 
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 
 public class HDFSSource extends FileSource {
 
-    @JsonProperty("fs_default_fs")
-    private String fsDefaultFS;
+    @JsonProperty("core_site_path")
+    private String coreSitePath;
 
     @Override
     public SourceType type() {
         return SourceType.HDFS;
     }
 
-    public String fsDefaultFS() {
-        return this.fsDefaultFS;
+    @Override
+    public void check() throws IllegalArgumentException {
+        super.check();
+        E.checkArgument(!StringUtils.isEmpty(this.coreSitePath),
+                        "The core_site_path can't be empty");
+    }
+
+    public String coreSitePath() {
+        return this.coreSitePath;
     }
 
     @Override

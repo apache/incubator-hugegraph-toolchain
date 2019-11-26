@@ -21,8 +21,6 @@ package com.baidu.hugegraph.loader.reader.hdfs;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,7 +52,7 @@ public class HDFSFileReader extends FileReader {
         super(source);
         Configuration config = this.loadConfiguration();
         try {
-            this.hdfs = FileSystem.get(URI.create(source.path()), config);
+            this.hdfs = FileSystem.get(config);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
@@ -106,23 +104,7 @@ public class HDFSFileReader extends FileReader {
 
     private Configuration loadConfiguration() {
         Configuration conf = new Configuration();
-        String fsDefaultFS = this.source().fsDefaultFS();
-        // Remote hadoop
-        if (fsDefaultFS != null) {
-            // TODO: Support pass more params or specify config files
-            conf.set("fs.defaultFS", fsDefaultFS);
-            return conf;
-        }
-        // Local hadoop
-        String hadoopHome = System.getenv("HADOOP_HOME");
-        if (hadoopHome != null && !hadoopHome.isEmpty()) {
-            LOG.info("Get HADOOP_HOME {}", hadoopHome);
-            String path = Paths.get(hadoopHome, "etc", "hadoop").toString();
-            conf.addResource(path(path, "/core-site.xml"));
-            conf.addResource(path(path, "/hdfs-site.xml"));
-            conf.addResource(path(path, "/mapred-site.xml"));
-            conf.addResource(path(path, "/yarn-site.xml"));
-        }
+        conf.addResource(new Path(this.source().coreSitePath()));
         return conf;
     }
 
@@ -136,10 +118,6 @@ public class HDFSFileReader extends FileReader {
             throw new LoadException("An exception occurred while checking " +
                                     "HDFS path: '%s'", e, path);
         }
-    }
-
-    private static Path path(String configPath, String configFile) {
-        return new Path(Paths.get(configPath, configFile).toString());
     }
 
     protected static class HDFSFile implements Readable {

@@ -163,8 +163,9 @@
             </activation>
             <properties>
                 <source_type>hdfs</source_type>
-                <store_path>hdfs://localhost:8020/files</store_path>
-                <test-classes>**/FileLoadTest.java</test-classes>
+                <!-- same as hdfs://localhost:8020/files -->
+                <store_path>/files</store_path>
+                <test-classes>**/HDFSLoadTest.java</test-classes>
             </properties>
         </profile>
         <profile>

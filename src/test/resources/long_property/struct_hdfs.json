@@ -1,0 +1,15 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_long_property.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "header": ["name", "age", "city", "weight"],
+        "charset": "UTF-8"
+      }
+    }
+  ]
+}
