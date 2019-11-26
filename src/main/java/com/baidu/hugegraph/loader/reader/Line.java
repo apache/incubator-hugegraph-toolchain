@@ -46,12 +46,12 @@ public final class Line {
         E.checkArgumentNotNull(names, "The names can't be null");
         E.checkArgumentNotNull(values, "The values can't be null");
         E.checkArgument(names.length == values.length,
-                        "The length of names %s should same as values %s");
+                        "The length of names %s should be same as values %s");
         this.rawLine = rawLine;
         this.names = names;
         this.values = values;
         this.keyValues = InsertionOrderUtil.newMap();
-        for (int i = 0, n = this.names.length; i < n; i++) {
+        for (int i = 0; i < this.names.length; i++) {
             this.keyValues.put(this.names[i], this.values[i]);
         }
     }
