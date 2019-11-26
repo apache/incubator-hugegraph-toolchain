@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.reader;
 import java.util.Arrays;
 import java.util.Map;
 
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 
 public final class Line {
@@ -32,6 +33,8 @@ public final class Line {
     private final Map<String, Object> keyValues;
 
     public Line(String rawLine, Map<String, Object> keyValues) {
+        E.checkArgumentNotNull(rawLine, "The rawLine can't be null");
+        E.checkArgumentNotNull(keyValues, "The keyValues can't be null");
         this.rawLine = rawLine;
         this.keyValues = keyValues;
         this.names = getNames(keyValues);
@@ -39,7 +42,11 @@ public final class Line {
     }
 
     public Line(String rawLine, String[] names, Object[] values) {
-        assert names.length == values.length;
+        E.checkArgumentNotNull(rawLine, "The rawLine can't be null");
+        E.checkArgumentNotNull(names, "The names can't be null");
+        E.checkArgumentNotNull(values, "The values can't be null");
+        E.checkArgument(names.length == values.length,
+                        "The length of names %s should same as values %s");
         this.rawLine = rawLine;
         this.names = names;
         this.values = values;

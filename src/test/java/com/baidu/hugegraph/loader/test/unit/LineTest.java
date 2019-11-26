@@ -28,6 +28,27 @@ import com.google.common.collect.ImmutableMap;
 public class LineTest {
 
     @Test
+    public void testInvalidParam() {
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            new Line(null, ImmutableMap.of("id", 1, "name", "marko"));
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            new Line("1,marko", null);
+        });
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            new Line(null, new String[]{"id", "name"},
+                     new Object[]{1, "marko"});
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            new Line("1,marko", null, new Object[]{1, "marko"});
+        });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            new Line("1,marko", new String[]{"id", "name"}, null);
+        });
+    }
+
+    @Test
     public void testKeyValues() {
         Line line = new Line("1,marko,27",
                              new String[]{"id", "name", "age"},
