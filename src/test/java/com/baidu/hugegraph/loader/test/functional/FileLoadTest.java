@@ -1237,7 +1237,7 @@ public class FileLoadTest extends LoadTest {
                      "vadas,2000-01-01 13:00:00,Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("default_timezone_gmt8/struct.json"),
+                "-f", structPath("default_timezone_gmt8/struct.json"),
                 "-s", configPath("default_timezone_gmt8/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -1266,7 +1266,7 @@ public class FileLoadTest extends LoadTest {
                      "vadas,2000-01-01 13:00:00,Hongkong");
 
         String[] args = new String[]{
-                "-f", configPath("customized_timezone_gmt0/struct.json"),
+                "-f", structPath("customized_timezone_gmt0/struct.json"),
                 "-s", configPath("customized_timezone_gmt0/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
