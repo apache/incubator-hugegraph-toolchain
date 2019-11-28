@@ -17,32 +17,27 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api;
+package com.baidu.hugegraph.api.traverser;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarity;
+import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarityRequest;
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.rest.RestResult;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PropertyKeyApiTest.class,
-    VertexLabelApiTest.class,
-    EdgeLabelApiTest.class,
-    IndexLabelApiTest.class,
-    VertexApiTest.class,
-    EdgeApiTest.class,
-    GremlinApiTest.class,
-    VariablesApiTest.class,
-    TaskApiTest.class,
-    JobApiTest.class,
-    RestoreApiTest.class,
-    TraverserApiTest.class,
-    RingsRaysApiTest.class,
-    ShortestPathApiTest.class,
-    CustomizedPathsApiTest.class,
-    FusiformSimilarityApiTest.class,
-    NeighborRankApiTest.class,
-    PersonalRankApiTest.class,
-    BatchUpdateElementApiTest.class
-})
-public class ApiTestSuite {
+public class FusiformSimilarityAPI extends TraversersAPI {
+
+    public FusiformSimilarityAPI(RestClient client, String graph) {
+        super(client, graph);
+    }
+
+    @Override
+    protected String type() {
+        return "fusiformsimilarity";
+    }
+
+    public FusiformSimilarity post(FusiformSimilarityRequest request) {
+        this.client.checkApiVersion("0.49", "fusiform similarity");
+        RestResult result = this.client.post(this.path(), request);
+        return result.readObject(FusiformSimilarity.class);
+    }
 }

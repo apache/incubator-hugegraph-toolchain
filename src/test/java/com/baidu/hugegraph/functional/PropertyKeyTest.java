@@ -131,7 +131,7 @@ public class PropertyKeyTest extends BaseFuncTest {
     }
 
     @Test
-    public void testResetVertexLabelId() {
+    public void testResetPropertyKeyId() {
         SchemaManager schema = schema();
         PropertyKey age = schema.propertyKey("age")
                                 .userdata("min", 0)
@@ -139,7 +139,7 @@ public class PropertyKeyTest extends BaseFuncTest {
                                 .create();
         Assert.assertTrue(age.id() > 0);
         age.resetId();
-        Assert.assertEquals(0, age.id());
+        Assert.assertEquals(0L, age.id());
     }
 
     @Test

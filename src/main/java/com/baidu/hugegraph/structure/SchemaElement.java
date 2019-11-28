@@ -48,7 +48,7 @@ public abstract class SchemaElement extends Element {
         this.checkExist = true;
     }
 
-    public long id() {
+    public Long id() {
         return this.id;
     }
 

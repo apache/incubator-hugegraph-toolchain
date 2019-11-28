@@ -39,6 +39,7 @@ import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedCrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
 import com.baidu.hugegraph.api.traverser.EdgesAPI;
+import com.baidu.hugegraph.api.traverser.FusiformSimilarityAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
 import com.baidu.hugegraph.api.traverser.NeighborRankAPI;
@@ -72,6 +73,7 @@ public class BaseApiTest extends BaseClientTest {
     protected static RaysAPI raysAPI;
     protected static CustomizedPathsAPI customizedPathsAPI;
     protected static CustomizedCrosspointsAPI customizedCrosspointsAPI;
+    protected static FusiformSimilarityAPI fusiformSimilarityAPI;
     protected static NeighborRankAPI neighborRankAPI;
     protected static PersonalRankAPI personalRankAPI;
     protected static VerticesAPI verticesAPI;
@@ -101,6 +103,7 @@ public class BaseApiTest extends BaseClientTest {
         raysAPI = new RaysAPI(client, GRAPH);
         customizedPathsAPI = new CustomizedPathsAPI(client, GRAPH);
         customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client, GRAPH);
+        fusiformSimilarityAPI = new FusiformSimilarityAPI(client, GRAPH);
         neighborRankAPI = new NeighborRankAPI(client, GRAPH);
         personalRankAPI = new PersonalRankAPI(client, GRAPH);
         verticesAPI = new VerticesAPI(client, GRAPH);

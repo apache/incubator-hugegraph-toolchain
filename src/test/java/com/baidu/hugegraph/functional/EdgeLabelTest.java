@@ -265,7 +265,7 @@ public class EdgeLabelTest extends BaseFuncTest {
     }
 
     @Test
-    public void testResetVertexLabelId() {
+    public void testResetEdgeLabelId() {
         SchemaManager schema = schema();
         schema.vertexLabel("person")
               .properties("name", "age", "city")
@@ -285,7 +285,7 @@ public class EdgeLabelTest extends BaseFuncTest {
                                 .create();
         Assert.assertTrue(write.id() > 0);
         write.resetId();
-        Assert.assertEquals(0, write.id());
+        Assert.assertEquals(0L, write.id());
     }
 
     @Test

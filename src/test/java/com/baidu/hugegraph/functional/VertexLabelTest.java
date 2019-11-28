@@ -155,7 +155,7 @@ public class VertexLabelTest extends BaseFuncTest {
                                    .properties("name").create();
         Assert.assertTrue(player.id() > 0);
         player.resetId();
-        Assert.assertEquals(0, player.id());
+        Assert.assertEquals(0L, player.id());
     }
 
     @Test

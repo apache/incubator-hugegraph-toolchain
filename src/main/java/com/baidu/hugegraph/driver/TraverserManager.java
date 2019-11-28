@@ -19,12 +19,6 @@
 
 package com.baidu.hugegraph.driver;
 
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
-
 import java.util.Iterator;
 import java.util.List;
 
@@ -32,6 +26,7 @@ import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedCrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
 import com.baidu.hugegraph.api.traverser.EdgesAPI;
+import com.baidu.hugegraph.api.traverser.FusiformSimilarityAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
 import com.baidu.hugegraph.api.traverser.NeighborRankAPI;
@@ -44,6 +39,8 @@ import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.api.traverser.structure.CrosspointsRequest;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedCrosspoints;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedPaths;
+import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarity;
+import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarityRequest;
 import com.baidu.hugegraph.api.traverser.structure.PathsRequest;
 import com.baidu.hugegraph.api.traverser.structure.Ranks;
 import com.baidu.hugegraph.client.RestClient;
@@ -56,6 +53,12 @@ import com.baidu.hugegraph.structure.graph.Shard;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.util.E;
+
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
 
 public class TraverserManager {
 
@@ -70,6 +73,7 @@ public class TraverserManager {
     private RaysAPI raysAPI;
     private CustomizedPathsAPI customizedPathsAPI;
     private CustomizedCrosspointsAPI customizedCrosspointsAPI;
+    private FusiformSimilarityAPI fusiformSimilarityAPI;
     private NeighborRankAPI neighborRankAPI;
     private PersonalRankAPI personalRankAPI;
     private VerticesAPI verticesAPI;
@@ -88,6 +92,7 @@ public class TraverserManager {
         this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
         this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client,
                                                                      graph);
+        this.fusiformSimilarityAPI = new FusiformSimilarityAPI(client, graph);
         this.neighborRankAPI = new NeighborRankAPI(client, graph);
         this.personalRankAPI = new PersonalRankAPI(client, graph);
         this.verticesAPI = new VerticesAPI(client, graph);
@@ -253,6 +258,11 @@ public class TraverserManager {
     public CustomizedCrosspoints customizedCrosspointss(
                                  CrosspointsRequest request) {
         return this.customizedCrosspointsAPI.post(request);
+    }
+
+    public FusiformSimilarity fusiformSimilarity(
+                              FusiformSimilarityRequest request) {
+        return this.fusiformSimilarityAPI.post(request);
     }
 
     public List<Ranks> neighborRank(NeighborRankAPI.Request request) {
