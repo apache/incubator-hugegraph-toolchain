@@ -90,7 +90,7 @@ public class TaskCache {
     }
 
     private synchronized void stop() {
-        if (this.taskTable.isEmpty()) {
+        if (this.taskTable.isEmpty() && this.service != null) {
             this.service.shutdown();
         }
     }
