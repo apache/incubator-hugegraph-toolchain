@@ -114,7 +114,9 @@ public class FileSource extends AbstractSource {
     @Override
     public FileSource asFileSource() {
         FileSource source = new FileSource();
-        source.header(this.header());
+        if (this.header() != null) {
+            source.header(this.header());
+        }
         source.charset(this.charset());
         source.listFormat(this.listFormat());
         source.path = this.path;
