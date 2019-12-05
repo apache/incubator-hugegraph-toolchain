@@ -48,7 +48,11 @@ public abstract class AbstractSource implements InputSource {
     }
 
     public void header(String[] header) {
-        this.header = Arrays.asList(header);
+        if (header == null) {
+            this.header = null;
+        } else {
+            this.header = Arrays.asList(header);
+        }
     }
 
     @Override

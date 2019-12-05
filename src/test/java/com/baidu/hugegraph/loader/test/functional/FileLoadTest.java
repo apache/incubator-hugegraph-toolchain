@@ -22,7 +22,6 @@ package com.baidu.hugegraph.loader.test.functional;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -2218,6 +2217,104 @@ public class FileLoadTest extends LoadTest {
                 Assert.assertEquals(4, fileItem.offset());
             }
         });
+
+        FileUtils.forceDeleteOnExit(structDir);
+    }
+
+    @Test
+    public void testReloadJsonFailureFiles() throws IOException,
+                                                    InterruptedException {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "tom,28,Wuhan");
+        ioUtil.write("edge_knows.json",
+                     "{\"source_name\": \"marko\", \"target_name\": " +
+                     "\"vadas\", \"date\": \"2016-01-10 12:00:00\"," +
+                     "\"weight\": 0.5}",
+                     // unexisted source and target vertex
+                     "{\"source_name\": \"marko1\", \"target_name\": " +
+                     "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
+                     "\"weight\": 1.0}");
+
+        String[] args = new String[]{
+                "-f", structPath("reload_json_failure_files/struct.json"),
+                "-s", configPath("reload_json_failure_files/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "true",
+                "--num-threads", "2",
+                "--max-parse-errors", "1",
+                "--test-mode", "false"
+        };
+        HugeGraphLoader loader = new HugeGraphLoader(args);
+        loader.load();
+        LoadContext context = Whitebox.getInternalState(loader, "context");
+
+        List<Edge> edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(1, edges.size());
+
+        InputProgressMap progresses = context.newProgress().edge();
+        Assert.assertEquals(1, progresses.size());
+        progresses.forEach((key, value) -> {
+            Assert.assertTrue(key.startsWith("knows"));
+            // The error line is exactly last line
+            Set<InputItemProgress> loadedItems = value.loadedItems();
+            Assert.assertEquals(1, loadedItems.size());
+
+            InputItemProgress loadedItem = loadedItems.iterator().next();
+            FileItemProgress fileItem = (FileItemProgress) loadedItem;
+            Assert.assertEquals("edge_knows.json", fileItem.name());
+            Assert.assertEquals(2, fileItem.offset());
+        });
+
+        // Reload without modification
+        args = new String[]{
+                "-f", structPath("reload_json_failure_files/struct.json"),
+                "-s", configPath("reload_json_failure_files/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--incremental-mode", "true",
+                "--reload-failure", "true",
+                "--check-vertex", "true",
+                "--num-threads", "2",
+                "--max-parse-errors", "1",
+                "--test-mode", "false"
+        };
+        // No exception throw, but error line still exist
+        HugeGraphLoader.main(args);
+        Thread.sleep(1000);
+
+        // Reload with modification
+        File structDir = FileUtils.getFile(structPath(
+                         "reload_json_failure_files/struct"));
+        File currentDir = FileUtils.getFile(structPath(
+                          "reload_json_failure_files/struct/current/"));
+        File[] files = currentDir.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(1, files.length);
+
+        File knowsFailureFile = files[0];
+        List<String> failureLines = FileUtils.readLines(knowsFailureFile,
+                                                        Constants.CHARSET);
+        Assert.assertEquals(2, failureLines.size());
+        Assert.assertEquals("{\"source_name\": \"marko1\", \"target_name\": " +
+                            "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
+                            "\"weight\": 1.0}",
+                            failureLines.get(1));
+
+        failureLines.remove(1);
+        failureLines.add("{\"source_name\": \"marko\", \"target_name\": " +
+                         "\"tom\", \"date\": \"2013-02-20 13:00:00\"," +
+                         "\"weight\": 1.0}");
+        FileUtils.writeLines(knowsFailureFile, failureLines, false);
+
+        // No exception throw, and error line doesn't exist
+        HugeGraphLoader.main(args);
+
+        edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(2, edges.size());
 
         FileUtils.forceDeleteOnExit(structDir);
     }

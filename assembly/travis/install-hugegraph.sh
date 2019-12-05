@@ -2,33 +2,19 @@
 
 set -ev
 
-if [ $# -ne 1 ]; then
-    echo "Must pass base branch name of pull request"
+if [[ $# -ne 1 ]]; then
+    echo "Must pass server version of hugegraph"
     exit 1
 fi
 
-LOADER_BRANCH=$1
-HUGEGRAPH_BRANCH=$LOADER_BRANCH
+VERSION=$1
+HUGEGRAPH_LINK="https://github.com/hugegraph/hugegraph/releases/download/v${VERSION}/hugegraph-${VERSION}.tar.gz"
 
-HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
+wget ${HUGEGRAPH_LINK} || exit 1
 
-git clone $HUGEGRAPH_GIT_URL || exit 1
+tar -zxvf hugegraph-${VERSION}.tar.gz
 
-cd hugegraph
-
-git checkout $HUGEGRAPH_BRANCH || exit 1
-
-mvn package -DskipTests || exit 1
-
-mv hugegraph-*.tar.gz ../
-
-cd ../
-
-rm -rf hugegraph
-
-tar -zxvf hugegraph-*.tar.gz
-
-cd hugegraph-*
+cd hugegraph-${VERSION}
 
 bin/init-store.sh || exit 1
 

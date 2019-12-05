@@ -1,0 +1,35 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "format": "CSV",
+        "header": ["name", "age", "city"],
+        "charset": "UTF-8",
+        "skipped_line": {
+          "regex": "(^#|^//).*"
+        }
+      },
+      "null_values": ["NULL", "null", ""]
+    }
+  ],
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_knows.json",
+        "format": "JSON",
+        "date_format": "yyyy-MM-dd HH:mm:ss"
+      },
+      "field_mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    }
+  ]
+}
