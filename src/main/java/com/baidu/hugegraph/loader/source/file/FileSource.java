@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.source.file;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
+import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -37,6 +38,8 @@ public class FileSource extends AbstractSource {
     private String delimiter;
     @JsonProperty("date_format")
     private String dateFormat;
+    @JsonProperty("time_zone")
+    private String timeZone;
     @JsonProperty("skipped_line")
     private SkippedLine skippedLine;
     @JsonProperty("compression")
@@ -48,6 +51,7 @@ public class FileSource extends AbstractSource {
         this.format = FileFormat.CSV;
         this.delimiter = Constants.COMMA_STR;
         this.dateFormat = Constants.DATE_FORMAT;
+        this.timeZone = Constants.TIME_ZONE;
         this.skippedLine = new SkippedLine();
         this.compression = Compression.NONE;
     }
@@ -66,6 +70,8 @@ public class FileSource extends AbstractSource {
                             "is %s, but got '%s'", Constants.COMMA_STR,
                             this.format, this.delimiter);
         }
+        E.checkArgument(DateUtil.checkTimeZone(this.timeZone),
+                        "The time_zone '%s' is invalid", this.timeZone);
         if (this.listFormat() != null) {
             String elemDelimiter = this.listFormat().elemDelimiter();
             E.checkArgument(!elemDelimiter.equals(this.delimiter),
@@ -101,6 +107,10 @@ public class FileSource extends AbstractSource {
 
     public String dateFormat() {
         return this.dateFormat;
+    }
+
+    public String timeZone() {
+        return this.timeZone;
     }
 
     public SkippedLine skippedLine() {

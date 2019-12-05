@@ -1,0 +1,22 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person_birth_date.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "header": ["name", "birth", "city"],
+        "charset": "UTF-8",
+        "date_format": "yyyy-MM-dd HH:mm:ss",
+        "time_zone": "GMT+0"
+      },
+      "field_mapping": {
+        "name": "name",
+        "birth": "birth",
+        "city": "city"
+      }
+    }
+  ]
+}

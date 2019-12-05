@@ -120,7 +120,8 @@ public final class DataTypeUtil {
                          "Only accept FileSource when convert String value " +
                          "to Date, but got '%s'", source.getClass().getName());
             String df = ((FileSource) source).dateFormat();
-            return parseDate(value, df);
+            String timeZone = ((FileSource) source).timeZone();
+            return parseDate(value, df, timeZone);
         } else if (dataType.isUUID()) {
             return parseUUID(value);
         }
@@ -249,7 +250,7 @@ public final class DataTypeUtil {
         }
     }
 
-    private static Date parseDate(Object value, String df) {
+    private static Date parseDate(Object value, String df, String timeZone) {
         if (value instanceof Date) {
             return (Date) value;
         }
@@ -257,7 +258,7 @@ public final class DataTypeUtil {
             return new Date(((Number) value).longValue());
         } else if (value instanceof String) {
             try {
-                return DateUtil.parse((String) value, df);
+                return DateUtil.parse((String) value, df, timeZone);
             } catch (ParseException e) {
                 throw new IllegalArgumentException(String.format(
                           "%s, expect format: %s",

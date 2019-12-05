@@ -25,6 +25,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     LineTest.class,
+    DateUtilTest.class,
     LoadProgressTest.class
 })
 public class UnitTestSuite {
