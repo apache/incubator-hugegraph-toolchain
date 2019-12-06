@@ -1,5 +1,6 @@
 package com.baidu.hugegraph.loader.reader.file;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.Readable;
@@ -25,29 +26,34 @@ public class OrcReaders extends Readers {
     private static final Logger LOG = Log.logger(OrcReaders.class);
 
     private OrcReader orcReader;
+    private Configuration conf;
 
-    public OrcReaders(FileSource source, List<Readable> readables) {
+    public OrcReaders(FileSource source, List<Readable> readables,
+                      Configuration conf) {
         super(source, readables);
+        this.conf = conf;
     }
 
     @Override
     public Line readNextLine() throws IOException {
         // Open the first file need to read
         if (this.orcReader == null &&
-            (this.orcReader = this.openNext()) == null) {
+           (this.orcReader = this.openNext()) == null) {
             return null;
         }
 
-        Line line = null;
-        if(this.orcReader.recordReader.hasNext()) {
-            this.orcReader.row = this.orcReader.recordReader.next(this.orcReader.row);
-            Object[] values = this.orcReader.inspector.getStructFieldsDataAsList(
-                              this.orcReader.row).toArray();
-            String[] names = parseHeader(this.orcReader.inspector);
-            String rowLine = StringUtils.join(values,",");
-            return new Line(rowLine,names,values);
+        if (!this.orcReader.recordReader.hasNext()) {
+            return null;
         }
-        return line;
+
+        this.orcReader.row = this.orcReader.recordReader.next(this.orcReader.row);
+        String[] names = parseHeader(this.orcReader.inspector);
+        Object[] values = this.orcReader.inspector.getStructFieldsDataAsList(
+                          this.orcReader.row).stream().map(Object::toString)
+                                             .toArray();
+
+        String rowLine = StringUtils.join(values, Constants.COMMA_STR);
+        return new Line(rowLine, names, values);
     }
 
     @Override
@@ -71,8 +77,6 @@ public class OrcReaders extends Readers {
 
     private String[] parseHeader(StructObjectInspector inspector) {
         List<? extends StructField> fields = inspector.getAllStructFieldRefs();
-        fields.get(0).getFieldName();
-
         return fields.stream().map(StructField::getFieldName)
                      .collect(Collectors.toList())
                      .toArray(new String[]{});
@@ -80,11 +84,9 @@ public class OrcReaders extends Readers {
 
 
     private Reader openReader(Readable readable) {
-        Path filePath = new Path(source.path() + "/" + readable.name());
-
+        Path filePath = new Path(source.path());
         try {
-            Configuration conf = new Configuration();
-            return OrcFile.createReader(filePath, OrcFile.readerOptions(conf));
+            return OrcFile.createReader(filePath, OrcFile.readerOptions(this.conf));
         } catch (IOException e) {
             throw new LoadException("Failed to open orcReader for '%s'",
                                     e, readable);
@@ -111,15 +113,15 @@ public class OrcReaders extends Readers {
 
     private static class OrcReader {
 
-        public Reader orcReader;
-        public RecordReader recordReader;
-        public StructObjectInspector inspector;
-        public Object row;
+        private Reader reader;
+        private RecordReader recordReader;
+        private StructObjectInspector inspector;
+        private Object row;
 
-        public OrcReader(Reader orcReader) throws IOException {
-            this.orcReader = orcReader;
-            this.recordReader = orcReader.rows();
-            this.inspector = (StructObjectInspector) orcReader.getObjectInspector();
+        public OrcReader(Reader reader) throws IOException {
+            this.reader = reader;
+            this.recordReader = reader.rows();
+            this.inspector = (StructObjectInspector) reader.getObjectInspector();
             this.row = null;
         }
 

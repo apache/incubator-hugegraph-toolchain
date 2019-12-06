@@ -27,8 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import javax.ws.rs.NotFoundException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -2285,10 +2283,10 @@ public class FileLoadTest extends LoadTest {
     public void testReloadJsonFailureFiles() throws IOException,
                                                     InterruptedException {
         ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing",
-                     "vadas,27,Hongkong",
-                     "tom,28,Wuhan");
+                "name,age,city",
+                "marko,29,Beijing",
+                "vadas,27,Hongkong",
+                "tom,28,Wuhan");
         ioUtil.write("edge_knows.json",
                      "{\"source_name\": \"marko\", \"target_name\": " +
                      "\"vadas\", \"date\": \"2016-01-10 12:00:00\"," +
@@ -2357,17 +2355,17 @@ public class FileLoadTest extends LoadTest {
 
         File knowsFailureFile = files[0];
         List<String> failureLines = FileUtils.readLines(knowsFailureFile,
-                                                        Constants.CHARSET);
+                Constants.CHARSET);
         Assert.assertEquals(2, failureLines.size());
         Assert.assertEquals("{\"source_name\": \"marko1\", \"target_name\": " +
-                            "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
-                            "\"weight\": 1.0}",
-                            failureLines.get(1));
+                        "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
+                        "\"weight\": 1.0}",
+                failureLines.get(1));
 
         failureLines.remove(1);
         failureLines.add("{\"source_name\": \"marko\", \"target_name\": " +
-                         "\"tom\", \"date\": \"2013-02-20 13:00:00\"," +
-                         "\"weight\": 1.0}");
+                "\"tom\", \"date\": \"2013-02-20 13:00:00\"," +
+                "\"weight\": 1.0}");
         FileUtils.writeLines(knowsFailureFile, failureLines, false);
 
         // No exception throw, and error line doesn't exist
