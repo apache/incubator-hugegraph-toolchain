@@ -7,12 +7,9 @@
         "path": "${store_path}/vertex_person.orc",
         "format": "CSV",
         "charset": "UTF-8",
-        "compression": "ORC"
-      },
-      "field_mapping": {
-        "name": "name",
-        "age": "age",
-        "city": "city"
+        "compression": "ORC",
+        "date_format": "yyyy-MM-dd",
+        "time_zone": "GMT+0"
       }
     }
   ]

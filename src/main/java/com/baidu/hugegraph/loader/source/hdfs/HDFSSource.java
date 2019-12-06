@@ -19,10 +19,15 @@
 
 package com.baidu.hugegraph.loader.source.hdfs;
 
+import java.io.File;
+import java.nio.file.Paths;
+
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class HDFSSource extends FileSource {
@@ -40,6 +45,10 @@ public class HDFSSource extends FileSource {
         super.check();
         E.checkArgument(!StringUtils.isEmpty(this.coreSitePath),
                         "The core_site_path can't be empty");
+        File file = FileUtils.getFile(Paths.get(this.coreSitePath).toString());
+        E.checkArgument(file.exists() && file.isFile(),
+                        "Please ensure the core site file exists: '%s' and " +
+                        "is indeed a file", file);
     }
 
     public String coreSitePath() {

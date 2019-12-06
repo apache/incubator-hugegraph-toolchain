@@ -96,11 +96,6 @@ public final class InputProgress {
         return this.loadingItem == null ? 0L : this.loadingItem.offset();
     }
 
-    public void increaseLoadingOffset() {
-        assert this.loadingItem != null;
-        this.loadingItem.increaseOffset();
-    }
-
     public void markLoaded(boolean markAll) {
         if (!this.loadingItems.isEmpty()) {
             this.loadedItems.addAll(this.loadingItems);

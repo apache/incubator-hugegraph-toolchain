@@ -21,7 +21,6 @@ package com.baidu.hugegraph.loader.test.functional;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
@@ -30,11 +29,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.ql.io.orc.OrcFile;
-import org.apache.hadoop.hive.ql.io.orc.Writer;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -46,19 +40,30 @@ public class HDFSUtil implements IOUtil {
     private static final Logger LOG = Log.logger(HDFSUtil.class);
 
     private final String storePath;
+    private final Configuration conf;
     private final FileSystem hdfs;
 
     public HDFSUtil(String storePath) {
         this.storePath = storePath;
-        Configuration config = loadConfiguration();
+        this.conf = loadConfiguration();
         // HDFS doesn't support write by default
-        config.setBoolean("dfs.support.write", true);
-        config.setBoolean("fs.hdfs.impl.disable.cache", true);
+        this.conf.setBoolean("dfs.support.write", true);
+        this.conf.setBoolean("fs.hdfs.impl.disable.cache", true);
         try {
-            this.hdfs = FileSystem.get(URI.create(storePath), config);
+            this.hdfs = FileSystem.get(URI.create(storePath), this.conf);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
+    }
+
+    @Override
+    public String storePath() {
+        return this.storePath;
+    }
+
+    @Override
+    public Configuration config() {
+        return this.conf;
     }
 
     private static Configuration loadConfiguration() {
@@ -109,24 +114,6 @@ public class HDFSUtil implements IOUtil {
                           "compression format",
                           Arrays.asList(lines), path, compression), e);
             }
-        }
-    }
-
-    @Override
-    public void writeOrc(String fileName, TypeInfo typeInfo, Object... values) {
-        Path path = new Path(this.storePath, fileName);
-        ObjectInspector inspector =
-                TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo);
-        OrcFile.WriterOptions options =
-                OrcFile.writerOptions(loadConfiguration()).inspector(inspector);
-        try {
-            Writer writer = OrcFile.createWriter(path, options);
-            writer.addRow(Arrays.asList(values));
-            writer.close();
-        } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                    "Failed to write lines '%s' to file '%s' in ORC " +
-                    "compression format", Arrays.asList(values), path), e);
         }
     }
 

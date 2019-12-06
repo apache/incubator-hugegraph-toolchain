@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 
@@ -31,8 +30,8 @@ public class CsvLineParser extends TextLineParser {
 
     private final CSVParser parser;
 
-    public CsvLineParser(FileSource source) {
-        super(source, Constants.COMMA_STR);
+    public CsvLineParser() {
+        super(Constants.COMMA_STR);
         char separator = this.delimiter().charAt(0);
         this.parser = new CSVParserBuilder().withSeparator(separator)
                                             .withIgnoreQuotations(false)

@@ -121,4 +121,32 @@ public class HDFSLoadTest extends FileLoadTest {
             Assert.assertTrue(e.getMessage().contains(message));
         });
     }
+
+    @Test
+    public void testHDFSWithUnexistCoreSitePath() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[]{
+                "-f", structPath("hdfs_with_unexist_core_site_path/struct.json"),
+                "-s", configPath("hdfs_with_unexist_core_site_path/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            Throwable t = e.getCause();
+            Assert.assertEquals(IllegalArgumentException.class, t.getClass());
+            String message = "Please ensure the core site file exists: ";
+            Assert.assertTrue(t.getMessage().contains(message));
+        });
+    }
 }

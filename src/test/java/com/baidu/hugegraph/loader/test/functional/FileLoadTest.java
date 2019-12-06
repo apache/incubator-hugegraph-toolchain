@@ -29,6 +29,9 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.common.type.Date;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -2283,10 +2286,10 @@ public class FileLoadTest extends LoadTest {
     public void testReloadJsonFailureFiles() throws IOException,
                                                     InterruptedException {
         ioUtil.write("vertex_person.csv",
-                "name,age,city",
-                "marko,29,Beijing",
-                "vadas,27,Hongkong",
-                "tom,28,Wuhan");
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "tom,28,Wuhan");
         ioUtil.write("edge_knows.json",
                      "{\"source_name\": \"marko\", \"target_name\": " +
                      "\"vadas\", \"date\": \"2016-01-10 12:00:00\"," +
@@ -2355,17 +2358,17 @@ public class FileLoadTest extends LoadTest {
 
         File knowsFailureFile = files[0];
         List<String> failureLines = FileUtils.readLines(knowsFailureFile,
-                Constants.CHARSET);
+                                                        Constants.CHARSET);
         Assert.assertEquals(2, failureLines.size());
         Assert.assertEquals("{\"source_name\": \"marko1\", \"target_name\": " +
-                        "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
-                        "\"weight\": 1.0}",
-                failureLines.get(1));
+                            "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
+                            "\"weight\": 1.0}",
+                            failureLines.get(1));
 
         failureLines.remove(1);
         failureLines.add("{\"source_name\": \"marko\", \"target_name\": " +
-                "\"tom\", \"date\": \"2013-02-20 13:00:00\"," +
-                "\"weight\": 1.0}");
+                         "\"tom\", \"date\": \"2013-02-20 13:00:00\"," +
+                         "\"weight\": 1.0}");
         FileUtils.writeLines(knowsFailureFile, failureLines, false);
 
         // No exception throw, and error line doesn't exist
@@ -2426,5 +2429,49 @@ public class FileLoadTest extends LoadTest {
                                     se.exception());
             });
         });
+    }
+
+    @Test
+    public void testOrcCompressFile() {
+        // TODO: add test for blob and uuid
+        TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(
+                "struct<" +
+                "name:string," +
+                "p_boolean:boolean," +
+                "p_byte:tinyint," +
+                "p_int:int," +
+                "p_long:bigint," +
+                "p_float:float," +
+                "p_double:double," +
+                "p_string:string," +
+                "p_date:date" +
+                ">");
+
+        Date now = Date.valueOf("2019-12-09");
+        ioUtil.writeOrc("vertex_person.orc", typeInfo,
+                        "marko", true, (byte) 1, 2, 3L, 4.0F, 5.0D, "marko",
+                        now);
+        String[] args = new String[]{
+                "-f", structPath("orc_compress_file/struct.json"),
+                "-s", configPath("orc_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
+
+        Vertex vertex = vertices.get(0);
+        Assert.assertEquals(true, vertex.property("p_boolean"));
+        Assert.assertEquals(1, vertex.property("p_byte"));
+        Assert.assertEquals(2, vertex.property("p_int"));
+        Assert.assertEquals(3, vertex.property("p_long"));
+        Assert.assertEquals(4.0D, vertex.property("p_float"));
+        Assert.assertEquals(5.0D, vertex.property("p_double"));
+        Assert.assertEquals("marko", vertex.property("p_string"));
+        Assert.assertEquals(now.toEpochMilli(), vertex.property("p_date"));
     }
 }
