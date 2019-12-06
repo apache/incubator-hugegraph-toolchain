@@ -24,8 +24,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.baidu.hugegraph.loader.reader.file.OrcReaders;
-import com.baidu.hugegraph.loader.source.file.Compression;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,7 +37,9 @@ import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.reader.file.FileReader;
+import com.baidu.hugegraph.loader.reader.file.OrcReaders;
 import com.baidu.hugegraph.loader.reader.file.Readers;
+import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.util.Log;
@@ -49,12 +49,13 @@ public class HDFSFileReader extends FileReader {
     private static final Logger LOG = Log.logger(HDFSFileReader.class);
 
     private final FileSystem hdfs;
+    private final Configuration conf;
 
     public HDFSFileReader(HDFSSource source) {
         super(source);
-        Configuration config = this.loadConfiguration();
+        this.conf = this.loadConfiguration();
         try {
-            this.hdfs = FileSystem.get(config);
+            this.hdfs = FileSystem.get(this.conf);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
@@ -81,6 +82,15 @@ public class HDFSFileReader extends FileReader {
 
     @Override
     protected Readers openReaders() throws IOException {
+        List<Readable> paths = this.scanReadables();
+        if (Compression.ORC == this.source().compression()) {
+            return new OrcReaders(this.source(), paths, this.conf);
+        }
+        return new Readers(this.source(), paths);
+    }
+
+    @Override
+    protected List<Readable> scanReadables() throws IOException {
         Path path = new Path(this.source().path());
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
@@ -101,11 +111,7 @@ public class HDFSFileReader extends FileReader {
                 }
             }
         }
-
-        if (Compression.ORC == this.source().compression()) {
-            return new OrcReaders(this.source(), paths, loadConfiguration());
-        }
-        return new Readers(this.source(), paths);
+        return paths;
     }
 
     private Configuration loadConfiguration() {

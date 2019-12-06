@@ -26,15 +26,14 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.baidu.hugegraph.loader.source.file.Compression;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
+import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import org.apache.hadoop.conf.Configuration;
 
 public class LocalFileReader extends FileReader {
 
@@ -44,9 +43,17 @@ public class LocalFileReader extends FileReader {
 
     @Override
     protected Readers openReaders() {
+        List<Readable> files = this.scanReadables();
+        if (Compression.ORC == this.source().compression()) {
+            return new OrcReaders(this.source(), files);
+        }
+        return new Readers(this.source(), files);
+    }
+
+    @Override
+    protected List<Readable> scanReadables() {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
-
         FileFilter filter = this.source().filter();
         List<Readable> files = new ArrayList<>();
         if (file.isFile()) {
@@ -69,10 +76,7 @@ public class LocalFileReader extends FileReader {
                 }
             }
         }
-        if (Compression.ORC == this.source().compression()) {
-            return new OrcReaders(this.source(), files, new Configuration());
-        }
-        return new Readers(this.source(), files);
+        return files;
     }
 
     private static void checkExistAndReadable(File file) {

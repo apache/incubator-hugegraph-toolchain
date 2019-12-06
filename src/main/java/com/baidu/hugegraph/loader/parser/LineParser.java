@@ -30,14 +30,10 @@ public interface LineParser {
     }
 
     public default String[] header() {
-        return new String[0];
+        return new String[]{};
     }
 
     public default void parseHeader(String rawLine) {
         // pass
     }
-
-//    public default boolean matchHeader(Line rawLine) {
-//        return false;
-//    }
 }

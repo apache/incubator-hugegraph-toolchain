@@ -29,23 +29,21 @@ import java.io.Reader;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.compress.compressors.CompressorInputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.slf4j.Logger;
+
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.parser.CsvLineParser;
 import com.baidu.hugegraph.loader.parser.JsonLineParser;
 import com.baidu.hugegraph.loader.parser.LineParser;
 import com.baidu.hugegraph.loader.parser.TextLineParser;
-import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.source.file.FileFormat;
-import com.baidu.hugegraph.structure.Task;
-import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.hadoop.hdfs.client.HdfsClientConfigKeys;
-import org.slf4j.Logger;
-
-import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
+import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.file.Compression;
+import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
@@ -66,7 +64,7 @@ public class Readers {
     protected final List<Readable> readables;
     protected int index;
     protected BufferedReader reader;
-    private final LineParser parser;
+    protected final LineParser parser;
 
     public Readers(FileSource source, List<Readable> readables) {
         E.checkNotNull(source, "source");
@@ -95,15 +93,18 @@ public class Readers {
         return this.index;
     }
 
-    public void resetIndex() {
+    /**
+     * Used after read header
+     */
+    public void reset() {
         this.index = -1;
     }
 
-    public boolean needHeader() {
+    public boolean needReadHeader() {
         return this.parser.needHeader();
     }
 
-    public String[] headerLine() {
+    public String[] header() {
         return this.parser.header();
     }
 
@@ -132,7 +133,7 @@ public class Readers {
                                         e, readable);
             }
         }
-        this.resetIndex();
+        this.reset();
         return header;
     }
 
@@ -182,7 +183,7 @@ public class Readers {
         return this.parser.parse(line);
     }
 
-    public Line parse(String line ) {
+    public Line parse(String line) {
         return this.parser.parse(line);
     }
 
@@ -224,7 +225,7 @@ public class Readers {
         } else {
             this.newProgress.addLoadingItem(input);
         }
-         return false;
+        return false;
     }
 
     private BufferedReader openReader(Readable readable) {

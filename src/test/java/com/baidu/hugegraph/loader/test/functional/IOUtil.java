@@ -24,19 +24,30 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.io.orc.OrcFile;
+import org.apache.hadoop.hive.ql.io.orc.Writer;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 
 import com.baidu.hugegraph.loader.source.file.Compression;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 
 public interface IOUtil {
 
     public Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     public CompressorStreamFactory FACTORY = new CompressorStreamFactory();
+
+    public String storePath();
+
+    public Configuration config();
 
     public void mkdirs(String path);
 
@@ -57,7 +68,33 @@ public interface IOUtil {
     public void write(String fileName, Charset charset,
                       Compression compression, String... lines);
 
-    public void writeOrc(String fileName, TypeInfo typeInfo, Object... values);
+    public default void writeOrc(String fileName, TypeInfo typeInfo,
+                                 Object... values) {
+        Path path = new Path(this.storePath(), fileName);
+        ObjectInspector inspector = TypeInfoUtils
+                                    .getStandardJavaObjectInspectorFromTypeInfo(
+                                    typeInfo);
+        OrcFile.WriterOptions options = OrcFile.writerOptions(this.config())
+                                               .inspector(inspector);
+
+        Writer writer = null;
+        Object row = Arrays.asList(values);
+        try {
+            writer = OrcFile.createWriter(path, options);
+            writer.addRow(row);
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                      "Failed to write values '%s' to file '%s' in ORC " +
+                      "compression format", row, path), e);
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
 
     public void delete();
 

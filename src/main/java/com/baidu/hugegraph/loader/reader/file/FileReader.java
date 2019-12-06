@@ -21,18 +21,20 @@ package com.baidu.hugegraph.loader.reader.file;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.NoSuchElementException;
 
-import com.baidu.hugegraph.loader.exception.ParseException;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
@@ -47,13 +49,13 @@ public abstract class FileReader implements InputReader {
     private final FileSource source;
 
     private Readers readers;
-    private String[] headerLine;
+    private String[] header;
     private Line nextLine;
 
     public FileReader(FileSource source) {
         this.source = source;
         this.readers = null;
-        this.headerLine = null;
+        this.header = null;
         this.nextLine = null;
     }
 
@@ -62,6 +64,8 @@ public abstract class FileReader implements InputReader {
     }
 
     protected abstract Readers openReaders() throws IOException;
+
+    protected abstract List<Readable> scanReadables() throws IOException;
 
     @Override
     public void init(LoadContext context, ElementStruct struct) {
@@ -74,9 +78,9 @@ public abstract class FileReader implements InputReader {
         }
         this.progress(context, struct);
 
-        if (this.readers.needHeader()) {
-            this.headerLine = this.readers.readHeader();
-            if (this.headerLine == null) {
+        if (this.readers.needReadHeader()) {
+            this.header = this.readers.readHeader();
+            if (this.header == null) {
                 throw new LoadException("Failed to read header from " +
                                         "file source '%s'", this.source);
             }
@@ -85,9 +89,9 @@ public abstract class FileReader implements InputReader {
                          "The InputSource must be FileSource when need header");
 
             FileSource fileSource = (FileSource) inputSource;
-            fileSource.header(this.headerLine);
+            fileSource.header(this.header);
         } else {
-            this.headerLine = this.readers.headerLine();
+            this.header = this.readers.header();
         }
 
         this.readers.skipOffset();
@@ -144,19 +148,19 @@ public abstract class FileReader implements InputReader {
     private Line fetch() {
         int index = this.readers.index();
         while (true) {
-            Line rawLine = this.readNextLine();
-            if (rawLine == null) {
+            Line line = this.readNextLine();
+            if (line == null) {
                 return null;
             }
-            if (this.needSkipLine(rawLine)) {
+            if (this.needSkipLine(line)) {
                 continue;
             }
             boolean openNext = (index != this.readers.index());
             index = this.readers.index();
-            if (openNext && this.matchHeader(rawLine)) {
+            if (openNext && this.matchHeader(line)) {
                 continue;
             }
-            return rawLine;
+            return line;
         }
     }
 
@@ -177,12 +181,12 @@ public abstract class FileReader implements InputReader {
         if (this.source.format() == FileFormat.JSON) {
             return false;
         }
-        if (line == null ) {
+        if (line == null) {
             throw new ParseException("The file header can't be empty " +
                                      "under path '%s'", this.source.path());
         }
 
-        assert this.headerLine != null;
-        return Arrays.equals(this.headerLine, line.values());
+        assert this.header != null;
+        return Arrays.equals(this.header, line.values());
     }
 }
