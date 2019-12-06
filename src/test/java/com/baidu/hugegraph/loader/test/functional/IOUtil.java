@@ -30,6 +30,7 @@ import org.apache.commons.compress.compressors.CompressorOutputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 
 import com.baidu.hugegraph.loader.source.file.Compression;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 
 public interface IOUtil {
 
@@ -55,6 +56,8 @@ public interface IOUtil {
 
     public void write(String fileName, Charset charset,
                       Compression compression, String... lines);
+
+    public void writeOrc(String fileName, TypeInfo typeInfo, Object... values);
 
     public void delete();
 

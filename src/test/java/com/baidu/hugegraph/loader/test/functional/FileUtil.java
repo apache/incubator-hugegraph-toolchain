@@ -31,6 +31,13 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.source.file.Compression;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.io.orc.OrcFile;
+import org.apache.hadoop.hive.ql.io.orc.Writer;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 
 public class FileUtil implements IOUtil {
 
@@ -76,6 +83,25 @@ public class FileUtil implements IOUtil {
                           "compression format",
                           Arrays.asList(lines), path, compression), e);
             }
+        }
+    }
+
+    @Override
+    public void writeOrc(String fileName, TypeInfo typeInfo, Object... values) {
+        String path = Paths.get(this.storePath, fileName).toString();
+        ObjectInspector inspector = TypeInfoUtils
+                .getStandardJavaObjectInspectorFromTypeInfo(typeInfo);
+        OrcFile.WriterOptions options =
+                OrcFile.writerOptions(new Configuration()).inspector(inspector);
+
+        try {
+            Writer writer = OrcFile.createWriter(new Path(path),options);
+            writer.addRow(Arrays.asList(values));
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                    "Failed to write lines '%s' to file '%s' in 'ORC' " +
+                    "compression format", Arrays.asList(values), path), e);
         }
     }
 

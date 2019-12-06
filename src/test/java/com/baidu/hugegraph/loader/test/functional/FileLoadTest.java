@@ -29,6 +29,8 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +54,8 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Whitebox;
 import com.google.common.collect.ImmutableList;
+
+import static com.baidu.hugegraph.loader.test.functional.IOUtil.DEFAULT_CHARSET;
 
 public class FileLoadTest extends LoadTest {
 
@@ -2283,10 +2287,10 @@ public class FileLoadTest extends LoadTest {
     public void testReloadJsonFailureFiles() throws IOException,
                                                     InterruptedException {
         ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing",
-                     "vadas,27,Hongkong",
-                     "tom,28,Wuhan");
+                "name,age,city",
+                "marko,29,Beijing",
+                "vadas,27,Hongkong",
+                "tom,28,Wuhan");
         ioUtil.write("edge_knows.json",
                      "{\"source_name\": \"marko\", \"target_name\": " +
                      "\"vadas\", \"date\": \"2016-01-10 12:00:00\"," +
@@ -2355,17 +2359,17 @@ public class FileLoadTest extends LoadTest {
 
         File knowsFailureFile = files[0];
         List<String> failureLines = FileUtils.readLines(knowsFailureFile,
-                                                        Constants.CHARSET);
+                Constants.CHARSET);
         Assert.assertEquals(2, failureLines.size());
         Assert.assertEquals("{\"source_name\": \"marko1\", \"target_name\": " +
-                            "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
-                            "\"weight\": 1.0}",
-                            failureLines.get(1));
+                        "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
+                        "\"weight\": 1.0}",
+                failureLines.get(1));
 
         failureLines.remove(1);
         failureLines.add("{\"source_name\": \"marko\", \"target_name\": " +
-                         "\"tom\", \"date\": \"2013-02-20 13:00:00\"," +
-                         "\"weight\": 1.0}");
+                "\"tom\", \"date\": \"2013-02-20 13:00:00\"," +
+                "\"weight\": 1.0}");
         FileUtils.writeLines(knowsFailureFile, failureLines, false);
 
         // No exception throw, and error line doesn't exist
@@ -2375,5 +2379,27 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, edges.size());
 
         FileUtils.forceDeleteOnExit(structDir);
+    }
+
+    @Test
+    public void testOrcCompressFile() {
+        TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(
+                            "struct<name:string,age:int,city:string>");
+
+        ioUtil.writeOrc("vertex_person.orc", typeInfo,
+                        "marko", 29, "Bejjing");
+
+        String[] args = new String[]{
+                        "-f", structPath("orc_compress_file/struct.json"),
+                        "-s", configPath("orc_compress_file/schema.groovy"),
+                        "-g", GRAPH,
+                        "-h", SERVER,
+                        "--num-threads", "2",
+                        "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
     }
 }

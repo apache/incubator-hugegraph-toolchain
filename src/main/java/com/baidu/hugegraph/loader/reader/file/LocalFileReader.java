@@ -34,6 +34,7 @@ import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import org.apache.hadoop.conf.Configuration;
 
 public class LocalFileReader extends FileReader {
 
@@ -68,9 +69,8 @@ public class LocalFileReader extends FileReader {
                 }
             }
         }
-
         if (Compression.ORC == this.source().compression()) {
-            return new OrcReaders(this.source(), files);
+            return new OrcReaders(this.source(), files, new Configuration());
         }
         return new Readers(this.source(), files);
     }

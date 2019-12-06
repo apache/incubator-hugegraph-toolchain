@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader.test.functional;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
@@ -29,6 +30,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.io.orc.OrcFile;
+import org.apache.hadoop.hive.ql.io.orc.Writer;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -57,7 +63,12 @@ public class HDFSUtil implements IOUtil {
 
     private static Configuration loadConfiguration() {
         // Just use local hadoop with default config in test
-        return new Configuration();
+        String fileName = "hdfs_with_core_site_path/core-site.xml";
+        String confPath = HDFSUtil.class.getClassLoader().getResource(fileName)
+                                                         .getPath();
+        Configuration conf = new Configuration();
+        conf.addResource(new Path(confPath));
+        return conf;
     }
 
     @Override
@@ -98,6 +109,24 @@ public class HDFSUtil implements IOUtil {
                           "compression format",
                           Arrays.asList(lines), path, compression), e);
             }
+        }
+    }
+
+    @Override
+    public void writeOrc(String fileName, TypeInfo typeInfo, Object... values) {
+        Path path = new Path(this.storePath, fileName);
+        ObjectInspector inspector =
+                TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo);
+        OrcFile.WriterOptions options =
+                OrcFile.writerOptions(loadConfiguration()).inspector(inspector);
+        try {
+            Writer writer = OrcFile.createWriter(path, options);
+            writer.addRow(Arrays.asList(values));
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                    "Failed to write lines '%s' to file '%s' in ORC " +
+                    "compression format", Arrays.asList(values), path), e);
         }
     }
 

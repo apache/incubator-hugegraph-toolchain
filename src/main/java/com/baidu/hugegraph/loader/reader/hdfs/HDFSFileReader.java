@@ -103,7 +103,7 @@ public class HDFSFileReader extends FileReader {
         }
 
         if (Compression.ORC == this.source().compression()) {
-            return new OrcReaders(this.source(), paths);
+            return new OrcReaders(this.source(), paths, loadConfiguration());
         }
         return new Readers(this.source(), paths);
     }
