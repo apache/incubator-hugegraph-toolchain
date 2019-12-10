@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InsertException;
@@ -33,11 +32,8 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
 import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
-import com.baidu.hugegraph.structure.graph.Edge;
-import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.Log;
 import com.google.common.collect.ImmutableList;
 
@@ -56,7 +52,7 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
         for (Record<GE> record : this.batch()) {
             try {
                 if (this.struct().updateStrategies().isEmpty()) {
-                    this.addSingle(this.type(), record);
+                    this.addSingle(this.type(), this.options(), record);
                 } else {
                     this.updateSingle(this.type(), this.options(), record);
                 }
@@ -85,19 +81,13 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                               SINGLE_PRINT_FREQ, this.batch().size());
     }
 
-    private void addSingle(ElemType type, Record<GE> record) {
-        HugeClient client = HugeClientHolder.get(this.context().options());
-        if (type.isVertex()) {
-            client.graph().addVertex((Vertex) record.element());
-        } else {
-            assert type.isEdge();
-            client.graph().addEdge((Edge) record.element());
-        }
+    private void addSingle(ElemType type, LoadOptions options,
+                           Record<GE> record) {
+        this.addBatch(type, ImmutableList.of(record), options.checkVertex);
     }
 
     private void updateSingle(ElemType type, LoadOptions options,
                               Record<GE> record) {
-        // TODO: Adapt single update later
         this.updateBatch(type, ImmutableList.of(record), options.checkVertex);
     }
 }

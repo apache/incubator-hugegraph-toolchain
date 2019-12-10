@@ -81,19 +81,6 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
                               BATCH_PRINT_FREQ, count);
     }
 
-    @SuppressWarnings("unchecked")
-    private void addBatch(ElemType type, List<Record<GE>> batch, boolean check) {
-        HugeClient client = HugeClientHolder.get(this.context().options());
-        List<GE> elements = new ArrayList<>(batch.size());
-        batch.forEach(r -> elements.add(r.element()));
-        if (type.isVertex()) {
-            client.graph().addVertices((List<Vertex>) elements);
-        } else {
-            assert type.isEdge();
-            client.graph().addEdges((List<Edge>) elements, check);
-        }
-    }
-
     private int waitThenRetry(int retryCount, RuntimeException e) {
         LoadOptions options = this.context().options();
         long interval = (1L << retryCount) * options.retryInterval;
