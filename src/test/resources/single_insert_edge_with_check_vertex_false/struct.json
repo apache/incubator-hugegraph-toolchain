@@ -1,0 +1,32 @@
+{
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_knows.csv",
+        "format": "CSV"
+      },
+      "field_mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    },
+    {
+      "label": "created",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_created.csv",
+        "format": "CSV"
+      },
+      "field_mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    }
+  ]
+}

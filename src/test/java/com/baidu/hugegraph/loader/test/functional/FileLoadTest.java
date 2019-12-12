@@ -27,6 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import javax.ws.rs.NotFoundException;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -2375,5 +2377,56 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, edges.size());
 
         FileUtils.forceDeleteOnExit(structDir);
+    }
+
+    @Test
+    public void testSingleInsertEdgeWithCheckVertexFalse() {
+        // The source and target vertex doesn't exist
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,vadas,20160110,0.5",
+                     "marko,josh,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,lop,20171210,0.4",
+                     "josh,lop,20091111,0.4",
+                     "josh,ripple,20171210,1.0",
+                     "peter,lop,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f",
+                structPath("single_insert_edge_with_check_vertex_false/struct.json"),
+                "-s",
+                configPath("single_insert_edge_with_check_vertex_false/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(6, edges.size());
+
+        edges.forEach(edge -> {
+            Assert.assertThrows(ServerException.class, () -> {
+                CLIENT.graph().getVertex(edge.sourceId());
+            }, e -> {
+                ServerException se = (ServerException) e;
+                Assert.assertEquals("class javax.ws.rs.NotFoundException",
+                                    se.exception());
+            });
+            Assert.assertThrows(ServerException.class, () -> {
+                CLIENT.graph().getVertex(edge.targetId());
+            }, e -> {
+                ServerException se = (ServerException) e;
+                Assert.assertEquals("class javax.ws.rs.NotFoundException",
+                                    se.exception());
+            });
+        });
     }
 }

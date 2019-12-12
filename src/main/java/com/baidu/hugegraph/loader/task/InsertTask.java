@@ -83,8 +83,22 @@ public abstract class InsertTask<GE extends GraphElement> implements Runnable {
     }
 
     @SuppressWarnings("unchecked")
+    protected void addBatch(ElemType type, List<Record<GE>> batch,
+                            boolean checkVertex) {
+        HugeClient client = HugeClientHolder.get(this.context().options());
+        List<GE> elements = new ArrayList<>(batch.size());
+        batch.forEach(r -> elements.add(r.element()));
+        if (type.isVertex()) {
+            client.graph().addVertices((List<Vertex>) elements);
+        } else {
+            assert type.isEdge();
+            client.graph().addEdges((List<Edge>) elements, checkVertex);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     protected void updateBatch(ElemType type, List<Record<GE>> batch,
-                               boolean check) {
+                               boolean checkVertex) {
         HugeClient client = HugeClientHolder.get(this.context().options());
         List<GE> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));
@@ -101,7 +115,7 @@ public abstract class InsertTask<GE extends GraphElement> implements Runnable {
             BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
             req.edges((List<Edge>) elements)
                .updatingStrategies(this.struct().updateStrategies())
-               .checkVertex(check)
+               .checkVertex(checkVertex)
                .createIfNotExist(true);
 
             client.graph().updateEdges(req.build());
