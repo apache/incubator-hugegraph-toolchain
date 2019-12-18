@@ -26,7 +26,7 @@ import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.util.E;
 
 /**
- * Maybe can as base class for JDBC RowFetcher
+ * Maybe can be used as base class for JDBC RowFetcher
  */
 public abstract class LineFetcher {
 

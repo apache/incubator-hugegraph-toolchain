@@ -181,7 +181,6 @@ public abstract class FileReader implements InputReader {
             LOG.debug("Ready to open '{}'", readable);
             this.fetcher.openReader(readable);
             if (status == LoadStatus.LOADING_HALF) {
-                this.fetcher.fresh(false);
                 long offset = this.oldProgress.loadingOffset();
                 this.fetcher.skipOffset(readable, offset);
             }

@@ -58,14 +58,13 @@ public class FileLineFetcher extends LineFetcher {
 
     private static final long BUF_SIZE = 4 * MB;
 
-    // Indicates whether the current file is still unread, used to match header
-    private boolean fresh;
+    private static final int FIRST_LINE_OFFSET = 1;
+
     private BufferedReader reader;
     private final LineParser parser;
 
     public FileLineFetcher(FileSource source) {
         super(source);
-        this.fresh = true;
         this.reader = null;
         this.parser = createLineParser(source);
     }
@@ -73,10 +72,6 @@ public class FileLineFetcher extends LineFetcher {
     @Override
     public FileSource source() {
         return (FileSource) super.source();
-    }
-
-    public void fresh(boolean fresh) {
-        this.fresh = fresh;
     }
 
     @Override
@@ -212,7 +207,6 @@ public class FileLineFetcher extends LineFetcher {
 
     private void resetStatus() {
         super.resetOffset();
-        this.fresh = true;
     }
 
     private boolean needSkipLine(String line) {
@@ -223,10 +217,10 @@ public class FileLineFetcher extends LineFetcher {
      * Just match header for second or subsequent file first line
      */
     private boolean checkMatchHeader(String line) {
-        if (!this.source().format().needHeader() || !this.fresh) {
+        if (!this.source().format().needHeader() ||
+            this.offset() != FIRST_LINE_OFFSET) {
             return false;
         }
-        this.fresh(false);
 
         assert this.source().header() != null;
         String[] columns = this.parser.split(line);
