@@ -24,11 +24,11 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import com.baidu.hugegraph.base.Printer;
 import com.baidu.hugegraph.formatter.Formatter;
-import com.baidu.hugegraph.structure.JsonGraph.JsonVertex;
 import com.baidu.hugegraph.structure.JsonGraph.JsonEdge;
+import com.baidu.hugegraph.structure.JsonGraph.JsonVertex;
 
 public class DumpKGFormatter implements Formatter {
 
@@ -62,7 +62,7 @@ public class DumpKGFormatter implements Formatter {
         if (vertex == null) {
             return "";
         }
-        List<JsonEdge> edges = vertex.getEdges();
+        Set<JsonEdge> edges = vertex.getEdges();
         Map<String, Object> properties = vertex.properties();
 
         String plainId = (String) properties.get("plain_id");
@@ -79,8 +79,7 @@ public class DumpKGFormatter implements Formatter {
         List<String> region = new ArrayList<>();
         List<String> regionWeight = new ArrayList<>();
 
-        for (int i = 0; i < edges.size(); i++) {
-            JsonEdge edge = edges.get(i);
+        for (JsonEdge edge : edges) {
             if (edge == null) {
                 continue;
             }
@@ -120,13 +119,12 @@ public class DumpKGFormatter implements Formatter {
             return "";
         }
 
-        List<JsonEdge> edges = vertex.getEdges();
+        Set<JsonEdge> edges = vertex.getEdges();
         String value = (String) vertex.properties().get("value");
 
         List<String> descript = new ArrayList<>();
         List<String> descriptWeight = new ArrayList<>();
-        for (int i = 0; i < edges.size(); i++) {
-            JsonEdge edge = edges.get(i);
+        for (JsonEdge edge : edges) {
             if (!vertex.getId().equals(edge.getSource())) {
                 continue;
             }

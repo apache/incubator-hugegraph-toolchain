@@ -19,13 +19,12 @@
 
 package com.baidu.hugegraph.structure;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.baidu.hugegraph.base.Printer;
+import org.eclipse.jetty.util.ConcurrentHashSet;
+
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.JsonUtil;
@@ -34,7 +33,6 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
 public class JsonGraph {
 
     private static final int INIT_VERTEX_CAPACITY = 1_000_000;
-    private static final int INIT_VERTEX_EDGES_CAPACITY = 10;
 
     private Map<String, Map<Object, JsonVertex>> tables;
 
@@ -83,7 +81,7 @@ public class JsonGraph {
             vertices = new ConcurrentHashMap<>(INIT_VERTEX_CAPACITY);
             this.tables.putIfAbsent(table, vertices);
         }
-        return vertices;
+        return this.tables.get(table);
     }
 
     public static class JsonVertex {
@@ -91,10 +89,10 @@ public class JsonGraph {
         private Object id;
         private String label;
         private String properties;
-        private List<JsonEdge> edges;
+        private Set<JsonEdge> edges;
 
         public JsonVertex() {
-            this.edges = new ArrayList<>(INIT_VERTEX_EDGES_CAPACITY);
+            this.edges = new ConcurrentHashSet<>();
         }
 
         public void addEdge(JsonEdge edge) {
@@ -114,7 +112,7 @@ public class JsonGraph {
             return this.properties;
         }
 
-        public List<JsonEdge> getEdges() {
+        public Set<JsonEdge> getEdges() {
             return this.edges;
         }
 
