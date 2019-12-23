@@ -68,11 +68,14 @@ public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
 
                 long failures = this.context().summary().totalInsertFailures();
                 if (failures >= this.options().maxInsertErrors) {
-                    Printer.printError("More than %s %s insert error, stop " +
-                                       "parsing and waiting other insert " +
-                                       "tasks finished",
-                                       this.options().maxInsertErrors,
-                                       this.type().string());
+                    if (!this.context().stopped()) {
+                        // Just print once
+                        Printer.printError("More than %s %s insert error, " +
+                                           "stop parsing and waiting other " +
+                                           "insert tasks finished",
+                                           this.options().maxInsertErrors,
+                                           this.type().string());
+                    }
                     this.context().stopLoading();
                 }
             }

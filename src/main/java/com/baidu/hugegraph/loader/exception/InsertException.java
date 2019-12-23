@@ -25,18 +25,8 @@ public class InsertException extends IllegalArgumentException {
 
     private final String line;
 
-    public InsertException(String line, String message) {
-        super(message);
-        this.line = line;
-    }
-
     public InsertException(String line, Throwable cause) {
         super(cause.getMessage(), cause);
-        this.line = line;
-    }
-
-    public InsertException(String line, String message, Throwable cause) {
-        super(message, cause);
         this.line = line;
     }
 
