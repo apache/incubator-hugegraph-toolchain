@@ -52,6 +52,22 @@ public class IndexLabelAPI extends SchemaAPI {
         return result.readObject(IndexLabel.CreatedIndexLabel.class);
     }
 
+    public IndexLabel append(IndexLabel indexLabel) {
+        String id = indexLabel.name();
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(this.path(), id,
+                                            indexLabel, params);
+        return result.readObject(IndexLabel.class);
+    }
+
+    public IndexLabel eliminate(IndexLabel indexLabel) {
+        String id = indexLabel.name();
+        Map<String, Object> params = ImmutableMap.of("action", "eliminate");
+        RestResult result = this.client.put(this.path(), id,
+                                            indexLabel, params);
+        return result.readObject(IndexLabel.class);
+    }
+
     public IndexLabel get(String name) {
         RestResult result = this.client.get(this.path(), name);
         return result.readObject(IndexLabel.class);

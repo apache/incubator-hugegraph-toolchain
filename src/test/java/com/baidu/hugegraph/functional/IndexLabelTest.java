@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.Date;
 import java.util.List;
 
 import org.junit.After;
@@ -43,6 +44,93 @@ public class IndexLabelTest extends BaseFuncTest {
     }
 
     @Test
+    public void testAddIndexLabelWithUserData() {
+        SchemaManager schema = schema();
+        BaseFuncTest.initVertexLabel();
+
+        IndexLabel personByCity = schema.indexLabel("personByCity")
+                                        .onV("person")
+                                        .by("city")
+                                        .secondary()
+                                        .userdata("type", "secondary")
+                                        .ifNotExist()
+                                        .create();
+        Assert.assertEquals(2, personByCity.userdata().size());
+        Assert.assertEquals("secondary", personByCity.userdata().get("type"));
+        long createTime = (long) personByCity.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
+
+        IndexLabel personByAge = schema.indexLabel("personByAge")
+                                       .onV("person")
+                                       .by("age")
+                                       .range()
+                                       .userdata("type", "secondary")
+                                       .userdata("type", "range")
+                                       .ifNotExist()
+                                       .create();
+        Assert.assertEquals(2, personByAge.userdata().size());
+        Assert.assertEquals("range", personByAge.userdata().get("type"));
+        createTime = (long) personByAge.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
+    }
+
+    @Test
+    public void testAppendIndexLabelWithUserData() {
+        SchemaManager schema = schema();
+        BaseFuncTest.initVertexLabel();
+
+        IndexLabel personByCity = schema.indexLabel("personByCity")
+                                        .onV("person")
+                                        .by("city")
+                                        .secondary()
+                                        .ifNotExist()
+                                        .create();
+        Assert.assertEquals(1, personByCity.userdata().size());
+        long createTime = (long) personByCity.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
+
+        personByCity = schema.indexLabel("personByCity")
+                             .userdata("type", "secondary")
+                             .append();
+        Assert.assertEquals(2, personByCity.userdata().size());
+        Assert.assertEquals("secondary", personByCity.userdata().get("type"));
+        Assert.assertEquals(createTime,
+                            personByCity.userdata().get("create_time"));
+    }
+
+    @Test
+    public void testEliminateIndexLabelWithUserData() {
+        SchemaManager schema = schema();
+        BaseFuncTest.initVertexLabel();
+
+        IndexLabel personByCity = schema.indexLabel("personByCity")
+                                        .onV("person")
+                                        .by("city")
+                                        .secondary()
+                                        .userdata("type", "secondary")
+                                        .userdata("icon", "picture")
+                                        .ifNotExist()
+                                        .create();
+        Assert.assertEquals(3, personByCity.userdata().size());
+        Assert.assertEquals("secondary", personByCity.userdata().get("type"));
+        Assert.assertEquals("picture", personByCity.userdata().get("icon"));
+        long createTime = (long) personByCity.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
+
+        personByCity = schema.indexLabel("personByCity")
+                             .userdata("type", "secondary")
+                             .eliminate();
+        Assert.assertEquals(2, personByCity.userdata().size());
+        Assert.assertEquals("picture", personByCity.userdata().get("icon"));
+        Assert.assertEquals(createTime,
+                            personByCity.userdata().get("create_time"));
+    }
+
+    @Test
     public void testRemoveIndexLabelSync() {
         SchemaManager schema = schema();
 
@@ -51,6 +139,7 @@ public class IndexLabelTest extends BaseFuncTest {
               .create();
         IndexLabel playerByName = schema.indexLabel("playerByName")
                                         .on(true, "player")
+                                        .secondary()
                                         .by("name")
                                         .create();
 
@@ -61,6 +150,7 @@ public class IndexLabelTest extends BaseFuncTest {
         playerByName = schema.indexLabel("playerByName")
                              .onV("player")
                              .by("name")
+                             .secondary()
                              .create();
 
         Assert.assertNotNull(playerByName);
@@ -78,6 +168,7 @@ public class IndexLabelTest extends BaseFuncTest {
         IndexLabel playerByName = schema.indexLabel("playerByName")
                                         .onV("player")
                                         .by("name")
+                                        .secondary()
                                         .create();
         Assert.assertNotNull(playerByName);
         // Remove index label async
@@ -92,10 +183,12 @@ public class IndexLabelTest extends BaseFuncTest {
         IndexLabel playerByName = schema.indexLabel("playerByName")
                                         .onV("player")
                                         .by("name")
+                                        .secondary()
                                         .create();
         IndexLabel playerByAge = schema.indexLabel("playerByAge")
                                        .onV("player")
                                        .by("age")
+                                       .range()
                                        .create();
 
         List<IndexLabel> indexLabels;
@@ -124,10 +217,11 @@ public class IndexLabelTest extends BaseFuncTest {
         IndexLabel playerByName = schema.indexLabel("playerByName")
                                         .onV("player")
                                         .by("name")
+                                        .secondary()
                                         .create();
         Assert.assertTrue(playerByName.id() > 0);
         playerByName.resetId();
-        Assert.assertEquals(0, playerByName.id());
+        Assert.assertEquals(0L, playerByName.id());
     }
 
     @Test
@@ -139,6 +233,7 @@ public class IndexLabelTest extends BaseFuncTest {
         IndexLabel playerByName = schema.indexLabel("playerByName")
                                         .onV("player")
                                         .by("name")
+                                        .secondary()
                                         .create();
         Assert.assertTrue(playerByName.checkExist());
         playerByName.checkExist(false);

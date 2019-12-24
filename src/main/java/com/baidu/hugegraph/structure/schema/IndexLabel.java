@@ -35,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties({"properties", "user_data"})
+@JsonIgnoreProperties({"properties"})
 public class IndexLabel extends SchemaElement {
 
     @JsonProperty("base_type")
@@ -50,18 +50,13 @@ public class IndexLabel extends SchemaElement {
     @JsonCreator
     public IndexLabel(@JsonProperty("name") String name) {
         super(name);
-        this.indexType = IndexType.SECONDARY;
+        this.indexType = null;
         this.fields = new CopyOnWriteArrayList<>();
     }
 
     @Override
     public String type() {
         return HugeType.INDEX_LABEL.string();
-    }
-
-    @Override
-    public Map<String, Object> userdata() {
-        throw new NotSupportException("user data for index label");
     }
 
     public HugeType baseType() {
@@ -110,6 +105,8 @@ public class IndexLabel extends SchemaElement {
 
         Builder unique();
 
+        Builder userdata(String key, Object val);
+
         Builder ifNotExist();
     }
 
@@ -135,12 +132,12 @@ public class IndexLabel extends SchemaElement {
 
         @Override
         public IndexLabel append() {
-            throw new NotSupportException("action append on index label");
+            return this.manager.appendIndexLabel(this.indexLabel);
         }
 
         @Override
         public IndexLabel eliminate() {
-            throw new NotSupportException("action eliminate on index label");
+            return this.manager.eliminateIndexLabel(this.indexLabel);
         }
 
         @Override
@@ -212,6 +209,14 @@ public class IndexLabel extends SchemaElement {
         @Override
         public Builder unique() {
             this.indexLabel.indexType = IndexType.UNIQUE;
+            return this;
+        }
+
+        @Override
+        public Builder userdata(String key, Object val) {
+            E.checkArgumentNotNull(key, "The user data key can't be null");
+            E.checkArgumentNotNull(val, "The user data value can't be null");
+            this.indexLabel.userdata.put(key, val);
             return this;
         }
 

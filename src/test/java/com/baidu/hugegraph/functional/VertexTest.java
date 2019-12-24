@@ -283,7 +283,8 @@ public class VertexTest extends BaseFuncTest {
 
     @Test
     public void testGetVerticesByLabelAndProperties() {
-        schema().indexLabel("PersonByAge").onV("person").by("age").create();
+        schema().indexLabel("PersonByAge").onV("person").by("age")
+                .secondary().create();
         BaseClientTest.initVertex();
 
         Map<String, Object> properties = ImmutableMap.of("age", 29);
@@ -297,7 +298,8 @@ public class VertexTest extends BaseFuncTest {
 
     @Test
     public void testGetVerticesByLabelAndPropertiesWithLimit1() {
-        schema().indexLabel("PersonByAge").onV("person").by("age").create();
+        schema().indexLabel("PersonByAge").onV("person").by("age")
+                .secondary().create();
         BaseClientTest.initVertex();
 
         Map<String, Object> properties = ImmutableMap.of("age", 29);

@@ -197,6 +197,14 @@ public class SchemaManager {
         return cil.taskId();
     }
 
+    public IndexLabel appendIndexLabel(IndexLabel indexLabel) {
+        return this.indexLabelAPI.append(indexLabel);
+    }
+
+    public IndexLabel eliminateIndexLabel(IndexLabel indexLabel) {
+        return this.indexLabelAPI.eliminate(indexLabel);
+    }
+
     public void removeIndexLabel(String name) {
         this.removeIndexLabel(name, TASK_TIMEOUT);
     }

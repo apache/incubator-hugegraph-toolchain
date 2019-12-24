@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.Date;
 import java.util.List;
 
 import org.junit.After;
@@ -50,25 +51,34 @@ public class PropertyKeyTest extends BaseFuncTest {
                                 .userdata("min", 0)
                                 .userdata("max", 100)
                                 .create();
-        Assert.assertEquals(2, age.userdata().size());
+        Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
+        long createTime = (long) age.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         PropertyKey id = schema.propertyKey("id")
                                .userdata("length", 15)
                                .userdata("length", 18)
                                .create();
         // The same key user data will be overwritten
-        Assert.assertEquals(1, id.userdata().size());
+        Assert.assertEquals(2, id.userdata().size());
         Assert.assertEquals(18, id.userdata().get("length"));
+        createTime = (long) id.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         PropertyKey sex = schema.propertyKey("sex")
                                 .userdata("range",
                                           ImmutableList.of("male", "female"))
                                 .create();
-        Assert.assertEquals(1, sex.userdata().size());
+        Assert.assertEquals(2, sex.userdata().size());
         Assert.assertEquals(ImmutableList.of("male", "female"),
                             sex.userdata().get("range"));
+        createTime = (long) sex.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
     }
 
     @Test
@@ -77,16 +87,20 @@ public class PropertyKeyTest extends BaseFuncTest {
         PropertyKey age = schema.propertyKey("age")
                                 .userdata("min", 0)
                                 .create();
-        Assert.assertEquals(1, age.userdata().size());
+        Assert.assertEquals(2, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
+        long createTime = (long) age.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         age = schema.propertyKey("age")
                     .userdata("min", 1)
                     .userdata("max", 100)
                     .append();
-        Assert.assertEquals(2, age.userdata().size());
+        Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(1, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
+        Assert.assertEquals(createTime, age.userdata().get("create_time"));
     }
 
     @Test
@@ -96,15 +110,19 @@ public class PropertyKeyTest extends BaseFuncTest {
                                 .userdata("min", 0)
                                 .userdata("max", 100)
                                 .create();
-        Assert.assertEquals(2, age.userdata().size());
+        Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
+        long createTime = (long) age.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         age = schema.propertyKey("age")
                     .userdata("max", "")
                     .eliminate();
-        Assert.assertEquals(1, age.userdata().size());
+        Assert.assertEquals(2, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
+        Assert.assertEquals(createTime, age.userdata().get("create_time"));
     }
 
     @Test

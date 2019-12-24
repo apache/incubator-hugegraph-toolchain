@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -467,10 +468,13 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                    .properties("weight")
                                    .userdata("multiplicity", "one-to-many")
                                    .build();
-        edgeLabelAPI.create(father);
-        Assert.assertEquals(1, father.userdata().size());
+        father = edgeLabelAPI.create(father);
+        Assert.assertEquals(2, father.userdata().size());
         Assert.assertEquals("one-to-many",
                             father.userdata().get("multiplicity"));
+        long createTime = (long) father.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         EdgeLabel write = schema().edgeLabel("write")
                                   .link("person", "book")
@@ -478,10 +482,13 @@ public class EdgeLabelApiTest extends BaseApiTest {
                                   .userdata("multiplicity", "one-to-many")
                                   .userdata("multiplicity", "many-to-many")
                                   .build();
-        edgeLabelAPI.create(write);
+        write = edgeLabelAPI.create(write);
         // The same key user data will be overwritten
-        Assert.assertEquals(1, write.userdata().size());
+        Assert.assertEquals(2, write.userdata().size());
         Assert.assertEquals("many-to-many",
                             write.userdata().get("multiplicity"));
+        createTime = (long) write.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
     }
 }

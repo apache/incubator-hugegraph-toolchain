@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
     PropertyKeyTest.class,
     VertexLabelTest.class,
     EdgeLabelTest.class,
+    IndexLabelTest.class,
     VertexTest.class,
     EdgeTest.class,
     BatchInsertTest.class,

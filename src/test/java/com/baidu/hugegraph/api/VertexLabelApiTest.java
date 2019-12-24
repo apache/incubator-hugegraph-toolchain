@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -428,18 +429,24 @@ public class VertexLabelApiTest extends BaseApiTest {
                                      .properties("name")
                                      .userdata("super_vl", "person")
                                      .build();
-        vertexLabelAPI.create(player);
-        Assert.assertEquals(1, player.userdata().size());
+        player = vertexLabelAPI.create(player);
+        Assert.assertEquals(2, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
+        long createTime = (long) player.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         VertexLabel runner = schema().vertexLabel("runner")
                                      .properties("name")
                                      .userdata("super_vl", "person")
                                      .userdata("super_vl", "player")
                                      .build();
-        vertexLabelAPI.create(runner);
+        runner = vertexLabelAPI.create(runner);
         // The same key user data will be overwritten
-        Assert.assertEquals(1, runner.userdata().size());
+        Assert.assertEquals(2, runner.userdata().size());
         Assert.assertEquals("player", runner.userdata().get("super_vl"));
+        createTime = (long) runner.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
     }
 }

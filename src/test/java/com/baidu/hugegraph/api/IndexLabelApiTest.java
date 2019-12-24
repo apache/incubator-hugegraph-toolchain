@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 
@@ -31,6 +32,7 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
+import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableList;
@@ -116,7 +118,6 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testCreateOnUndefinedSchemaLabel() {
-
         IndexLabel indexLabel1 = schema().indexLabel("authorByAge")
                                          .onV("author")
                                          .by("age")
@@ -337,5 +338,53 @@ public class IndexLabelApiTest extends BaseApiTest {
         Utils.assertResponseError(404, () -> {
             indexLabelAPI.delete("not-exist-il");
         });
+    }
+
+    @Test
+    public void testAddIndexLabelWithUserData() {
+        IndexLabel personByAge = schema().indexLabel("personByAge")
+                                         .onV("person")
+                                         .by("age")
+                                         .range()
+                                         .userdata("min", 0)
+                                         .userdata("max", 100)
+                                         .build();
+        personByAge = indexLabelAPI.create(personByAge).indexLabel();
+        Assert.assertEquals(3, personByAge.userdata().size());
+        Assert.assertEquals(0, personByAge.userdata().get("min"));
+        Assert.assertEquals(100, personByAge.userdata().get("max"));
+        long createTime = (long) personByAge.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
+
+        IndexLabel personByCity = schema().indexLabel("personByCity")
+                                          .onV("person")
+                                          .by("city")
+                                          .secondary()
+                                          .userdata("length", 15)
+                                          .userdata("length", 18)
+                                          .build();
+        personByCity = indexLabelAPI.create(personByCity).indexLabel();
+        // The same key user data will be overwritten
+        Assert.assertEquals(2, personByCity.userdata().size());
+        Assert.assertEquals(18, personByCity.userdata().get("length"));
+        createTime = (long) personByCity.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
+
+        IndexLabel bookByName = schema().indexLabel("bookByName")
+                                        .onV("book")
+                                        .by("name")
+                                        .secondary()
+                                        .userdata("option",
+                                                  ImmutableList.of("xx", "yy"))
+                                        .build();
+        bookByName = indexLabelAPI.create(bookByName).indexLabel();
+        Assert.assertEquals(2, bookByName.userdata().size());
+        Assert.assertEquals(ImmutableList.of("xx", "yy"),
+                            bookByName.userdata().get("option"));
+        createTime = (long) bookByName.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
     }
 }

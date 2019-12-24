@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.Date;
 import java.util.List;
 
 import org.junit.After;
@@ -98,10 +99,12 @@ public class EdgeLabelTest extends BaseFuncTest {
                                  .properties("weight")
                                  .userdata("multiplicity", "one-to-many")
                                  .create();
-
-        Assert.assertEquals(1, father.userdata().size());
+        Assert.assertEquals(2, father.userdata().size());
         Assert.assertEquals("one-to-many",
                             father.userdata().get("multiplicity"));
+        long createTime = (long) father.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         EdgeLabel write = schema.edgeLabel("write").link("person", "book")
                                 .properties("date", "weight")
@@ -109,9 +112,12 @@ public class EdgeLabelTest extends BaseFuncTest {
                                 .userdata("multiplicity", "many-to-many")
                                 .create();
         // The same key user data will be overwritten
-        Assert.assertEquals(1, write.userdata().size());
+        Assert.assertEquals(2, write.userdata().size());
         Assert.assertEquals("many-to-many",
                             write.userdata().get("multiplicity"));
+        createTime = (long) write.userdata().get("create_time");
+        now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
     }
 
     @Test
@@ -128,15 +134,18 @@ public class EdgeLabelTest extends BaseFuncTest {
         EdgeLabel father = schema.edgeLabel("father").link("person", "person")
                                  .properties("weight")
                                  .create();
-
-        Assert.assertEquals(0, father.userdata().size());
+        Assert.assertEquals(1, father.userdata().size());
+        long createTime = (long) father.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         father = schema.edgeLabel("father")
                        .userdata("multiplicity", "one-to-many")
                        .append();
-        Assert.assertEquals(1, father.userdata().size());
+        Assert.assertEquals(2, father.userdata().size());
         Assert.assertEquals("one-to-many",
                             father.userdata().get("multiplicity"));
+        Assert.assertEquals(createTime, father.userdata().get("create_time"));
     }
 
     @Test
@@ -159,17 +168,21 @@ public class EdgeLabelTest extends BaseFuncTest {
                                 .userdata("multiplicity", "one-to-many")
                                 .userdata("icon", "picture2")
                                 .create();
-        Assert.assertEquals(2, write.userdata().size());
+        Assert.assertEquals(3, write.userdata().size());
         Assert.assertEquals("one-to-many",
                             write.userdata().get("multiplicity"));
         Assert.assertEquals("picture2", write.userdata().get("icon"));
+        long createTime = (long) write.userdata().get("create_time");
+        long now = new Date().getTime();
+        Assert.assertTrue(createTime <= now);
 
         write = schema.edgeLabel("write")
                       .userdata("icon", "")
                       .eliminate();
-        Assert.assertEquals(1, write.userdata().size());
+        Assert.assertEquals(2, write.userdata().size());
         Assert.assertEquals("one-to-many",
                             write.userdata().get("multiplicity"));
+        Assert.assertEquals(createTime, write.userdata().get("create_time"));
     }
 
     @Test
