@@ -1683,10 +1683,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(1, vertices.size());
     }
 
-    /**
-     * Didn't find a way to generate the compression file using code
-     */
-    //@Test
+//    @Test
     public void testSnappyRawCompressFile() {
         ioUtil.write("vertex_person.snappy", Compression.SNAPPY_RAW,
                      "name,age,city",
