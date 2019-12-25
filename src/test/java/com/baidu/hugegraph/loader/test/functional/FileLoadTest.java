@@ -90,7 +90,7 @@ public class FileLoadTest extends LoadTest {
                 "-f", "example/struct.json",
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2"
+                "--batch-insert-threads", "2"
         };
 
         HugeGraphLoader.main(args);
@@ -160,7 +160,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("customized_schema/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -206,7 +206,7 @@ public class FileLoadTest extends LoadTest {
                 "-f", structPath("no_schema_file/struct.json"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(ServerException.class, () -> {
@@ -243,7 +243,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("skip_struct/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -274,7 +274,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("vertex_id_exceed_limit/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
@@ -299,7 +299,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("vertex_id_exceed_limit_in_bytes/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         // Bytes encoded in utf-8 exceed 128
@@ -319,7 +319,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("too_many_columns/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
@@ -338,7 +338,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("unmatched_property_datatype/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
@@ -357,7 +357,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("vertex_pk_contains_special_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -382,7 +382,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("unmatched_encoding_charset/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -406,7 +406,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("matched_encoding_charset/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -430,7 +430,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("customized_delimiter_in_csv_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {
@@ -459,7 +459,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_list_property_in_json_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -487,7 +487,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_list_property_in_text_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -520,7 +520,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_set_property_in_text_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -553,7 +553,7 @@ public class FileLoadTest extends LoadTest {
                 "value_list_property_in_text_file_with_elem_delimiter/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -582,7 +582,7 @@ public class FileLoadTest extends LoadTest {
                 "value_list_property_in_text_file_with_symbols/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -608,7 +608,7 @@ public class FileLoadTest extends LoadTest {
                 "value_list_property_in_csv_file_with_same_delimiter/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {
@@ -633,7 +633,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_set_property_in_json_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -694,7 +694,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_boolean_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -716,7 +716,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_boolean_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(IllegalArgumentException.class, () -> {
@@ -739,7 +739,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_uuid_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -760,7 +760,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_uuid_property_in_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(IllegalArgumentException.class, () -> {
@@ -1373,7 +1373,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("source_target_value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1402,7 +1402,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_mapping_in_json_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1470,7 +1470,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("gzip_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1490,7 +1490,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("bz2_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1510,7 +1510,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("xz_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1530,7 +1530,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("lzma_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1553,7 +1553,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("snappy_raw_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1573,7 +1573,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("snappy_framed_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1596,7 +1596,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("z_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1616,7 +1616,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("deflate_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1636,7 +1636,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("lz4_block_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1656,7 +1656,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("lz4_framed_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -1679,7 +1679,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("too_few_columns/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "3"
         };
         HugeGraphLoader.main(args);
@@ -1699,7 +1699,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("update_by_strategy/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--check-vertex", "false"
         };
         HugeGraphLoader.main(args);
@@ -1738,7 +1738,7 @@ public class FileLoadTest extends LoadTest {
                 "update_by_strategy_without_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--check-vertex", "false"
         };
         HugeGraphLoader.main(args);
@@ -1777,7 +1777,7 @@ public class FileLoadTest extends LoadTest {
                 "update_by_strategy_without_symbol/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--check-vertex", "false",
                 "--test-mode", "true"
         };
@@ -1805,7 +1805,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("update_by_strategy/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--check-vertex", "true"
         };
         HugeGraphLoader.main(args);
@@ -1830,7 +1830,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("update_by_strategy/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
 
@@ -1862,7 +1862,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("incremental_mode/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
         };
@@ -1904,7 +1904,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
         };
@@ -1969,7 +1969,7 @@ public class FileLoadTest extends LoadTest {
                 configPath("incremental_mode_and_reload_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
         };
@@ -2043,7 +2043,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--incremental-mode", "true",
                 "--reload-failure", "true",
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
         };
@@ -2120,7 +2120,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--incremental-mode", "true",
                 "--reload-failure", "true",
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
         };
@@ -2209,7 +2209,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--incremental-mode", "true",
                 "--reload-failure", "true",
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
         };
@@ -2305,7 +2305,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--check-vertex", "true",
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "1",
                 "--test-mode", "false"
         };
@@ -2339,7 +2339,7 @@ public class FileLoadTest extends LoadTest {
                 "--incremental-mode", "true",
                 "--reload-failure", "true",
                 "--check-vertex", "true",
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--max-parse-errors", "1",
                 "--test-mode", "false"
         };
@@ -2402,7 +2402,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--check-vertex", "false",
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -2456,7 +2456,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("orc_compress_file/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);

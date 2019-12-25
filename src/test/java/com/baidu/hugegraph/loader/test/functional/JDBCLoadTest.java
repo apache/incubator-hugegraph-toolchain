@@ -147,7 +147,7 @@ public class JDBCLoadTest extends LoadTest {
                 "-s", configPath("jdbc_customized_schema/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -174,7 +174,7 @@ public class JDBCLoadTest extends LoadTest {
                 "-s", configPath("jdbc_customized_schema/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -197,7 +197,7 @@ public class JDBCLoadTest extends LoadTest {
                 "-s", configPath("value_mapping_in_jdbc_source/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);

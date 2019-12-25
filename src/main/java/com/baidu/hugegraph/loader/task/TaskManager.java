@@ -70,19 +70,19 @@ public final class TaskManager {
          * limit the number of tasks added. When there are no idle threads in
          * the thread pool, the producer will be blocked, so OOM will not occur.
          */
-        this.batchService = ExecutorUtil.newFixedThreadPool(options.numThreads,
-                                                            BATCH_WORKER);
-        this.singleService = ExecutorUtil.newFixedThreadPool(options.numThreads,
-                                                             SINGLE_WORKER);
+        this.batchService = ExecutorUtil.newFixedThreadPool(
+                            this.options.batchInsertThreads, BATCH_WORKER);
+        this.singleService = ExecutorUtil.newFixedThreadPool(
+                             this.options.singleInsertThreads, SINGLE_WORKER);
         this.stopped = false;
     }
 
     private int batchSemaphoreNum() {
-        return 1 + this.options.numThreads;
+        return 1 + this.options.batchInsertThreads;
     }
 
     private int singleSemaphoreNum() {
-        return 2 * this.options.numThreads;
+        return 2 * this.options.singleInsertThreads;
     }
 
     public void waitFinished(ElemType type) {
