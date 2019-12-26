@@ -59,7 +59,7 @@ public class GremlinRequest {
             return this.manager.executeAsTask(this.request);
         }
 
-        public Builder binding(String key, String value) {
+        public Builder binding(String key, Object value) {
             this.request.bindings.put(key, value);
             return this;
         }
