@@ -47,8 +47,8 @@ public class HDFSSource extends FileSource {
                         "The core_site_path can't be empty");
         File file = FileUtils.getFile(Paths.get(this.coreSitePath).toString());
         E.checkArgument(file.exists() && file.isFile(),
-                        "Please ensure the core site file exists: '%s' and " +
-                        "is indeed a file", file);
+                        "The core site file '%s' is not an existing file",
+                        file);
     }
 
     public String coreSitePath() {

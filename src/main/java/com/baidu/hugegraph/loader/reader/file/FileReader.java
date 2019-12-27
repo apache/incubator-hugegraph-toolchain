@@ -77,7 +77,7 @@ public abstract class FileReader implements InputReader {
 
         try {
             this.readables = this.scanReadables();
-            // sort readable files by name
+            // Sort readable files by name
             this.readables.sort(Comparator.comparing(Readable::name));
         } catch (IOException e) {
             throw new LoadException("Failed to scan readable files for '%s'",
@@ -170,9 +170,9 @@ public abstract class FileReader implements InputReader {
             Readable readable = this.currentReadable();
             LoadStatus status = this.checkLastLoadStatus(readable);
             /*
-             * If the file has been loaded, skipped it
-             * If the file has been loaded in half, skipped the last offset
-             * If the file has not been loaded, loading it
+             * If the file has been loaded fully, skip it
+             * If the file has been loaded in half, skip the last offset
+             * If the file has not been loaded, load it
              */
             if (status == LoadStatus.LOADED) {
                 continue;
@@ -180,7 +180,7 @@ public abstract class FileReader implements InputReader {
 
             LOG.debug("Ready to open '{}'", readable);
             this.fetcher.openReader(readable);
-            if (status == LoadStatus.LOADING_HALF) {
+            if (status == LoadStatus.LOADED_HALF) {
                 long offset = this.oldProgress.loadingOffset();
                 this.fetcher.skipOffset(readable, offset);
             }
@@ -203,10 +203,10 @@ public abstract class FileReader implements InputReader {
         if (loading != null) {
             // The file has been loaded half before and it is not changed
             this.newProgress.addLoadingItem(loading);
-            return LoadStatus.LOADING_HALF;
+            return LoadStatus.LOADED_HALF;
         } else {
             this.newProgress.addLoadingItem(input);
-            return LoadStatus.LOADING;
+            return LoadStatus.NOT_LOADED;
         }
     }
 
@@ -214,8 +214,8 @@ public abstract class FileReader implements InputReader {
 
         LOADED,
 
-        LOADING_HALF,
+        LOADED_HALF,
 
-        LOADING
+        NOT_LOADED
     }
 }

@@ -145,8 +145,9 @@ public class HDFSLoadTest extends FileLoadTest {
         }, e -> {
             Throwable t = e.getCause();
             Assert.assertEquals(IllegalArgumentException.class, t.getClass());
-            String message = "Please ensure the core site file exists: ";
-            Assert.assertTrue(t.getMessage().contains(message));
+            String msg = t.getMessage();
+            Assert.assertTrue(msg.startsWith("The core site file"));
+            Assert.assertTrue(msg.endsWith("is not an existing file"));
         });
     }
 }

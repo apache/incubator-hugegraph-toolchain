@@ -73,10 +73,10 @@ public class LocalFileReader extends FileReader {
 
     @Override
     protected FileLineFetcher createLineFetcher() {
-        if (Compression.ORC != this.source().compression()) {
-            return new FileLineFetcher(this.source());
-        } else {
+        if (Compression.ORC == this.source().compression()) {
             return new OrcFileLineFetcher(this.source());
+        } else {
+            return new FileLineFetcher(this.source());
         }
     }
 

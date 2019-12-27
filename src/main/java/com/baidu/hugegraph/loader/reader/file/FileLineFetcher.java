@@ -264,7 +264,7 @@ public class FileLineFetcher extends LineFetcher {
             case LZ4_FRAMED:
                 CompressorStreamFactory factory = new CompressorStreamFactory();
                 CompressorInputStream cis = factory.createCompressorInputStream(
-                        compression.string(), stream);
+                                            compression.string(), stream);
                 return new InputStreamReader(cis, charset);
             default:
                 throw new LoadException("Unsupported compression format '%s'",
@@ -283,7 +283,8 @@ public class FileLineFetcher extends LineFetcher {
                 return new JsonLineParser();
             default:
                 throw new AssertionError(String.format(
-                          "Unsupported file format '%s'", source));
+                          "Unsupported file format '%s' of source '%s'",
+                          format, source));
         }
     }
 }

@@ -2449,8 +2449,8 @@ public class FileLoadTest extends LoadTest {
 
         Date now = Date.valueOf("2019-12-09");
         ioUtil.writeOrc("vertex_person.orc", typeInfo,
-                        "marko", true, (byte) 1, 2, 3L, 4.0F, 5.0D, "marko",
-                        now);
+                        "marko", true, (byte) 1, 2, 3L,
+                        4.0F, 5.0D, "marko", now);
         String[] args = new String[]{
                 "-f", structPath("orc_compress_file/struct.json"),
                 "-s", configPath("orc_compress_file/schema.groovy"),
