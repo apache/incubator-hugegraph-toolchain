@@ -17,13 +17,16 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.summary;
+package com.baidu.hugegraph.loader.metrics;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
+
+import org.apache.commons.lang3.time.StopWatch;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 
 public final class LoadSummary {
@@ -31,21 +34,23 @@ public final class LoadSummary {
     private final Map<String, LoadMetrics> vertexMetricsMap;
     private final Map<String, LoadMetrics> edgeMetricsMap;
 
-    private long vertexTotalTime;
-    private long edgeTotalTime;
+    private final StopWatch totalTimer;
+    private final LongAdder vertexLoaded;
+    private final LongAdder edgeLoaded;
 
     public LoadSummary() {
         this.vertexMetricsMap = InsertionOrderUtil.newMap();
         this.edgeMetricsMap = InsertionOrderUtil.newMap();
-        this.vertexTotalTime = 0L;
-        this.edgeTotalTime = 0L;
+        this.vertexLoaded = new LongAdder();
+        this.edgeLoaded = new LongAdder();
+        this.totalTimer = new StopWatch();
     }
 
-    public LoadMetrics metrics(ElementStruct struct) {
-        return this.metrics(struct.type(), struct.uniqueKey());
+    public LoadMetrics metrics(ElementMapping mapping) {
+        return this.metrics(mapping.type(), mapping.label());
     }
 
-    public LoadMetrics metrics(ElemType type, String uniqueKey) {
+    public LoadMetrics metrics(ElemType type, String label) {
         Map<String, LoadMetrics> metricsMap;
         if (type.isVertex()) {
             metricsMap = this.vertexMetricsMap;
@@ -53,7 +58,7 @@ public final class LoadSummary {
             assert type.isEdge();
             metricsMap = this.edgeMetricsMap;
         }
-        return metricsMap.computeIfAbsent(uniqueKey, k -> new LoadMetrics());
+        return metricsMap.computeIfAbsent(label, k -> new LoadMetrics());
     }
 
     public Map<String, LoadMetrics> vertexMetrics() {
@@ -64,11 +69,31 @@ public final class LoadSummary {
         return this.edgeMetricsMap;
     }
 
-    public void totalTime(ElemType type, long time) {
+    public long totalTime() {
+        return this.totalTimer.getTime();
+    }
+
+    public void startTimer() {
+        this.totalTimer.start();
+    }
+
+    public void stopTimer() {
+        this.totalTimer.stop();
+    }
+
+    public long vertexLoaded() {
+        return this.vertexLoaded.longValue();
+    }
+
+    public long edgeLoaded() {
+        return this.edgeLoaded.longValue();
+    }
+
+    public void plusTotalLoaded(ElemType type, int count) {
         if (type.isVertex()) {
-            this.vertexTotalTime = time;
+            this.vertexLoaded.add(count);
         } else {
-            this.edgeTotalTime = time;
+            this.edgeLoaded.add(count);
         }
     }
 
@@ -94,30 +119,25 @@ public final class LoadSummary {
         return total;
     }
 
-    public LoadMetrics accumulateMetrics(ElemType type) {
-        LoadMetrics metrics;
+    public LoadReport buildReport(ElemType type) {
         if (type.isVertex()) {
-            metrics = this.accumulateMetrics(this.vertexMetricsMap.values());
-            metrics.loadTime(this.vertexTotalTime);
+            return this.accumulateMetrics(this.vertexMetricsMap.values());
         } else {
             assert type.isEdge();
-            metrics = this.accumulateMetrics(this.edgeMetricsMap.values());
-            metrics.loadTime(this.edgeTotalTime);
+            return this.accumulateMetrics(this.edgeMetricsMap.values());
         }
-        return metrics;
     }
 
-    private LoadMetrics accumulateMetrics(Collection<LoadMetrics> metricsList) {
-        LoadMetrics totalMetrics = new LoadMetrics();
+    private LoadReport accumulateMetrics(Collection<LoadMetrics> metricsList) {
+        long parseSuccess = 0L, parseFailure = 0L;
+        long loadSuccess = 0L, loadFailure = 0L;
         for (LoadMetrics metrics : metricsList) {
-            totalMetrics.plusParseSuccess(metrics.parseSuccess());
-            totalMetrics.plusParseFailure(metrics.parseFailure());
-            totalMetrics.plusParseTime(metrics.parseTime());
-
-            totalMetrics.plusLoadSuccess(metrics.loadSuccess());
-            totalMetrics.plusLoadFailure(metrics.loadFailure());
-            totalMetrics.plusLoadTime(metrics.loadTime());
+            parseSuccess += metrics.parseSuccess();
+            parseFailure += metrics.parseFailure();
+            loadSuccess += metrics.loadSuccess();
+            loadFailure += metrics.loadFailure();
         }
-        return totalMetrics;
+        return new LoadReport(this.totalTime(), parseSuccess, parseFailure,
+                              loadSuccess, loadFailure);
     }
 }

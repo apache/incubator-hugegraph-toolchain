@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.struct.EdgeStruct;
+import com.baidu.hugegraph.loader.mapping.EdgeMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -32,56 +33,58 @@ import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 
-public class EdgeBuilder extends ElementBuilder<Edge> {
+public class EdgeBuilder extends ElementBuilder {
 
-    private final EdgeStruct struct;
+    private final EdgeMapping mapping;
     private final EdgeLabel edgeLabel;
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(LoadContext context, EdgeStruct struct) {
+    public EdgeBuilder(LoadContext context, InputStruct struct,
+                       EdgeMapping mapping) {
         super(context, struct);
-        this.struct = struct;
-        this.edgeLabel = this.getEdgeLabel(struct.label());
+        this.mapping = mapping;
+        this.edgeLabel = this.getEdgeLabel(this.mapping.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
         this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
         // Ensure that the source/target id fileds are matched with id strategy
-        this.checkIdFields(this.sourceLabel, this.struct.sourceFields());
-        this.checkIdFields(this.targetLabel, this.struct.targetFields());
+        this.checkIdFields(this.sourceLabel, this.mapping.sourceFields());
+        this.checkIdFields(this.targetLabel, this.mapping.targetFields());
     }
 
     @Override
-    public EdgeStruct struct() {
-        return this.struct;
+    public EdgeMapping mapping() {
+        return this.mapping;
     }
 
     @Override
-    protected SchemaLabel getSchemaLabel() {
-        return this.edgeLabel;
-    }
-
-    @Override
-    protected Edge build(Map<String, Object> keyValues) {
-        Edge edge = new Edge(this.struct.label());
+    public Edge build(Map<String, Object> keyValues) {
+        Map<String, Object> properties = this.filterFields(keyValues);
+        Edge edge = new Edge(this.mapping.label());
         // Must add source/target vertex id
         edge.sourceId(this.buildVertexId(this.sourceLabel,
-                                         this.struct.sourceFields(),
-                                         keyValues));
+                                         this.mapping.sourceFields(),
+                                         properties));
         edge.targetId(this.buildVertexId(this.targetLabel,
-                                         this.struct.targetFields(),
-                                         keyValues));
+                                         this.mapping.targetFields(),
+                                         properties));
         // Must add source/target vertex label
         edge.sourceLabel(this.sourceLabel.name());
         edge.targetLabel(this.targetLabel.name());
         // Add properties
-        this.addProperties(edge, keyValues);
+        this.addProperties(edge, properties);
         return edge;
     }
 
     @Override
+    protected SchemaLabel schemaLabel() {
+        return this.edgeLabel;
+    }
+
+    @Override
     protected boolean isIdField(String fieldName) {
-        return this.struct.sourceFields().contains(fieldName) ||
-               this.struct.targetFields().contains(fieldName);
+        return this.mapping.sourceFields().contains(fieldName) ||
+               this.mapping.targetFields().contains(fieldName);
     }
 
     private Object buildVertexId(VertexLabel vertexLabel,
@@ -118,7 +121,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                 return DataTypeUtil.parseUUID(mappedValue);
             } else {
                 // The id strategy of source/target label must be PRIMARY_KEY
-                String key = this.struct.mappingField(fieldName);
+                String key = this.mapping.mappingField(fieldName);
                 if (primaryKeys.contains(key)) {
                     int index = primaryKeys.indexOf(key);
                     Object value = this.validatePropertyValue(key, mappedValue);

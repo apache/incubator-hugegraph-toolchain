@@ -24,11 +24,11 @@ import com.baidu.hugegraph.loader.source.file.FileSource;
 
 public interface InputSource extends Checkable {
 
-    public SourceType type();
+    SourceType type();
 
-    public String[] header();
+    String[] header();
 
-    public String charset();
+    String charset();
 
-    public FileSource asFileSource();
+    FileSource asFileSource();
 }

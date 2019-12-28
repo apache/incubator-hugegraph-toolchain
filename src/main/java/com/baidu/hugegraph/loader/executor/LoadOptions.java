@@ -31,7 +31,7 @@ public final class LoadOptions {
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
-               description = "The path of the data struct description file")
+               description = "The path of the data mapping description file")
     public String file;
 
     @Parameter(names = {"-s", "--schema"}, arity = 1,
@@ -73,6 +73,11 @@ public final class LoadOptions {
     @Parameter(names = {"--reload-failure"}, arity = 1,
                description = "Whether to reload the previous failure records")
     public boolean reloadFailure = false;
+
+    @Parameter(names = {"--parse-threads"}, arity = 1,
+               validateWith = {PositiveValidator.class},
+               description = "The number of threads to execute parse")
+    public int parseThreads = 4;
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},

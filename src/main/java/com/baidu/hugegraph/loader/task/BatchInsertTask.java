@@ -21,46 +21,41 @@ package com.baidu.hugegraph.loader.task;
 
 import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.util.HugeClientHolder;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.structure.GraphElement;
-import com.baidu.hugegraph.structure.graph.Edge;
-import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.Log;
 
-public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
+public class BatchInsertTask extends InsertTask {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    public BatchInsertTask(LoadContext context, ElementStruct struct,
-                           List<Record<GE>> batch) {
-        super(context, struct, batch);
+    public BatchInsertTask(LoadContext context, InputStruct struct,
+                           ElementMapping mapping, List<Record> batch) {
+        super(context, struct, mapping, batch);
     }
 
     @Override
     public void run() {
+        ElemType type = this.type();
+        boolean checkVertex = this.options().checkVertex;
         int retryCount = 0;
         do {
             try {
-                if (this.struct().updateStrategies().isEmpty()) {
-                    this.addBatch(this.type(), this.batch(),
-                                  this.options().checkVertex);
+                if (this.mapping.updateStrategies().isEmpty()) {
+                    this.addBatch(type, this.batch, checkVertex);
                 } else {
-                    this.updateBatch(this.type(), this.batch(),
-                                     this.options().checkVertex);
+                    this.updateBatch(type, this.batch, checkVertex);
                 }
                 break;
             } catch (ClientException e) {
@@ -75,15 +70,17 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
             }
         } while (retryCount > 0 && retryCount <= this.options().retryTimes);
 
-        int count = this.batch().size();
-        this.metrics().plusLoadSuccess(count);
-        Printer.printProgress(this.type(), this.metrics().loadSuccess(),
-                              BATCH_PRINT_FREQ, count);
+        int count = this.batch.size();
+        // This metrics just for current mapping
+        this.plusLoadSuccess(count);
+        Printer.printProgress(this.context.summary(), BATCH_PRINT_FREQ, count);
     }
 
     private int waitThenRetry(int retryCount, RuntimeException e) {
-        LoadOptions options = this.context().options();
-        long interval = (1L << retryCount) * options.retryInterval;
+        LoadOptions options = this.options();
+        if (options.retryTimes <= 0) {
+            return retryCount;
+        }
 
         if (++retryCount > options.retryTimes) {
             LOG.error("Batch insert has been retried more than {} times",
@@ -91,6 +88,7 @@ public class BatchInsertTask<GE extends GraphElement> extends InsertTask<GE> {
             throw e;
         }
 
+        long interval = (1L << retryCount) * options.retryInterval;
         LOG.debug("Batch insert will sleep {} seconds then do the {}th retry",
                   interval, retryCount);
         try {

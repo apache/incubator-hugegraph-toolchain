@@ -24,27 +24,17 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.reader.InputReader;
-import com.baidu.hugegraph.loader.reader.InputReaderFactory;
-import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.struct.EdgeStruct;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.struct.VertexStruct;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
@@ -52,130 +42,65 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.Log;
 import com.baidu.hugegraph.util.LongEncoding;
+import com.google.common.collect.Maps;
 
-public abstract class ElementBuilder<GE extends GraphElement>
-                implements AutoCloseableIterator<Record<GE>> {
-
-    private static final Logger LOG = Log.logger(ElementBuilder.class);
+public abstract class ElementBuilder {
 
     private static final CharsetEncoder ENCODER =
                          Constants.CHARSET.newEncoder();
     private static final ByteBuffer BUFFER =
                          ByteBuffer.allocate(Constants.VERTEX_ID_LIMIT);
 
+    private final InputStruct struct;
     private final SchemaCache schema;
-    private final InputReader reader;
 
-    public ElementBuilder(LoadContext context, ElementStruct struct) {
+    public ElementBuilder(LoadContext context, InputStruct struct) {
+        this.struct = struct;
         this.schema = new SchemaCache(context);
-        this.reader = InputReaderFactory.create(struct.input());
-        this.init(context, struct);
     }
 
-    public static ElementBuilder<?> of(LoadContext context,
-                                       ElementStruct struct) {
-        if (struct.type().isVertex()) {
-            return new VertexBuilder(context, (VertexStruct) struct);
-        } else {
-            assert struct.type().isEdge();
-            return new EdgeBuilder(context, (EdgeStruct) struct);
-        }
-    }
+    public abstract ElementMapping mapping();
 
-    public abstract ElementStruct struct();
+    public abstract GraphElement build(Map<String, Object> keyValues);
 
-    public ElemType type() {
-        return this.struct().type();
-    }
-
-    private void init(LoadContext context, ElementStruct struct) {
-        try {
-            this.reader.init(context, struct);
-        } catch (Exception e) {
-            throw new LoadException("Failed to init input reader", e);
-        }
-    }
-
-    @Override
-    public boolean hasNext() {
-        return this.reader.hasNext();
-    }
-
-    @Override
-    public Record<GE> next() {
-        Line line = this.reader.next();
-        Map<String, Object> keyValues = line.keyValues();
-        try {
-            keyValues = this.filterFields(keyValues);
-            GE element = this.build(keyValues);
-            return Record.of(line.rawLine(), element);
-        } catch (IllegalArgumentException e) {
-            throw new ParseException(line.rawLine(), e);
-        }
-    }
-
-    @Override
-    public void close() {
-        try {
-            this.reader.close();
-        } catch (Exception e) {
-            LOG.warn("Failed to close builder for {} with exception {}",
-                     this.struct(), e);
-        }
-    }
-
-    public long confirmOffset() {
-        return this.reader.confirmOffset();
-    }
-
-    protected abstract SchemaLabel getSchemaLabel();
-
-    protected abstract GE build(Map<String, Object> keyValues);
+    protected abstract SchemaLabel schemaLabel();
 
     protected abstract boolean isIdField(String fieldName);
 
+    /**
+     * Retain only the key-value pairs needed by the current vertex or edge
+     */
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
-        // Retain selected fileds or remove ignored fields
-        if (!this.struct().selectedFields().isEmpty()) {
-            keyValues.keySet().retainAll(this.struct().selectedFields());
-        } else if (!this.struct().ignoredFields().isEmpty()) {
-            keyValues.keySet().removeAll(this.struct().ignoredFields());
-        }
+        // select and ignore not allowed to be true at the same time
+        boolean selectFields = !this.mapping().selectedFields().isEmpty();
+        boolean ignoreFields = !this.mapping().ignoredFields().isEmpty();
 
-        SchemaLabel schemaLabel = this.getSchemaLabel();
-        Set<String> nullableKeys = schemaLabel.nullableKeys();
-        Set<Object> nullValues = this.struct().nullValues();
-        if (!nullableKeys.isEmpty() && !nullValues.isEmpty()) {
-            Iterator<Map.Entry<String, Object>> iter = keyValues.entrySet()
-                                                                .iterator();
-            iter.forEachRemaining(entry -> {
-                String key = this.struct().mappingField(entry.getKey());
-                Object val = entry.getValue();
-                if (nullableKeys.contains(key) && nullValues.contains(val)) {
-                    iter.remove();
-                }
-            });
-        }
-        return keyValues;
+        Set<String> nullableKeys = this.schemaLabel().nullableKeys();
+        Set<Object> nullValues = this.mapping().nullValues();
+
+        return Maps.filterEntries(keyValues, entry -> {
+            assert entry != null;
+            String key = entry.getKey();
+            Object val = entry.getValue();
+            // Retain selected fields or remove ignored fields
+            if (selectFields) {
+                return this.mapping().selectedFields().contains(key);
+            } else if (ignoreFields) {
+                return !this.mapping().ignoredFields().contains(key);
+            }
+            String mappedKey = this.mapping().mappingField(key);
+            return !nullableKeys.contains(mappedKey) || !nullValues.contains(val);
+        });
     }
 
-    protected void addProperties(GE element, Map<String, Object> keyValues) {
-        Set<String> properties = this.getSchemaLabel().properties();
+    protected void addProperties(GraphElement element,
+                                 Map<String, Object> keyValues) {
         for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-            String fieldName = entry.getKey();
-            Object fieldValue = entry.getValue();
-            this.checkFieldValue(fieldName, fieldValue);
-            String key = this.struct().mappingField(fieldName);
-
-            // If the ID field is also a property, retained it
-            if (this.isIdField(fieldName) &&
-                !properties.contains(fieldName) && !properties.contains(key)) {
-                continue;
-            }
-            fieldValue = this.mappingFieldValueIfNeeded(fieldName, fieldValue);
-            Object value = this.validatePropertyValue(key, fieldValue);
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            this.checkFieldValue(key, value);
+            value = this.validatePropertyValue(key, value);
 
             element.property(key, value);
         }
@@ -195,13 +120,13 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected Object validatePropertyValue(String key, Object rawValue) {
         PropertyKey pKey = this.getPropertyKey(key);
-        InputSource inputSource = this.struct().input();
+        InputSource inputSource = this.struct.input();
         return DataTypeUtil.convert(rawValue, pKey, inputSource);
     }
 
     protected void checkFieldValue(String fieldName, Object fieldValue) {
-        if (this.struct().mappingValues().isEmpty() ||
-            !this.struct().mappingValues().containsKey(fieldName)) {
+        if (this.mapping().mappingValues().isEmpty() ||
+            !this.mapping().mappingValues().containsKey(fieldName)) {
             return;
         }
         // NOTE: The nullable values has been filtered before this
@@ -213,11 +138,11 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
     protected Object mappingFieldValueIfNeeded(String fieldName,
                                                Object fieldValue) {
-        if (this.struct().mappingValues().isEmpty()) {
+        if (this.mapping().mappingValues().isEmpty()) {
             return fieldValue;
         }
         String fieldStrValue = String.valueOf(fieldValue);
-        return this.struct().mappingValue(fieldName, fieldStrValue);
+        return this.mapping().mappingValue(fieldName, fieldStrValue);
     }
 
     protected static String spliceVertexId(VertexLabel vertexLabel,

@@ -17,14 +17,11 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.parser;
+package com.baidu.hugegraph.loader.reader.line;
 
-import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.reader.line.Line;
+import java.util.List;
 
-public interface LineParser {
+public class BatchLine {
 
-    Line parse(String[] header, String rawLine) throws ParseException;
-
-    String[] split(String rawLine);
+    private List<Line> lines;
 }

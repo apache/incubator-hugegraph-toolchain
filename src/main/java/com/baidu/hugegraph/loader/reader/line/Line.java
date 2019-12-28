@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.reader.line;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -25,7 +25,7 @@ import java.util.Map;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 
-public final class Line {
+public class Line {
 
     private final String rawLine;
     private String[] names;

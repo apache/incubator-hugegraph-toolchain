@@ -21,23 +21,22 @@ package com.baidu.hugegraph.loader.reader.file;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
-import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.InputReader;
-import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.Readable;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.util.Log;
 
 public abstract class FileReader implements InputReader {
@@ -46,9 +45,9 @@ public abstract class FileReader implements InputReader {
 
     private final FileSource source;
 
-    private List<Readable> readables;
+    private Iterator<Readable> readables;
+    private Readable readable;
     private FileLineFetcher fetcher;
-    private int index;
     private Line nextLine;
 
     private InputProgress oldProgress;
@@ -57,8 +56,8 @@ public abstract class FileReader implements InputReader {
     public FileReader(FileSource source) {
         this.source = source;
         this.readables = null;
+        this.readable = null;
         this.fetcher = null;
-        this.index = -1;
         this.nextLine = null;
     }
 
@@ -71,26 +70,29 @@ public abstract class FileReader implements InputReader {
     protected abstract FileLineFetcher createLineFetcher();
 
     @Override
-    public void init(LoadContext context, ElementStruct struct) {
-        LOG.info("Opening struct '{}'", struct);
+    public void init(LoadContext context, InputStruct struct)
+                     throws InitException {
+        LOG.info("Opening input mapping '{}'", struct);
         this.progress(context, struct);
 
+        List<Readable> readableList;
         try {
-            this.readables = this.scanReadables();
+            readableList = this.scanReadables();
             // Sort readable files by name
-            this.readables.sort(Comparator.comparing(Readable::name));
+            readableList.sort(Comparator.comparing(Readable::name));
         } catch (IOException e) {
-            throw new LoadException("Failed to scan readable files for '%s'",
+            throw new InitException("Failed to scan readable files for '%s'",
                                     e, this.source);
         }
 
+        this.readables = readableList.iterator();
         this.fetcher = this.createLineFetcher();
-        this.fetcher.readHeaderIfNeeded(this.readables);
+        this.fetcher.readHeaderIfNeeded(readableList);
     }
 
     @Override
-    public long confirmOffset() {
-        return this.newProgress.confirmOffset();
+    public void confirmOffset() {
+        this.newProgress.confirmOffset();
     }
 
     @Override
@@ -117,30 +119,26 @@ public abstract class FileReader implements InputReader {
     }
 
     @Override
-    public void close() throws IOException {
-        Readable readable = this.currentReadable();
-        LOG.debug("Ready to close '{}'", readable);
-        this.fetcher.closeReader(readable);
-    }
-
-    private Readable currentReadable() {
-        E.checkState(this.index >= 0 && this.index < this.readables.size(),
-                     "Invalid readable index %s", this.index);
-        return this.readables.get(this.index);
-    }
-
-    private void progress(LoadContext context, ElementStruct struct) {
-        ElemType type = struct.type();
-        InputProgressMap oldProgress = context.oldProgress().type(type);
-        InputProgressMap newProgress = context.newProgress().type(type);
-        InputProgress oldInputProgress = oldProgress.getByStruct(struct);
-        if (oldInputProgress == null) {
-            oldInputProgress = new InputProgress(struct);
+    public void close() {
+        if (this.readable == null) {
+            return;
         }
-        InputProgress newInputProgress = newProgress.getByStruct(struct);
-        assert newInputProgress != null;
-        this.oldProgress = oldInputProgress;
-        this.newProgress = newInputProgress;
+        LOG.debug("Ready to close '{}'", this.readable);
+        try {
+            this.fetcher.closeReader();
+        } catch (IOException e) {
+            LOG.warn("Failed to close reader for {} with exception {}",
+                     this.source, e);
+        }
+    }
+
+    private void progress(LoadContext context, InputStruct struct) {
+        this.oldProgress = context.oldProgress().get(struct.id());
+        if (this.oldProgress == null) {
+            this.oldProgress = new InputProgress(struct);
+        }
+        // Update loading vertex/edge mapping
+        this.newProgress = context.newProgress().addStruct(struct);
     }
 
     private Line readNextLine() throws IOException {
@@ -152,7 +150,7 @@ public abstract class FileReader implements InputReader {
         try {
             while ((line = this.fetcher.fetch()) == null) {
                 // The current file is read at the end, ready to read next one
-                this.fetcher.closeReader(this.currentReadable());
+                this.fetcher.closeReader();
                 if (!this.openNextReadable()) {
                     // There is no readable file
                     return null;
@@ -166,9 +164,8 @@ public abstract class FileReader implements InputReader {
     }
 
     private boolean openNextReadable() {
-        while (++this.index < this.readables.size()) {
-            Readable readable = this.currentReadable();
-            LoadStatus status = this.checkLastLoadStatus(readable);
+        while (this.moveToNextReadable()) {
+            LoadStatus status = this.checkLastLoadStatus(this.readable);
             /*
              * If the file has been loaded fully, skip it
              * If the file has been loaded in half, skip the last offset
@@ -187,6 +184,14 @@ public abstract class FileReader implements InputReader {
             return true;
         }
         return false;
+    }
+
+    private boolean moveToNextReadable() {
+        boolean hasNext = this.readables.hasNext();
+        if (hasNext) {
+            this.readable = this.readables.next();
+        }
+        return hasNext;
     }
 
     private LoadStatus checkLastLoadStatus(Readable readable) {

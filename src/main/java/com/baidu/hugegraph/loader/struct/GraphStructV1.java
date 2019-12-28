@@ -21,12 +21,12 @@ package com.baidu.hugegraph.loader.struct;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.ListUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
@@ -36,57 +36,59 @@ import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
-import com.baidu.hugegraph.loader.util.LoadUtil;
-import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class GraphStruct implements Checkable {
+/**
+ * The GraphStructV1 is deprecated, it will be removed sometime in the future
+ */
+@Deprecated
+public class GraphStructV1 implements Checkable {
 
-    private static final Logger LOG = Log.logger(GraphStruct.class);
+    private static final Logger LOG = Log.logger(GraphStructV1.class);
 
+    @JsonProperty("version")
+    private String version;
     @JsonProperty("vertices")
-    private final List<VertexStruct> vertexStructs;
+    private final List<VertexStructV1> vertexStructs;
     @JsonProperty("edges")
-    private final List<EdgeStruct> edgeStructs;
+    private final List<EdgeStructV1> edgeStructs;
 
-    public GraphStruct() {
+    public GraphStructV1() {
         this.vertexStructs = new ArrayList<>();
         this.edgeStructs = new ArrayList<>();
     }
 
-    public static GraphStruct of(LoadContext context) {
+    public static GraphStructV1 of(LoadContext context) {
         LoadOptions options = context.options();
         File file = FileUtils.getFile(options.file);
         try {
             String json = FileUtils.readFileToString(file, Constants.CHARSET);
-            GraphStruct struct = JsonUtil.fromJson(json, GraphStruct.class);
+            GraphStructV1 struct = JsonUtil.fromJson(json, GraphStructV1.class);
             struct.check();
             return struct;
         } catch (IOException | IllegalArgumentException e) {
             throw new LoadException(
-                      "Failed to parse graph struct description file '%s'",
+                      "Failed to parse graph mapping description file '%s'",
                       e, options.file);
         }
     }
 
     @Override
     public void check() throws IllegalArgumentException {
-        LOG.info("Checking vertex struct descriptions");
-        this.vertexStructs.forEach(VertexStruct::check);
+        LOG.info("Checking vertex mapping descriptions");
+        this.vertexStructs.forEach(VertexStructV1::check);
         this.checkNoSameStruct(this.vertexStructs);
 
-        LOG.info("Checking edge struct descriptions");
-        this.edgeStructs.forEach(EdgeStruct::check);
+        LOG.info("Checking edge mapping descriptions");
+        this.edgeStructs.forEach(EdgeStructV1::check);
         this.checkNoSameStruct(this.edgeStructs);
     }
 
     @SuppressWarnings("unchecked")
-    public <ES extends ElementStruct> List<ES> structs(ElemType type) {
+    public <ES extends ElementStructV1> List<ES> structs(ElemType type) {
         if (type.isVertex()) {
             return (List<ES>) this.vertexStructs;
         } else {
@@ -96,43 +98,16 @@ public class GraphStruct implements Checkable {
     }
 
     @SuppressWarnings("unchecked")
-    public <ES extends ElementStruct> List<ES> structsForFailure(
-                                               ElemType type,
-                                               LoadOptions options) {
-        List<ES> sourceStructs = (List<ES>) (type.isVertex() ?
-                                             this.vertexStructs :
-                                             this.edgeStructs);
-        List<ES> targetStructs = new ArrayList<>();
-        for (ES struct : sourceStructs) {
-            String dir = LoadUtil.getStructDirPrefix(options);
-            String path = Paths.get(dir, Constants.FAILURE_HISTORY_DIR,
-                                    struct.uniqueKey()).toString();
-            File pathDir = FileUtils.getFile(path);
-            // It means no failure data if the path directory does not exist
-            if (!pathDir.exists()) {
-                continue;
-            }
-            if (!pathDir.isDirectory()) {
-                throw new LoadException("The path '%s' of failure struct " +
-                                        "must be directory", path);
-            }
-
-            InputSource inputSource = struct.input();
-            FileSource fileSource = inputSource.asFileSource();
-            // Set failure data path
-            fileSource.path(path);
-            struct.input(fileSource);
-            // In order to distinguish from the normal loaded strcut
-            struct.setFailureUniqueKey();
-            targetStructs.add(struct);
-        }
-        return targetStructs;
+    public <ES extends ElementStructV1> List<ES> structs() {
+        return (List<ES>) ListUtils.union(this.vertexStructs, this.edgeStructs);
     }
 
-    private <ES extends ElementStruct> void checkNoSameStruct(List<ES> structs) {
-        Set<String> uniqueKeys = structs.stream().map(ElementStruct::uniqueKey)
+    private <ES extends ElementStructV1> void checkNoSameStruct(
+                                              List<ES> structs) {
+        Set<String> uniqueKeys = structs.stream()
+                                        .map(ElementStructV1::uniqueKey)
                                         .collect(Collectors.toSet());
         E.checkArgument(structs.size() == uniqueKeys.size(),
-                        "Please ensure there is no same struct in %s", structs);
+                        "Please ensure there is no same mapping in %s", structs);
     }
 }

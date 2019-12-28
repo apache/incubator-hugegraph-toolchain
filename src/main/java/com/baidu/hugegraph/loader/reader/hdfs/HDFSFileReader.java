@@ -73,10 +73,13 @@ public class HDFSFileReader extends FileReader {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         super.close();
-        if (this.hdfs != null) {
+        try {
             this.hdfs.close();
+        } catch (IOException e) {
+            LOG.warn("Failed to close reader for {} with exception {}",
+                     this.source(), e);
         }
     }
 

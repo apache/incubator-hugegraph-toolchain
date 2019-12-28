@@ -24,7 +24,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.struct.VertexStruct;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.mapping.VertexMapping;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -32,53 +33,55 @@ import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 
-public class VertexBuilder extends ElementBuilder<Vertex> {
+public class VertexBuilder extends ElementBuilder {
 
-    private final VertexStruct struct;
+    private final VertexMapping mapping;
     private final VertexLabel vertexLabel;
 
-    public VertexBuilder(LoadContext context, VertexStruct struct) {
+    public VertexBuilder(LoadContext context, InputStruct struct,
+                         VertexMapping mapping) {
         super(context, struct);
-        this.struct = struct;
-        this.vertexLabel = this.getVertexLabel(struct.label());
+        this.mapping = mapping;
+        this.vertexLabel = this.getVertexLabel(this.mapping.label());
         // Ensure the id field is matched with id strategy
         this.checkIdField();
     }
 
     @Override
-    public VertexStruct struct() {
-        return this.struct;
+    public VertexMapping mapping() {
+        return this.mapping;
     }
 
     @Override
-    protected SchemaLabel getSchemaLabel() {
-        return this.vertexLabel;
-    }
-
-    @Override
-    protected Vertex build(Map<String, Object> keyValues) {
-        Vertex vertex = new Vertex(this.struct.label());
+    public Vertex build(Map<String, Object> keyValues) {
+        Map<String, Object> properties = this.filterFields(keyValues);
+        Vertex vertex = new Vertex(this.mapping.label());
         // Assign or check id if need
-        this.assignIdIfNeed(vertex, keyValues);
+        this.assignIdIfNeed(vertex, properties);
         // Add properties
-        this.addProperties(vertex, keyValues);
+        this.addProperties(vertex, properties);
         return vertex;
     }
 
     @Override
+    protected SchemaLabel schemaLabel() {
+        return this.vertexLabel;
+    }
+
+    @Override
     protected boolean isIdField(String fieldName) {
-        return fieldName.equals(this.struct.idField());
+        return fieldName.equals(this.mapping.idField());
     }
 
     private void assignIdIfNeed(Vertex vertex, Map<String, Object> keyValues) {
         // The id strategy must be CUSTOMIZE/PRIMARY_KEY via 'checkIdField()'
         IdStrategy idStrategy = this.vertexLabel.idStrategy();
         if (idStrategy.isCustomize()) {
-            assert this.struct.idField() != null;
-            Object idValue = keyValues.get(this.struct.idField());
+            assert this.mapping.idField() != null;
+            Object idValue = keyValues.get(this.mapping.idField());
             E.checkArgument(idValue != null,
                             "The value of id field '%s' can't be null",
-                            this.struct.idField());
+                            this.mapping.idField());
 
             if (idStrategy.isCustomizeString()) {
                 String id = (String) idValue;
@@ -101,7 +104,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                 Object fieldValue = entry.getValue();
                 this.checkFieldValue(fieldName, fieldValue);
 
-                String key = this.struct.mappingField(fieldName);
+                String key = this.mapping.mappingField(fieldName);
                 if (!primaryKeys.contains(key)) {
                     continue;
                 }
@@ -120,15 +123,15 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     private void checkIdField() {
         String name = this.vertexLabel.name();
         if (this.vertexLabel.idStrategy().isCustomize()) {
-            E.checkState(this.struct.idField() != null,
+            E.checkState(this.mapping.idField() != null,
                          "The id field can't be empty or null when " +
-                         "id strategy is CUSTOMIZE for vertex label '%s'",
-                         name);
+                         "id strategy is '%s' for vertex label '%s'",
+                         this.vertexLabel.idStrategy(), name);
         } else if (this.vertexLabel.idStrategy().isPrimaryKey()) {
-            E.checkState(this.struct.idField() == null,
+            E.checkState(this.mapping.idField() == null,
                          "The id field must be empty or null when " +
-                         "id strategy is PRIMARY_KEY for vertex label '%s'",
-                         name);
+                         "id strategy is '%s' for vertex label '%s'",
+                         this.vertexLabel.idStrategy(), name);
         } else {
             // The id strategy is automatic
             throw new IllegalArgumentException(

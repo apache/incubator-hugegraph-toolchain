@@ -49,8 +49,7 @@ public abstract class InputItemProgress {
         this.offset = offset;
     }
 
-    public long confirmOffset() {
+    public void confirmOffset() {
         this.confirmOffset = this.offset;
-        return this.confirmOffset;
     }
 }

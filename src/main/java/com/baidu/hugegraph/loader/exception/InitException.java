@@ -17,14 +17,25 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.parser;
+package com.baidu.hugegraph.loader.exception;
 
-import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.reader.line.Line;
+public class InitException extends RuntimeException {
 
-public interface LineParser {
+    private static final long serialVersionUID = 5204623124963497613L;
 
-    Line parse(String[] header, String rawLine) throws ParseException;
+    public InitException(String message) {
+        super(message);
+    }
 
-    String[] split(String rawLine);
+    public InitException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public InitException(String message, Object... args) {
+        super(String.format(message, args));
+    }
+
+    public InitException(String message, Throwable cause, Object... args) {
+        super(String.format(message, args), cause);
+    }
 }

@@ -22,67 +22,34 @@ package com.baidu.hugegraph.loader.progress;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.HashMap;
 
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.E;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * LoadProgress was used to record progress of loading, in order to
  * continue loading when the last work was dropped out halfway.
  * The LoadProgress will only be operated by a single thread.
  */
-public final class LoadProgress {
+public final class LoadProgress extends HashMap<String, InputProgress> {
 
-    @JsonProperty("vertex")
-    private final InputProgressMap vertexProgress;
-    @JsonProperty("edge")
-    private final InputProgressMap edgeProgress;
-
-    public LoadProgress() {
-        this.vertexProgress = new InputProgressMap();
-        this.edgeProgress = new InputProgressMap();
+    public InputProgress addStruct(InputStruct struct) {
+        E.checkNotNull(struct, "mapping mapping");
+        this.put(struct.id(), new InputProgress(struct));
+        return this.get(struct.id());
     }
 
-    public InputProgressMap vertex() {
-        return this.vertexProgress;
-    }
-
-    public InputProgressMap edge() {
-        return this.edgeProgress;
-    }
-
-    public InputProgressMap type(ElemType type) {
-        return type.isVertex() ? this.vertexProgress : this.edgeProgress;
-    }
-
-    public long totalLoaded(ElemType type) {
-        InputProgressMap lastLoadMap = type.isVertex() ?
-                                       this.vertexProgress :
-                                       this.edgeProgress;
-        long total = 0L;
-        for (InputProgress inputProgress : lastLoadMap.values()) {
-            for (InputItemProgress itemProgress : inputProgress.loadedItems()) {
-                total += itemProgress.offset();
-            }
-            if (inputProgress.loadingItem() != null) {
-                total += inputProgress.loadingItem().offset();
-            }
-        }
-        return total;
-    }
-
-    public void markLoaded(ElementStruct struct, boolean markAll) {
-        InputProgress progress = this.type(struct.type()).getByStruct(struct);
-        E.checkArgumentNotNull(progress, "Invalid struct '%s'", struct);
+    public void markLoaded(InputStruct struct, boolean markAll) {
+        InputProgress progress = this.get(struct.id());
+        E.checkArgumentNotNull(progress, "Invalid mapping '%s'", struct);
         progress.markLoaded(markAll);
     }
 

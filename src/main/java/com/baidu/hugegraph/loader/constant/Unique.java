@@ -21,5 +21,5 @@ package com.baidu.hugegraph.loader.constant;
 
 public interface Unique<T> {
 
-    public T uniqueKey();
+    T uniqueKey();
 }

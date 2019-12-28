@@ -17,14 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.parser;
+package com.baidu.hugegraph.loader.mapping;
 
-import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.reader.line.Line;
-
-public interface LineParser {
-
-    Line parse(String[] header, String rawLine) throws ParseException;
-
-    String[] split(String rawLine);
+public class Global {
 }

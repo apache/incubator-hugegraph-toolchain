@@ -30,8 +30,10 @@ import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.summary.LoadMetrics;
+import com.baidu.hugegraph.loader.metrics.LoadMetrics;
+import com.baidu.hugegraph.loader.metrics.LoadSummary;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -39,82 +41,88 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableSet;
 
-public abstract class InsertTask<GE extends GraphElement> implements Runnable {
+public abstract class InsertTask implements Runnable {
 
     public static final Set<String> UNACCEPTABLE_EXCEPTIONS = ImmutableSet.of(
             "class java.lang.IllegalArgumentException"
     );
 
-    private final LoadContext context;
-    private final ElementStruct struct;
-    private final List<Record<GE>> batch;
+    protected final LoadContext context;
+    protected final InputStruct struct;
+    protected final ElementMapping mapping;
+    protected final List<Record> batch;
 
-    public InsertTask(LoadContext context, ElementStruct struct,
-                      List<Record<GE>> batch) {
+    public InsertTask(LoadContext context, InputStruct struct,
+                      ElementMapping mapping, List<Record> batch) {
         E.checkArgument(batch != null && !batch.isEmpty(),
                         "The batch can't be null or empty");
         this.context = context;
         this.struct = struct;
+        this.mapping = mapping;
         this.batch = batch;
     }
 
-    public LoadContext context() {
-        return this.context;
-    }
-
-    public ElementStruct struct() {
-        return this.struct;
-    }
-
     public ElemType type() {
-        return this.struct.type();
+        return this.mapping.type();
     }
 
     public LoadOptions options() {
         return this.context.options();
     }
 
-    public LoadMetrics metrics() {
-        return this.context.summary().metrics(this.struct);
+    public LoadSummary summary() {
+        return this.context.summary();
     }
 
-    public List<Record<GE>> batch() {
-        return this.batch;
+    public LoadMetrics metrics() {
+        return this.summary().metrics(this.mapping);
+    }
+
+    protected void plusLoadSuccess(int count) {
+        LoadMetrics metrics = this.summary().metrics(this.mapping);
+        metrics.plusLoadSuccess(count);
+        this.summary().plusTotalLoaded(this.type(), count);
+    }
+
+    protected void increaseLoadSuccess() {
+        LoadMetrics metrics = this.summary().metrics(this.mapping);
+        metrics.increaseLoadSuccess();
+        this.summary().plusTotalLoaded(this.type(), 1);
     }
 
     @SuppressWarnings("unchecked")
-    protected void addBatch(ElemType type, List<Record<GE>> batch,
+    protected void addBatch(ElemType type, List<Record> batch,
                             boolean checkVertex) {
-        HugeClient client = HugeClientHolder.get(this.context().options());
-        List<GE> elements = new ArrayList<>(batch.size());
+        HugeClient client = HugeClientHolder.get(this.options());
+        List<GraphElement> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));
         if (type.isVertex()) {
-            client.graph().addVertices((List<Vertex>) elements);
+            client.graph().addVertices((List<Vertex>) (Object) elements);
         } else {
             assert type.isEdge();
-            client.graph().addEdges((List<Edge>) elements, checkVertex);
+            client.graph().addEdges((List<Edge>) (Object) elements, checkVertex);
         }
     }
 
     @SuppressWarnings("unchecked")
-    protected void updateBatch(ElemType type, List<Record<GE>> batch,
+    protected void updateBatch(ElemType type, List<Record> batch,
                                boolean checkVertex) {
-        HugeClient client = HugeClientHolder.get(this.context().options());
-        List<GE> elements = new ArrayList<>(batch.size());
+        HugeClient client = HugeClientHolder.get(this.options());
+        List<GraphElement> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));
         // CreateIfNotExist dose not support false now
         if (type.isVertex()) {
             BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
-            req.vertices((List<Vertex>) elements)
-               .updatingStrategies(this.struct().updateStrategies())
+            req.vertices((List<Vertex>) (Object) elements)
+               .updatingStrategies(this.mapping.updateStrategies())
                .createIfNotExist(true);
 
             client.graph().updateVertices(req.build());
         } else {
             assert type.isEdge();
             BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
-            req.edges((List<Edge>) elements)
-               .updatingStrategies(this.struct().updateStrategies())
+            req.edges((List<Edge>) (Object) elements)
+               .updatingStrategies(this.mapping.updateStrategies())
                .checkVertex(checkVertex)
                .createIfNotExist(true);
 

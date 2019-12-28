@@ -31,66 +31,66 @@ import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.Log;
 import com.google.common.collect.ImmutableList;
 
-public class SingleInsertTask<GE extends GraphElement> extends InsertTask<GE> {
+public class SingleInsertTask extends InsertTask {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    public SingleInsertTask(LoadContext context, ElementStruct struct,
-                            List<Record<GE>> batch) {
-        super(context, struct, batch);
+    public SingleInsertTask(LoadContext context, InputStruct struct,
+                            ElementMapping mapping, List<Record> batch) {
+        super(context, struct, mapping, batch);
     }
 
     @Override
     public void run() {
-        FailureLogger logger = this.context().failureLogger(this.struct());
-        for (Record<GE> record : this.batch()) {
+        ElemType type = this.type();
+        FailureLogger logger = this.context.failureLogger(this.struct);
+        for (Record record : this.batch) {
             try {
-                if (this.struct().updateStrategies().isEmpty()) {
-                    this.addSingle(this.type(), this.options(), record);
+                if (this.mapping.updateStrategies().isEmpty()) {
+                    this.addSingle(type, this.options(), record);
                 } else {
-                    this.updateSingle(this.type(), this.options(), record);
+                    this.updateSingle(type, this.options(), record);
                 }
-                this.metrics().increaseLoadSuccess();
+                this.increaseLoadSuccess();
             } catch (Exception e) {
                 this.metrics().increaseLoadFailure();
-                LOG.error("Single insert {} error", this.type(), e);
+                LOG.error("Single insert {} error", type, e);
                 if (this.options().testMode) {
                     throw e;
                 }
-                // Write to current struct's insert failure log
+                // Write to current mapping's insert failure log
                 logger.write(new InsertException(record.rawLine(), e));
 
-                long failures = this.context().summary().totalInsertFailures();
+                long failures = this.context.summary().totalInsertFailures();
                 if (failures >= this.options().maxInsertErrors) {
-                    if (!this.context().stopped()) {
+                    if (!this.context.stopped()) {
                         // Just print once
                         Printer.printError("More than %s %s insert error, " +
                                            "stop parsing and waiting other " +
                                            "insert tasks finished",
                                            this.options().maxInsertErrors,
-                                           this.type().string());
+                                           type.string());
                     }
-                    this.context().stopLoading();
+                    this.context.stopLoading();
                 }
             }
         }
-        Printer.printProgress(this.type(), this.metrics().loadSuccess(),
-                              SINGLE_PRINT_FREQ, this.batch().size());
+        Printer.printProgress(this.summary(), SINGLE_PRINT_FREQ,
+                              this.batch.size());
     }
 
-    private void addSingle(ElemType type, LoadOptions options,
-                           Record<GE> record) {
+    private void addSingle(ElemType type, LoadOptions options, Record record) {
         this.addBatch(type, ImmutableList.of(record), options.checkVertex);
     }
 
     private void updateSingle(ElemType type, LoadOptions options,
-                              Record<GE> record) {
+                              Record record) {
         this.updateBatch(type, ImmutableList.of(record), options.checkVertex);
     }
 }

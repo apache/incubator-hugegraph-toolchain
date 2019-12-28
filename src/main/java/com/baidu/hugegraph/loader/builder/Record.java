@@ -21,17 +21,12 @@ package com.baidu.hugegraph.loader.builder;
 
 import com.baidu.hugegraph.structure.GraphElement;
 
-public class Record<GE extends GraphElement> {
+public class Record {
 
     private final String rawLine;
-    private final GE element;
+    private final GraphElement element;
 
-    public static <GE extends GraphElement> Record<GE> of(String rawLine,
-                                                          GE element) {
-        return new Record<>(rawLine, element);
-    }
-
-    private Record(String rawLine, GE element) {
+    public Record(String rawLine, GraphElement element) {
         this.rawLine = rawLine;
         this.element = element;
     }
@@ -40,7 +35,7 @@ public class Record<GE extends GraphElement> {
         return this.rawLine;
     }
 
-    public GE element() {
+    public GraphElement element() {
         return this.element;
     }
 

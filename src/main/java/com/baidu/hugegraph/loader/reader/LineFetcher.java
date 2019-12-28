@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.reader;
 import java.io.IOException;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.util.E;
 
@@ -70,7 +71,7 @@ public abstract class LineFetcher {
 
     public abstract void openReader(Readable readable);
 
-    public abstract void closeReader(Readable readable) throws IOException;
+    public abstract void closeReader() throws IOException;
 
     public abstract Line fetch() throws IOException;
 }

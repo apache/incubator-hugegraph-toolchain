@@ -36,7 +36,7 @@ import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.Log;
 
@@ -47,9 +47,9 @@ public final class FailureLogger {
     private final FailureWriter parseWriter;
     private final FailureWriter insertWriter;
 
-    public FailureLogger(LoadContext context, ElementStruct struct) {
+    public FailureLogger(LoadContext context, InputStruct struct) {
         String dir = LoadUtil.getStructDirPrefix(context.options());
-        String prefix = struct.uniqueKeyForFile();
+        String prefix = struct.id();
         String charset = struct.input().charset();
         /*
          * If user prepare to hanlde failures, new failure record will write
@@ -64,7 +64,7 @@ public final class FailureLogger {
     }
 
     private static String path(String dir, String prefix, String suffix) {
-        // The path format like: struct/current/person-f17h1220.parse-error
+        // The path format like: mapping/current/person-f17h1220.parse-error
         String name = prefix + Constants.DOT_STR + suffix;
         return Paths.get(dir, Constants.FAILURE_CURRENT_DIR, name).toString();
     }

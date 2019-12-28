@@ -17,86 +17,49 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.summary;
+package com.baidu.hugegraph.loader.metrics;
 
 import java.util.concurrent.atomic.LongAdder;
 
+/**
+ * Records parse and load statistics for each vertexlabel and edgelabel
+ */
 public final class LoadMetrics {
 
-    // Modified in only one thread
-    // The parse time and load time unit is ms
-    private long parseTime;
-    private long parseSuccess;
-    private long parseFailure;
-    // These metrics are user’s focus
-    private long loadTime;
+    private final LongAdder parseSuccess;
+    private final LongAdder parseFailure;
     private final LongAdder loadSuccess;
     private final LongAdder loadFailure;
 
-    private long averageLoadRate;
-
     public LoadMetrics() {
-        this.parseTime = 0L;
-        this.parseSuccess = 0L;
-        this.parseFailure = 0L;
-        this.loadTime = 0L;
+        this.parseSuccess = new LongAdder();
+        this.parseFailure = new LongAdder();
         this.loadSuccess = new LongAdder();
         this.loadFailure = new LongAdder();
-        this.averageLoadRate = 0L;
-    }
-
-    public long parseTime() {
-        return this.parseTime;
-    }
-
-    public void parseTime(long time) {
-        this.parseTime = time;
-    }
-
-    public void plusParseTime(long time) {
-        this.parseTime += time;
     }
 
     public long parseSuccess() {
-        return this.parseSuccess;
+        return this.parseSuccess.longValue();
     }
 
     public void plusParseSuccess(long count) {
-        this.parseSuccess += count;
+        this.parseSuccess.add(count);
+    }
+
+    public void increaseParseSuccess() {
+        this.parseSuccess.increment();
     }
 
     public long parseFailure() {
-        return this.parseFailure;
+        return this.parseFailure.longValue();
     }
 
     public void plusParseFailure(long count) {
-        this.parseFailure += count;
+        this.parseFailure.add(count);
     }
 
-    public long increaseParseFailure() {
-        return ++this.parseFailure;
-    }
-
-    public long parseRate() {
-        return this.parseTime == 0 ? -1L :
-               this.parseSuccess() * 1000 / this.parseTime;
-    }
-
-    public long loadTime() {
-        return this.loadTime;
-    }
-
-    public void loadTime(long time) {
-        this.loadTime = time;
-        /*
-         * The `loadSuccess` may change after that because there may
-         * exist unfinished vertices or edges in the thread pool
-         */
-        this.averageLoadRate = this.loadRate();
-    }
-
-    public void plusLoadTime(long time) {
-        this.loadTime += time;
+    public void increaseParseFailure() {
+        this.parseFailure.increment();
     }
 
     public long loadSuccess() {
@@ -123,12 +86,8 @@ public final class LoadMetrics {
         this.loadFailure.increment();
     }
 
-    public long loadRate() {
-        return this.loadTime == 0 ? -1L :
-               this.loadSuccess() * 1000 / this.loadTime;
-    }
-
-    public long averageLoadRate() {
-        return this.averageLoadRate;
+    public LoadReport buildReport() {
+        return new LoadReport(0L, this.parseSuccess(), this.parseFailure(),
+                              this.loadSuccess(), this.loadFailure());
     }
 }

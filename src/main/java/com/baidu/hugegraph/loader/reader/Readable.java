@@ -26,9 +26,9 @@ import com.baidu.hugegraph.loader.progress.InputItemProgress;
 
 public interface Readable {
 
-    public String name();
+    String name();
 
-    public InputStream open() throws IOException;
+    InputStream open() throws IOException;
 
-    public InputItemProgress inputItemProgress();
+    InputItemProgress inputItemProgress();
 }

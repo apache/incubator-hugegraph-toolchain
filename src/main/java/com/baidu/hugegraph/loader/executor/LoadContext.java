@@ -32,12 +32,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
+import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.summary.LoadSummary;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.LoadUtil;
@@ -49,9 +48,10 @@ public final class LoadContext {
 
     private static final Logger LOG = Log.logger(LoadContext.class);
 
+    private static volatile LoadContext instance;
+
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
-    private ElemType loadingType;
 
     private volatile boolean stopped;
     private final LoadOptions options;
@@ -59,12 +59,11 @@ public final class LoadContext {
     // The old progress just used to read
     private final LoadProgress oldProgress;
     private final LoadProgress newProgress;
-    // Each Element struct corresponds to a FailureLogger
+    // Each input mapping corresponds to a FailureLogger
     private final Map<String, FailureLogger> loggers;
 
     public LoadContext(String[] args) {
         this.timestamp = DateUtil.now(Constants.DATE_FORMAT);
-        this.loadingType = null;
         this.stopped = false;
         this.options = parseCheckOptions(args);
         this.summary = new LoadSummary();
@@ -75,14 +74,6 @@ public final class LoadContext {
 
     public String timestamp() {
         return this.timestamp;
-    }
-
-    public ElemType loadingType() {
-        return this.loadingType;
-    }
-
-    public void loadingType(ElemType type) {
-        this.loadingType = type;
     }
 
     public boolean stopped() {
@@ -109,9 +100,9 @@ public final class LoadContext {
         return this.newProgress;
     }
 
-    public FailureLogger failureLogger(ElementStruct struct) {
-        return this.loggers.computeIfAbsent(struct.uniqueKeyForFile(), k -> {
-            LOG.info("Create failure logger for struct '{}'", struct);
+    public FailureLogger failureLogger(InputStruct struct) {
+        return this.loggers.computeIfAbsent(struct.id(), k -> {
+            LOG.info("Create failure logger for mapping '{}'", struct);
             return new FailureLogger(this, struct);
         });
     }
@@ -141,9 +132,9 @@ public final class LoadContext {
         // Check options
         // Check option "-f"
         E.checkArgument(!StringUtils.isEmpty(options.file),
-                        "The struct description file must be specified");
+                        "The mapping description file must be specified");
         E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
-                        "The struct description file name must be end with %s",
+                        "The mapping description file name must be end with %s",
                         Constants.JSON_SUFFIX);
         File structFile = new File(options.file);
         if (!structFile.canRead()) {

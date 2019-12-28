@@ -25,6 +25,8 @@ import java.util.List;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.file.ListFormat;
+import com.baidu.hugegraph.util.CollectionUtil;
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class AbstractSource implements InputSource {
@@ -40,6 +42,15 @@ public abstract class AbstractSource implements InputSource {
         this.header = null;
         this.charset = Constants.CHARSET.name();
         this.listFormat = null;
+    }
+
+    @Override
+    public void check() throws IllegalArgumentException {
+        if (this.header != null) {
+            E.checkArgument(CollectionUtil.allUnique(this.header),
+                            "The header can't contain duplicate columns, " +
+                            "but got %s", this.header);
+        }
     }
 
     @Override

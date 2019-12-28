@@ -33,6 +33,10 @@ public final class Constants {
     public static final String JSON_SUFFIX = ".json";
     public static final String GROOVY_SCHEMA = "schema";
 
+    public static final String FIELD_VERSION = "version";
+    public static final String V1_STRUCT_VERSION = "1.0";
+    public static final String V2_STRUCT_VERSION = "2.0";
+
     public static final String EMPTY_STR = "";
     public static final String BLANK_STR = " ";
     public static final String DOT_STR = ".";
@@ -50,6 +54,7 @@ public final class Constants {
     public static final String INSERT_FAILURE_SUFFIX = "insert-error";
     public static final String PROGRESS_FILE = "load-progress";
 
+    public static final String PARSE_WORKER = "parse-worker-%s";
     public static final String BATCH_WORKER = "batch-worker-%d";
     public static final String SINGLE_WORKER = "single-worker-%d";
     public static final long BATCH_PRINT_FREQ = 10_000_000L;

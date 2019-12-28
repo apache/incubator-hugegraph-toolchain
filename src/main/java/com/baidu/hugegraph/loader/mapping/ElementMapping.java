@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.struct;
+package com.baidu.hugegraph.loader.mapping;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,22 +28,16 @@ import com.baidu.hugegraph.api.graph.structure.UpdateStrategy;
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.constant.Unique;
-import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.HashUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
 
-public abstract class ElementStruct implements Unique<String>, Checkable {
+public abstract class ElementMapping implements Checkable {
 
     @JsonProperty("label")
     private String label;
     @JsonProperty("skip")
     private boolean skip;
-    @JsonProperty("input")
-    private InputSource input;
     @JsonProperty("field_mapping")
     private Map<String, String> mappingFields;
     @JsonProperty("value_mapping")
@@ -57,9 +51,7 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
     @JsonProperty("update_strategies")
     private Map<String, UpdateStrategy> updateStrategies;
 
-    private transient String uniqueKey;
-
-    public ElementStruct() {
+    public ElementMapping() {
         this.skip = false;
         this.mappingFields = new HashMap<>();
         this.mappingValues = new HashMap<>();
@@ -67,41 +59,14 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
         this.updateStrategies = new HashMap<>();
-        this.uniqueKey = null;
     }
 
     public abstract ElemType type();
 
     @Override
-    public String uniqueKey() {
-        if (this.uniqueKey == null) {
-            String hashCode = HashUtil.hash(JsonUtil.toJson(this));
-            this.uniqueKey = this.label + Constants.MINUS_STR + hashCode;
-        }
-        return this.uniqueKey;
-    }
-
-    public String uniqueKeyForFile() {
-        String key = this.uniqueKey();
-        if (key.endsWith(Constants.FAILURE)) {
-            // Delete suffix "-failure" from uniqueKey
-            return key.replace(Constants.MINUS_STR + Constants.FAILURE,
-                               Constants.EMPTY_STR);
-        } else {
-            return key;
-        }
-    }
-
-    public void setFailureUniqueKey() {
-        this.uniqueKey = this.uniqueKey() + Constants.MINUS_STR +
-                         Constants.FAILURE;
-    }
-
-    @Override
     public void check() throws IllegalArgumentException {
         E.checkArgument(this.label != null && !this.label.isEmpty(),
                         "The label can't be null or empty");
-        this.input.check();
         E.checkArgument(this.selectedFields.isEmpty() ||
                         this.ignoredFields.isEmpty(),
                         "Not allowed to specify selected(%s) and ignored(%s) " +
@@ -123,20 +88,24 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         return this.label;
     }
 
+    public void label(String label) {
+        this.label = label;
+    }
+
     public boolean skip() {
         return this.skip;
     }
 
-    public InputSource input() {
-        return this.input;
-    }
-
-    public void input(InputSource input) {
-        this.input = input;
+    public void skip(boolean skip) {
+        this.skip = skip;
     }
 
     public Map<String, String> mappingFields() {
         return this.mappingFields;
+    }
+
+    public void mappingFields(Map<String, String> mappingFields) {
+        this.mappingFields = mappingFields;
     }
 
     public String mappingField(String fieldName) {
@@ -146,6 +115,10 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
 
     public Map<String, Map<String, Object>> mappingValues() {
         return this.mappingValues;
+    }
+
+    public void mappingValues(Map<String, Map<String, Object>> mappingValues) {
+        this.mappingValues = mappingValues;
     }
 
     public Object mappingValue(String fieldName, String rawValue) {
@@ -164,15 +137,31 @@ public abstract class ElementStruct implements Unique<String>, Checkable {
         return this.selectedFields;
     }
 
+    public void selectedFields(Set<String> selectedFields) {
+        this.selectedFields = selectedFields;
+    }
+
     public Set<String> ignoredFields() {
         return this.ignoredFields;
+    }
+
+    public void ignoredFields(Set<String> ignoredFields) {
+        this.ignoredFields = ignoredFields;
     }
 
     public Set<Object> nullValues() {
         return this.nullValues;
     }
 
+    public void nullValues(Set<Object> nullValues) {
+        this.nullValues = nullValues;
+    }
+
     public Map<String, UpdateStrategy> updateStrategies() {
         return this.updateStrategies;
+    }
+
+    public void updateStrategies(Map<String, UpdateStrategy> updateStrategies) {
+        this.updateStrategies = updateStrategies;
     }
 }

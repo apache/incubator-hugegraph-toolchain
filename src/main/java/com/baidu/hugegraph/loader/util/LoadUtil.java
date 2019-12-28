@@ -36,17 +36,18 @@ import com.beust.jcommander.JCommander;
 public final class LoadUtil {
 
     public static long lastLoaded(LoadContext context, ElemType type) {
-        if (context.options().incrementalMode) {
-            return context.oldProgress().totalLoaded(type);
-        } else {
-            return 0L;
-        }
+        return 0L;
+//        if (context.options().incrementalMode) {
+//            return context.oldProgress().totalLoaded(type);
+//        } else {
+//            return 0L;
+//        }
     }
 
     public static String getStructDirPrefix(LoadOptions options) {
         String structFileName = options.file;
         E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
-                        "The struct description file name must be end with %s",
+                        "The mapping description file name must be end with %s",
                         Constants.JSON_SUFFIX);
         int lastDotIdx = structFileName.lastIndexOf(Constants.DOT_STR);
         return structFileName.substring(0, lastDotIdx);

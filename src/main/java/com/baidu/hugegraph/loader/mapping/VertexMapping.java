@@ -17,20 +17,20 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.struct;
+package com.baidu.hugegraph.loader.mapping;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class VertexStruct extends ElementStruct {
+public class VertexMapping extends ElementMapping {
 
     // Be null when id strategy is primary key
     @JsonProperty("id")
     private final String idField;
 
     @JsonCreator
-    public VertexStruct(@JsonProperty("id") String idField) {
+    public VertexMapping(@JsonProperty("id") String idField) {
         this.idField = idField;
     }
 
@@ -50,6 +50,6 @@ public class VertexStruct extends ElementStruct {
 
     @Override
     public String toString() {
-        return String.format("VertexStruct(%s)", this.uniqueKey());
+        return String.format("vertex-mapping(label=%s)", this.label());
     }
 }

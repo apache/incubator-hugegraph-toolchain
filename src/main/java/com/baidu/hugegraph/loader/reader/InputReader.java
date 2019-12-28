@@ -20,12 +20,42 @@
 package com.baidu.hugegraph.loader.reader;
 
 import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
+import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.reader.file.LocalFileReader;
+import com.baidu.hugegraph.loader.reader.hdfs.HDFSFileReader;
+import com.baidu.hugegraph.loader.reader.jdbc.JDBCReader;
+import com.baidu.hugegraph.loader.reader.line.Line;
+import com.baidu.hugegraph.loader.source.InputSource;
+import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 
+/**
+ * Responsible for continuously reading the next batch of data lines
+ * from the input source
+ */
 public interface InputReader extends AutoCloseableIterator<Line> {
 
-    public void init(LoadContext context, ElementStruct struct);
+    void init(LoadContext context, InputStruct struct) throws InitException;
 
-    public long confirmOffset();
+    void confirmOffset();
+
+    @Override
+    void close();
+
+    static InputReader create(InputSource source) {
+        switch (source.type()) {
+            case FILE:
+                return new LocalFileReader((FileSource) source);
+            case HDFS:
+                return new HDFSFileReader((HDFSSource) source);
+            case JDBC:
+                return new JDBCReader((JDBCSource) source);
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported input source '%s'", source.type()));
+        }
+    }
 }

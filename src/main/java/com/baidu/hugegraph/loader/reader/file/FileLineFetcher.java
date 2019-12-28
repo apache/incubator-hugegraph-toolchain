@@ -40,9 +40,9 @@ import com.baidu.hugegraph.loader.parser.CsvLineParser;
 import com.baidu.hugegraph.loader.parser.JsonLineParser;
 import com.baidu.hugegraph.loader.parser.LineParser;
 import com.baidu.hugegraph.loader.parser.TextLineParser;
-import com.baidu.hugegraph.loader.reader.Line;
 import com.baidu.hugegraph.loader.reader.LineFetcher;
 import com.baidu.hugegraph.loader.reader.Readable;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
@@ -144,7 +144,7 @@ public class FileLineFetcher extends LineFetcher {
     }
 
     @Override
-    public void closeReader(Readable readable) throws IOException {
+    public void closeReader() throws IOException {
         if (this.reader != null) {
             this.reader.close();
         }

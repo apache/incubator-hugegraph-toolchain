@@ -21,5 +21,5 @@ package com.baidu.hugegraph.loader.constant;
 
 public interface Checkable {
 
-    public void check() throws IllegalArgumentException;
+    void check() throws IllegalArgumentException;
 }

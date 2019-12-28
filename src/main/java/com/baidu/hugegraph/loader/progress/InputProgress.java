@@ -22,7 +22,7 @@ package com.baidu.hugegraph.loader.progress;
 import java.util.Set;
 
 import com.baidu.hugegraph.loader.source.SourceType;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -50,7 +50,7 @@ public final class InputProgress {
         this.loadingItems = InsertionOrderUtil.newSet();
     }
 
-    public InputProgress(ElementStruct struct) {
+    public InputProgress(InputStruct struct) {
         this.type = struct.input().type();
         this.loadedItems = InsertionOrderUtil.newSet();
         this.loadingItem = null;
@@ -107,13 +107,12 @@ public final class InputProgress {
         }
     }
 
-    public long confirmOffset() {
+    public void confirmOffset() {
         for (InputItemProgress item : this.loadingItems) {
             item.confirmOffset();
         }
         if (this.loadingItem != null) {
-            return this.loadingItem.confirmOffset();
+            this.loadingItem.confirmOffset();
         }
-        return -1L;
     }
 }

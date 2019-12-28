@@ -17,22 +17,40 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.progress;
+package com.baidu.hugegraph.loader.struct;
 
-import java.util.HashMap;
+import com.baidu.hugegraph.loader.constant.ElemType;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.util.E;
+@Deprecated
+public class VertexStructV1 extends ElementStructV1 {
 
-public final class InputProgressMap extends HashMap<String, InputProgress> {
+    // Be null when id strategy is primary key
+    @JsonProperty("id")
+    private final String idField;
 
-    public InputProgress getByStruct(ElementStruct struct) {
-        E.checkNotNull(struct, "element struct");
-        return this.get(struct.uniqueKey());
+    @JsonCreator
+    public VertexStructV1(@JsonProperty("id") String idField) {
+        this.idField = idField;
     }
 
-    public void addStruct(ElementStruct struct) {
-        E.checkNotNull(struct, "element struct");
-        this.put(struct.uniqueKey(), new InputProgress(struct));
+    @Override
+    public ElemType type() {
+        return ElemType.VERTEX;
+    }
+
+    @Override
+    public void check() throws IllegalArgumentException {
+        super.check();
+    }
+
+    public String idField() {
+        return this.idField;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("VertexMapping(%s)", this.uniqueKey());
     }
 }

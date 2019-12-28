@@ -26,7 +26,8 @@ import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class EdgeStruct extends ElementStruct {
+@Deprecated
+public class EdgeStructV1 extends ElementStructV1 {
 
     @JsonProperty("source")
     private final List<String> sourceFields;
@@ -34,8 +35,8 @@ public class EdgeStruct extends ElementStruct {
     private final List<String> targetFields;
 
     @JsonCreator
-    public EdgeStruct(@JsonProperty("source") List<String> sourceFields,
-                      @JsonProperty("target") List<String> targetFields) {
+    public EdgeStructV1(@JsonProperty("source") List<String> sourceFields,
+                        @JsonProperty("target") List<String> targetFields) {
         this.sourceFields = sourceFields;
         this.targetFields = targetFields;
     }
@@ -68,6 +69,6 @@ public class EdgeStruct extends ElementStruct {
 
     @Override
     public String toString() {
-        return String.format("EdgeStruct(%s)", this.uniqueKey());
+        return String.format("EdgeMapping(%s)", this.uniqueKey());
     }
 }

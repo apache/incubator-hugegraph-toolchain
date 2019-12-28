@@ -63,6 +63,7 @@ public class FileSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
+        super.check();
         if (this.format == FileFormat.CSV) {
             E.checkArgument(this.delimiter == null ||
                             this.delimiter.equals(Constants.COMMA_STR),

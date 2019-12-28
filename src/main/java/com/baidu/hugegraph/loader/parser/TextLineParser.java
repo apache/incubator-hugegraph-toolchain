@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.util.StringUtil;
 
 public class TextLineParser implements LineParser {
