@@ -65,7 +65,7 @@ public class HDFSLoadTest extends FileLoadTest {
                 "-s", configPath("hdfs_with_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
@@ -88,7 +88,7 @@ public class HDFSLoadTest extends FileLoadTest {
                 "-s", configPath("hdfs_with_empty_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {
@@ -111,7 +111,7 @@ public class HDFSLoadTest extends FileLoadTest {
                 "-s", configPath("hdfs_with_invalid_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {
@@ -137,7 +137,7 @@ public class HDFSLoadTest extends FileLoadTest {
                 "-s", configPath("hdfs_with_unexist_core_site_path/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--num-threads", "2",
+                "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {

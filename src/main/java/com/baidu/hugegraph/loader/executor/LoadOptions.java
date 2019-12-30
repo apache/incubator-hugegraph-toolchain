@@ -65,10 +65,15 @@ public final class LoadOptions {
                description = "Whether to reload the previous failure records")
     public boolean reloadFailure = false;
 
-    @Parameter(names = {"--num-threads"}, arity = 1,
+    @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The number of threads to execute loading")
-    public int numThreads = CPUS;
+               description = "The number of threads to execute batch insert")
+    public int batchInsertThreads = CPUS;
+
+    @Parameter(names = {"--single-insert-threads"}, arity = 1,
+               validateWith = {PositiveValidator.class},
+               description = "The number of threads to execute single insert")
+    public int singleInsertThreads = 8;
 
     @Parameter(names = {"--max-conn"}, arity = 1,
                description = "Max number of HTTP connections to server")
