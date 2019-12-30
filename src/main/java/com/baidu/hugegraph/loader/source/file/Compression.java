@@ -41,7 +41,9 @@ public enum Compression {
 
     LZ4_BLOCK("lz4-block"),
 
-    LZ4_FRAMED("lz4-framed");
+    LZ4_FRAMED("lz4-framed"),
+
+    ORC("orc");
 
     private String name;
 

@@ -36,8 +36,10 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
+import com.baidu.hugegraph.loader.reader.file.FileLineFetcher;
 import com.baidu.hugegraph.loader.reader.file.FileReader;
-import com.baidu.hugegraph.loader.reader.file.Readers;
+import com.baidu.hugegraph.loader.reader.file.OrcFileLineFetcher;
+import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.util.Log;
@@ -47,12 +49,13 @@ public class HDFSFileReader extends FileReader {
     private static final Logger LOG = Log.logger(HDFSFileReader.class);
 
     private final FileSystem hdfs;
+    private final Configuration conf;
 
     public HDFSFileReader(HDFSSource source) {
         super(source);
-        Configuration config = this.loadConfiguration();
+        this.conf = this.loadConfiguration();
         try {
-            this.hdfs = FileSystem.get(config);
+            this.hdfs = FileSystem.get(this.conf);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
@@ -78,7 +81,7 @@ public class HDFSFileReader extends FileReader {
     }
 
     @Override
-    protected Readers openReaders() throws IOException {
+    protected List<Readable> scanReadables() throws IOException {
         Path path = new Path(this.source().path());
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
@@ -99,7 +102,16 @@ public class HDFSFileReader extends FileReader {
                 }
             }
         }
-        return new Readers(this.source(), paths);
+        return paths;
+    }
+
+    @Override
+    protected FileLineFetcher createLineFetcher() {
+        if (Compression.ORC == this.source().compression()) {
+            return new OrcFileLineFetcher(this.source(), this.conf);
+        } else {
+            return new FileLineFetcher(this.source());
+        }
     }
 
     private Configuration loadConfiguration() {

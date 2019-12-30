@@ -27,10 +27,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import javax.ws.rs.NotFoundException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.common.type.Date;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -2428,5 +2429,49 @@ public class FileLoadTest extends LoadTest {
                                     se.exception());
             });
         });
+    }
+
+    @Test
+    public void testOrcCompressFile() {
+        // TODO: add test for blob and uuid
+        TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(
+                "struct<" +
+                "name:string," +
+                "p_boolean:boolean," +
+                "p_byte:tinyint," +
+                "p_int:int," +
+                "p_long:bigint," +
+                "p_float:float," +
+                "p_double:double," +
+                "p_string:string," +
+                "p_date:date" +
+                ">");
+
+        Date now = Date.valueOf("2019-12-09");
+        ioUtil.writeOrc("vertex_person.orc", typeInfo,
+                        "marko", true, (byte) 1, 2, 3L,
+                        4.0F, 5.0D, "marko", now);
+        String[] args = new String[]{
+                "-f", structPath("orc_compress_file/struct.json"),
+                "-s", configPath("orc_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--num-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(1, vertices.size());
+
+        Vertex vertex = vertices.get(0);
+        Assert.assertEquals(true, vertex.property("p_boolean"));
+        Assert.assertEquals(1, vertex.property("p_byte"));
+        Assert.assertEquals(2, vertex.property("p_int"));
+        Assert.assertEquals(3, vertex.property("p_long"));
+        Assert.assertEquals(4.0D, vertex.property("p_float"));
+        Assert.assertEquals(5.0D, vertex.property("p_double"));
+        Assert.assertEquals("marko", vertex.property("p_string"));
+        Assert.assertEquals(now.toEpochMilli(), vertex.property("p_date"));
     }
 }

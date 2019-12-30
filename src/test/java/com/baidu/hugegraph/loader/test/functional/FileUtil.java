@@ -31,13 +31,26 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.source.file.Compression;
+import org.apache.hadoop.conf.Configuration;
 
 public class FileUtil implements IOUtil {
 
     private final String storePath;
+    private final Configuration conf;
 
     public FileUtil(String storePath) {
         this.storePath = storePath;
+        this.conf = new Configuration();
+    }
+
+    @Override
+    public String storePath() {
+        return this.storePath;
+    }
+
+    @Override
+    public Configuration config() {
+        return this.conf;
     }
 
     @Override

@@ -1,0 +1,16 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.orc",
+        "format": "CSV",
+        "charset": "UTF-8",
+        "compression": "ORC",
+        "date_format": "yyyy-MM-dd",
+        "time_zone": "GMT+0"
+      }
+    }
+  ]
+}

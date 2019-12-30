@@ -25,5 +25,9 @@ public enum FileFormat {
 
     TEXT,
 
-    JSON
+    JSON;
+
+    public boolean needHeader() {
+        return this == CSV || this == TEXT;
+    }
 }

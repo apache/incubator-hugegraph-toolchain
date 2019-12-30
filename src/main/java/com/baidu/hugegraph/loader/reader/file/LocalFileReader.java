@@ -31,6 +31,7 @@ import org.apache.commons.io.FileUtils;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
+import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 
@@ -41,7 +42,7 @@ public class LocalFileReader extends FileReader {
     }
 
     @Override
-    protected Readers openReaders() {
+    protected List<Readable> scanReadables() {
         File file = FileUtils.getFile(this.source().path());
         checkExistAndReadable(file);
 
@@ -67,7 +68,16 @@ public class LocalFileReader extends FileReader {
                 }
             }
         }
-        return new Readers(this.source(), files);
+        return files;
+    }
+
+    @Override
+    protected FileLineFetcher createLineFetcher() {
+        if (Compression.ORC == this.source().compression()) {
+            return new OrcFileLineFetcher(this.source());
+        } else {
+            return new FileLineFetcher(this.source());
+        }
     }
 
     private static void checkExistAndReadable(File file) {

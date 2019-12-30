@@ -40,24 +40,40 @@ public class HDFSUtil implements IOUtil {
     private static final Logger LOG = Log.logger(HDFSUtil.class);
 
     private final String storePath;
+    private final Configuration conf;
     private final FileSystem hdfs;
 
     public HDFSUtil(String storePath) {
         this.storePath = storePath;
-        Configuration config = loadConfiguration();
+        this.conf = loadConfiguration();
         // HDFS doesn't support write by default
-        config.setBoolean("dfs.support.write", true);
-        config.setBoolean("fs.hdfs.impl.disable.cache", true);
+        this.conf.setBoolean("dfs.support.write", true);
+        this.conf.setBoolean("fs.hdfs.impl.disable.cache", true);
         try {
-            this.hdfs = FileSystem.get(URI.create(storePath), config);
+            this.hdfs = FileSystem.get(URI.create(storePath), this.conf);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
     }
 
+    @Override
+    public String storePath() {
+        return this.storePath;
+    }
+
+    @Override
+    public Configuration config() {
+        return this.conf;
+    }
+
     private static Configuration loadConfiguration() {
         // Just use local hadoop with default config in test
-        return new Configuration();
+        String fileName = "hdfs_with_core_site_path/core-site.xml";
+        String confPath = HDFSUtil.class.getClassLoader().getResource(fileName)
+                                                         .getPath();
+        Configuration conf = new Configuration();
+        conf.addResource(new Path(confPath));
+        return conf;
     }
 
     @Override

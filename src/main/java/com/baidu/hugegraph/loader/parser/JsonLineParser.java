@@ -23,18 +23,13 @@ import java.util.Map;
 
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.rest.SerializeException;
 
 public class JsonLineParser implements LineParser {
 
-    public JsonLineParser(FileSource source) {
-        // pass
-    }
-
     @Override
-    public Line parse(String line) {
+    public Line parse(String[] header, String line) {
         Map<String, Object> keyValues;
         try {
             keyValues = JsonUtil.convertMap(line, String.class, Object.class);
@@ -43,5 +38,10 @@ public class JsonLineParser implements LineParser {
             throw new ParseException(line, "Deserialize line '%s' error",
                                      e, line);
         }
+    }
+
+    @Override
+    public String[] split(String rawLine) {
+        throw new UnsupportedOperationException("JsonLineParser.split()");
     }
 }

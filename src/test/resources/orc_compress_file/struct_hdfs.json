@@ -1,0 +1,17 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.orc",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8",
+        "compression": "ORC",
+        "date_format": "yyyy-MM-dd",
+        "time_zone": "GMT+0"
+      }
+    }
+  ]
+}

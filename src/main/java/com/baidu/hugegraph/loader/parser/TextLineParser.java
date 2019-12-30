@@ -24,29 +24,15 @@ import java.util.Arrays;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.reader.Line;
-import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.StringUtil;
 
 public class TextLineParser implements LineParser {
 
-    private final FileSource source;
-
     // Default is "\t"
     private final String delimiter;
-    private String[] header;
 
-    public TextLineParser(FileSource source) {
-        this(source, source.delimiter() != null ?
-                     source.delimiter() :
-                     Constants.TAB_STR);
-    }
-
-    public TextLineParser(FileSource source, String delimiter) {
-        this.source = source;
-        this.delimiter = delimiter;
-        if (this.source.header() != null) {
-            this.header = this.source.header();
-        }
+    public TextLineParser(String delimiter) {
+        this.delimiter = delimiter != null ? delimiter : Constants.TAB_STR;
     }
 
     public String delimiter() {
@@ -54,68 +40,32 @@ public class TextLineParser implements LineParser {
     }
 
     @Override
-    public String[] header() {
-        return this.header;
-    }
-
-    @Override
-    public Line parse(String line) {
+    public Line parse(String[] header, String line) throws ParseException {
         String[] columns = this.split(line);
-        if (columns.length > this.header.length) {
+        if (columns.length > header.length) {
             // Ignore extra empty string at the tail of line
-            int extra = columns.length - this.header.length;
+            int extra = columns.length - header.length;
             if (!this.tailColumnEmpty(columns, extra)) {
                 throw new ParseException(line,
                           "The column length '%s' doesn't match with " +
                           "header length '%s' on: %s",
-                          columns.length, this.header.length, line);
+                          columns.length, header.length, line);
             }
-            String[] subColumns = new String[this.header.length];
-            System.arraycopy(columns, 0, subColumns, 0, this.header.length);
-            return new Line(line, this.header, subColumns);
-        } else if (columns.length < this.header.length) {
+            String[] subColumns = new String[header.length];
+            System.arraycopy(columns, 0, subColumns, 0, header.length);
+            return new Line(line, header, subColumns);
+        } else if (columns.length < header.length) {
             // Fill with an empty string
-            String[] supColumns = new String[this.header.length];
+            String[] supColumns = new String[header.length];
             System.arraycopy(columns, 0, supColumns, 0, columns.length);
             Arrays.fill(supColumns, columns.length, supColumns.length,
                         Constants.EMPTY_STR);
-            return new Line(line, this.header, supColumns);
+            return new Line(line, header, supColumns);
         }
-        return new Line(line, this.header, columns);
+        return new Line(line, header, columns);
     }
 
     @Override
-    public boolean needHeader() {
-        return this.header == null;
-    }
-
-    @Override
-    public void parseHeader(String line) {
-        if (line == null || line.isEmpty()) {
-            throw new ParseException("The file header can't be empty " +
-                                     "under path '%s'", this.source.path());
-        }
-
-        // If doesn't specify header, the first line is treated as header
-        String[] columns = this.split(line);
-        assert columns.length > 0;
-        if (this.header == null) {
-            this.header = columns;
-        }
-    }
-
-    @Override
-    public boolean matchHeader(String line) {
-        if (line == null || line.isEmpty()) {
-            throw new ParseException("The file header can't be empty " +
-                                     "under path '%s'", this.source.path());
-        }
-
-        assert this.header != null;
-        String[] columns = this.split(line);
-        return Arrays.equals(this.header, columns);
-    }
-
     public String[] split(String line) {
         return StringUtil.split(line, this.delimiter);
     }
