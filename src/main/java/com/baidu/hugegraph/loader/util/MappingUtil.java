@@ -19,12 +19,17 @@
 
 package com.baidu.hugegraph.loader.util;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
+
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -41,11 +46,22 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.google.common.collect.ImmutableSet;
 
-public final class StructParseUtil {
+public final class MappingUtil {
 
     private static final Set<String> ACCEPTABLE_VERSIONS = ImmutableSet.of(
             Constants.V1_STRUCT_VERSION, Constants.V2_STRUCT_VERSION
     );
+
+    public static void write(LoadMapping mapping, String path) {
+        File file = FileUtils.getFile(path);
+        String json = JsonUtil.toJson(mapping);
+        try {
+            FileUtils.write(file, json, Constants.CHARSET);
+        } catch (IOException e) {
+            throw new LoadException("Failed to write mapping %s to file '%s'",
+                                    e, mapping, file);
+        }
+    }
 
     public static LoadMapping parse(String json) {
         Map<String, Object> map = JsonUtil.convertMap(json, String.class,

@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
@@ -36,8 +37,9 @@ public final class SchemaCache {
     private final Map<String, VertexLabel> vertexLabels;
     private final Map<String, EdgeLabel> edgeLabels;
 
-    public SchemaCache(LoadContext context) {
-        this.client = HugeClientHolder.get(context.options());
+    public SchemaCache() {
+        LoadOptions options = LoadContext.get().options();
+        this.client = HugeClientHolder.get(options);
         this.propertyKeys = new HashMap<>();
         this.vertexLabels = new HashMap<>();
         this.edgeLabels = new HashMap<>();

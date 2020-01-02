@@ -30,13 +30,13 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.util.Log;
 
 public abstract class FileReader implements InputReader {
@@ -72,7 +72,6 @@ public abstract class FileReader implements InputReader {
     @Override
     public void init(LoadContext context, InputStruct struct)
                      throws InitException {
-        LOG.info("Opening input mapping '{}'", struct);
         this.progress(context, struct);
 
         List<Readable> readableList;

@@ -27,8 +27,6 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.builder.Record;
-import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -40,22 +38,21 @@ public class BatchInsertTask extends InsertTask {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    public BatchInsertTask(LoadContext context, InputStruct struct,
-                           ElementMapping mapping, List<Record> batch) {
-        super(context, struct, mapping, batch);
+    public BatchInsertTask(InputStruct struct, ElementMapping mapping,
+                           List<Record> batch) {
+        super(struct, mapping, batch);
     }
 
     @Override
     public void run() {
-        ElemType type = this.type();
         boolean checkVertex = this.options().checkVertex;
         int retryCount = 0;
         do {
             try {
                 if (this.mapping.updateStrategies().isEmpty()) {
-                    this.addBatch(type, this.batch, checkVertex);
+                    this.addBatch(this.batch, checkVertex);
                 } else {
-                    this.updateBatch(type, this.batch, checkVertex);
+                    this.updateBatch(this.batch, checkVertex);
                 }
                 break;
             } catch (ClientException e) {
@@ -71,9 +68,9 @@ public class BatchInsertTask extends InsertTask {
         } while (retryCount > 0 && retryCount <= this.options().retryTimes);
 
         int count = this.batch.size();
-        // This metrics just for current mapping
+        // This metrics just for current element mapping
         this.plusLoadSuccess(count);
-        Printer.printProgress(this.context.summary(), BATCH_PRINT_FREQ, count);
+        Printer.printProgress(this.type(), BATCH_PRINT_FREQ, count);
     }
 
     private int waitThenRetry(int retryCount, RuntimeException e) {

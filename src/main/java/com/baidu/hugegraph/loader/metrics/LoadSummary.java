@@ -34,14 +34,18 @@ public final class LoadSummary {
     private final Map<String, LoadMetrics> vertexMetricsMap;
     private final Map<String, LoadMetrics> edgeMetricsMap;
 
-    private final StopWatch totalTimer;
+    private final LongAdder vertexParsed;
     private final LongAdder vertexLoaded;
+    private final LongAdder edgeParsed;
     private final LongAdder edgeLoaded;
+    private final StopWatch totalTimer;
 
     public LoadSummary() {
         this.vertexMetricsMap = InsertionOrderUtil.newMap();
         this.edgeMetricsMap = InsertionOrderUtil.newMap();
+        this.vertexParsed = new LongAdder();
         this.vertexLoaded = new LongAdder();
+        this.edgeParsed = new LongAdder();
         this.edgeLoaded = new LongAdder();
         this.totalTimer = new StopWatch();
     }
@@ -69,16 +73,20 @@ public final class LoadSummary {
         return this.edgeMetricsMap;
     }
 
-    public long totalTime() {
-        return this.totalTimer.getTime();
+    public long vertexParsed() {
+        return this.vertexParsed.longValue();
     }
 
-    public void startTimer() {
-        this.totalTimer.start();
+    public long edgeParsed() {
+        return this.edgeParsed.longValue();
     }
 
-    public void stopTimer() {
-        this.totalTimer.stop();
+    public void plusParsed(ElemType type, int count) {
+        if (type.isVertex()) {
+            this.vertexParsed.add(count);
+        } else {
+            this.edgeParsed.add(count);
+        }
     }
 
     public long vertexLoaded() {
@@ -89,7 +97,7 @@ public final class LoadSummary {
         return this.edgeLoaded.longValue();
     }
 
-    public void plusTotalLoaded(ElemType type, int count) {
+    public void plusLoaded(ElemType type, int count) {
         if (type.isVertex()) {
             this.vertexLoaded.add(count);
         } else {
@@ -117,6 +125,38 @@ public final class LoadSummary {
             total += metrics.loadFailure();
         }
         return total;
+    }
+
+    public long totalTime() {
+        return this.totalTimer.getTime();
+    }
+
+    public void startTimer() {
+        this.totalTimer.start();
+    }
+
+    public void stopTimer() {
+        this.totalTimer.stop();
+    }
+
+    public long parseRate(ElemType type) {
+        long totalTime = this.totalTime();
+        if (totalTime == 0) {
+            return -1;
+        }
+        long success = type.isVertex() ? this.vertexParsed.longValue() :
+                       this.edgeParsed.longValue();
+        return success * 1000 / totalTime;
+    }
+
+    public long loadRate(ElemType type) {
+        long totalTime = this.totalTime();
+        if (totalTime == 0) {
+            return -1;
+        }
+        long success = type.isVertex() ? this.vertexLoaded.longValue() :
+                       this.edgeLoaded.longValue();
+        return success * 1000 / totalTime;
     }
 
     public LoadReport buildReport(ElemType type) {

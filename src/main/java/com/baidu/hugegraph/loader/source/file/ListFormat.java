@@ -29,7 +29,7 @@ public final class ListFormat {
 
     private static final String DEFAULT_START_SYMBOL = "[";
     private static final String DEFAULT_END_SYMBOL = "]";
-    private static final String DEFAULT_ELEM_DELIMITER = ",";
+    private static final String DEFAULT_ELEM_DELIMITER = ";";
 
     @JsonProperty("start_symbol")
     private String startSymbol;

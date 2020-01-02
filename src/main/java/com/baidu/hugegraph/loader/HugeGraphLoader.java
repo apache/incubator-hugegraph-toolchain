@@ -35,10 +35,10 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.reader.InputReader;
-import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
+import com.baidu.hugegraph.loader.reader.InputReader;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.task.ParseTaskBuilder;
 import com.baidu.hugegraph.loader.task.ParseTaskBuilder.ParseTask;
 import com.baidu.hugegraph.loader.task.TaskManager;
@@ -61,9 +61,15 @@ public final class HugeGraphLoader {
     }
 
     public HugeGraphLoader(String[] args) {
-        this.context = new LoadContext(args);
-        this.mapping = LoadMapping.of(this.context);
-        this.manager = new TaskManager(this.context);
+        LoadOptions options = LoadOptions.parseOptions(args);
+        try {
+            this.context = LoadContext.init(options);
+            this.mapping = LoadMapping.of(options.file);
+            this.manager = new TaskManager();
+        } catch (Throwable e) {
+            LoadContext.destroy();
+            throw e;
+        }
         this.addShutdownHook();
     }
 
@@ -88,7 +94,7 @@ public final class HugeGraphLoader {
             throw e;
         }
         // Print load summary
-        Printer.printSummary(this.context);
+        Printer.printSummary();
         this.stopThenShutdown();
     }
 
@@ -135,7 +141,7 @@ public final class HugeGraphLoader {
 
     private void loadInputs() {
         LOG.info("Start loading");
-        Printer.printRealtimeProgress(this.context);
+        Printer.printRealtimeProgress();
         LoadOptions options = this.context.options();
 
         this.context.summary().startTimer();
@@ -152,12 +158,15 @@ public final class HugeGraphLoader {
             this.context.summary().stopTimer();
         }
 
-        Printer.printFinalProgress(this.context);
+        Printer.printFinalProgress();
     }
 
     private void load(List<InputStruct> structs) {
         // Load input structs one by one
         for (InputStruct struct : structs) {
+            if (this.context.stopped()) {
+                break;
+            }
             if (struct.skip()) {
                 continue;
             }
@@ -175,8 +184,7 @@ public final class HugeGraphLoader {
 
     private void load(InputStruct struct, InputReader reader) {
         LOG.info("Start parsing and loading '{}'", struct);
-        ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context,
-                                                            struct);
+        ParseTaskBuilder taskBuilder = new ParseTaskBuilder(struct);
         int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
         for (boolean finished = false; !this.context.stopped() && !finished;) {
@@ -204,10 +212,13 @@ public final class HugeGraphLoader {
 
     private void stopThenShutdown() {
         LOG.info("Stop loading then shutdown HugeGraphLoader");
-        this.context.stopLoading();
-        // Wait all insert tasks finished before exit
-        this.manager.waitFinished();
-        this.manager.shutdown();
-        this.context.close();
+        try {
+            this.context.stopLoading();
+            // Wait all insert tasks finished before exit
+            this.manager.waitFinished();
+            this.manager.shutdown();
+        } finally {
+            LoadContext.destroy();
+        }
     }
 }

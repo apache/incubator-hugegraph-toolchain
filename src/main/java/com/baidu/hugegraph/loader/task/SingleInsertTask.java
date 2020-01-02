@@ -26,9 +26,7 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.Record;
-import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InsertException;
-import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
@@ -41,26 +39,25 @@ public class SingleInsertTask extends InsertTask {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    public SingleInsertTask(LoadContext context, InputStruct struct,
-                            ElementMapping mapping, List<Record> batch) {
-        super(context, struct, mapping, batch);
+    public SingleInsertTask(InputStruct struct, ElementMapping mapping,
+                            List<Record> batch) {
+        super(struct, mapping, batch);
     }
 
     @Override
     public void run() {
-        ElemType type = this.type();
         FailureLogger logger = this.context.failureLogger(this.struct);
         for (Record record : this.batch) {
             try {
                 if (this.mapping.updateStrategies().isEmpty()) {
-                    this.addSingle(type, this.options(), record);
+                    this.addSingle(this.options(), record);
                 } else {
-                    this.updateSingle(type, this.options(), record);
+                    this.updateSingle(this.options(), record);
                 }
                 this.increaseLoadSuccess();
             } catch (Exception e) {
                 this.metrics().increaseLoadFailure();
-                LOG.error("Single insert {} error", type, e);
+                LOG.error("Single insert {} error", this.type(), e);
                 if (this.options().testMode) {
                     throw e;
                 }
@@ -75,22 +72,20 @@ public class SingleInsertTask extends InsertTask {
                                            "stop parsing and waiting other " +
                                            "insert tasks finished",
                                            this.options().maxInsertErrors,
-                                           type.string());
+                                           this.type().string());
                     }
                     this.context.stopLoading();
                 }
             }
         }
-        Printer.printProgress(this.summary(), SINGLE_PRINT_FREQ,
-                              this.batch.size());
+        Printer.printProgress(this.type(), SINGLE_PRINT_FREQ, this.batch.size());
     }
 
-    private void addSingle(ElemType type, LoadOptions options, Record record) {
-        this.addBatch(type, ImmutableList.of(record), options.checkVertex);
+    private void addSingle(LoadOptions options, Record record) {
+        this.addBatch(ImmutableList.of(record), options.checkVertex);
     }
 
-    private void updateSingle(ElemType type, LoadOptions options,
-                              Record record) {
-        this.updateBatch(type, ImmutableList.of(record), options.checkVertex);
+    private void updateSingle(LoadOptions options, Record record) {
+        this.updateBatch(ImmutableList.of(record), options.checkVertex);
     }
 }

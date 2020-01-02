@@ -45,7 +45,6 @@ public final class TaskManager {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    private final LoadContext context;
     private final LoadOptions options;
 
     private final Semaphore parseSemaphore;
@@ -57,9 +56,8 @@ public final class TaskManager {
 
     private volatile boolean stopped;
 
-    public TaskManager(LoadContext context) {
-        this.context = context;
-        this.options = context.options();
+    public TaskManager() {
+        this.options = LoadContext.get().options();
         this.parseSemaphore = new Semaphore(this.parseSemaphoreNum());
         // Try to make all batch threads running and don't wait for producer
         this.batchSemaphore = new Semaphore(this.batchSemaphoreNum());
@@ -186,12 +184,12 @@ public final class TaskManager {
                                     "parse task", e);
         }
 
-        CompletableFuture.supplyAsync(task, this.parseService).exceptionally(e -> {
+        CompletableFuture.supplyAsync(task, this.parseService)
+                         .exceptionally(e -> {
             LOG.error("Failed to execute parse task", e);
             return null;
         }).thenAccept(batch -> {
-            if (CollectionUtils.isEmpty(batch) ||
-                this.context.options().dryRun) {
+            if (CollectionUtils.isEmpty(batch) || this.options.dryRun) {
                 return;
             }
             this.submitBatch(struct, mapping, batch);
@@ -207,8 +205,7 @@ public final class TaskManager {
                                     "batch in batch mode", e, mapping.type());
         }
 
-        InsertTask task = new BatchInsertTask(this.context, struct,
-                                              mapping, batch);
+        InsertTask task = new BatchInsertTask(struct, mapping, batch);
         CompletableFuture.runAsync(task, this.batchService).exceptionally(e -> {
             LOG.warn("Batch insert {} error, try single insert",
                      mapping.type(), e);
@@ -228,8 +225,7 @@ public final class TaskManager {
                                     "batch in single mode", e, mapping.type());
         }
 
-        InsertTask task = new SingleInsertTask(this.context, struct,
-                                               mapping, batch);
+        InsertTask task = new SingleInsertTask(struct, mapping, batch);
         CompletableFuture.runAsync(task, this.singleService)
                          .whenComplete((r, e) -> this.singleSemaphore.release());
     }

@@ -21,11 +21,21 @@ package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+
+import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.util.LoadUtil;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
 public final class LoadOptions {
+
+    private static final Logger LOG = Log.logger(LoadOptions.class);
 
     private final int CPUS = Runtime.getRuntime().availableProcessors();
 
@@ -149,6 +159,45 @@ public final class LoadOptions {
     @Parameter(names = {"--help"}, help = true,
                description = "Print usage of HugeGraphLoader")
     public boolean help;
+
+    public static LoadOptions parseOptions(String[] args) {
+        LoadOptions options = new LoadOptions();
+        JCommander commander = JCommander.newBuilder()
+                                         .addObject(options)
+                                         .build();
+        commander.parse(args);
+        // Print usage and exit
+        if (options.help) {
+            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
+        }
+        // Check options
+        // Check option "-f"
+        E.checkArgument(!StringUtils.isEmpty(options.file),
+                        "The mapping file must be specified");
+        E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
+                        "The mapping file name must be end with %s",
+                        Constants.JSON_SUFFIX);
+        File mappingFile = new File(options.file);
+        if (!mappingFile.canRead()) {
+            LOG.error("The mapping file must be readable: '{}'", mappingFile);
+            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
+        }
+
+        // Check option "-g"
+        E.checkArgument(!StringUtils.isEmpty(options.graph),
+                        "The graph must be specified");
+        // Check option "-h"
+        if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
+            options.host = Constants.HTTP_PREFIX + options.host;
+        }
+        // Check option --incremental-mode and --reload-failure
+        if (options.reloadFailure) {
+            E.checkArgument(options.incrementalMode,
+                            "Option --reload-failure is only allowed to set " +
+                            "in incremental mode");
+        }
+        return options;
+    }
 
     public static class UrlValidator implements IParameterValidator {
 

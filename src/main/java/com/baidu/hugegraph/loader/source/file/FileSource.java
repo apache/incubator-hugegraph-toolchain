@@ -25,7 +25,9 @@ import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+@JsonPropertyOrder({"type", "path", "file_filter"})
 public class FileSource extends AbstractSource {
 
     @JsonProperty("path")

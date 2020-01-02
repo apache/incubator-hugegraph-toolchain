@@ -22,7 +22,6 @@ package com.baidu.hugegraph.loader.builder;
 import java.util.List;
 import java.util.Map;
 
-import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
@@ -40,9 +39,8 @@ public class EdgeBuilder extends ElementBuilder {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(LoadContext context, InputStruct struct,
-                       EdgeMapping mapping) {
-        super(context, struct);
+    public EdgeBuilder(InputStruct struct, EdgeMapping mapping) {
+        super(struct);
         this.mapping = mapping;
         this.edgeLabel = this.getEdgeLabel(this.mapping.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
@@ -94,10 +92,10 @@ public class EdgeBuilder extends ElementBuilder {
         List<String> primaryKeys = vertexLabel.primaryKeys();
         Object[] primaryValues = new Object[primaryKeys.size()];
         for (String fieldName : fieldNames) {
-            if (!keyValues.containsKey(fieldName)) {
+            Object fieldValue = keyValues.get(fieldName);
+            if (fieldValue == null) {
                 continue;
             }
-            Object fieldValue = keyValues.get(fieldName);
             this.checkFieldValue(fieldName, fieldValue);
             Object mappedValue = this.mappingFieldValueIfNeeded(fieldName,
                                                                 fieldValue);
@@ -113,7 +111,7 @@ public class EdgeBuilder extends ElementBuilder {
                                 fieldValue, fieldValue.getClass(),
                                 mappedValue, mappedValue.getClass());
                 String id = (String) mappedValue;
-                checkVertexIdLength(id);
+                this.checkVertexIdLength(id);
                 return id;
             } else if (idStrategy.isCustomizeNumber()) {
                 return DataTypeUtil.parseNumber(mappedValue);
@@ -130,8 +128,8 @@ public class EdgeBuilder extends ElementBuilder {
             }
         }
 
-        String id = spliceVertexId(vertexLabel, primaryValues);
-        checkVertexIdLength(id);
+        String id = this.spliceVertexId(vertexLabel, primaryValues);
+        this.checkVertexIdLength(id);
         return id;
     }
 

@@ -30,7 +30,6 @@ import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
-import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -40,12 +39,11 @@ import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.VertexMapping;
 import com.baidu.hugegraph.loader.metrics.LoadMetrics;
+import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.Log;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 
 public final class ParseTaskBuilder {
 
@@ -53,19 +51,17 @@ public final class ParseTaskBuilder {
 
     private final LoadContext context;
     private final InputStruct struct;
-    private final Multimap<ElemType, ElementBuilder> builders;
+    private final List<ElementBuilder> builders;
 
-    public ParseTaskBuilder(LoadContext context, InputStruct struct) {
-        this.context = context;
+    public ParseTaskBuilder(InputStruct struct) {
+        this.context = LoadContext.get();
         this.struct = struct;
-        this.builders = ArrayListMultimap.create();
+        this.builders = new ArrayList<>();
         for (VertexMapping mapping : struct.vertices()) {
-            this.builders.put(ElemType.VERTEX,
-                              new VertexBuilder(context, struct, mapping));
+            this.builders.add(new VertexBuilder(struct, mapping));
         }
         for (EdgeMapping mapping : struct.edges()) {
-            this.builders.put(ElemType.EDGE,
-                              new EdgeBuilder(context, struct, mapping));
+            this.builders.add(new EdgeBuilder(struct, mapping));
         }
     }
 
@@ -75,26 +71,35 @@ public final class ParseTaskBuilder {
 
     public List<ParseTask> build(List<Line> lines) {
         final int batchSize = this.context.options().batchSize;
-        List<ParseTask> tasks = new ArrayList<>();
-        for (ElementBuilder builder : this.builders.values()) {
+        List<ParseTask> tasks = new ArrayList<>(this.builders.size());
+        for (ElementBuilder builder : this.builders) {
             ParseTask task = new ParseTask(builder.mapping(), () -> {
+                // One batch records
                 List<Record> records = new ArrayList<>(batchSize);
                 ElementMapping mapping = builder.mapping();
-                LoadMetrics metrics = this.context.summary().metrics(mapping);
+
+                LoadSummary summary = this.context.summary();
+                LoadMetrics metrics = summary.metrics(mapping);
+                int count = 0;
                 for (Line line : lines) {
+                    if (this.context.stopped()) {
+                        break;
+                    }
                     String rawLine = line.rawLine();
                     Map<String, Object> keyValues = line.keyValues();
                     try {
                         // NOTE: don't remove entry in keyValues
                         GraphElement element = builder.build(keyValues);
-                        metrics.increaseParseSuccess();
                         records.add(new Record(rawLine, element));
+                        count++;
                     } catch (IllegalArgumentException e) {
                         metrics.increaseParseFailure();
                         ParseException pe = new ParseException(rawLine, e);
                         this.handleParseFailure(mapping, pe);
                     }
                 }
+                metrics.plusParseSuccess(count);
+                summary.plusParsed(mapping.type(), count);
                 return records;
             });
             tasks.add(task);

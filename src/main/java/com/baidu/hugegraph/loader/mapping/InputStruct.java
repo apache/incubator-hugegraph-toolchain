@@ -29,7 +29,9 @@ import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+@JsonPropertyOrder({"id", "skip", "input", "vertices", "edges"})
 public class InputStruct implements Checkable {
 
     @JsonProperty("id")

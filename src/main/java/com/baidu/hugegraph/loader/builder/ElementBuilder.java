@@ -31,7 +31,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.source.InputSource;
@@ -47,17 +46,18 @@ import com.google.common.collect.Maps;
 
 public abstract class ElementBuilder {
 
-    private static final CharsetEncoder ENCODER =
-                         Constants.CHARSET.newEncoder();
-    private static final ByteBuffer BUFFER =
-                         ByteBuffer.allocate(Constants.VERTEX_ID_LIMIT);
-
     private final InputStruct struct;
     private final SchemaCache schema;
 
-    public ElementBuilder(LoadContext context, InputStruct struct) {
+    // NOTE: CharsetEncoder is not thread safe
+    private final CharsetEncoder encoder;
+    private final ByteBuffer buffer;
+
+    public ElementBuilder(InputStruct struct) {
         this.struct = struct;
-        this.schema = new SchemaCache(context);
+        this.schema = new SchemaCache();
+        this.encoder = Constants.CHARSET.newEncoder();
+        this.buffer = ByteBuffer.allocate(Constants.VERTEX_ID_LIMIT);
     }
 
     public abstract ElementMapping mapping();
@@ -72,24 +72,19 @@ public abstract class ElementBuilder {
      * Retain only the key-value pairs needed by the current vertex or edge
      */
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
-        // select and ignore not allowed to be true at the same time
-        boolean selectFields = !this.mapping().selectedFields().isEmpty();
-        boolean ignoreFields = !this.mapping().ignoredFields().isEmpty();
-
-        Set<String> nullableKeys = this.schemaLabel().nullableKeys();
-        Set<Object> nullValues = this.mapping().nullValues();
-
         return Maps.filterEntries(keyValues, entry -> {
             assert entry != null;
             String key = entry.getKey();
             Object val = entry.getValue();
             // Retain selected fields or remove ignored fields
-            if (selectFields) {
+            if (!this.mapping().selectedFields().isEmpty()) {
                 return this.mapping().selectedFields().contains(key);
-            } else if (ignoreFields) {
+            } else if (!this.mapping().ignoredFields().isEmpty()) {
                 return !this.mapping().ignoredFields().contains(key);
             }
             String mappedKey = this.mapping().mappingField(key);
+            Set<String> nullableKeys = this.schemaLabel().nullableKeys();
+            Set<Object> nullValues = this.mapping().nullValues();
             return !nullableKeys.contains(mappedKey) || !nullValues.contains(val);
         });
     }
@@ -145,8 +140,8 @@ public abstract class ElementBuilder {
         return this.mapping().mappingValue(fieldName, fieldStrValue);
     }
 
-    protected static String spliceVertexId(VertexLabel vertexLabel,
-                                           Object[] primaryValues) {
+    protected String spliceVertexId(VertexLabel vertexLabel,
+                                    Object[] primaryValues) {
         List<String> primaryKeys = vertexLabel.primaryKeys();
         E.checkArgument(primaryKeys.size() == primaryValues.length,
                         "Missing some primary key columns, expect %s, " +
@@ -182,12 +177,12 @@ public abstract class ElementBuilder {
         return vertexId.toString();
     }
 
-    protected static void checkVertexIdLength(String id) {
-        ENCODER.reset();
-        BUFFER.clear();
-        CoderResult result = ENCODER.encode(CharBuffer.wrap(id.toCharArray()),
-                                            BUFFER, true);
-        E.checkArgument(result.isUnderflow(),
+    protected void checkVertexIdLength(String id) {
+        this.encoder.reset();
+        this.buffer.clear();
+        CoderResult r = this.encoder.encode(CharBuffer.wrap(id.toCharArray()),
+                                            this.buffer, true);
+        E.checkArgument(r.isUnderflow(),
                         "The vertex id length limit is '%s', '%s' exceeds it",
                         Constants.VERTEX_ID_LIMIT, id);
     }

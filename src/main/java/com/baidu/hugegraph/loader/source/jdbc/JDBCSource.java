@@ -24,7 +24,9 @@ import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+@JsonPropertyOrder({"type", "vendor"})
 public class JDBCSource extends AbstractSource {
 
     @JsonProperty("vendor")

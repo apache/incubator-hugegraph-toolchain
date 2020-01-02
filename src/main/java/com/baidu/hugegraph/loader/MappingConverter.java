@@ -17,20 +17,19 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.source;
+package com.baidu.hugegraph.loader;
 
-import com.baidu.hugegraph.loader.constant.Checkable;
-import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.mapping.LoadMapping;
+import com.baidu.hugegraph.loader.util.MappingUtil;
 
-public interface InputSource extends Checkable {
+public final class MappingConverter {
 
-    @JsonProperty("type")
-    SourceType type();
-
-    String[] header();
-
-    String charset();
-
-    FileSource asFileSource();
+    public static void main(String[] args) {
+        LoadOptions options = LoadOptions.parseOptions(args);
+        LoadMapping mapping = LoadMapping.of(options.file);
+        MappingUtil.write(mapping, "mapping-v2.json");
+        LoadContext.destroy();
+    }
 }

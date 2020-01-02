@@ -28,21 +28,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
-import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
-import com.beust.jcommander.JCommander;
 
 public final class LoadContext {
 
@@ -62,10 +60,32 @@ public final class LoadContext {
     // Each input mapping corresponds to a FailureLogger
     private final Map<String, FailureLogger> loggers;
 
-    public LoadContext(String[] args) {
+    public static synchronized LoadContext init(LoadOptions options) {
+        if (instance == null) {
+            instance = new LoadContext(options);
+        }
+        return instance;
+    }
+
+    public static synchronized void destroy() {
+        if (instance != null) {
+            try {
+                instance.close();
+            } finally {
+                instance = null;
+            }
+        }
+    }
+
+    public static LoadContext get() {
+        E.checkState(instance != null, "Must init LoadContext firstly");
+        return instance;
+    }
+
+    private LoadContext(LoadOptions options) {
         this.timestamp = DateUtil.now(Constants.DATE_FORMAT);
         this.stopped = false;
-        this.options = parseCheckOptions(args);
+        this.options = options;
         this.summary = new LoadSummary();
         this.oldProgress = parseLoadProgress(this.options);
         this.newProgress = new LoadProgress();
@@ -119,47 +139,7 @@ public final class LoadContext {
         HugeClientHolder.close();
     }
 
-    private static LoadOptions parseCheckOptions(String[] args) {
-        LoadOptions options = new LoadOptions();
-        JCommander commander = JCommander.newBuilder()
-                                         .addObject(options)
-                                         .build();
-        commander.parse(args);
-        // Print usage and exit
-        if (options.help) {
-            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
-        }
-        // Check options
-        // Check option "-f"
-        E.checkArgument(!StringUtils.isEmpty(options.file),
-                        "The mapping description file must be specified");
-        E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
-                        "The mapping description file name must be end with %s",
-                        Constants.JSON_SUFFIX);
-        File structFile = new File(options.file);
-        if (!structFile.canRead()) {
-            LOG.error("Struct file must be readable: '{}'",
-                      structFile.getAbsolutePath());
-            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
-        }
-
-        // Check option "-g"
-        E.checkArgument(!StringUtils.isEmpty(options.graph),
-                        "Must specified a graph");
-        // Check option "-h"
-        if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
-            options.host = Constants.HTTP_PREFIX + options.host;
-        }
-        // Check option --incremental-mode and --reload-failure
-        if (options.reloadFailure) {
-            E.checkArgument(options.incrementalMode,
-                            "Option --reload-failure is only allowed to set " +
-                            "in incremental mode");
-        }
-        return options;
-    }
-
-    private static LoadProgress parseLoadProgress(LoadOptions options) {
+    public static LoadProgress parseLoadProgress(LoadOptions options) {
         if (!options.incrementalMode) {
             return new LoadProgress();
         }

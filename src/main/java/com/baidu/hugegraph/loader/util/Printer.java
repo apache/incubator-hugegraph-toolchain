@@ -37,7 +37,9 @@ public final class Printer {
     private static final String SLASH = "/";
     private static final String DIVIDE_LINE = StringUtils.repeat('-', 50);
 
-    public static void printRealtimeProgress(LoadContext context) {
+    private static final LoadContext context = LoadContext.get();
+
+    public static void printRealtimeProgress() {
         long lastVertexLoaded = LoadUtil.lastLoaded(context, ElemType.VERTEX);
         long lastEdgeLoaded = LoadUtil.lastLoaded(context, ElemType.EDGE);
         if (lastVertexLoaded > 0 || lastEdgeLoaded > 0) {
@@ -47,7 +49,7 @@ public final class Printer {
         System.out.print("vertices/edges has been loaded this time : ");
     }
 
-    public static void printFinalProgress(LoadContext context) {
+    public static void printFinalProgress() {
         LoadSummary summary = context.summary();
         long vertexLoaded = summary.buildReport(ElemType.VERTEX).loadSuccess();
         long edgeLoaded = summary.buildReport(ElemType.EDGE).loadSuccess();
@@ -57,7 +59,7 @@ public final class Printer {
     /**
      *
      */
-    public static void printSummary(LoadContext context) {
+    public static void printSummary() {
         LoadSummary summary = context.summary();
         // Just log vertices/edges metrics
         log(DIVIDE_LINE);
@@ -65,43 +67,49 @@ public final class Printer {
         summary.vertexMetrics().forEach((label, metrics) -> {
             log(EMPTY_LINE);
             log(String.format("label '%s'", label));
-            logReport(metrics.buildReport());
+            logCountReport(metrics.buildReport());
         });
         log(DIVIDE_LINE);
         log("edges metrics");
         summary.edgeMetrics().forEach((label, metrics) -> {
             log(EMPTY_LINE);
             log(String.format("label '%s'", label));
-            logReport(metrics.buildReport());
+            logCountReport(metrics.buildReport());
         });
 
         // Print and log total vertices/edges metrics
         printAndLog(DIVIDE_LINE);
-        printAndLog("integral vertex metrics");
-        printReport(ElemType.VERTEX, summary.buildReport(ElemType.VERTEX));
+        printAndLog("total vertex metrics");
+        printCountReport(ElemType.VERTEX, summary.buildReport(ElemType.VERTEX));
         printAndLog(DIVIDE_LINE);
-        printAndLog("integral edge metrics");
-        printReport(ElemType.EDGE, summary.buildReport(ElemType.EDGE));
+        printAndLog("total edge metrics");
+        printCountReport(ElemType.EDGE, summary.buildReport(ElemType.EDGE));
+        printAndLog(DIVIDE_LINE);
+        printAndLog("time metrics");
+        printMeterReport(summary);
     }
 
-    private static void logReport(LoadReport report) {
+    private static void logCountReport(LoadReport report) {
         log("parse success", report.parseSuccess());
         log("parse failure", report.parseFailure());
         log("load success", report.loadSuccess());
         log("load failure", report.loadFailure());
     }
 
-    private static void printReport(ElemType type, LoadReport report) {
-        printAndLog("total time", TimeUtil.readableTime(report.totalTime()));
+    private static void printCountReport(ElemType type, LoadReport report) {
         // Print parse success used to comfirm data integrity
         printAndLog("parse success", report.parseSuccess());
         printAndLog("parse failure", report.parseFailure());
-        printAndLog("parse rate", String.format("%s(%s/s)", report.parseRate(),
-                                                            type.string()));
         printAndLog("load success", report.loadSuccess());
         printAndLog("load failure", report.loadFailure());
-        printAndLog("load rate", String.format("%s(%s/s)", report.loadRate(),
-                                                           type.string()));
+    }
+
+    private static void printMeterReport(LoadSummary summary) {
+        printAndLog("total time", TimeUtil.readableTime(summary.totalTime()));
+//        printAndLog("vertex parse rate", summary.parseRate(ElemType.VERTEX));
+//        printAndLog("vertex load rate", summary.loadRate(ElemType.VERTEX));
+//        printAndLog("edge parse rate", summary.loadRate(ElemType.EDGE));
+//        printAndLog("edge load rate", summary.loadRate(ElemType.EDGE));
     }
 
     public static void printError(String message, Object... args) {
@@ -121,16 +129,18 @@ public final class Printer {
         System.err.println(formatMsg);
     }
 
-    public static void printProgress(LoadSummary summary, long frequency,
+    public static void printProgress(ElemType type, long frequency,
                                      int batchSize) {
+        LoadSummary summary = context.summary();
         long vertexLoaded = summary.vertexLoaded();
         long edgeLoaded = summary.edgeLoaded();
         Printer.printInBackward(vertexLoaded, edgeLoaded);
-        if (vertexLoaded % frequency < batchSize) {
-            LOG.info("vertices has been loaded: {}", vertexLoaded);
-        }
-        if (edgeLoaded % frequency < batchSize) {
-            LOG.info("edges has been loaded: {}", edgeLoaded);
+
+        long loadSuccess = type.isVertex() ? vertexLoaded : edgeLoaded;
+        if (loadSuccess % frequency < batchSize) {
+            LOG.info("{} has been loaded: {}, with average parse rate: {}/s " +
+                     "and load rate: {}/s", type.string(), loadSuccess,
+                     summary.parseRate(type), summary.loadRate(type));
         }
     }
 

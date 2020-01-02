@@ -34,16 +34,17 @@ import org.apache.commons.lang3.StringUtils;
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.util.StructParseUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
+import com.baidu.hugegraph.loader.util.MappingUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+@JsonPropertyOrder({"version", "structs"})
 public class LoadMapping implements Checkable {
 
     @JsonProperty("version")
@@ -51,25 +52,23 @@ public class LoadMapping implements Checkable {
     @JsonProperty("structs")
     private List<InputStruct> structs;
 
-    public static LoadMapping of(LoadContext context) {
-        LoadOptions options = context.options();
-        File file = FileUtils.getFile(options.file);
+    public static LoadMapping of(String filePath) {
+        File file = FileUtils.getFile(filePath);
         LoadMapping mapping;
         try {
             String json = FileUtils.readFileToString(file, Constants.CHARSET);
-            mapping = StructParseUtil.parse(json);
+            mapping = MappingUtil.parse(json);
         } catch (IOException e) {
             throw new LoadException("Failed to read mapping mapping file '%s'",
-                                    e, options.file);
+                                    e, filePath);
         } catch (IllegalArgumentException e) {
             throw new LoadException("Failed to parse mapping mapping file '%s'",
-                                    e, options.file);
+                                    e, filePath);
         }
         try {
             mapping.check();
         } catch (IllegalArgumentException e) {
-            throw new LoadException("Invalid mapping mapping file '%s'",
-                                    e, options.file);
+            throw new LoadException("Invalid mapping file '%s'", e, filePath);
         }
         return mapping;
     }
@@ -127,5 +126,4 @@ public class LoadMapping implements Checkable {
         }
         return targetStructs;
     }
-
 }
