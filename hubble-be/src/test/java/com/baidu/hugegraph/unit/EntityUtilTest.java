@@ -33,9 +33,8 @@ public class EntityUtilTest {
     public void testMerge() throws InterruptedException {
         GraphConnection oldEntity;
         GraphConnection newEntity;
-        Date dateTime = new Date();
         oldEntity = new GraphConnection(1, "conn1", "graph1", "host1", 8001,
-                                        "", "", dateTime);
+                                        "", "", new Date());
         Thread.sleep(10);
         newEntity = new GraphConnection(2, "conn2", "graph2", "host2", 8002,
                                         "u", "p", new Date());

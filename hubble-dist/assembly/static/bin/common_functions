@@ -2,10 +2,41 @@
 
 export LANG=zh_CN.UTF-8
 
-java_env_check() {
+function java_env_check() {
     which java >/dev/null 2>&1
     if [[ $? -ne 0 ]]; then
         echo "cannot find java in environment."
         exit 1
     fi
+}
+
+# read a property from .properties file
+function read_property() {
+    # file path
+    local file_name=$1
+    # replace "." to "\."
+    local property_name=`echo $2 | sed 's/\./\\\./g'`
+    cat ${file_name} | sed -n -e "s/^[ ]*//g;/^#/d;s/^$property_name=//p" | tail -1
+}
+
+# wait_for_startup friendly_name host port timeout_s
+function wait_for_startup() {
+    local server_url=$1
+    local timeout_s=$2
+    local now_s=`date '+%s'`
+    local stop_s=$(( $now_s + $timeout_s ))
+
+    while [[ ${now_s} -le ${stop_s} ]]; do
+        echo -n .
+        status=`curl -o /dev/null -s -w %{http_code} ${server_url}`
+        if [[ ${status} -eq 200 ]]; then
+            echo "OK"
+            return 0
+        fi
+        sleep 2
+        now_s=`date '+%s'`
+    done
+
+    echo "timed out" >&2
+    return 1
 }

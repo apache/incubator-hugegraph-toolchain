@@ -1,0 +1,5 @@
+mock
+pytest >= 3.0
+six >= 1.11
+behave >= 1.2.6
+assertpy >= 0.15
