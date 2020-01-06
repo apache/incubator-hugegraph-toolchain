@@ -31,6 +31,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.source.InputSource;
@@ -55,7 +56,7 @@ public abstract class ElementBuilder {
 
     public ElementBuilder(InputStruct struct) {
         this.struct = struct;
-        this.schema = new SchemaCache();
+        this.schema = LoadContext.get().schemaCache();
         this.encoder = Constants.CHARSET.newEncoder();
         this.buffer = ByteBuffer.allocate(Constants.VERTEX_ID_LIMIT);
     }

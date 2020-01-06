@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
@@ -59,6 +60,8 @@ public final class LoadContext {
     private final LoadProgress newProgress;
     // Each input mapping corresponds to a FailureLogger
     private final Map<String, FailureLogger> loggers;
+
+    private SchemaCache schemaCache;
 
     public static synchronized LoadContext init(LoadOptions options) {
         if (instance == null) {
@@ -90,6 +93,7 @@ public final class LoadContext {
         this.oldProgress = parseLoadProgress(this.options);
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
+        this.schemaCache = null;
     }
 
     public String timestamp() {
@@ -125,6 +129,14 @@ public final class LoadContext {
             LOG.info("Create failure logger for mapping '{}'", struct);
             return new FailureLogger(this, struct);
         });
+    }
+
+    public void schemaCache(SchemaCache cache) {
+        this.schemaCache = cache;
+    }
+
+    public SchemaCache schemaCache() {
+        return this.schemaCache;
     }
 
     public void close() {

@@ -23,52 +23,63 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.util.HugeClientHolder;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 
 public final class SchemaCache {
 
-    private final HugeClient client;
     private final Map<String, PropertyKey> propertyKeys;
     private final Map<String, VertexLabel> vertexLabels;
     private final Map<String, EdgeLabel> edgeLabels;
 
-    public SchemaCache() {
-        LoadOptions options = LoadContext.get().options();
-        this.client = HugeClientHolder.get(options);
+    public SchemaCache(HugeClient client) {
         this.propertyKeys = new HashMap<>();
+        client.schema().getPropertyKeys().forEach(pk -> {
+            propertyKeys.put(pk.name(), pk);
+        });
+
         this.vertexLabels = new HashMap<>();
+        client.schema().getVertexLabels().forEach(vl -> {
+            vertexLabels.put(vl.name(), vl);
+        });
+
         this.edgeLabels = new HashMap<>();
+        client.schema().getEdgeLabels().forEach(el -> {
+            edgeLabels.put(el.name(), el);
+        });
     }
 
     public PropertyKey getPropertyKey(String name) {
-        PropertyKey schema = this.propertyKeys.get(name);
-        if (schema == null) {
-            schema = this.client.schema().getPropertyKey(name);
-            this.propertyKeys.put(name, schema);
+        PropertyKey propertyKey = this.propertyKeys.get(name);
+        if (propertyKey == null) {
+            throw new LoadException("The property key '%s' doesn't exist",
+                                    name);
         }
-        return schema;
+        return propertyKey;
     }
 
     public VertexLabel getVertexLabel(String name) {
-        VertexLabel schema = this.vertexLabels.get(name);
-        if (schema == null) {
-            schema = this.client.schema().getVertexLabel(name);
-            this.vertexLabels.put(name, schema);
+        VertexLabel vertexLabel = this.vertexLabels.get(name);
+        if (vertexLabel == null) {
+            throw new LoadException("The vertex label '%s' doesn't exist",
+                                    name);
         }
-        return schema;
+        return vertexLabel;
     }
 
     public EdgeLabel getEdgeLabel(String name) {
-        EdgeLabel schema = this.edgeLabels.get(name);
-        if (schema == null) {
-            schema = this.client.schema().getEdgeLabel(name);
-            this.edgeLabels.put(name, schema);
+        EdgeLabel edgeLabel = this.edgeLabels.get(name);
+        if (edgeLabel == null) {
+            throw new LoadException("The edge label '%s' doesn't exist", name);
         }
-        return schema;
+        return edgeLabel;
+    }
+
+    public boolean isEmpty() {
+        return this.propertyKeys.isEmpty() &&
+               this.vertexLabels.isEmpty() &&
+               this.edgeLabels.isEmpty();
     }
 }

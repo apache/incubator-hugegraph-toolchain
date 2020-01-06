@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -85,6 +86,8 @@ public final class HugeGraphLoader {
             this.clearAllDataIfNeeded();
             // Create schema
             this.createSchema();
+            // Init schema cache
+            this.initSchemaCache();
             // Move failure files from current to history directory
             LoadUtil.moveFailureFiles(this.context);
             this.loadInputs();
@@ -137,6 +140,16 @@ public final class HugeGraphLoader {
                                     e, options.schema);
         }
         groovyExecutor.execute(script, client);
+    }
+
+    private void initSchemaCache() {
+        HugeClient client = HugeClientHolder.get(this.context.options());
+        SchemaCache cache = new SchemaCache(client);
+        if (cache.isEmpty()) {
+            throw new InitException("There is no schema in HugeGraphServer, " +
+                                    "please init it at first");
+        }
+        this.context.schemaCache(cache);
     }
 
     private void loadInputs() {

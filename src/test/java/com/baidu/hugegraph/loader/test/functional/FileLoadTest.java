@@ -19,15 +19,11 @@
 
 package com.baidu.hugegraph.loader.test.functional;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.common.type.Date;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
@@ -41,12 +37,10 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.progress.InputItemProgress;
-import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
@@ -56,7 +50,6 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.testutil.Whitebox;
 import com.baidu.hugegraph.util.LongEncoding;
 import com.google.common.collect.ImmutableList;
 
@@ -213,7 +206,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ServerException.class, () -> {
+        Assert.assertThrows(InitException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
