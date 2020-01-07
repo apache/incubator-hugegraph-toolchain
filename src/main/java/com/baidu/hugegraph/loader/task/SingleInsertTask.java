@@ -56,7 +56,7 @@ public class SingleInsertTask extends InsertTask {
                 }
                 this.increaseLoadSuccess();
             } catch (Exception e) {
-                this.metrics().increaseLoadFailure();
+                this.metrics().increaseInsertFailure(this.mapping);
                 LOG.error("Single insert {} error", this.type(), e);
                 if (this.options().testMode) {
                     throw e;

@@ -35,6 +35,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
+import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.LoadUtil;
@@ -69,6 +70,10 @@ public final class FailureLogger {
         return Paths.get(dir, Constants.FAILURE_CURRENT_DIR, name).toString();
     }
 
+    public void write(ReadException e) {
+        this.parseWriter.write(e);
+    }
+
     public void write(ParseException e) {
         this.parseWriter.write(e);
     }
@@ -98,6 +103,16 @@ public final class FailureLogger {
             } catch (IOException e) {
                 throw new LoadException("Failed to create writer for file '%s'",
                                         e, this.file);
+            }
+        }
+
+        public void write(ReadException e) {
+            try {
+                this.writeLine("#### READ ERROR: " + e.getMessage());
+                this.writeLine(e.line());
+            } catch (IOException ex) {
+                throw new LoadException("Failed to write read error '%s'",
+                                        ex, e.line());
             }
         }
 

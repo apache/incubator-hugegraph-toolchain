@@ -19,12 +19,12 @@
 
 package com.baidu.hugegraph.loader.parser;
 
-import com.baidu.hugegraph.loader.exception.ParseException;
+import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.reader.line.Line;
 
 public interface LineParser {
 
-    Line parse(String[] header, String rawLine) throws ParseException;
+    Line parse(String[] header, String rawLine) throws ReadException;
 
     String[] split(String rawLine);
 }

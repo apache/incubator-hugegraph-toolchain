@@ -45,14 +45,13 @@ public class BatchInsertTask extends InsertTask {
 
     @Override
     public void run() {
-        boolean checkVertex = this.options().checkVertex;
         int retryCount = 0;
         do {
             try {
                 if (this.mapping.updateStrategies().isEmpty()) {
-                    this.addBatch(this.batch, checkVertex);
+                    this.addBatch(this.batch, this.options().checkVertex);
                 } else {
-                    this.updateBatch(this.batch, checkVertex);
+                    this.updateBatch(this.batch, this.options().checkVertex);
                 }
                 break;
             } catch (ClientException e) {

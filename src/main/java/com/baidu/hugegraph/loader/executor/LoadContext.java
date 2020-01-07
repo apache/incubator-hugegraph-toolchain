@@ -19,27 +19,20 @@
 
 package com.baidu.hugegraph.loader.executor;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
@@ -81,7 +74,7 @@ public final class LoadContext {
     }
 
     public static LoadContext get() {
-        E.checkState(instance != null, "Must init LoadContext firstly");
+        E.checkState(instance != null, "LoadContext Must be inited firstly");
         return instance;
     }
 
@@ -90,7 +83,7 @@ public final class LoadContext {
         this.stopped = false;
         this.options = options;
         this.summary = new LoadSummary();
-        this.oldProgress = parseLoadProgress(this.options);
+        this.oldProgress = LoadProgress.parse(this.options);
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
         this.schemaCache = null;
@@ -140,43 +133,22 @@ public final class LoadContext {
     }
 
     public void close() {
+        LOG.info("Ready to close failure loggers");
         for (FailureLogger logger : this.loggers.values()) {
             logger.close();
         }
+        LOG.info("Successfully close all failure loggers");
+
+        LOG.info("Ready to write load progress");
         try {
             this.newProgress().write(this);
         } catch (IOException e) {
             LOG.error("Failed to write load progress", e);
         }
+        LOG.info("Successfully write load progress");
+
+        LOG.info("Ready to close HugeClient");
         HugeClientHolder.close();
-    }
-
-    public static LoadProgress parseLoadProgress(LoadOptions options) {
-        if (!options.incrementalMode) {
-            return new LoadProgress();
-        }
-
-        String dir = LoadUtil.getStructDirPrefix(options);
-        File dirFile = FileUtils.getFile(dir);
-        if (!dirFile.exists()) {
-            return new LoadProgress();
-        }
-
-        File[] subFiles = dirFile.listFiles((d, name) -> {
-            return name.startsWith(Constants.PROGRESS_FILE);
-        });
-        if (subFiles == null || subFiles.length == 0) {
-            return new LoadProgress();
-        }
-
-        // Sort progress files by time, then get the last progress file
-        List<File> progressFiles = Arrays.asList(subFiles);
-        progressFiles.sort(Comparator.comparing(File::getName));
-        File lastProgressFile = progressFiles.get(progressFiles.size() - 1);
-        try {
-            return LoadProgress.read(lastProgressFile);
-        } catch (IOException e) {
-            throw new LoadException("Failed to read progress file", e);
-        }
+        LOG.info("Successfully close HugeClient");
     }
 }

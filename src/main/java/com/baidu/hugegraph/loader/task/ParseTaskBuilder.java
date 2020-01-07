@@ -39,7 +39,6 @@ import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.VertexMapping;
 import com.baidu.hugegraph.loader.metrics.LoadMetrics;
-import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
@@ -69,22 +68,21 @@ public final class ParseTaskBuilder {
         return this.struct;
     }
 
-    public List<ParseTask> build(List<Line> lines) {
+    public List<ParseTask> build(final List<Line> lines) {
+        LoadMetrics metrics = this.context.summary().metrics(this.struct);
         final int batchSize = this.context.options().batchSize;
         List<ParseTask> tasks = new ArrayList<>(this.builders.size());
         for (ElementBuilder builder : this.builders) {
-            ParseTask task = new ParseTask(builder.mapping(), () -> {
+            ElementMapping mapping = builder.mapping();
+            if (mapping.skip()) {
+                continue;
+            }
+
+            ParseTask task = new ParseTask(mapping, () -> {
                 // One batch records
                 List<Record> records = new ArrayList<>(batchSize);
-                ElementMapping mapping = builder.mapping();
-
-                LoadSummary summary = this.context.summary();
-                LoadMetrics metrics = summary.metrics(mapping);
                 int count = 0;
                 for (Line line : lines) {
-                    if (this.context.stopped()) {
-                        break;
-                    }
                     String rawLine = line.rawLine();
                     Map<String, Object> keyValues = line.keyValues();
                     try {
@@ -93,13 +91,12 @@ public final class ParseTaskBuilder {
                         records.add(new Record(rawLine, element));
                         count++;
                     } catch (IllegalArgumentException e) {
-                        metrics.increaseParseFailure();
+                        metrics.increaseParseFailure(mapping);
                         ParseException pe = new ParseException(rawLine, e);
                         this.handleParseFailure(mapping, pe);
                     }
                 }
-                metrics.plusParseSuccess(count);
-                summary.plusParsed(mapping.type(), count);
+                metrics.plusParseSuccess(mapping, count);
                 return records;
             });
             tasks.add(task);
@@ -108,16 +105,12 @@ public final class ParseTaskBuilder {
     }
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {
-        LoadOptions options = this.context.options();
-        if (options.testMode) {
-            throw e;
-        }
-
         LOG.error("Parse {} error", mapping.type(), e);
         // Write to current mapping's parse failure log
         FailureLogger logger = this.context.failureLogger(this.struct);
         logger.write(e);
 
+        LoadOptions options = this.context.options();
         long failures = this.context.summary().totalParseFailures();
         if (failures >= options.maxParseErrors) {
             Printer.printError("More than %s %s parsing error, stop parsing " +

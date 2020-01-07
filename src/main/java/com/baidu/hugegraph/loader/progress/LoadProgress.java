@@ -22,11 +22,15 @@ package com.baidu.hugegraph.loader.progress;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -63,6 +67,35 @@ public final class LoadProgress extends HashMap<String, InputProgress> {
     public static LoadProgress read(File file) throws IOException {
         String json = FileUtils.readFileToString(file, Constants.CHARSET);
         return JsonUtil.fromJson(json, LoadProgress.class);
+    }
+
+    public static LoadProgress parse(LoadOptions options) {
+        if (!options.incrementalMode) {
+            return new LoadProgress();
+        }
+
+        String dir = LoadUtil.getStructDirPrefix(options);
+        File dirFile = FileUtils.getFile(dir);
+        if (!dirFile.exists()) {
+            return new LoadProgress();
+        }
+
+        File[] subFiles = dirFile.listFiles((d, name) -> {
+            return name.startsWith(Constants.PROGRESS_FILE);
+        });
+        if (subFiles == null || subFiles.length == 0) {
+            return new LoadProgress();
+        }
+
+        // Sort progress files by time, then get the last progress file
+        List<File> progressFiles = Arrays.asList(subFiles);
+        progressFiles.sort(Comparator.comparing(File::getName));
+        File lastProgressFile = progressFiles.get(progressFiles.size() - 1);
+        try {
+            return LoadProgress.read(lastProgressFile);
+        } catch (IOException e) {
+            throw new LoadException("Failed to read progress file", e);
+        }
     }
 
     public static String format(LoadOptions options, String timestamp) {

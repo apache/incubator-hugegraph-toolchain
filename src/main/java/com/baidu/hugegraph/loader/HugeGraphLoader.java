@@ -33,11 +33,14 @@ import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.failure.FailureLogger;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
+import com.baidu.hugegraph.loader.metrics.LoadMetrics;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.task.ParseTaskBuilder;
@@ -197,29 +200,56 @@ public final class HugeGraphLoader {
 
     private void load(InputStruct struct, InputReader reader) {
         LOG.info("Start parsing and loading '{}'", struct);
+        LoadMetrics metrics = this.context.summary().metrics(struct);
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(struct);
         int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
         for (boolean finished = false; !this.context.stopped() && !finished;) {
-            if (reader.hasNext()) {
-                lines.add(reader.next());
-            } else {
-                finished = true;
+            try {
+                if (reader.hasNext()) {
+                    lines.add(reader.next());
+                    metrics.increaseReadSuccess();
+                } else {
+                    finished = true;
+                }
+            } catch (ReadException e) {
+                metrics.increaseReadFailure();
+                this.handleReadFailure(struct, e);
+                reader.confirmOffset();
             }
 
             boolean stopped = this.context.stopped() || finished;
-            if ((!lines.isEmpty() && lines.size() >= batchSize) || stopped) {
+            if (lines.size() >= batchSize || stopped) {
                 List<ParseTask> tasks = taskBuilder.build(lines);
                 for (ParseTask task : tasks) {
                     this.manager.submitParseTask(struct, task.mapping(), task);
                 }
                 lines = new ArrayList<>(batchSize);
-            }
-            if (stopped) {
-                this.context.newProgress().markLoaded(struct, finished);
+                if (stopped) {
+                    this.context.newProgress().markLoaded(struct, finished);
+                }
             }
             // Confirm offset to avoid lost records
             reader.confirmOffset();
+        }
+    }
+
+    private void handleReadFailure(InputStruct struct, ReadException e) {
+        LoadOptions options = this.context.options();
+        if (options.testMode) {
+            throw e;
+        }
+
+        // Write to current mapping's parse failure log
+        FailureLogger logger = this.context.failureLogger(struct);
+        logger.write(e);
+
+        long failures = this.context.summary().totalReadFailures();
+        if (failures >= options.maxReadErrors) {
+            Printer.printError("More than %s reading error, stop loading " +
+                               "and waiting all load tasks finished",
+                               options.maxReadErrors);
+            this.context.stopLoading();
         }
     }
 

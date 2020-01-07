@@ -24,6 +24,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +44,6 @@ import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.LongEncoding;
-import com.google.common.collect.Maps;
 
 public abstract class ElementBuilder {
 
@@ -73,21 +73,29 @@ public abstract class ElementBuilder {
      * Retain only the key-value pairs needed by the current vertex or edge
      */
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
-        return Maps.filterEntries(keyValues, entry -> {
-            assert entry != null;
+        Map<String, Object> filtered = new HashMap<>();
+        for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
             String key = entry.getKey();
-            Object val = entry.getValue();
-            // Retain selected fields or remove ignored fields
-            if (!this.mapping().selectedFields().isEmpty()) {
-                return this.mapping().selectedFields().contains(key);
-            } else if (!this.mapping().ignoredFields().isEmpty()) {
-                return !this.mapping().ignoredFields().contains(key);
+            Object value = entry.getValue();
+            if (this.retainKeyValue(key, value)) {
+                filtered.put(key, value);
             }
-            String mappedKey = this.mapping().mappingField(key);
-            Set<String> nullableKeys = this.schemaLabel().nullableKeys();
-            Set<Object> nullValues = this.mapping().nullValues();
-            return !nullableKeys.contains(mappedKey) || !nullValues.contains(val);
-        });
+        }
+        return filtered;
+    }
+
+    protected boolean retainKeyValue(String key, Object value) {
+        ElementMapping mapping = this.mapping();
+        // Retain selected fields or remove ignored fields
+        if (!mapping.selectedFields().isEmpty()) {
+            return mapping.selectedFields().contains(key);
+        } else if (!mapping.ignoredFields().isEmpty()) {
+            return !mapping.ignoredFields().contains(key);
+        }
+        String mappedKey = mapping.mappingField(key);
+        Set<String> nullableKeys = this.schemaLabel().nullableKeys();
+        Set<Object> nullValues = mapping.nullValues();
+        return !nullableKeys.contains(mappedKey) || !nullValues.contains(value);
     }
 
     protected void addProperties(GraphElement element,

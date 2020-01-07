@@ -121,6 +121,12 @@ public final class LoadOptions {
                description = "Check vertices exists while inserting edges")
     public boolean checkVertex = false;
 
+    @Parameter(names = {"--max-read-errors"}, arity = 1,
+               validateWith = {PositiveValidator.class},
+               description = "The maximum number of rows that read error " +
+                             "before exiting")
+    public int maxReadErrors = 1;
+
     @Parameter(names = {"--max-parse-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The maximum number of rows that parse error " +
@@ -151,6 +157,10 @@ public final class LoadOptions {
     @Parameter(names = {"--dry-run"}, arity = 1,
                description = "Dry run means that only parse but doesn't load")
     public boolean dryRun = false;
+
+    @Parameter(names = {"--print-progress"}, arity = 1,
+               description = "Whether to print real-time load progress")
+    public boolean printProgress = true;
 
     @Parameter(names = {"--test-mode"}, arity = 1,
                description = "Whether the hugegraph-loader work in test mode")

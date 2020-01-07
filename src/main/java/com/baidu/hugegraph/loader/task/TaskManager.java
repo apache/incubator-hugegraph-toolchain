@@ -135,10 +135,11 @@ public final class TaskManager {
         this.stopped = true;
         long timeout = this.options.shutdownTimeout;
 
-        LOG.debug("Ready to shutdown parse tasks executor");
+        LOG.info("Ready to shutdown parse tasks executor");
         try {
             this.parseService.shutdown();
             this.parseService.awaitTermination(timeout, TimeUnit.SECONDS);
+            LOG.info("The parse tasks service executor shutdown");
         } catch (InterruptedException e) {
             LOG.error("The parse tasks are interrupted");
         } finally {
@@ -148,10 +149,11 @@ public final class TaskManager {
             this.parseService.shutdownNow();
         }
 
-        LOG.debug("Ready to shutdown batch-mode tasks executor");
+        LOG.info("Ready to shutdown batch-mode tasks executor");
         try {
             this.batchService.shutdown();
             this.batchService.awaitTermination(timeout, TimeUnit.SECONDS);
+            LOG.info("The batch-mode tasks service executor shutdown");
         } catch (InterruptedException e) {
             LOG.error("The batch-mode tasks are interrupted");
         } finally {
@@ -165,6 +167,7 @@ public final class TaskManager {
         try {
             this.singleService.shutdown();
             this.singleService.awaitTermination(timeout, TimeUnit.SECONDS);
+            LOG.info("The single-mode tasks service executor shutdown");
         } catch (InterruptedException e) {
             LOG.error("The single-mode tasks are interrupted");
         } finally {

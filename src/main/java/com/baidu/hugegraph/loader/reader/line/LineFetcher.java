@@ -17,11 +17,12 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader;
+package com.baidu.hugegraph.loader.reader.line;
 
 import java.io.IOException;
 import java.util.List;
 
+import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.util.E;

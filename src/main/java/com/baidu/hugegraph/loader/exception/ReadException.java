@@ -17,11 +17,31 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader.line;
+package com.baidu.hugegraph.loader.exception;
 
-import java.util.List;
+public class ReadException extends IllegalArgumentException {
 
-public class BatchLine {
+    private static final long serialVersionUID = 5626071847324807449L;
 
-    private List<Line> lines;
+    private final String line;
+
+    public ReadException(String line, Throwable cause) {
+        super(cause.getMessage(), cause);
+        this.line = line;
+    }
+
+    public ReadException(String line, String message, Object... args) {
+        super(String.format(message, args));
+        this.line = line;
+    }
+
+    public ReadException(String line, String message, Throwable cause,
+                         Object... args) {
+        super(String.format(message, args), cause);
+        this.line = line;
+    }
+
+    public String line() {
+        return this.line;
+    }
 }

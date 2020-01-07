@@ -19,74 +19,88 @@
 
 package com.baidu.hugegraph.loader.metrics;
 
+import static com.baidu.hugegraph.loader.metrics.LoadMetrics.MetricsCounter;
+
 public final class LoadReport {
 
+    // input struct related
     private long totalTime;
-    private long parseSuccess;
-    private long parseFailure;
-    private long loadSuccess;
-    private long loadFailure;
-
-    public LoadReport() {
-        this(0L, 0L, 0L, 0L, 0L);
-    }
-
-    public LoadReport(long totalTime, long parseSuccess, long parseFailure,
-                      long loadSuccess, long loadFailure) {
-        this.totalTime = totalTime;
-        this.parseSuccess = parseSuccess;
-        this.parseFailure = parseFailure;
-        this.loadSuccess = loadSuccess;
-        this.loadFailure = loadFailure;
-    }
+    private long readSuccess;
+    private long readFailure;
+    // vertex
+    private long vertexParseSuccess;
+    private long vertexParseFailure;
+    private long vertexInsertSuccess;
+    private long vertexInsertFailure;
+    // edge
+    private long edgeParseSuccess;
+    private long edgeParseFailure;
+    private long edgeInsertSuccess;
+    private long edgeInsertFailure;
 
     public long totalTime() {
         return this.totalTime;
     }
 
-    public void totalTime(long totalTime) {
-        this.totalTime = totalTime;
+    public long readSuccess() {
+        return this.readSuccess;
     }
 
-    public long parseSuccess() {
-        return this.parseSuccess;
+    public long readFailure() {
+        return this.readFailure;
     }
 
-    public void parseSuccess(long parseSuccess) {
-        this.parseSuccess = parseSuccess;
+    public long vertexParseSuccess() {
+        return this.vertexParseSuccess;
     }
 
-    public long parseFailure() {
-        return this.parseFailure;
+    public long vertexParseFailure() {
+        return this.vertexParseFailure;
     }
 
-    public void parseFailure(long parseFailure) {
-        this.parseFailure = parseFailure;
+    public long vertexInsertSuccess() {
+        return this.vertexInsertSuccess;
     }
 
-    public long parseRate() {
-        return this.totalTime == 0 ? -1L :
-               this.parseSuccess * 1000 / this.totalTime;
+    public long vertexInsertFailure() {
+        return this.vertexInsertFailure;
     }
 
-    public long loadSuccess() {
-        return this.loadSuccess;
+    public long edgeParseSuccess() {
+        return this.edgeParseSuccess;
     }
 
-    public void loadSuccess(long loadSuccess) {
-        this.loadSuccess = loadSuccess;
+    public long edgeParseFailure() {
+        return this.edgeParseFailure;
     }
 
-    public long loadFailure() {
-        return this.loadFailure;
+    public long edgeInsertSuccess() {
+        return this.edgeInsertSuccess;
     }
 
-    public void loadFailure(long loadFailure) {
-        this.loadFailure = loadFailure;
+    public long edgeInsertFailure() {
+        return this.edgeInsertFailure;
     }
 
-    public long loadRate() {
-        return this.totalTime == 0 ? -1L :
-               this.loadSuccess * 1000 / this.totalTime;
+    public static LoadReport collect(LoadSummary summary) {
+        LoadReport report = new LoadReport();
+        report.totalTime = summary.totalTime();
+        for (LoadMetrics metrics : summary.inputMetricsMap().values()) {
+            report.readSuccess += metrics.readSuccess();
+            report.readFailure += metrics.readFailure();
+            for (MetricsCounter counter : metrics.vertexCounters().values()) {
+                report.vertexParseSuccess += counter.parseSuccess();
+                report.vertexParseFailure += counter.parseFailure();
+                report.vertexInsertSuccess += counter.insertSuccess();
+                report.vertexInsertFailure += counter.insertFailure();
+            }
+            for (MetricsCounter counter : metrics.edgeCounters().values()) {
+                report.edgeParseSuccess += counter.parseSuccess();
+                report.edgeParseFailure += counter.parseFailure();
+                report.edgeInsertSuccess += counter.insertSuccess();
+                report.edgeInsertFailure += counter.insertFailure();
+            }
+        }
+        return report;
     }
 }
