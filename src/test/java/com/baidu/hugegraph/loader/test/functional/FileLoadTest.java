@@ -438,6 +438,27 @@ public class FileLoadTest extends LoadTest {
         });
     }
 
+    @Test
+    public void testParseEmptyCsvLine() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "");
+
+        String[] args = new String[]{
+                "-f", structPath("parse_empty_csv_line/struct.json"),
+                "-s", configPath("parse_empty_csv_line/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, (e) -> {
+            Assert.assertTrue(e.getMessage().contains("Parse line '' error"));
+        });
+    }
+
     /**
      * TODO: the order of collection's maybe change
      * (such as time:["2019-05-02 13:12:44","2008-05-02 13:12:44"])
