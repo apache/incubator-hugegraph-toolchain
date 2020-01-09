@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.parser;
 
 import java.io.IOException;
+import java.util.NoSuchElementException;
 
 import org.simpleflatmapper.csv.CsvParser;
 
@@ -40,7 +41,7 @@ public class CsvLineParser extends TextLineParser {
     public String[] split(String line) {
         try {
             return this.dsl.reader(line).iterator().next();
-        } catch (IOException e) {
+        } catch (IOException | NoSuchElementException e) {
             throw new ParseException(line, "Parse line '%s' error", e, line);
         }
     }
