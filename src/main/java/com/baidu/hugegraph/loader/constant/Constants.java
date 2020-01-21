@@ -53,6 +53,7 @@ public final class Constants {
     public static final String PARSE_FAILURE_SUFFIX = "parse-error";
     public static final String INSERT_FAILURE_SUFFIX = "insert-error";
     public static final String PROGRESS_FILE = "load-progress";
+    public static final String VIRTUAL_LABEL = "~virtual";
 
     public static final String PARSE_WORKER = "parse-worker-%s";
     public static final String BATCH_WORKER = "batch-worker-%d";

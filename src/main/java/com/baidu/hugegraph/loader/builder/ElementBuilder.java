@@ -38,6 +38,7 @@ import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
@@ -73,29 +74,30 @@ public abstract class ElementBuilder {
      * Retain only the key-value pairs needed by the current vertex or edge
      */
     protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
-        Map<String, Object> filtered = new HashMap<>();
+        Map<String, Object> filteredFields = new HashMap<>();
         for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            if (this.retainKeyValue(key, value)) {
-                filtered.put(key, value);
+            String fieldName = entry.getKey();
+            Object fieldValue = entry.getValue();
+            if (this.retainField(fieldName, fieldValue)) {
+                filteredFields.put(fieldName, fieldValue);
             }
         }
-        return filtered;
+        return filteredFields;
     }
 
-    protected boolean retainKeyValue(String key, Object value) {
+    protected boolean retainField(String fieldName, Object fieldValue) {
         ElementMapping mapping = this.mapping();
         // Retain selected fields or remove ignored fields
         if (!mapping.selectedFields().isEmpty()) {
-            return mapping.selectedFields().contains(key);
+            return mapping.selectedFields().contains(fieldName);
         } else if (!mapping.ignoredFields().isEmpty()) {
-            return !mapping.ignoredFields().contains(key);
+            return !mapping.ignoredFields().contains(fieldName);
         }
-        String mappedKey = mapping.mappingField(key);
+        String mappedKey = mapping.mappingField(fieldName);
         Set<String> nullableKeys = this.schemaLabel().nullableKeys();
         Set<Object> nullValues = mapping.nullValues();
-        return !nullableKeys.contains(mappedKey) || !nullValues.contains(value);
+        return !nullableKeys.contains(mappedKey) ||
+               !nullValues.contains(fieldValue);
     }
 
     protected void addProperties(GraphElement element,
@@ -123,9 +125,9 @@ public abstract class ElementBuilder {
     }
 
     protected Object validatePropertyValue(String key, Object rawValue) {
-        PropertyKey pKey = this.getPropertyKey(key);
+        PropertyKey propertyKey = this.getPropertyKey(key);
         InputSource inputSource = this.struct.input();
-        return DataTypeUtil.convert(rawValue, pKey, inputSource);
+        return DataTypeUtil.convert(rawValue, propertyKey, inputSource);
     }
 
     protected void checkFieldValue(String fieldName, Object fieldValue) {
@@ -147,6 +149,15 @@ public abstract class ElementBuilder {
         }
         String fieldStrValue = String.valueOf(fieldValue);
         return this.mapping().mappingValue(fieldName, fieldStrValue);
+    }
+
+    protected boolean vertexIdEmpty(VertexLabel vertexLabel, Object vertexId) {
+        IdStrategy idStrategy = vertexLabel.idStrategy();
+        if (idStrategy.isCustomizeString()) {
+            assert vertexId instanceof String : vertexId;
+            return StringUtils.isEmpty((String) vertexId);
+        }
+        return false;
     }
 
     protected String spliceVertexId(VertexLabel vertexLabel,

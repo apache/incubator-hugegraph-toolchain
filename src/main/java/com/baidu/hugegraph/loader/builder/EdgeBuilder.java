@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.builder;
 import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
@@ -33,6 +34,8 @@ import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 
 public class EdgeBuilder extends ElementBuilder {
+
+    private static final Edge VIRTUAL_EDGE = new Edge(Constants.VIRTUAL_LABEL);
 
     private final EdgeMapping mapping;
     private final EdgeLabel edgeLabel;
@@ -60,12 +63,22 @@ public class EdgeBuilder extends ElementBuilder {
         Map<String, Object> properties = this.filterFields(keyValues);
         Edge edge = new Edge(this.mapping.label());
         // Must add source/target vertex id
-        edge.sourceId(this.buildVertexId(this.sourceLabel,
-                                         this.mapping.sourceFields(),
-                                         properties));
-        edge.targetId(this.buildVertexId(this.targetLabel,
-                                         this.mapping.targetFields(),
-                                         properties));
+        Object sourceVertexId = this.buildVertexId(this.sourceLabel,
+                                                   this.mapping.sourceFields(),
+                                                   properties);
+        if (this.vertexIdEmpty(this.sourceLabel, sourceVertexId)) {
+            return VIRTUAL_EDGE;
+        }
+        edge.sourceId(sourceVertexId);
+
+        Object targetVertexId = this.buildVertexId(this.targetLabel,
+                                                   this.mapping.targetFields(),
+                                                   properties);
+        if (this.vertexIdEmpty(this.targetLabel, targetVertexId)) {
+            return VIRTUAL_EDGE;
+        }
+        edge.targetId(targetVertexId);
+
         // Must add source/target vertex label
         edge.sourceLabel(this.sourceLabel.name());
         edge.targetLabel(this.targetLabel.name());
@@ -114,9 +127,9 @@ public class EdgeBuilder extends ElementBuilder {
                 this.checkVertexIdLength(id);
                 return id;
             } else if (idStrategy.isCustomizeNumber()) {
-                return DataTypeUtil.parseNumber(mappedValue);
+                return DataTypeUtil.parseNumber(fieldName, mappedValue);
             } else if (idStrategy.isCustomizeUuid()) {
-                return DataTypeUtil.parseUUID(mappedValue);
+                return DataTypeUtil.parseUUID(fieldName, mappedValue);
             } else {
                 // The id strategy of source/target label must be PRIMARY_KEY
                 String key = this.mapping.mappingField(fieldName);

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.VertexMapping;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
@@ -33,6 +34,9 @@ import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 
 public class VertexBuilder extends ElementBuilder {
+
+    private static final Vertex VIRTUAL_VERTEX =
+            new Vertex(Constants.VIRTUAL_LABEL);
 
     private final VertexMapping mapping;
     private final VertexLabel vertexLabel;
@@ -56,6 +60,9 @@ public class VertexBuilder extends ElementBuilder {
         Vertex vertex = new Vertex(this.mapping.label());
         // Assign or check id if need
         this.assignIdIfNeed(vertex, properties);
+        if (this.vertexIdEmpty(this.vertexLabel, vertex.id())) {
+            return VIRTUAL_VERTEX;
+        }
         // Add properties
         this.addProperties(vertex, properties);
         return vertex;
@@ -76,7 +83,8 @@ public class VertexBuilder extends ElementBuilder {
         IdStrategy idStrategy = this.vertexLabel.idStrategy();
         if (idStrategy.isCustomize()) {
             assert this.mapping.idField() != null;
-            Object idValue = keyValues.get(this.mapping.idField());
+            String idField = this.mapping.idField();
+            Object idValue = keyValues.get(idField);
             E.checkArgument(idValue != null,
                             "The value of id field '%s' can't be null",
                             this.mapping.idField());
@@ -86,11 +94,11 @@ public class VertexBuilder extends ElementBuilder {
                 this.checkVertexIdLength(id);
                 vertex.id(id);
             } else if (idStrategy.isCustomizeNumber()) {
-                Long id = DataTypeUtil.parseNumber(idValue);
+                Long id = DataTypeUtil.parseNumber(idField, idValue);
                 vertex.id(id);
             } else {
                 assert idStrategy.isCustomizeUuid();
-                UUID id = DataTypeUtil.parseUUID(idValue);
+                UUID id = DataTypeUtil.parseUUID(idField, idValue);
                 vertex.id(id);
             }
         } else {

@@ -21,7 +21,6 @@ package com.baidu.hugegraph.loader.task;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -30,6 +29,7 @@ import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -68,40 +68,48 @@ public final class ParseTaskBuilder {
         return this.struct;
     }
 
-    public List<ParseTask> build(final List<Line> lines) {
-        LoadMetrics metrics = this.context.summary().metrics(this.struct);
-        final int batchSize = this.context.options().batchSize;
+    public List<ParseTask> build(List<Line> lines) {
         List<ParseTask> tasks = new ArrayList<>(this.builders.size());
         for (ElementBuilder builder : this.builders) {
-            ElementMapping mapping = builder.mapping();
-            if (mapping.skip()) {
+            if (builder.mapping().skip()) {
                 continue;
             }
-
-            ParseTask task = new ParseTask(mapping, () -> {
-                // One batch records
-                List<Record> records = new ArrayList<>(batchSize);
-                int count = 0;
-                for (Line line : lines) {
-                    String rawLine = line.rawLine();
-                    Map<String, Object> keyValues = line.keyValues();
-                    try {
-                        // NOTE: don't remove entry in keyValues
-                        GraphElement element = builder.build(keyValues);
-                        records.add(new Record(rawLine, element));
-                        count++;
-                    } catch (IllegalArgumentException e) {
-                        metrics.increaseParseFailure(mapping);
-                        ParseException pe = new ParseException(rawLine, e);
-                        this.handleParseFailure(mapping, pe);
-                    }
-                }
-                metrics.plusParseSuccess(mapping, count);
-                return records;
-            });
-            tasks.add(task);
+            tasks.add(this.buildTask(builder, lines));
         }
         return tasks;
+    }
+
+    private ParseTask buildTask(ElementBuilder builder, List<Line> lines) {
+        final LoadMetrics metrics = this.context.summary().metrics(this.struct);
+        final int batchSize = this.context.options().batchSize;
+        final ElementMapping mapping = builder.mapping();
+        return new ParseTask(mapping, () -> {
+            // One batch records
+            List<Record> records = new ArrayList<>(batchSize);
+            int count = 0;
+            for (Line line : lines) {
+                String rawLine = line.rawLine();
+                try {
+                    // NOTE: don't remove entry in keyValues
+                    GraphElement element = builder.build(line.keyValues());
+                    if (this.isVirtual(element)) {
+                        continue;
+                    }
+                    records.add(new Record(rawLine, element));
+                    count++;
+                } catch (IllegalArgumentException e) {
+                    metrics.increaseParseFailure(mapping);
+                    ParseException pe = new ParseException(rawLine, e);
+                    this.handleParseFailure(mapping, pe);
+                }
+            }
+            metrics.plusParseSuccess(mapping, count);
+            return records;
+        });
+    }
+
+    private boolean isVirtual(GraphElement element) {
+        return Constants.VIRTUAL_LABEL.equals(element.label());
     }
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {

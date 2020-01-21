@@ -2707,4 +2707,51 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(7, vertices.size());
         Assert.assertEquals(0, edges.size());
     }
+
+    @Test
+    public void testVertexIdColumnEmpty() {
+        ioUtil.write("vertex_person.csv",
+                     "id,name,age,city",
+                     "1,marko,29,Beijing",
+                     ",vadas,27,Hongkong",
+                     "2,josh,32,Beijing",
+                     ",peter,35,Shanghai",
+                     "3,\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_id_column_empty/struct.json"),
+                "-s", configPath("vertex_id_column_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(3, vertices.size());
+    }
+
+    @Test
+    public void testEdgeSourceOrTargetColumnEmpty() {
+        ioUtil.write("edge_created.csv",
+                     "source_id,target_id,date,weight",
+                     "1,2,20171210,0.4",
+                     ",2,20091111,0.4",
+                     "1,,20171210,1.0");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_source_or_target_column_empty/struct.json"),
+                "-s", configPath("edge_source_or_target_column_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Edge> edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(1, edges.size());
+    }
 }
