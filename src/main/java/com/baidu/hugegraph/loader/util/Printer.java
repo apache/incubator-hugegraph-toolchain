@@ -115,8 +115,8 @@ public final class Printer {
     private static void printMeterReport(LoadSummary summary) {
         printAndLog("meter metrics");
         printAndLog("total time", TimeUtil.readableTime(summary.totalTime()));
-        printAndLog("vertex load rate", summary.loadRate(ElemType.VERTEX));
-        printAndLog("edge load rate", summary.loadRate(ElemType.EDGE));
+        printAndLog("vertex load rate(rec/s)", summary.loadRate(ElemType.VERTEX));
+        printAndLog("edge load rate(rec/s)", summary.loadRate(ElemType.EDGE));
     }
 
     public static void printError(String message, Object... args) {

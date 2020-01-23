@@ -41,7 +41,7 @@ public abstract class AbstractSource implements InputSource {
     public AbstractSource() {
         this.header = null;
         this.charset = Constants.CHARSET.name();
-        this.listFormat = new ListFormat();
+        this.listFormat = null;
     }
 
     @Override

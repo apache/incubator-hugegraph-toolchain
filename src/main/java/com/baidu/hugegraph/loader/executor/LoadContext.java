@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.SchemaCache;
-import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.failure.FailureLogger;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
@@ -74,12 +73,13 @@ public final class LoadContext {
     }
 
     public static LoadContext get() {
-        E.checkState(instance != null, "LoadContext Must be inited firstly");
+        E.checkState(instance != null,
+                     "LoadContext must be initialized firstly");
         return instance;
     }
 
     private LoadContext(LoadOptions options) {
-        this.timestamp = DateUtil.now(Constants.DATE_FORMAT);
+        this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
         this.stopped = false;
         this.options = options;
         this.summary = new LoadSummary();

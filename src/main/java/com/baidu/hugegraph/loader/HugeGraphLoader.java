@@ -222,7 +222,7 @@ public final class HugeGraphLoader {
             if (lines.size() >= batchSize || stopped) {
                 List<ParseTask> tasks = taskBuilder.build(lines);
                 for (ParseTask task : tasks) {
-                    this.manager.submitParseTask(struct, task.mapping(), task);
+                    this.manager.executeParseTask(struct, task.mapping(), task);
                 }
                 lines = new ArrayList<>(batchSize);
                 if (stopped) {

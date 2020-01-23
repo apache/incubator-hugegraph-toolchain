@@ -178,6 +178,21 @@ public final class TaskManager {
         }
     }
 
+    /**
+     * Execute parse task sync
+     */
+    public void executeParseTask(InputStruct struct, ElementMapping mapping,
+                                 ParseTaskBuilder.ParseTask task) {
+        List<Record> batch = task.get();
+        if (CollectionUtils.isEmpty(batch) || this.options.dryRun) {
+            return;
+        }
+        this.submitBatch(struct, mapping, batch);
+    }
+
+    /**
+     * Submit parse task async
+     */
     public void submitParseTask(InputStruct struct, ElementMapping mapping,
                                 ParseTaskBuilder.ParseTask task) {
         try {

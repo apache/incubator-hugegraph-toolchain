@@ -19,29 +19,20 @@
 
 package com.baidu.hugegraph.loader.exception;
 
-public class ReadException extends IllegalArgumentException {
+public class ReadException extends ParseException {
 
     private static final long serialVersionUID = 5626071847324807449L;
 
-    private final String line;
-
     public ReadException(String line, Throwable cause) {
-        super(cause.getMessage(), cause);
-        this.line = line;
+        super(line, cause);
     }
 
     public ReadException(String line, String message, Object... args) {
-        super(String.format(message, args));
-        this.line = line;
+        super(line, message, args);
     }
 
     public ReadException(String line, String message, Throwable cause,
                          Object... args) {
-        super(String.format(message, args), cause);
-        this.line = line;
-    }
-
-    public String line() {
-        return this.line;
+        super(line, message, cause, args);
     }
 }

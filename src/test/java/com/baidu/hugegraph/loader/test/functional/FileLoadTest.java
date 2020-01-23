@@ -67,7 +67,7 @@ public class FileLoadTest extends LoadTest {
 
     private static final Charset GBK = Charset.forName("GBK");
 
-    protected IOUtil ioUtil ;
+    protected IOUtil ioUtil;
 
     public String structPath(String fileName) {
         return configPath(fileName);

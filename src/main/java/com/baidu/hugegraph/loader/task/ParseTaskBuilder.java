@@ -114,11 +114,15 @@ public final class ParseTaskBuilder {
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {
         LOG.error("Parse {} error", mapping.type(), e);
+        LoadOptions options = this.context.options();
+        if (options.testMode) {
+            throw e;
+        }
+
         // Write to current mapping's parse failure log
         FailureLogger logger = this.context.failureLogger(this.struct);
         logger.write(e);
 
-        LoadOptions options = this.context.options();
         long failures = this.context.summary().totalParseFailures();
         if (failures >= options.maxParseErrors) {
             Printer.printError("More than %s %s parsing error, stop parsing " +
