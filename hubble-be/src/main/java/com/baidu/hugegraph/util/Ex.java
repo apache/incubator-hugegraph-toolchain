@@ -21,15 +21,15 @@ package com.baidu.hugegraph.util;
 
 import java.util.concurrent.Callable;
 
+import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
-import com.baidu.hugegraph.exception.ParameterizedException;
 
 public final class Ex {
 
     public static void check(boolean expression, String message,
                              Object... args) {
         if (!expression) {
-            throw new ParameterizedException(message, args);
+            throw new ExternalException(message, args);
         }
     }
 
@@ -46,13 +46,13 @@ public final class Ex {
         } catch (Exception e) {
             throw new InternalException("execute.predication.error", e);
         }
-        throw new ParameterizedException(message, args);
+        throw new ExternalException(message, args);
     }
 
     public static void check(boolean expression, String message,
                              Throwable cause, Object... args) {
         if (!expression) {
-            throw new ParameterizedException(message, cause, args);
+            throw new ExternalException(message, cause, args);
         }
     }
 
@@ -69,6 +69,6 @@ public final class Ex {
         } catch (Exception e) {
             throw new InternalException("execute.predication.error", e);
         }
-        throw new ParameterizedException(message, cause, args);
+        throw new ExternalException(message, cause, args);
     }
 }

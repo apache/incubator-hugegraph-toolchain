@@ -34,7 +34,7 @@ public final class EntityUtil {
         try {
             entity = (T) clazz.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
-            throw new InternalException("reflect.new-instance.failed",
+            throw new InternalException("reflect.new-instance.failed", e,
                                         clazz.getName());
         }
         Field[] fields = clazz.getDeclaredFields();
@@ -58,7 +58,7 @@ public final class EntityUtil {
                     field.set(entity, oldFieldValue);
                 }
             } catch (IllegalAccessException e) {
-                throw new InternalException("reflect.access-field.failed",
+                throw new InternalException("reflect.access-field.failed", e,
                                             field.getName(), clazz.getName());
             }
         }

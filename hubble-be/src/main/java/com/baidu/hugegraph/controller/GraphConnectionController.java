@@ -21,6 +21,7 @@ package com.baidu.hugegraph.controller;
 
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,10 +34,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
+import com.baidu.hugegraph.license.LicenseVerifier;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.util.Ex;
@@ -44,14 +47,16 @@ import com.baidu.hugegraph.util.HugeClientUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 @RestController
-@RequestMapping("graph-connections")
+@RequestMapping(Constant.API_VERSION + "graph-connections")
 public class GraphConnectionController extends BaseController {
 
-    private static final String NAME_REGEX = "^[A-Za-z][A-Za-z0-9_]{0,47}$";
-    private static final String GRAPH_REGEX = NAME_REGEX;
-    private static final String HOST_REGEX =
-                                "(([0-9]{1,3}\\.){3}[0-9]{1,3}" + "|" +
-                                "([0-9A-Za-z_!~*'()-]+\\.)*[0-9A-Za-z_!~*'()-]+)$";
+    private static final Pattern GRAPH_PATTERN = Pattern.compile(
+            "^[A-Za-z][A-Za-z0-9_]{0,47}$"
+    );
+    private static final Pattern HOST_PATTERN = Pattern.compile(
+            "(([0-9]{1,3}\\.){3}[0-9]{1,3}|" +
+            "([0-9A-Za-z_!~*'()-]+\\.)*[0-9A-Za-z_!~*'()-]+)$"
+    );
 
     @Autowired
     private GraphConnectionService connService;
@@ -65,11 +70,12 @@ public class GraphConnectionController extends BaseController {
                                        @RequestParam(name = "page_no",
                                                      required = false,
                                                      defaultValue = "1")
-                                       long pageNo,
+                                       int pageNo,
                                        @RequestParam(name = "page_size",
                                                      required = false,
                                                      defaultValue = "10")
-                                       long pageSize) {
+                                       int pageSize) {
+        this.checkGraphConnectionCount(false);
         return this.connService.list(content, pageNo, pageSize);
     }
 
@@ -88,6 +94,9 @@ public class GraphConnectionController extends BaseController {
 
     @PostMapping
     public GraphConnection create(@RequestBody GraphConnection newEntity) {
+        // Verify graph connections
+        this.checkGraphConnectionCount(true);
+
         this.checkParamsValid(newEntity, true);
         // Make sure the new entity doesn't conflict with exists
         this.checkEntityUnique(newEntity, true);
@@ -147,25 +156,26 @@ public class GraphConnectionController extends BaseController {
 
         String name = newEntity.getName();
         this.checkParamsNotEmpty("name", name, creating);
-        Ex.check(name != null, () -> name.matches(NAME_REGEX),
-                 "graph-connection.name.unmatch-regex", name);
+        Ex.check(name != null, () -> Constant.COMMON_NAME_PATTERN.matcher(name)
+                                                                 .matches(),
+                 "graph-connection.name.unmatch-regex");
 
         String graph = newEntity.getGraph();
         this.checkParamsNotEmpty("graph", graph, creating);
-        Ex.check(graph != null, () -> graph.matches(GRAPH_REGEX),
-                 "graph-connection.graph.unmatch-regex", graph);
+        Ex.check(graph != null, () -> GRAPH_PATTERN.matcher(graph).matches(),
+                 "graph-connection.graph.unmatch-regex");
 
         String host = newEntity.getHost();
         this.checkParamsNotEmpty("host", host, creating);
-        Ex.check(host != null, () -> host.matches(HOST_REGEX),
-                 "graph-connection.host.unmatch-regex", host);
+        Ex.check(host != null, () -> HOST_PATTERN.matcher(host).matches(),
+                 "graph-connection.host.unmatch-regex");
 
         Integer port = newEntity.getPort();
         Ex.check(creating, () -> port != null,
                  "common.param.cannot-be-null", "port");
         Ex.check(port != null, () -> 0 < port && port <= 65535,
                  "graph-connection.port.must-be-in-range", "[1, 65535]", port);
-        
+
         Ex.check(newEntity.getCreateTime() == null,
                  "common.param.must-be-null", "create_time");
     }
@@ -186,6 +196,19 @@ public class GraphConnectionController extends BaseController {
                      "graph-connection.exist.graph-host-port",
                      oldEntity.getGraph(), oldEntity.getHost(),
                      oldEntity.getPort());
+        }
+    }
+
+    private void checkGraphConnectionCount(boolean plusOne) {
+        int allowedGraphs = LicenseVerifier.instance().allowedGraphs();
+        if (allowedGraphs == Constant.NO_LIMIT) {
+            return;
+        }
+        int increment = plusOne ? 1 : 0;
+        int actualGraphs = this.connService.count() + increment;
+        if (actualGraphs > allowedGraphs) {
+            throw new ExternalException("license.verify.graphs.exceed",
+                                        actualGraphs, allowedGraphs);
         }
     }
 }

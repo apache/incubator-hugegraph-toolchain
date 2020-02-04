@@ -23,6 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.nio.charset.Charset;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -42,6 +43,24 @@ public final class Constant {
                                "com.baidu.hugegraph.controller";
 
     public static final String COOKIE_USER = "user";
+    public static final String API_V1_1 = "/api/v1.1/";
+    public static final String API_V1_2 = "/api/v1.2/";
+    public static final String API_VERSION = API_V1_1;
+
+    public static final int STATUS_BAD_REQUEST = 400;
+    public static final int STATUS_NOT_FOUND = 404;
+    public static final int STATUS_ILLEGAL_GREMLIN = 460;
+    public static final int STATUS_INTERNAL_ERROR = 500;
+
+    public static final int NO_LIMIT = -1;
+
+    public static final Pattern COMMON_NAME_PATTERN = Pattern.compile(
+            "[A-Za-z0-9\u4e00-\u9fa5_]{1,48}"
+    );
+
+    public static final Pattern SCHEMA_NAME_PATTERN = Pattern.compile(
+            "[A-Za-z0-9\u4e00-\u9fa5_]{1,128}"
+    );
 
     public static final Set<String> LIKE_WILDCARDS = ImmutableSet.of(
             "%", "_", "^", "[", "]"

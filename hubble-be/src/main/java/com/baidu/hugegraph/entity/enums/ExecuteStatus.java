@@ -23,6 +23,8 @@ import com.baomidou.mybatisplus.core.enums.IEnum;
 
 public enum ExecuteStatus implements IEnum<Byte> {
 
+    RUNNING(0),
+
     SUCCESS(1),
 
     FAILED(2);

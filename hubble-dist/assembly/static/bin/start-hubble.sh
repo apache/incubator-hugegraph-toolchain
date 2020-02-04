@@ -61,7 +61,7 @@ main_class="com.baidu.hugegraph.HugeGraphHubble"
 args=${CONF_PATH}/hugegraph-hubble.properties
 log=${LOG_PATH}/hugegraph-hubble.log
 
-echo -n "starting HugeGraphHubble..."
+echo -n "starting HugeGraphHubble"
 nohup nice -n 0 java -server ${java_opts} -cp ${class_path} ${main_class} ${args} > ${log} 2>&1 < /dev/null &
 pid=$!
 echo ${pid} > ${PID_FILE}
@@ -70,7 +70,7 @@ echo ${pid} > ${PID_FILE}
 timeout_s=30
 server_host=`read_property ${CONF_PATH}/hugegraph-hubble.properties server.host`
 server_port=`read_property ${CONF_PATH}/hugegraph-hubble.properties server.port`
-server_url="http://${server_host}:${server_port}/api/v1.1/actuator/health"
+server_url="http://${server_host}:${server_port}/actuator/health"
 
 wait_for_startup ${server_url} ${timeout_s} || {
     cat ${log}

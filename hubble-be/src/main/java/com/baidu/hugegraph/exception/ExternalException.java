@@ -21,19 +21,11 @@ package com.baidu.hugegraph.exception;
 
 public class ExternalException extends ParameterizedException {
 
-    public ExternalException(String message) {
-        super(message);
-    }
-
-    public ExternalException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
     public ExternalException(String message, Object... args) {
         super(message, args);
     }
 
     public ExternalException(String message, Throwable cause, Object... args) {
-        super(message, args, cause);
+        super(message, cause, args);
     }
 }

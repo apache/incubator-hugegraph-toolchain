@@ -21,6 +21,7 @@ package com.baidu.hugegraph.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
 
 import com.baidu.hugegraph.entity.GraphConnection;
@@ -34,6 +35,16 @@ public interface GraphConnectionMapper extends BaseMapper<GraphConnection> {
     /**
      * NOTE: Page must be the first param, otherwise throw exception
      */
+    @Select("SELECT * FROM `graph_connection` " +
+            "WHERE `name` LIKE '%${content}%' OR `graph` LIKE '%${content}%'" +
+            "ORDER BY " +
+            "   CASE " +
+            "       WHEN `name` LIKE '%${content}%' AND " +
+            "            `graph` LIKE '%${content}%' THEN 0 " +
+            "       WHEN `name` LIKE '%${content}%' THEN 1 " +
+            "       WHEN `graph` LIKE '%${content}%' THEN 2 " +
+            "   END ASC, " +
+            "   `create_time` DESC")
     IPage<GraphConnection> selectByContentInPage(IPage<GraphConnection> page,
                                                  @Param("content")
                                                  String content);

@@ -52,14 +52,14 @@ public final class HugeClientUtil {
         } catch (IllegalStateException e) {
             String message = e.getMessage();
             if (message != null && message.startsWith("The version")) {
-                throw new ExternalException("client-server.version.unmatched");
+                throw new ExternalException("client-server.version.unmatched", e);
             }
             throw e;
         } catch (ServerException e) {
             String message = e.getMessage();
             if (message != null && message.startsWith("Authentication")) {
                 throw new ExternalException(
-                          "graph-connection.username-or-password.incorrect");
+                          "graph-connection.username-or-password.incorrect", e);
             }
             throw e;
         } catch (ClientException e) {
@@ -69,10 +69,10 @@ public final class HugeClientUtil {
             }
             String message = cause.getMessage();
             if (message.contains("Connection refused")) {
-                throw new ExternalException("service.unavailable", host, port);
+                throw new ExternalException("service.unavailable", e, host, port);
             } else if (message.contains("java.net.UnknownHostException") ||
                        message.contains("Host name may not be null")) {
-                throw new ExternalException("service.unknown-host", host);
+                throw new ExternalException("service.unknown-host", e, host);
             }
             throw e;
         }
@@ -83,7 +83,7 @@ public final class HugeClientUtil {
         } catch (ServerException e) {
             String message = e.message();
             if (message != null && message.contains("Could not rebind [g]")) {
-                throw new ExternalException("graph-connection.graph.unexist",
+                throw new ExternalException("graph-connection.graph.unexist", e,
                                             graph, host, port);
             }
             throw e;

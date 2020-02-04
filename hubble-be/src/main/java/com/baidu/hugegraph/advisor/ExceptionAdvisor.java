@@ -25,14 +25,16 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.common.Response;
 import com.baidu.hugegraph.exception.ExternalException;
+import com.baidu.hugegraph.exception.IllegalGremlinException;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.exception.ParameterizedException;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 
-@Slf4j
+@Log4j2
 @RestControllerAdvice
 public class ExceptionAdvisor {
 
@@ -44,8 +46,9 @@ public class ExceptionAdvisor {
     public Response exceptionHandler(InternalException e) {
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
-                       .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                       .status(Constant.STATUS_INTERNAL_ERROR)
                        .message(message)
+                       .cause(e.getCause())
                        .build();
     }
 
@@ -54,8 +57,9 @@ public class ExceptionAdvisor {
     public Response exceptionHandler(ExternalException e) {
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
-                       .status(HttpStatus.BAD_REQUEST.value())
+                       .status(Constant.STATUS_BAD_REQUEST)
                        .message(message)
+                       .cause(e.getCause())
                        .build();
     }
 
@@ -64,8 +68,9 @@ public class ExceptionAdvisor {
     public Response exceptionHandler(ParameterizedException e) {
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
-                       .status(HttpStatus.BAD_REQUEST.value())
+                       .status(Constant.STATUS_BAD_REQUEST)
                        .message(message)
+                       .cause(e.getCause())
                        .build();
     }
 
@@ -74,8 +79,20 @@ public class ExceptionAdvisor {
     public Response exceptionHandler(Exception e) {
         String message = this.handleMessage(e.getMessage(), null);
         return Response.builder()
-                       .status(HttpStatus.BAD_REQUEST.value())
+                       .status(Constant.STATUS_BAD_REQUEST)
                        .message(message)
+                       .cause(e.getCause())
+                       .build();
+    }
+
+    @ExceptionHandler(IllegalGremlinException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Response exceptionHandler(IllegalGremlinException e) {
+        String message = this.handleMessage(e.getMessage(), e.args());
+        return Response.builder()
+                       .status(Constant.STATUS_ILLEGAL_GREMLIN)
+                       .message(message)
+                       .cause(e.getCause())
                        .build();
     }
 
@@ -84,11 +101,7 @@ public class ExceptionAdvisor {
         if (args != null && args.length > 0) {
             strArgs = new String[args.length];
             for (int i = 0; i < args.length; i++) {
-                if (args[i] != null) {
-                    strArgs[i] = args[i].toString();
-                } else {
-                    strArgs[i] = "?";
-                }
+                strArgs[i] = args[i] != null ? args[i].toString() : "?";
             }
         }
         try {

@@ -19,8 +19,7 @@
 
 package com.baidu.hugegraph.util;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,10 +43,10 @@ public final class GremlinUtil {
     );
 
     private static final String[] COMPILE_SEARCH_LIST = new String[]{
-            "\\.", "\\(", "\\)"
+            ".", "(", ")"
     };
     private static final String[] COMPILE_TARGET_LIST = new String[]{
-            "\\\\.", "\\\\(", "\\\\)"
+            "\\.", "\\(", "\\)"
     };
 
     private static final String[] ESCAPE_SEARCH_LIST = new String[]{
@@ -57,8 +56,7 @@ public final class GremlinUtil {
             "\\\\", "\\\"", "\\'", "\\n"
     };
 
-    private static final Map<String, Pattern> limitPatterns =
-                                              compileToPattern(LIMIT_SUFFIXES);
+    private static final Set<Pattern> LIMIT_PATTERNS = compile(LIMIT_SUFFIXES);
 
     public static String escapeId(Object id) {
         if (!(id instanceof String)) {
@@ -78,7 +76,7 @@ public final class GremlinUtil {
     }
 
     public static String optimizeLimit(String gremlin, int limit) {
-        for (Pattern pattern : limitPatterns.values()) {
+        for (Pattern pattern : LIMIT_PATTERNS) {
             Matcher matcher = pattern.matcher(gremlin);
             if (matcher.find()) {
                 return gremlin + ".limit(" + limit + ")";
@@ -87,34 +85,33 @@ public final class GremlinUtil {
         return gremlin;
     }
 
-    public static Map<String, Pattern> compileToPattern(Set<String> texts) {
-        Map<String, Pattern> patterns = new LinkedHashMap<>();
+    private static Set<Pattern> compile(Set<String> texts) {
+        Set<Pattern> patterns = new LinkedHashSet<>();
         for (String text : texts) {
             String regex = StringUtils.replaceEach(text, COMPILE_SEARCH_LIST,
                                                    COMPILE_TARGET_LIST);
-            String finalRegex;
+            Pattern pattern;
             // Assume that (STR), (NUM) and () not exist at the same time
             if (text.contains("(STR)")) {
                 // single quote
-                finalRegex = restrictAsEnd(regex.replaceAll("STR",
-                                                            "'[\\\\s\\\\S]+'"));
-                patterns.put(finalRegex, Pattern.compile(finalRegex));
+                pattern = compile(regex.replaceAll("STR", "'[\\\\s\\\\S]+'"));
+                patterns.add(pattern);
                 // double quotes
-                finalRegex = restrictAsEnd(regex.replaceAll("STR",
-                                                            "\"[\\\\s\\\\S]+\""));
-                patterns.put(finalRegex, Pattern.compile(finalRegex));
+                pattern = compile(regex.replaceAll("STR", "\"[\\\\s\\\\S]+\""));
+                patterns.add(pattern);
             } else if (text.contains("(NUM)")) {
-                finalRegex = restrictAsEnd(regex.replaceAll("NUM", "[\\\\d]+"));
-                patterns.put(finalRegex, Pattern.compile(finalRegex));
+                pattern = compile(regex.replaceAll("NUM", "[\\\\d]+"));
+                patterns.add(pattern);
             } else if (text.contains("()")) {
-                finalRegex = restrictAsEnd(regex);
-                patterns.put(finalRegex, Pattern.compile(finalRegex));
+                pattern = compile(regex);
+                patterns.add(pattern);
             }
         }
         return patterns;
     }
 
-    public static String restrictAsEnd(String regex) {
-        return "(" + regex + ")$";
+    private static Pattern compile(String regex) {
+        String finalRegex = "(" + regex + ")$";
+        return Pattern.compile(finalRegex);
     }
 }

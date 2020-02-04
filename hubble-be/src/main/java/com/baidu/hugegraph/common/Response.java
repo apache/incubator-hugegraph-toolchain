@@ -33,4 +33,5 @@ public class Response {
     private int status;
     private Object data;
     private String message;
+    private Throwable cause;
 }

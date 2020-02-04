@@ -24,13 +24,13 @@ public class ParameterizedException extends RuntimeException {
     private final Object[] args;
 
     public ParameterizedException(String message, Object... args) {
-        super(message);
+        super(String.format(message, args));
         this.args = args;
     }
 
     public ParameterizedException(String message, Throwable cause,
                                   Object... args) {
-        super(message, cause);
+        super(String.format(message, args), cause);
         this.args = args;
     }
 

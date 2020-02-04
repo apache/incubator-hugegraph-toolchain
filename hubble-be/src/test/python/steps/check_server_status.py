@@ -14,7 +14,7 @@ use_step_matcher("re")
 
 @when("scene:(?P<scene>.+) url:(?P<url>.+)")
 def step_impl(context, scene, url):
-    http_url = "http://" + url + "/api/v1.1/actuator/health"
+    http_url = "http://" + url + "/actuator/health"
     context.response = requests.get(http_url)
     context.code = context.response.status_code
     context.json = context.response.json()

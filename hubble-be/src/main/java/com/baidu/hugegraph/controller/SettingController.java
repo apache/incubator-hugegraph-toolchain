@@ -38,7 +38,7 @@ import com.baidu.hugegraph.service.UserInfoService;
 import com.baidu.hugegraph.util.E;
 
 @RestController
-@RequestMapping("setting")
+@RequestMapping(Constant.API_VERSION + "setting")
 public class SettingController {
 
     @Autowired

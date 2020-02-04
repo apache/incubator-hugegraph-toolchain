@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.LocaleUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.support.RequestContextUtils;
@@ -36,6 +37,9 @@ import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.UserInfo;
 import com.baidu.hugegraph.service.UserInfoService;
 
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
 @Component
 public class MessageSourceHandler {
 
@@ -47,7 +51,13 @@ public class MessageSourceHandler {
     private UserInfoService service;
 
     public String getMessage(String message, String[] args) {
-        return this.messageSource.getMessage(message, args, this.getLocale());
+        try {
+            return this.messageSource.getMessage(message, args,
+                                                 this.getLocale());
+        } catch (NoSuchMessageException e) {
+            log.error("There is no message corresponding to '{}'", message);
+            return message;
+        }
     }
 
     private Locale getLocale() {

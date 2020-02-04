@@ -21,15 +21,15 @@ package com.baidu.hugegraph.service;
 
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
-import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.mapper.GraphConnectionMapper;
+import com.baidu.hugegraph.util.SQLUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -49,10 +49,7 @@ public class GraphConnectionService {
                                        long pageSize) {
         IPage<GraphConnection> page = new Page<>(current, pageSize);
         if (!StringUtils.isEmpty(content)) {
-            String value = content;
-            if (Constant.LIKE_WILDCARDS.contains(content)) {
-                value = "\\" + content;
-            }
+            String value = SQLUtil.escapeLike(content);
             return this.mapper.selectByContentInPage(page, value);
         } else {
             QueryWrapper<GraphConnection> query = Wrappers.query();
@@ -63,6 +60,10 @@ public class GraphConnectionService {
 
     public GraphConnection get(int id) {
         return this.mapper.selectById(id);
+    }
+
+    public int count() {
+        return this.mapper.selectCount(null);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)

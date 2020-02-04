@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `execute_history` (
 
 CREATE TABLE IF NOT EXISTS `gremlin_collection` (
     `id` INT NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(50) NOT NULL,
+    `name` VARCHAR(48) NOT NULL,
     `content` VARCHAR(65535) NOT NULL,
     `create_time` DATETIME(6) NOT NULL,
     PRIMARY KEY (`id`),
