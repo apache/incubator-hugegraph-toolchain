@@ -94,7 +94,7 @@ public final class MappingUtil {
         List<InputStruct> jdbcSourceInputStructs = new ArrayList<>();
         for (ElementStructV1 originStruct : graphStruct.structs()) {
             InputSource inputSource = originStruct.input();
-            ElementMapping targetStruct = convert(originStruct);
+            ElementMapping targetStruct = convertV1ToV2(originStruct);
 
             SourceType type = inputSource.type();
             if (type == SourceType.FILE || type == SourceType.HDFS) {
@@ -130,7 +130,7 @@ public final class MappingUtil {
         return new LoadMapping(inputStructs);
     }
 
-    private static ElementMapping convert(ElementStructV1 origin) {
+    private static ElementMapping convertV1ToV2(ElementStructV1 origin) {
         ElementMapping target;
         if (origin.type().isVertex()) {
             VertexStructV1 originVertex = (VertexStructV1) origin;

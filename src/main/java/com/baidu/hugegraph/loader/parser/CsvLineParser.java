@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 import org.simpleflatmapper.csv.CsvParser;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.exception.ParseException;
+import com.baidu.hugegraph.loader.exception.ReadException;
 
 public class CsvLineParser extends TextLineParser {
 
@@ -42,7 +42,7 @@ public class CsvLineParser extends TextLineParser {
         try {
             return this.dsl.reader(line).iterator().next();
         } catch (IOException | NoSuchElementException e) {
-            throw new ParseException(line, "Parse line '%s' error", e, line);
+            throw new ReadException(line, "Parse line '%s' error", e, line);
         }
     }
 }

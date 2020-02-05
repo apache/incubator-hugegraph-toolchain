@@ -46,6 +46,8 @@ public class FileSource extends AbstractSource {
     private SkippedLine skippedLine;
     @JsonProperty("compression")
     private Compression compression;
+    @JsonProperty("batch_size")
+    private int batchSize = 500;
 
     public FileSource() {
         this.path = null;
@@ -122,6 +124,10 @@ public class FileSource extends AbstractSource {
 
     public Compression compression() {
         return this.compression;
+    }
+
+    public int batchSize() {
+        return this.batchSize;
     }
 
     @Override

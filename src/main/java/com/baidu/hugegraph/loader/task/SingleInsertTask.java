@@ -27,8 +27,9 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.exception.InsertException;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.failure.FailureLogger;
+import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.Printer;
@@ -46,7 +47,6 @@ public class SingleInsertTask extends InsertTask {
 
     @Override
     public void run() {
-        FailureLogger logger = this.context.failureLogger(this.struct);
         for (Record record : this.batch) {
             try {
                 if (this.mapping.updateStrategies().isEmpty()) {
@@ -57,28 +57,38 @@ public class SingleInsertTask extends InsertTask {
                 this.increaseLoadSuccess();
             } catch (Exception e) {
                 this.metrics().increaseInsertFailure(this.mapping);
-                LOG.error("Single insert {} error", this.type(), e);
-                if (this.options().testMode) {
-                    throw e;
-                }
-                // Write to current mapping's insert failure log
-                logger.write(new InsertException(record.rawLine(), e));
+                InsertException ie = new InsertException(record.rawLine(), e);
+                this.handleInsertFailure(ie);
+            }
+        }
+        Printer.printProgress(this.type(), SINGLE_PRINT_FREQ, this.batch.size());
+    }
 
-                long failures = this.context.summary().totalInsertFailures();
-                if (failures >= this.options().maxInsertErrors) {
-                    if (!this.context.stopped()) {
-                        // Just print once
-                        Printer.printError("More than %s %s insert error, " +
-                                           "stop parsing and waiting other " +
-                                           "insert tasks finished",
-                                           this.options().maxInsertErrors,
-                                           this.type().string());
-                    }
+    private void handleInsertFailure(InsertException e) {
+        LOG.error("Single insert {} error", this.type(), e);
+        if (this.options().testMode) {
+            throw e;
+        }
+        FailLogger logger = this.context.failureLogger(this.struct);
+        // Write to current mapping's insert failure log
+        logger.write(e);
+
+        long failures = this.context.summary().totalInsertFailures();
+        if (failures < this.options().maxInsertErrors) {
+            return;
+        }
+        if (!this.context.stopped()) {
+            synchronized(LoadContext.class) {
+                if (!this.context.stopped()) {
+                    Printer.printError("More than %s %s insert error, " +
+                                       "stop parsing and waiting other " +
+                                       "insert tasks finished",
+                                       this.options().maxInsertErrors,
+                                       this.type().string());
                     this.context.stopLoading();
                 }
             }
         }
-        Printer.printProgress(this.type(), SINGLE_PRINT_FREQ, this.batch.size());
     }
 
     private void addSingle(LoadOptions options, Record record) {

@@ -115,8 +115,8 @@ public final class Printer {
     private static void printMeterReport(LoadSummary summary) {
         printAndLog("meter metrics");
         printAndLog("total time", TimeUtil.readableTime(summary.totalTime()));
-        printAndLog("vertex load rate(rec/s)", summary.loadRate(ElemType.VERTEX));
-        printAndLog("edge load rate(rec/s)", summary.loadRate(ElemType.EDGE));
+        printAndLog("vertex load rate(vertices/s)", summary.loadRate(ElemType.VERTEX));
+        printAndLog("edge load rate(edges/s)", summary.loadRate(ElemType.EDGE));
     }
 
     public static void printError(String message, Object... args) {
@@ -147,7 +147,7 @@ public final class Printer {
 
         long loadSuccess = type.isVertex() ? vertexLoaded : edgeLoaded;
         if (loadSuccess % frequency < batchSize) {
-            LOG.info("{} has been loaded: {}, with average load rate: {}/s",
+            LOG.info("{} has been loaded: {}, average load rate: {}/s",
                      type.string(), loadSuccess, summary.loadRate(type));
         }
     }
@@ -164,11 +164,11 @@ public final class Printer {
     }
 
     private static void log(String key, long value) {
-        LOG.info(String.format("    %-24s: %-20d", key, value));
+        LOG.info(String.format("    %-30s: %-20d", key, value));
     }
 
     private static void log(String key, String value) {
-        LOG.info(String.format("    %-24s: %-20s", key, value));
+        LOG.info(String.format("    %-30s: %-20s", key, value));
     }
 
     private static void printAndLog(String message) {
@@ -177,12 +177,12 @@ public final class Printer {
     }
 
     private static void printAndLog(String key, long value) {
-        String msg = String.format("    %-24s: %-20d", key, value);
+        String msg = String.format("    %-30s: %-20d", key, value);
         printAndLog(msg);
     }
 
     private static void printAndLog(String key, String value) {
-        String msg = String.format("    %-24s: %-20s", key, value);
+        String msg = String.format("    %-30s: %-20s", key, value);
         printAndLog(msg);
     }
 

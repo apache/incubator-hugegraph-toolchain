@@ -81,7 +81,7 @@ public final class LoadProgress extends HashMap<String, InputProgress> {
         }
 
         File[] subFiles = dirFile.listFiles((d, name) -> {
-            return name.startsWith(Constants.PROGRESS_FILE);
+            return name.startsWith(Constants.LOAD_PROGRESS);
         });
         if (subFiles == null || subFiles.length == 0) {
             return new LoadProgress();
@@ -100,7 +100,8 @@ public final class LoadProgress extends HashMap<String, InputProgress> {
 
     public static String format(LoadOptions options, String timestamp) {
         String dir = LoadUtil.getStructDirPrefix(options);
-        String name = Constants.PROGRESS_FILE + Constants.BLANK_STR + timestamp;
+        String name = Constants.LOAD_PROGRESS + Constants.UNDERLINE_STR +
+                      timestamp;
         return Paths.get(dir, name).toString();
     }
 }

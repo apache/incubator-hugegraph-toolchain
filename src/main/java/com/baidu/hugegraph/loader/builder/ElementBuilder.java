@@ -87,11 +87,14 @@ public abstract class ElementBuilder {
 
     protected boolean retainField(String fieldName, Object fieldValue) {
         ElementMapping mapping = this.mapping();
+        Set<String> selectedFields = mapping.selectedFields();
+        Set<String> ignoredFields = mapping.ignoredFields();
         // Retain selected fields or remove ignored fields
-        if (!mapping.selectedFields().isEmpty()) {
-            return mapping.selectedFields().contains(fieldName);
-        } else if (!mapping.ignoredFields().isEmpty()) {
-            return !mapping.ignoredFields().contains(fieldName);
+        if (!selectedFields.isEmpty() && !selectedFields.contains(fieldName)) {
+            return false;
+        }
+        if (!ignoredFields.isEmpty() && ignoredFields.contains(fieldName)) {
+            return false;
         }
         String mappedKey = mapping.mappingField(fieldName);
         Set<String> nullableKeys = this.schemaLabel().nullableKeys();

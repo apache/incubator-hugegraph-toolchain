@@ -46,6 +46,11 @@ public abstract class InsertTask implements Runnable {
             "class java.lang.IllegalArgumentException"
     );
 
+    public static final String[] UNACCEPTABLE_MESSAGES = {
+            "not allowed to insert, because already exist a vertex " +
+            "with same id and different label"
+    };
+
     protected final LoadContext context;
     protected final InputStruct struct;
     protected final ElementMapping mapping;

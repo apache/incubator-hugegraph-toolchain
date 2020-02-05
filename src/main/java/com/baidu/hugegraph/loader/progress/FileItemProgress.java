@@ -17,9 +17,8 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.reader.file;
+package com.baidu.hugegraph.loader.progress;
 
-import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -24,11 +24,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InitException;
@@ -37,7 +39,8 @@ import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.failure.FailureLogger;
+import com.baidu.hugegraph.loader.failure.FailLogger;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.loader.metrics.LoadMetrics;
@@ -150,7 +153,7 @@ public final class HugeGraphLoader {
         SchemaCache cache = new SchemaCache(client);
         if (cache.isEmpty()) {
             throw new InitException("There is no schema in HugeGraphServer, " +
-                                    "please init it at first");
+                                    "please create it at first");
         }
         this.context.schemaCache(cache);
     }
@@ -168,12 +171,11 @@ public final class HugeGraphLoader {
             if (options.incrementalMode && options.reloadFailure) {
                 this.load(this.mapping.structsForFailure(options));
             }
-            // Waiting async worker threads finish
+            // Waiting for async worker threads finish
             this.manager.waitFinished();
         } finally {
             this.context.summary().stopTimer();
         }
-
         Printer.printFinalProgress();
     }
 
@@ -222,9 +224,10 @@ public final class HugeGraphLoader {
             if (lines.size() >= batchSize || stopped) {
                 List<ParseTask> tasks = taskBuilder.build(lines);
                 for (ParseTask task : tasks) {
-                    this.manager.executeParseTask(struct, task.mapping(), task);
+                    this.executeParseTask(struct, task.mapping(), task);
                 }
                 lines = new ArrayList<>(batchSize);
+
                 if (stopped) {
                     this.context.newProgress().markLoaded(struct, finished);
                 }
@@ -234,6 +237,18 @@ public final class HugeGraphLoader {
         }
     }
 
+    /**
+     * Execute parse task sync
+     */
+    private void executeParseTask(InputStruct struct, ElementMapping mapping,
+                                  ParseTaskBuilder.ParseTask task) {
+        List<Record> batch = task.get();
+        if (CollectionUtils.isEmpty(batch) || this.context.options().dryRun) {
+            return;
+        }
+        this.manager.submitBatch(struct, mapping, batch);
+    }
+
     private void handleReadFailure(InputStruct struct, ReadException e) {
         LoadOptions options = this.context.options();
         if (options.testMode) {
@@ -241,7 +256,7 @@ public final class HugeGraphLoader {
         }
 
         // Write to current mapping's parse failure log
-        FailureLogger logger = this.context.failureLogger(struct);
+        FailLogger logger = this.context.failureLogger(struct);
         logger.write(e);
 
         long failures = this.context.summary().totalReadFailures();

@@ -41,6 +41,6 @@ public class Record {
 
     @Override
     public String toString() {
-        return this.rawLine;
+        return this.element.toString();
     }
 }

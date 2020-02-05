@@ -69,6 +69,6 @@ public class EdgeStructV1 extends ElementStructV1 {
 
     @Override
     public String toString() {
-        return String.format("EdgeMapping(%s)", this.uniqueKey());
+        return String.format("EdgeStruct(%s)", this.uniqueKey());
     }
 }

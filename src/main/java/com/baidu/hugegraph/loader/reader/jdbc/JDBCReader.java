@@ -26,10 +26,10 @@ import java.util.NoSuchElementException;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
-import com.baidu.hugegraph.loader.mapping.InputStruct;
 
 public class JDBCReader implements InputReader {
 

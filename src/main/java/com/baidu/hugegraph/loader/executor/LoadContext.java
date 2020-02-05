@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.SchemaCache;
-import com.baidu.hugegraph.loader.failure.FailureLogger;
+import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
@@ -50,8 +50,8 @@ public final class LoadContext {
     // The old progress just used to read
     private final LoadProgress oldProgress;
     private final LoadProgress newProgress;
-    // Each input mapping corresponds to a FailureLogger
-    private final Map<String, FailureLogger> loggers;
+    // Each input mapping corresponds to a FailLogger
+    private final Map<String, FailLogger> loggers;
 
     private SchemaCache schemaCache;
 
@@ -117,10 +117,10 @@ public final class LoadContext {
         return this.newProgress;
     }
 
-    public FailureLogger failureLogger(InputStruct struct) {
+    public FailLogger failureLogger(InputStruct struct) {
         return this.loggers.computeIfAbsent(struct.id(), k -> {
             LOG.info("Create failure logger for mapping '{}'", struct);
-            return new FailureLogger(this, struct);
+            return new FailLogger(this, struct);
         });
     }
 
@@ -134,7 +134,7 @@ public final class LoadContext {
 
     public void close() {
         LOG.info("Ready to close failure loggers");
-        for (FailureLogger logger : this.loggers.values()) {
+        for (FailLogger logger : this.loggers.values()) {
             logger.close();
         }
         LOG.info("Successfully close all failure loggers");

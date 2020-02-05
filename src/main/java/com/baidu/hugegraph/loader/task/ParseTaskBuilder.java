@@ -33,7 +33,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.failure.FailureLogger;
+import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -114,21 +114,26 @@ public final class ParseTaskBuilder {
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {
         LOG.error("Parse {} error", mapping.type(), e);
-        LoadOptions options = this.context.options();
-        if (options.testMode) {
-            throw e;
-        }
-
         // Write to current mapping's parse failure log
-        FailureLogger logger = this.context.failureLogger(this.struct);
+        FailLogger logger = this.context.failureLogger(this.struct);
         logger.write(e);
 
         long failures = this.context.summary().totalParseFailures();
-        if (failures >= options.maxParseErrors) {
-            Printer.printError("More than %s %s parsing error, stop parsing " +
-                               "and waiting all insert tasks finished",
-                               options.maxParseErrors, mapping.type().string());
-            this.context.stopLoading();
+        LoadOptions options = this.context.options();
+        if (failures < options.maxParseErrors) {
+            return;
+        }
+        if (!this.context.stopped()) {
+            synchronized(LoadContext.class) {
+                if (!this.context.stopped()) {
+                    Printer.printError("More than %s %s parsing error, " +
+                                       "stop parsing and waiting all " +
+                                       "insert tasks finished",
+                                       options.maxParseErrors,
+                                       mapping.type().string());
+                    this.context.stopLoading();
+                }
+            }
         }
     }
 

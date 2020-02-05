@@ -33,9 +33,9 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
-import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.reader.file.FileLineFetcher;
 import com.baidu.hugegraph.loader.reader.file.FileReader;
 import com.baidu.hugegraph.loader.reader.file.OrcFileLineFetcher;
@@ -79,7 +79,7 @@ public class HDFSFileReader extends FileReader {
             this.hdfs.close();
         } catch (IOException e) {
             LOG.warn("Failed to close reader for {} with exception {}",
-                     this.source(), e);
+                     this.source(), e.getMessage(), e);
         }
     }
 

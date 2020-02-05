@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.loader.exception;
 
-public class InitException extends RuntimeException {
+public class InitException extends LoadException {
 
     private static final long serialVersionUID = 5204623124963497613L;
 
@@ -32,10 +32,10 @@ public class InitException extends RuntimeException {
     }
 
     public InitException(String message, Object... args) {
-        super(String.format(message, args));
+        super(message, args);
     }
 
     public InitException(String message, Throwable cause, Object... args) {
-        super(String.format(message, args), cause);
+        super(message, cause, args);
     }
 }

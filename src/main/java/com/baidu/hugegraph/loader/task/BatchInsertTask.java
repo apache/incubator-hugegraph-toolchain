@@ -23,6 +23,7 @@ import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.exception.ServerException;
@@ -58,14 +59,19 @@ public class BatchInsertTask extends InsertTask {
                 LOG.debug("client exception: {}", e.getMessage());
                 retryCount = this.waitThenRetry(retryCount, e);
             } catch (ServerException e) {
-                LOG.debug("server exception: {}", e.getMessage());
+                String message = e.getMessage();
+                LOG.error("server exception: {}", message);
                 if (UNACCEPTABLE_EXCEPTIONS.contains(e.exception())) {
+                    throw e;
+                }
+                if (StringUtils.containsAny(message, UNACCEPTABLE_MESSAGES)) {
                     throw e;
                 }
                 retryCount = this.waitThenRetry(retryCount, e);
             }
         } while (retryCount > 0 && retryCount <= this.options().retryTimes);
 
+        // TODO：need to write to error log when when addBatch fails
         int count = this.batch.size();
         // This metrics just for current element mapping
         this.plusLoadSuccess(count);

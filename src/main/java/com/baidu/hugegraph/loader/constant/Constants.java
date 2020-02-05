@@ -41,6 +41,7 @@ public final class Constants {
     public static final String BLANK_STR = " ";
     public static final String DOT_STR = ".";
     public static final String MINUS_STR = "-";
+    public static final String UNDERLINE_STR = "_";
     public static final String COMMA_STR = ",";
     public static final String TAB_STR = "\t";
     public static final String NULL_STR = "NULL";
@@ -52,7 +53,7 @@ public final class Constants {
     public static final String FAILURE_HISTORY_DIR = "history";
     public static final String PARSE_FAILURE_SUFFIX = "parse-error";
     public static final String INSERT_FAILURE_SUFFIX = "insert-error";
-    public static final String PROGRESS_FILE = "load-progress";
+    public static final String LOAD_PROGRESS = "load-progress";
     public static final String VIRTUAL_LABEL = "~virtual";
 
     public static final String PARSE_WORKER = "parse-worker-%s";

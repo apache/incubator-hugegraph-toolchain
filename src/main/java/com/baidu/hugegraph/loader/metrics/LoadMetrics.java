@@ -58,6 +58,10 @@ public final class LoadMetrics {
         this.readSuccess++;
     }
 
+    public void plusReadSuccess(long count) {
+        this.readSuccess += count;
+    }
+
     public long readFailure() {
         return this.readFailure;
     }

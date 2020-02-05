@@ -51,6 +51,6 @@ public class VertexStructV1 extends ElementStructV1 {
 
     @Override
     public String toString() {
-        return String.format("VertexMapping(%s)", this.uniqueKey());
+        return String.format("VertexStruct(%s)", this.uniqueKey());
     }
 }

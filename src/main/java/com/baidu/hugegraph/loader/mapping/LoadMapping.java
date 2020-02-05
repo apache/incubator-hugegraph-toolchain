@@ -90,7 +90,7 @@ public class LoadMapping implements Checkable {
                         "The structs can't be null or empty");
         this.structs.forEach(InputStruct::check);
         Set<String> uniqueIds = this.structs.stream().map(InputStruct::id)
-                                             .collect(Collectors.toSet());
+                                            .collect(Collectors.toSet());
         E.checkArgument(this.structs.size() == uniqueIds.size(),
                         "The structs cannot contain the same id mapping");
     }
