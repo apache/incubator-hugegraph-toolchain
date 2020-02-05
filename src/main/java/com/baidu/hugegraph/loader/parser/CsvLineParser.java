@@ -20,29 +20,28 @@
 package com.baidu.hugegraph.loader.parser;
 
 import java.io.IOException;
+import java.util.NoSuchElementException;
+
+import org.simpleflatmapper.csv.CsvParser;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
-import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
 
 public class CsvLineParser extends TextLineParser {
 
-    private final CSVParser parser;
+    private final CsvParser.DSL dsl;
 
     public CsvLineParser() {
         super(Constants.COMMA_STR);
         char separator = this.delimiter().charAt(0);
-        this.parser = new CSVParserBuilder().withSeparator(separator)
-                                            .withIgnoreQuotations(false)
-                                            .build();
+        this.dsl = CsvParser.separator(separator);
     }
 
     @Override
     public String[] split(String line) {
         try {
-            return this.parser.parseLine(line);
-        } catch (IOException e) {
+            return this.dsl.reader(line).iterator().next();
+        } catch (IOException | NoSuchElementException e) {
             throw new ParseException(line, "Parse line '%s' error", e, line);
         }
     }

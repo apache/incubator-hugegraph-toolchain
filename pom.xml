@@ -27,9 +27,19 @@
             <version>1.8.2</version>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>2.9.5</version>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.9</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
@@ -42,9 +52,9 @@
             <version>1.78</version>
         </dependency>
         <dependency>
-            <groupId>com.opencsv</groupId>
-            <artifactId>opencsv</artifactId>
-            <version>5.0</version>
+            <groupId>org.simpleflatmapper</groupId>
+            <artifactId>sfm-csv</artifactId>
+            <version>8.2.1</version>
         </dependency>
 
         <dependency>
