@@ -92,7 +92,7 @@ public class VertexLabelService extends SchemaService {
 
         List<VertexLabelEntity> results = new ArrayList<>(vertexLabels.size());
         vertexLabels.forEach(vertexLabel -> {
-            results.add(convert(vertexLabel, indexLabels));
+            results.add(join(vertexLabel, indexLabels));
         });
         return results;
     }
@@ -102,13 +102,34 @@ public class VertexLabelService extends SchemaService {
         try {
             VertexLabel vertexLabel = client.schema().getVertexLabel(name);
             List<IndexLabel> indexLabels = client.schema().getIndexLabels();
-            return convert(vertexLabel, indexLabels);
+            return join(vertexLabel, indexLabels);
         } catch (ServerException e) {
             if (e.status() == Constant.STATUS_NOT_FOUND) {
-                return null;
+                throw new ExternalException("schema.vertexlabel.not-exist",
+                                            e, name);
+            }
+            throw new ExternalException("schema.vertexlabel.get.failed",
+                                        e, name);
+        }
+    }
+
+    public void checkExist(String name, int connId) {
+        // Throw exception if it doesn't exist
+        this.get(name, connId);
+    }
+
+    public void checkNotExist(String name, int connId) {
+        try {
+            this.get(name, connId);
+        } catch (ExternalException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof ServerException &&
+                ((ServerException) cause).status() == Constant.STATUS_NOT_FOUND) {
+                return;
             }
             throw e;
         }
+        throw new ExternalException("schema.vertexlabel.exist", name);
     }
 
     public List<String> getLinkEdgeLabels(String name, int connId) {
@@ -193,10 +214,6 @@ public class VertexLabelService extends SchemaService {
     public void remove(String name, int connId) {
         HugeClient client = this.client(connId);
         client.schema().removeVertexLabelAsync(name);
-    }
-
-    public boolean exist(String name, int connId) {
-        return this.get(name, connId) != null;
     }
 
     public boolean checkUsing(String name, int connId) {
@@ -316,8 +333,8 @@ public class VertexLabelService extends SchemaService {
         removeBatch(names, client, func, SchemaType.VERTEX_LABEL);
     }
 
-    private static VertexLabelEntity convert(VertexLabel vertexLabel,
-                                             List<IndexLabel> indexLabels) {
+    private static VertexLabelEntity join(VertexLabel vertexLabel,
+                                          List<IndexLabel> indexLabels) {
         if (vertexLabel == null) {
             return null;
         }

@@ -36,7 +36,8 @@ public interface GraphConnectionMapper extends BaseMapper<GraphConnection> {
      * NOTE: Page must be the first param, otherwise throw exception
      */
     @Select("SELECT * FROM `graph_connection` " +
-            "WHERE `name` LIKE '%${content}%' OR `graph` LIKE '%${content}%'" +
+            "WHERE `name` LIKE concat('%', #{content}, '%') OR " +
+            "`graph` LIKE concat('%', #{content}, '%') " +
             "ORDER BY " +
             "   CASE " +
             "       WHEN `name` LIKE '%${content}%' AND " +

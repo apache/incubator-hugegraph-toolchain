@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.controller.schema;
 
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +41,7 @@ import com.baidu.hugegraph.entity.schema.PropertyKeyEntity;
 import com.baidu.hugegraph.entity.schema.UsingCheckEntity;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.service.schema.PropertyKeyService;
+import com.baidu.hugegraph.util.CommonUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
@@ -49,14 +49,14 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "schema/propertykeys")
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema/propertykeys")
 public class PropertyKeyController extends SchemaController {
 
     @Autowired
     private PropertyKeyService service;
 
     @GetMapping
-    public IPage<PropertyKeyEntity> list(@RequestParam("conn_id") int connId,
+    public IPage<PropertyKeyEntity> list(@PathVariable("connId") int connId,
                                          @RequestParam(name = "content",
                                                        required = false)
                                          String content,
@@ -76,26 +76,24 @@ public class PropertyKeyController extends SchemaController {
     }
 
     @GetMapping("{name}")
-    public PropertyKeyEntity get(@PathVariable("name") String name,
-                                 @RequestParam("conn_id") int connId) {
-        PropertyKeyEntity entity = this.service.get(name, connId);
-        Ex.check(entity != null, "schema.propertykey.not-exist", name);
-        return entity;
+    public PropertyKeyEntity get(@PathVariable("connId") int connId,
+                                 @PathVariable("name") String name) {
+        return this.service.get(name, connId);
     }
 
     @PostMapping
-    public void create(@RequestBody PropertyKeyEntity entity,
-                       @RequestParam("conn_id") int connId) {
+    public void create(@PathVariable("connId") int connId,
+                       @RequestBody PropertyKeyEntity entity) {
         this.checkParamsValid(entity, true);
         this.checkEntityUnique(entity, connId);
-        entity.setCreateTime(new Date());
+        entity.setCreateTime(CommonUtil.nowDate());
         this.service.add(entity, connId);
     }
 
     @PostMapping("check_conflict")
     public ConflictDetail checkConflict(
-                          @RequestBody ConflictCheckEntity entity,
-                          @RequestParam("conn_id") int connId) {
+                          @PathVariable("connId") int connId,
+                          @RequestBody ConflictCheckEntity entity) {
         List<PropertyKeyEntity> entities = entity.getPkEntities();
         Ex.check(!CollectionUtils.isEmpty(entities),
                  "common.param.cannot-be-empty", "entities");
@@ -111,8 +109,8 @@ public class PropertyKeyController extends SchemaController {
 
     @PostMapping("recheck_conflict")
     public ConflictDetail recheckConflict(
-                          @RequestBody ConflictCheckEntity entity,
-                          @RequestParam("conn_id") int connId) {
+                          @PathVariable("connId") int connId,
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getPkEntities()),
                  "common.param.cannot-be-empty", "propertykeys");
         Ex.check(CollectionUtils.isEmpty(entity.getPiEntities()),
@@ -125,20 +123,21 @@ public class PropertyKeyController extends SchemaController {
     }
 
     @PostMapping("reuse")
-    public void reuse(@RequestBody ConflictDetail detail,
-                      @RequestParam("conn_id") int connId) {
+    public void reuse(@PathVariable("connId") int connId,
+                      @RequestBody ConflictDetail detail) {
+        Ex.check(!CollectionUtils.isEmpty(detail.getPkConflicts()),
+                 "common.param.cannot-be-empty", "propertykey_conflicts");
         this.service.reuse(detail, connId);
     }
 
     @PostMapping("check_using")
-    public Map<String, Boolean> checkUsing(@RequestBody UsingCheckEntity entity,
-                                           @RequestParam("conn_id") int connId) {
+    public Map<String, Boolean> checkUsing(@PathVariable("connId") int connId,
+                                           @RequestBody UsingCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getNames()),
                  "common.param.cannot-be-empty", "names");
         Map<String, Boolean> inUsing = new LinkedHashMap<>();
         for (String name : entity.getNames()) {
-            Ex.check(this.service.exist(name, connId),
-                     "schema.propertykey.not-exist", name);
+            this.service.checkExist(name, connId);
             inUsing.put(name, this.service.checkUsing(name, connId));
         }
         return inUsing;
@@ -148,14 +147,13 @@ public class PropertyKeyController extends SchemaController {
      * Should request "check_using" before delete
      */
     @DeleteMapping
-    public void delete(@RequestParam List<String> names,
+    public void delete(@PathVariable("connId") int connId,
+                       @RequestParam List<String> names,
                        @RequestParam(name = "skip_using",
                                      defaultValue = "false")
-                       boolean skipUsing,
-                       @RequestParam("conn_id") int connId) {
+                       boolean skipUsing) {
         for (String name : names) {
-            PropertyKeyEntity entity = this.service.get(name, connId);
-            Ex.check(entity != null, "schema.propertykey.not-exist", name);
+            this.service.checkExist(name, connId);
             if (this.service.checkUsing(name, connId)) {
                 if (skipUsing) {
                     continue;
@@ -185,7 +183,6 @@ public class PropertyKeyController extends SchemaController {
     private void checkEntityUnique(PropertyKeyEntity newEntity, int connId) {
         // The name must be unique
         String name = newEntity.getName();
-        PropertyKeyEntity oldEntity = this.service.get(name, connId);
-        Ex.check(oldEntity == null, "schema.propertykey.exist", name);
+        this.service.checkNotExist(name, connId);
     }
 }

@@ -58,7 +58,7 @@ public class SchemaController extends BaseController {
         if (!StringUtils.isEmpty(content)) {
             // Select by content
             entities = entities.stream()
-                               .filter(e -> e.getName().contains(content))
+                               .filter(c -> c.getName().contains(content))
                                .collect(Collectors.toList());
             if (nameOrderAsc != null) {
                 // order by name
@@ -140,8 +140,7 @@ public class SchemaController extends BaseController {
         }
         for (Property property : properties) {
             String pkName = property.getName();
-            Ex.check(service.exist(pkName, connId),
-                     "schema.propertykey.not-exist", pkName);
+            service.checkExist(pkName, connId);
             Ex.check(mustNullable, property::isNullable,
                      "schema.propertykey.must-be-nullable");
         }

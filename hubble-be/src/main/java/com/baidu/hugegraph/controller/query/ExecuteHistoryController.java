@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.controller.query;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,18 +32,18 @@ import com.baidu.hugegraph.entity.query.ExecuteHistory;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.query.ExecuteHistoryService;
-import com.baidu.hugegraph.util.Ex;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 @RestController
-@RequestMapping(Constant.API_VERSION + "execute-histories")
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/execute-histories")
 public class ExecuteHistoryController extends GremlinController {
 
     @Autowired
     private ExecuteHistoryService service;
 
     @GetMapping
-    public IPage<ExecuteHistory> listAll(@RequestParam(name = "page_no",
+    public IPage<ExecuteHistory> listAll(@PathVariable("connId") int connId,
+                                         @RequestParam(name = "page_no",
                                                        required = false,
                                                        defaultValue = "1")
                                          int pageNo,
@@ -53,14 +51,7 @@ public class ExecuteHistoryController extends GremlinController {
                                                        required = false,
                                                        defaultValue = "10")
                                          int pageSize) {
-        return this.service.list(pageNo, pageSize);
-    }
-
-    @GetMapping("batch")
-    public List<ExecuteHistory> listBatch(@RequestParam("ids")
-                                          List<Integer> ids) {
-        this.checkParamsNotEmpty("ids", ids);
-        return this.service.listBatch(ids);
+        return this.service.list(connId, pageNo, pageSize);
     }
 
     @GetMapping("{id}")
@@ -79,18 +70,5 @@ public class ExecuteHistoryController extends GremlinController {
             throw new InternalException("entity.delete.failed", oldEntity);
         }
         return oldEntity;
-    }
-
-    private void checkParamsValid(ExecuteHistory newEntity) {
-        Ex.check(newEntity.getId() == null, "common.param.must-be-null", "id");
-        Ex.check(newEntity.getType() != null,
-                 "common.param.cannot-be-null", "type");
-        this.checkParamsNotEmpty("content", newEntity.getContent(), true);
-        Ex.check(newEntity.getStatus() != null,
-                 "common.param.cannot-be-null", "status");
-        Ex.check(newEntity.getDuration() != null,
-                 "common.param.cannot-be-null", "duration");
-        Ex.check(newEntity.getCreateTime() != null,
-                 "common.param.cannot-be-null", "create_time");
     }
 }

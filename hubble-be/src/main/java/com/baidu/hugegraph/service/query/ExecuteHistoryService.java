@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.service.query;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,9 +46,9 @@ public class ExecuteHistoryService {
     @Autowired
     private ExecuteHistoryMapper mapper;
 
-    public IPage<ExecuteHistory> list(long current, long pageSize) {
+    public IPage<ExecuteHistory> list(int connId, long current, long pageSize) {
         QueryWrapper<ExecuteHistory> query = Wrappers.query();
-        query.orderByDesc("create_time");
+        query.eq("conn_id", connId).orderByDesc("create_time");
         Page<ExecuteHistory> page = new Page<>(current, pageSize);
         IPage<ExecuteHistory> results = this.mapper.selectPage(page, query);
 
@@ -62,16 +60,8 @@ public class ExecuteHistoryService {
         return results;
     }
 
-    public List<ExecuteHistory> listBatch(List<Integer> ids) {
-        return this.mapper.selectBatchIds(ids);
-    }
-
     public ExecuteHistory get(int id) {
         return this.mapper.selectById(id);
-    }
-
-    public int count() {
-        return this.mapper.selectCount(null);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)

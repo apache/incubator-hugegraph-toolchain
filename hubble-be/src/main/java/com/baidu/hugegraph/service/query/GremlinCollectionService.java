@@ -39,7 +39,7 @@ public class GremlinCollectionService {
     @Autowired
     private GremlinCollectionMapper mapper;
 
-    public IPage<GremlinCollection> list(String content,
+    public IPage<GremlinCollection> list(int connId, String content,
                                          Boolean nameOrderAsc,
                                          Boolean timeOrderAsc,
                                          long current, long pageSize) {
@@ -51,31 +51,35 @@ public class GremlinCollectionService {
             if (nameOrderAsc != null) {
                 // order by name
                 assert timeOrderAsc == null;
-                query.like("name", value).or().like("content", value);
+                query.eq("conn_id", connId).and(wrapper -> {
+                    wrapper.like("name", value).or().like("content", value);
+                });
                 query.orderBy(true, nameOrderAsc, "name");
                 return this.mapper.selectPage(page, query);
             } else if (timeOrderAsc != null) {
                 // order by time
                 assert nameOrderAsc == null;
-                query.like("name", value).or().like("content", value);
+                query.eq("conn_id", connId).and(wrapper -> {
+                    wrapper.like("name", value).or().like("content", value);
+                });
                 query.orderBy(true, timeOrderAsc, "create_time");
                 return this.mapper.selectPage(page, query);
             } else {
                 // order by relativity
                 assert nameOrderAsc == null && timeOrderAsc == null;
-                return this.mapper.selectByContentInPage(page, content);
+                return this.mapper.selectByContentInPage(page, connId, content);
             }
         } else {
             // Select all
             if (nameOrderAsc != null) {
                 // order by name
                 assert timeOrderAsc == null;
-                query.orderBy(true, nameOrderAsc, "name");
+                query.eq("conn_id", connId).orderBy(true, nameOrderAsc, "name");
                 return this.mapper.selectPage(page, query);
             } else {
                 // order by time
                 boolean isAsc = timeOrderAsc != null && timeOrderAsc;
-                query.orderBy(true, isAsc, "create_time");
+                query.eq("conn_id", connId).orderBy(true, isAsc, "create_time");
                 return this.mapper.selectPage(page, query);
             }
         }

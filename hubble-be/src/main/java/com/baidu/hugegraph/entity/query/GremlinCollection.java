@@ -47,6 +47,10 @@ public class GremlinCollection implements Identifiable, Mergeable {
     private Integer id;
 
     @MergeProperty
+    @JsonProperty("conn_id")
+    private Integer connId;
+
+    @MergeProperty
     @JsonProperty("name")
     private String name;
 

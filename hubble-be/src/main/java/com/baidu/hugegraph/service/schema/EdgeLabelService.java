@@ -108,10 +108,30 @@ public class EdgeLabelService extends SchemaService {
             return convert(edgeLabel, indexLabels);
         } catch (ServerException e) {
             if (e.status() == Constant.STATUS_NOT_FOUND) {
-                return null;
+                throw new ExternalException("schema.edgelabel.not-exist",
+                                            e, name);
+            }
+            throw new ExternalException("schema.edgelabel.get.failed", e, name);
+        }
+    }
+
+    public void checkExist(String name, int connId) {
+        // Throw exception if it doesn't exist
+        this.get(name, connId);
+    }
+
+    public void checkNotExist(String name, int connId) {
+        try {
+            this.get(name, connId);
+        } catch (ExternalException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof ServerException &&
+                ((ServerException) cause).status() == Constant.STATUS_NOT_FOUND) {
+                return;
             }
             throw e;
         }
+        throw new ExternalException("schema.edgelabel.exist", name);
     }
 
     public void add(EdgeLabelEntity entity, int connId) {
@@ -184,10 +204,6 @@ public class EdgeLabelService extends SchemaService {
     public void remove(String name, int connId) {
         HugeClient client = this.client(connId);
         client.schema().removeEdgeLabelAsync(name);
-    }
-
-    public boolean exist(String name, int connId) {
-        return this.get(name, connId) != null;
     }
 
     public ConflictDetail checkConflict(ConflictCheckEntity entity,

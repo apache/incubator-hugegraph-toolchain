@@ -105,9 +105,9 @@ public class HubbleOptions extends OptionHolder {
                     500
             );
 
-    public static final ConfigOption<Integer> INDEXLABEL_CREATE_TIMEOUT =
+    public static final ConfigOption<Integer> INDEXLABEL_REBUILD_TIMEOUT =
             new ConfigOption<>(
-                    "indexlabel.create.timeout",
+                    "indexlabel.rebuild.timeout",
                     "The timeout in seconds for waiting to create index label.",
                     rangeInt(-1, Integer.MAX_VALUE),
                     30

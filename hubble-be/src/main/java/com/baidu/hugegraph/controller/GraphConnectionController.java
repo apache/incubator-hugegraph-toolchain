@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.controller;
 
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -42,6 +41,7 @@ import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.license.LicenseVerifier;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
+import com.baidu.hugegraph.util.CommonUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HugeClientUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -102,7 +102,7 @@ public class GraphConnectionController extends BaseController {
         this.checkEntityUnique(newEntity, true);
         // Do connect test, failure will throw an exception
         HugeClient client = HugeClientUtil.tryConnect(newEntity);
-        newEntity.setCreateTime(new Date());
+        newEntity.setCreateTime(CommonUtil.nowDate());
 
         int rows = this.connService.save(newEntity);
         if (rows != 1) {
@@ -115,7 +115,7 @@ public class GraphConnectionController extends BaseController {
     @PutMapping("{id}")
     public GraphConnection update(@PathVariable("id") int id,
                                   @RequestBody GraphConnection newEntity) {
-        this.checkIdWhenUpdate(id, newEntity);
+        this.checkIdSameAsBody(id, newEntity);
         this.checkParamsValid(newEntity, false);
 
         // Check exist connection with this id

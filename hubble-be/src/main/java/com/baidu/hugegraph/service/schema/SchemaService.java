@@ -52,6 +52,8 @@ import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
+import com.baidu.hugegraph.util.CommonUtil;
+import com.baidu.hugegraph.util.Ex;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -208,21 +210,20 @@ public class SchemaService {
         return status;
     }
 
-    public static <T extends SchemaElement>
-           void addBatch(List<T> schemas, HugeClient client,
-                         BiConsumer<HugeClient, T> consumer,
-                         SchemaType type) {
+    public static <T extends SchemaElement> void addBatch(
+           List<T> schemas, HugeClient client,
+           BiConsumer<HugeClient, T> func, SchemaType type) {
         if (CollectionUtils.isEmpty(schemas)) {
             return;
         }
-        Date now = new Date();
+        Date now = CommonUtil.nowDate();
         for (T schema : schemas) {
             schema.resetId();
             if (!(schema instanceof IndexLabel)) {
                 schema.userdata().put(USER_KEY_CREATE_TIME, now);
             }
             try {
-                consumer.accept(client, schema);
+                func.accept(client, schema);
             } catch (Exception e) {
                 throw new ExternalException("Failed to create %s %s", e,
                                             type.string(), schema.name());
@@ -231,15 +232,14 @@ public class SchemaService {
         }
     }
 
-    public static <T extends SchemaElement>
-           List<Long> addBatch(List<T> schemas, HugeClient client,
-                               BiFunction<HugeClient, T, Long> func,
-                               SchemaType type) {
+    public static <T extends SchemaElement> List<Long> addBatch(
+           List<T> schemas, HugeClient client,
+           BiFunction<HugeClient, T, Long> func, SchemaType type) {
         List<Long> tasks = new ArrayList<>();
         if (CollectionUtils.isEmpty(schemas)) {
             return tasks;
         }
-        Date now = new Date();
+        Date now = CommonUtil.nowDate();
         for (T schema : schemas) {
             schema.resetId();
             if (!(schema instanceof IndexLabel)) {
@@ -256,9 +256,9 @@ public class SchemaService {
         return tasks;
     }
 
-    public static List<Long> removeBatch(List<String> names, HugeClient client,
-                                         BiFunction<HugeClient, String, Long> func,
-                                         SchemaType type) {
+    public static List<Long> removeBatch(
+           List<String> names, HugeClient client,
+           BiFunction<HugeClient, String, Long> func, SchemaType type) {
         List<Long> tasks = new ArrayList<>();
         if (CollectionUtils.isEmpty(names)) {
             return tasks;
@@ -274,16 +274,15 @@ public class SchemaService {
         return tasks;
     }
 
-    public static void removeBatch(
-            List<String> names, HugeClient client,
-            BiConsumer<HugeClient, String> consumer,
-            SchemaType type) {
+    public static void removeBatch(List<String> names, HugeClient client,
+                                   BiConsumer<HugeClient, String> func,
+                                   SchemaType type) {
         if (CollectionUtils.isEmpty(names)) {
             return;
         }
         for (String name : names) {
             try {
-                consumer.accept(client, name);
+                func.accept(client, name);
             } catch (Exception e) {
                 throw new ExternalException("Failed to remove %s %s", e,
                                             type.string(), name);
@@ -312,7 +311,7 @@ public class SchemaService {
 
     public static Date getCreateTime(SchemaElement element) {
         Object createTimeValue = element.userdata().get(USER_KEY_CREATE_TIME);
-        if (createTimeValue == null) {
+        if (!(createTimeValue instanceof Long)) {
             return new Date(0);
         }
         return new Date((long) createTimeValue);

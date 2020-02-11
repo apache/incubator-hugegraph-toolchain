@@ -51,6 +51,11 @@ public class ExecuteHistory implements Identifiable, Mergeable {
     @JsonProperty("id")
     private Integer id;
 
+    @TableField(value = "conn_id")
+    @MergeProperty
+    @JsonProperty("conn_id")
+    private Integer connId;
+
     @TableField(value = "execute_type")
     @MergeProperty
     @JsonProperty("type")

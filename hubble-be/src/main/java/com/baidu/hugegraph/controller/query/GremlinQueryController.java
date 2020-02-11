@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,6 +43,7 @@ import com.baidu.hugegraph.entity.query.GremlinResult;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.query.ExecuteHistoryService;
 import com.baidu.hugegraph.service.query.GremlinQueryService;
+import com.baidu.hugegraph.util.CommonUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.google.common.collect.ImmutableSet;
 
@@ -49,7 +51,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "gremlin-query")
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/gremlin-query")
 public class GremlinQueryController extends GremlinController {
 
     private static final Set<String> CONDITION_OPERATORS = ImmutableSet.of(
@@ -62,19 +64,16 @@ public class GremlinQueryController extends GremlinController {
     private ExecuteHistoryService historyService;
 
     @PostMapping
-    public GremlinResult execute(@RequestBody GremlinQuery query) {
+    public GremlinResult execute(@PathVariable("connId") int connId,
+                                 @RequestBody GremlinQuery query) {
         this.checkParamsValid(query);
 
-        Date createTime = new Date();
+        Date createTime = CommonUtil.nowDate();
         // Insert execute history
         ExecuteStatus status = ExecuteStatus.RUNNING;
-        ExecuteHistory history = ExecuteHistory.builder()
-                                               .type(ExecuteType.GREMLIN)
-                                               .content(query.getContent())
-                                               .status(status)
-                                               .duration(-1L)
-                                               .createTime(createTime)
-                                               .build();
+        ExecuteHistory history;
+        history = new ExecuteHistory(null, connId, ExecuteType.GREMLIN,
+                                     query.getContent(), status, -1L, createTime);
         int rows = this.historyService.save(history);
         if (rows != 1) {
             throw new InternalException("entity.insert.failed", history);
@@ -82,11 +81,10 @@ public class GremlinQueryController extends GremlinController {
 
         StopWatch timer = StopWatch.createStarted();
         try {
-            int connId = query.getConnectionId();
-            GremlinResult result = this.queryService.executeQuery(query, connId);
+            GremlinResult result = this.queryService.executeQuery(connId, query);
             status = ExecuteStatus.SUCCESS;
             return result;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             status = ExecuteStatus.FAILED;
             throw e;
         } finally {
@@ -102,10 +100,10 @@ public class GremlinQueryController extends GremlinController {
     }
 
     @PutMapping
-    public GremlinResult expand(@RequestBody AdjacentQuery query) {
+    public GremlinResult expand(@PathVariable("connId") int connId,
+                                @RequestBody AdjacentQuery query) {
         this.checkParamsValid(query);
-        int connId = query.getConnectionId();
-        return this.queryService.expandVertex(query, connId);
+        return this.queryService.expandVertex(connId, query);
     }
 
     private void checkParamsValid(GremlinQuery query) {

@@ -19,12 +19,14 @@
 
 package com.baidu.hugegraph.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.baidu.hugegraph.common.Constant;
 
 public final class SQLUtil {
 
     public static String escapeLike(String text) {
-        if (Constant.LIKE_WILDCARDS.contains(text)) {
+        if (StringUtils.containsAny(text, Constant.LIKE_WILDCARDS)) {
             return "\\" + text;
         }
         return text;

@@ -19,11 +19,21 @@
 
 package com.baidu.hugegraph.util;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.Date;
 
 import org.apache.commons.collections.CollectionUtils;
 
 public final class CommonUtil {
+
+    public static Date nowDate() {
+        return new Date();
+    }
+
+    public static Instant nowTime() {
+        return Instant.now();
+    }
 
     public static boolean equalCollection(Collection<?> c1, Collection<?> c2) {
         if (c1 != null && c2 == null || c1 == null && c2 != null) {

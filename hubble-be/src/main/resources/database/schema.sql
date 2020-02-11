@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS `graph_connection` (
 
 CREATE TABLE IF NOT EXISTS `execute_history` (
     `id` INT NOT NULL AUTO_INCREMENT,
+    `conn_id` INT NOT NULL,
     `execute_type` TINYINT NOT NULL,
     `content` VARCHAR(65535) NOT NULL,
     `execute_status` TINYINT NOT NULL,
@@ -29,12 +30,15 @@ CREATE TABLE IF NOT EXISTS `execute_history` (
     `create_time` DATETIME(6) NOT NULL,
     PRIMARY KEY (`id`)
 );
+CREATE INDEX IF NOT EXISTS `execute_history_conn_id` ON `execute_history`(`conn_id`);
 
 CREATE TABLE IF NOT EXISTS `gremlin_collection` (
     `id` INT NOT NULL AUTO_INCREMENT,
+    `conn_id` INT NOT NULL,
     `name` VARCHAR(48) NOT NULL,
     `content` VARCHAR(65535) NOT NULL,
     `create_time` DATETIME(6) NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`name`)
 );
+CREATE INDEX IF NOT EXISTS `gremlin_collection_conn_id` ON `gremlin_collection`(`conn_id`);

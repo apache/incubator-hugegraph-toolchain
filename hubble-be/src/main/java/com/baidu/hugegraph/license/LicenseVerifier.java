@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.HugeGraphHubble;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
+import com.baidu.hugegraph.util.CommonUtil;
 import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -79,7 +80,7 @@ public class LicenseVerifier {
     }
 
     public void verifyIfNeeded() {
-        Instant now = Instant.now();
+        Instant now = CommonUtil.nowTime();
         Duration interval = Duration.between(this.lastCheckTime, now);
         if (!interval.minus(CHECK_INTERVAL).isNegative()) {
             this.verify();
@@ -96,10 +97,9 @@ public class LicenseVerifier {
             LicenseContent content = this.manager.install(licenseFile);
             LOG.info("The license is successfully installed, valid for {} - {}",
                      content.getNotBefore(), content.getNotAfter());
+        } catch (ExternalException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof ExternalException) {
-                throw (ExternalException) e;
-            }
             throw new ExternalException("license.install.failed", e);
         }
     }
@@ -109,10 +109,9 @@ public class LicenseVerifier {
             LicenseContent content = this.manager.verify();
             LOG.info("The license verification passed, valid for {} - {}",
                      content.getNotBefore(), content.getNotAfter());
+        } catch (ExternalException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof ExternalException) {
-                throw (ExternalException) e;
-            }
             throw new ExternalException("license.verify.failed", e);
         }
     }

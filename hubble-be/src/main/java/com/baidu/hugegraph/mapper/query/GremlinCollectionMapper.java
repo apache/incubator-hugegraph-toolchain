@@ -19,9 +19,7 @@
 
 package com.baidu.hugegraph.mapper.query;
 
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
@@ -35,7 +33,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 public interface GremlinCollectionMapper extends BaseMapper<GremlinCollection> {
 
     @Select("SELECT * FROM `gremlin_collection` " +
-            "WHERE `name` LIKE '%${content}%' OR `content` LIKE '%${content}%'" +
+            "WHERE `conn_id` = #{conn_id} AND " +
+            "(`name` LIKE concat('%', #{content}, '%') OR " +
+            "`content` LIKE concat('%', #{content}, '%')) " +
             "ORDER BY " +
             "   CASE " +
             "       WHEN `name` LIKE '%${content}%' AND " +
@@ -45,15 +45,7 @@ public interface GremlinCollectionMapper extends BaseMapper<GremlinCollection> {
             "   END ASC, " +
             "   `create_time` DESC")
     IPage<GremlinCollection> selectByContentInPage(IPage<GremlinCollection> page,
+                                                   @Param("conn_id") int connId,
                                                    @Param("content")
                                                    String content);
-
-    @SuppressWarnings("unused")
-    @Insert("INSERT INTO `gremlin_collection`(name, content, create_time) " +
-            "SELECT '${statement.name}', '${statement.content}', sysdate " +
-            "WHERE (SELECT COUNT(*) FROM `gremlin_collection`) < ${limit}")
-    @Options(useGeneratedKeys = true, keyProperty = "statement.id",
-             flushCache = Options.FlushCachePolicy.TRUE)
-    int insertIfUnreachLimit(@Param("statement") GremlinCollection collection,
-                             @Param("limit") int limit);
 }

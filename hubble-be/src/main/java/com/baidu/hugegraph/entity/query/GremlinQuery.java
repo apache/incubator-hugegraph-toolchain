@@ -32,9 +32,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class GremlinQuery {
 
-    @JsonProperty("connection_id")
-    private Integer connectionId;
-
     @JsonProperty("content")
     private String content;
 }

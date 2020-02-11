@@ -35,9 +35,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AdjacentQuery {
 
-    @JsonProperty("connection_id")
-    private Integer connectionId;
-
     @JsonProperty("vertex_id")
     private String vertexId;
 

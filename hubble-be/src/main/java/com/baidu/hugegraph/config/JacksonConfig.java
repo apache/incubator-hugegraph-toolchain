@@ -34,7 +34,6 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 @JsonComponent
 public class JacksonConfig {
@@ -45,7 +44,6 @@ public class JacksonConfig {
 
         SimpleModule module = new SimpleModule();
         // Add global serializer here
-
         mapper.registerModule(module);
         return mapper;
     }
@@ -61,7 +59,7 @@ public class JacksonConfig {
             generator.writeObjectField("message", response.getMessage());
             Throwable cause = response.getCause();
             if (cause != null) {
-                generator.writeStringField("cause", cause.getMessage());
+                generator.writeStringField("cause", cause.toString());
             } else {
                 generator.writeStringField("cause", null);
             }

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>hugegraph-hubble</artifactId>
         <groupId>com.baidu.hugegraph</groupId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -68,20 +68,9 @@
         </dependency>
 
         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
-            <version>2.9.2</version>
-        </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger-ui</artifactId>
-            <version>2.9.2</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
-            <version>1.6.16</version>
+            <version>1.7.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
@@ -96,10 +85,6 @@
                     <artifactId>log4j-slf4j-impl</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>guava</artifactId>
-                    <groupId>com.google.guava</groupId>
-                </exclusion>
-                <exclusion>
                     <artifactId>commons-logging</artifactId>
                     <groupId>commons-logging</groupId>
                 </exclusion>
@@ -112,7 +97,7 @@
         <dependency>
             <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>1.8.0</version>
+            <version>1.8.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>

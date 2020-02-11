@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.controller.schema;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,12 +50,13 @@ import com.baidu.hugegraph.service.schema.PropertyKeyService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.util.CollectionUtil;
+import com.baidu.hugegraph.util.CommonUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableList;
 
 @RestController
-@RequestMapping(Constant.API_VERSION + "schema/vertexlabels")
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema/vertexlabels")
 public class VertexLabelController extends SchemaController {
 
     private static final List<String> PRESET_COLORS = ImmutableList.of(
@@ -72,21 +72,19 @@ public class VertexLabelController extends SchemaController {
     private VertexLabelService vlService;
 
     @GetMapping("optional-colors")
-    public List<String> getOptionalColors(@RequestParam("connection_id")
-                                          int connId) {
+    public List<String> getOptionalColors(@PathVariable("connId") int connId) {
         return PRESET_COLORS;
     }
 
     @GetMapping("{name}/link")
-    public List<String> getLinkEdgeLabels(@PathVariable("name") String name,
-                                          @RequestParam("conn_id") int connId) {
-        VertexLabelEntity entity = this.vlService.get(name, connId);
-        Ex.check(entity != null, "schema.vertexlabel.not-exist", name);
+    public List<String> getLinkEdgeLabels(@PathVariable("connId") int connId,
+                                          @PathVariable("name") String name) {
+        this.vlService.checkExist(name, connId);
         return this.vlService.getLinkEdgeLabels(name, connId);
     }
 
     @GetMapping
-    public IPage<VertexLabelEntity> list(@RequestParam("conn_id") int connId,
+    public IPage<VertexLabelEntity> list(@PathVariable("connId") int connId,
                                          @RequestParam(name = "content",
                                                        required = false)
                                          String content,
@@ -106,27 +104,25 @@ public class VertexLabelController extends SchemaController {
     }
 
     @GetMapping("{name}")
-    public VertexLabelEntity get(@PathVariable("name") String name,
-                                 @RequestParam("conn_id") int connId) {
-        VertexLabelEntity entity = this.vlService.get(name, connId);
-        Ex.check(entity != null, "schema.vertexlabel.not-exist", name);
-        return entity;
+    public VertexLabelEntity get(@PathVariable("connId") int connId,
+                                 @PathVariable("name") String name) {
+        return this.vlService.get(name, connId);
     }
 
     @PostMapping
-    public void create(@RequestBody VertexLabelEntity entity,
-                       @RequestParam("conn_id") int connId) {
+    public void create(@PathVariable("connId") int connId,
+                       @RequestBody VertexLabelEntity entity) {
         this.checkParamsValid(entity, connId, true);
         this.checkEntityUnique(entity, connId, true);
-        entity.setCreateTime(new Date());
+        entity.setCreateTime(CommonUtil.nowDate());
         this.vlService.add(entity, connId);
     }
 
     @PostMapping("check_conflict")
     public ConflictDetail checkConflicts(
-                          @RequestBody ConflictCheckEntity entity,
+                          @PathVariable("connId") int connId,
                           @RequestParam("reused_conn_id") int reusedConnId,
-                          @RequestParam("conn_id") int connId) {
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getVlEntities()),
                  "common.param.cannot-be-empty", "vertexlabels");
         Ex.check(CollectionUtils.isEmpty(entity.getPkEntities()),
@@ -151,8 +147,8 @@ public class VertexLabelController extends SchemaController {
 
     @PostMapping("recheck_conflict")
     public ConflictDetail recheckConflicts(
-                          @RequestBody ConflictCheckEntity entity,
-                          @RequestParam("conn_id") int connId) {
+                          @PathVariable("connId") int connId,
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getVlEntities()),
                  "common.param.cannot-be-empty", "vertexlabels");
         Ex.check(CollectionUtils.isEmpty(entity.getElEntities()),
@@ -161,46 +157,44 @@ public class VertexLabelController extends SchemaController {
     }
 
     @PostMapping("reuse")
-    public void reuse(@RequestBody ConflictDetail detail,
-                      @RequestParam("conn_id") int connId) {
+    public void reuse(@PathVariable("connId") int connId,
+                      @RequestBody ConflictDetail detail) {
         this.vlService.reuse(detail, connId);
     }
 
     @PutMapping("{name}")
-    public void update(@PathVariable("name") String name,
-                       @RequestParam("conn_id") int connId,
+    public void update(@PathVariable("connId") int connId,
+                       @PathVariable("name") String name,
                        @RequestBody LabelUpdateEntity entity) {
         Ex.check(!StringUtils.isEmpty(name),
                  "common.param.cannot-be-null-or-empty", name);
         entity.setName(name);
         entity.setType(SchemaType.VERTEX_LABEL);
 
-        VertexLabelEntity oldEntity = this.vlService.get(name, connId);
-        Ex.check(oldEntity != null, "schema.vertexlabel.not-exist", name);
+        this.vlService.checkExist(name, connId);
         checkParamsValid(this.pkService, entity, connId);
         this.vlService.update(entity, connId);
     }
 
     @PostMapping("check_using")
-    public Map<String, Boolean> checkUsing(@RequestBody UsingCheckEntity entity,
-                                           @RequestParam("conn_id") int connId) {
+    public Map<String, Boolean> checkUsing(
+                                @PathVariable("connId") int connId,
+                                @RequestBody UsingCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getNames()),
                  "common.param.cannot-be-empty", "names");
         Map<String, Boolean> inUsing = new LinkedHashMap<>();
         for (String name : entity.getNames()) {
-            Ex.check(this.vlService.exist(name, connId),
-                     "schema.vertexlabel.not-exist", name);
+            this.vlService.checkExist(name, connId);
             inUsing.put(name, this.vlService.checkUsing(name, connId));
         }
         return inUsing;
     }
 
     @DeleteMapping
-    public void delete(@RequestParam("names") List<String> names,
-                       @RequestParam("conn_id") int connId) {
+    public void delete(@PathVariable("connId") int connId,
+                       @RequestParam("names") List<String> names) {
         for (String name : names) {
-            VertexLabelEntity entity = this.vlService.get(name, connId);
-            Ex.check(entity != null, "schema.vertexlabel.not-exist", name);
+            this.vlService.checkExist(name, connId);
             Ex.check(!this.vlService.checkUsing(name, connId),
                      "schema.vertexlabel.in-using", name);
             this.vlService.remove(name, connId);
@@ -256,7 +250,6 @@ public class VertexLabelController extends SchemaController {
                                    boolean creating) {
         // The name must be unique
         String name = newEntity.getName();
-        VertexLabelEntity oldEntity = this.vlService.get(name, connId);
-        Ex.check(oldEntity == null, "schema.vertexlabel.exist", name);
+        this.vlService.checkNotExist(name, connId);
     }
 }
