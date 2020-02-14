@@ -39,13 +39,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class IndexLabel extends SchemaElement {
 
     @JsonProperty("base_type")
-    private HugeType baseType;
+    protected HugeType baseType;
     @JsonProperty("base_value")
-    private String baseValue;
+    protected String baseValue;
     @JsonProperty("index_type")
-    private IndexType indexType;
+    protected IndexType indexType;
     @JsonProperty("fields")
-    private List<String> fields;
+    protected List<String> fields;
 
     @JsonCreator
     public IndexLabel(@JsonProperty("name") String name) {
@@ -81,6 +81,10 @@ public class IndexLabel extends SchemaElement {
                              "indexType=%s, fields=%s}",
                              this.name, this.baseType, this.baseValue,
                              this.indexType, this.fields);
+    }
+
+    public IndexLabelV49 switchV49() {
+        return new IndexLabelV49(this);
     }
 
     public interface Builder extends SchemaBuilder<IndexLabel> {
@@ -241,6 +245,25 @@ public class IndexLabel extends SchemaElement {
 
         public long taskId() {
             return this.taskId;
+        }
+    }
+
+    @JsonIgnoreProperties({"properties", "user_data"})
+    public static class IndexLabelV49 extends IndexLabel {
+
+        public IndexLabelV49(IndexLabel indexLabel) {
+            super(indexLabel.name);
+            E.checkArgument(indexLabel.userdata.isEmpty(),
+                            "The userdata of indexlabel must be empty");
+            this.baseType = indexLabel.baseType;
+            this.baseValue = indexLabel.baseValue;
+            this.indexType = indexLabel.indexType;
+            this.fields = indexLabel.fields;
+        }
+
+        @Override
+        public Map<String, Object> userdata() {
+            throw new NotSupportException("user data for index label");
         }
     }
 }

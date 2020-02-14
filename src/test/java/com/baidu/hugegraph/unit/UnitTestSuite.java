@@ -28,7 +28,8 @@ import org.junit.runners.Suite;
     PathSerializerTest.class,
     RestResultTest.class,
     BatchElementRequestTest.class,
-    PropertyKeyTest.class
+    PropertyKeyTest.class,
+    IndexLabelTest.class
 })
 public class UnitTestSuite {
 }

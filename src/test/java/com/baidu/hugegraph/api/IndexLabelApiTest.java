@@ -28,13 +28,14 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
-import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.baidu.hugegraph.util.VersionUtil;
 import com.google.common.collect.ImmutableList;
 
 public class IndexLabelApiTest extends BaseApiTest {
@@ -386,5 +387,60 @@ public class IndexLabelApiTest extends BaseApiTest {
         createTime = (long) bookByName.userdata().get("create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
+    }
+
+    @Test
+    public void testAddIndexLabelWithUserDataWithApiVersion49() {
+        VersionUtil.Version originApiVersion = client().apiVersion();
+        VersionUtil.Version apiVersion = VersionUtil.Version.of("0.49");
+        client().apiVersion(apiVersion);
+
+        IndexLabel personByAge = schema().indexLabel("personByAge")
+                                         .onV("person")
+                                         .by("age")
+                                         .range()
+                                         .build();
+        personByAge = indexLabelAPI.create(personByAge).indexLabel();
+        Assert.assertEquals(1, personByAge.userdata().size());
+
+        IndexLabel personByAge1 = schema().indexLabel("personByAge1")
+                                          .onV("person")
+                                          .by("age")
+                                          .range()
+                                          .userdata("min", 0)
+                                          .userdata("max", 100)
+                                          .build();
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            indexLabelAPI.create(personByAge1).indexLabel();
+        }, (e) -> {
+            String msg = "Not support userdata until api version 0.50";
+            Assert.assertTrue(e.getMessage().contains(msg));
+        });
+
+        IndexLabel personByAge2 = schema().indexLabel("personByAge2")
+                                          .onV("person")
+                                          .by("age")
+                                          .userdata("min", 0)
+                                          .build();
+        Assert.assertThrows(NotSupportException.class, () -> {
+            indexLabelAPI.append(personByAge2);
+        }, (e) -> {
+            String msg = "action append on index label";
+            Assert.assertTrue(e.getMessage().contains(msg));
+        });
+
+        IndexLabel personByAge3 = schema().indexLabel("personByAge3")
+                                          .onV("person")
+                                          .by("age")
+                                          .userdata("min", 0)
+                                          .build();
+        Assert.assertThrows(NotSupportException.class, () -> {
+            indexLabelAPI.eliminate(personByAge3);
+        }, (e) -> {
+            String msg = "action eliminate on index label";
+            Assert.assertTrue(e.getMessage().contains(msg));
+        });
+
+        client().apiVersion(originApiVersion);
     }
 }

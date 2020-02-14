@@ -50,13 +50,16 @@ import com.baidu.hugegraph.api.traverser.RingsAPI;
 import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
+import com.baidu.hugegraph.api.version.VersionAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.util.VersionUtil;
 
 public class BaseApiTest extends BaseClientTest {
 
     private static RestClient client;
 
+    protected static VersionAPI versionAPI;
     protected static PropertyKeyAPI propertyKeyAPI;
     protected static VertexLabelAPI vertexLabelAPI;
     protected static EdgeLabelAPI edgeLabelAPI;
@@ -87,6 +90,9 @@ public class BaseApiTest extends BaseClientTest {
         BaseClientTest.init();
 
         client = new RestClient(BASE_URL, 5);
+        versionAPI = new VersionAPI(client);
+        client.apiVersion(VersionUtil.Version.of(versionAPI.get().get("api")));
+
         propertyKeyAPI = new PropertyKeyAPI(client, GRAPH);
         vertexLabelAPI = new VertexLabelAPI(client, GRAPH);
         edgeLabelAPI = new EdgeLabelAPI(client, GRAPH);

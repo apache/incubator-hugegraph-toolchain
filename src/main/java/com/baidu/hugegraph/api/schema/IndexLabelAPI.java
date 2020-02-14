@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
@@ -48,11 +49,24 @@ public class IndexLabelAPI extends SchemaAPI {
         } else if (indexLabel.indexType() == IndexType.UNIQUE) {
             this.client.checkApiVersion("0.44", "unique index");
         }
-        RestResult result = this.client.post(this.path(), indexLabel);
+
+        IndexLabel il = indexLabel;
+        if (this.client.apiVersionLt("0.50")) {
+            E.checkArgument(indexLabel.userdata() == null ||
+                            indexLabel.userdata().isEmpty(),
+                            "Not support userdata until api version 0.50");
+            il = indexLabel.switchV49();
+        }
+
+        RestResult result = this.client.post(this.path(), il);
         return result.readObject(IndexLabel.CreatedIndexLabel.class);
     }
 
     public IndexLabel append(IndexLabel indexLabel) {
+        if (this.client.apiVersionLt("0.50")) {
+            throw new NotSupportException("action append on index label");
+        }
+
         String id = indexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
         RestResult result = this.client.put(this.path(), id,
@@ -61,6 +75,10 @@ public class IndexLabelAPI extends SchemaAPI {
     }
 
     public IndexLabel eliminate(IndexLabel indexLabel) {
+        if (this.client.apiVersionLt("0.50")) {
+            throw new NotSupportException("action eliminate on index label");
+        }
+
         String id = indexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         RestResult result = this.client.put(this.path(), id,
