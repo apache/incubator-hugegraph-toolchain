@@ -29,7 +29,8 @@ import org.junit.runners.Suite;
     RestResultTest.class,
     BatchElementRequestTest.class,
     PropertyKeyTest.class,
-    IndexLabelTest.class
+    IndexLabelTest.class,
+    CommonUtilTest.class
 })
 public class UnitTestSuite {
 }

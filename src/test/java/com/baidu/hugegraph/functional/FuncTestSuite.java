@@ -32,7 +32,8 @@ import org.junit.runners.Suite;
     EdgeTest.class,
     BatchInsertTest.class,
     GraphManagerTest.class,
-    TraverserManagerTest.class
+    TraverserManagerTest.class,
+    MetricsManagerTest.class
 })
 public class FuncTestSuite {
 }

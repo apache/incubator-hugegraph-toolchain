@@ -13,6 +13,7 @@ import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GraphsManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.driver.MetricsManager;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.driver.TaskManager;
 import com.baidu.hugegraph.driver.TraverserManager;
@@ -76,6 +77,11 @@ public class BaseClientTest {
     public static GraphsManager graphs() {
         Assert.assertNotNull("Not opened client", client);
         return client.graphs();
+    }
+
+    public static MetricsManager metrics() {
+        Assert.assertNotNull("Not opened client", client);
+        return client.metrics();
     }
 
     @Before

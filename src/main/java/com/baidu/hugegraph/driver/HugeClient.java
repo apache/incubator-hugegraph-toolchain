@@ -51,6 +51,7 @@ public class HugeClient implements Closeable {
     private VariablesManager variables;
     private JobManager job;
     private TaskManager task;
+    private MetricsManager metrics;
 
     public HugeClient(String url, String graph) {
         this(url, graph, DEFAULT_TIMEOUT);
@@ -115,6 +116,7 @@ public class HugeClient implements Closeable {
         this.variables = new VariablesManager(client, graph);
         this.job = new JobManager(client, graph);
         this.task = new TaskManager(client, graph);
+        this.metrics = new MetricsManager(client);
     }
 
     private void checkServerApiVersion() {
@@ -155,5 +157,9 @@ public class HugeClient implements Closeable {
 
     public TaskManager task() {
         return this.task;
+    }
+
+    public MetricsManager metrics() {
+        return this.metrics;
     }
 }

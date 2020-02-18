@@ -17,54 +17,37 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure.constant;
+package com.baidu.hugegraph.driver;
 
-public enum HugeType {
+import java.util.Map;
 
-    // Schema
-    VERTEX_LABEL(1, "vertexlabels"),
-    EDGE_LABEL(2, "edgelabels"),
-    PROPERTY_KEY(3, "propertykeys"),
-    INDEX_LABEL(4, "indexlabels"),
+import com.baidu.hugegraph.api.metrics.MetricsAPI;
+import com.baidu.hugegraph.client.RestClient;
 
-    // Data
-    VERTEX(101, "vertices"),
-    EDGE(120, "edges"),
+public class MetricsManager {
 
-    // Variables
-    VARIABLES(130, "variables"),
+    private MetricsAPI metricsAPI;
 
-    // Task
-    TASK(140, "tasks"),
-
-    // Job
-    JOB(150, "jobs"),
-
-    // Gremlin
-    GREMLIN(201, "gremlin"),
-
-    GRAPHS(220, "graphs"),
-
-    // Version
-    VERSION(230, "versions"),
-
-    // Metrics
-    METRICS(240, "metrics");
-
-    private int code;
-    private String name = null;
-
-    HugeType(int code, String name) {
-        assert code < 256;
-        this.code = code;
-        this.name = name;
+    public MetricsManager(RestClient client) {
+        this.metricsAPI = new MetricsAPI(client);
     }
 
-    public int code() {
-        return this.code;
+    public Map<String, Map<String, Object>> backend() {
+        return this.metricsAPI.backend();
     }
 
-    public String string() {
-        return this.name;
+    public Map<String, Object> backend(String graph) {
+        return this.metricsAPI.backend(graph);
+    }
+
+    public Map<String, Map<String, Object>> system() {
+        return this.metricsAPI.system();
+    }
+
+    /**
+     * The nesting level is too deep, may need to optimize the server first
+     */
+    public Map<String, Map<String, Object>> all() {
+        return this.metricsAPI.all();
     }
 }
