@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
+import org.apache.commons.io.FileUtils;
+
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.base.Printer;
 import com.baidu.hugegraph.base.ToolClient;
@@ -57,10 +59,11 @@ import jersey.repackaged.com.google.common.collect.ImmutableList;
 
 public class BackupManager extends BackupRestoreBaseManager {
 
-    private static final String ALL_SHARDS = "_all_shards";
-    private static final String TIMEOUT_SHARDS = "_timeout_shards";
-    private static final String LIMIT_EXCEED_SHARDS = "_limit_exceed_shards";
-    private static final String FAILED_SHARDS = "_failed_shards";
+    private static final String SHARDS_SUFFIX = "_shards";
+    private static final String ALL_SHARDS = "_all" + SHARDS_SUFFIX;
+    private static final String TIMEOUT_SHARDS = "_timeout" + SHARDS_SUFFIX;
+    private static final String LIMIT_EXCEED_SHARDS = "_limit_exceed" + SHARDS_SUFFIX;
+    private static final String FAILED_SHARDS = "_failed" + SHARDS_SUFFIX;
 
     public static final int BACKUP_DEFAULT_TIMEOUT = 120;
 
@@ -76,6 +79,7 @@ public class BackupManager extends BackupRestoreBaseManager {
 
     public void init(SubCommands.Backup backup) {
         super.init(backup);
+        this.removeShardsFilesIfExists();
         this.ensureDirectoryExist(true);
         long splitSize = backup.splitSize();
         E.checkArgument(splitSize >= 1024 * 1024,
@@ -400,6 +404,23 @@ public class BackupManager extends BackupRestoreBaseManager {
     private String allShardsLog(HugeType type) {
         String shardsFile = type.string() + ALL_SHARDS;
         return Paths.get(this.logDir(), shardsFile).toString();
+    }
+
+    private void removeShardsFilesIfExists() {
+        File logDir = new File(this.logDir());
+        E.checkArgument(logDir.exists() && logDir.isDirectory(),
+                        "The log directory '%s' not exists or is file",
+                        logDir);
+        for (File file : logDir.listFiles()) {
+            if (file.getName().endsWith(SHARDS_SUFFIX)) {
+                try {
+                    FileUtils.forceDelete(file);
+                } catch (IOException e) {
+                    throw new ToolsException("Failed to delete shard file " +
+                                             "'%s'", file);
+                }
+            }
+        }
     }
 
     private static boolean isTimeoutException(ToolsException e) {
