@@ -1,0 +1,39 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "format": "CSV",
+        "charset": "UTF-8"
+      }
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.csv",
+        "format": "CSV",
+        "date_format": "yyyy-MM-dd"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "label": "created",
+      "source": ["source_id"],
+      "target": ["target_date"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_created.csv",
+        "format": "CSV",
+        "date_format": "yyyy-MM-dd"
+      },
+      "field_mapping": {
+        "source_id": "id",
+        "target_date": "date"
+      }
+    }
+  ]
+}
