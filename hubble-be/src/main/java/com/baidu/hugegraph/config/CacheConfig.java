@@ -60,6 +60,7 @@ public class CacheConfig {
         public int maxSize() {
             return this.maxSize;
         }
+
         public int ttl() {
             return this.ttl;
         }

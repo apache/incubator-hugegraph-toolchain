@@ -21,6 +21,7 @@ package com.baidu.hugegraph.util;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.exception.ExternalException;
@@ -57,7 +58,8 @@ public final class HugeClientUtil {
             throw e;
         } catch (ServerException e) {
             String message = e.getMessage();
-            if (message != null && message.startsWith("Authentication")) {
+            if (Constant.STATUS_UNAUTHORIZED == e.status() ||
+                (message != null && message.startsWith("Authentication"))) {
                 throw new ExternalException(
                           "graph-connection.username-or-password.incorrect", e);
             }
@@ -81,6 +83,10 @@ public final class HugeClientUtil {
             ResultSet rs = client.gremlin().gremlin("g.V().limit(1)").execute();
             rs.iterator().forEachRemaining(Result::getObject);
         } catch (ServerException e) {
+            if (Constant.STATUS_UNAUTHORIZED == e.status()) {
+                throw new ExternalException(
+                          "graph-connection.username-or-password.incorrect", e);
+            }
             String message = e.message();
             if (message != null && message.contains("Could not rebind [g]")) {
                 throw new ExternalException("graph-connection.graph.unexist", e,

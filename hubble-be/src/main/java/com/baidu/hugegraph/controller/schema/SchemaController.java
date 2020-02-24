@@ -19,28 +19,131 @@
 
 package com.baidu.hugegraph.controller.schema;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.controller.BaseController;
+import com.baidu.hugegraph.entity.schema.EdgeLabelEntity;
 import com.baidu.hugegraph.entity.schema.LabelUpdateEntity;
 import com.baidu.hugegraph.entity.schema.Property;
 import com.baidu.hugegraph.entity.schema.PropertyIndex;
+import com.baidu.hugegraph.entity.schema.PropertyKeyEntity;
 import com.baidu.hugegraph.entity.schema.SchemaEntity;
 import com.baidu.hugegraph.entity.schema.SchemaLabelEntity;
 import com.baidu.hugegraph.entity.schema.Timefiable;
+import com.baidu.hugegraph.entity.schema.VertexLabelEntity;
+import com.baidu.hugegraph.exception.InternalException;
+import com.baidu.hugegraph.service.schema.EdgeLabelService;
 import com.baidu.hugegraph.service.schema.PropertyKeyService;
+import com.baidu.hugegraph.service.schema.VertexLabelService;
+import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.PageUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.AllArgsConstructor;
+
+@RestController
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema")
 public class SchemaController extends BaseController {
+
+    @Autowired
+    private PropertyKeyService pkService;
+    @Autowired
+    private VertexLabelService vlService;
+    @Autowired
+    private EdgeLabelService elService;
+
+    @GetMapping("graphview")
+    public SchemaView displayInSchemaView(@PathVariable("connId") int connId) {
+        List<PropertyKeyEntity> propertyKeys = this.pkService.list(connId);
+        List<VertexLabelEntity> vertexLabels = this.vlService.list(connId);
+        List<EdgeLabelEntity> edgeLabels = this.elService.list(connId);
+
+        List<Map<String, Object>> vertices = new ArrayList<>(vertexLabels.size());
+        for (VertexLabelEntity entity : vertexLabels) {
+            Map<String, Object> vertex = new LinkedHashMap<>();
+            vertex.put("id", entity.getName());
+            vertex.put("label", entity.getName());
+            if (entity.getIdStrategy() == IdStrategy.PRIMARY_KEY) {
+                vertex.put("primary_keys", entity.getPrimaryKeys());
+            } else {
+                vertex.put("primary_keys", new ArrayList<>());
+            }
+            Map<String, String> properties = new LinkedHashMap<>();
+            this.fillProperties(properties, entity, propertyKeys);
+            vertex.put("properties", properties);
+            vertices.add(vertex);
+        }
+
+        List<Map<String, Object>> edges = new ArrayList<>(edgeLabels.size());
+        for (EdgeLabelEntity entity : edgeLabels) {
+            Map<String, Object> edge = new LinkedHashMap<>();
+            String edgeId = String.format(
+                            "%s-%s->%s", entity.getSourceLabel(),
+                            entity.getName(), entity.getTargetLabel());
+            edge.put("id", edgeId);
+            edge.put("label", entity.getName());
+            edge.put("source", entity.getSourceLabel());
+            edge.put("target", entity.getSourceLabel());
+            if (entity.isLinkMultiTimes()) {
+                edge.put("sort_keys", entity.getSortKeys());
+            } else {
+                edge.put("sort_keys", new ArrayList<>());
+            }
+            Map<String, String> properties = new LinkedHashMap<>();
+            this.fillProperties(properties, entity, propertyKeys);
+            edge.put("properties", properties);
+            edges.add(edge);
+        }
+        return new SchemaView(vertices, edges);
+    }
+
+    private void fillProperties(Map<String, String> properties,
+                                SchemaLabelEntity entity,
+                                List<PropertyKeyEntity> propertyKeys) {
+        for (Property property : entity.getProperties()) {
+            String name = property.getName();
+            PropertyKeyEntity pkEntity = findPropertyKey(propertyKeys, name);
+            properties.put(name, pkEntity.getDataType().string());
+        }
+    }
+
+    private PropertyKeyEntity findPropertyKey(List<PropertyKeyEntity> entities,
+                                              String name) {
+        for (PropertyKeyEntity entity : entities) {
+            if (entity.getName().equals(name)) {
+                return entity;
+            }
+        }
+        throw new InternalException("schema.propertykey.not-exist", name);
+    }
+
+    @AllArgsConstructor
+    private static class SchemaView {
+
+        @JsonProperty("vertices")
+        private List<Map<String, Object>> vertices;
+
+        @JsonProperty("edges")
+        private List<Map<String, Object>> edges;
+    }
 
     public <T extends SchemaEntity> IPage<T> listInPage(
                                              Function<Integer, List<T>> fetcher,

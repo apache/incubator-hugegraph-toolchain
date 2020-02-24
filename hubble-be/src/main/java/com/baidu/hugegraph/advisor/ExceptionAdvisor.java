@@ -57,7 +57,7 @@ public class ExceptionAdvisor {
     public Response exceptionHandler(ExternalException e) {
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
-                       .status(Constant.STATUS_BAD_REQUEST)
+                       .status(e.status())
                        .message(message)
                        .cause(e.getCause())
                        .build();

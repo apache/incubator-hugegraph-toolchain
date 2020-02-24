@@ -34,14 +34,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.baidu.hugegraph.common.Constant;
+import com.baidu.hugegraph.common.Response;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
-import com.baidu.hugegraph.license.LicenseVerifier;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
-import com.baidu.hugegraph.util.CommonUtil;
+import com.baidu.hugegraph.service.license.LicenseService;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HugeClientUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -62,21 +63,41 @@ public class GraphConnectionController extends BaseController {
     private GraphConnectionService connService;
     @Autowired
     private HugeClientPoolService poolService;
+    @Autowired
+    private LicenseService licenseService;
 
     @GetMapping
-    public IPage<GraphConnection> list(@RequestParam(name = "content",
-                                                     required = false)
-                                       String content,
-                                       @RequestParam(name = "page_no",
-                                                     required = false,
-                                                     defaultValue = "1")
-                                       int pageNo,
-                                       @RequestParam(name = "page_size",
-                                                     required = false,
-                                                     defaultValue = "10")
-                                       int pageSize) {
-        this.checkGraphConnectionCount(false);
-        return this.connService.list(content, pageNo, pageSize);
+    public Response list(@RequestParam(name = "content", required = false)
+                         String content,
+                         @RequestParam(name = "page_no", required = false,
+                                       defaultValue = "1")
+                         int pageNo,
+                         @RequestParam(name = "page_size", required = false,
+                                       defaultValue = "10")
+                         int pageSize) {
+        IPage<GraphConnection> conns = this.connService.list(content, pageNo,
+                                                             pageSize);
+        LicenseService.VerifyResult verifyResult;
+        verifyResult = this.licenseService.verifyGraphs((int) conns.getTotal());
+        // Verifed graphs failed, all connections marked as disabled
+        if (!verifyResult.isEnabled()) {
+            conns.getRecords().forEach(r -> r.setEnabled(false));
+        }
+        for (GraphConnection conn : conns.getRecords()) {
+            if (!conn.getEnabled()) {
+                verifyResult.setEnabled(false);
+                verifyResult.add(conn.getDisableReason());
+            }
+        }
+        // Verifed failed
+        if (!verifyResult.isEnabled()) {
+            // The first message is about graph connection count
+            return Response.builder().status(Constant.STATUS_UNAUTHORIZED)
+                           .data(conns).message(verifyResult.getMessage())
+                           .build();
+        }
+        return Response.builder().status(Constant.STATUS_OK).data(conns)
+                       .build();
     }
 
     @GetMapping("{id}")
@@ -94,18 +115,28 @@ public class GraphConnectionController extends BaseController {
 
     @PostMapping
     public GraphConnection create(@RequestBody GraphConnection newEntity) {
-        // Verify graph connections
-        this.checkGraphConnectionCount(true);
+        // Check graph connection count, if exceed limit, throw exception
+        LicenseService.VerifyResult verifyResult;
+        verifyResult = this.licenseService.verifyGraphs(
+                       this.connService.count() + 1);
+        Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
+                 verifyResult.getMessage());
 
         this.checkParamsValid(newEntity, true);
         // Make sure the new entity doesn't conflict with exists
         this.checkEntityUnique(newEntity, true);
+
         // Do connect test, failure will throw an exception
         HugeClient client = HugeClientUtil.tryConnect(newEntity);
-        newEntity.setCreateTime(CommonUtil.nowDate());
+        newEntity.setCreateTime(HubbleUtil.nowDate());
 
-        int rows = this.connService.save(newEntity);
-        if (rows != 1) {
+        // Check current graph's data size
+        verifyResult = this.licenseService.verifyDataSize(
+                       client, newEntity.getName(), newEntity.getGraph());
+        Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
+                 verifyResult.getMessage());
+
+        if (this.connService.save(newEntity) != 1) {
             throw new InternalException("entity.insert.failed", newEntity);
         }
         this.poolService.put(newEntity, client);
@@ -127,9 +158,14 @@ public class GraphConnectionController extends BaseController {
         // Make sure the updated connection doesn't conflict with exists
         this.checkEntityUnique(entity, false);
         HugeClient client = HugeClientUtil.tryConnect(entity);
+        // Check current graph's data size
+        LicenseService.VerifyResult verifyResult;
+        verifyResult = this.licenseService.verifyDataSize(
+                       client, entity.getName(), entity.getGraph());
+        Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
+                 verifyResult.getMessage());
 
-        int rows = this.connService.update(entity);
-        if (rows != 1) {
+        if (this.connService.update(entity) != 1) {
             throw new InternalException("entity.update.failed", entity);
         }
         this.poolService.put(entity, client);
@@ -147,6 +183,7 @@ public class GraphConnectionController extends BaseController {
             throw new InternalException("entity.delete.failed", oldEntity);
         }
         this.poolService.remove(oldEntity);
+        this.licenseService.updateAllGraphStatus();
         return oldEntity;
     }
 
@@ -196,19 +233,6 @@ public class GraphConnectionController extends BaseController {
                      "graph-connection.exist.graph-host-port",
                      oldEntity.getGraph(), oldEntity.getHost(),
                      oldEntity.getPort());
-        }
-    }
-
-    private void checkGraphConnectionCount(boolean plusOne) {
-        int allowedGraphs = LicenseVerifier.instance().allowedGraphs();
-        if (allowedGraphs == Constant.NO_LIMIT) {
-            return;
-        }
-        int increment = plusOne ? 1 : 0;
-        int actualGraphs = this.connService.count() + increment;
-        if (actualGraphs > allowedGraphs) {
-            throw new ExternalException("license.verify.graphs.exceed",
-                                        actualGraphs, allowedGraphs);
         }
     }
 }

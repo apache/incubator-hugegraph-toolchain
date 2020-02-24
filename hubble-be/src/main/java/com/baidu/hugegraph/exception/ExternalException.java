@@ -21,11 +21,27 @@ package com.baidu.hugegraph.exception;
 
 public class ExternalException extends ParameterizedException {
 
+    private int status;
+
     public ExternalException(String message, Object... args) {
-        super(message, args);
+        this(400, message, args);
+    }
+
+    public ExternalException(int status, String message, Object... args) {
+        this(status, message, null, args);
     }
 
     public ExternalException(String message, Throwable cause, Object... args) {
+        this(400, message, cause, args);
+    }
+
+    public ExternalException(int status, String message, Throwable cause,
+                             Object... args) {
         super(message, cause, args);
+        this.status = status;
+    }
+
+    public int status() {
+        return this.status;
     }
 }

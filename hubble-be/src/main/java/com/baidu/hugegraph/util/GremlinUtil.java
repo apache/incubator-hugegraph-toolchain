@@ -19,7 +19,9 @@
 
 package com.baidu.hugegraph.util;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,6 +60,10 @@ public final class GremlinUtil {
 
     private static final Set<Pattern> LIMIT_PATTERNS = compile(LIMIT_SUFFIXES);
 
+    private static final Set<Pattern> IGNORED_PATTERNS = ImmutableSet.of(
+            Pattern.compile("^\\s*//.*")
+    );
+
     public static String escapeId(Object id) {
         if (!(id instanceof String)) {
             return id.toString();
@@ -76,13 +82,26 @@ public final class GremlinUtil {
     }
 
     public static String optimizeLimit(String gremlin, int limit) {
-        for (Pattern pattern : LIMIT_PATTERNS) {
-            Matcher matcher = pattern.matcher(gremlin);
-            if (matcher.find()) {
-                return gremlin + ".limit(" + limit + ")";
+        String[] rawLines = StringUtils.split(gremlin, "\n");
+        List<String> newLines = new ArrayList<>(rawLines.length);
+        for (String rawLine : rawLines) {
+            boolean ignored = IGNORED_PATTERNS.stream().anyMatch(pattern -> {
+                return pattern.matcher(rawLine).find();
+            });
+            if (ignored) {
+                newLines.add(rawLine);
+                continue;
             }
+            for (Pattern pattern : LIMIT_PATTERNS) {
+                Matcher matcher = pattern.matcher(rawLine);
+                if (matcher.find()) {
+                    newLines.add(rawLine + ".limit(" + limit + ")");
+                    break;
+                }
+            }
+            newLines.add(rawLine);
         }
-        return gremlin;
+        return StringUtils.join(newLines, "\n");
     }
 
     private static Set<Pattern> compile(Set<String> texts) {

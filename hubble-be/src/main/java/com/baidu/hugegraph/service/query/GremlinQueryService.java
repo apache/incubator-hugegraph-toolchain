@@ -103,8 +103,9 @@ public class GremlinQueryService {
     public GremlinResult executeQuery(int connId, GremlinQuery query) {
         HugeClient client = this.getClient(connId);
 
+        log.debug("The original gremlin ==> {}", query.getContent());
         String gremlin = this.optimize(query.getContent());
-        log.debug("optimized gremlin ==> {}", gremlin);
+        log.debug("The optimized gremlin ==> {}", gremlin);
         // Execute gremlin query
         ResultSet resultSet = this.executeGremlin(gremlin, client);
         // Scan data, vote the result type
@@ -283,6 +284,8 @@ public class GremlinQueryService {
                                 ids.add(((Vertex) element).id());
                             } else if (element instanceof Edge) {
                                 ids.add(((Edge) element).id());
+                            } else {
+                                ids.add(element);
                             }
                         });
                         paths.add(ImmutableMap.of("path", ids));
@@ -316,9 +319,11 @@ public class GremlinQueryService {
                     if (element instanceof Vertex) {
                         Vertex vertex = (Vertex) element;
                         vertices.put(vertex.id(), vertex);
-                    } else {
+                    } else if (element instanceof Edge) {
                         Edge edge = (Edge) element;
                         edges.put(edge.id(), edge);
+                    } else {
+                        return GraphView.EMPTY;
                     }
                 }
             }

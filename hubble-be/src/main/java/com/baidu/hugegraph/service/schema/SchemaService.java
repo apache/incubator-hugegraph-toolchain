@@ -47,13 +47,11 @@ import com.baidu.hugegraph.entity.schema.SchemaLabelEntity;
 import com.baidu.hugegraph.entity.schema.SchemaStyle;
 import com.baidu.hugegraph.entity.schema.SchemaType;
 import com.baidu.hugegraph.entity.schema.Stylefiable;
-import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
-import com.baidu.hugegraph.util.CommonUtil;
-import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -216,19 +214,13 @@ public class SchemaService {
         if (CollectionUtils.isEmpty(schemas)) {
             return;
         }
-        Date now = CommonUtil.nowDate();
+        Date now = HubbleUtil.nowDate();
         for (T schema : schemas) {
             schema.resetId();
             if (!(schema instanceof IndexLabel)) {
                 schema.userdata().put(USER_KEY_CREATE_TIME, now);
             }
-            try {
-                func.accept(client, schema);
-            } catch (Exception e) {
-                throw new ExternalException("Failed to create %s %s", e,
-                                            type.string(), schema.name());
-
-            }
+            func.accept(client, schema);
         }
     }
 
@@ -239,19 +231,13 @@ public class SchemaService {
         if (CollectionUtils.isEmpty(schemas)) {
             return tasks;
         }
-        Date now = CommonUtil.nowDate();
+        Date now = HubbleUtil.nowDate();
         for (T schema : schemas) {
             schema.resetId();
             if (!(schema instanceof IndexLabel)) {
                 schema.userdata().put(USER_KEY_CREATE_TIME, now);
             }
-            try {
-                tasks.add(func.apply(client, schema));
-            } catch (Exception e) {
-                throw new ExternalException("schema.create.failed", e,
-                                            type.string(), schema.name());
-
-            }
+            tasks.add(func.apply(client, schema));
         }
         return tasks;
     }
@@ -264,12 +250,7 @@ public class SchemaService {
             return tasks;
         }
         for (String name : names) {
-            try {
-                tasks.add(func.apply(client, name));
-            } catch (Exception e) {
-                throw new ExternalException("schema.remove.failed", e,
-                                            type.string(), name);
-            }
+            tasks.add(func.apply(client, name));
         }
         return tasks;
     }
@@ -281,12 +262,7 @@ public class SchemaService {
             return;
         }
         for (String name : names) {
-            try {
-                func.accept(client, name);
-            } catch (Exception e) {
-                throw new ExternalException("Failed to remove %s %s", e,
-                                            type.string(), name);
-            }
+            func.accept(client, name);
         }
     }
 
@@ -305,7 +281,13 @@ public class SchemaService {
 
     public static SchemaStyle getSchemaStyle(SchemaElement element) {
         String icon = (String) element.userdata().get(USER_KEY_ICON);
+        if (icon == null) {
+            icon = SchemaStyle.DEFAULT_STYLE.getIcon();
+        }
         String color = (String) element.userdata().get(USER_KEY_COLOR);
+        if (color == null) {
+            color = SchemaStyle.DEFAULT_STYLE.getColor();
+        }
         return new SchemaStyle(icon, color);
     }
 

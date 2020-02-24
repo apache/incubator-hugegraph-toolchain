@@ -32,10 +32,10 @@ public final class Constant {
     public static final Charset CHARSET = UTF_8;
 
     public static final Set<String> LANGUAGES = ImmutableSet.of(
-            "en_US",
-            "zh_CN"
+            "en_US", "zh_CN"
     );
 
+    public static final String SERVER_NAME = "hugegraph-hubble";
     public static final String MODULE_NAME = "hubble-be";
     public static final String CONFIG_FILE = "hugegraph-hubble.properties";
 
@@ -47,7 +47,12 @@ public final class Constant {
     public static final String API_V1_2 = "/api/v1.2/";
     public static final String API_VERSION = API_V1_2;
 
+    public static final String EDITION_COMMUNITY = "community";
+    public static final String EDITION_COMMERCIAL = "commercial";
+
+    public static final int STATUS_OK = 200;
     public static final int STATUS_BAD_REQUEST = 400;
+    public static final int STATUS_UNAUTHORIZED = 401;
     public static final int STATUS_NOT_FOUND = 404;
     public static final int STATUS_ILLEGAL_GREMLIN = 460;
     public static final int STATUS_INTERNAL_ERROR = 500;

@@ -76,4 +76,4 @@ wait_for_startup ${server_url} ${timeout_s} || {
     cat ${log}
     exit 1
 }
-echo "logging to ${log}."
+echo "logging to ${log}"

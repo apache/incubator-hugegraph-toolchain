@@ -86,7 +86,9 @@ public class JacksonConfig {
         public void serialize(Edge edge, JsonGenerator generator,
                               SerializerProvider provider) throws IOException {
             generator.writeStartObject();
-            writeIdField("id", edge.id(), generator);
+            if (edge.id() != null) {
+                writeIdField("id", edge.id(), generator);
+            }
             generator.writeStringField("label", edge.label());
             writeIdField("source", edge.sourceId(), generator);
             writeIdField("target", edge.targetId(), generator);
@@ -116,7 +118,7 @@ public class JacksonConfig {
             if (value != null) {
                 if (value instanceof Long) {
                     // To avoid javascript loss of long precision
-                    generator.writeStringField(key, String.valueOf(value));
+                    generator.writeString(String.valueOf(value));
                 } else {
                     JsonSerializer<Object> serializer;
                     serializer = provider.findValueSerializer(value.getClass());

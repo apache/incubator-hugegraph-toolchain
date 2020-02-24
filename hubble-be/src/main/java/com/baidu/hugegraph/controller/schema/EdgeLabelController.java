@@ -48,8 +48,8 @@ import com.baidu.hugegraph.service.schema.PropertyIndexService;
 import com.baidu.hugegraph.service.schema.PropertyKeyService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.util.CollectionUtil;
-import com.baidu.hugegraph.util.CommonUtil;
 import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableList;
 
@@ -58,9 +58,12 @@ import com.google.common.collect.ImmutableList;
 public class EdgeLabelController extends SchemaController {
 
     private static final List<String> PRESET_COLORS = ImmutableList.of(
-            "#ED5736", "#4C8DAE", "#48C0A3", "#FF8C31", "#3B2E7E", "#6E511E",
-            "#F47983", "#60281E", "#B36D61", "#C89B40", "#8D4BBB", "#789262",
-            "#177CB0", "#8C4356"
+            // bright color
+            "#2B65FF", "#0EB880", "#76C100", "#ED7600", "#E65055",
+            "#A64EE6", "#108CEE", "#00B5D9", "#F2CA00", "#E048AE",
+            // dull color
+            "#5C73E6", "#569380", "#76C100", "#FE9227", "#FE585D",
+            "#FD6ACE", "#4D8DDA", "#57C7E3", "#F2CA00", "#C570FF"
     );
 
     @Autowired
@@ -73,8 +76,7 @@ public class EdgeLabelController extends SchemaController {
     private EdgeLabelService elService;
 
     @GetMapping("optional-colors")
-    public List<String> getOptionalColors(@RequestParam("connection_id")
-                                          int connId) {
+    public List<String> getOptionalColors(@PathVariable("connId") int connId) {
         return PRESET_COLORS;
     }
 
@@ -109,7 +111,7 @@ public class EdgeLabelController extends SchemaController {
                        @RequestBody EdgeLabelEntity entity) {
         this.checkParamsValid(entity, connId, true);
         this.checkEntityUnique(entity, connId, true);
-        entity.setCreateTime(CommonUtil.nowDate());
+        entity.setCreateTime(HubbleUtil.nowDate());
         this.elService.add(entity, connId);
     }
 

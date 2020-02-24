@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -39,7 +40,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new CustomInterceptor())
+        registry.addInterceptor(this.customInterceptor())
                 .addPathPatterns("/**");
+    }
+
+    @Bean
+    public CustomInterceptor customInterceptor() {
+        return new CustomInterceptor();
     }
 }

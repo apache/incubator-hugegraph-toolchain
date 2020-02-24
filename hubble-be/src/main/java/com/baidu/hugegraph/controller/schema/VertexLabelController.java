@@ -50,7 +50,7 @@ import com.baidu.hugegraph.service.schema.PropertyKeyService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.util.CollectionUtil;
-import com.baidu.hugegraph.util.CommonUtil;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableList;
@@ -60,8 +60,12 @@ import com.google.common.collect.ImmutableList;
 public class VertexLabelController extends SchemaController {
 
     private static final List<String> PRESET_COLORS = ImmutableList.of(
-            "#5C73E6", "#569380", "#8ECC93", "#F79767", "#F06667",
-            "#C990C0", "#4D8DDA", "#57C7E3", "#FFE081", "#DA7194"
+            // bright color
+            "#2B65FF", "#0EB880", "#76C100", "#ED7600", "#E65055",
+            "#A64EE6", "#108CEE", "#00B5D9", "#F2CA00", "#E048AE",
+            // dull color
+            "#5C73E6", "#569380", "#76C100", "#FE9227", "#FE585D",
+            "#FD6ACE", "#4D8DDA", "#57C7E3", "#F2CA00", "#C570FF"
     );
 
     @Autowired
@@ -114,7 +118,7 @@ public class VertexLabelController extends SchemaController {
                        @RequestBody VertexLabelEntity entity) {
         this.checkParamsValid(entity, connId, true);
         this.checkEntityUnique(entity, connId, true);
-        entity.setCreateTime(CommonUtil.nowDate());
+        entity.setCreateTime(HubbleUtil.nowDate());
         this.vlService.add(entity, connId);
     }
 

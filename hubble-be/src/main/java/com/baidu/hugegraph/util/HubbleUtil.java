@@ -25,7 +25,7 @@ import java.util.Date;
 
 import org.apache.commons.collections.CollectionUtils;
 
-public final class CommonUtil {
+public final class HubbleUtil {
 
     public static Date nowDate() {
         return new Date();

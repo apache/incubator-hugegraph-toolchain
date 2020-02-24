@@ -203,7 +203,7 @@ public class EdgeLabelService extends SchemaService {
 
     public void remove(String name, int connId) {
         HugeClient client = this.client(connId);
-        client.schema().removeEdgeLabelAsync(name);
+        client.schema().removeEdgeLabel(name);
     }
 
     public ConflictDetail checkConflict(ConflictCheckEntity entity,

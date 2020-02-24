@@ -64,6 +64,13 @@ public class LicenseVerifyManager extends CommonLicenseManager {
         return this.param.graphs();
     }
 
+    public long allowedDataSize() {
+        if (this.param == null) {
+            throw new InternalException("license.install.failed");
+        }
+        return this.param.dataSize();
+    }
+
     @Override
     protected synchronized void validate(LicenseContent content) {
         // call super validate firstly

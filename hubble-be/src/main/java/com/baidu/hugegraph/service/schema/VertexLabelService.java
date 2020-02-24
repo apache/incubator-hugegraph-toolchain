@@ -213,7 +213,7 @@ public class VertexLabelService extends SchemaService {
 
     public void remove(String name, int connId) {
         HugeClient client = this.client(connId);
-        client.schema().removeVertexLabelAsync(name);
+        client.schema().removeVertexLabel(name);
     }
 
     public boolean checkUsing(String name, int connId) {

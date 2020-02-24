@@ -89,8 +89,9 @@ public class GremlinCollectionService {
         return this.mapper.selectById(id);
     }
 
-    public GremlinCollection getByName(String name) {
+    public GremlinCollection getByName(int connId, String name) {
         QueryWrapper<GremlinCollection> query = Wrappers.query();
+        query.eq("conn_id", connId);
         query.eq("name", name);
         return this.mapper.selectOne(query);
     }

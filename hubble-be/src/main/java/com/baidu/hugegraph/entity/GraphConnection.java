@@ -38,7 +38,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@TableName("graph_connection")
+@TableName(value = "graph_connection", autoResultMap = true)
 public class GraphConnection implements Identifiable, Mergeable {
 
     @TableId(type = IdType.AUTO)
@@ -69,6 +69,14 @@ public class GraphConnection implements Identifiable, Mergeable {
     @MergeProperty
     @JsonProperty(value = "password", access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+
+    @MergeProperty
+    @JsonProperty("enabled")
+    private Boolean enabled;
+
+    @MergeProperty
+    @JsonProperty(value = "disable_reason")
+    private String disableReason;
 
     @MergeProperty(useNew = false)
     @JsonProperty("create_time")

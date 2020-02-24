@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import com.baidu.hugegraph.util.CommonUtil;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
@@ -90,9 +90,9 @@ public class EdgeLabelEntity implements SchemaLabelEntity, Timefiable,
                this.sourceLabel.equals(other.sourceLabel) &&
                this.targetLabel.equals(other.targetLabel) &&
                this.linkMultiTimes == other.linkMultiTimes &&
-               CommonUtil.equalCollection(this.properties, other.properties) &&
-               CommonUtil.equalCollection(this.sortKeys, other.sortKeys) &&
-               CommonUtil.equalCollection(this.propertyIndexes,
+               HubbleUtil.equalCollection(this.properties, other.properties) &&
+               HubbleUtil.equalCollection(this.sortKeys, other.sortKeys) &&
+               HubbleUtil.equalCollection(this.propertyIndexes,
                                           other.propertyIndexes) &&
                this.openLabelIndex == other.openLabelIndex;
     }

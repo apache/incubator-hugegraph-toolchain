@@ -33,6 +33,13 @@ public final class Ex {
         }
     }
 
+    public static void check(boolean expression, int status,
+                             String message, Object... args) {
+        if (!expression) {
+            throw new ExternalException(status, message, args);
+        }
+    }
+
     public static void check(boolean condition, Callable<Boolean> predicate,
                              String message, Object... args) {
         try {

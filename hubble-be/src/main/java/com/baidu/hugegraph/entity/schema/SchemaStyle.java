@@ -33,7 +33,7 @@ import lombok.NoArgsConstructor;
 public class SchemaStyle {
 
     public static final SchemaStyle DEFAULT_STYLE =
-                        new SchemaStyle("", "#ED5736");
+                        new SchemaStyle("", "#5C73E6");
 
     @JsonProperty("icon")
     private String icon;

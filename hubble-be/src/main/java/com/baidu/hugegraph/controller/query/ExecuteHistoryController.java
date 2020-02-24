@@ -65,8 +65,7 @@ public class ExecuteHistoryController extends GremlinController {
         if (oldEntity == null) {
             throw new ExternalException("execute-history.not-exist.id", id);
         }
-        int rows = this.service.remove(id);
-        if (rows != 1) {
+        if (this.service.remove(id) != 1) {
             throw new InternalException("entity.delete.failed", oldEntity);
         }
         return oldEntity;
