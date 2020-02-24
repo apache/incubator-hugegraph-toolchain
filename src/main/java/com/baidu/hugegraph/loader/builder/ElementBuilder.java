@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,7 @@ import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
+import com.baidu.hugegraph.util.LongEncoding;
 
 public abstract class ElementBuilder<GE extends GraphElement>
                 implements AutoCloseableIterator<Record<GE>> {
@@ -226,7 +228,12 @@ public abstract class ElementBuilder<GE extends GraphElement>
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
         for (Object value : primaryValues) {
-            String pkValue = String.valueOf(value);
+            String pkValue;
+            if (value instanceof Number || value instanceof Date) {
+                pkValue = LongEncoding.encodeNumber(value);
+            } else {
+                pkValue = String.valueOf(value);
+            }
             if (StringUtils.containsAny(pkValue, Constants.SEARCH_LIST)) {
                 pkValue = StringUtils.replaceEach(pkValue,
                                                   Constants.SEARCH_LIST,

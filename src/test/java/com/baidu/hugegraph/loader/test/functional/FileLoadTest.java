@@ -54,6 +54,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Whitebox;
+import com.baidu.hugegraph.util.LongEncoding;
 import com.google.common.collect.ImmutableList;
 
 public class FileLoadTest extends LoadTest {
@@ -2494,5 +2495,49 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(5.0D, vertex.property("p_double"));
         Assert.assertEquals("marko", vertex.property("p_string"));
         Assert.assertEquals(now.toEpochMilli(), vertex.property("p_date"));
+    }
+
+    @Test
+    public void testNumberAndDatePrimaryKeysEncoded()
+           throws java.text.ParseException {
+        ioUtil.write("vertex_person.csv",
+                     "id,name,age,city",
+                     "100,marko,29,Beijing");
+        ioUtil.write("vertex_software.csv",
+                     "date,name,lang,price",
+                     "2000-02-01,lop,java,328");
+        ioUtil.write("edge_created.csv",
+                     "source_id,target_date,date,weight",
+                     "100,2000-02-01,2017-12-10,0.4");
+
+        String[] args = new String[]{
+                "-f", structPath("number_and_date_pks_encoded/struct.json"),
+                "-s", configPath("number_and_date_pks_encoded/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(2, vertices.size());
+        Assert.assertEquals(1, edges.size());
+
+        Vertex v1 = CLIENT.graph().listVertices("person").get(0);
+        Vertex v2 = CLIENT.graph().listVertices("software").get(0);
+        Edge e = edges.get(0);
+
+        String v1Id = String.format("%s:%s", 1, LongEncoding.encodeNumber(100));
+        java.util.Date date = DateUtil.parse("2000-02-01", "yyyy-MM-dd");
+        String v2Id = String.format("%s:%s", 2, LongEncoding.encodeNumber(date));
+        String eId = String.format("S1:%s>1>>S2:%s",
+                                   LongEncoding.encodeNumber(100),
+                                   LongEncoding.encodeNumber(date));
+        Assert.assertEquals(v1Id, v1.id());
+        Assert.assertEquals(v2Id, v2.id());
+        Assert.assertEquals(eId, e.id());
     }
 }
