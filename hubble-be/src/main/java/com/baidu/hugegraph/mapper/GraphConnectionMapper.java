@@ -35,17 +35,16 @@ public interface GraphConnectionMapper extends BaseMapper<GraphConnection> {
     /**
      * NOTE: Page must be the first param, otherwise throw exception
      */
-    @Select("SELECT * FROM `graph_connection` " +
+    @Select("SELECT *, " +
+            "(CASE WHEN `name` LIKE concat('%', #{content}, '%') AND " +
+            "           `graph` LIKE concat('%', #{content}, '%') THEN 0 " +
+            "      WHEN `name` LIKE concat('%', #{content}, '%') THEN 1 " +
+            "      WHEN `graph` LIKE concat('%', #{content}, '%') THEN 2 " +
+            "END) as relation_sort " +
+            "FROM `graph_connection` " +
             "WHERE `name` LIKE concat('%', #{content}, '%') OR " +
             "`graph` LIKE concat('%', #{content}, '%') " +
-            "ORDER BY " +
-            "   CASE " +
-            "       WHEN `name` LIKE '%${content}%' AND " +
-            "            `graph` LIKE '%${content}%' THEN 0 " +
-            "       WHEN `name` LIKE '%${content}%' THEN 1 " +
-            "       WHEN `graph` LIKE '%${content}%' THEN 2 " +
-            "   END ASC, " +
-            "   `create_time` DESC")
+            "ORDER BY relation_sort ASC, `create_time` DESC")
     IPage<GraphConnection> selectByContentInPage(IPage<GraphConnection> page,
                                                  @Param("content")
                                                  String content);

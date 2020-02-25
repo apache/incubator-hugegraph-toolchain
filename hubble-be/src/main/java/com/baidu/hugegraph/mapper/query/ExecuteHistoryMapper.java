@@ -33,6 +33,6 @@ public interface ExecuteHistoryMapper extends BaseMapper<ExecuteHistory> {
 
     @Delete("DELETE FROM `execute_history` WHERE `id` IN (" +
             "SELECT `id` FROM `execute_history` ORDER BY `create_time` DESC " +
-            "LIMIT ${limit} OFFSET ${limit})")
+            "LIMIT #{limit} OFFSET #{limit})")
     void deleteExceedLimit(@Param("limit") int limit);
 }

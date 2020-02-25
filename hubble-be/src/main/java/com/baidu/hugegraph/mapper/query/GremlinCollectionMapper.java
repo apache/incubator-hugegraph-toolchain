@@ -32,18 +32,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 @Component
 public interface GremlinCollectionMapper extends BaseMapper<GremlinCollection> {
 
-    @Select("SELECT * FROM `gremlin_collection` " +
+    @Select("SELECT *, " +
+            "(CASE WHEN `name` LIKE concat('%', #{content}, '%') AND " +
+            "           `content` LIKE concat('%', #{content}, '%') THEN 0 " +
+            "      WHEN `name` LIKE concat('%', #{content}, '%') THEN 1 " +
+            "      WHEN `content` LIKE concat('%', #{content}, '%') THEN 2 " +
+            "END) as relation_sort " +
+            "FROM `gremlin_collection` " +
             "WHERE `conn_id` = #{conn_id} AND " +
             "(`name` LIKE concat('%', #{content}, '%') OR " +
             "`content` LIKE concat('%', #{content}, '%')) " +
-            "ORDER BY " +
-            "   CASE " +
-            "       WHEN `name` LIKE '%${content}%' AND " +
-            "            `content` LIKE '%${content}%' THEN 0 " +
-            "       WHEN `name` LIKE '%${content}%' THEN 1 " +
-            "       WHEN `content` LIKE '%${content}%' THEN 2 " +
-            "   END ASC, " +
-            "   `create_time` DESC")
+            "ORDER BY relation_sort ASC, `create_time` DESC")
     IPage<GremlinCollection> selectByContentInPage(IPage<GremlinCollection> page,
                                                    @Param("conn_id") int connId,
                                                    @Param("content")
