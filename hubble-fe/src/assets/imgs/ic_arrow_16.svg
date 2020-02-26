@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55 (78076) - https://sketchapp.com -->
+    <title>ic_arrow_16</title>
+    <desc>Created with Sketch.</desc>
+    <g id="ic_arrow_16" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="箭头-默认-01" transform="translate(8.000000, 8.000000) scale(1, -1) translate(-8.000000, -8.000000) translate(3.000000, 5.000000)" fill="#999999" fill-rule="nonzero">
+            <path d="M9.14644661,0.146446609 C9.34170876,-0.0488155365 9.65829124,-0.0488155365 9.85355339,0.146446609 C10.0488155,0.341708755 10.0488155,0.658291245 9.85355339,0.853553391 L5.35355339,5.35355339 C5.15829124,5.54881554 4.84170876,5.54881554 4.64644661,5.35355339 L0.146446609,0.853553391 C-0.0488155365,0.658291245 -0.0488155365,0.341708755 0.146446609,0.146446609 C0.341708755,-0.0488155365 0.658291245,-0.0488155365 0.853553391,0.146446609 L5,4.29289322 L9.14644661,0.146446609 Z" id="Rectangle-2" transform="translate(5.000000, 2.750000) scale(1, -1) translate(-5.000000, -2.750000) "></path>
+        </g>
+    </g>
+</svg>

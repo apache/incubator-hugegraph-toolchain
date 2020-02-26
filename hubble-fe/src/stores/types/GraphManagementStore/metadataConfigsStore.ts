@@ -1,0 +1,140 @@
+export interface PageConfig {
+  pageNumber: number;
+  pageTotal: number;
+  sort: 'asc' | 'desc' | '';
+}
+
+// metadata property
+
+export interface MetadataProperty {
+  name: string;
+  data_type: string;
+  cardinality: string;
+  create_time?: string;
+}
+
+export interface MetadataPropertyListResponse {
+  records: MetadataProperty[];
+  total: number;
+}
+
+// vertex types
+
+type VertexTypeProperty = {
+  name: string;
+  nullable: boolean;
+};
+
+type VertexTypePropertyIndex = {
+  name: string;
+  type: string;
+  fields: string[];
+};
+
+type VertexTypeStyle = {
+  icon: string | null;
+  color: string | null;
+};
+
+export type VertexTypeValidateFields =
+  | 'name'
+  | 'properties'
+  | 'primaryKeys'
+  | 'propertyIndexes';
+
+export type VertexTypeValidatePropertyIndexes = {
+  name: string;
+  type: string;
+  properties: string;
+};
+
+export interface EditVertexTypeParams {
+  append_properties: VertexTypeProperty[];
+  append_property_indexes: VertexTypePropertyIndex[];
+  remove_property_indexes: string[];
+  style: {
+    color: string | null;
+    icon: null;
+  };
+}
+
+export interface VertexType {
+  [index: string]: string | any[] | VertexTypeStyle | boolean;
+
+  name: string;
+  id_strategy: string;
+  properties: VertexTypeProperty[];
+  primary_keys: string[];
+  property_indexes: VertexTypePropertyIndex[];
+  open_label_index: boolean;
+  style: VertexTypeStyle;
+}
+
+export interface VertexTypeListResponse {
+  records: VertexType[];
+  total: number;
+}
+
+export interface CheckedReusableData {
+  type: string;
+  propertykey_conflicts: { entity: MetadataProperty; status: string }[];
+  propertyindex_conflicts: { entity: MetadataPropertyIndex; status: string }[];
+  vertexlabel_conflicts: { entity: VertexType; status: string }[];
+  edgelabel_conflicts: { entity: EdgeType; status: string }[];
+}
+
+export interface ReCheckedReusableData {
+  propertykeys: MetadataProperty[];
+  propertyindexes: MetadataPropertyIndex[];
+  vertexlabels: VertexType[];
+}
+
+// edge types
+
+type EdgeTypeProperty = VertexTypeProperty;
+type EdgeTypePropertyIndex = VertexTypePropertyIndex;
+type EdgeTypeStyle = VertexTypeStyle;
+
+export type EdgeTypeValidateFields =
+  | 'name'
+  | 'sourceLabel'
+  | 'targetLabel'
+  | 'properties'
+  | 'sortKeys'
+  | 'propertyIndexes';
+
+export type EdgeTypeValidatePropertyIndexes = VertexTypeValidatePropertyIndexes;
+
+export interface EditEdgeTypeParams extends EditVertexTypeParams {}
+
+export interface EdgeType {
+  name: string;
+  source_label: string;
+  target_label: string;
+  link_multi_times: boolean;
+  properties: EdgeTypeProperty[];
+  sort_keys: string[];
+  property_indexes: EdgeTypePropertyIndex[];
+  open_label_index: boolean;
+  style: EdgeTypeStyle;
+}
+
+export interface EdgeTypeListResponse {
+  records: EdgeType[];
+  total: number;
+}
+
+// metadata property index
+
+export interface MetadataPropertyIndex {
+  owner: string;
+  owner_type: string;
+  name: string;
+  type: string;
+  fields: string[];
+}
+
+export interface MetadataPropertyIndexResponse {
+  records: MetadataPropertyIndex[];
+  total: number;
+}
