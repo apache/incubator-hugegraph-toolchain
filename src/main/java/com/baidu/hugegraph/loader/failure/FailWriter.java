@@ -28,23 +28,32 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.exception.ReadException;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.util.Log;
 
 public final class FailWriter {
 
     private static final Logger LOG = Log.logger(FailWriter.class);
 
+    private final InputStruct struct;
+    private volatile boolean writedHeader;
+
     private final File file;
     // BufferedWriter is thread safe
     private final BufferedWriter writer;
 
-    public FailWriter(String name, String charset, boolean append) {
+    public FailWriter(InputStruct struct, String name,
+                      String charset, boolean append) {
+        this.struct = struct;
+        this.writedHeader = false;
         this.file = FileUtils.getFile(name);
         checkFileAvailable(this.file);
         try {
@@ -58,6 +67,7 @@ public final class FailWriter {
     }
 
     public void write(ReadException e) {
+        this.writeHeaderIfNeeded();
         try {
             this.writeLine("#### READ ERROR: " + e.getMessage());
             this.writeLine(e.line());
@@ -68,6 +78,7 @@ public final class FailWriter {
     }
 
     public void write(ParseException e) {
+        this.writeHeaderIfNeeded();
         try {
             this.writeLine("#### PARSE ERROR: " + e.getMessage());
             this.writeLine(e.line());
@@ -78,6 +89,7 @@ public final class FailWriter {
     }
 
     public void write(InsertException e) {
+        this.writeHeaderIfNeeded();
         try {
             this.writeLine("#### INSERT ERROR: " + e.getMessage());
             this.writeLine(e.line());
@@ -90,6 +102,25 @@ public final class FailWriter {
     private void writeLine(String line) throws IOException {
         this.writer.write(line);
         this.writer.newLine();
+    }
+
+    private void writeHeaderIfNeeded() {
+        if (this.struct.input().header() == null || this.writedHeader) {
+            return;
+        }
+        synchronized(this.file) {
+            if (!this.writedHeader) {
+                String headerLine = StringUtils.join(this.struct.input().header(),
+                                                     Constants.COMMA_STR);
+                try {
+                    this.writeLine(headerLine);
+                } catch (IOException e) {
+                    throw new LoadException("Failed to write header '%s'",
+                                            e);
+                }
+                this.writedHeader = true;
+            }
+        }
     }
 
     public void close() {

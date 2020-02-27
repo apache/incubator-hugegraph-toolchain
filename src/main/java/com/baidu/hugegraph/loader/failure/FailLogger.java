@@ -36,45 +36,51 @@ public final class FailLogger {
 
     private static final Logger LOG = Log.logger(FailLogger.class);
 
-    private final FailWriter parseWriter;
-    private final FailWriter insertWriter;
+    private final FailWriter readFailWriter;
+    private final FailWriter parseFailWriter;
+    private final FailWriter insertFailWriter;
 
     public FailLogger(LoadContext context, InputStruct struct) {
         String dir = LoadUtil.getStructDirPrefix(context.options());
         String prefix = struct.id();
         String charset = struct.input().charset();
         /*
-         * If user prepare to hanlde failures, new failure record will write
-         * to the new failure file, and the old failure file need to rename
+         * If user use incremental mode, the failure record will append
+         * to the failure file, otherwise write to a new file
+         * TODO: Need to split when the file is too large
          */
-        boolean append = !context.options().reloadFailure;
+        boolean append = context.options().incrementalMode;
 
-        String path = path(dir, prefix, Constants.PARSE_FAILURE_SUFFIX);
-        this.parseWriter = new FailWriter(path, charset, append);
+        String path;
+        path = path(dir, prefix, Constants.READ_FAILURE_SUFFIX);
+        this.readFailWriter = new FailWriter(struct, path, charset, append);
+        path = path(dir, prefix, Constants.PARSE_FAILURE_SUFFIX);
+        this.parseFailWriter = new FailWriter(struct, path, charset, append);
         path = path(dir, prefix, Constants.INSERT_FAILURE_SUFFIX);
-        this.insertWriter = new FailWriter(path, charset, append);
+        this.insertFailWriter = new FailWriter(struct, path, charset, append);
     }
 
     private static String path(String dir, String prefix, String suffix) {
-        // The path format like: mapping/current/file1.parse-error
+        // The path format like: mapping/error-data/file1.parse-error
         String name = prefix + Constants.DOT_STR + suffix;
-        return Paths.get(dir, Constants.FAILURE_CURRENT_DIR, name).toString();
+        return Paths.get(dir, Constants.FAILURE_DATA, prefix, name).toString();
     }
 
     public void write(ReadException e) {
-        this.parseWriter.write(e);
+        this.readFailWriter.write(e);
     }
 
     public void write(ParseException e) {
-        this.parseWriter.write(e);
+        this.parseFailWriter.write(e);
     }
 
     public void write(InsertException e) {
-        this.insertWriter.write(e);
+        this.insertFailWriter.write(e);
     }
 
     public void close() {
-        this.parseWriter.close();
-        this.insertWriter.close();
+        this.readFailWriter.close();
+        this.parseFailWriter.close();
+        this.insertFailWriter.close();
     }
 }

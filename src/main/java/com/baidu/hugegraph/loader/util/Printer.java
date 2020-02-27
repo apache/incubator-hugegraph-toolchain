@@ -45,12 +45,6 @@ public final class Printer {
         if (!options.printProgress) {
             return;
         }
-        long lastVertexLoaded = LoadUtil.lastLoaded(context, ElemType.VERTEX);
-        long lastEdgeLoaded = LoadUtil.lastLoaded(context, ElemType.EDGE);
-        if (lastVertexLoaded > 0 || lastEdgeLoaded > 0) {
-            printAndLog("vertices/edges has been loaded last time : " +
-                        lastVertexLoaded + SLASH + lastEdgeLoaded);
-        }
         System.out.print("vertices/edges has been loaded this time : ");
     }
 

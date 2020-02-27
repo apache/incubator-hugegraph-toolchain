@@ -80,14 +80,12 @@ public final class LoadOptions {
                description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
 
-    @Parameter(names = {"--reload-failure"}, arity = 1,
-               description = "Whether to reload the previous failure records")
-    public boolean reloadFailure = false;
-
-    @Parameter(names = {"--parse-threads"}, arity = 1,
-               validateWith = {PositiveValidator.class},
-               description = "The number of threads to execute parse")
-    public int parseThreads = 4;
+    @Parameter(names = {"--load-failure-mode"}, arity = 1,
+               description = "Load data from the failure records, in this " +
+                             "mode, only full load is supported, and " +
+                             "arbitrary read errors and parsing errors will " +
+                             "cause the load task stop")
+    public boolean loadFailureMode = false;
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -200,11 +198,17 @@ public final class LoadOptions {
         if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
             options.host = Constants.HTTP_PREFIX + options.host;
         }
-        // Check option --incremental-mode and --reload-failure
-        if (options.reloadFailure) {
-            E.checkArgument(options.incrementalMode,
-                            "Option --reload-failure is only allowed to set " +
-                            "in incremental mode");
+        // Check option --incremental-mode and --load-failure-mode
+        E.checkArgument(!(options.incrementalMode && options.loadFailureMode),
+                        "The option --incremental-mode and " +
+                        "--load-failure-mode can't be true at same time");
+        if (options.loadFailureMode) {
+            LOG.warn("The value of options: --max-read-errors, " +
+                     "--max-parse-errors and --max-insert-errors will be " +
+                     "setted as 1 in load-failure-mode");
+            options.maxReadErrors = 1;
+            options.maxParseErrors = 1;
+            options.maxInsertErrors = 1;
         }
         return options;
     }

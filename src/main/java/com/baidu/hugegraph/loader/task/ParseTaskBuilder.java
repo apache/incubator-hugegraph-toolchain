@@ -114,26 +114,21 @@ public final class ParseTaskBuilder {
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {
         LOG.error("Parse {} error", mapping.type(), e);
-        // Write to current mapping's parse failure log
-        FailLogger logger = this.context.failureLogger(this.struct);
-        logger.write(e);
+        LoadOptions options = this.context.options();
+        if (options.testMode) {
+            throw e;
+        }
 
         long failures = this.context.summary().totalParseFailures();
-        LoadOptions options = this.context.options();
-        if (failures < options.maxParseErrors) {
-            return;
-        }
-        if (!this.context.stopped()) {
-            synchronized(LoadContext.class) {
-                if (!this.context.stopped()) {
-                    Printer.printError("More than %s %s parsing error, " +
-                                       "stop parsing and waiting all " +
-                                       "insert tasks finished",
-                                       options.maxParseErrors,
-                                       mapping.type().string());
-                    this.context.stopLoading();
-                }
-            }
+        if (failures >= options.maxParseErrors) {
+            Printer.printError("More than %s %s parsing error, stop parsing " +
+                               "and waiting all insert tasks finished",
+                               options.maxParseErrors, mapping.type().string());
+            this.context.stopLoading();
+        } else {
+            // Write to current mapping's parse failure log
+            FailLogger logger = this.context.failureLogger(this.struct);
+            logger.write(e);
         }
     }
 

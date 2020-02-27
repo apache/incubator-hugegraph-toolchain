@@ -20,7 +20,6 @@
 package com.baidu.hugegraph.loader.task;
 
 import static com.baidu.hugegraph.loader.constant.Constants.BATCH_WORKER;
-import static com.baidu.hugegraph.loader.constant.Constants.PARSE_WORKER;
 import static com.baidu.hugegraph.loader.constant.Constants.SINGLE_WORKER;
 
 import java.util.List;
@@ -29,7 +28,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.Record;
@@ -47,10 +45,8 @@ public final class TaskManager {
 
     private final LoadOptions options;
 
-    private final Semaphore parseSemaphore;
     private final Semaphore batchSemaphore;
     private final Semaphore singleSemaphore;
-    private final ExecutorService parseService;
     private final ExecutorService batchService;
     private final ExecutorService singleService;
 
@@ -58,7 +54,6 @@ public final class TaskManager {
 
     public TaskManager() {
         this.options = LoadContext.get().options();
-        this.parseSemaphore = new Semaphore(this.parseSemaphoreNum());
         // Try to make all batch threads running and don't wait for producer
         this.batchSemaphore = new Semaphore(this.batchSemaphoreNum());
         /*
@@ -72,17 +67,11 @@ public final class TaskManager {
          * limit the number of tasks added. When there are no idle threads in
          * the thread pool, the producer will be blocked, so OOM will not occur.
          */
-        this.parseService = ExecutorUtil.newFixedThreadPool(
-                            this.options.parseThreads, PARSE_WORKER);
         this.batchService = ExecutorUtil.newFixedThreadPool(
                             this.options.batchInsertThreads, BATCH_WORKER);
         this.singleService = ExecutorUtil.newFixedThreadPool(
                              this.options.singleInsertThreads, SINGLE_WORKER);
         this.stopped = false;
-    }
-
-    private int parseSemaphoreNum() {
-        return 1 + this.options.parseThreads;
     }
 
     private int batchSemaphoreNum() {
@@ -96,17 +85,6 @@ public final class TaskManager {
     public void waitFinished() {
         if (this.stopped) {
             return;
-        }
-
-        LOG.info("Waiting for the parse tasks finish");
-        try {
-            // Wait batch mode task finished
-            this.parseSemaphore.acquire(this.parseSemaphoreNum());
-            LOG.info("The parse tasks finished");
-        } catch (InterruptedException e) {
-            LOG.error("Interrupted while waiting parse tasks");
-        } finally {
-            this.parseSemaphore.release(this.parseSemaphoreNum());
         }
 
         LOG.info("Waiting for the insert tasks finish");
@@ -135,20 +113,6 @@ public final class TaskManager {
         this.stopped = true;
         long timeout = this.options.shutdownTimeout;
 
-        LOG.info("Ready to shutdown parse tasks executor");
-        try {
-            this.parseService.shutdown();
-            this.parseService.awaitTermination(timeout, TimeUnit.SECONDS);
-            LOG.info("The parse tasks service executor shutdown");
-        } catch (InterruptedException e) {
-            LOG.error("The parse tasks are interrupted");
-        } finally {
-            if (!this.parseService.isTerminated()) {
-                LOG.error("The unfinished parse tasks will be cancelled");
-            }
-            this.parseService.shutdownNow();
-        }
-
         LOG.info("Ready to shutdown batch-mode tasks executor");
         try {
             this.batchService.shutdown();
@@ -176,30 +140,6 @@ public final class TaskManager {
             }
             this.singleService.shutdownNow();
         }
-    }
-
-    /**
-     * Submit parse task async
-     */
-    public void submitParseTask(InputStruct struct, ElementMapping mapping,
-                                ParseTaskBuilder.ParseTask task) {
-        try {
-            this.parseSemaphore.acquire();
-        } catch (InterruptedException e) {
-            throw new LoadException("Interrupted while waiting to submit %s " +
-                                    "parse task", e);
-        }
-
-        CompletableFuture.supplyAsync(task, this.parseService)
-                         .exceptionally(e -> {
-            LOG.error("Failed to execute parse task", e);
-            return null;
-        }).thenAccept(batch -> {
-            if (CollectionUtils.isEmpty(batch) || this.options.dryRun) {
-                return;
-            }
-            this.submitBatch(struct, mapping, batch);
-        }).whenComplete((r ,e) -> this.parseSemaphore.release());
     }
 
     public void submitBatch(InputStruct struct, ElementMapping mapping,

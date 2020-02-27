@@ -32,14 +32,13 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
-import com.baidu.hugegraph.loader.progress.InputProgress;
-import com.baidu.hugegraph.loader.reader.InputReader;
+import com.baidu.hugegraph.loader.reader.AbstractReader;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.Log;
 
-public abstract class FileReader implements InputReader {
+public abstract class FileReader extends AbstractReader {
 
     private static final Logger LOG = Log.logger(FileReader.class);
 
@@ -49,9 +48,6 @@ public abstract class FileReader implements InputReader {
     private Readable readable;
     private FileLineFetcher fetcher;
     private Line nextLine;
-
-    private InputProgress oldProgress;
-    private InputProgress newProgress;
 
     public FileReader(FileSource source) {
         this.source = source;
@@ -129,15 +125,6 @@ public abstract class FileReader implements InputReader {
             LOG.warn("Failed to close reader for {} with exception {}",
                      this.source, e);
         }
-    }
-
-    private void progress(LoadContext context, InputStruct struct) {
-        this.oldProgress = context.oldProgress().get(struct.id());
-        if (this.oldProgress == null) {
-            this.oldProgress = new InputProgress(struct);
-        }
-        // Update loading vertex/edge mapping
-        this.newProgress = context.newProgress().addStruct(struct);
     }
 
     private Line readNextLine() throws IOException {

@@ -35,7 +35,6 @@ import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.MappingUtil;
@@ -101,29 +100,34 @@ public class LoadMapping implements Checkable {
 
     public List<InputStruct> structsForFailure(LoadOptions options) {
         List<InputStruct> targetStructs = new ArrayList<>();
-        for (InputStruct struct : this.structs) {
-            String dir = LoadUtil.getStructDirPrefix(options);
-            String path = Paths.get(dir, Constants.FAILURE_HISTORY_DIR,
-                                    struct.id()).toString();
-            File pathDir = FileUtils.getFile(path);
-            // It means no failure data if the path directory does not exist
-            if (!pathDir.exists()) {
-                continue;
-            }
-            if (!pathDir.isDirectory()) {
-                throw new LoadException("The path '%s' of failure mapping " +
-                                        "must be directory", path);
-            }
+        String dir = LoadUtil.getStructDirPrefix(options);
+        String path = Paths.get(dir, Constants.FAILURE_DATA).toString();
+        File pathDir = FileUtils.getFile(path);
+        // It means no failure data if the path directory does not exist
+        if (!pathDir.exists()) {
+            return targetStructs;
+        }
 
-            InputSource inputSource = struct.input();
-            FileSource fileSource = inputSource.asFileSource();
+        File[] inputDirs = pathDir.listFiles();
+        for (File inputDir : inputDirs) {
+            String inputId = inputDir.getName();
+            InputStruct struct = this.struct(inputId);
+            FileSource source = struct.input().asFileSource();
             // Set failure data path
-            fileSource.path(path);
-            struct.input(fileSource);
-            // In order to distinguish from the normal loaded strcut
-//            mapping.setFailureUniqueKey();
+            source.path(inputDir.getPath());
+            struct.input(source);
             targetStructs.add(struct);
         }
         return targetStructs;
+    }
+
+    public InputStruct struct(String id) {
+        for (InputStruct struct : this.structs) {
+            if (struct.id().equals(id)) {
+                return struct;
+            }
+        }
+        throw new IllegalArgumentException(String.format(
+                  "There is no input struct with id '%s'", id));
     }
 }

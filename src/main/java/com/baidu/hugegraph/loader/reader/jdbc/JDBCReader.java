@@ -27,11 +27,11 @@ import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
-import com.baidu.hugegraph.loader.reader.InputReader;
+import com.baidu.hugegraph.loader.reader.AbstractReader;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 
-public class JDBCReader implements InputReader {
+public class JDBCReader extends AbstractReader {
 
     private final JDBCSource source;
     private final RowFetcher fetcher;
@@ -58,6 +58,7 @@ public class JDBCReader implements InputReader {
     @Override
     public void init(LoadContext context, InputStruct struct)
                      throws InitException {
+        this.progress(context, struct);
         try {
             this.source.header(this.fetcher.readHeader());
             this.fetcher.readPrimaryKey();
@@ -68,6 +69,7 @@ public class JDBCReader implements InputReader {
 
     @Override
     public void confirmOffset() {
+        // TODO: save offset
     }
 
     @Override

@@ -39,7 +39,6 @@ import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
@@ -50,7 +49,6 @@ import com.baidu.hugegraph.loader.task.ParseTaskBuilder;
 import com.baidu.hugegraph.loader.task.ParseTaskBuilder.ParseTask;
 import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.util.Log;
 
@@ -94,8 +92,6 @@ public final class HugeGraphLoader {
             this.createSchema();
             // Init schema cache
             this.initSchemaCache();
-            // Move failure files from current to history directory
-            LoadUtil.moveFailureFiles(this.context);
             this.loadInputs();
         } catch (Exception e) {
             Printer.printError("Failed to load", e);
@@ -165,10 +161,11 @@ public final class HugeGraphLoader {
 
         this.context.summary().startTimer();
         try {
-            // Load normal data from user supplied input structs
-            this.load(this.mapping.structs());
-            // Load failure data from generated input structs
-            if (options.incrementalMode && options.reloadFailure) {
+            if (!options.loadFailureMode) {
+                // Load normal data from user supplied input structs
+                this.load(this.mapping.structs());
+            } else {
+                // Load failure data from generated input structs
                 this.load(this.mapping.structsForFailure(options));
             }
             // Waiting for async worker threads finish
@@ -200,13 +197,17 @@ public final class HugeGraphLoader {
         }
     }
 
+    /**
+     * TODO: Seperate classes: ReadHandler -> ParseHandler -> InsertHandler
+     * Let load task worked in pipeline mode
+     */
     private void load(InputStruct struct, InputReader reader) {
         LOG.info("Start parsing and loading '{}'", struct);
         LoadMetrics metrics = this.context.summary().metrics(struct);
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(struct);
         int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
-        for (boolean finished = false; !this.context.stopped() && !finished;) {
+        for (boolean finished = false; !finished;) {
             try {
                 if (reader.hasNext()) {
                     lines.add(reader.next());
@@ -217,23 +218,27 @@ public final class HugeGraphLoader {
             } catch (ReadException e) {
                 metrics.increaseReadFailure();
                 this.handleReadFailure(struct, e);
-                reader.confirmOffset();
+            }
+            if (this.context.stopped()) {
+                LOG.warn("Read errors exceed limit, load task stopped");
+                return;
             }
 
-            boolean stopped = this.context.stopped() || finished;
-            if (lines.size() >= batchSize || stopped) {
+            if (lines.size() >= batchSize || finished) {
                 List<ParseTask> tasks = taskBuilder.build(lines);
                 for (ParseTask task : tasks) {
                     this.executeParseTask(struct, task.mapping(), task);
+                    if (this.context.stopped()) {
+                        LOG.warn("Parse errors exceed limit, load task stopped");
+                        return;
+                    }
                 }
                 lines = new ArrayList<>(batchSize);
 
-                if (stopped) {
-                    this.context.newProgress().markLoaded(struct, finished);
-                }
+                // Confirm offset to avoid lost records
+                reader.confirmOffset();
+                this.context.newProgress().markLoaded(struct, finished);
             }
-            // Confirm offset to avoid lost records
-            reader.confirmOffset();
         }
     }
 
@@ -243,21 +248,19 @@ public final class HugeGraphLoader {
     private void executeParseTask(InputStruct struct, ElementMapping mapping,
                                   ParseTaskBuilder.ParseTask task) {
         List<Record> batch = task.get();
-        if (CollectionUtils.isEmpty(batch) || this.context.options().dryRun) {
+        if (this.context.stopped() || this.context.options().dryRun ||
+            CollectionUtils.isEmpty(batch)) {
             return;
         }
         this.manager.submitBatch(struct, mapping, batch);
     }
 
     private void handleReadFailure(InputStruct struct, ReadException e) {
+        LOG.error("Read {} error", struct, e);
         LoadOptions options = this.context.options();
         if (options.testMode) {
             throw e;
         }
-
-        // Write to current mapping's parse failure log
-        FailLogger logger = this.context.failureLogger(struct);
-        logger.write(e);
 
         long failures = this.context.summary().totalReadFailures();
         if (failures >= options.maxReadErrors) {
@@ -265,6 +268,9 @@ public final class HugeGraphLoader {
                                "and waiting all load tasks finished",
                                options.maxReadErrors);
             this.context.stopLoading();
+        } else {
+            // Write to current mapping's parse failure log
+            this.context.failureLogger(struct).write(e);
         }
     }
 

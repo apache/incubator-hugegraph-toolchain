@@ -49,8 +49,10 @@ public final class Constants {
     public static final String TIME_ZONE = "GMT+8";
     public static final String SKIPPED_LINE_REGEX = "(^#|^//).*|";
     public static final String FAILURE = "failure";
+    public static final String FAILURE_DATA = "failure-data";
     public static final String FAILURE_CURRENT_DIR = "current";
     public static final String FAILURE_HISTORY_DIR = "history";
+    public static final String READ_FAILURE_SUFFIX = "read-error";
     public static final String PARSE_FAILURE_SUFFIX = "parse-error";
     public static final String INSERT_FAILURE_SUFFIX = "insert-error";
     public static final String LOAD_PROGRESS = "load-progress";

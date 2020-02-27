@@ -17,26 +17,23 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.loader.util;
+package com.baidu.hugegraph.loader.reader;
 
-import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.util.E;
-import com.beust.jcommander.JCommander;
+import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.progress.InputProgress;
 
-public final class LoadUtil {
+public abstract class AbstractReader implements InputReader {
 
-    public static String getStructDirPrefix(LoadOptions options) {
-        String structFileName = options.file;
-        E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
-                        "The mapping description file name must be end with %s",
-                        Constants.JSON_SUFFIX);
-        int lastDotIdx = structFileName.lastIndexOf(Constants.DOT_STR);
-        return structFileName.substring(0, lastDotIdx);
-    }
+    protected InputProgress oldProgress;
+    protected InputProgress newProgress;
 
-    public static void exitWithUsage(JCommander commander, int code) {
-        commander.usage();
-        System.exit(code);
+    public void progress(LoadContext context, InputStruct struct) {
+        this.oldProgress = context.oldProgress().get(struct.id());
+        if (this.oldProgress == null) {
+            this.oldProgress = new InputProgress(struct);
+        }
+        // Update loading vertex/edge mapping
+        this.newProgress = context.newProgress().addStruct(struct);
     }
 }
