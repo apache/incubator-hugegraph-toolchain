@@ -22,8 +22,12 @@ package com.baidu.hugegraph.options;
 import static com.baidu.hugegraph.config.OptionChecker.disallowEmpty;
 import static com.baidu.hugegraph.config.OptionChecker.rangeInt;
 
+import org.springframework.util.CollectionUtils;
+
+import com.baidu.hugegraph.config.ConfigListOption;
 import com.baidu.hugegraph.config.ConfigOption;
 import com.baidu.hugegraph.config.OptionHolder;
+import com.baidu.hugegraph.util.HubbleUtil;
 
 public class HubbleOptions extends OptionHolder {
 
@@ -63,6 +67,46 @@ public class HubbleOptions extends OptionHolder {
                     "The port of hugegraph-hubble server.",
                     rangeInt(1, 65535),
                     8088
+            );
+
+    public static final ConfigListOption<String> CONNECTION_IP_WHITE_LIST =
+            new ConfigListOption<>(
+                    "graph_connection.ip_white_list",
+                    "The ip white list available for connecting to " +
+                    "HugeGraphServer, * means no ip limited.",
+                    input -> {
+                        if (CollectionUtils.isEmpty(input)) {
+                            return false;
+                        }
+                        if (input.contains("*") && input.size() > 1) {
+                            return false;
+                        }
+                        for (String ip : input) {
+                            if (!HubbleUtil.HOST_PATTERN.matcher(ip)
+                                                        .matches()) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    },
+                    "*"
+            );
+
+    public static final ConfigListOption<Integer> CONNECTION_PORT_WHITE_LIST =
+            new ConfigListOption<>(
+                    "graph_connection.port_white_list",
+                    "The port white list available for connecting to " +
+                    "HugeGraphServer, -1 means no port limited.",
+                    input -> {
+                        if (CollectionUtils.isEmpty(input)) {
+                            return false;
+                        }
+                        if (input.contains(-1) && input.size() > 1) {
+                            return false;
+                        }
+                        return true;
+                    },
+                    -1
             );
 
     public static final ConfigOption<Integer> GREMLIN_SUFFIX_LIMIT =

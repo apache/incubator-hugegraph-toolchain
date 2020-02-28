@@ -22,10 +22,16 @@ package com.baidu.hugegraph.util;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 import org.apache.commons.collections.CollectionUtils;
 
 public final class HubbleUtil {
+
+    public static final Pattern HOST_PATTERN = Pattern.compile(
+            "(([0-9]{1,3}\\.){3}[0-9]{1,3}|" +
+            "([0-9A-Za-z_!~*'()-]+\\.)*[0-9A-Za-z_!~*'()-]+)$"
+    );
 
     public static Date nowDate() {
         return new Date();

@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.controller;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -35,18 +37,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.common.Response;
+import com.baidu.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
+import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.service.license.LicenseService;
-import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.HugeClientUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
 @RestController
 @RequestMapping(Constant.API_VERSION + "graph-connections")
 public class GraphConnectionController extends BaseController {
@@ -54,11 +61,9 @@ public class GraphConnectionController extends BaseController {
     private static final Pattern GRAPH_PATTERN = Pattern.compile(
             "^[A-Za-z][A-Za-z0-9_]{0,47}$"
     );
-    private static final Pattern HOST_PATTERN = Pattern.compile(
-            "(([0-9]{1,3}\\.){3}[0-9]{1,3}|" +
-            "([0-9A-Za-z_!~*'()-]+\\.)*[0-9A-Za-z_!~*'()-]+)$"
-    );
 
+    @Autowired
+    private HugeConfig config;
     @Autowired
     private GraphConnectionService connService;
     @Autowired
@@ -123,6 +128,7 @@ public class GraphConnectionController extends BaseController {
                  verifyResult.getMessage());
 
         this.checkParamsValid(newEntity, true);
+        this.checkAddressSecurity(newEntity);
         // Make sure the new entity doesn't conflict with exists
         this.checkEntityUnique(newEntity, true);
 
@@ -148,6 +154,7 @@ public class GraphConnectionController extends BaseController {
                                   @RequestBody GraphConnection newEntity) {
         this.checkIdSameAsBody(id, newEntity);
         this.checkParamsValid(newEntity, false);
+        this.checkAddressSecurity(newEntity);
 
         // Check exist connection with this id
         GraphConnection oldEntity = this.connService.get(id);
@@ -204,7 +211,8 @@ public class GraphConnectionController extends BaseController {
 
         String host = newEntity.getHost();
         this.checkParamsNotEmpty("host", host, creating);
-        Ex.check(host != null, () -> HOST_PATTERN.matcher(host).matches(),
+        Ex.check(host != null, () -> HubbleUtil.HOST_PATTERN.matcher(host)
+                                                            .matches(),
                  "graph-connection.host.unmatch-regex");
 
         Integer port = newEntity.getPort();
@@ -215,6 +223,33 @@ public class GraphConnectionController extends BaseController {
 
         Ex.check(newEntity.getCreateTime() == null,
                  "common.param.must-be-null", "create_time");
+    }
+
+    private void checkAddressSecurity(GraphConnection newEntity) {
+        String host = newEntity.getHost();
+        Integer port = newEntity.getPort();
+        InetAddress address;
+        try {
+            address = InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            throw new ExternalException("graph-connection.host.unresolved");
+        }
+        String ip = address.getHostAddress();
+        log.debug("The host: {}, ip: {}", address.getHostName(), ip);
+
+        List<String> ipWhiteList = this.config.get(
+                                   HubbleOptions.CONNECTION_IP_WHITE_LIST);
+        if (!ipWhiteList.contains("*")) {
+            Ex.check(ipWhiteList.contains(host) || ipWhiteList.contains(ip),
+                     "graph-connection.host.unauthorized");
+        }
+
+        List<Integer> portWhiteList = this.config.get(
+                                      HubbleOptions.CONNECTION_PORT_WHITE_LIST);
+        if (!portWhiteList.contains(-1)) {
+            Ex.check(portWhiteList.contains(port),
+                     "graph-connection.port.unauthorized");
+        }
     }
 
     private void checkEntityUnique(GraphConnection newEntity,
