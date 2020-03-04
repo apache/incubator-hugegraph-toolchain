@@ -78,7 +78,7 @@ public class SingleInsertTask extends InsertTask {
             return;
         }
         if (!this.context.stopped()) {
-            synchronized(LoadContext.class) {
+            synchronized (LoadContext.class) {
                 if (!this.context.stopped()) {
                     Printer.printError("More than %s %s insert error, " +
                                        "stop parsing and waiting other " +

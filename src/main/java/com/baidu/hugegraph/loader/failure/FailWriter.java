@@ -108,7 +108,7 @@ public final class FailWriter {
         if (this.struct.input().header() == null || this.writedHeader) {
             return;
         }
-        synchronized(this.file) {
+        synchronized (this.file) {
             if (!this.writedHeader) {
                 String headerLine = StringUtils.join(this.struct.input().header(),
                                                      Constants.COMMA_STR);
