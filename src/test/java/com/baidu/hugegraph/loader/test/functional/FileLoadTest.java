@@ -36,6 +36,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -47,6 +48,7 @@ import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
+import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -213,6 +215,10 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ServerException.class, () -> {
             HugeGraphLoader.main(args);
         });
+    }
+
+    @Test
+    public void testClearSchemaBeforeLoad() {
     }
 
     @Test
