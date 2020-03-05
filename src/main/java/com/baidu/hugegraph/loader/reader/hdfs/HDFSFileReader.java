@@ -123,7 +123,6 @@ public class HDFSFileReader extends FileReader {
 
     private Configuration loadConfiguration() {
         Configuration conf = new Configuration();
-        conf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
         conf.addResource(new Path(this.source().coreSitePath()));
         return conf;
     }
