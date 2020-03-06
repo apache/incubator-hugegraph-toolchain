@@ -36,7 +36,7 @@ public class LoadTest {
     protected static final String CONFIG_PATH_PREFIX = "target/test-classes";
     protected static final String GRAPH = "hugegraph";
     protected static final String SERVER = "127.0.0.1";
-    protected static final String PORT = "8080";
+    protected static final int PORT = 8080;
     protected static final String CONFIRM_CLEAR = "I'm sure to delete all data";
     protected static final String URL = String.format("http://%s:%s",
                                                       SERVER, PORT);
