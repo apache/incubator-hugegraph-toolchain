@@ -228,6 +228,10 @@ public abstract class ElementBuilder<GE extends GraphElement>
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
         for (Object value : primaryValues) {
+            E.checkArgument(value != null,
+                            "There are some columns haven't correspond to " +
+                            "primary keys, please modify header column or " +
+                            "field_mapping");
             String pkValue;
             if (value instanceof Number || value instanceof Date) {
                 pkValue = LongEncoding.encodeNumber(value);

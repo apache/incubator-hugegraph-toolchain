@@ -2540,4 +2540,74 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(v2Id, v2.id());
         Assert.assertEquals(eId, e.id());
     }
+
+    @Test
+    public void testVertexPrimaryValueNull() {
+        ioUtil.write("vertex_person.csv",
+                     "p_name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        String[] args = new String[]{
+                "-f", structPath("vertex_pk_value_null/struct.json"),
+                "-s", configPath("vertex_pk_value_null/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String msgSuffix = "modify header column or field_mapping";
+            Assert.assertTrue(e.getMessage().endsWith(msgSuffix));
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
+    }
+
+    @Test
+    public void testSourceOrTargetPrimaryValueNull() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,java,328",
+                     "ripple,java,199");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,lop,20171210,0.4",
+                     "josh,lop,20091111,0.4",
+                     "josh,ripple,20171210,1.0",
+                     "peter,lop,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f", structPath("source_or_target_pk_value_null/struct.json"),
+                "-s", configPath("source_or_target_pk_value_null/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String msgSuffix = "modify header column or field_mapping";
+            Assert.assertTrue(e.getMessage().endsWith(msgSuffix));
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(7, vertices.size());
+        Assert.assertEquals(0, edges.size());
+    }
 }
