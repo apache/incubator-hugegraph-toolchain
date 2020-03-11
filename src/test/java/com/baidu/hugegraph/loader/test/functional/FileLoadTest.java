@@ -2561,7 +2561,8 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
-            String msgSuffix = "modify header column or field_mapping";
+            String msgSuffix = "check whether the headers or field_mapping " +
+                               "are configured correctly";
             Assert.assertTrue(e.getMessage().endsWith(msgSuffix));
         });
 
@@ -2600,7 +2601,8 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
-            String msgSuffix = "modify header column or field_mapping";
+            String msgSuffix = "check whether the headers or field_mapping " +
+                               "are configured correctly";
             Assert.assertTrue(e.getMessage().endsWith(msgSuffix));
         });
 

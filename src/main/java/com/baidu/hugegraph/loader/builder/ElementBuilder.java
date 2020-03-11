@@ -230,8 +230,9 @@ public abstract class ElementBuilder<GE extends GraphElement>
         for (int i = 0; i < primaryValues.length; i++) {
             Object value = primaryValues[i];
             E.checkArgument(value != null,
-                            "The value of primary key '%s' is null, " +
-                            "please modify header column or field_mapping",
+                            "Make sure the value of the primary key '%s' is " +
+                            "not empty, or check whether the headers or " +
+                            "field_mapping are configured correctly",
                             primaryKeys.get(i));
             String pkValue;
             if (value instanceof Number || value instanceof Date) {
