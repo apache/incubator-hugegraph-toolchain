@@ -227,11 +227,12 @@ public abstract class ElementBuilder<GE extends GraphElement>
 
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
-        for (Object value : primaryValues) {
+        for (int i = 0; i < primaryValues.length; i++) {
+            Object value = primaryValues[i];
             E.checkArgument(value != null,
-                            "There are some columns haven't correspond to " +
-                            "primary keys, please modify header column or " +
-                            "field_mapping");
+                            "The value of primary key '%s' is null, " +
+                            "please modify header column or field_mapping",
+                            primaryKeys.get(i));
             String pkValue;
             if (value instanceof Number || value instanceof Date) {
                 pkValue = LongEncoding.encodeNumber(value);
