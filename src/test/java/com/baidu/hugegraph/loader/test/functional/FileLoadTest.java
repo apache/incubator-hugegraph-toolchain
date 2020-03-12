@@ -229,7 +229,7 @@ public class FileLoadTest extends LoadTest {
         SchemaManager schema = client.schema();
         schema.propertyKey("name").asText().ifNotExist().create();
         schema.propertyKey("age").asInt().ifNotExist().create();
-        // The datatype is int
+        // The old datatype of city is int
         schema.propertyKey("city").asInt().ifNotExist().create();
         schema.vertexLabel("person").properties("name", "age", "city")
               .primaryKeys("name").ifNotExist().create();

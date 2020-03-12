@@ -31,7 +31,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -107,33 +106,12 @@ public final class HugeGraphLoader {
         if (!options.clearOldSchema) {
             return;
         }
-
         HugeClient client = HugeClientHolder.get(options);
-        SchemaManager schema = client.schema();
-        com.baidu.hugegraph.driver.TaskManager task = client.task();
-        int timeout = options.clearSchemaTimeout;
-        // Clear schema
-        List<Long> taskIds = new ArrayList<>();
-        schema.getIndexLabels().forEach(il -> {
-            taskIds.add(schema.removeIndexLabelAsync(il.name()));
-        });
-        taskIds.forEach(taskId -> task.waitUntilTaskCompleted(taskId, timeout));
+        String message = "I'm sure to delete all data";
 
-        taskIds.clear();
-        schema.getEdgeLabels().forEach(el -> {
-            taskIds.add(schema.removeEdgeLabelAsync(el.name()));
-        });
-        taskIds.forEach(taskId -> task.waitUntilTaskCompleted(taskId, timeout));
-
-        taskIds.clear();
-        schema.getVertexLabels().forEach(vl -> {
-            taskIds.add(schema.removeVertexLabelAsync(vl.name()));
-        });
-        taskIds.forEach(taskId -> task.waitUntilTaskCompleted(taskId, timeout));
-
-        schema.getPropertyKeys().forEach(pk -> {
-            schema.removePropertyKey(pk.name());
-        });
+        LOG.info("Prepare to clear the data of graph {}", options.graph);
+        client.graphs().clear(options.graph, message);
+        LOG.info("The graph {} has been cleared successfully", options.graph);
     }
 
     private void createSchema() {

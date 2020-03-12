@@ -61,11 +61,6 @@ public final class LoadOptions {
                description = "Whether to clear old schema before loading")
     public boolean clearOldSchema = false;
 
-    @Parameter(names = {"--clear-schema-timeout"}, arity = 1,
-               validateWith = {PositiveValidator.class},
-               description = "The timeout of clearing schema")
-    public int clearSchemaTimeout = 60;
-
     @Parameter(names = {"--incremental-mode"}, arity = 1,
                description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
