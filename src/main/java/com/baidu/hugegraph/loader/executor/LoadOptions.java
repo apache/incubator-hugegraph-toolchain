@@ -57,7 +57,7 @@ public final class LoadOptions {
                description = "The token of graph for authentication")
     public String token = null;
 
-    @Parameter(names = {"--clear-old-schema"}, arity = 1,
+    @Parameter(names = {"--clear-all"}, arity = 1,
                description = "Whether to clear old schema before loading")
     public boolean clearOldSchema = false;
 

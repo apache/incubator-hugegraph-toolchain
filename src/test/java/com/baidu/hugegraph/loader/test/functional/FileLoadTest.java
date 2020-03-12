@@ -263,7 +263,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("clear_schema_before_load/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--clear-old-schema", "true",
+                "--clear-all", "true",
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
