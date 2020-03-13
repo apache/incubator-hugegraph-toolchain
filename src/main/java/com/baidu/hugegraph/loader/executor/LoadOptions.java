@@ -57,9 +57,9 @@ public final class LoadOptions {
                description = "The token of graph for authentication")
     public String token = null;
 
-    @Parameter(names = {"--clear-all"}, arity = 1,
-               description = "Whether to clear old schema before loading")
-    public boolean clearOldSchema = false;
+    @Parameter(names = {"--clear-all-data"}, arity = 1,
+               description = "Whether to clear all old data before loading")
+    public boolean clearAllData = false;
 
     @Parameter(names = {"--incremental-mode"}, arity = 1,
                description = "Load data from the breakpoint of last time")

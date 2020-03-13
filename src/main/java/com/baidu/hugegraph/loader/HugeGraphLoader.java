@@ -103,7 +103,7 @@ public final class HugeGraphLoader {
 
     private void clearSchemaIfNeeded() {
         LoadOptions options = this.context.options();
-        if (!options.clearOldSchema) {
+        if (!options.clearAllData) {
             return;
         }
         HugeClient client = HugeClientHolder.get(options);
