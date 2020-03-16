@@ -310,6 +310,33 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testIdFieldAsProperty() {
+        ioUtil.write("vertex_person.csv",
+                     "id,name,age,city",
+                     "1,marko,29,Beijing",
+                     "2,vadas,27,Hongkong",
+                     "3,josh,32,Beijing",
+                     "4,peter,35,Shanghai",
+                     "5,\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[]{
+                "-f", structPath("id_field_as_property/struct.json"),
+                "-s", configPath("id_field_as_property/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(5, vertices.size());
+        for (Vertex vertex : vertices) {
+            Assert.assertNotNull(vertex.property("id"));
+        }
+    }
+
+    @Test
     public void testTooManyColumns() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",

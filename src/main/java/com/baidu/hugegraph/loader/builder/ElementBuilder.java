@@ -162,15 +162,18 @@ public abstract class ElementBuilder<GE extends GraphElement>
     }
 
     protected void addProperties(GE element, Map<String, Object> keyValues) {
+        Set<String> properties = this.getSchemaLabel().properties();
         for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
             String fieldName = entry.getKey();
             Object fieldValue = entry.getValue();
             this.checkFieldValue(fieldName, fieldValue);
+            String key = this.struct().mappingField(fieldName);
 
-            if (this.isIdField(fieldName)) {
+            // If the ID field is also a property, retained it
+            if (this.isIdField(fieldName) &&
+                !properties.contains(fieldName) && !properties.contains(key)) {
                 continue;
             }
-            String key = this.struct().mappingField(fieldName);
             fieldValue = this.mappingFieldValueIfNeeded(fieldName, fieldValue);
             Object value = this.validatePropertyValue(key, fieldValue);
 
