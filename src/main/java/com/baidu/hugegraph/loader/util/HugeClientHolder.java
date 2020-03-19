@@ -28,7 +28,7 @@ public final class HugeClientHolder {
 
     public static HugeClient get(LoadOptions options) {
         if (instance == null) {
-            synchronized(HugeClientHolder.class) {
+            synchronized (HugeClientHolder.class) {
                 if (instance == null) {
                     instance = newHugeClient(options);
                 }
@@ -55,7 +55,7 @@ public final class HugeClientHolder {
     }
 
     public static void close() {
-        synchronized(HugeClientHolder.class) {
+        synchronized (HugeClientHolder.class) {
             if (instance != null) {
                 instance.close();
                 instance = null;
