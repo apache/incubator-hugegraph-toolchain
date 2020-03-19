@@ -1,0 +1,24 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "format": "CSV",
+        "charset": "UTF-8",
+        "list_format": {
+          "start_symbol": "",
+          "end_symbol": "",
+          "elem_delimiter": "|"
+        }
+      },
+      "unfold": true,
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    }
+  ]
+}

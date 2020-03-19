@@ -100,7 +100,7 @@ public final class ParseTaskBuilder {
                                  elements.size(), batchSize);
                     // Prevent batch size from exceeding limit
                     if (records.size() + elements.size() > batchSize) {
-                        LOG.info("Create a new batch for {}", mapping);
+                        LOG.debug("Create a new batch for {}", mapping);
                         // Add current batch and create a new batch
                         batches.add(records);
                         records = new ArrayList<>(batchSize);

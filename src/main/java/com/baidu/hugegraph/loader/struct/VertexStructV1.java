@@ -32,10 +32,6 @@ public class VertexStructV1 extends ElementStructV1 {
     @JsonProperty("unfold")
     private final boolean unfold;
 
-    public VertexStructV1(String idField) {
-        this(idField, false);
-    }
-
     @JsonCreator
     public VertexStructV1(@JsonProperty("id") String idField,
                           @JsonProperty("unfold") boolean unfold) {

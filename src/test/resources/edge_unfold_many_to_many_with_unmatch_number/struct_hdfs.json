@@ -1,0 +1,47 @@
+{
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_name"],
+      "unfold_source": true,
+      "target": ["target_name"],
+      "unfold_target": true,
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_knows.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "list_format": {
+          "start_symbol": "",
+          "end_symbol": "",
+          "elem_delimiter": "|"
+        }
+      },
+      "field_mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    },
+    {
+      "label": "created",
+      "source": ["source_name"],
+      "unfold_source": true,
+      "target": ["target_id"],
+      "unfold_target": true,
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_created.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "list_format": {
+          "start_symbol": "",
+          "end_symbol": "",
+          "elem_delimiter": "|"
+        }
+      },
+      "field_mapping": {
+        "source_name": "name"
+      }
+    }
+  ]
+}

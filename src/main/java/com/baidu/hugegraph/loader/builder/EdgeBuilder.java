@@ -72,8 +72,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         }
         E.checkArgument(sources.size() == 1 || targets.size() == 1 ||
                         sources.size() == targets.size(),
-                        "The source and target vertices must have the same " +
-                        "id number or one of them must be 1");
+                        "The elements number of source and target must be: " +
+                        "1 to n, n to 1, n to n");
         int size = Math.max(sources.size(), targets.size());
         List<Edge> edges = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {

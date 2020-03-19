@@ -31,10 +31,6 @@ public class VertexMapping extends ElementMapping {
     @JsonProperty("unfold")
     private final boolean unfold;
 
-    public VertexMapping(@JsonProperty("id") String idField) {
-        this(idField, false);
-    }
-
     @JsonCreator
     public VertexMapping(@JsonProperty("id") String idField,
                          @JsonProperty("unfold") boolean unfold) {

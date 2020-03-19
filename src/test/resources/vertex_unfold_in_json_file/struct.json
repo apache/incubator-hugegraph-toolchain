@@ -1,0 +1,34 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.json",
+        "format": "JSON",
+        "charset": "UTF-8"
+      },
+      "id": "id",
+      "unfold": true,
+      "field_mapping": {
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      }
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_software.json",
+        "format": "JSON"
+      },
+      "unfold": true,
+      "field_mapping": {
+        "name": "name",
+        "lang": "lang",
+        "price": "price"
+      }
+    }
+  ]
+}

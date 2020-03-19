@@ -97,7 +97,11 @@ public final class HugeGraphLoader {
             Printer.printSummary();
         } catch (Throwable e) {
             Printer.printError("Failed to load", e);
-            throw e;
+            if (this.context.options().testMode) {
+                throw e;
+            } else {
+                System.exit(-1);
+            }
         } finally {
             this.stopThenShutdown();
         }

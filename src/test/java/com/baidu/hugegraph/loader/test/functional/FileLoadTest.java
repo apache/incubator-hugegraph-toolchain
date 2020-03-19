@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +62,7 @@ import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Whitebox;
 import com.baidu.hugegraph.util.LongEncoding;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class FileLoadTest extends LoadTest {
@@ -2114,7 +2116,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(3, softwareFailureLines.size());
         Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(2));
 
-        // TODO: 先只改一行,让第二行也出错
+        // TODO: Change only one line first, and make the second line go wrong
         // modify person and software failure file
         personFailureLines.remove(2);
         personFailureLines.add("marko,29,Beijing");
@@ -2549,5 +2551,318 @@ public class FileLoadTest extends LoadTest {
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(6, vertices.size());
+    }
+
+    @Test
+    public void testVertexCusomizedIdUnfold() {
+        ioUtil.write("vertex_person.csv",
+                     "id,name,age,city",
+                     "1|2|3,marko,29,Beijing",
+                     "4|5,vadas,27,Hongkong",
+                     "6,josh,32,Beijing",
+                     "7|8|9,peter,35,Shanghai",
+                     "10,\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_customized_id_unfold/struct.json"),
+                "-s", configPath("vertex_customized_id_unfold/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        Vertex v1 = CLIENT.graph().getVertex("1");
+        Vertex v2 = CLIENT.graph().getVertex("2");
+        Vertex v3 = CLIENT.graph().getVertex("3");
+        Assert.assertEquals("marko", v1.property("name"));
+        Assert.assertEquals("marko", v2.property("name"));
+        Assert.assertEquals("marko", v3.property("name"));
+    }
+
+    @Test
+    public void testVertexCusomizedIdUnfoldWithMapping() {
+        // field_mapping: p_id -> id
+        // value_mapping: p1 -> 1, p2 -> 2, p3 -> 3
+        ioUtil.write("vertex_person.csv",
+                     "p_id,name,age,city",
+                     "p1|p2|p3,marko,29,Beijing",
+                     "4|5,vadas,27,Hongkong",
+                     "6,josh,32,Beijing",
+                     "7|8|9,peter,35,Shanghai",
+                     "10,\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_customized_id_unfold_with_mapping/struct.json"),
+                "-s", configPath("vertex_customized_id_unfold_with_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        Vertex v1 = CLIENT.graph().getVertex("1");
+        Vertex v2 = CLIENT.graph().getVertex("2");
+        Vertex v3 = CLIENT.graph().getVertex("3");
+        Assert.assertEquals("marko", v1.property("name"));
+        Assert.assertEquals("marko", v2.property("name"));
+        Assert.assertEquals("marko", v3.property("name"));
+    }
+
+    @Test
+    public void testVertexPrimaryKeyUnfold() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko|marko1|marko2,29,Beijing",
+                     "vadas|vadas1,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter|peter1|peter2,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_primarykey_unfold/struct.json"),
+                "-s", configPath("vertex_primarykey_unfold/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        vertices = CLIENT.graph().listVertices("person",
+                                               ImmutableMap.of("age", 29));
+        Assert.assertEquals(3, vertices.size());
+        Set<Object> names = vertices.stream().map(v -> v.property("name"))
+                                    .collect(Collectors.toSet());
+        Assert.assertEquals(ImmutableSet.of("marko", "marko1", "marko2"), names);
+    }
+
+    @Test
+    public void testVertexPrimaryKeyUnfoldWithMapping() {
+        // field_mapping: p_name -> name
+        // value_mapping: m -> marko, m1 -> marko1, m2 -> marko2
+        ioUtil.write("vertex_person.csv",
+                     "p_name,age,city",
+                     "m|m1|m2,29,Beijing",
+                     "vadas|vadas1,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter|peter1|peter2,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_primarykey_unfold_with_mapping/struct.json"),
+                "-s", configPath("vertex_primarykey_unfold_with_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        vertices = CLIENT.graph().listVertices("person",
+                                               ImmutableMap.of("age", 29));
+        Assert.assertEquals(3, vertices.size());
+        Set<Object> names = vertices.stream().map(v -> v.property("name"))
+                                    .collect(Collectors.toSet());
+        Assert.assertEquals(ImmutableSet.of("marko", "marko1", "marko2"), names);
+    }
+
+    @Test
+    public void testVertexPrimaryKeyUnfoldExceedLimit() {
+        // The primary keys are "name" nad "age"
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko|marko1|marko2,29,Beijing",
+                     "vadas|vadas1,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter|peter1|peter2,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_primarykey_unfold_exceed_limit/struct.json"),
+                "-s", configPath("vertex_primarykey_unfold_exceed_limit/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String msg = "In case unfold is true, just supported " +
+                         "a single primary key";
+            Assert.assertEquals(msg, e.getMessage());
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
+    }
+
+    @Test
+    public void testVertexUnfoldInJsonFile() {
+        ioUtil.write("vertex_person.json",
+                     "{\"id\": [1,2,3], \"name\": \"marko\", \"age\": 29, " +
+                     "\"city\": \"Beijing\"}",
+                     "{\"id\": [4,5,6], \"name\": \"vadas\", \"age\": 27, " +
+                     "\"city\": \"Beijing\"}");
+        ioUtil.write("vertex_software.json",
+                     "{\"name\": [\"hugegraph\", \"hg\"], " +
+                     "\"lang\": \"java\", \"price\": 1000}",
+                     "{\"name\": [\"word\", \"excel\"], " +
+                     "\"lang\": \"C#\", \"price\": 999}");
+
+        String[] args = new String[]{
+                "-f", structPath("vertex_unfold_in_json_file/struct.json"),
+                "-s", configPath("vertex_unfold_in_json_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testEdgeUnfoldOneToMany() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,vadas|tom|peter,20160110,0.5",
+                     "jerry,josh|jack|marry,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko,1|2|3,20171210,0.4",
+                     "josh,4|5|6,20091111,0.4",
+                     "peter,7,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_unfold_one_to_many/struct.json"),
+                "-s", configPath("edge_unfold_one_to_many/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(13, edges.size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("knows").size());
+        Assert.assertEquals(7, CLIENT.graph().listEdges("created").size());
+    }
+
+    @Test
+    public void testEdgeUnfoldManyToOne() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko|tom|peter,vadas,20160110,0.5",
+                     "jerry|josh|jack,marry,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko|tom|peter,1,20171210,0.4",
+                     "jerry|josh|jack,2,20091111,0.4",
+                     "marry,3,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_unfold_many_to_one/struct.json"),
+                "-s", configPath("edge_unfold_many_to_one/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(13, edges.size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("knows").size());
+        Assert.assertEquals(7, CLIENT.graph().listEdges("created").size());
+    }
+
+    @Test
+    public void testEdgeUnfoldManyToMany() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko|tom|peter,jerry|josh|jack,20160110,0.5",
+                     "jerry|josh|jack,marry|jack|marko,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko|tom|peter,1|2|3,20171210,0.4",
+                     "jerry|josh|jack,4|5|6,20091111,0.4");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_unfold_many_to_many/struct.json"),
+                "-s", configPath("edge_unfold_many_to_many/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(12, edges.size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("knows").size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("created").size());
+    }
+
+    @Test
+    public void testEdgeUnfoldManyToManyWithUnmatchNumber() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko|tom|peter,jerry|josh,20160110,0.5");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko|tom|peter,1|2,20171210,0.4");
+
+        String[] args = new String[]{
+                "-f",
+                structPath("edge_unfold_many_to_many_with_unmatch_number/struct.json"),
+                "-s",
+                configPath("edge_unfold_many_to_many_with_unmatch_number/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String msg = "The elements number of source and target must be: " +
+                         "1 to n, n to 1, n to n";
+            Assert.assertEquals(msg, e.getMessage());
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(0, edges.size());
     }
 }
