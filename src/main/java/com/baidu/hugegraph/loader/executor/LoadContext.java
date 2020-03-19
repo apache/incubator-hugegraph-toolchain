@@ -137,7 +137,7 @@ public final class LoadContext {
         for (FailLogger logger : this.loggers.values()) {
             logger.close();
         }
-        LOG.info("Successfully close all failure loggers");
+        LOG.info("Close all failure loggers successfully");
 
         LOG.info("Ready to write load progress");
         try {
@@ -145,10 +145,10 @@ public final class LoadContext {
         } catch (IOException e) {
             LOG.error("Failed to write load progress", e);
         }
-        LOG.info("Successfully write load progress");
+        LOG.info("Write load progress successfully");
 
         LOG.info("Ready to close HugeClient");
         HugeClientHolder.close();
-        LOG.info("Successfully close HugeClient");
+        LOG.info("Close HugeClient successfully");
     }
 }

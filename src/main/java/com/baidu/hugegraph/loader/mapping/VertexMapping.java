@@ -28,10 +28,18 @@ public class VertexMapping extends ElementMapping {
     // Be null when id strategy is primary key
     @JsonProperty("id")
     private final String idField;
+    @JsonProperty("unfold")
+    private final boolean unfold;
+
+    public VertexMapping(@JsonProperty("id") String idField) {
+        this(idField, false);
+    }
 
     @JsonCreator
-    public VertexMapping(@JsonProperty("id") String idField) {
+    public VertexMapping(@JsonProperty("id") String idField,
+                         @JsonProperty("unfold") boolean unfold) {
         this.idField = idField;
+        this.unfold = unfold;
     }
 
     @Override
@@ -46,6 +54,10 @@ public class VertexMapping extends ElementMapping {
 
     public String idField() {
         return this.idField;
+    }
+
+    public boolean unfold() {
+        return this.unfold;
     }
 
     @Override

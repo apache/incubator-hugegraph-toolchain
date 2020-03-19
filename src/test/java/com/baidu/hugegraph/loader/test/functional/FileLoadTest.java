@@ -1964,7 +1964,6 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testLoadIncrementalModeAndLoadFailure()
            throws IOException, InterruptedException {
-        // Trigger read exception
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
                      "marko,应该是数字,Beijing",
@@ -1972,7 +1971,6 @@ public class FileLoadTest extends LoadTest {
                      "josh,32,Beijing",
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
-        // Trigger parse exception
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
                      "office,C#,999",
@@ -2018,7 +2016,7 @@ public class FileLoadTest extends LoadTest {
                 Assert.assertTrue(loadingItem instanceof FileItemProgress);
                 FileItemProgress fileItem = (FileItemProgress) loadingItem;
                 Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // Offset doesn't confirm yet
+                // NOTE: Offset doesn't confirm yet
                 Assert.assertEquals(0, fileItem.offset());
             }
         });
@@ -2042,7 +2040,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals("marko,应该是数字,Beijing",
                             personFailureLines.get(2));
 
-        // 2nd time
+        // 2nd time, incremental-mode
         args = new String[]{
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
@@ -2051,7 +2049,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
-                "--load-failure-mode", "false",
+                "--failure-mode", "false",
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
@@ -2116,6 +2114,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(3, softwareFailureLines.size());
         Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(2));
 
+        // TODO: 先只改一行,让第二行也出错
         // modify person and software failure file
         personFailureLines.remove(2);
         personFailureLines.add("marko,29,Beijing");
@@ -2124,7 +2123,8 @@ public class FileLoadTest extends LoadTest {
         softwareFailureLines.remove(2);
         softwareFailureLines.add("lop,java,328");
         FileUtils.writeLines(softwareFailureFile, softwareFailureLines, false);
-        // 3rd time
+
+        // 3rd time, --failure-mode
         args = new String[]{
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
@@ -2133,7 +2133,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "false",
-                "--load-failure-mode", "true",
+                "--failure-mode", "true",
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
@@ -2226,7 +2226,7 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("reload_json_failure_files/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--load-failure-mode", "true",
+                "--failure-mode", "true",
                 "--check-vertex", "true",
                 "--batch-insert-threads", "2",
                 "--test-mode", "false"
@@ -2430,9 +2430,8 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
-            String msgSuffix = "check whether the headers or field_mapping " +
-                               "are configured correctly";
-            Assert.assertTrue(e.getMessage().endsWith(msgSuffix));
+            String msgSuffix = "Missing some primary key values";
+            Assert.assertTrue(e.getMessage().startsWith(msgSuffix));
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();

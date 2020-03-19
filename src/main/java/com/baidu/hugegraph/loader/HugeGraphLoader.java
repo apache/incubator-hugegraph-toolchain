@@ -93,14 +93,14 @@ public final class HugeGraphLoader {
             // Init schema cache
             this.initSchemaCache();
             this.loadInputs();
-        } catch (Exception e) {
+            // Print load summary
+            Printer.printSummary();
+        } catch (Throwable e) {
             Printer.printError("Failed to load", e);
-            this.stopThenShutdown();
             throw e;
+        } finally {
+            this.stopThenShutdown();
         }
-        // Print load summary
-        Printer.printSummary();
-        this.stopThenShutdown();
     }
 
     private void clearAllDataIfNeeded() {
@@ -161,7 +161,7 @@ public final class HugeGraphLoader {
 
         this.context.summary().startTimer();
         try {
-            if (!options.loadFailureMode) {
+            if (!options.failureMode) {
                 // Load normal data from user supplied input structs
                 this.load(this.mapping.structs());
             } else {
@@ -247,12 +247,14 @@ public final class HugeGraphLoader {
      */
     private void executeParseTask(InputStruct struct, ElementMapping mapping,
                                   ParseTaskBuilder.ParseTask task) {
-        List<Record> batch = task.get();
+        List<List<Record>> batches = task.get();
         if (this.context.stopped() || this.context.options().dryRun ||
-            CollectionUtils.isEmpty(batch)) {
+            CollectionUtils.isEmpty(batches)) {
             return;
         }
-        this.manager.submitBatch(struct, mapping, batch);
+        for (List<Record> batch : batches) {
+            this.manager.submitBatch(struct, mapping, batch);
+        }
     }
 
     private void handleReadFailure(InputStruct struct, ReadException e) {

@@ -31,14 +31,22 @@ public class EdgeStructV1 extends ElementStructV1 {
 
     @JsonProperty("source")
     private final List<String> sourceFields;
+    @JsonProperty("unfold_source")
+    private final boolean unfoldSource;
     @JsonProperty("target")
     private final List<String> targetFields;
+    @JsonProperty("unfold_target")
+    private final boolean unfoldTarget;
 
     @JsonCreator
     public EdgeStructV1(@JsonProperty("source") List<String> sourceFields,
-                        @JsonProperty("target") List<String> targetFields) {
+                        @JsonProperty("unfold_source") boolean unfoldSource,
+                        @JsonProperty("target") List<String> targetFields,
+                        @JsonProperty("unfold_target") boolean unfoldTarget) {
         this.sourceFields = sourceFields;
         this.targetFields = targetFields;
+        this.unfoldSource = unfoldSource;
+        this.unfoldTarget = unfoldTarget;
     }
 
     @Override
@@ -63,8 +71,16 @@ public class EdgeStructV1 extends ElementStructV1 {
         return this.sourceFields;
     }
 
+    public boolean unfoldSource() {
+        return this.unfoldSource;
+    }
+
     public List<String> targetFields() {
         return this.targetFields;
+    }
+
+    public boolean unfoldTarget() {
+        return this.unfoldTarget;
     }
 
     @Override

@@ -20,10 +20,13 @@
 package com.baidu.hugegraph.loader.util;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.InputSource;
@@ -72,6 +75,18 @@ public final class DataTypeUtil {
                 throw new AssertionError(String.format(
                           "Unsupported cardinality: '%s'", cardinality));
         }
+    }
+
+    public static List<Object> splitField(String key, Object rawColumnValue,
+                                          InputSource source) {
+        E.checkArgument(rawColumnValue != null,
+                        "The value to be splitted can't be null");
+        if (rawColumnValue instanceof Collection) {
+            return (List<Object>) rawColumnValue;
+        }
+        // TODO: Seems a bit violent
+        String rawValue = rawColumnValue.toString();
+        return split(key, rawValue, source);
     }
 
     public static long parseNumber(String key, Object rawValue) {
@@ -155,46 +170,17 @@ public final class DataTypeUtil {
                      "The value(key='%s') must be String type, but got '%s'(%s)",
                      key, values);
         String rawValue = (String) values;
-        Collection<Object> valueColl = cardinality == Cardinality.LIST ?
-                                       InsertionOrderUtil.newList() :
-                                       InsertionOrderUtil.newSet();
-        if (rawValue.isEmpty()) {
-            return valueColl;
-        }
-
-        E.checkState(AbstractSource.class.isAssignableFrom(source.getClass()),
-                     "Only accept AbstractSource when parse multi values, " +
-                     "but got '%s'", source.getClass().getName());
-        ListFormat listFormat = ((AbstractSource) source).listFormat();
-        E.checkArgumentNotNull(listFormat, "The list_format must be set when " +
-                                           "parse list or set values");
-
-        String startSymbol = listFormat.startSymbol();
-        String endSymbol = listFormat.endSymbol();
-        E.checkArgument(rawValue.length() >=
-                        startSymbol.length() + endSymbol.length(),
-                        "The value(key='%s') '%s' length(%s) must be >= " +
-                        "start symbol '%s' + end symbol '%s' length",
-                        key, rawValue, rawValue.length(),
-                        startSymbol, endSymbol);
-        E.checkArgument(rawValue.startsWith(startSymbol) &&
-                        rawValue.endsWith(endSymbol),
-                        "The value(key='%s') must start with '%s' and " +
-                        "end with '%s', but got '%s'",
-                        key, startSymbol, endSymbol, rawValue);
-        rawValue = rawValue.substring(startSymbol.length(),
-                                      rawValue.length() - endSymbol.length());
-
-        String elemDelimiter = listFormat.elemDelimiter();
-        Splitter.on(elemDelimiter).split(rawValue).forEach(value -> {
-            if (!listFormat.ignoredElems().contains(value)) {
-                valueColl.add(parseSingleValue(key, value, dataType, source));
-            }
+        List<Object> valueColl = split(key, rawValue, source);
+        Collection<Object> results = cardinality == Cardinality.LIST ?
+                                     InsertionOrderUtil.newList() :
+                                     InsertionOrderUtil.newSet();
+        valueColl.forEach(value -> {
+            results.add(parseSingleValue(key, value, dataType, source));
         });
-        E.checkArgument(checkCollectionDataType(key, valueColl, dataType),
+        E.checkArgument(checkCollectionDataType(key, results, dataType),
                         "Not all collection elems %s match with data type %s",
-                        valueColl, dataType);
-        return valueColl;
+                        results, dataType);
+        return results;
     }
 
     private static Boolean parseBoolean(String key, Object rawValue) {
@@ -278,6 +264,43 @@ public final class DataTypeUtil {
         throw new IllegalArgumentException(String.format(
                   "Failed to convert value(key='%s') '%s'(%s) to Date",
                   key, value, value.getClass()));
+    }
+
+    private static List<Object> split(String key, String rawValue,
+                                      InputSource source) {
+        List<Object> valueColl = new ArrayList<>();
+        if (rawValue.isEmpty()) {
+            return valueColl;
+        }
+        E.checkState(AbstractSource.class.isAssignableFrom(source.getClass()),
+                     "Only accept AbstractSource when parse multi values, " +
+                     "but got '%s'", source.getClass().getName());
+        ListFormat listFormat = ((AbstractSource) source).listFormat();
+        E.checkArgumentNotNull(listFormat, "The list_format must be set when " +
+                                           "parse list or set values");
+
+        String startSymbol = listFormat.startSymbol();
+        String endSymbol = listFormat.endSymbol();
+        E.checkArgument(rawValue.length() >=
+                        startSymbol.length() + endSymbol.length(),
+                        "The value(key='%s') '%s' length(%s) must be >= " +
+                        "start symbol '%s' + end symbol '%s' length",
+                        key, rawValue, rawValue.length(),
+                        startSymbol, endSymbol);
+        E.checkArgument(rawValue.startsWith(startSymbol) &&
+                        rawValue.endsWith(endSymbol),
+                        "The value(key='%s') must start with '%s' and " +
+                        "end with '%s', but got '%s'",
+                        key, startSymbol, endSymbol, rawValue);
+        rawValue = rawValue.substring(startSymbol.length(),
+                                      rawValue.length() - endSymbol.length());
+        String elemDelimiter = listFormat.elemDelimiter();
+        Splitter.on(elemDelimiter).split(rawValue).forEach(value -> {
+            if (!listFormat.ignoredElems().contains(value)) {
+                valueColl.add(value);
+            }
+        });
+        return valueColl;
     }
 
     /**

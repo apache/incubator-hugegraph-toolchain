@@ -29,10 +29,18 @@ public class VertexStructV1 extends ElementStructV1 {
     // Be null when id strategy is primary key
     @JsonProperty("id")
     private final String idField;
+    @JsonProperty("unfold")
+    private final boolean unfold;
+
+    public VertexStructV1(String idField) {
+        this(idField, false);
+    }
 
     @JsonCreator
-    public VertexStructV1(@JsonProperty("id") String idField) {
+    public VertexStructV1(@JsonProperty("id") String idField,
+                          @JsonProperty("unfold") boolean unfold) {
         this.idField = idField;
+        this.unfold = unfold;
     }
 
     @Override
@@ -47,6 +55,10 @@ public class VertexStructV1 extends ElementStructV1 {
 
     public String idField() {
         return this.idField;
+    }
+
+    public boolean unfold() {
+        return this.unfold;
     }
 
     @Override

@@ -30,14 +30,22 @@ public class EdgeMapping extends ElementMapping {
 
     @JsonProperty("source")
     private final List<String> sourceFields;
+    @JsonProperty("unfold_source")
+    private final boolean unfoldSource;
     @JsonProperty("target")
     private final List<String> targetFields;
+    @JsonProperty("unfold_target")
+    private final boolean unfoldTarget;
 
     @JsonCreator
     public EdgeMapping(@JsonProperty("source") List<String> sourceFields,
-                       @JsonProperty("target") List<String> targetFields) {
+                       @JsonProperty("unfold_source") boolean unfoldSource,
+                       @JsonProperty("target") List<String> targetFields,
+                       @JsonProperty("unfold_target") boolean unfoldTarget) {
         this.sourceFields = sourceFields;
+        this.unfoldSource = unfoldSource;
         this.targetFields = targetFields;
+        this.unfoldTarget = unfoldTarget;
     }
 
     @Override
@@ -62,8 +70,16 @@ public class EdgeMapping extends ElementMapping {
         return this.sourceFields;
     }
 
+    public boolean unfoldSource() {
+        return this.unfoldSource;
+    }
+
     public List<String> targetFields() {
         return this.targetFields;
+    }
+
+    public boolean unfoldTarget() {
+        return this.unfoldTarget;
     }
 
     @Override

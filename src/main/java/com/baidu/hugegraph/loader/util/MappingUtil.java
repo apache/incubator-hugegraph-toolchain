@@ -134,11 +134,14 @@ public final class MappingUtil {
         ElementMapping target;
         if (origin.type().isVertex()) {
             VertexStructV1 originVertex = (VertexStructV1) origin;
-            target = new VertexMapping(originVertex.idField());
+            target = new VertexMapping(originVertex.idField(),
+                                       originVertex.unfold());
         } else {
             EdgeStructV1 originEdge = (EdgeStructV1) origin;
             target = new EdgeMapping(originEdge.sourceFields(),
-                                     originEdge.targetFields());
+                                     originEdge.unfoldSource(),
+                                     originEdge.targetFields(),
+                                     originEdge.unfoldTarget());
         }
         fill(origin, target);
         return target;

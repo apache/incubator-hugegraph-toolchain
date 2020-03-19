@@ -23,12 +23,16 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -39,14 +43,16 @@ import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
+import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.LongEncoding;
+import com.google.common.collect.ImmutableList;
 
-public abstract class ElementBuilder {
+public abstract class ElementBuilder<GE extends GraphElement> {
 
     private final InputStruct struct;
     private final SchemaCache schema;
@@ -64,27 +70,33 @@ public abstract class ElementBuilder {
 
     public abstract ElementMapping mapping();
 
-    public abstract GraphElement build(Map<String, Object> keyValues);
+    public abstract List<GE> build(Map<String, Object> keyValues);
 
     protected abstract SchemaLabel schemaLabel();
 
     protected abstract boolean isIdField(String fieldName);
 
+    protected VertexKVPairs newKVPairs(VertexLabel vertexLabel, boolean unfold) {
+        IdStrategy idStrategy = vertexLabel.idStrategy();
+        if (idStrategy.isCustomize()) {
+            if (unfold) {
+                return new VertexFlatIdKVPairs(vertexLabel);
+            } else {
+                return new VertexIdKVPairs(vertexLabel);
+            }
+        } else {
+            assert idStrategy.isPrimaryKey();
+            if (unfold) {
+                return new VertexFlatPkKVPairs(vertexLabel);
+            } else {
+                return new VertexPkKVPairs(vertexLabel);
+            }
+        }
+    }
+
     /**
      * Retain only the key-value pairs needed by the current vertex or edge
      */
-    protected Map<String, Object> filterFields(Map<String, Object> keyValues) {
-        Map<String, Object> filteredFields = new HashMap<>();
-        for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-            String fieldName = entry.getKey();
-            Object fieldValue = entry.getValue();
-            if (this.retainField(fieldName, fieldValue)) {
-                filteredFields.put(fieldName, fieldValue);
-            }
-        }
-        return filteredFields;
-    }
-
     protected boolean retainField(String fieldName, Object fieldValue) {
         ElementMapping mapping = this.mapping();
         Set<String> selectedFields = mapping.selectedFields();
@@ -103,13 +115,25 @@ public abstract class ElementBuilder {
                !nullValues.contains(fieldValue);
     }
 
+    protected void addProperty(GraphElement element, String key, Object value) {
+        this.addProperty(element, key, value, true);
+    }
+
+    protected void addProperty(GraphElement element, String key, Object value,
+                               boolean needConvert) {
+        if (needConvert) {
+            value = this.convertPropertyValue(key, value);
+        }
+        element.property(key, value);
+    }
+
     protected void addProperties(GraphElement element,
-                                 Map<String, Object> keyValues) {
-        for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
+                                 Map<String, Object> properties) {
+        for (Map.Entry<String, Object> entry : properties.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
             this.checkFieldValue(key, value);
-            value = this.validatePropertyValue(key, value);
+            value = this.convertPropertyValue(key, value);
 
             element.property(key, value);
         }
@@ -127,13 +151,38 @@ public abstract class ElementBuilder {
         return this.schema.getEdgeLabel(name);
     }
 
-    protected Object validatePropertyValue(String key, Object rawValue) {
+    protected Object mappingValue(String fieldName, Object fieldValue) {
+        if (this.mapping().mappingValues().isEmpty()) {
+            return fieldValue;
+        }
+        String fieldStrValue = String.valueOf(fieldValue);
+        return this.mapping().mappingValue(fieldName, fieldStrValue);
+    }
+
+    private void customizeId(VertexLabel vertexLabel, Vertex vertex,
+                             String idField, Object idValue) {
+        IdStrategy idStrategy = vertexLabel.idStrategy();
+        if (idStrategy.isCustomizeString()) {
+            String id = (String) idValue;
+            this.checkVertexIdLength(id);
+            vertex.id(id);
+        } else if (idStrategy.isCustomizeNumber()) {
+            Long id = DataTypeUtil.parseNumber(idField, idValue);
+            vertex.id(id);
+        } else {
+            assert idStrategy.isCustomizeUuid();
+            UUID id = DataTypeUtil.parseUUID(idField, idValue);
+            vertex.id(id);
+        }
+    }
+
+    private Object convertPropertyValue(String key, Object rawValue) {
         PropertyKey propertyKey = this.getPropertyKey(key);
         InputSource inputSource = this.struct.input();
         return DataTypeUtil.convert(rawValue, propertyKey, inputSource);
     }
 
-    protected void checkFieldValue(String fieldName, Object fieldValue) {
+    private void checkFieldValue(String fieldName, Object fieldValue) {
         if (this.mapping().mappingValues().isEmpty() ||
             !this.mapping().mappingValues().containsKey(fieldName)) {
             return;
@@ -145,32 +194,18 @@ public abstract class ElementBuilder {
                         fieldValue.getClass());
     }
 
-    protected Object mappingFieldValueIfNeeded(String fieldName,
-                                               Object fieldValue) {
-        if (this.mapping().mappingValues().isEmpty()) {
-            return fieldValue;
-        }
-        String fieldStrValue = String.valueOf(fieldValue);
-        return this.mapping().mappingValue(fieldName, fieldStrValue);
-    }
-
-    protected boolean vertexIdEmpty(VertexLabel vertexLabel, Object vertexId) {
+    private boolean vertexIdEmpty(VertexLabel vertexLabel, Vertex vertex) {
         IdStrategy idStrategy = vertexLabel.idStrategy();
         if (idStrategy.isCustomizeString()) {
-            assert vertexId instanceof String : vertexId;
-            return StringUtils.isEmpty((String) vertexId);
+            Object vertexId = vertex.id();
+            return vertexId == null || StringUtils.isEmpty((String) vertexId);
         }
         return false;
     }
 
-    protected String spliceVertexId(VertexLabel vertexLabel,
-                                    Object[] primaryValues) {
+    private String spliceVertexId(VertexLabel vertexLabel,
+                                  Object... primaryValues) {
         List<String> primaryKeys = vertexLabel.primaryKeys();
-        E.checkArgument(primaryKeys.size() == primaryValues.length,
-                        "Missing some primary key columns, expect %s, " +
-                        "but only got %s for vertex label '%s'",
-                        primaryKeys, primaryValues, vertexLabel);
-
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
         for (int i = 0; i < primaryValues.length; i++) {
@@ -200,13 +235,358 @@ public abstract class ElementBuilder {
         return vertexId.toString();
     }
 
-    protected void checkVertexIdLength(String id) {
+    private void checkVertexIdLength(String id) {
         this.encoder.reset();
         this.buffer.clear();
         CoderResult r = this.encoder.encode(CharBuffer.wrap(id.toCharArray()),
                                             this.buffer, true);
         E.checkArgument(r.isUnderflow(),
-                        "The vertex id length limit is '%s', '%s' exceeds it",
+                        "The vertex id length exceeds limit %s : '%s'",
                         Constants.VERTEX_ID_LIMIT, id);
+    }
+
+    public abstract class VertexKVPairs {
+
+        public final VertexLabel vertexLabel;
+        // General properties
+        public Map<String, Object> properties;
+
+        public VertexKVPairs(VertexLabel vertexLabel) {
+            this.vertexLabel = vertexLabel;
+            this.properties = null;
+        }
+
+        public abstract void extractFromVertex(Map<String, Object> keyValues);
+
+        public abstract void extractFromEdge(Map<String, Object> keyValues,
+                                             List<String> fieldNames);
+
+        public abstract List<Vertex> buildVertices(boolean withProperty);
+
+        public List<Object> splitField(String key, Object value) {
+            return DataTypeUtil.splitField(key, value, struct.input());
+        }
+    }
+
+    public class VertexIdKVPairs extends VertexKVPairs {
+
+        // The idField(raw field), like: id
+        private String idField;
+        // The single idValue(mapped), like: A -> 1
+        private Object idValue;
+
+        public VertexIdKVPairs(VertexLabel vertexLabel) {
+            super(vertexLabel);
+        }
+
+        @Override
+        public void extractFromVertex(Map<String, Object> keyValues) {
+            // General properties
+            this.properties = new HashMap<>();
+            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
+                String fieldName = entry.getKey();
+                Object fieldValue = entry.getValue();
+                if (!retainField(fieldName, fieldValue)) {
+                    continue;
+                }
+                if (isIdField(fieldName)) {
+                    this.idField = fieldName;
+                    this.idValue = mappingValue(fieldName, fieldValue);
+                } else {
+                    String key = mapping().mappingField(fieldName);
+                    Object value = mappingValue(fieldName, fieldValue);
+                    this.properties.put(key, value);
+                }
+            }
+        }
+
+        @Override
+        public void extractFromEdge(Map<String, Object> keyValues,
+                                    List<String> fieldNames) {
+            assert fieldNames.size() == 1;
+            String fieldName = fieldNames.get(0);
+            Object fieldValue = keyValues.get(fieldName);
+            this.idField = fieldName;
+            this.idValue = mappingValue(fieldName, fieldValue);
+        }
+
+        @Override
+        public List<Vertex> buildVertices(boolean withProperty) {
+            Vertex vertex = new Vertex(vertexLabel.name());
+            customizeId(vertexLabel, vertex, this.idField, this.idValue);
+            if (vertexIdEmpty(vertexLabel, vertex)) {
+                return ImmutableList.of();
+            }
+            if (withProperty) {
+                String key = mapping().mappingField(this.idField);
+                // The id field is also used as a general property
+                if (vertexLabel.properties().contains(key)) {
+                    addProperty(vertex, key, this.idValue);
+                }
+                addProperties(vertex, this.properties);
+            }
+            return ImmutableList.of(vertex);
+        }
+    }
+
+    public class VertexFlatIdKVPairs extends VertexKVPairs {
+
+        // The idField(raw field), like: id
+        private String idField;
+        /*
+         * The multiple idValues(spilted and mapped)
+         * like: A|B|C -> [1,2,3]
+         */
+        private List<Object> idValues;
+
+        public VertexFlatIdKVPairs(VertexLabel vertexLabel) {
+            super(vertexLabel);
+        }
+
+        @Override
+        public void extractFromVertex(Map<String, Object> keyValues) {
+            // General properties
+            this.properties = new HashMap<>();
+            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
+                String fieldName = entry.getKey();
+                Object fieldValue = entry.getValue();
+                if (!retainField(fieldName, fieldValue)) {
+                    continue;
+                }
+                if (isIdField(fieldName)) {
+                    this.idField = fieldName;
+                    List<Object> rawIdValues = splitField(fieldName, fieldValue);
+                    this.idValues = rawIdValues.stream().map(rawIdValue -> {
+                        return mappingValue(fieldName, rawIdValue);
+                    }).collect(Collectors.toList());
+                } else {
+                    String key = mapping().mappingField(fieldName);
+                    Object value = mappingValue(fieldName, fieldValue);
+                    this.properties.put(key, value);
+                }
+            }
+        }
+
+        @Override
+        public void extractFromEdge(Map<String, Object> keyValues,
+                                    List<String> fieldNames) {
+            assert fieldNames.size() == 1;
+            String fieldName = fieldNames.get(0);
+            Object fieldValue = keyValues.get(fieldName);
+            this.idField = fieldName;
+            List<Object> rawIdValues = splitField(fieldName, fieldValue);
+            this.idValues = rawIdValues.stream().map(rawIdValue -> {
+                return mappingValue(fieldName, rawIdValue);
+            }).collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Vertex> buildVertices(boolean withProperty) {
+            List<Vertex> vertices = new ArrayList<>(this.idValues.size());
+            for (Object idValue : this.idValues) {
+                Vertex vertex = new Vertex(vertexLabel.name());
+                customizeId(vertexLabel, vertex, this.idField, idValue);
+                if (vertexIdEmpty(vertexLabel, vertex)) {
+                    continue;
+                }
+                if (withProperty) {
+                    String key = mapping().mappingField(this.idField);
+                    // The id field is also used as a general property
+                    if (vertexLabel.properties().contains(key)) {
+                        addProperty(vertex, key, idValue);
+                    }
+                    addProperties(vertex, this.properties);
+                }
+                vertices.add(vertex);
+            }
+            return vertices;
+        }
+    }
+
+    public class VertexPkKVPairs extends VertexKVPairs {
+
+        /*
+         * The primary key names(mapped), allowed multiple
+         * like: [p_name,p_age] -> [name,age]
+         */
+        private List<String> pkNames;
+        /*
+         * The primary values(mapped), length is the same as pkNames
+         * like: [m,2] -> [marko,18]
+         */
+        private List<Object> pkValues;
+
+        public VertexPkKVPairs(VertexLabel vertexLabel) {
+            super(vertexLabel);
+        }
+
+        @Override
+        public void extractFromVertex(Map<String, Object> keyValues) {
+            List<String> primaryKeys = vertexLabel.primaryKeys();
+            this.pkNames = primaryKeys;
+            this.pkValues = new ArrayList<>(primaryKeys.size());
+            // General properties
+            this.properties = new HashMap<>();
+            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
+                String fieldName = entry.getKey();
+                Object fieldValue = entry.getValue();
+                if (!retainField(fieldName, fieldValue)) {
+                    continue;
+                }
+                String key = mapping().mappingField(fieldName);
+                if (primaryKeys.contains(key)) {
+                    // Don't put priamry key/values into general properties
+                    int index = primaryKeys.indexOf(key);
+                    Object pkValue = mappingValue(fieldName, fieldValue);
+                    this.pkValues.add(index, pkValue);
+                } else {
+                    Object value = mappingValue(fieldName, fieldValue);
+                    this.properties.put(key, value);
+                }
+            }
+            E.checkArgument(this.pkNames.size() == this.pkValues.size(),
+                            "Missing some primary key values, expect %s, " +
+                            "but only got %s for vertex label '%s'",
+                            this.pkNames, this.pkValues, vertexLabel);
+        }
+
+        @Override
+        public void extractFromEdge(Map<String, Object> keyValues,
+                                    List<String> fieldNames) {
+            this.pkNames = fieldNames.stream().map(mapping()::mappingField)
+                                     .collect(Collectors.toList());
+            List<String> primaryKeys = vertexLabel.primaryKeys();
+            E.checkArgument(ListUtils.isEqualList(this.pkNames, primaryKeys),
+                            "Make sure the the primary key fields %s are " +
+                            "not empty, or check whether the headers or " +
+                            "field_mapping are configured correctly",
+                            primaryKeys);
+            this.pkValues = new ArrayList<>(this.pkNames.size());
+            for (String fieldName : fieldNames) {
+                Object fieldValue = keyValues.get(fieldName);
+                Object pkValue = mappingValue(fieldName, fieldValue);
+                this.pkValues.add(pkValue);
+            }
+            E.checkArgument(this.pkNames.size() == this.pkValues.size(),
+                            "Missing some primary key values, expect %s, " +
+                            "but only got %s for vertex label '%s'",
+                            this.pkNames, this.pkValues, vertexLabel);
+        }
+
+        @Override
+        public List<Vertex> buildVertices(boolean withProperty) {
+            for (int i = 0; i < this.pkNames.size(); i++) {
+                Object pkValue = convertPropertyValue(this.pkNames.get(i),
+                                                      this.pkValues.get(i));
+                this.pkValues.set(i, pkValue);
+            }
+            String id = spliceVertexId(vertexLabel, this.pkValues.toArray());
+            checkVertexIdLength(id);
+
+            Vertex vertex = new Vertex(vertexLabel.name());
+            // NOTE: withProperty is true means that parsing vertex
+            if (withProperty) {
+                for (int i = 0; i < this.pkNames.size(); i++) {
+                    addProperty(vertex, this.pkNames.get(i),
+                                this.pkValues.get(i), false);
+                }
+                addProperties(vertex, this.properties);
+            } else {
+                vertex.id(id);
+            }
+            return ImmutableList.of(vertex);
+        }
+    }
+
+    public class VertexFlatPkKVPairs extends VertexKVPairs {
+
+        /*
+         * The primary key name(mapped), must be single
+         * like: p_name -> name
+         */
+        private String pkName;
+        /*
+         * The primary values(splited and mapped)
+         * like: m|v -> [marko,vadas]
+         */
+        private List<Object> pkValues;
+
+        public VertexFlatPkKVPairs(VertexLabel vertexLabel) {
+            super(vertexLabel);
+        }
+
+        @Override
+        public void extractFromVertex(Map<String, Object> keyValues) {
+            List<String> primaryKeys = vertexLabel.primaryKeys();
+            E.checkArgument(primaryKeys.size() == 1,
+                            "In case unfold is true, just supported " +
+                            "a single primary key");
+            this.pkName = primaryKeys.get(0);
+            // General properties
+            this.properties = new HashMap<>();
+            boolean handledPk = false;
+            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
+                String fieldName = entry.getKey();
+                Object fieldValue = entry.getValue();
+                if (!retainField(fieldName, fieldValue)) {
+                    continue;
+                }
+                String key = mapping().mappingField(fieldName);
+                if (!handledPk && primaryKeys.contains(key)) {
+                    // Don't put priamry key/values into general properties
+                    List<Object> rawPkValues = splitField(fieldName, fieldValue);
+                    this.pkValues = rawPkValues.stream().map(rawPkValue -> {
+                        return mappingValue(fieldName, rawPkValue);
+                    }).collect(Collectors.toList());
+                    handledPk = true;
+                } else {
+                    Object value = mappingValue(fieldName, fieldValue);
+                    this.properties.put(key, value);
+                }
+            }
+        }
+
+        @Override
+        public void extractFromEdge(Map<String, Object> keyValues,
+                                    List<String> fieldNames) {
+            List<String> primaryKeys = vertexLabel.primaryKeys();
+            E.checkArgument(fieldNames.size() == 1 && primaryKeys.size() == 1,
+                            "In case unfold is true, just supported " +
+                            "a single primary key");
+            String fieldName = fieldNames.get(0);
+            this.pkName = mapping().mappingField(fieldName);
+            String primaryKey = primaryKeys.get(0);
+            E.checkArgument(this.pkName.equals(primaryKey),
+                            "Make sure the the primary key field '%s' is " +
+                            "not empty, or check whether the headers or " +
+                            "field_mapping are configured correctly",
+                            primaryKey);
+            Object fieldValue = keyValues.get(fieldName);
+            List<Object> rawPkValues = splitField(fieldName, fieldValue);
+            this.pkValues = rawPkValues.stream().map(rawPkValue -> {
+                return mappingValue(fieldName, rawPkValue);
+            }).collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Vertex> buildVertices(boolean withProperty) {
+            List<Vertex> vertices = new ArrayList<>(this.pkValues.size());
+            for (Object pkValue : this.pkValues) {
+                pkValue = convertPropertyValue(this.pkName, pkValue);
+                String id = spliceVertexId(vertexLabel, pkValue);
+                checkVertexIdLength(id);
+
+                Vertex vertex = new Vertex(vertexLabel.name());
+                // NOTE: withProperty is true means that parsing vertex
+                if (withProperty) {
+                    addProperty(vertex, this.pkName, pkValue, false);
+                    addProperties(vertex, this.properties);
+                } else {
+                    vertex.id(id);
+                }
+                vertices.add(vertex);
+            }
+            return vertices;
+        }
     }
 }

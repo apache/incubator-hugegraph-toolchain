@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.exception.InsertException;
-import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
@@ -78,7 +77,7 @@ public class SingleInsertTask extends InsertTask {
             return;
         }
         if (!this.context.stopped()) {
-            synchronized (LoadContext.class) {
+            synchronized (this.context) {
                 if (!this.context.stopped()) {
                     Printer.printError("More than %s %s insert error, " +
                                        "stop parsing and waiting other " +

@@ -29,7 +29,6 @@ import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
-import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -42,6 +41,7 @@ import com.baidu.hugegraph.loader.metrics.LoadMetrics;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public final class ParseTaskBuilder {
@@ -74,6 +74,7 @@ public final class ParseTaskBuilder {
             if (builder.mapping().skip()) {
                 continue;
             }
+            // Iterate mappings(vertex/edge label) one by one
             tasks.add(this.buildTask(builder, lines));
         }
         return tasks;
@@ -84,32 +85,42 @@ public final class ParseTaskBuilder {
         final int batchSize = this.context.options().batchSize;
         final ElementMapping mapping = builder.mapping();
         return new ParseTask(mapping, () -> {
-            // One batch records
+            List<List<Record>> batches = new ArrayList<>();
+            // One batch record
             List<Record> records = new ArrayList<>(batchSize);
             int count = 0;
             for (Line line : lines) {
                 String rawLine = line.rawLine();
                 try {
                     // NOTE: don't remove entry in keyValues
-                    GraphElement element = builder.build(line.keyValues());
-                    if (this.isVirtual(element)) {
-                        continue;
+                    List<GraphElement> elements = builder.build(line.keyValues());
+                    E.checkState(elements.size() <= batchSize,
+                                 "The number of columns in a line cannot " +
+                                 "exceed the size of a batch, but got %s > %s",
+                                 elements.size(), batchSize);
+                    // Prevent batch size from exceeding limit
+                    if (records.size() + elements.size() > batchSize) {
+                        LOG.info("Create a new batch for {}", mapping);
+                        // Add current batch and create a new batch
+                        batches.add(records);
+                        records = new ArrayList<>(batchSize);
                     }
-                    records.add(new Record(rawLine, element));
-                    count++;
+                    for (GraphElement element : elements) {
+                        records.add(new Record(rawLine, element));
+                        count++;
+                    }
                 } catch (IllegalArgumentException e) {
                     metrics.increaseParseFailure(mapping);
                     ParseException pe = new ParseException(rawLine, e);
                     this.handleParseFailure(mapping, pe);
                 }
             }
+            if (!records.isEmpty()) {
+                batches.add(records);
+            }
             metrics.plusParseSuccess(mapping, count);
-            return records;
+            return batches;
         });
-    }
-
-    private boolean isVirtual(GraphElement element) {
-        return Constants.VIRTUAL_LABEL.equals(element.label());
     }
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {
@@ -121,10 +132,19 @@ public final class ParseTaskBuilder {
 
         long failures = this.context.summary().totalParseFailures();
         if (failures >= options.maxParseErrors) {
-            Printer.printError("More than %s %s parsing error, stop parsing " +
-                               "and waiting all insert tasks finished",
-                               options.maxParseErrors, mapping.type().string());
-            this.context.stopLoading();
+            if (this.context.stopped()) {
+                return;
+            }
+            synchronized (this.context) {
+                if (!this.context.stopped()) {
+                    Printer.printError("More than %s %s parsing error, stop " +
+                                       "parsing and waiting all insert tasks " +
+                                       "finished",
+                                       options.maxParseErrors,
+                                       mapping.type().string());
+                    this.context.stopLoading();
+                }
+            }
         } else {
             // Write to current mapping's parse failure log
             FailLogger logger = this.context.failureLogger(this.struct);
@@ -132,13 +152,13 @@ public final class ParseTaskBuilder {
         }
     }
 
-    public static class ParseTask implements Supplier<List<Record>> {
+    public static class ParseTask implements Supplier<List<List<Record>>> {
 
         private final ElementMapping mapping;
-        private final Supplier<List<Record>> supplier;
+        private final Supplier<List<List<Record>>> supplier;
 
         public ParseTask(ElementMapping mapping,
-                         Supplier<List<Record>> supplier) {
+                         Supplier<List<List<Record>>> supplier) {
             this.mapping = mapping;
             this.supplier = supplier;
         }
@@ -148,7 +168,7 @@ public final class ParseTaskBuilder {
         }
 
         @Override
-        public List<Record> get() {
+        public List<List<Record>> get() {
             return this.supplier.get();
         }
     }

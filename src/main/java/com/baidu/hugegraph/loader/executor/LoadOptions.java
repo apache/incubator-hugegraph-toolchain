@@ -80,12 +80,11 @@ public final class LoadOptions {
                description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
 
-    @Parameter(names = {"--load-failure-mode"}, arity = 1,
+    @Parameter(names = {"--failure-mode"}, arity = 1,
                description = "Load data from the failure records, in this " +
-                             "mode, only full load is supported, and " +
-                             "arbitrary read errors and parsing errors will " +
-                             "cause the load task stop")
-    public boolean loadFailureMode = false;
+                             "mode, only full load is supported, any read " +
+                             "or parsing errors will cause load task stop")
+    public boolean failureMode = false;
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -145,7 +144,7 @@ public final class LoadOptions {
     @Parameter(names = {"--retry-times"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "Setting the max retry times when loading timeout")
-    public int retryTimes = 0;
+    public int retryTimes = 3;
 
     @Parameter(names = {"--retry-interval"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -198,11 +197,11 @@ public final class LoadOptions {
         if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
             options.host = Constants.HTTP_PREFIX + options.host;
         }
-        // Check option --incremental-mode and --load-failure-mode
-        E.checkArgument(!(options.incrementalMode && options.loadFailureMode),
-                        "The option --incremental-mode and " +
-                        "--load-failure-mode can't be true at same time");
-        if (options.loadFailureMode) {
+        // Check option --incremental-mode and --failure-mode
+        E.checkArgument(!(options.incrementalMode && options.failureMode),
+                        "The option --incremental-mode and --failure-mode " +
+                        "can't be true at same time");
+        if (options.failureMode) {
             LOG.warn("The value of options: --max-read-errors, " +
                      "--max-parse-errors and --max-insert-errors will be " +
                      "setted as 1 in load-failure-mode");
