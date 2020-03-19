@@ -2,16 +2,16 @@
 
 abs_path() {
     SOURCE="${BASH_SOURCE[0]}"
-    while [ -h "$SOURCE" ]; do
+    while [[ -h "$SOURCE" ]]; do
         DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
         SOURCE="$(readlink "$SOURCE")"
-        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+        [[ ${SOURCE} != /* ]] && SOURCE="$DIR/$SOURCE"
     done
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
 BIN=`abs_path`
-TOP="$(cd $BIN/../ && pwd)"
+TOP="$(cd ${BIN}/../ && pwd)"
 CONF="$TOP/conf"
 LIB="$TOP/lib"
 LOG="$TOP/logs"
@@ -23,13 +23,13 @@ set -eo pipefail
 export VARS=${@:1}
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
-if [ -n "$JAVA_HOME" ]; then
+if [[ -n "$JAVA_HOME" ]]; then
     # Why we can't have nice things: Solaris combines x86 and x86_64
     # installations in the same tree, using an unconventional path for the
     # 64bit JVM.  Since we prefer 64bit, search the alternate path first,
     # (see https://issues.apache.org/jira/browse/CASSANDRA-4638).
     for java in "$JAVA_HOME"/bin/amd64/java "$JAVA_HOME"/bin/java; do
-        if [ -x "$java" ]; then
+        if [[ -x "$java" ]]; then
             JAVA="$java"
             break
         fi
@@ -38,17 +38,17 @@ else
     JAVA=java
 fi
 
-if [ -z $JAVA ] ; then
+if [[ -z ${JAVA} ]] ; then
     echo Unable to find java executable. Check JAVA_HOME and PATH environment variables. > /dev/stderr
     exit 1;
 fi
 
 # Add the slf4j-log4j12 binding
-CP=$(find -L $LIB -name 'log4j-slf4j-impl*.jar' | sort | tr '\n' ':')
+CP=$(find -L ${LIB} -name 'log4j-slf4j-impl*.jar' | sort | tr '\n' ':')
 # Add the jars in lib that start with "hugegraph"
-CP="$CP":$(find -L $LIB -name 'hugegraph*.jar' | sort | tr '\n' ':')
+CP="$CP":$(find -L ${LIB} -name 'hugegraph*.jar' | sort | tr '\n' ':')
 # Add the remaining jars in lib.
-CP="$CP":$(find -L $LIB -name '*.jar' \
+CP="$CP":$(find -L ${LIB} -name '*.jar' \
                 \! -name 'hugegraph*' \
                 \! -name 'log4j-slf4j-impl*.jar' | sort | tr '\n' ':')
 
@@ -61,4 +61,4 @@ export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
 #JVM_OPTS="$JVM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1414"
 
 exec "$JAVA" -Dname="HugeGraphLoader" -Dlog4j.configurationFile="$CONF/log4j2.xml" \
-$JVM_OPTS com.baidu.hugegraph.loader.HugeGraphLoader $VARS
+${JVM_OPTS} com.baidu.hugegraph.loader.HugeGraphLoader ${VARS}

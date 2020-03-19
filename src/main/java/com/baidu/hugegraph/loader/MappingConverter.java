@@ -19,17 +19,48 @@
 
 package com.baidu.hugegraph.loader;
 
-import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.executor.LoadOptions;
+import java.io.File;
+import java.nio.file.Paths;
+
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.loader.util.MappingUtil;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 
 public final class MappingConverter {
 
+    private static final Logger LOG = Log.logger(MappingConverter.class);
+
     public static void main(String[] args) {
-        LoadOptions options = LoadOptions.parseOptions(args);
-        LoadMapping mapping = LoadMapping.of(options.file);
-        MappingUtil.write(mapping, "mapping-v2.json");
-        LoadContext.destroy();
+        E.checkArgument(args.length == 1, "args: file");
+        String input = args[0];
+        LOG.info("Prepare to convert mapping file {}", input);
+
+        File file = FileUtils.getFile(input);
+        if (!file.exists() || !file.isFile()) {
+            LOG.error("The file '{}' doesn't exists or not a file", input);
+            throw new IllegalArgumentException(String.format(
+                      "The file '%s' doesn't exists or not a file", input));
+        }
+
+        LoadMapping mapping = LoadMapping.of(input);
+        String outputPath = getOutputPath(file);
+        MappingUtil.write(mapping, outputPath);
+        LOG.info("Convert mapping file successfuly, stored at {}", outputPath);
+    }
+
+    public static String getOutputPath(File file) {
+        String fileName = file.getName();
+        String prefix = fileName.substring(0, fileName.lastIndexOf("."));
+        String suffix = fileName.substring(fileName.lastIndexOf("."));
+        String newFileName = prefix + "-v2" + suffix;
+        if (file.getParent() != null) {
+            return Paths.get(file.getParent(), newFileName).toString();
+        } else {
+            return newFileName;
+        }
     }
 }
