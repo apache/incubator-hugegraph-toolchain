@@ -36,17 +36,21 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgressMap;
 import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
+import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -213,6 +217,60 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ServerException.class, () -> {
             HugeGraphLoader.main(args);
         });
+    }
+
+    @Test
+    public void testClearSchemaBeforeLoad() {
+        LoadOptions options = new LoadOptions();
+        options.host = Constants.HTTP_PREFIX + SERVER;
+        options.port = PORT;
+        options.graph = GRAPH;
+        HugeClient client = HugeClientHolder.get(options);
+        SchemaManager schema = client.schema();
+        schema.propertyKey("name").asText().ifNotExist().create();
+        schema.propertyKey("age").asInt().ifNotExist().create();
+        // The old datatype of city is int
+        schema.propertyKey("city").asInt().ifNotExist().create();
+        schema.vertexLabel("person").properties("name", "age", "city")
+              .primaryKeys("name").ifNotExist().create();
+
+        // Actual city datatype is String
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        String[] args1 = new String[]{
+                "-f", structPath("clear_schema_before_load/struct.json"),
+                "-s", configPath("clear_schema_before_load/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args1);
+        }, (e) -> {
+            String msg = e.getMessage();
+            Assert.assertTrue(msg.startsWith("Failed to convert value"));
+            Assert.assertTrue(msg.endsWith("to Number"));
+        });
+
+        String[] args2 = new String[]{
+                "-f", structPath("clear_schema_before_load/struct.json"),
+                "-s", configPath("clear_schema_before_load/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--clear-all-data", "true",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args2);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(5, vertices.size());
     }
 
     @Test

@@ -81,6 +81,8 @@ public final class HugeGraphLoader {
 
     public void load() {
         try {
+            // Clear schema if needed
+            this.clearAllDataIfNeeded();
             // Create schema
             this.createSchema();
             // Move failure files from current to history directory
@@ -97,6 +99,28 @@ public final class HugeGraphLoader {
         // Print load summary
         Printer.printSummary(this.context);
         this.stopThenShutdown();
+    }
+
+    private void clearAllDataIfNeeded() {
+        LoadOptions options = this.context.options();
+        if (!options.clearAllData) {
+            return;
+        }
+
+        int requestTimeout = options.timeout;
+        options.timeout = options.clearTimeout;
+        HugeClient client = HugeClientHolder.get(options);
+        String message = "I'm sure to delete all data";
+
+        LOG.info("Prepare to clear the data of graph {}", options.graph);
+        client.graphs().clear(options.graph, message);
+        LOG.info("The graph {} has been cleared successfully", options.graph);
+
+        // Close HugeClient and set the original timeout back if needed
+        if (requestTimeout != options.clearTimeout) {
+            HugeClientHolder.close();
+            options.timeout = requestTimeout;
+        }
     }
 
     private void createSchema() {
