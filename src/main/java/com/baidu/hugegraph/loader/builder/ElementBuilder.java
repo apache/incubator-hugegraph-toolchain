@@ -414,7 +414,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
          * The primary values(mapped), length is the same as pkNames
          * like: [m,2] -> [marko,18]
          */
-        private List<Object> pkValues;
+        private Object[] pkValues;
 
         public VertexPkKVPairs(VertexLabel vertexLabel) {
             super(vertexLabel);
@@ -424,7 +424,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         public void extractFromVertex(Map<String, Object> keyValues) {
             List<String> primaryKeys = vertexLabel.primaryKeys();
             this.pkNames = primaryKeys;
-            this.pkValues = new ArrayList<>(primaryKeys.size());
+            this.pkValues = new Object[primaryKeys.size()];
             // General properties
             this.properties = new HashMap<>();
             for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
@@ -438,16 +438,12 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                     // Don't put priamry key/values into general properties
                     int index = primaryKeys.indexOf(key);
                     Object pkValue = mappingValue(fieldName, fieldValue);
-                    this.pkValues.add(index, pkValue);
+                    this.pkValues[index] = pkValue;
                 } else {
                     Object value = mappingValue(fieldName, fieldValue);
                     this.properties.put(key, value);
                 }
             }
-            E.checkArgument(this.pkNames.size() == this.pkValues.size(),
-                            "Missing some primary key values, expect %s, " +
-                            "but only got %s for vertex label '%s'",
-                            this.pkNames, this.pkValues, vertexLabel);
         }
 
         @Override
@@ -461,26 +457,23 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                             "not empty, or check whether the headers or " +
                             "field_mapping are configured correctly",
                             primaryKeys);
-            this.pkValues = new ArrayList<>(this.pkNames.size());
-            for (String fieldName : fieldNames) {
+            this.pkValues = new Object[this.pkNames.size()];
+            for (int i = 0; i < fieldNames.size(); i++) {
+                String fieldName = fieldNames.get(i);
                 Object fieldValue = keyValues.get(fieldName);
                 Object pkValue = mappingValue(fieldName, fieldValue);
-                this.pkValues.add(pkValue);
+                this.pkValues[i] = pkValue;
             }
-            E.checkArgument(this.pkNames.size() == this.pkValues.size(),
-                            "Missing some primary key values, expect %s, " +
-                            "but only got %s for vertex label '%s'",
-                            this.pkNames, this.pkValues, vertexLabel);
         }
 
         @Override
         public List<Vertex> buildVertices(boolean withProperty) {
             for (int i = 0; i < this.pkNames.size(); i++) {
                 Object pkValue = convertPropertyValue(this.pkNames.get(i),
-                                                      this.pkValues.get(i));
-                this.pkValues.set(i, pkValue);
+                                                      this.pkValues[i]);
+                this.pkValues[i] = pkValue;
             }
-            String id = spliceVertexId(vertexLabel, this.pkValues.toArray());
+            String id = spliceVertexId(vertexLabel, this.pkValues);
             checkVertexIdLength(id);
 
             Vertex vertex = new Vertex(vertexLabel.name());
@@ -488,7 +481,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             if (withProperty) {
                 for (int i = 0; i < this.pkNames.size(); i++) {
                     addProperty(vertex, this.pkNames.get(i),
-                                this.pkValues.get(i), false);
+                                this.pkValues[i], false);
                 }
                 addProperties(vertex, this.properties);
             } else {

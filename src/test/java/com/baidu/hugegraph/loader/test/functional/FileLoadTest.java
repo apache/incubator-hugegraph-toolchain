@@ -1988,7 +1988,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
-                "--max-parse-errors", "2",
+                "--max-parse-errors", "1",
                 "--test-mode", "false"
         };
         HugeGraphLoader loader = new HugeGraphLoader(args);
@@ -1999,7 +1999,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(4, vertices.size());
 
         LoadProgress loadProgress = context.newProgress();
-        Assert.assertEquals(2, loadProgress.size());
+        Assert.assertEquals(1, loadProgress.size());
         loadProgress.forEach((id, inputProgress) -> {
             if (id.equals("1")) {
                 Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
@@ -2011,15 +2011,6 @@ public class FileLoadTest extends LoadTest {
                 Assert.assertEquals("vertex_person.csv", fileItem.name());
                 // Reached last line: "li,nary",26,"Wu,han"
                 Assert.assertEquals(6, fileItem.offset());
-            } else if (id.equals("2")) {
-                InputItemProgress loadingItem = inputProgress.loadingItem();
-                Assert.assertNotNull(loadingItem);
-
-                Assert.assertTrue(loadingItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadingItem;
-                Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // NOTE: Offset doesn't confirm yet
-                Assert.assertEquals(0, fileItem.offset());
             }
         });
 

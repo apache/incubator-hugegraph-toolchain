@@ -202,12 +202,10 @@ public final class LoadOptions {
                         "The option --incremental-mode and --failure-mode " +
                         "can't be true at same time");
         if (options.failureMode) {
-            LOG.warn("The value of options: --max-read-errors, " +
-                     "--max-parse-errors and --max-insert-errors will be " +
-                     "setted as 1 in load-failure-mode");
-            options.maxReadErrors = 1;
-            options.maxParseErrors = 1;
-            options.maxInsertErrors = 1;
+            // NOTE: scan the entire error file in failure mode
+            options.maxReadErrors = Constants.NO_LIMIT;
+            options.maxParseErrors = Constants.NO_LIMIT;
+            options.maxInsertErrors = Constants.NO_LIMIT;
         }
         return options;
     }

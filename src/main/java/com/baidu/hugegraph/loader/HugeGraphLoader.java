@@ -232,16 +232,18 @@ public final class HugeGraphLoader {
                 List<ParseTask> tasks = taskBuilder.build(lines);
                 for (ParseTask task : tasks) {
                     this.executeParseTask(struct, task.mapping(), task);
-                    if (this.context.stopped()) {
-                        LOG.warn("Parse errors exceed limit, load task stopped");
-                        return;
-                    }
                 }
-                lines = new ArrayList<>(batchSize);
-
                 // Confirm offset to avoid lost records
                 reader.confirmOffset();
                 this.context.newProgress().markLoaded(struct, finished);
+
+                this.markStopIfNeeded();
+                if (this.context.stopped()) {
+                    LOG.warn("Parse errors exceed limit, load task stopped");
+                    return;
+                }
+
+                lines = new ArrayList<>(batchSize);
             }
         }
     }
@@ -269,7 +271,8 @@ public final class HugeGraphLoader {
         }
 
         long failures = this.context.summary().totalReadFailures();
-        if (failures >= options.maxReadErrors) {
+        if (options.maxReadErrors != Constants.NO_LIMIT &&
+            failures >= options.maxReadErrors) {
             Printer.printError("More than %s reading error, stop loading " +
                                "and waiting all load tasks finished",
                                options.maxReadErrors);
@@ -277,6 +280,25 @@ public final class HugeGraphLoader {
         } else {
             // Write to current mapping's parse failure log
             this.context.failureLogger(struct).write(e);
+        }
+    }
+
+    private void markStopIfNeeded() {
+        LoadOptions options = this.context.options();
+        long failures = this.context.summary().totalParseFailures();
+        if (options.maxParseErrors != Constants.NO_LIMIT &&
+            failures >= options.maxParseErrors) {
+            if (this.context.stopped()) {
+                return;
+            }
+            synchronized (this.context) {
+                if (!this.context.stopped()) {
+                    Printer.printError("More than %s parsing error, stop " +
+                                       "parsing and waiting all insert tasks " +
+                                       "finished", options.maxParseErrors);
+                    this.context.stopLoading();
+                }
+            }
         }
     }
 

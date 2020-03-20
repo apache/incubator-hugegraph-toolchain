@@ -6,7 +6,7 @@
 
     <groupId>com.baidu.hugegraph</groupId>
     <artifactId>hugegraph-loader</artifactId>
-    <version>0.10.0</version>
+    <version>0.10.2</version>
 
     <properties>
         <release.name>hugegraph-loader</release.name>

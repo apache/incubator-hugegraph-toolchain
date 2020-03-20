@@ -28,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -36,6 +37,8 @@ import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.exception.ReadException;
+import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.util.Log;
 
@@ -43,6 +46,7 @@ public final class FailWriter {
 
     private static final Logger LOG = Log.logger(FailWriter.class);
 
+    private final LoadOptions options;
     private final InputStruct struct;
     private volatile boolean writedHeader;
 
@@ -52,15 +56,24 @@ public final class FailWriter {
 
     public FailWriter(InputStruct struct, String name,
                       String charset, boolean append) {
+        this.options = LoadContext.get().options();
         this.struct = struct;
-        this.writedHeader = false;
-        this.file = FileUtils.getFile(name);
+        if (append) {
+            this.file = FileUtils.getFile(name);
+        } else {
+            this.file = FileUtils.getFile(name + Constants.TEMP_FAILURE_SUFFIX);
+        }
+        this.writedHeader = this.file.exists();
         checkFileAvailable(this.file);
+        OutputStream stream = null;
         try {
-            OutputStream stream = new FileOutputStream(this.file, append);
+            stream = new FileOutputStream(this.file, append);
             Writer streamWriter = new OutputStreamWriter(stream, charset);
             this.writer = new BufferedWriter(streamWriter);
         } catch (IOException e) {
+            if (stream != null) {
+                IOUtils.closeQuietly(stream);
+            }
             throw new LoadException("Failed to create writer for file '%s'",
                                     e, this.file);
         }
@@ -105,18 +118,17 @@ public final class FailWriter {
     }
 
     private void writeHeaderIfNeeded() {
-        if (this.struct.input().header() == null || this.writedHeader) {
+        if (this.writedHeader || this.struct.input().header() == null) {
             return;
         }
         synchronized (this.file) {
             if (!this.writedHeader) {
-                String headerLine = StringUtils.join(this.struct.input().header(),
-                                                     Constants.COMMA_STR);
+                String header = StringUtils.join(this.struct.input().header(),
+                                                 Constants.COMMA_STR);
                 try {
-                    this.writeLine(headerLine);
+                    this.writeLine(header);
                 } catch (IOException e) {
-                    throw new LoadException("Failed to write header '%s'",
-                                            e);
+                    throw new LoadException("Failed to write header '%s'", e);
                 }
                 this.writedHeader = true;
             }
@@ -128,11 +140,28 @@ public final class FailWriter {
             // No need to flush() manually, close() will do it automatically
             this.writer.close();
         } catch (IOException e) {
-            LOG.error("Failed to close writer for file '{}'", file);
+            LOG.error("Failed to close writer for file '{}'", this.file);
         }
+
         if (this.file.length() == 0) {
             LOG.debug("The file {} is empty, delete it", this.file);
             this.file.delete();
+        } else {
+            this.renameTempFile();
+        }
+    }
+
+    private void renameTempFile() {
+        // Renamed file if needed
+        boolean needRename = !this.options.incrementalMode;
+        if (needRename) {
+            String fileName = this.file.getAbsolutePath();
+            int idx = fileName.lastIndexOf(Constants.TEMP_FAILURE_SUFFIX);
+            String destName = fileName.substring(0, idx);
+            if (!this.file.renameTo(new File(destName))) {
+                LOG.warn("The failure file {} rename to {} failed",
+                         fileName, destName);
+            }
         }
     }
 

@@ -45,9 +45,9 @@ public final class FailLogger {
         String prefix = struct.id();
         String charset = struct.input().charset();
         /*
-         * If user use incremental mode, the failure record will append
-         * to the failure file, otherwise write to a new file
-         * TODO: Need to split when the file is too large
+         * If worked in incremental mode, the failure record will append
+         * to the failure file, otherwise(failure mode) write to a new file,
+         * the writing file is a temp file, it will be renamed to formal
          */
         boolean append = context.options().incrementalMode;
 

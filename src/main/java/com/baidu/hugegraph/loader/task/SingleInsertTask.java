@@ -26,6 +26,7 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.Record;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.failure.FailLogger;
@@ -73,10 +74,11 @@ public class SingleInsertTask extends InsertTask {
         logger.write(e);
 
         long failures = this.context.summary().totalInsertFailures();
-        if (failures < this.options().maxInsertErrors) {
-            return;
-        }
-        if (!this.context.stopped()) {
+        if (this.options().maxInsertErrors != Constants.NO_LIMIT &&
+            failures >= this.options().maxInsertErrors) {
+            if (this.context.stopped()) {
+                return;
+            }
             synchronized (this.context) {
                 if (!this.context.stopped()) {
                     Printer.printError("More than %s %s insert error, " +

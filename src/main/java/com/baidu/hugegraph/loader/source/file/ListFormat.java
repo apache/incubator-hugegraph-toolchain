@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public final class ListFormat {
@@ -45,6 +46,7 @@ public final class ListFormat {
         this.endSymbol = DEFAULT_END_SYMBOL;
         this.elemDelimiter = DEFAULT_ELEM_DELIMITER;
         this.ignoredElems = new HashSet<>();
+        this.ignoredElems.add(Constants.EMPTY_STR);
     }
 
     public String startSymbol() {
