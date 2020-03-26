@@ -24,6 +24,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -203,18 +204,29 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         return false;
     }
 
-    private String spliceVertexId(VertexLabel vertexLabel,
-                                  Object... primaryValues) {
+    private void checkPrimaryValuesValid(VertexLabel vertexLabel,
+                                         Object[] primaryValues) {
         List<String> primaryKeys = vertexLabel.primaryKeys();
-        StringBuilder vertexId = new StringBuilder();
-        StringBuilder vertexKeysId = new StringBuilder();
-        for (int i = 0; i < primaryValues.length; i++) {
-            Object value = primaryValues[i];
-            E.checkArgument(value != null,
+        E.checkArgument(primaryKeys.size() == primaryValues.length,
+                        "Missing some primary key values, expect %s, " +
+                        "but only got %s for vertex label '%s'",
+                        primaryKeys, Arrays.toString(primaryValues),
+                        vertexLabel);
+        for (int i = 0; i < primaryKeys.size(); i++) {
+            E.checkArgument(primaryValues[i] != null,
                             "Make sure the value of the primary key '%s' is " +
                             "not empty, or check whether the headers or " +
                             "field_mapping are configured correctly",
                             primaryKeys.get(i));
+        }
+    }
+
+    private String spliceVertexId(VertexLabel vertexLabel,
+                                  Object... primaryValues) {
+        StringBuilder vertexId = new StringBuilder();
+        StringBuilder vertexKeysId = new StringBuilder();
+        for (int i = 0; i < primaryValues.length; i++) {
+            Object value = primaryValues[i];
             String pkValue;
             if (value instanceof Number || value instanceof Date) {
                 pkValue = LongEncoding.encodeNumber(value);
@@ -422,7 +434,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
         @Override
         public void extractFromVertex(Map<String, Object> keyValues) {
-            List<String> primaryKeys = vertexLabel.primaryKeys();
+            List<String> primaryKeys = this.vertexLabel.primaryKeys();
             this.pkNames = primaryKeys;
             this.pkValues = new Object[primaryKeys.size()];
             // General properties
@@ -451,7 +463,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                                     List<String> fieldNames) {
             this.pkNames = fieldNames.stream().map(mapping()::mappingField)
                                      .collect(Collectors.toList());
-            List<String> primaryKeys = vertexLabel.primaryKeys();
+            List<String> primaryKeys = this.vertexLabel.primaryKeys();
             E.checkArgument(ListUtils.isEqualList(this.pkNames, primaryKeys),
                             "Make sure the the primary key fields %s are " +
                             "not empty, or check whether the headers or " +
@@ -468,6 +480,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
         @Override
         public List<Vertex> buildVertices(boolean withProperty) {
+            checkPrimaryValuesValid(vertexLabel, this.pkValues);
             for (int i = 0; i < this.pkNames.size(); i++) {
                 Object pkValue = convertPropertyValue(this.pkNames.get(i),
                                                       this.pkValues[i]);

@@ -2423,8 +2423,9 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
-            String msgSuffix = "Missing some primary key values";
-            Assert.assertTrue(e.getMessage().startsWith(msgSuffix));
+            String msgSuffix = "check whether the headers or field_mapping " +
+                               "are configured correctly";
+            Assert.assertTrue(e.getMessage().endsWith(msgSuffix));
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();

@@ -159,7 +159,7 @@ public final class FailWriter {
             int idx = fileName.lastIndexOf(Constants.TEMP_FAILURE_SUFFIX);
             String destName = fileName.substring(0, idx);
             if (!this.file.renameTo(new File(destName))) {
-                LOG.warn("The failure file {} rename to {} failed",
+                LOG.warn("Failed to rename failure file {} to {}",
                          fileName, destName);
             }
         }

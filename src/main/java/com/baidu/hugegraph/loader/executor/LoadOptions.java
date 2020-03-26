@@ -202,7 +202,7 @@ public final class LoadOptions {
                         "The option --incremental-mode and --failure-mode " +
                         "can't be true at same time");
         if (options.failureMode) {
-            // NOTE: scan the entire error file in failure mode
+            LOG.info("The failure-mode will scan the entire error file");
             options.maxReadErrors = Constants.NO_LIMIT;
             options.maxParseErrors = Constants.NO_LIMIT;
             options.maxInsertErrors = Constants.NO_LIMIT;

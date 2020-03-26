@@ -239,7 +239,7 @@ public final class HugeGraphLoader {
 
                 this.markStopIfNeeded();
                 if (this.context.stopped()) {
-                    LOG.warn("Parse errors exceed limit, load task stopped");
+                    LOG.warn("Parse errors exceed limit, stopped loading tasks");
                     return;
                 }
 
@@ -293,7 +293,7 @@ public final class HugeGraphLoader {
             }
             synchronized (this.context) {
                 if (!this.context.stopped()) {
-                    Printer.printError("More than %s parsing error, stop " +
+                    Printer.printError("More than %s parse errors, stop " +
                                        "parsing and waiting all insert tasks " +
                                        "finished", options.maxParseErrors);
                     this.context.stopLoading();
