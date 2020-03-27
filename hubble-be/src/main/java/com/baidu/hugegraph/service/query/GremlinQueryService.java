@@ -62,6 +62,7 @@ import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
+import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.GremlinUtil;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -340,6 +341,11 @@ public class GremlinQueryService {
             if (!vertices.isEmpty()) {
                 edges = this.edgesOfVertex(vertices, client);
             }
+        }
+
+        if (!edges.isEmpty()) {
+            Ex.check(!vertices.isEmpty(),
+                     "gremlin.edges.linked-vertex.not-exist");
         }
         return new GraphView(vertices.values(), edges.values());
     }

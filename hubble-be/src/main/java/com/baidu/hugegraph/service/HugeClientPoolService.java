@@ -26,9 +26,11 @@ import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.baidu.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.exception.ExternalException;
+import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.util.HugeClientUtil;
 
 import lombok.extern.log4j.Log4j2;
@@ -38,6 +40,8 @@ import lombok.extern.log4j.Log4j2;
 public final class HugeClientPoolService
              extends ConcurrentHashMap<Integer, HugeClient> {
 
+    @Autowired
+    private HugeConfig config;
     @Autowired
     private GraphConnectionService connService;
 
@@ -62,12 +66,20 @@ public final class HugeClientPoolService
         if (connection == null) {
             throw new ExternalException("graph-connection.get.failed", id);
         }
+        if (connection.getTimeout() == null) {
+            int timeout = this.config.get(HubbleOptions.CLIENT_REQUEST_TIMEOUT);
+            connection.setTimeout(timeout);
+        }
         client = HugeClientUtil.tryConnect(connection);
         this.put(id, client);
         return client;
     }
 
     public void remove(GraphConnection connection) {
-        super.remove(connection.getId());
+        HugeClient client = super.remove(connection.getId());
+        if (client == null) {
+            return;
+        }
+        client.close();
     }
 }

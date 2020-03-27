@@ -40,8 +40,8 @@ import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.schema.ConflictCheckEntity;
 import com.baidu.hugegraph.entity.schema.ConflictDetail;
 import com.baidu.hugegraph.entity.schema.EdgeLabelEntity;
-import com.baidu.hugegraph.entity.schema.LabelUpdateEntity;
-import com.baidu.hugegraph.entity.schema.SchemaType;
+import com.baidu.hugegraph.entity.schema.EdgeLabelStyle;
+import com.baidu.hugegraph.entity.schema.EdgeLabelUpdateEntity;
 import com.baidu.hugegraph.entity.schema.VertexLabelEntity;
 import com.baidu.hugegraph.service.schema.EdgeLabelService;
 import com.baidu.hugegraph.service.schema.PropertyIndexService;
@@ -169,11 +169,10 @@ public class EdgeLabelController extends SchemaController {
     @PutMapping("{name}")
     public void update(@PathVariable("connId") int connId,
                        @PathVariable("name") String name,
-                       @RequestBody LabelUpdateEntity entity) {
+                       @RequestBody EdgeLabelUpdateEntity entity) {
         Ex.check(!StringUtils.isEmpty(name),
                  "common.param.cannot-be-null-or-empty", name);
         entity.setName(name);
-        entity.setType(SchemaType.EDGE_LABEL);
 
         this.elService.checkExist(name, connId);
         checkParamsValid(this.pkService, entity, connId);
@@ -208,6 +207,8 @@ public class EdgeLabelController extends SchemaController {
         checkSortKeys(entity);
         // Check property index
         checkPropertyIndexes(entity, connId);
+        // Check display fields and join symbols
+        checkDisplayFields(entity);
     }
 
     private void checkRelation(EdgeLabelEntity entity, int connId) {
@@ -247,6 +248,20 @@ public class EdgeLabelController extends SchemaController {
             Ex.check(CollectionUtils.isEmpty(sortKeys),
                      "schema.edgelabel.sortkey.should-be-null-or-empty",
                      entity.getName());
+        }
+    }
+
+    /**
+     * TODO：merge with VertexLabelController.checkDisplayFields
+     */
+    private static void checkDisplayFields(EdgeLabelEntity entity) {
+        EdgeLabelStyle style = entity.getStyle();
+        List<String> displayFields = style.getDisplayFields();
+        if (!CollectionUtils.isEmpty(displayFields)) {
+            Set<String> nullableProps = entity.getNullableProps();
+            Ex.check(!CollectionUtil.hasIntersection(displayFields,
+                                                     nullableProps),
+                     "schema.display-fields.cannot-be-nullable");
         }
     }
 

@@ -132,6 +132,7 @@ public class GraphConnectionController extends BaseController {
         // Make sure the new entity doesn't conflict with exists
         this.checkEntityUnique(newEntity, true);
 
+        newEntity.setTimeout(config.get(HubbleOptions.CLIENT_REQUEST_TIMEOUT));
         // Do connect test, failure will throw an exception
         HugeClient client = HugeClientUtil.tryConnect(newEntity);
         newEntity.setCreateTime(HubbleUtil.nowDate());

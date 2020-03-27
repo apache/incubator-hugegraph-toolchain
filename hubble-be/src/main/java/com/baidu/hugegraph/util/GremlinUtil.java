@@ -92,14 +92,19 @@ public final class GremlinUtil {
                 newLines.add(rawLine);
                 continue;
             }
+            boolean matched = false;
             for (Pattern pattern : LIMIT_PATTERNS) {
                 Matcher matcher = pattern.matcher(rawLine);
                 if (matcher.find()) {
-                    newLines.add(rawLine + ".limit(" + limit + ")");
+                    matched = true;
                     break;
                 }
             }
-            newLines.add(rawLine);
+            if (matched) {
+                newLines.add(rawLine + ".limit(" + limit + ")");
+            } else {
+                newLines.add(rawLine);
+            }
         }
         return StringUtils.join(newLines, "\n");
     }

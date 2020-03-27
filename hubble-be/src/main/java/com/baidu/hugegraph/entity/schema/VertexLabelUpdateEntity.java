@@ -19,7 +19,26 @@
 
 package com.baidu.hugegraph.entity.schema;
 
-public interface Stylefiable {
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    SchemaStyle getStyle();
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class VertexLabelUpdateEntity extends LabelUpdateEntity {
+
+    @JsonProperty("style")
+    private VertexLabelStyle style;
+
+    @Override
+    public SchemaType getSchemaType() {
+        return SchemaType.VERTEX_LABEL;
+    }
 }

@@ -32,10 +32,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class LabelUpdateEntity implements Typifiable, Stylefiable {
+public abstract class LabelUpdateEntity implements Typifiable {
 
     @JsonProperty("append_properties")
     private Set<Property> appendProperties;
@@ -46,16 +43,7 @@ public class LabelUpdateEntity implements Typifiable, Stylefiable {
     @JsonProperty("remove_property_indexes")
     private List<String> removePropertyIndexes;
 
-    @JsonProperty("style")
-    private SchemaStyle style;
-
     private transient String name;
-    private transient SchemaType type;
-
-    @Override
-    public SchemaType getSchemaType() {
-        return this.type;
-    }
 
     public List<String> getAppendPropertyIndexNames() {
         if (this.appendPropertyIndexes == null) {

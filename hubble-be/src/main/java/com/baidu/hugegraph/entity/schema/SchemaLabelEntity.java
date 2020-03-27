@@ -34,6 +34,8 @@ public interface SchemaLabelEntity extends SchemaEntity {
 
     boolean isOpenLabelIndex();
 
+    SchemaStyle getStyle();
+
     @JsonIgnore
     default Set<String> getPropNames() {
         if (this.getProperties() == null) {

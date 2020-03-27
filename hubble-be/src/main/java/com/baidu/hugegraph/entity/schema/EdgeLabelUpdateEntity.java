@@ -19,5 +19,26 @@
 
 package com.baidu.hugegraph.entity.schema;
 
-public class SchemaStyle {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class EdgeLabelUpdateEntity extends LabelUpdateEntity {
+
+    @JsonProperty("style")
+    private EdgeLabelStyle style;
+
+    @Override
+    public SchemaType getSchemaType() {
+        return SchemaType.EDGE_LABEL;
+    }
 }

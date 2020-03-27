@@ -34,10 +34,10 @@ public class EntityUtilTest {
         GraphConnection oldEntity;
         GraphConnection newEntity;
         oldEntity = new GraphConnection(1, "conn1", "graph1", "host1", 8001,
-                                        "", "", true, "", new Date());
+                                        30, "", "", true, "", new Date());
         Thread.sleep(10);
         newEntity = new GraphConnection(2, "conn2", "graph2", "host2", 8002,
-                                        "u", "p", false, "xxx",
+                                        40, "u", "p", false, "xxx",
                                         new Date());
 
         GraphConnection entity = EntityUtil.merge(oldEntity, newEntity);
@@ -46,6 +46,7 @@ public class EntityUtilTest {
         Assert.assertEquals(newEntity.getGraph(), entity.getGraph());
         Assert.assertEquals(newEntity.getHost(), entity.getHost());
         Assert.assertEquals(newEntity.getPort(), entity.getPort());
+        Assert.assertEquals(oldEntity.getTimeout(), entity.getTimeout());
         Assert.assertEquals(newEntity.getUsername(), entity.getUsername());
         Assert.assertEquals(newEntity.getPassword(), entity.getPassword());
         Assert.assertEquals(newEntity.getEnabled(), entity.getEnabled());

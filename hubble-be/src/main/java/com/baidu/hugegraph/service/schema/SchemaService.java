@@ -44,9 +44,7 @@ import com.baidu.hugegraph.entity.schema.PropertyIndex;
 import com.baidu.hugegraph.entity.schema.SchemaConflict;
 import com.baidu.hugegraph.entity.schema.SchemaEntity;
 import com.baidu.hugegraph.entity.schema.SchemaLabelEntity;
-import com.baidu.hugegraph.entity.schema.SchemaStyle;
 import com.baidu.hugegraph.entity.schema.SchemaType;
-import com.baidu.hugegraph.entity.schema.Stylefiable;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
@@ -59,9 +57,8 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class SchemaService {
 
-    public static final String USER_KEY_CREATE_TIME = "create_time";
-    public static final String USER_KEY_ICON = "~icon";
-    public static final String USER_KEY_COLOR = "~color";
+    public static final String USER_KEY_CREATE_TIME = "~create_time";
+    public static final String USER_KEY_STYLE = "~style";
 
     @Autowired
     private HugeConfig config;
@@ -264,31 +261,6 @@ public class SchemaService {
         for (String name : names) {
             func.accept(client, name);
         }
-    }
-
-    public static SchemaStyle getSchemaStyle(Stylefiable stylefiable) {
-        SchemaStyle style = stylefiable.getStyle();
-        if (style == null) {
-            return SchemaStyle.DEFAULT_STYLE;
-        } else {
-            String icon = style.getIcon() != null ? style.getIcon() :
-                          SchemaStyle.DEFAULT_STYLE.getIcon();
-            String color = style.getColor() != null ? style.getColor() :
-                           SchemaStyle.DEFAULT_STYLE.getColor();
-            return new SchemaStyle(icon, color);
-        }
-    }
-
-    public static SchemaStyle getSchemaStyle(SchemaElement element) {
-        String icon = (String) element.userdata().get(USER_KEY_ICON);
-        if (icon == null) {
-            icon = SchemaStyle.DEFAULT_STYLE.getIcon();
-        }
-        String color = (String) element.userdata().get(USER_KEY_COLOR);
-        if (color == null) {
-            color = SchemaStyle.DEFAULT_STYLE.getColor();
-        }
-        return new SchemaStyle(icon, color);
     }
 
     public static Date getCreateTime(SchemaElement element) {

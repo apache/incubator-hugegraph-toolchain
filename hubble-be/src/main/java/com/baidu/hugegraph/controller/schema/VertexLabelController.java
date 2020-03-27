@@ -41,17 +41,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.schema.ConflictCheckEntity;
 import com.baidu.hugegraph.entity.schema.ConflictDetail;
-import com.baidu.hugegraph.entity.schema.LabelUpdateEntity;
 import com.baidu.hugegraph.entity.schema.SchemaType;
 import com.baidu.hugegraph.entity.schema.UsingCheckEntity;
 import com.baidu.hugegraph.entity.schema.VertexLabelEntity;
+import com.baidu.hugegraph.entity.schema.VertexLabelStyle;
+import com.baidu.hugegraph.entity.schema.VertexLabelUpdateEntity;
 import com.baidu.hugegraph.service.schema.PropertyIndexService;
 import com.baidu.hugegraph.service.schema.PropertyKeyService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.util.CollectionUtil;
-import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableList;
 
@@ -169,11 +170,10 @@ public class VertexLabelController extends SchemaController {
     @PutMapping("{name}")
     public void update(@PathVariable("connId") int connId,
                        @PathVariable("name") String name,
-                       @RequestBody LabelUpdateEntity entity) {
+                       @RequestBody VertexLabelUpdateEntity entity) {
         Ex.check(!StringUtils.isEmpty(name),
                  "common.param.cannot-be-null-or-empty", name);
         entity.setName(name);
-        entity.setType(SchemaType.VERTEX_LABEL);
 
         this.vlService.checkExist(name, connId);
         checkParamsValid(this.pkService, entity, connId);
@@ -219,6 +219,19 @@ public class VertexLabelController extends SchemaController {
         checkPrimaryKeys(entity);
         // Check property index
         checkPropertyIndexes(entity, connId);
+        // Check display fields and join symbols
+        checkDisplayFields(entity);
+    }
+
+    private static void checkDisplayFields(VertexLabelEntity entity) {
+        VertexLabelStyle style = entity.getStyle();
+        List<String> displayFields = style.getDisplayFields();
+        if (!CollectionUtils.isEmpty(displayFields)) {
+            Set<String> nullableProps = entity.getNullableProps();
+            Ex.check(!CollectionUtil.hasIntersection(displayFields,
+                                                     nullableProps),
+                     "schema.display-fields.cannot-be-nullable");
+        }
     }
 
     private void checkPrimaryKeys(VertexLabelEntity entity) {

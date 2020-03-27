@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.options;
 
 import static com.baidu.hugegraph.config.OptionChecker.disallowEmpty;
+import static com.baidu.hugegraph.config.OptionChecker.positiveInt;
 import static com.baidu.hugegraph.config.OptionChecker.rangeInt;
 
 import org.springframework.util.CollectionUtils;
@@ -107,6 +108,14 @@ public class HubbleOptions extends OptionHolder {
                         return true;
                     },
                     -1
+            );
+
+    public static final ConfigOption<Integer> CLIENT_REQUEST_TIMEOUT =
+            new ConfigOption<>(
+                    "client.request_timeout",
+                    "The request timeout in seconds for HugeClient.",
+                    positiveInt(),
+                    60
             );
 
     public static final ConfigOption<Integer> GREMLIN_SUFFIX_LIMIT =

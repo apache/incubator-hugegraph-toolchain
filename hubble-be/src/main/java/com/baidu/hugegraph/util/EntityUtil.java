@@ -43,8 +43,11 @@ public final class EntityUtil {
             if (field.getName().startsWith("$")) {
                 continue;
             }
-            field.setAccessible(true);
             MergeProperty property = field.getAnnotation(MergeProperty.class);
+            if (property == null) {
+                continue;
+            }
+            field.setAccessible(true);
             try {
                 Object oldFieldValue = field.get(oldEntity);
                 Object newFieldValue = field.get(newEntity);

@@ -38,6 +38,7 @@ public final class HugeClientUtil {
         Integer port = connection.getPort();
         String username = connection.getUsername();
         String password = connection.getPassword();
+        int timeout = connection.getTimeout();
 
         String url = UriComponentsBuilder.newInstance()
                                          .scheme("http")
@@ -46,9 +47,9 @@ public final class HugeClientUtil {
         HugeClient client;
         try {
             if (username != null) {
-                client = new HugeClient(url, graph, username, password);
+                client = new HugeClient(url, graph, username, password, timeout);
             } else {
-                client = new HugeClient(url, graph);
+                client = new HugeClient(url, graph, timeout);
             }
         } catch (IllegalStateException e) {
             String message = e.getMessage();
