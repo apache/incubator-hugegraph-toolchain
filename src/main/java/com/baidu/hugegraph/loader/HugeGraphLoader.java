@@ -23,34 +23,33 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.Record;
+import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.exception.ParseException;
+import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.failure.FailureLogger;
-import com.baidu.hugegraph.loader.progress.InputProgressMap;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.struct.GraphStruct;
-import com.baidu.hugegraph.loader.summary.LoadMetrics;
-import com.baidu.hugegraph.loader.summary.LoadSummary;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.mapping.LoadMapping;
+import com.baidu.hugegraph.loader.metrics.LoadMetrics;
+import com.baidu.hugegraph.loader.reader.InputReader;
+import com.baidu.hugegraph.loader.reader.line.Line;
+import com.baidu.hugegraph.loader.task.ParseTaskBuilder;
+import com.baidu.hugegraph.loader.task.ParseTaskBuilder.ParseTask;
 import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.Log;
 
 public final class HugeGraphLoader {
@@ -58,8 +57,8 @@ public final class HugeGraphLoader {
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
     private final LoadContext context;
-    private final GraphStruct graphStruct;
-    private final TaskManager taskManager;
+    private final LoadMapping mapping;
+    private final TaskManager manager;
 
     public static void main(String[] args) {
         HugeGraphLoader loader = new HugeGraphLoader(args);
@@ -67,9 +66,15 @@ public final class HugeGraphLoader {
     }
 
     public HugeGraphLoader(String[] args) {
-        this.context = new LoadContext(args);
-        this.graphStruct = GraphStruct.of(this.context);
-        this.taskManager = new TaskManager(this.context);
+        LoadOptions options = LoadOptions.parseOptions(args);
+        try {
+            this.context = LoadContext.init(options);
+            this.mapping = LoadMapping.of(options.file);
+            this.manager = new TaskManager();
+        } catch (Throwable e) {
+            LoadContext.destroy();
+            throw e;
+        }
         this.addShutdownHook();
     }
 
@@ -85,20 +90,21 @@ public final class HugeGraphLoader {
             this.clearAllDataIfNeeded();
             // Create schema
             this.createSchema();
-            // Move failure files from current to history directory
-            LoadUtil.moveFailureFiles(this.context);
-            // Load vertices
-            this.load(ElemType.VERTEX);
-            // Load edges
-            this.load(ElemType.EDGE);
-        } catch (Exception e) {
+            // Init schema cache
+            this.initSchemaCache();
+            this.loadInputs();
+            // Print load summary
+            Printer.printSummary();
+        } catch (Throwable e) {
             Printer.printError("Failed to load", e);
+            if (this.context.options().testMode) {
+                throw e;
+            } else {
+                System.exit(-1);
+            }
+        } finally {
             this.stopThenShutdown();
-            throw e;
         }
-        // Print load summary
-        Printer.printSummary(this.context);
-        this.stopThenShutdown();
     }
 
     private void clearAllDataIfNeeded() {
@@ -142,143 +148,169 @@ public final class HugeGraphLoader {
         groovyExecutor.execute(script, client);
     }
 
-    private void load(ElemType type) {
-        LOG.info("Start loading {}", type.string());
-        this.context.loadingType(type);
-
-        Printer.printRealTimeProgress(type, LoadUtil.lastLoaded(this.context,
-                                                                type));
-        LoadOptions options = this.context.options();
-        LoadSummary summary = this.context.summary();
-        StopWatch totalTimer = StopWatch.createStarted();
-
-        // Load normal data
-        this.load(type, this.graphStruct.structs(type));
-        // Load failure data
-        if (options.incrementalMode && options.reloadFailure) {
-            this.load(type, this.graphStruct.structsForFailure(type, options));
+    private void initSchemaCache() {
+        HugeClient client = HugeClientHolder.get(this.context.options());
+        SchemaCache cache = new SchemaCache(client);
+        if (cache.isEmpty()) {
+            throw new InitException("There is no schema in HugeGraphServer, " +
+                                    "please create it at first");
         }
-
-        // Waiting async worker threads finish
-        this.taskManager.waitFinished(type);
-        totalTimer.stop();
-        summary.totalTime(type, totalTimer.getTime(TimeUnit.MILLISECONDS));
-
-        Printer.print(summary.accumulateMetrics(type).loadSuccess());
+        this.context.schemaCache(cache);
     }
 
-    private void load(ElemType type, List<ElementStruct> structs) {
-        LoadSummary summary = this.context.summary();
-        InputProgressMap newProgress = this.context.newProgress().type(type);
-        for (ElementStruct struct : structs) {
+    private void loadInputs() {
+        LOG.info("Start loading");
+        Printer.printRealtimeProgress();
+        LoadOptions options = this.context.options();
+
+        this.context.summary().startTimer();
+        try {
+            if (!options.failureMode) {
+                // Load normal data from user supplied input structs
+                this.load(this.mapping.structs());
+            } else {
+                // Load failure data from generated input structs
+                this.load(this.mapping.structsForFailure(options));
+            }
+            // Waiting for async worker threads finish
+            this.manager.waitFinished();
+        } finally {
+            this.context.summary().stopTimer();
+        }
+        Printer.printFinalProgress();
+    }
+
+    private void load(List<InputStruct> structs) {
+        // Load input structs one by one
+        for (InputStruct struct : structs) {
+            if (this.context.stopped()) {
+                break;
+            }
             if (struct.skip()) {
                 continue;
             }
-            StopWatch loadTimer = StopWatch.createStarted();
-            LoadMetrics metrics = summary.metrics(struct);
-            if (!this.context.stopped()) {
-                // Update loading vertex/edge struct
-                newProgress.addStruct(struct);
-                // Produce batch of vertices/edges and execute loading tasks
-                try (ElementBuilder<?> builder = ElementBuilder.of(this.context,
-                                                                   struct)) {
-                    this.load(builder);
-                }
+            // Create and init InputReader, fetch next batch lines
+            try (InputReader reader = InputReader.create(struct.input())) {
+                // Init reader
+                reader.init(this.context, struct);
+                // Load data from current input mapping
+                this.load(struct, reader);
+            } catch (InitException e) {
+                throw new LoadException("Failed to init input reader", e);
             }
-            /*
-             * NOTE: the load task of this struct may not be completed,
-             * so the load rate of each struct is an inaccurate value.
-             */
-            loadTimer.stop();
-            metrics.loadTime(loadTimer.getTime(TimeUnit.MILLISECONDS));
-            LOG.info("Loading {} '{}' with average rate: {}/s",
-                     metrics.loadSuccess(), struct, metrics.averageLoadRate());
         }
     }
 
-    private <GE extends GraphElement> void load(ElementBuilder<GE> builder) {
-        ElementStruct struct = builder.struct();
+    /**
+     * TODO: Seperate classes: ReadHandler -> ParseHandler -> InsertHandler
+     * Let load task worked in pipeline mode
+     */
+    private void load(InputStruct struct, InputReader reader) {
         LOG.info("Start parsing and loading '{}'", struct);
-        final int batchSize = this.context.options().batchSize;
         LoadMetrics metrics = this.context.summary().metrics(struct);
-
-        StopWatch parseTimer = StopWatch.createStarted();
-        List<Record<GE>> batch = new ArrayList<>(batchSize);
-        for (boolean finished = false; !this.context.stopped() && !finished;) {
+        ParseTaskBuilder taskBuilder = new ParseTaskBuilder(struct);
+        int batchSize = this.context.options().batchSize;
+        List<Line> lines = new ArrayList<>(batchSize);
+        for (boolean finished = false; !finished;) {
             try {
-                if (builder.hasNext()) {
-                    Record<GE> record = builder.next();
-                    batch.add(record);
+                if (reader.hasNext()) {
+                    lines.add(reader.next());
+                    metrics.increaseReadSuccess();
                 } else {
                     finished = true;
                 }
-            } catch (ParseException e) {
-                builder.confirmOffset();
-                metrics.increaseParseFailure();
-
-                this.handleParseFailure(struct, e);
+            } catch (ReadException e) {
+                metrics.increaseReadFailure();
+                this.handleReadFailure(struct, e);
+            }
+            if (this.context.stopped()) {
+                LOG.warn("Read errors exceed limit, load task stopped");
+                return;
             }
 
-            boolean stopped = this.context.stopped() || finished;
-            if (batch.size() >= batchSize || stopped) {
-                this.submit(struct, batch, parseTimer);
-                metrics.plusParseSuccess(batch.size());
-                batch = new ArrayList<>(batchSize);
-
-                // Confirm offset to avoid lost records
-                builder.confirmOffset();
-                if (stopped) {
-                    this.context.newProgress().markLoaded(struct, finished);
+            if (lines.size() >= batchSize || finished) {
+                List<ParseTask> tasks = taskBuilder.build(lines);
+                for (ParseTask task : tasks) {
+                    this.executeParseTask(struct, task.mapping(), task);
                 }
+                // Confirm offset to avoid lost records
+                reader.confirmOffset();
+                this.context.newProgress().markLoaded(struct, finished);
+
+                this.markStopIfNeeded();
+                if (this.context.stopped()) {
+                    LOG.warn("Parse errors exceed limit, stopped loading tasks");
+                    return;
+                }
+
+                lines = new ArrayList<>(batchSize);
             }
         }
-
-        parseTimer.stop();
-        metrics.parseTime(parseTimer.getTime(TimeUnit.MILLISECONDS));
-        LOG.info("Parsing {} '{}' with average rate: {}/s",
-                 metrics.parseSuccess(), struct, metrics.parseRate());
     }
 
-    private void handleParseFailure(ElementStruct struct, ParseException e) {
-        if (this.context.options().testMode) {
+    /**
+     * Execute parse task sync
+     */
+    private void executeParseTask(InputStruct struct, ElementMapping mapping,
+                                  ParseTaskBuilder.ParseTask task) {
+        List<List<Record>> batches = task.get();
+        if (this.context.stopped() || this.context.options().dryRun ||
+            CollectionUtils.isEmpty(batches)) {
+            return;
+        }
+        for (List<Record> batch : batches) {
+            this.manager.submitBatch(struct, mapping, batch);
+        }
+    }
+
+    private void handleReadFailure(InputStruct struct, ReadException e) {
+        LOG.error("Read {} error", struct, e);
+        LoadOptions options = this.context.options();
+        if (options.testMode) {
             throw e;
         }
 
-        LOG.error("Parse {} error", struct.type(), e);
-        // Write to current struct's parse failure log
-        FailureLogger logger = this.context.failureLogger(struct);
-        logger.write(e);
-
-        LoadOptions options = this.context.options();
-        long failures = this.context.summary().totalParseFailures();
-        if (failures >= options.maxParseErrors) {
-            Printer.printError("More than %s %s parsing error, stop parsing " +
-                               "and waiting all insert tasks finished",
-                               options.maxParseErrors, struct.type().string());
+        long failures = this.context.summary().totalReadFailures();
+        if (options.maxReadErrors != Constants.NO_LIMIT &&
+            failures >= options.maxReadErrors) {
+            Printer.printError("More than %s reading error, stop loading " +
+                               "and waiting all load tasks finished",
+                               options.maxReadErrors);
             this.context.stopLoading();
+        } else {
+            // Write to current mapping's parse failure log
+            this.context.failureLogger(struct).write(e);
         }
     }
 
-    private <GE extends GraphElement> void submit(ElementStruct struct,
-                                                  List<Record<GE>> batch,
-                                                  StopWatch parseTimer) {
-        if (!this.context.options().dryRun && !batch.isEmpty()) {
-            // Parse time doesn't include submit time, it's accurate
-            parseTimer.suspend();
-            try {
-                this.taskManager.submitBatch(struct, batch);
-            } finally {
-                parseTimer.resume();
+    private void markStopIfNeeded() {
+        LoadOptions options = this.context.options();
+        long failures = this.context.summary().totalParseFailures();
+        if (options.maxParseErrors != Constants.NO_LIMIT &&
+            failures >= options.maxParseErrors) {
+            if (this.context.stopped()) {
+                return;
+            }
+            synchronized (this.context) {
+                if (!this.context.stopped()) {
+                    Printer.printError("More than %s parse errors, stop " +
+                                       "parsing and waiting all insert tasks " +
+                                       "finished", options.maxParseErrors);
+                    this.context.stopLoading();
+                }
             }
         }
     }
 
     private void stopThenShutdown() {
         LOG.info("Stop loading then shutdown HugeGraphLoader");
-        this.context.stopLoading();
-        // Wait all insert tasks finished before exit
-        this.taskManager.waitFinished(this.context.loadingType());
-        this.taskManager.shutdown();
-        this.context.close();
+        try {
+            this.context.stopLoading();
+            // Wait all insert tasks finished before exit
+            this.manager.waitFinished();
+            this.manager.shutdown();
+        } finally {
+            LoadContext.destroy();
+        }
     }
 }

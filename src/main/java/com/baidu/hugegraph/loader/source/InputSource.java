@@ -21,14 +21,16 @@ package com.baidu.hugegraph.loader.source;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public interface InputSource extends Checkable {
 
-    public SourceType type();
+    @JsonProperty("type")
+    SourceType type();
 
-    public String[] header();
+    String[] header();
 
-    public String charset();
+    String charset();
 
-    public FileSource asFileSource();
+    FileSource asFileSource();
 }

@@ -1,0 +1,26 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/data.csv",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "id": "name",
+      "selected": ["name"]
+    },
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/data.csv",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "id": "alias",
+      "selected": ["alias"]
+    }
+  ]
+}

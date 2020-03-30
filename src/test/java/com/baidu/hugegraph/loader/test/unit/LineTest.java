@@ -21,7 +21,7 @@ package com.baidu.hugegraph.loader.test.unit;
 
 import org.junit.Test;
 
-import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableMap;
 

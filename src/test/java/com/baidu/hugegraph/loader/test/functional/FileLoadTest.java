@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,13 +42,14 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
-import com.baidu.hugegraph.loader.progress.InputProgressMap;
-import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
@@ -60,12 +62,14 @@ import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Whitebox;
 import com.baidu.hugegraph.util.LongEncoding;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 public class FileLoadTest extends LoadTest {
 
     private static final Charset GBK = Charset.forName("GBK");
 
-    protected IOUtil ioUtil ;
+    protected IOUtil ioUtil;
 
     public String structPath(String fileName) {
         return configPath(fileName);
@@ -214,7 +218,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ServerException.class, () -> {
+        Assert.assertThrows(InitException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -339,6 +343,9 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
     }
 
     @Test
@@ -430,6 +437,9 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
     }
 
     @Test
@@ -826,7 +836,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -870,7 +880,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -1338,6 +1348,9 @@ public class FileLoadTest extends LoadTest {
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
     }
 
     @Test
@@ -1890,11 +1903,12 @@ public class FileLoadTest extends LoadTest {
         };
         Assert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
-        }, e -> {
-            String expect = "The list_format must be set when " +
-                            "parse list or set values";
-            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
+        List<Edge> edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(0, edges.size());
     }
 
     @Test
@@ -1950,114 +1964,11 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testLoadIncrementalMode() {
-        ioUtil.write("vertex_person.csv",
-                     "name,age,city",
-                     "marko,29,Beijing,REDUNDANT",
-                     "vadas,27,Hongkong",
-                     "josh,32,Beijing",
-                     "peter,35,Shanghai",
-                     "\"li,nary\",26,\"Wu,han\"");
-        ioUtil.write("vertex_software.csv",
-                     "name,lang,price",
-                     "office,C#,999",
-                     "lop,java,328,多余的",
-                     "ripple,java,199");
-
-        String[] args = new String[]{
-                "-f", structPath("incremental_mode/struct.json"),
-                "-s", configPath("incremental_mode/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--batch-insert-threads", "2",
-                "--max-parse-errors", "2",
-                "--test-mode", "false"
-        };
-        HugeGraphLoader loader = new HugeGraphLoader(args);
-        loader.load();
-        LoadContext context = Whitebox.getInternalState(loader, "context");
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(5, vertices.size());
-
-        InputProgressMap progresses = context.newProgress().vertex();
-        Assert.assertEquals(2, progresses.size());
-        progresses.forEach((key, value) -> {
-            if (key.startsWith("person")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadedItem = loadedItems.iterator().next();
-                Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals("vertex_person.csv", fileItem.name());
-                // Reached last line: "li,nary",26,"Wu,han"
-                Assert.assertEquals(6, fileItem.offset());
-            } else if (key.startsWith("software")) {
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNotNull(loadingItem);
-
-                Assert.assertTrue(loadingItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadingItem;
-                Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // Reached line: lop,java,328,多余的
-                Assert.assertEquals(3, fileItem.offset());
-            }
-        });
-
-        args = new String[]{
-                "-f", structPath("incremental_mode/struct.json"),
-                "-s", configPath("incremental_mode/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--incremental-mode", "true",
-                "--batch-insert-threads", "2",
-                "--max-parse-errors", "2",
-                "--test-mode", "false"
-        };
-        loader = new HugeGraphLoader(args);
-        loader.load();
-        context = Whitebox.getInternalState(loader, "context");
-
-        vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(6, vertices.size());
-
-        progresses = context.newProgress().vertex();
-        Assert.assertEquals(2, progresses.size());
-        progresses.forEach((key, value) -> {
-            if (key.startsWith("person")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadedItem = loadedItems.iterator().next();
-                Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals("vertex_person.csv", fileItem.name());
-                // Reached last line: "li,nary",26,"Wu,han"
-                Assert.assertEquals(6, fileItem.offset());
-            } else if (key.startsWith("software")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNull(loadingItem);
-
-                InputItemProgress loadedItem = loadedItems.iterator().next();
-                Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // Reached last line: ripple,java,199
-                Assert.assertEquals(4, fileItem.offset());
-            }
-        });
-    }
-
-    @Test
-    public void testLoadIncrementalModeAndReloadFailure()
+    public void testLoadIncrementalModeAndLoadFailure()
            throws IOException, InterruptedException {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
-                     "marko,29,Beijing,REDUNDANT",
+                     "marko,应该是数字,Beijing",
                      "vadas,27,Hongkong",
                      "josh,32,Beijing",
                      "peter,35,Shanghai",
@@ -2071,13 +1982,13 @@ public class FileLoadTest extends LoadTest {
         // 1st time
         String[] args = new String[] {
                 "-f",
-                structPath("incremental_mode_and_reload_failure/struct.json"),
+                structPath("incremental_mode_and_load_failure/struct.json"),
                 "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                configPath("incremental_mode_and_load_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
-                "--max-parse-errors", "2",
+                "--max-parse-errors", "1",
                 "--test-mode", "false"
         };
         HugeGraphLoader loader = new HugeGraphLoader(args);
@@ -2085,13 +1996,13 @@ public class FileLoadTest extends LoadTest {
         LoadContext context = Whitebox.getInternalState(loader, "context");
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(5, vertices.size());
+        Assert.assertEquals(4, vertices.size());
 
-        InputProgressMap progresses = context.newProgress().vertex();
-        Assert.assertEquals(2, progresses.size());
-        progresses.forEach((key, value) -> {
-            if (key.startsWith("person")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
+        LoadProgress loadProgress = context.newProgress();
+        Assert.assertEquals(1, loadProgress.size());
+        loadProgress.forEach((id, inputProgress) -> {
+            if (id.equals("1")) {
+                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2100,56 +2011,38 @@ public class FileLoadTest extends LoadTest {
                 Assert.assertEquals("vertex_person.csv", fileItem.name());
                 // Reached last line: "li,nary",26,"Wu,han"
                 Assert.assertEquals(6, fileItem.offset());
-            } else if (key.startsWith("software")) {
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNotNull(loadingItem);
-
-                Assert.assertTrue(loadingItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadingItem;
-                Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // Reached line: lop,java,328,多余的
-                Assert.assertEquals(3, fileItem.offset());
             }
         });
 
         File structDir = FileUtils.getFile(structPath(
-                "incremental_mode_and_reload_failure/struct"));
-        File currentDir = FileUtils.getFile(structPath(
-                "incremental_mode_and_reload_failure/struct/current/"));
-        File[] files = currentDir.listFiles();
-        Assert.assertNotNull(files);
-        Assert.assertEquals(2, files.length);
+                "incremental_mode_and_load_failure/struct"));
+        File failureDataDir = FileUtils.getFile(structPath(
+                "incremental_mode_and_load_failure/struct/failure-data/"));
+        File[] subDirs = failureDataDir.listFiles();
+        Assert.assertNotNull(subDirs);
+        Assert.assertEquals(1, subDirs.length);
 
-        File personFailureFile;
-        File softwareFailureFile;
-        if (files[0].getName().startsWith("person")) {
-            personFailureFile = files[0];
-            softwareFailureFile = files[1];
-        } else {
-            softwareFailureFile = files[0];
-            personFailureFile = files[1];
-        }
+        File personFailureDir = subDirs[0];
+        File[] files = personFailureDir.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(1, files.length);
+        File personFailureFile = files[0];
         List<String> personFailureLines = FileUtils.readLines(personFailureFile,
                                                               Constants.CHARSET);
-        Assert.assertEquals(2, personFailureLines.size());
-        Assert.assertEquals("marko,29,Beijing,REDUNDANT",
-                            personFailureLines.get(1));
+        Assert.assertEquals(3, personFailureLines.size());
+        Assert.assertEquals("marko,应该是数字,Beijing",
+                            personFailureLines.get(2));
 
-        List<String> softwareFailureLines = FileUtils.readLines(
-                                            softwareFailureFile, GBK);
-        Assert.assertEquals(2, softwareFailureLines.size());
-        Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(1));
-
-        // 2nd time
+        // 2nd time, incremental-mode
         args = new String[]{
                 "-f",
-                structPath("incremental_mode_and_reload_failure/struct.json"),
+                structPath("incremental_mode_and_load_failure/struct.json"),
                 "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                configPath("incremental_mode_and_load_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
-                "--reload-failure", "true",
+                "--failure-mode", "false",
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
@@ -2162,22 +2055,11 @@ public class FileLoadTest extends LoadTest {
         // ripple,java,199 has been loaded
         Assert.assertEquals(6, vertices.size());
 
-        progresses = context.newProgress().vertex();
-        Assert.assertEquals(4, progresses.size());
-        progresses.forEach((key, value) -> {
-            if (key.startsWith("person") && key.endsWith("failure")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadedItem = loadedItems.iterator().next();
-                Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertTrue(fileItem.name().endsWith(
-                                  Constants.PARSE_FAILURE_SUFFIX));
-                // Has readed the end of failure file and marked as loaded
-                Assert.assertEquals(2, fileItem.offset());
-            } else if (key.startsWith("person")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
+        loadProgress = context.newProgress();
+        Assert.assertEquals(2, loadProgress.size());
+        loadProgress.forEach((id, inputProgress) -> {
+            if (id.equals("1")) {
+                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2186,47 +2068,65 @@ public class FileLoadTest extends LoadTest {
                 Assert.assertEquals("vertex_person.csv", fileItem.name());
                 // Reached last line: "li,nary",26,"Wu,han"
                 Assert.assertEquals(6, fileItem.offset());
-            } else if (key.startsWith("software") && key.endsWith("failure")) {
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNotNull(loadingItem);
-
-                Assert.assertTrue(loadingItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadingItem;
-                Assert.assertTrue(fileItem.name().endsWith(
-                                  Constants.PARSE_FAILURE_SUFFIX));
-                // Has readed the end of failure file but still as loading
-                Assert.assertEquals(2, fileItem.offset());
-            } else if (key.startsWith("software")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
+            } else if (id.equals("2")) {
+                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNull(loadingItem);
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
                 Assert.assertTrue(loadedItem instanceof FileItemProgress);
                 FileItemProgress fileItem = (FileItemProgress) loadedItem;
                 Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // Reached last line: ripple,java,199
+                // Reached last line: "ripple,java,199"
                 Assert.assertEquals(4, fileItem.offset());
             }
         });
 
         Thread.sleep(1000);
-        // modify person failure file
-        personFailureLines.remove(1);
+        subDirs = failureDataDir.listFiles();
+        Assert.assertNotNull(subDirs);
+        Assert.assertEquals(2, subDirs.length);
+
+        personFailureDir = subDirs[0];
+        files = personFailureDir.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(1, files.length);
+        personFailureFile = files[0];
+        personFailureLines = FileUtils.readLines(personFailureFile,
+                                                 Constants.CHARSET);
+        Assert.assertEquals(3, personFailureLines.size());
+        Assert.assertEquals("marko,应该是数字,Beijing",
+                            personFailureLines.get(2));
+
+        File softwareFailureDir = subDirs[1];
+        files = softwareFailureDir.listFiles();
+        Assert.assertNotNull(files);
+        Assert.assertEquals(1, files.length);
+        File softwareFailureFile = files[0];
+        List<String> softwareFailureLines = FileUtils.readLines(
+                                            softwareFailureFile, GBK);
+        Assert.assertEquals(3, softwareFailureLines.size());
+        Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(2));
+
+        // TODO: Change only one line first, and make the second line go wrong
+        // modify person and software failure file
+        personFailureLines.remove(2);
         personFailureLines.add("marko,29,Beijing");
         FileUtils.writeLines(personFailureFile, personFailureLines, false);
-        // 3rd time
+        // modify software failure file
+        softwareFailureLines.remove(2);
+        softwareFailureLines.add("lop,java,328");
+        FileUtils.writeLines(softwareFailureFile, softwareFailureLines, false);
+
+        // 3rd time, --failure-mode
         args = new String[]{
                 "-f",
-                structPath("incremental_mode_and_reload_failure/struct.json"),
+                structPath("incremental_mode_and_load_failure/struct.json"),
                 "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
+                configPath("incremental_mode_and_load_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--incremental-mode", "true",
-                "--reload-failure", "true",
+                "--incremental-mode", "false",
+                "--failure-mode", "true",
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
@@ -2237,152 +2137,27 @@ public class FileLoadTest extends LoadTest {
 
         vertices = CLIENT.graph().listVertices();
         // marko,29,Beijing has been loaded
-        Assert.assertEquals(7, vertices.size());
-
-        progresses = context.newProgress().vertex();
-        Assert.assertEquals(4, progresses.size());
-        progresses.forEach((key, value) -> {
-            if (key.startsWith("person") && key.endsWith("failure")) {
-                /*
-                 * history dir has two person failure files,
-                 * the last one is correct
-                 */
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(2, loadedItems.size());
-
-                for (InputItemProgress loadedItem : loadedItems) {
-                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                    Assert.assertTrue(fileItem.name().endsWith(
-                                      Constants.PARSE_FAILURE_SUFFIX));
-                    Assert.assertEquals(2, fileItem.offset());
-                }
-            } else if (key.startsWith("person")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadedItem = loadedItems.iterator().next();
-                Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals("vertex_person.csv", fileItem.name());
-                // Reached last line: "li,nary",26,"Wu,han"
-                Assert.assertEquals(6, fileItem.offset());
-            } else if (key.startsWith("software") && key.endsWith("failure")) {
-                /*
-                 * history dir has two software failure files,
-                 * they are all incorrect
-                 */
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(2, loadedItems.size());
-
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNull(loadingItem);
-
-                for (InputItemProgress loadedItem : loadedItems) {
-                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                    Assert.assertTrue(fileItem.name().endsWith(
-                                      Constants.PARSE_FAILURE_SUFFIX));
-                    Assert.assertEquals(2, fileItem.offset());
-                }
-            } else if (key.startsWith("software")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNull(loadingItem);
-
-                InputItemProgress loadedItem = loadedItems.iterator().next();
-                Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // Reached last line: ripple,java,199
-                Assert.assertEquals(4, fileItem.offset());
-            }
-        });
-
-        Thread.sleep(1000);
-        // modify software failure file
-        softwareFailureLines.remove(1);
-        softwareFailureLines.add("lop,java,328");
-        FileUtils.writeLines(softwareFailureFile, softwareFailureLines, false);
-        // 4th time
-        args = new String[]{
-                "-f",
-                structPath("incremental_mode_and_reload_failure/struct.json"),
-                "-s",
-                configPath("incremental_mode_and_reload_failure/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--incremental-mode", "true",
-                "--reload-failure", "true",
-                "--batch-insert-threads", "2",
-                "--max-parse-errors", "2",
-                "--test-mode", "false"
-        };
-        loader = new HugeGraphLoader(args);
-        loader.load();
-        context = Whitebox.getInternalState(loader, "context");
-
-        vertices = CLIENT.graph().listVertices();
-        // lop,java,328 has been loaded
         Assert.assertEquals(8, vertices.size());
 
-        progresses = context.newProgress().vertex();
-        Assert.assertEquals(4, progresses.size());
-        progresses.forEach((key, value) -> {
-            if (key.startsWith("person") && key.endsWith("failure")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(2, loadedItems.size());
-
-                for (InputItemProgress loadedItem : loadedItems) {
-                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                    Assert.assertTrue(fileItem.name().endsWith(
-                                      Constants.PARSE_FAILURE_SUFFIX));
-                    Assert.assertEquals(2, fileItem.offset());
-                }
-            } else if (key.startsWith("person")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
+        loadProgress = context.newProgress();
+        Assert.assertEquals(2, loadProgress.size());
+        loadProgress.forEach((id, inputProgress) -> {
+            if (id.equals("1")) {
+                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
                 Assert.assertTrue(loadedItem instanceof FileItemProgress);
                 FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals("vertex_person.csv", fileItem.name());
-                // Reached last line: "li,nary",26,"Wu,han"
-                Assert.assertEquals(6, fileItem.offset());
-            } else if (key.startsWith("software") && key.endsWith("failure")) {
-                /*
-                 * history dir has three software failure files,
-                 * the last one is correct
-                 */
-                Set<InputItemProgress> loadedItems = value.loadedItems();
-                Assert.assertEquals(3, loadedItems.size());
-
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNull(loadingItem);
-
-                for (InputItemProgress loadedItem : loadedItems) {
-                    Assert.assertTrue(loadedItem instanceof FileItemProgress);
-                    FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                    Assert.assertTrue(fileItem.name().endsWith(
-                                      Constants.PARSE_FAILURE_SUFFIX));
-                    Assert.assertEquals(2, fileItem.offset());
-                }
-            } else if (key.startsWith("software")) {
-                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(3, fileItem.offset());
+            } else if (id.equals("2")) {
+                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
-
-                InputItemProgress loadingItem = value.loadingItem();
-                Assert.assertNull(loadingItem);
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
                 Assert.assertTrue(loadedItem instanceof FileItemProgress);
                 FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals("vertex_software.csv", fileItem.name());
-                // Reached last line: ripple,java,199
-                Assert.assertEquals(4, fileItem.offset());
+                Assert.assertEquals(3, fileItem.offset());
             }
         });
 
@@ -2413,7 +2188,6 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--check-vertex", "true",
                 "--batch-insert-threads", "2",
-                "--max-parse-errors", "1",
                 "--test-mode", "false"
         };
         HugeGraphLoader loader = new HugeGraphLoader(args);
@@ -2423,31 +2197,31 @@ public class FileLoadTest extends LoadTest {
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
 
-        InputProgressMap progresses = context.newProgress().edge();
-        Assert.assertEquals(1, progresses.size());
-        progresses.forEach((key, value) -> {
-            Assert.assertTrue(key.startsWith("knows"));
-            // The error line is exactly last line
-            Set<InputItemProgress> loadedItems = value.loadedItems();
-            Assert.assertEquals(1, loadedItems.size());
+        LoadProgress loadProgress = context.newProgress();
+        Assert.assertEquals(2, loadProgress.size());
+        Assert.assertEquals(ImmutableSet.of("1", "2"), loadProgress.keySet());
+        loadProgress.forEach((id, value) -> {
+            if (id.equals("2")) {
+                // The error line is exactly last line
+                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Assert.assertEquals(1, loadedItems.size());
 
-            InputItemProgress loadedItem = loadedItems.iterator().next();
-            FileItemProgress fileItem = (FileItemProgress) loadedItem;
-            Assert.assertEquals("edge_knows.json", fileItem.name());
-            Assert.assertEquals(2, fileItem.offset());
+                InputItemProgress loadedItem = loadedItems.iterator().next();
+                FileItemProgress fileItem = (FileItemProgress) loadedItem;
+                Assert.assertEquals("edge_knows.json", fileItem.name());
+                Assert.assertEquals(2, fileItem.offset());
+            }
         });
 
-        // Reload without modification
+        // Load failure data without modification
         args = new String[]{
                 "-f", structPath("reload_json_failure_files/struct.json"),
                 "-s", configPath("reload_json_failure_files/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "--incremental-mode", "true",
-                "--reload-failure", "true",
+                "--failure-mode", "true",
                 "--check-vertex", "true",
                 "--batch-insert-threads", "2",
-                "--max-parse-errors", "1",
                 "--test-mode", "false"
         };
         // No exception throw, but error line still exist
@@ -2457,12 +2231,15 @@ public class FileLoadTest extends LoadTest {
         // Reload with modification
         File structDir = FileUtils.getFile(structPath(
                          "reload_json_failure_files/struct"));
-        File currentDir = FileUtils.getFile(structPath(
-                          "reload_json_failure_files/struct/current/"));
-        File[] files = currentDir.listFiles();
+        File failureDir = FileUtils.getFile(structPath(
+                          "reload_json_failure_files/struct/failure-data/"));
+        File[] subDirs = failureDir.listFiles();
+        Assert.assertNotNull(subDirs);
+        Assert.assertEquals(1, subDirs.length);
+
+        File[] files = subDirs[0].listFiles();
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.length);
-
         File knowsFailureFile = files[0];
         List<String> failureLines = FileUtils.readLines(knowsFailureFile,
                                                         Constants.CHARSET);
@@ -2695,6 +2472,389 @@ public class FileLoadTest extends LoadTest {
         List<Edge> edges = CLIENT.graph().listEdges();
 
         Assert.assertEquals(7, vertices.size());
+        Assert.assertEquals(0, edges.size());
+    }
+
+    @Test
+    public void testVertexIdColumnEmpty() {
+        ioUtil.write("vertex_person.csv",
+                     "id,name,age,city",
+                     "1,marko,29,Beijing",
+                     ",vadas,27,Hongkong",
+                     "2,josh,32,Beijing",
+                     ",peter,35,Shanghai",
+                     "3,\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_id_column_empty/struct.json"),
+                "-s", configPath("vertex_id_column_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(3, vertices.size());
+    }
+
+    @Test
+    public void testEdgeSourceOrTargetColumnEmpty() {
+        ioUtil.write("edge_created.csv",
+                     "source_id,target_id,date,weight",
+                     "1,2,20171210,0.4",
+                     ",2,20091111,0.4",
+                     "1,,20171210,1.0");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_source_or_target_column_empty/struct.json"),
+                "-s", configPath("edge_source_or_target_column_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Edge> edges = CLIENT.graph().listEdges();
+        Assert.assertEquals(1, edges.size());
+    }
+
+    @Test
+    public void testMultiColumnMappingToSameLabel() {
+        ioUtil.write("data.csv",
+                     "name,alias",
+                     "marko,m",
+                     "vadas,v",
+                     "josh,j");
+
+        String[] args = new String[]{
+                "-f", structPath("multi_column_mapping_to_same_label/struct.json"),
+                "-s", configPath("multi_column_mapping_to_same_label/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(6, vertices.size());
+    }
+
+    @Test
+    public void testVertexCusomizedIdUnfold() {
+        ioUtil.write("vertex_person.csv",
+                     "id,name,age,city",
+                     "1|2|3,marko,29,Beijing",
+                     "4|5,vadas,27,Hongkong",
+                     "6,josh,32,Beijing",
+                     "7|8|9,peter,35,Shanghai",
+                     "10,\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_customized_id_unfold/struct.json"),
+                "-s", configPath("vertex_customized_id_unfold/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        Vertex v1 = CLIENT.graph().getVertex("1");
+        Vertex v2 = CLIENT.graph().getVertex("2");
+        Vertex v3 = CLIENT.graph().getVertex("3");
+        Assert.assertEquals("marko", v1.property("name"));
+        Assert.assertEquals("marko", v2.property("name"));
+        Assert.assertEquals("marko", v3.property("name"));
+    }
+
+    @Test
+    public void testVertexCusomizedIdUnfoldWithMapping() {
+        // field_mapping: p_id -> id
+        // value_mapping: p1 -> 1, p2 -> 2, p3 -> 3
+        ioUtil.write("vertex_person.csv",
+                     "p_id,name,age,city",
+                     "p1|p2|p3,marko,29,Beijing",
+                     "4|5,vadas,27,Hongkong",
+                     "6,josh,32,Beijing",
+                     "7|8|9,peter,35,Shanghai",
+                     "10,\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_customized_id_unfold_with_mapping/struct.json"),
+                "-s", configPath("vertex_customized_id_unfold_with_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        Vertex v1 = CLIENT.graph().getVertex("1");
+        Vertex v2 = CLIENT.graph().getVertex("2");
+        Vertex v3 = CLIENT.graph().getVertex("3");
+        Assert.assertEquals("marko", v1.property("name"));
+        Assert.assertEquals("marko", v2.property("name"));
+        Assert.assertEquals("marko", v3.property("name"));
+    }
+
+    @Test
+    public void testVertexPrimaryKeyUnfold() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko|marko1|marko2,29,Beijing",
+                     "vadas|vadas1,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter|peter1|peter2,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_primarykey_unfold/struct.json"),
+                "-s", configPath("vertex_primarykey_unfold/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        vertices = CLIENT.graph().listVertices("person",
+                                               ImmutableMap.of("age", 29));
+        Assert.assertEquals(3, vertices.size());
+        Set<Object> names = vertices.stream().map(v -> v.property("name"))
+                                    .collect(Collectors.toSet());
+        Assert.assertEquals(ImmutableSet.of("marko", "marko1", "marko2"), names);
+    }
+
+    @Test
+    public void testVertexPrimaryKeyUnfoldWithMapping() {
+        // field_mapping: p_name -> name
+        // value_mapping: m -> marko, m1 -> marko1, m2 -> marko2
+        ioUtil.write("vertex_person.csv",
+                     "p_name,age,city",
+                     "m|m1|m2,29,Beijing",
+                     "vadas|vadas1,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter|peter1|peter2,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_primarykey_unfold_with_mapping/struct.json"),
+                "-s", configPath("vertex_primarykey_unfold_with_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(10, vertices.size());
+
+        vertices = CLIENT.graph().listVertices("person",
+                                               ImmutableMap.of("age", 29));
+        Assert.assertEquals(3, vertices.size());
+        Set<Object> names = vertices.stream().map(v -> v.property("name"))
+                                    .collect(Collectors.toSet());
+        Assert.assertEquals(ImmutableSet.of("marko", "marko1", "marko2"), names);
+    }
+
+    @Test
+    public void testVertexPrimaryKeyUnfoldExceedLimit() {
+        // The primary keys are "name" nad "age"
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko|marko1|marko2,29,Beijing",
+                     "vadas|vadas1,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter|peter1|peter2,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[] {
+                "-f", structPath("vertex_primarykey_unfold_exceed_limit/struct.json"),
+                "-s", configPath("vertex_primarykey_unfold_exceed_limit/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String msg = "In case unfold is true, just supported " +
+                         "a single primary key";
+            Assert.assertEquals(msg, e.getMessage());
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
+    }
+
+    @Test
+    public void testVertexUnfoldInJsonFile() {
+        ioUtil.write("vertex_person.json",
+                     "{\"id\": [1,2,3], \"name\": \"marko\", \"age\": 29, " +
+                     "\"city\": \"Beijing\"}",
+                     "{\"id\": [4,5,6], \"name\": \"vadas\", \"age\": 27, " +
+                     "\"city\": \"Beijing\"}");
+        ioUtil.write("vertex_software.json",
+                     "{\"name\": [\"hugegraph\", \"hg\"], " +
+                     "\"lang\": \"java\", \"price\": 1000}",
+                     "{\"name\": [\"word\", \"excel\"], " +
+                     "\"lang\": \"C#\", \"price\": 999}");
+
+        String[] args = new String[]{
+                "-f", structPath("vertex_unfold_in_json_file/struct.json"),
+                "-s", configPath("vertex_unfold_in_json_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
+    public void testEdgeUnfoldOneToMany() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko,vadas|tom|peter,20160110,0.5",
+                     "jerry,josh|jack|marry,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko,1|2|3,20171210,0.4",
+                     "josh,4|5|6,20091111,0.4",
+                     "peter,7,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_unfold_one_to_many/struct.json"),
+                "-s", configPath("edge_unfold_one_to_many/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(13, edges.size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("knows").size());
+        Assert.assertEquals(7, CLIENT.graph().listEdges("created").size());
+    }
+
+    @Test
+    public void testEdgeUnfoldManyToOne() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko|tom|peter,vadas,20160110,0.5",
+                     "jerry|josh|jack,marry,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko|tom|peter,1,20171210,0.4",
+                     "jerry|josh|jack,2,20091111,0.4",
+                     "marry,3,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_unfold_many_to_one/struct.json"),
+                "-s", configPath("edge_unfold_many_to_one/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(13, edges.size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("knows").size());
+        Assert.assertEquals(7, CLIENT.graph().listEdges("created").size());
+    }
+
+    @Test
+    public void testEdgeUnfoldManyToMany() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko|tom|peter,jerry|josh|jack,20160110,0.5",
+                     "jerry|josh|jack,marry|jack|marko,20130220,1.0");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko|tom|peter,1|2|3,20171210,0.4",
+                     "jerry|josh|jack,4|5|6,20091111,0.4");
+
+        String[] args = new String[]{
+                "-f", structPath("edge_unfold_many_to_many/struct.json"),
+                "-s", configPath("edge_unfold_many_to_many/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
+        Assert.assertEquals(12, edges.size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("knows").size());
+        Assert.assertEquals(6, CLIENT.graph().listEdges("created").size());
+    }
+
+    @Test
+    public void testEdgeUnfoldManyToManyWithUnmatchNumber() {
+        ioUtil.write("edge_knows.csv",
+                     "source_name,target_name,date,weight",
+                     "marko|tom|peter,jerry|josh,20160110,0.5");
+        ioUtil.write("edge_created.csv",
+                     "source_name,target_id,date,weight",
+                     "marko|tom|peter,1|2,20171210,0.4");
+
+        String[] args = new String[]{
+                "-f",
+                structPath("edge_unfold_many_to_many_with_unmatch_number/struct.json"),
+                "-s",
+                configPath("edge_unfold_many_to_many_with_unmatch_number/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--check-vertex", "false",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(ParseException.class, () -> {
+            HugeGraphLoader.main(args);
+        }, e -> {
+            String msg = "The elements number of source and target must be: " +
+                         "1 to n, n to 1, n to n";
+            Assert.assertEquals(msg, e.getMessage());
+        });
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(0, vertices.size());
         Assert.assertEquals(0, edges.size());
     }
 }

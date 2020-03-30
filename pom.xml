@@ -6,7 +6,7 @@
 
     <groupId>com.baidu.hugegraph</groupId>
     <artifactId>hugegraph-loader</artifactId>
-    <version>0.10.0</version>
+    <version>0.10.2</version>
 
     <properties>
         <release.name>hugegraph-loader</release.name>
@@ -25,16 +25,17 @@
             <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
             <version>1.7.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
             <version>1.8.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <version>2.9.5</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -60,6 +61,11 @@
             <groupId>org.simpleflatmapper</groupId>
             <artifactId>sfm-csv</artifactId>
             <version>8.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.1-jre</version>
         </dependency>
 
         <dependency>
@@ -159,16 +165,68 @@
             <version>3.1.2</version>
             <exclusions>
                 <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-1.2-api</artifactId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
+                    <artifactId>log4j-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-hdfs</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-yarn-registry</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.calcite.avatica</groupId>
+                    <artifactId>avatica</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.calcite</groupId>
+                    <artifactId>calcite-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.calcite</groupId>
+                    <artifactId>calcite-druid</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.codehaus.groovy</groupId>
+                    <artifactId>groovy-all</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-json</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey.contribs</groupId>
+                    <artifactId>jersey-guice</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

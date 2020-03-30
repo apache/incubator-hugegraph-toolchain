@@ -25,7 +25,9 @@ import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+@JsonPropertyOrder({"type", "path", "file_filter"})
 public class FileSource extends AbstractSource {
 
     @JsonProperty("path")
@@ -44,6 +46,8 @@ public class FileSource extends AbstractSource {
     private SkippedLine skippedLine;
     @JsonProperty("compression")
     private Compression compression;
+    @JsonProperty("batch_size")
+    private int batchSize = 500;
 
     public FileSource() {
         this.path = null;
@@ -63,6 +67,7 @@ public class FileSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
+        super.check();
         if (this.format == FileFormat.CSV) {
             E.checkArgument(this.delimiter == null ||
                             this.delimiter.equals(Constants.COMMA_STR),
@@ -119,6 +124,10 @@ public class FileSource extends AbstractSource {
 
     public Compression compression() {
         return this.compression;
+    }
+
+    public int batchSize() {
+        return this.batchSize;
     }
 
     @Override

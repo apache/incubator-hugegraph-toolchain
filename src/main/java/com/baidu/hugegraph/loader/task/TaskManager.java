@@ -31,12 +31,11 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.builder.Record;
-import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.loader.mapping.ElementMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.util.ExecutorUtil;
 import com.baidu.hugegraph.util.Log;
 
@@ -44,7 +43,6 @@ public final class TaskManager {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    private final LoadContext context;
     private final LoadOptions options;
 
     private final Semaphore batchSemaphore;
@@ -54,9 +52,8 @@ public final class TaskManager {
 
     private volatile boolean stopped;
 
-    public TaskManager(LoadContext context) {
-        this.context = context;
-        this.options = context.options();
+    public TaskManager() {
+        this.options = LoadContext.get().options();
         // Try to make all batch threads running and don't wait for producer
         this.batchSemaphore = new Semaphore(this.batchSemaphoreNum());
         /*
@@ -85,12 +82,12 @@ public final class TaskManager {
         return 2 * this.options.singleInsertThreads;
     }
 
-    public void waitFinished(ElemType type) {
-        if (type == null || this.stopped) {
+    public void waitFinished() {
+        if (this.stopped) {
             return;
         }
 
-        LOG.info("Waiting for the insert tasks of {} finish", type.string());
+        LOG.info("Waiting for the insert tasks finish");
         try {
             // Wait batch mode task finished
             this.batchSemaphore.acquire(this.batchSemaphoreNum());
@@ -114,12 +111,13 @@ public final class TaskManager {
 
     public void shutdown() {
         this.stopped = true;
-
-        LOG.debug("Ready to shutdown batch-mode tasks executor");
         long timeout = this.options.shutdownTimeout;
+
+        LOG.info("Ready to shutdown batch-mode tasks executor");
         try {
             this.batchService.shutdown();
             this.batchService.awaitTermination(timeout, TimeUnit.SECONDS);
+            LOG.info("The batch-mode tasks service executor shutdown");
         } catch (InterruptedException e) {
             LOG.error("The batch-mode tasks are interrupted");
         } finally {
@@ -133,6 +131,7 @@ public final class TaskManager {
         try {
             this.singleService.shutdown();
             this.singleService.awaitTermination(timeout, TimeUnit.SECONDS);
+            LOG.info("The single-mode tasks service executor shutdown");
         } catch (InterruptedException e) {
             LOG.error("The single-mode tasks are interrupted");
         } finally {
@@ -143,37 +142,36 @@ public final class TaskManager {
         }
     }
 
-    public <GE extends GraphElement> void submitBatch(ElementStruct struct,
-                                                      List<Record<GE>> batch) {
-        ElemType type = struct.type();
+    public void submitBatch(InputStruct struct, ElementMapping mapping,
+                            List<Record> batch) {
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
             throw new LoadException("Interrupted while waiting to submit %s " +
-                                    "batch in batch mode", e, type);
+                                    "batch in batch mode", e, mapping.type());
         }
 
-        InsertTask<GE> task = new BatchInsertTask<>(this.context, struct,
-                                                    batch);
+        InsertTask task = new BatchInsertTask(struct, mapping, batch);
         CompletableFuture.runAsync(task, this.batchService).exceptionally(e -> {
-            LOG.warn("Batch insert {} error, try single insert", type, e);
-            this.submitInSingle(struct, batch);
+            LOG.warn("Batch insert {} error, try single insert",
+                     mapping.type(), e);
+            this.submitInSingle(struct, mapping, batch);
             return null;
-        }).whenComplete((r, e) -> this.batchSemaphore.release());
+        }).whenComplete((r, e) -> {
+            this.batchSemaphore.release();
+        });
     }
 
-    private <GE extends GraphElement> void submitInSingle(ElementStruct struct,
-                                                          List<Record<GE>> batch) {
-        ElemType type = struct.type();
+    private void submitInSingle(InputStruct struct, ElementMapping mapping,
+                                List<Record> batch) {
         try {
             this.singleSemaphore.acquire();
         } catch (InterruptedException e) {
             throw new LoadException("Interrupted while waiting to submit %s " +
-                                    "batch in single mode", e, type);
+                                    "batch in single mode", e, mapping.type());
         }
 
-        InsertTask<GE> task = new SingleInsertTask<>(this.context, struct,
-                                                     batch);
+        InsertTask task = new SingleInsertTask(struct, mapping, batch);
         CompletableFuture.runAsync(task, this.singleService)
                          .whenComplete((r, e) -> this.singleSemaphore.release());
     }

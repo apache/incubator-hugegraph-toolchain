@@ -1,0 +1,15 @@
+{
+  "edges": [
+    {
+      "label": "created",
+      "source": ["source_id"],
+      "target": ["target_id"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_created.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV"
+      }
+    }
+  ]
+}

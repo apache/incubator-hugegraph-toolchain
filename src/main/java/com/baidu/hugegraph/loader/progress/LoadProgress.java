@@ -22,67 +22,38 @@ package com.baidu.hugegraph.loader.progress;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.E;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * LoadProgress was used to record progress of loading, in order to
  * continue loading when the last work was dropped out halfway.
  * The LoadProgress will only be operated by a single thread.
  */
-public final class LoadProgress {
+public final class LoadProgress extends HashMap<String, InputProgress> {
 
-    @JsonProperty("vertex")
-    private final InputProgressMap vertexProgress;
-    @JsonProperty("edge")
-    private final InputProgressMap edgeProgress;
-
-    public LoadProgress() {
-        this.vertexProgress = new InputProgressMap();
-        this.edgeProgress = new InputProgressMap();
+    public InputProgress addStruct(InputStruct struct) {
+        E.checkNotNull(struct, "mapping mapping");
+        this.put(struct.id(), new InputProgress(struct));
+        return this.get(struct.id());
     }
 
-    public InputProgressMap vertex() {
-        return this.vertexProgress;
-    }
-
-    public InputProgressMap edge() {
-        return this.edgeProgress;
-    }
-
-    public InputProgressMap type(ElemType type) {
-        return type.isVertex() ? this.vertexProgress : this.edgeProgress;
-    }
-
-    public long totalLoaded(ElemType type) {
-        InputProgressMap lastLoadMap = type.isVertex() ?
-                                       this.vertexProgress :
-                                       this.edgeProgress;
-        long total = 0L;
-        for (InputProgress inputProgress : lastLoadMap.values()) {
-            for (InputItemProgress itemProgress : inputProgress.loadedItems()) {
-                total += itemProgress.offset();
-            }
-            if (inputProgress.loadingItem() != null) {
-                total += inputProgress.loadingItem().offset();
-            }
-        }
-        return total;
-    }
-
-    public void markLoaded(ElementStruct struct, boolean markAll) {
-        InputProgress progress = this.type(struct.type()).getByStruct(struct);
-        E.checkArgumentNotNull(progress, "Invalid struct '%s'", struct);
+    public void markLoaded(InputStruct struct, boolean markAll) {
+        InputProgress progress = this.get(struct.id());
+        E.checkArgumentNotNull(progress, "Invalid mapping '%s'", struct);
         progress.markLoaded(markAll);
     }
 
@@ -98,9 +69,39 @@ public final class LoadProgress {
         return JsonUtil.fromJson(json, LoadProgress.class);
     }
 
+    public static LoadProgress parse(LoadOptions options) {
+        if (!options.incrementalMode) {
+            return new LoadProgress();
+        }
+
+        String dir = LoadUtil.getStructDirPrefix(options);
+        File dirFile = FileUtils.getFile(dir);
+        if (!dirFile.exists()) {
+            return new LoadProgress();
+        }
+
+        File[] subFiles = dirFile.listFiles((d, name) -> {
+            return name.startsWith(Constants.LOAD_PROGRESS);
+        });
+        if (subFiles == null || subFiles.length == 0) {
+            return new LoadProgress();
+        }
+
+        // Sort progress files by time, then get the last progress file
+        List<File> progressFiles = Arrays.asList(subFiles);
+        progressFiles.sort(Comparator.comparing(File::getName));
+        File lastProgressFile = progressFiles.get(progressFiles.size() - 1);
+        try {
+            return LoadProgress.read(lastProgressFile);
+        } catch (IOException e) {
+            throw new LoadException("Failed to read progress file", e);
+        }
+    }
+
     public static String format(LoadOptions options, String timestamp) {
         String dir = LoadUtil.getStructDirPrefix(options);
-        String name = Constants.PROGRESS_FILE + Constants.BLANK_STR + timestamp;
+        String name = Constants.LOAD_PROGRESS + Constants.UNDERLINE_STR +
+                      timestamp;
         return Paths.get(dir, name).toString();
     }
 }

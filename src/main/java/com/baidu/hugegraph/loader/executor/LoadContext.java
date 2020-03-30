@@ -19,39 +19,30 @@
 
 package com.baidu.hugegraph.loader.executor;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.loader.exception.LoadException;
-import com.baidu.hugegraph.loader.failure.FailureLogger;
+import com.baidu.hugegraph.loader.builder.SchemaCache;
+import com.baidu.hugegraph.loader.failure.FailLogger;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
-import com.baidu.hugegraph.loader.summary.LoadSummary;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
-import com.beust.jcommander.JCommander;
 
 public final class LoadContext {
 
     private static final Logger LOG = Log.logger(LoadContext.class);
 
+    private static volatile LoadContext instance;
+
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
-    private ElemType loadingType;
 
     private volatile boolean stopped;
     private final LoadOptions options;
@@ -59,30 +50,47 @@ public final class LoadContext {
     // The old progress just used to read
     private final LoadProgress oldProgress;
     private final LoadProgress newProgress;
-    // Each Element struct corresponds to a FailureLogger
-    private final Map<String, FailureLogger> loggers;
+    // Each input mapping corresponds to a FailLogger
+    private final Map<String, FailLogger> loggers;
 
-    public LoadContext(String[] args) {
-        this.timestamp = DateUtil.now(Constants.DATE_FORMAT);
-        this.loadingType = null;
+    private SchemaCache schemaCache;
+
+    public static synchronized LoadContext init(LoadOptions options) {
+        if (instance == null) {
+            instance = new LoadContext(options);
+        }
+        return instance;
+    }
+
+    public static synchronized void destroy() {
+        if (instance != null) {
+            try {
+                instance.close();
+            } finally {
+                instance = null;
+            }
+        }
+    }
+
+    public static LoadContext get() {
+        E.checkState(instance != null,
+                     "LoadContext must be initialized firstly");
+        return instance;
+    }
+
+    private LoadContext(LoadOptions options) {
+        this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
         this.stopped = false;
-        this.options = parseCheckOptions(args);
+        this.options = options;
         this.summary = new LoadSummary();
-        this.oldProgress = parseLoadProgress(this.options);
+        this.oldProgress = LoadProgress.parse(this.options);
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
+        this.schemaCache = null;
     }
 
     public String timestamp() {
         return this.timestamp;
-    }
-
-    public ElemType loadingType() {
-        return this.loadingType;
-    }
-
-    public void loadingType(ElemType type) {
-        this.loadingType = type;
     }
 
     public boolean stopped() {
@@ -109,91 +117,38 @@ public final class LoadContext {
         return this.newProgress;
     }
 
-    public FailureLogger failureLogger(ElementStruct struct) {
-        return this.loggers.computeIfAbsent(struct.uniqueKeyForFile(), k -> {
-            LOG.info("Create failure logger for struct '{}'", struct);
-            return new FailureLogger(this, struct);
+    public FailLogger failureLogger(InputStruct struct) {
+        return this.loggers.computeIfAbsent(struct.id(), k -> {
+            LOG.info("Create failure logger for mapping '{}'", struct);
+            return new FailLogger(this, struct);
         });
     }
 
+    public void schemaCache(SchemaCache cache) {
+        this.schemaCache = cache;
+    }
+
+    public SchemaCache schemaCache() {
+        return this.schemaCache;
+    }
+
     public void close() {
-        for (FailureLogger logger : this.loggers.values()) {
+        LOG.info("Ready to close failure loggers");
+        for (FailLogger logger : this.loggers.values()) {
             logger.close();
         }
+        LOG.info("Close all failure loggers successfully");
+
+        LOG.info("Ready to write load progress");
         try {
             this.newProgress().write(this);
         } catch (IOException e) {
             LOG.error("Failed to write load progress", e);
         }
+        LOG.info("Write load progress successfully");
+
+        LOG.info("Ready to close HugeClient");
         HugeClientHolder.close();
-    }
-
-    private static LoadOptions parseCheckOptions(String[] args) {
-        LoadOptions options = new LoadOptions();
-        JCommander commander = JCommander.newBuilder()
-                                         .addObject(options)
-                                         .build();
-        commander.parse(args);
-        // Print usage and exit
-        if (options.help) {
-            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
-        }
-        // Check options
-        // Check option "-f"
-        E.checkArgument(!StringUtils.isEmpty(options.file),
-                        "The struct description file must be specified");
-        E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
-                        "The struct description file name must be end with %s",
-                        Constants.JSON_SUFFIX);
-        File structFile = new File(options.file);
-        if (!structFile.canRead()) {
-            LOG.error("Struct file must be readable: '{}'",
-                      structFile.getAbsolutePath());
-            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
-        }
-
-        // Check option "-g"
-        E.checkArgument(!StringUtils.isEmpty(options.graph),
-                        "Must specified a graph");
-        // Check option "-h"
-        if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
-            options.host = Constants.HTTP_PREFIX + options.host;
-        }
-        // Check option --incremental-mode and --reload-failure
-        if (options.reloadFailure) {
-            E.checkArgument(options.incrementalMode,
-                            "Option --reload-failure is only allowed to set " +
-                            "in incremental mode");
-        }
-        return options;
-    }
-
-    private static LoadProgress parseLoadProgress(LoadOptions options) {
-        if (!options.incrementalMode) {
-            return new LoadProgress();
-        }
-
-        String dir = LoadUtil.getStructDirPrefix(options);
-        File dirFile = FileUtils.getFile(dir);
-        if (!dirFile.exists()) {
-            return new LoadProgress();
-        }
-
-        File[] subFiles = dirFile.listFiles((d, name) -> {
-            return name.startsWith(Constants.PROGRESS_FILE);
-        });
-        if (subFiles == null || subFiles.length == 0) {
-            return new LoadProgress();
-        }
-
-        // Sort progress files by time, then get the last progress file
-        List<File> progressFiles = Arrays.asList(subFiles);
-        progressFiles.sort(Comparator.comparing(File::getName));
-        File lastProgressFile = progressFiles.get(progressFiles.size() - 1);
-        try {
-            return LoadProgress.read(lastProgressFile);
-        } catch (IOException e) {
-            throw new LoadException("Failed to read progress file", e);
-        }
+        LOG.info("Close HugeClient successfully");
     }
 }

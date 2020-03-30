@@ -1,0 +1,28 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/data.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "id": "name",
+      "selected": ["name"]
+    },
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/data.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "id": "alias",
+      "selected": ["alias"]
+    }
+  ]
+}

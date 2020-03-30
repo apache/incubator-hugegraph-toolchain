@@ -27,7 +27,7 @@ public enum ElemType {
 
     private String name;
 
-    private ElemType(String name) {
+    ElemType(String name) {
         this.name = name;
     }
 

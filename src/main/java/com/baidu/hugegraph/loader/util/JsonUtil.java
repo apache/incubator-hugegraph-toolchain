@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
 import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.serializer.DeserializeException;
 import com.baidu.hugegraph.loader.serializer.InputProgressDeser;
@@ -32,6 +34,7 @@ import com.baidu.hugegraph.loader.serializer.InputSourceDeser;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
@@ -42,6 +45,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public final class JsonUtil {
 
+    private static final Logger LOG = Log.logger(JsonUtil.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     static {
@@ -59,6 +63,7 @@ public final class JsonUtil {
         try {
             return MAPPER.writeValueAsString(object);
         } catch (JsonProcessingException e) {
+            LOG.error("Failed to serialize objects", e);
             throw new SerializeException("Failed to serialize objects", e);
         }
     }
@@ -67,6 +72,7 @@ public final class JsonUtil {
         try {
             return MAPPER.readValue(json, clazz);
         } catch (IOException e) {
+            LOG.error("Failed to deserialize json", e);
             throw new SerializeException("Failed to deserialize json", e);
         }
     }
@@ -77,6 +83,7 @@ public final class JsonUtil {
         try {
             return MAPPER.readValue(json, typeRef);
         } catch (IOException e) {
+            LOG.error("Failed to deserialize json", e);
             throw new DeserializeException("Failed to deserialize json", e);
         }
     }
@@ -104,6 +111,7 @@ public final class JsonUtil {
         try {
             return MAPPER.readValue(json, type);
         } catch (IOException e) {
+            LOG.error("Failed to deserialize json", e);
             throw new DeserializeException("Failed to deserialize json", e);
         }
     }

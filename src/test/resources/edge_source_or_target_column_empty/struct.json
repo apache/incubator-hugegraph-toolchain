@@ -1,0 +1,14 @@
+{
+  "edges": [
+    {
+      "label": "created",
+      "source": ["source_id"],
+      "target": ["target_id"],
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/edge_created.csv",
+        "format": "CSV"
+      }
+    }
+  ]
+}

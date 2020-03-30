@@ -33,10 +33,15 @@ public final class Constants {
     public static final String JSON_SUFFIX = ".json";
     public static final String GROOVY_SCHEMA = "schema";
 
+    public static final String FIELD_VERSION = "version";
+    public static final String V1_STRUCT_VERSION = "1.0";
+    public static final String V2_STRUCT_VERSION = "2.0";
+
     public static final String EMPTY_STR = "";
     public static final String BLANK_STR = " ";
     public static final String DOT_STR = ".";
     public static final String MINUS_STR = "-";
+    public static final String UNDERLINE_STR = "_";
     public static final String COMMA_STR = ",";
     public static final String TAB_STR = "\t";
     public static final String NULL_STR = "NULL";
@@ -44,17 +49,20 @@ public final class Constants {
     public static final String TIME_ZONE = "GMT+8";
     public static final String SKIPPED_LINE_REGEX = "(^#|^//).*|";
     public static final String FAILURE = "failure";
-    public static final String FAILURE_CURRENT_DIR = "current";
-    public static final String FAILURE_HISTORY_DIR = "history";
+    public static final String FAILURE_DATA = "failure-data";
+    public static final String READ_FAILURE_SUFFIX = "read-error";
     public static final String PARSE_FAILURE_SUFFIX = "parse-error";
     public static final String INSERT_FAILURE_SUFFIX = "insert-error";
-    public static final String PROGRESS_FILE = "load-progress";
+    public static final String TEMP_FAILURE_SUFFIX = ".temp";
+    public static final String LOAD_PROGRESS = "load-progress";
 
+    public static final String PARSE_WORKER = "parse-worker-%s";
     public static final String BATCH_WORKER = "batch-worker-%d";
     public static final String SINGLE_WORKER = "single-worker-%d";
     public static final long BATCH_PRINT_FREQ = 10_000_000L;
     public static final long SINGLE_PRINT_FREQ = 10_000L;
 
+    public static final int NO_LIMIT = -1;
     public static final int VERTEX_ID_LIMIT = 128;
     public static final String[] SEARCH_LIST = new String[]{":", "!"};
     public static final String[] TARGET_LIST = new String[]{"`:", "`!"};

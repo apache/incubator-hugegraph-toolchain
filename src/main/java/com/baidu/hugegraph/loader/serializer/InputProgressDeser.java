@@ -24,7 +24,7 @@ import java.util.Set;
 
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
-import com.baidu.hugegraph.loader.reader.file.FileItemProgress;
+import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.fasterxml.jackson.core.JsonParser;

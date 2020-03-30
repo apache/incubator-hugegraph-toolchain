@@ -29,6 +29,7 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
+import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.file.Compression;

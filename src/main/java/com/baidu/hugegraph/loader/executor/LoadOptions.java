@@ -21,17 +21,27 @@ package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+
+import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.util.LoadUtil;
+import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.Log;
 import com.beust.jcommander.IParameterValidator;
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 
 public final class LoadOptions {
 
+    private static final Logger LOG = Log.logger(LoadOptions.class);
+
     private final int CPUS = Runtime.getRuntime().availableProcessors();
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
-               description = "The path of the data struct description file")
+               description = "The path of the data mapping description file")
     public String file;
 
     @Parameter(names = {"-s", "--schema"}, arity = 1,
@@ -70,9 +80,11 @@ public final class LoadOptions {
                description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
 
-    @Parameter(names = {"--reload-failure"}, arity = 1,
-               description = "Whether to reload the previous failure records")
-    public boolean reloadFailure = false;
+    @Parameter(names = {"--failure-mode"}, arity = 1,
+               description = "Load data from the failure records, in this " +
+                             "mode, only full load is supported, any read " +
+                             "or parsing errors will cause load task stop")
+    public boolean failureMode = false;
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -106,6 +118,12 @@ public final class LoadOptions {
                description = "Check vertices exists while inserting edges")
     public boolean checkVertex = false;
 
+    @Parameter(names = {"--max-read-errors"}, arity = 1,
+               validateWith = {PositiveValidator.class},
+               description = "The maximum number of rows that read error " +
+                             "before exiting")
+    public int maxReadErrors = 1;
+
     @Parameter(names = {"--max-parse-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The maximum number of rows that parse error " +
@@ -126,7 +144,7 @@ public final class LoadOptions {
     @Parameter(names = {"--retry-times"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "Setting the max retry times when loading timeout")
-    public int retryTimes = 0;
+    public int retryTimes = 3;
 
     @Parameter(names = {"--retry-interval"}, arity = 1,
                validateWith = {PositiveValidator.class},
@@ -137,6 +155,10 @@ public final class LoadOptions {
                description = "Dry run means that only parse but doesn't load")
     public boolean dryRun = false;
 
+    @Parameter(names = {"--print-progress"}, arity = 1,
+               description = "Whether to print real-time load progress")
+    public boolean printProgress = true;
+
     @Parameter(names = {"--test-mode"}, arity = 1,
                description = "Whether the hugegraph-loader work in test mode")
     public boolean testMode = false;
@@ -144,6 +166,49 @@ public final class LoadOptions {
     @Parameter(names = {"--help"}, help = true,
                description = "Print usage of HugeGraphLoader")
     public boolean help;
+
+    public static LoadOptions parseOptions(String[] args) {
+        LoadOptions options = new LoadOptions();
+        JCommander commander = JCommander.newBuilder()
+                                         .addObject(options)
+                                         .build();
+        commander.parse(args);
+        // Print usage and exit
+        if (options.help) {
+            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
+        }
+        // Check options
+        // Check option "-f"
+        E.checkArgument(!StringUtils.isEmpty(options.file),
+                        "The mapping file must be specified");
+        E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
+                        "The mapping file name must be end with %s",
+                        Constants.JSON_SUFFIX);
+        File mappingFile = new File(options.file);
+        if (!mappingFile.canRead()) {
+            LOG.error("The mapping file must be readable: '{}'", mappingFile);
+            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
+        }
+
+        // Check option "-g"
+        E.checkArgument(!StringUtils.isEmpty(options.graph),
+                        "The graph must be specified");
+        // Check option "-h"
+        if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
+            options.host = Constants.HTTP_PREFIX + options.host;
+        }
+        // Check option --incremental-mode and --failure-mode
+        E.checkArgument(!(options.incrementalMode && options.failureMode),
+                        "The option --incremental-mode and --failure-mode " +
+                        "can't be true at same time");
+        if (options.failureMode) {
+            LOG.info("The failure-mode will scan the entire error file");
+            options.maxReadErrors = Constants.NO_LIMIT;
+            options.maxParseErrors = Constants.NO_LIMIT;
+            options.maxInsertErrors = Constants.NO_LIMIT;
+        }
+        return options;
+    }
 
     public static class UrlValidator implements IParameterValidator {
 

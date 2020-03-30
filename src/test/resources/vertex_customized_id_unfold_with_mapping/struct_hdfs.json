@@ -1,0 +1,34 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "core_site_path": "src/test/resources/hdfs_with_core_site_path/core-site.xml",
+        "format": "CSV",
+        "charset": "UTF-8",
+        "list_format": {
+          "start_symbol": "",
+          "end_symbol": "",
+          "elem_delimiter": "|"
+        }
+      },
+      "id": "p_id",
+      "unfold": true,
+      "field_mapping": {
+        "p_id": "id",
+        "name": "name",
+        "age": "age",
+        "city": "city"
+      },
+      "value_mapping": {
+        "p_id": {
+          "p1": "1",
+          "p2": "2",
+          "p3": "3"
+        }
+      }
+    }
+  ]
+}

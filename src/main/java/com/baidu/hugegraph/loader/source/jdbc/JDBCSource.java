@@ -24,7 +24,9 @@ import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+@JsonPropertyOrder({"type", "vendor"})
 public class JDBCSource extends AbstractSource {
 
     @JsonProperty("vendor")
@@ -53,6 +55,7 @@ public class JDBCSource extends AbstractSource {
 
     @Override
     public void check() throws IllegalArgumentException {
+        super.check();
         E.checkArgument(this.vendor != null, "The vendor can't be null");
         E.checkArgument(this.url != null, "The url can't be null");
         E.checkArgument(this.database != null, "The database can't be null");

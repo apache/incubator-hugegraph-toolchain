@@ -23,13 +23,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public final class ListFormat {
 
-    private static final String DEFAULT_START_SYMBOL = "[";
-    private static final String DEFAULT_END_SYMBOL = "]";
-    private static final String DEFAULT_ELEM_DELIMITER = ",";
+    private static final String DEFAULT_START_SYMBOL = "";
+    private static final String DEFAULT_END_SYMBOL = "";
+    private static final String DEFAULT_ELEM_DELIMITER = "|";
 
     @JsonProperty("start_symbol")
     private String startSymbol;
@@ -45,6 +46,7 @@ public final class ListFormat {
         this.endSymbol = DEFAULT_END_SYMBOL;
         this.elemDelimiter = DEFAULT_ELEM_DELIMITER;
         this.ignoredElems = new HashSet<>();
+        this.ignoredElems.add(Constants.EMPTY_STR);
     }
 
     public String startSymbol() {

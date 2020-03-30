@@ -19,117 +19,94 @@
 
 package com.baidu.hugegraph.loader.builder;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.struct.EdgeStruct;
-import com.baidu.hugegraph.loader.util.DataTypeUtil;
-import com.baidu.hugegraph.structure.constant.IdStrategy;
+import com.baidu.hugegraph.loader.mapping.EdgeMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
+import com.google.common.collect.ImmutableList;
 
 public class EdgeBuilder extends ElementBuilder<Edge> {
 
-    private final EdgeStruct struct;
+    private final EdgeMapping mapping;
     private final EdgeLabel edgeLabel;
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(LoadContext context, EdgeStruct struct) {
-        super(context, struct);
-        this.struct = struct;
-        this.edgeLabel = this.getEdgeLabel(struct.label());
+    public EdgeBuilder(InputStruct struct, EdgeMapping mapping) {
+        super(struct);
+        this.mapping = mapping;
+        this.edgeLabel = this.getEdgeLabel(this.mapping.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
         this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
         // Ensure that the source/target id fileds are matched with id strategy
-        this.checkIdFields(this.sourceLabel, this.struct.sourceFields());
-        this.checkIdFields(this.targetLabel, this.struct.targetFields());
+        this.checkIdFields(this.sourceLabel, this.mapping.sourceFields());
+        this.checkIdFields(this.targetLabel, this.mapping.targetFields());
     }
 
     @Override
-    public EdgeStruct struct() {
-        return this.struct;
+    public EdgeMapping mapping() {
+        return this.mapping;
     }
 
     @Override
-    protected SchemaLabel getSchemaLabel() {
+    public List<Edge> build(Map<String, Object> keyValues) {
+        EdgeKVPairs kvPairs = this.newEdgeKVPairs();
+        kvPairs.source.extractFromEdge(keyValues, this.mapping.sourceFields());
+        kvPairs.target.extractFromEdge(keyValues, this.mapping.targetFields());
+        kvPairs.extractProperties(keyValues);
+
+        List<Vertex> sources = kvPairs.source.buildVertices(false);
+        List<Vertex> targets = kvPairs.target.buildVertices(false);
+        if (sources.isEmpty() || targets.isEmpty()) {
+            return ImmutableList.of();
+        }
+        E.checkArgument(sources.size() == 1 || targets.size() == 1 ||
+                        sources.size() == targets.size(),
+                        "The elements number of source and target must be: " +
+                        "1 to n, n to 1, n to n");
+        int size = Math.max(sources.size(), targets.size());
+        List<Edge> edges = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            Vertex source = i < sources.size() ? sources.get(i) : sources.get(0);
+            Vertex target = i < targets.size() ? targets.get(i) : targets.get(0);
+            Edge edge = new Edge(this.mapping.label());
+            edge.source(source);
+            edge.target(target);
+            // Add properties
+            this.addProperties(edge, kvPairs.properties);
+            edges.add(edge);
+        }
+        return edges;
+    }
+
+    private EdgeKVPairs newEdgeKVPairs() {
+        EdgeKVPairs kvPairs = new EdgeKVPairs();
+        kvPairs.source = this.newKVPairs(this.sourceLabel,
+                                         this.mapping.unfoldSource());
+        kvPairs.target = this.newKVPairs(this.targetLabel,
+                                         this.mapping.unfoldTarget());
+        return kvPairs;
+    }
+
+    @Override
+    protected SchemaLabel schemaLabel() {
         return this.edgeLabel;
     }
 
     @Override
-    protected Edge build(Map<String, Object> keyValues) {
-        Edge edge = new Edge(this.struct.label());
-        // Must add source/target vertex id
-        edge.sourceId(this.buildVertexId(this.sourceLabel,
-                                         this.struct.sourceFields(),
-                                         keyValues));
-        edge.targetId(this.buildVertexId(this.targetLabel,
-                                         this.struct.targetFields(),
-                                         keyValues));
-        // Must add source/target vertex label
-        edge.sourceLabel(this.sourceLabel.name());
-        edge.targetLabel(this.targetLabel.name());
-        // Add properties
-        this.addProperties(edge, keyValues);
-        return edge;
-    }
-
-    @Override
     protected boolean isIdField(String fieldName) {
-        return this.struct.sourceFields().contains(fieldName) ||
-               this.struct.targetFields().contains(fieldName);
-    }
-
-    private Object buildVertexId(VertexLabel vertexLabel,
-                                 List<String> fieldNames,
-                                 Map<String, Object> keyValues) {
-        IdStrategy idStrategy = vertexLabel.idStrategy();
-        List<String> primaryKeys = vertexLabel.primaryKeys();
-        Object[] primaryValues = new Object[primaryKeys.size()];
-        for (String fieldName : fieldNames) {
-            if (!keyValues.containsKey(fieldName)) {
-                continue;
-            }
-            Object fieldValue = keyValues.get(fieldName);
-            this.checkFieldValue(fieldName, fieldValue);
-            Object mappedValue = this.mappingFieldValueIfNeeded(fieldName,
-                                                                fieldValue);
-            /*
-             * Check vertex id length when the id strategy of source/target
-             * label is CUSTOMIZE_STRING, just return when CUSTOMIZE_NUMBER
-             */
-            if (idStrategy.isCustomizeString()) {
-                E.checkArgument(mappedValue instanceof String,
-                                "The field value must be String if there " +
-                                "is no value mapping, same as the value " +
-                                "after mapping, but got %s(%s) -> %s(%s)",
-                                fieldValue, fieldValue.getClass(),
-                                mappedValue, mappedValue.getClass());
-                String id = (String) mappedValue;
-                checkVertexIdLength(id);
-                return id;
-            } else if (idStrategy.isCustomizeNumber()) {
-                return DataTypeUtil.parseNumber(mappedValue);
-            } else if (idStrategy.isCustomizeUuid()) {
-                return DataTypeUtil.parseUUID(mappedValue);
-            } else {
-                // The id strategy of source/target label must be PRIMARY_KEY
-                String key = this.struct.mappingField(fieldName);
-                if (primaryKeys.contains(key)) {
-                    int index = primaryKeys.indexOf(key);
-                    Object value = this.validatePropertyValue(key, mappedValue);
-                    primaryValues[index] = value;
-                }
-            }
-        }
-
-        String id = spliceVertexId(vertexLabel, primaryValues);
-        checkVertexIdLength(id);
-        return id;
+        return this.mapping.sourceFields().contains(fieldName) ||
+               this.mapping.targetFields().contains(fieldName);
     }
 
     private void checkIdFields(VertexLabel vertexLabel, List<String> fields) {
@@ -144,6 +121,37 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         } else {
             throw new IllegalArgumentException(
                       "Unsupported AUTOMATIC id strategy for hugegraph-loader");
+        }
+    }
+
+    public class EdgeKVPairs {
+
+        // No general properties
+        private VertexKVPairs source;
+        private VertexKVPairs target;
+        // General properties
+        private Map<String, Object> properties;
+
+        public void extractProperties(Map<String, Object> rawKeyValues) {
+            // General properties
+            this.properties = new HashMap<>();
+            Set<String> props = schemaLabel().properties();
+            for (Map.Entry<String, Object> entry : rawKeyValues.entrySet()) {
+                String fieldName = entry.getKey();
+                Object fieldValue = entry.getValue();
+                if (!retainField(fieldName, fieldValue)) {
+                    continue;
+                }
+
+                String key = mapping.mappingField(fieldName);
+                if (isIdField(fieldName) &&
+                    !props.contains(fieldName) && !props.contains(key)) {
+                    continue;
+                }
+
+                Object value = mappingValue(fieldName, fieldValue);
+                this.properties.put(key, value);
+            }
         }
     }
 }

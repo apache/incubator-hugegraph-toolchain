@@ -23,14 +23,15 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.reader.InputReader;
-import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.reader.AbstractReader;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
-import com.baidu.hugegraph.loader.struct.ElementStruct;
 
-public class JDBCReader implements InputReader {
+public class JDBCReader extends AbstractReader {
 
     private final JDBCSource source;
     private final RowFetcher fetcher;
@@ -55,18 +56,20 @@ public class JDBCReader implements InputReader {
     }
 
     @Override
-    public void init(LoadContext context, ElementStruct struct) {
+    public void init(LoadContext context, InputStruct struct)
+                     throws InitException {
+        this.progress(context, struct);
         try {
             this.source.header(this.fetcher.readHeader());
             this.fetcher.readPrimaryKey();
         } catch (SQLException e) {
-            throw new LoadException("Failed to fetch table structure info", e);
+            throw new InitException("Failed to fetch table structure info", e);
         }
     }
 
     @Override
-    public long confirmOffset() {
-        return -1L;
+    public void confirmOffset() {
+        // TODO: save offset
     }
 
     @Override

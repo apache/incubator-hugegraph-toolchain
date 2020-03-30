@@ -22,8 +22,8 @@ package com.baidu.hugegraph.loader.parser;
 import java.util.Arrays;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.exception.ParseException;
-import com.baidu.hugegraph.loader.reader.Line;
+import com.baidu.hugegraph.loader.exception.ReadException;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.util.StringUtil;
 
 public class TextLineParser implements LineParser {
@@ -40,13 +40,13 @@ public class TextLineParser implements LineParser {
     }
 
     @Override
-    public Line parse(String[] header, String line) throws ParseException {
+    public Line parse(String[] header, String line) throws ReadException {
         String[] columns = this.split(line);
         if (columns.length > header.length) {
             // Ignore extra empty string at the tail of line
             int extra = columns.length - header.length;
             if (!this.tailColumnEmpty(columns, extra)) {
-                throw new ParseException(line,
+                throw new ReadException(line,
                           "The column length '%s' doesn't match with " +
                           "header length '%s' on: %s",
                           columns.length, header.length, line);
