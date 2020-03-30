@@ -47,7 +47,9 @@ public final class HugeClientHolder {
                                   options.maxConnectionsPerRoute);
         } else {
             // The username is same as graph name
-            return new HugeClient(address, options.graph, options.graph,
+            String username = options.username != null ? options.username :
+                              options.graph;
+            return new HugeClient(address, options.graph, username,
                                   options.token, options.timeout,
                                   options.maxConnections,
                                   options.maxConnectionsPerRoute);
