@@ -20,7 +20,11 @@
 package com.baidu.hugegraph.loader.util;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.rest.ClientException;
 
 public final class HugeClientHolder {
 
@@ -41,18 +45,54 @@ public final class HugeClientHolder {
 
     private static HugeClient newHugeClient(LoadOptions options) {
         String address = options.host + ":" + options.port;
-        if (options.token == null) {
-            return new HugeClient(address, options.graph, options.timeout,
-                                  options.maxConnections,
-                                  options.maxConnectionsPerRoute);
-        } else {
-            // The username is same as graph name
-            String username = options.username != null ? options.username :
-                              options.graph;
-            return new HugeClient(address, options.graph, username,
-                                  options.token, options.timeout,
-                                  options.maxConnections,
-                                  options.maxConnectionsPerRoute);
+        try {
+            if (options.token == null) {
+                return new HugeClient(address, options.graph, options.timeout,
+                                      options.maxConnections,
+                                      options.maxConnectionsPerRoute);
+            } else {
+                // The username is same as graph name
+                String username = options.username != null ? options.username :
+                                  options.graph;
+                return new HugeClient(address, options.graph, username,
+                                      options.token, options.timeout,
+                                      options.maxConnections,
+                                      options.maxConnectionsPerRoute);
+            }
+        } catch (IllegalStateException e) {
+            String message = e.getMessage();
+            if (message != null && message.startsWith("The version")) {
+                throw new LoadException("The version of hugegraph-client and " +
+                                        "hugegraph-server don't match", e);
+            }
+            throw e;
+        } catch (ServerException e) {
+            String message = e.getMessage();
+            if (Constants.STATUS_UNAUTHORIZED == e.status() ||
+                (message != null && message.startsWith("Authentication"))) {
+                throw new LoadException("Incorrect username or password", e);
+            }
+            throw e;
+        } catch (ClientException e) {
+            Throwable cause = e.getCause();
+            if (cause == null || cause.getMessage() == null) {
+                throw e;
+            }
+            String message = cause.getMessage();
+            if (message.contains("Connection refused")) {
+                throw new LoadException("The service %s:%s is unavailable", e,
+                                        options.host, options.port);
+            } else if (message.contains("java.net.UnknownHostException") ||
+                       message.contains("Host name may not be null")) {
+                throw new LoadException("The host %s is unknown", e,
+                                        options.host);
+            } else if (message.contains("connect timed out")) {
+                throw new LoadException("Connect service %s:%s timeout, " +
+                                        "please check service is available " +
+                                        "and network is unobstructed", e,
+                                        options.host, options.port);
+            }
+            throw e;
         }
     }
 

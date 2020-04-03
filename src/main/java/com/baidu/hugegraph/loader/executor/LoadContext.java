@@ -140,8 +140,10 @@ public final class LoadContext {
         LOG.info("Close all failure loggers successfully");
 
         LOG.info("Ready to write load progress");
+        this.newProgress.plusVertexLoaded(summary.vertexLoaded());
+        this.newProgress.plusEdgeLoaded(summary.edgeLoaded());
         try {
-            this.newProgress().write(this);
+            this.newProgress.write(this);
         } catch (IOException e) {
             LOG.error("Failed to write load progress", e);
         }

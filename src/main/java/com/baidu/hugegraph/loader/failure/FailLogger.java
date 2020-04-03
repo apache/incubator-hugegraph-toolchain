@@ -19,68 +19,178 @@
 
 package com.baidu.hugegraph.loader.failure;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InsertException;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.LoadUtil;
+import com.baidu.hugegraph.util.JsonUtil;
 import com.baidu.hugegraph.util.Log;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 public final class FailLogger {
 
     private static final Logger LOG = Log.logger(FailLogger.class);
 
-    private final FailWriter readFailWriter;
-    private final FailWriter parseFailWriter;
-    private final FailWriter insertFailWriter;
+    private final LoadOptions options;
+    private final InputStruct struct;
+    private final File file;
+    private final FailWriter writer;
 
     public FailLogger(LoadContext context, InputStruct struct) {
-        String dir = LoadUtil.getStructDirPrefix(context.options());
-        String prefix = struct.id();
-        String charset = struct.input().charset();
-        /*
-         * If worked in incremental mode, the failure record will append
-         * to the failure file, otherwise(failure mode) write to a new file,
-         * the writing file is a temp file, it will be renamed to formal
-         */
-        boolean append = context.options().incrementalMode;
-
-        String path;
-        path = path(dir, prefix, Constants.READ_FAILURE_SUFFIX);
-        this.readFailWriter = new FailWriter(struct, path, charset, append);
-        path = path(dir, prefix, Constants.PARSE_FAILURE_SUFFIX);
-        this.parseFailWriter = new FailWriter(struct, path, charset, append);
-        path = path(dir, prefix, Constants.INSERT_FAILURE_SUFFIX);
-        this.insertFailWriter = new FailWriter(struct, path, charset, append);
-    }
-
-    private static String path(String dir, String prefix, String suffix) {
-        // The path format like: mapping/error-data/file1.parse-error
-        String name = prefix + Constants.DOT_STR + suffix;
-        return Paths.get(dir, Constants.FAILURE_DATA, prefix, name).toString();
+        this.options = context.options();
+        this.struct = struct;
+        String prefix = LoadUtil.getStructDirPrefix(context.options());
+        String parentDir = Paths.get(prefix, Constants.FAILURE_DATA).toString();
+        // The files under failure path are like:
+        // mapping/failure-data/input-1.error
+        String fileName = this.struct.id() + Constants.FAILURE_SUFFIX;
+        boolean append;
+        if (this.options.incrementalMode) {
+            // Append to existed file
+            append = true;
+        } else if (this.options.failureMode) {
+            // Write to a temp file first, then rename
+            fileName += Constants.TEMP_SUFFIX;
+            append = false;
+        } else {
+            // Overwrite the origin file
+            append = false;
+        }
+        String savePath = Paths.get(parentDir, fileName).toString();
+        LOG.info("The failure data save path of input struct {} is at {}: ",
+                 struct.id(), savePath);
+        this.file = new File(savePath);
+        String charset = this.struct.input().charset();
+        this.writer = new FailWriter(this.file, charset, append);
     }
 
     public void write(ReadException e) {
-        this.readFailWriter.write(e);
+        this.writer.write(e);
     }
 
     public void write(ParseException e) {
-        this.parseFailWriter.write(e);
+        this.writer.write(e);
     }
 
     public void write(InsertException e) {
-        this.insertFailWriter.write(e);
+        this.writer.write(e);
     }
 
     public void close() {
-        this.readFailWriter.close();
-        this.parseFailWriter.close();
-        this.insertFailWriter.close();
+        this.writeHeaderIfNeeded();
+        this.writer.close();
+
+        if (this.file.length() == 0) {
+            LOG.debug("The file {} is empty, delete it", this.file);
+            this.file.delete();
+        } else {
+            this.removeDupLines();
+            this.renameTempFile();
+        }
+    }
+
+    /**
+     * Write head to a specialized file, every input struct has one
+     */
+    private void writeHeaderIfNeeded() {
+        // header() == null means no need header
+        if (this.struct.input().header() == null) {
+            return;
+        }
+        String header = JsonUtil.toJson(this.struct.input().header());
+        /*
+         * The files under failure path are like:
+         * mapping/failure-data/input-1.header
+         */
+        String fileName = this.struct.id() + Constants.HEADER_SUFFIX;
+        String filePath = Paths.get(this.file.getParent(), fileName).toString();
+        File headerFile = new File(filePath);
+        String charset = this.struct.input().charset();
+        try {
+            FileUtils.writeStringToFile(headerFile, header, charset);
+        } catch (IOException e) {
+            throw new LoadException("Failed to write header '%s'", e);
+        }
+    }
+
+    private void removeDupLines() {
+        Charset charset = Charset.forName(this.struct.input().charset());
+        System.out.println("charset is " + charset);
+
+        File dedupFile = new File(this.file.getAbsolutePath() +
+                                   Constants.DEDUP_SUFFIX);
+        try (InputStream is = new FileInputStream(this.file);
+             Reader reader = new InputStreamReader(is, charset);
+             BufferedReader br = new BufferedReader(reader);
+             // upper is input, below is output
+             OutputStream os = new FileOutputStream(dedupFile);
+             Writer writer = new OutputStreamWriter(os, charset);
+             BufferedWriter bw = new BufferedWriter(writer)) {
+            Set<Integer> writedLines = new HashSet<>();
+            HashFunction hashFunc = Hashing.murmur3_32();
+            for (String tipsLine, dataLine;
+                 (tipsLine = br.readLine()) != null &&
+                 (dataLine = br.readLine()) != null;) {
+                /*
+                 * Hash data line to remove duplicate lines
+                 * Misjudgment may occur, but the probability is extremely low
+                 */
+                int hash = hashFunc.hashString(dataLine, charset).asInt();
+                if (!writedLines.contains(hash)) {
+                    bw.write(tipsLine);
+                    bw.newLine();
+                    bw.write(dataLine);
+                    bw.newLine();
+                    // Add
+                    writedLines.add(hash);
+                }
+            }
+        } catch (IOException e) {
+            throw new LoadException("Failed to scan and remove duplicate lines");
+        }
+        if (!dedupFile.renameTo(this.file)) {
+            throw new LoadException("Failed to rename dedup file to origin");
+        }
+    }
+
+    private void renameTempFile() {
+        // Renamed file if needed
+        boolean needRename = this.options.failureMode;
+        if (needRename) {
+            String fileName = this.file.getAbsolutePath();
+            int idx = fileName.lastIndexOf(Constants.TEMP_SUFFIX);
+            String destName = fileName.substring(0, idx);
+            if (!this.file.renameTo(new File(destName))) {
+                LOG.warn("Failed to rename failure data file {} to {}",
+                         fileName, destName);
+            }
+        }
     }
 }

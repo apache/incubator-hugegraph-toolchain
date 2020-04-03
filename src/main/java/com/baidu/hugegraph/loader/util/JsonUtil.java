@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.util;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,17 @@ public final class JsonUtil {
         JavaType type = MAPPER.getTypeFactory().constructCollectionType(
                                                 LinkedHashSet.class, clazz);
         return MAPPER.convertValue(node, type);
+    }
+
+    public static <T> List<T> convertList(String json, Class<T> clazz) {
+        JavaType type = MAPPER.getTypeFactory()
+                              .constructCollectionType(ArrayList.class, clazz);
+        try {
+            return MAPPER.readValue(json, type);
+        } catch (IOException e) {
+            LOG.error("Failed to deserialize json", e);
+            throw new DeserializeException("Failed to deserialize json", e);
+        }
     }
 
     public static <T> List<T> convertList(JsonNode node, Class<T> clazz) {

@@ -19,13 +19,25 @@
 
 package com.baidu.hugegraph.loader.source.file;
 
+import com.baidu.hugegraph.loader.constant.Constants;
+
 public enum FileFormat {
 
-    CSV,
+    CSV(Constants.COMMA_STR),
 
-    TEXT,
+    TEXT(Constants.TAB_STR),
 
-    JSON;
+    JSON(null);
+
+    private String delimiter;
+
+    FileFormat(String delimiter) {
+        this.delimiter = delimiter;
+    }
+
+    public String delimiter() {
+        return this.delimiter;
+    }
 
     public boolean needHeader() {
         return this == CSV || this == TEXT;

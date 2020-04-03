@@ -171,6 +171,16 @@ public final class LoadOptions {
                description = "Print usage of HugeGraphLoader")
     public boolean help;
 
+    public String workModeString() {
+        if (this.incrementalMode) {
+            return "INCREMENTAL MODE";
+        } else if (this.failureMode) {
+            return "FAILURE MODE";
+        } else {
+            return "NORMAL MODE";
+        }
+    }
+
     public static LoadOptions parseOptions(String[] args) {
         LoadOptions options = new LoadOptions();
         JCommander commander = JCommander.newBuilder()

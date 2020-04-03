@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class SkippedLine {
 
     @JsonProperty("regex")
-    private final String regex;
+    private String regex;
 
     private transient Matcher matcher;
 
@@ -39,6 +39,10 @@ public class SkippedLine {
 
     public String regex() {
         return this.regex;
+    }
+
+    public void regex(String regex) {
+        this.regex = regex;
     }
 
     private Matcher matcher() {

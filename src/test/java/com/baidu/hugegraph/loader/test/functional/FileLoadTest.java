@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,6 +50,7 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
+import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
@@ -1998,9 +2000,10 @@ public class FileLoadTest extends LoadTest {
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(4, vertices.size());
 
-        LoadProgress loadProgress = context.newProgress();
-        Assert.assertEquals(1, loadProgress.size());
-        loadProgress.forEach((id, inputProgress) -> {
+        Map<String, InputProgress> inputProgressMap = context.newProgress()
+                                                             .inputProgress();
+        Assert.assertEquals(1, inputProgressMap.size());
+        inputProgressMap.forEach((id, inputProgress) -> {
             if (id.equals("1")) {
                 Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
@@ -2055,9 +2058,9 @@ public class FileLoadTest extends LoadTest {
         // ripple,java,199 has been loaded
         Assert.assertEquals(6, vertices.size());
 
-        loadProgress = context.newProgress();
-        Assert.assertEquals(2, loadProgress.size());
-        loadProgress.forEach((id, inputProgress) -> {
+        inputProgressMap = context.newProgress().inputProgress();
+        Assert.assertEquals(2, inputProgressMap.size());
+        inputProgressMap.forEach((id, inputProgress) -> {
             if (id.equals("1")) {
                 Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
@@ -2139,9 +2142,9 @@ public class FileLoadTest extends LoadTest {
         // marko,29,Beijing has been loaded
         Assert.assertEquals(8, vertices.size());
 
-        loadProgress = context.newProgress();
-        Assert.assertEquals(2, loadProgress.size());
-        loadProgress.forEach((id, inputProgress) -> {
+        inputProgressMap = context.newProgress().inputProgress();
+        Assert.assertEquals(2, inputProgressMap.size());
+        inputProgressMap.forEach((id, inputProgress) -> {
             if (id.equals("1")) {
                 Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
@@ -2197,10 +2200,12 @@ public class FileLoadTest extends LoadTest {
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
 
-        LoadProgress loadProgress = context.newProgress();
-        Assert.assertEquals(2, loadProgress.size());
-        Assert.assertEquals(ImmutableSet.of("1", "2"), loadProgress.keySet());
-        loadProgress.forEach((id, value) -> {
+        Map<String, InputProgress> inputProgressMap = context.newProgress()
+                                                             .inputProgress();
+        Assert.assertEquals(2, inputProgressMap.size());
+        Assert.assertEquals(ImmutableSet.of("1", "2"),
+                            inputProgressMap.keySet());
+        inputProgressMap.forEach((id, value) -> {
             if (id.equals("2")) {
                 // The error line is exactly last line
                 Set<InputItemProgress> loadedItems = value.loadedItems();

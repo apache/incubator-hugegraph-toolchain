@@ -88,7 +88,6 @@ public final class ParseTaskBuilder {
             List<Record> records = new ArrayList<>(batchSize);
             int count = 0;
             for (Line line : lines) {
-                String rawLine = line.rawLine();
                 try {
                     // NOTE: don't remove entry in keyValues
                     List<GraphElement> elements = builder.build(line.keyValues());
@@ -104,12 +103,12 @@ public final class ParseTaskBuilder {
                         records = new ArrayList<>(batchSize);
                     }
                     for (GraphElement element : elements) {
-                        records.add(new Record(rawLine, element));
+                        records.add(new Record(line.rawLine(), element));
                         count++;
                     }
                 } catch (IllegalArgumentException e) {
                     metrics.increaseParseFailure(mapping);
-                    ParseException pe = new ParseException(rawLine, e);
+                    ParseException pe = new ParseException(line.rawLine(), e);
                     this.handleParseFailure(mapping, pe);
                 }
             }

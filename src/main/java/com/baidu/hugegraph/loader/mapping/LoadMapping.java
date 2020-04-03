@@ -23,19 +23,25 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.MappingUtil;
 import com.baidu.hugegraph.util.E;
@@ -107,18 +113,47 @@ public class LoadMapping implements Checkable {
         if (!pathDir.exists()) {
             return targetStructs;
         }
-
-        File[] inputDirs = pathDir.listFiles();
-        for (File inputDir : inputDirs) {
-            String inputId = inputDir.getName();
+        Map<String, Pair<File, File>> inputFiles = this.collectInputFiles(pathDir);
+        for (String inputId : inputFiles.keySet()) {
             InputStruct struct = this.struct(inputId);
+            String charset = struct.input().charset();
+            Pair<File, File> filePair = inputFiles.get(inputId);
+            String json;
+            try {
+                json = FileUtils.readFileToString(filePair.getLeft(), charset);
+            } catch (IOException e) {
+                throw new LoadException("Failed to read header file %s",
+                                        filePair.getLeft());
+            }
+            List<String> header = JsonUtil.convertList(json, String.class);
             FileSource source = struct.input().asFileSource();
+            source.header(header.toArray(new String[]{}));
             // Set failure data path
-            source.path(inputDir.getPath());
+            source.path(filePair.getRight().getAbsolutePath());
+            source.skippedLine().regex(Constants.SKIPPED_LINE_REGEX);
             struct.input(source);
+            // Add to target structs
             targetStructs.add(struct);
         }
         return targetStructs;
+    }
+
+    private Map<String, Pair<File, File>> collectInputFiles(File pathDir) {
+        File[] subFiles = pathDir.listFiles();
+        E.checkArgument(subFiles != null && subFiles.length == 2,
+                        "Every input struct should have️ a pair of " +
+                        "data file and header file");
+        Arrays.sort(subFiles, Comparator.comparing(File::getName));
+        Map<String, Pair<File, File>> inputFiles = new LinkedHashMap<>();
+        for (int i = 0; i < subFiles.length; i += 2) {
+            File dataFile = subFiles[i];
+            File headerFile = subFiles[i + 1];
+            // TODO: check data file and header file has same preifx
+            int idx = dataFile.getName().lastIndexOf(Constants.DOT_STR);
+            String inputId = dataFile.getName().substring(0, idx);
+            inputFiles.put(inputId, Pair.of(headerFile, dataFile));
+        }
+        return inputFiles;
     }
 
     public InputStruct struct(String id) {
