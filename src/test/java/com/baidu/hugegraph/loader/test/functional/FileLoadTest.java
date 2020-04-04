@@ -43,7 +43,6 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
@@ -51,7 +50,6 @@ import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
-import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
@@ -220,7 +218,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(InitException.class, () -> {
+        Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -231,7 +229,7 @@ public class FileLoadTest extends LoadTest {
         options.host = Constants.HTTP_PREFIX + SERVER;
         options.port = PORT;
         options.graph = GRAPH;
-        HugeClient client = HugeClientHolder.get(options);
+        HugeClient client = HugeClientHolder.create(options);
         SchemaManager schema = client.schema();
         schema.propertyKey("name").asText().ifNotExist().create();
         schema.propertyKey("age").asInt().ifNotExist().create();
@@ -277,6 +275,7 @@ public class FileLoadTest extends LoadTest {
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
+        client.close();
     }
 
     @Test

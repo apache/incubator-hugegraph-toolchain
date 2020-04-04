@@ -142,8 +142,6 @@ public final class FailLogger {
 
     private void removeDupLines() {
         Charset charset = Charset.forName(this.struct.input().charset());
-        System.out.println("charset is " + charset);
-
         File dedupFile = new File(this.file.getAbsolutePath() +
                                    Constants.DEDUP_SUFFIX);
         try (InputStream is = new FileInputStream(this.file);

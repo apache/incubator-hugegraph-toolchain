@@ -115,8 +115,16 @@ public class FileSource extends AbstractSource {
         return this.filter;
     }
 
+    public void filter(FileFilter filter) {
+        this.filter = filter;
+    }
+
     public FileFormat format() {
         return this.format;
+    }
+
+    public void format(FileFormat format) {
+        this.format = format;
     }
 
     public String delimiter() {
@@ -131,20 +139,40 @@ public class FileSource extends AbstractSource {
         return this.dateFormat;
     }
 
+    public void dateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
+
     public String timeZone() {
         return this.timeZone;
+    }
+
+    public void timeZone(String timeZone) {
+        this.timeZone = timeZone;
     }
 
     public SkippedLine skippedLine() {
         return this.skippedLine;
     }
 
+    public void skippedLine(SkippedLine skippedLine) {
+        this.skippedLine = skippedLine;
+    }
+
     public Compression compression() {
         return this.compression;
     }
 
+    public void compression(Compression compression) {
+        this.compression = compression;
+    }
+
     public int batchSize() {
         return this.batchSize;
+    }
+
+    public void batchSize(int batchSize) {
+        this.batchSize = batchSize;
     }
 
     @Override

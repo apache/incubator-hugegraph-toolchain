@@ -37,7 +37,7 @@ public final class LoadOptions {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 
-    private final int CPUS = Runtime.getRuntime().availableProcessors();
+    private static final int CPUS = Runtime.getRuntime().availableProcessors();
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},

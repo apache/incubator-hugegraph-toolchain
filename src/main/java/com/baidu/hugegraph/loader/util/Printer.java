@@ -39,9 +39,7 @@ public final class Printer {
     private static final String SLASH = "/";
     private static final String DIVIDE_LINE = StringUtils.repeat('-', 50);
 
-    private static final LoadContext context = LoadContext.get();
-
-    public static void printRealtimeProgress() {
+    public static void printRealtimeProgress(LoadContext context) {
         LoadOptions options = context.options();
         if (!options.printProgress) {
             return;
@@ -57,7 +55,7 @@ public final class Printer {
         System.out.print("vertices/edges has been loaded this time : ");
     }
 
-    public static void printFinalProgress() {
+    public static void printFinalProgress(LoadContext context) {
         LoadOptions options = context.options();
         if (!options.printProgress) {
             return;
@@ -68,7 +66,7 @@ public final class Printer {
         System.out.println(vertexLoaded + SLASH + edgeLoaded);
     }
 
-    public static void printSummary() {
+    public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
         // Just log vertices/edges metrics
         log(DIVIDE_LINE);
@@ -140,8 +138,8 @@ public final class Printer {
         System.err.println(formatMsg);
     }
 
-    public static void printProgress(ElemType type, long frequency,
-                                     int batchSize) {
+    public static void printProgress(LoadContext context, ElemType type,
+                                     long frequency, int batchSize) {
         LoadSummary summary = context.summary();
         long vertexLoaded = summary.vertexLoaded();
         long edgeLoaded = summary.edgeLoaded();

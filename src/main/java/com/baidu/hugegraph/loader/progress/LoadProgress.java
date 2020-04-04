@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
@@ -78,6 +79,20 @@ public final class LoadProgress  {
 
     public Map<String, InputProgress> inputProgress() {
         return this.inputProgress;
+    }
+
+    public long totalInputReaded() {
+        long count = 0L;
+        for (InputProgress inputProgress : this.inputProgress.values()) {
+            Set<InputItemProgress> itemProgresses = inputProgress.loadedItems();
+            for (InputItemProgress itemProgress : itemProgresses) {
+                count += itemProgress.offset();
+            }
+            if (inputProgress.loadingItem() != null) {
+                count += inputProgress.loadingItem().offset();
+            }
+        }
+        return count;
     }
 
     public InputProgress addStruct(InputStruct struct) {

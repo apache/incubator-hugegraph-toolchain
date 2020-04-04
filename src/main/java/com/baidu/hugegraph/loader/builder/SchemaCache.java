@@ -34,20 +34,24 @@ public final class SchemaCache {
     private final Map<String, VertexLabel> vertexLabels;
     private final Map<String, EdgeLabel> edgeLabels;
 
-    public SchemaCache(HugeClient client) {
+    public SchemaCache() {
         this.propertyKeys = new HashMap<>();
-        client.schema().getPropertyKeys().forEach(pk -> {
-            propertyKeys.put(pk.name(), pk);
-        });
-
         this.vertexLabels = new HashMap<>();
-        client.schema().getVertexLabels().forEach(vl -> {
-            vertexLabels.put(vl.name(), vl);
-        });
-
         this.edgeLabels = new HashMap<>();
+    }
+
+    public void updateAll(HugeClient client) {
+        this.propertyKeys.clear();
+        client.schema().getPropertyKeys().forEach(pk -> {
+            this.propertyKeys.put(pk.name(), pk);
+        });
+        this.vertexLabels.clear();
+        client.schema().getVertexLabels().forEach(vl -> {
+            this.vertexLabels.put(vl.name(), vl);
+        });
+        this.edgeLabels.clear();
         client.schema().getEdgeLabels().forEach(el -> {
-            edgeLabels.put(el.name(), el);
+            this.edgeLabels.put(el.name(), el);
         });
     }
 

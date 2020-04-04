@@ -66,6 +66,10 @@ public abstract class AbstractSource implements InputSource {
         }
     }
 
+    public void header(List<String> header) {
+        this.header = header;
+    }
+
     @Override
     public String charset() {
         return this.charset;

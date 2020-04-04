@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.builder.Record;
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -39,9 +40,9 @@ public class BatchInsertTask extends InsertTask {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
 
-    public BatchInsertTask(InputStruct struct, ElementMapping mapping,
-                           List<Record> batch) {
-        super(struct, mapping, batch);
+    public BatchInsertTask(LoadContext context, InputStruct struct,
+                           ElementMapping mapping, List<Record> batch) {
+        super(context, struct, mapping, batch);
     }
 
     @Override
@@ -75,7 +76,8 @@ public class BatchInsertTask extends InsertTask {
         int count = this.batch.size();
         // This metrics just for current element mapping
         this.plusLoadSuccess(count);
-        Printer.printProgress(this.type(), BATCH_PRINT_FREQ, count);
+        Printer.printProgress(this.context, this.type(),
+                              BATCH_PRINT_FREQ, count);
     }
 
     private int waitThenRetry(int retryCount, RuntimeException e) {

@@ -28,23 +28,13 @@ import com.baidu.hugegraph.rest.ClientException;
 
 public final class HugeClientHolder {
 
-    private static volatile HugeClient instance;
-
-    public static HugeClient get(LoadOptions options) {
-        if (instance == null) {
-            synchronized (HugeClientHolder.class) {
-                if (instance == null) {
-                    instance = newHugeClient(options);
-                }
-            }
+    public static HugeClient create(LoadOptions options) {
+        String address;
+        if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
+            address = Constants.HTTP_PREFIX + options.host + ":" + options.port;
+        } else {
+            address = options.host + ":" + options.port;
         }
-        return instance;
-    }
-
-    private HugeClientHolder() {}
-
-    private static HugeClient newHugeClient(LoadOptions options) {
-        String address = options.host + ":" + options.port;
         try {
             if (options.token == null) {
                 return new HugeClient(address, options.graph, options.timeout,
@@ -93,15 +83,6 @@ public final class HugeClientHolder {
                                         options.host, options.port);
             }
             throw e;
-        }
-    }
-
-    public static void close() {
-        synchronized (HugeClientHolder.class) {
-            if (instance != null) {
-                instance.close();
-                instance = null;
-            }
         }
     }
 }

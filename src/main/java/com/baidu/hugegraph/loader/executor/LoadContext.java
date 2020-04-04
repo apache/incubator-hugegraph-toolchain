@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -39,12 +40,10 @@ public final class LoadContext {
 
     private static final Logger LOG = Log.logger(LoadContext.class);
 
-    private static volatile LoadContext instance;
-
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
 
-    private volatile boolean stopped;
+    private volatile LoadStatus status;
     private final LoadOptions options;
     private final LoadSummary summary;
     // The old progress just used to read
@@ -53,52 +52,45 @@ public final class LoadContext {
     // Each input mapping corresponds to a FailLogger
     private final Map<String, FailLogger> loggers;
 
-    private SchemaCache schemaCache;
+    private final HugeClient client;
+    private final SchemaCache schemaCache;
 
-    public static synchronized LoadContext init(LoadOptions options) {
-        if (instance == null) {
-            instance = new LoadContext(options);
-        }
-        return instance;
-    }
-
-    public static synchronized void destroy() {
-        if (instance != null) {
-            try {
-                instance.close();
-            } finally {
-                instance = null;
-            }
-        }
-    }
-
-    public static LoadContext get() {
-        E.checkState(instance != null,
-                     "LoadContext must be initialized firstly");
-        return instance;
-    }
-
-    private LoadContext(LoadOptions options) {
+    public LoadContext(LoadOptions options) {
         this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
-        this.stopped = false;
+        this.status = LoadStatus.RUNNING;
         this.options = options;
         this.summary = new LoadSummary();
-        this.oldProgress = LoadProgress.parse(this.options);
+        this.oldProgress = LoadProgress.parse(options);
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
-        this.schemaCache = null;
+        this.client = HugeClientHolder.create(options);
+        this.schemaCache = new SchemaCache();
     }
 
     public String timestamp() {
         return this.timestamp;
     }
 
-    public boolean stopped() {
-        return this.stopped;
+    public LoadStatus status() {
+        return this.status;
     }
 
-    public void stopLoading() {
-        this.stopped = true;
+    public boolean stopped() {
+        return this.status.stopped();
+    }
+
+    public void stopLoading(LoadStatus status) {
+        /*
+         * The marking behavior of the upper layer may be speculative.
+         * If it has been marked before, skip this marking
+         */
+        if (this.status.stopped()) {
+            return;
+        }
+        E.checkArgument(status.stopped(), String.format(
+                        "The status must be %s or %s when mark stopped",
+                        LoadStatus.SUCCEED, LoadStatus.FAILED));
+        this.status = status;
     }
 
     public LoadOptions options() {
@@ -124,12 +116,17 @@ public final class LoadContext {
         });
     }
 
-    public void schemaCache(SchemaCache cache) {
-        this.schemaCache = cache;
+    public HugeClient client() {
+        return this.client;
     }
 
     public SchemaCache schemaCache() {
         return this.schemaCache;
+    }
+
+    public void updateSchemaCache() {
+        assert this.client != null;
+        this.schemaCache.updateAll(this.client);
     }
 
     public void close() {
@@ -150,7 +147,7 @@ public final class LoadContext {
         LOG.info("Write load progress successfully");
 
         LOG.info("Ready to close HugeClient");
-        HugeClientHolder.close();
+        this.client.close();
         LOG.info("Close HugeClient successfully");
     }
 }

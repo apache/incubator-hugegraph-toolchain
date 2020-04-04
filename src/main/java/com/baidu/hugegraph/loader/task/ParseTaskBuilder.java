@@ -50,15 +50,15 @@ public final class ParseTaskBuilder {
     private final InputStruct struct;
     private final List<ElementBuilder> builders;
 
-    public ParseTaskBuilder(InputStruct struct) {
-        this.context = LoadContext.get();
+    public ParseTaskBuilder(LoadContext context, InputStruct struct) {
+        this.context = context;
         this.struct = struct;
         this.builders = new ArrayList<>();
         for (VertexMapping mapping : struct.vertices()) {
-            this.builders.add(new VertexBuilder(struct, mapping));
+            this.builders.add(new VertexBuilder(this.context, struct, mapping));
         }
         for (EdgeMapping mapping : struct.edges()) {
-            this.builders.add(new EdgeBuilder(struct, mapping));
+            this.builders.add(new EdgeBuilder(this.context, struct, mapping));
         }
     }
 
