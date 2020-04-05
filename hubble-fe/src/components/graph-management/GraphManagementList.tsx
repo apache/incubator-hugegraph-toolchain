@@ -15,6 +15,7 @@ import Highlighter from 'react-highlight-words';
 
 import { GraphManagementStoreContext } from '../../stores';
 import HintIcon from '../../assets/imgs/ic_question_mark.svg';
+import { GraphData } from '../../stores/types/GraphManagementStore/graphManagementStore';
 
 const dropdownList = [
   {
@@ -113,7 +114,9 @@ const GraphManagementList: React.FC = observer(() => {
   );
 });
 
-const GraphManagementListItem = observer(
+const GraphManagementListItem: React.FC<GraphData & {
+  index: number;
+}> = observer(
   ({ id, name, graph, host, port, enabled, create_time, index }) => {
     const graphManagementStore = useContext(GraphManagementStoreContext);
     const [_, setLocation] = useLocation();
@@ -404,7 +407,7 @@ const GraphManagementListItem = observer(
         </div>
         <div className="graph-management-list-item">
           <div className="graph-management-list-title">端口号</div>
-          <div className="graph-management-list-data" title={port}>
+          <div className="graph-management-list-data" title={String(port)}>
             {port}
           </div>
         </div>

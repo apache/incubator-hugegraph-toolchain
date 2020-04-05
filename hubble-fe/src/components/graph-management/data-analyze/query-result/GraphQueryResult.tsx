@@ -33,7 +33,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
   const resultWrapper = useRef<HTMLDivElement>(null);
   const legendViewPointWrapper = useRef<HTMLDivElement>(null);
   const legendWrapper = useRef<HTMLDivElement>(null);
-  const [loadingGraphs, switchLoadingGraphs] = useState(true);
+  const [showLoadingGraphs, switchShowLoadingGraphs] = useState(true);
   const [isPopover, switchIsPopover] = useState(false);
   const [nodeTooltipX, setNodeToolTipX] = useState(0);
   const [nodeTooltipY, setNodeToolTipY] = useState(0);
@@ -271,6 +271,9 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                       ...edge,
                       from: edge.source,
                       to: edge.target,
+                      font: {
+                        color: '#666'
+                      },
                       title: `
                           <div class="tooltip-fields">
                             <div>边类型：</div>
@@ -288,7 +291,13 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                                       </div>`;
                             })
                             .join('')}
-                        `
+                        `,
+                      color: {
+                        color: dataAnalyzeStore.edgeColorMappings[edge.label],
+                        highlight:
+                          dataAnalyzeStore.edgeColorMappings[edge.label],
+                        hover: dataAnalyzeStore.edgeColorMappings[edge.label]
+                      }
                     });
                   }
                 );
@@ -339,7 +348,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
         });
 
         network.once('stabilizationIterationsDone', () => {
-          switchLoadingGraphs(false);
+          switchShowLoadingGraphs(false);
         });
 
         setGraph(network);
@@ -553,7 +562,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           visGraphEdges={visGraphEdges}
         />
       )}
-      {loadingGraphs && (
+      {showLoadingGraphs && (
         <div className="graph-loading-placeholder">
           <div className="query-result-loading-bg">
             <img
@@ -686,6 +695,9 @@ const GraphPopover: React.FC<{
                     ...edge,
                     from: edge.source,
                     to: edge.target,
+                    font: {
+                      color: '#666'
+                    },
                     title: `
                       <div class="tooltip-fields">
                         <div>边类型：</div>
@@ -704,7 +716,12 @@ const GraphPopover: React.FC<{
                                 `;
                         })
                         .join('')}
-                    `
+                    `,
+                    color: {
+                      color: dataAnalyzeStore.edgeColorMappings[edge.label],
+                      highlight: dataAnalyzeStore.edgeColorMappings[edge.label],
+                      hover: dataAnalyzeStore.edgeColorMappings[edge.label]
+                    }
                   });
                 }
               );

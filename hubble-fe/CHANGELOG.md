@@ -1,3 +1,13 @@
+## 1.2.1 (2020-02-27)
+
+1.2.1 added graph-mode view for metadata management. It supports all functions that list-mode has with better visual effect.
+
+#### :rocket: New Feature
+
+- graph-mode view in metadata management
+
+<br />
+
 ## 2019-08-16
 
 ### Graph Management (front page)

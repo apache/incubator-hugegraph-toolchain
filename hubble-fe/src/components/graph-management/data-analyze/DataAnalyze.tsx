@@ -40,6 +40,7 @@ const DataAnalyze: React.FC = observer(() => {
       dataAnalyzeStore.setCurrentId(Number(params.id));
       dataAnalyzeStore.fetchValueTypes();
       dataAnalyzeStore.fetchAllNodeColors();
+      dataAnalyzeStore.fetchAllEdgeColors();
     }
   }, [dataAnalyzeStore, match, (params as Params).id]);
 

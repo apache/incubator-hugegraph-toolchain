@@ -1143,9 +1143,9 @@ export class EdgeTypeStore {
         : this.metadataConfigsRootStore.currentId;
 
     try {
-      const result: AxiosResponse<
-        responseData<EdgeTypeListResponse>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        EdgeTypeListResponse
+      >> = yield axios
         .get(`${baseUrl}/${conn_id}/schema/edgelabels`, {
           params: {
             page_no: this.edgeTypeListPageConfig.pageNumber,
@@ -1251,20 +1251,25 @@ export class EdgeTypeStore {
 
   deleteEdgeType = flow(function* deleteEdgeType(
     this: EdgeTypeStore,
-    selectedEdgeTypeIndexes: number[]
+    selectedEdgeTypeIndexes: number[] | string
   ) {
     this.requestStatus.deleteEdgeType = 'pending';
+
+    const combinedParams = Array.isArray(selectedEdgeTypeIndexes)
+      ? selectedEdgeTypeIndexes
+          .map(propertyIndex => 'names=' + this.edgeTypes[propertyIndex].name)
+          .join('&')
+      : `names=${selectedEdgeTypeIndexes}`;
 
     try {
       const result: AxiosResponse<responseData<null>> = yield axios
         .delete(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels?` +
-            selectedEdgeTypeIndexes
-              .map(
-                propertyIndex => 'names=' + this.edgeTypes[propertyIndex].name
-              )
-              .join('&') +
-            `&skip_using=${String(selectedEdgeTypeIndexes.length !== 1)}`
+            combinedParams +
+            `&skip_using=${String(
+              Array.isArray(selectedEdgeTypeIndexes) &&
+                selectedEdgeTypeIndexes.length !== 1
+            )}`
         )
         .catch(checkIfLocalNetworkOffline);
 
@@ -1297,9 +1302,9 @@ export class EdgeTypeStore {
     this.requestStatus.checkConflict = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<CheckedReusableData>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels/check_conflict`,
           {
@@ -1336,9 +1341,9 @@ export class EdgeTypeStore {
     this.requestStatus.recheckConflict = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<CheckedReusableData>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels/recheck_conflict`,
           {

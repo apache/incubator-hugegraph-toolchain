@@ -26,6 +26,7 @@ import {
   FavoriteQueryResponse
 } from '../types/GraphManagementStore/dataAnalyzeStore';
 import { VertexTypeListResponse } from '../types/GraphManagementStore/metadataConfigsStore';
+import { EdgeTypeListResponse } from '../types/GraphManagementStore/metadataConfigsStore';
 
 const ruleMap: RuleMap = {
   大于: 'gt',
@@ -69,6 +70,7 @@ export class DataAnalyzeStore {
   @observable.ref colorSchemas: ColorSchemas = {};
   @observable.ref colorList: string[] = [];
   @observable.ref colorMappings: Record<string, string> = {};
+  @observable.ref edgeColorMappings: Record<string, string> = {};
   @observable.ref
   originalGraphData: FetchGraphReponse = {} as FetchGraphReponse;
   @observable.ref graphData: FetchGraphReponse = {} as FetchGraphReponse;
@@ -140,6 +142,7 @@ export class DataAnalyzeStore {
     fetchColorSchemas: 'standby',
     fetchColorList: 'standby',
     fetchAllNodeColors: 'standby',
+    fetchAllEdgeColors: 'standby',
     fetchGraphs: 'standby',
     expandGraphNode: 'standby',
     filteredGraphData: 'standby',
@@ -170,6 +173,10 @@ export class DataAnalyzeStore {
       message: ''
     },
     fetchAllNodeColors: {
+      code: NaN,
+      message: ''
+    },
+    fetchAllEdgeColors: {
       code: NaN,
       message: ''
     },
@@ -540,6 +547,7 @@ export class DataAnalyzeStore {
       fetchColorList: 'standby',
       fetchGraphs: 'standby',
       fetchAllNodeColors: 'standby',
+      fetchAllEdgeColors: 'standby',
       expandGraphNode: 'standby',
       filteredGraphData: 'standby',
       fetchRelatedVertex: 'standby',
@@ -569,6 +577,10 @@ export class DataAnalyzeStore {
         message: ''
       },
       fetchAllNodeColors: {
+        code: NaN,
+        message: ''
+      },
+      fetchAllEdgeColors: {
         code: NaN,
         message: ''
       },
@@ -734,9 +746,9 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchAllNodeColors = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<VertexTypeListResponse>
-      > = yield axios.get(`${baseUrl}/${this.currentId}/schema/vertexlabels`, {
+      const result: AxiosResponse<responseData<
+        VertexTypeListResponse
+      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/vertexlabels`, {
         params: {
           page_no: 1,
           page_size: -1
@@ -757,6 +769,39 @@ export class DataAnalyzeStore {
     } catch (error) {
       this.requestStatus.fetchAllNodeColors = 'failed';
       this.errorInfo.fetchAllNodeColors.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  fetchAllEdgeColors = flow(function* fetchAllEdgeColors(
+    this: DataAnalyzeStore
+  ) {
+    this.requestStatus.fetchAllEdgeColors = 'pending';
+
+    try {
+      const result: AxiosResponse<responseData<
+        EdgeTypeListResponse
+      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
+        params: {
+          page_no: 1,
+          page_size: -1
+        }
+      });
+
+      if (result.data.status !== 200) {
+        throw new Error(result.data.message);
+      }
+
+      result.data.data.records.forEach(({ name, style }) => {
+        if (style.color !== null) {
+          this.edgeColorMappings[name] = style.color;
+        }
+      });
+
+      this.requestStatus.fetchAllEdgeColors = 'success';
+    } catch (error) {
+      this.requestStatus.fetchAllEdgeColors = 'failed';
+      this.errorInfo.fetchAllEdgeColors.message = error.message;
       console.error(error.message);
     }
   });
@@ -954,9 +999,7 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchFilteredPropertyOptions = 'pending';
 
     try {
-      const result: AxiosResponse<
-        FetchFilteredPropertyOptions
-      > = yield axios.get(
+      const result: AxiosResponse<FetchFilteredPropertyOptions> = yield axios.get(
         `${baseUrl}/${this.currentId}/schema/edgelabels/${edgeName}`
       );
 

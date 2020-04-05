@@ -16,6 +16,7 @@ export interface GraphData {
   port: number;
   create_time: string;
   username: string;
+  enabled: boolean;
 }
 
 export interface GraphDataConfig {

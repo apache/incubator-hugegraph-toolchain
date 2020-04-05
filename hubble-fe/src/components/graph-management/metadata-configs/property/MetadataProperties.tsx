@@ -11,6 +11,7 @@ import { Input, Button, Table, Modal, Select, Message } from '@baidu/one-ui';
 import Highlighter from 'react-highlight-words';
 import TooltipTrigger from 'react-popper-tooltip';
 
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import AddIcon from '../../../../assets/imgs/ic_add.svg';
 import CloseIcon from '../../../../assets/imgs/ic_close_16.svg';
@@ -41,8 +42,9 @@ const dataTypeOptions = [
 const cardinalityOptions = ['single', 'list', 'set'];
 
 const MetadataProperties: React.FC = observer(() => {
+  const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
-  const { metadataPropertyStore } = metadataConfigsRootStore;
+  const { metadataPropertyStore, graphViewStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('');
   const [selectedRowKeys, mutateSelectedRowKeys] = useState<any[]>([]);
@@ -183,13 +185,13 @@ const MetadataProperties: React.FC = observer(() => {
             }}
           >
             {metadataPropertyStore.isSearched.status ? (
-              // @ts-ignore
               <Highlighter
                 highlightClassName="metadata-properties-search-highlights"
                 searchWords={[metadataPropertyStore.isSearched.value]}
                 autoEscape={true}
                 textToHighlight={text}
                 // caution: no title property on type defination
+                // @ts-ignore
                 title={text}
               />
             ) : (
@@ -501,7 +503,17 @@ const MetadataProperties: React.FC = observer(() => {
     return () => {
       metadataPropertyStore.dispose();
     };
-  }, [metadataPropertyStore, metadataConfigsRootStore.currentId]);
+  }, [
+    metadataPropertyStore,
+    metadataConfigsRootStore.currentId,
+    graphViewStore
+  ]);
+
+  // these would be called before <MetadataConfigs /> rendered, pre-load some data here
+  useEffect(() => {
+    dataAnalyzeStore.fetchAllNodeColors();
+    dataAnalyzeStore.fetchAllEdgeColors();
+  }, [dataAnalyzeStore]);
 
   useEffect(() => {
     document.addEventListener('click', handleOutSideClick, false);

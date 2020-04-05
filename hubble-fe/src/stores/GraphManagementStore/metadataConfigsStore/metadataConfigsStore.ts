@@ -6,6 +6,7 @@ import { MetadataPropertyStore } from './metadataPropertyStore';
 import { VertexTypeStore } from './vertexTypeStore';
 import { EdgeTypeStore } from './edgeTypeStore';
 import { MetadataPropertyIndexStore } from './metadataPropertyIndexStore';
+import { GraphViewStore } from './graphViewStore';
 import { baseUrl } from '../../types/common';
 
 export class MetadataConfigsRootStore {
@@ -13,6 +14,7 @@ export class MetadataConfigsRootStore {
   vertexTypeStore: VertexTypeStore;
   edgeTypeStore: EdgeTypeStore;
   metadataPropertyIndexStore: MetadataPropertyIndexStore;
+  graphViewStore: GraphViewStore;
 
   @observable currentId: number | null = null;
 
@@ -34,6 +36,7 @@ export class MetadataConfigsRootStore {
     this.vertexTypeStore = new VertexTypeStore(this);
     this.edgeTypeStore = new EdgeTypeStore(this);
     this.metadataPropertyIndexStore = new MetadataPropertyIndexStore(this);
+    this.graphViewStore = new GraphViewStore(this);
   }
 
   @action

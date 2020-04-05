@@ -476,7 +476,6 @@ const NewVertexType: React.FC = observer(() => {
                     <Input
                       size="medium"
                       width={110}
-                      maxLen={128}
                       placeholder="索引名称"
                       errorLocation="layer"
                       errorMessage={
@@ -775,6 +774,12 @@ const NewVertexType: React.FC = observer(() => {
             style={{ width: 78, marginRight: 12 }}
             disabled={!edgeTypeStore.isCreatedReady}
             onClick={async () => {
+              edgeTypeStore.validateAllNewEdgeType();
+
+              if (!edgeTypeStore.isCreatedReady) {
+                return;
+              }
+
               await edgeTypeStore.addEdgeType();
 
               if (edgeTypeStore.requestStatus.addEdgeType === 'success') {

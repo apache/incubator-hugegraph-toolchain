@@ -1,5 +1,9 @@
 @import '~@baidu/one-ui/src/index.less';
 
+@primary-color: #2b65ff;
+@primary-hover-color: #527dff;
+@primary-active-color: #184bcc;
+
 * {
   box-sizing: border-box;
 }
@@ -22,16 +26,8 @@ p {
 
 body {
   background: #f2f2f2;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    'Helvetica Neue',
-    Helvetica,
-    'PingFang SC',
-    'Hiragino Sans GB',
-    'Microsoft YaHei',
-    '微软雅黑',
-    Arial,
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -42,12 +38,7 @@ body {
 }
 
 code {
-  font-family:
-    source-code-pro,
-    Menlo,
-    Monaco,
-    Consolas,
-    'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
 
@@ -68,14 +59,14 @@ code {
 
 //primary button background colors
 .new-fc-one-btn-primary {
-  background: #2b65ff;
+  background: @primary-color;
 
   &:hover {
-    background: #527dff;
+    background: @primary-hover-color;
   }
 
   &:active {
-    background: #184bcc;
+    background: @primary-active-color;
   }
 
   &-disabled {
@@ -90,11 +81,7 @@ code {
 
 // Modal titles
 .new-fc-one-modal-title {
-  font-family:
-    'PingFangSC-Medium',
-    'Microsoft YaHei',
-    '微软雅黑',
-    Arial,
+  font-family: 'PingFangSC-Medium', 'Microsoft YaHei', '微软雅黑', Arial,
     sans-serif;
   font-weight: bold;
   font-size: 16px;
@@ -110,7 +97,8 @@ code {
 }
 
 // z-index input errorlayer in Drawer should be higher
-.new-fc-one-drawer-content-wrapper .new-fc-one-input-error.new-fc-one-input-error-layer {
+.new-fc-one-drawer-content-wrapper
+  .new-fc-one-input-error.new-fc-one-input-error-layer {
   z-index: 1041;
 }
 
@@ -121,5 +109,30 @@ code {
 
 // Steps process style
 .new-fc-one-steps-item-process .new-fc-one-steps-item-icon {
-  background: #2b65ff;
+  background: @primary-color;
+}
+
+// <Swtich /> checked-color
+.new-fc-one-switch-checked {
+  background: @primary-color;
+
+  &:hover {
+    background: @primary-hover-color;
+  }
+}
+
+.new-fc-one-radio-button-wrapper-checked {
+  border: 1px solid @primary-color;
+  background-color: @primary-color;
+
+  &:hover {
+    border: 1px solid @primary-hover-color;
+    background-color: @primary-hover-color;
+  }
+}
+
+// <Tab /> hovered color
+.new-fc-one-menu-horizontal-box .new-fc-one-menu-item-selected:hover {
+  color: @primary-hover-color;
+  border-color: @primary-hover-color;
 }

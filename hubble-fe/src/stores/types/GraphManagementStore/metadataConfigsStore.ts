@@ -20,18 +20,18 @@ export interface MetadataPropertyListResponse {
 
 // vertex types
 
-type VertexTypeProperty = {
+export type VertexTypeProperty = {
   name: string;
   nullable: boolean;
 };
 
-type VertexTypePropertyIndex = {
+export type VertexTypePropertyIndex = {
   name: string;
   type: string;
   fields: string[];
 };
 
-type VertexTypeStyle = {
+export type VertexTypeStyle = {
   icon: string | null;
   color: string | null;
 };
@@ -137,4 +137,34 @@ export interface MetadataPropertyIndex {
 export interface MetadataPropertyIndexResponse {
   records: MetadataPropertyIndex[];
   total: number;
+}
+
+// graph view data
+
+export type DrawerTypes =
+  | 'create-property'
+  | 'create-vertex'
+  | 'create-edge'
+  | 'check-property'
+  | 'check-vertex'
+  | 'check-edge'
+  | 'edit-vertex'
+  | 'edit-edge'
+  | '';
+
+export interface GraphViewData {
+  vertices: {
+    id: string;
+    label: string;
+    properties: Record<string, string>;
+    primary_keys: string[];
+  }[];
+  edges: {
+    id: string;
+    label: string;
+    source: string;
+    target: string;
+    properties: Record<string, string>;
+    sort_keys: string[];
+  }[];
 }

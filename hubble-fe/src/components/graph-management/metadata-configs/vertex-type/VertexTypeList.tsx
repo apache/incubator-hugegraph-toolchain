@@ -144,6 +144,7 @@ const VertexTypeList: React.FC = observer(() => {
         !dropdownWrapperRef.current.contains(e.target as Element)
       ) {
         switchIsAddProperty(false);
+        return;
       }
 
       if (
@@ -1084,7 +1085,6 @@ const VertexTypeList: React.FC = observer(() => {
                               <Input
                                 size="medium"
                                 width={100}
-                                maxLen={128}
                                 placeholder="索引名称"
                                 errorLocation="layer"
                                 errorMessage={

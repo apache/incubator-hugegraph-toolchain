@@ -416,7 +416,6 @@ const NewVertexType: React.FC = observer(() => {
                     <Input
                       size="medium"
                       width={110}
-                      maxLen={128}
                       placeholder="索引名称"
                       errorLocation="layer"
                       errorMessage={

@@ -890,9 +890,9 @@ export class VertexTypeStore {
         : this.metadataConfigsRootStore.currentId;
 
     try {
-      const result: AxiosResponse<
-        responseData<VertexTypeListResponse>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        VertexTypeListResponse
+      >> = yield axios
         .get(`${baseUrl}/${conn_id}/schema/vertexlabels`, {
           params: {
             page_no: this.vertexListPageConfig.pageNumber,
@@ -940,9 +940,9 @@ export class VertexTypeStore {
     this.requestStatus.checkIfUsing = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<Record<string, boolean>>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        Record<string, boolean>
+      >> = yield axios
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/check_using`,
           {
@@ -1028,20 +1028,25 @@ export class VertexTypeStore {
 
   deleteVertexType = flow(function* deleteVertexType(
     this: VertexTypeStore,
-    selectedVertexTypeIndexes: number[]
+    selectedVertexTypeIndexes: number[] | string
   ) {
     this.requestStatus.deleteVertexType = 'pending';
+
+    const combinedParams = Array.isArray(selectedVertexTypeIndexes)
+      ? selectedVertexTypeIndexes
+          .map(propertyIndex => 'names=' + this.vertexTypes[propertyIndex].name)
+          .join('&')
+      : `names=${selectedVertexTypeIndexes}`;
 
     try {
       const result: AxiosResponse<responseData<null>> = yield axios
         .delete(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels?` +
-            selectedVertexTypeIndexes
-              .map(
-                propertyIndex => 'names=' + this.vertexTypes[propertyIndex].name
-              )
-              .join('&') +
-            `&skip_using=${String(selectedVertexTypeIndexes.length !== 1)}`
+            combinedParams +
+            `&skip_using=${String(
+              Array.isArray(selectedVertexTypeIndexes) &&
+                selectedVertexTypeIndexes.length !== 1
+            )}`
         )
         .catch(checkIfLocalNetworkOffline);
 
@@ -1111,9 +1116,9 @@ export class VertexTypeStore {
     this.requestStatus.recheckConflict = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<CheckedReusableData>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/recheck_conflict`,
           {
