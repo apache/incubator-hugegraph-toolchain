@@ -63,6 +63,10 @@ public final class LoadOptions {
                description = "The port of HugeGraphServer")
     public int port = 8080;
 
+    @Parameter(names = {"--username"}, arity = 1,
+               description = "The username of graph for authentication")
+    public String username = null;
+
     @Parameter(names = {"--token"}, arity = 1,
                description = "The token of graph for authentication")
     public String token = null;
