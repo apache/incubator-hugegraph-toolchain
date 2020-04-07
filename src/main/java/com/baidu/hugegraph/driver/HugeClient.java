@@ -70,7 +70,12 @@ public class HugeClient implements Closeable {
         } catch (ProcessingException e) {
             throw new ServerException("Failed to connect url '%s'", url);
         }
-        this.initManagers(this.client, graph);
+        try {
+            this.initManagers(this.client, graph);
+        } catch (Throwable e) {
+            this.client.close();
+            throw e;
+        }
     }
 
     public HugeClient(String url, String graph,
