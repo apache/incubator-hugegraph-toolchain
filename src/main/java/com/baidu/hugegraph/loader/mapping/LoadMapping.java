@@ -23,8 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +32,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -113,23 +110,28 @@ public class LoadMapping implements Checkable {
         if (!pathDir.exists()) {
             return targetStructs;
         }
-        Map<String, Pair<File, File>> inputFiles = this.collectInputFiles(pathDir);
-        for (String inputId : inputFiles.keySet()) {
+        Map<String, FailureFile> failureFiles = this.groupFailureFiles(pathDir);
+        for (String inputId : failureFiles.keySet()) {
             InputStruct struct = this.struct(inputId);
             String charset = struct.input().charset();
-            Pair<File, File> filePair = inputFiles.get(inputId);
-            String json;
-            try {
-                json = FileUtils.readFileToString(filePair.getLeft(), charset);
-            } catch (IOException e) {
-                throw new LoadException("Failed to read header file %s",
-                                        filePair.getLeft());
-            }
-            List<String> header = JsonUtil.convertList(json, String.class);
+            FailureFile failureFile = failureFiles.get(inputId);
+
             FileSource source = struct.input().asFileSource();
-            source.header(header.toArray(new String[]{}));
+            if (failureFile.headerFile != null) {
+                // It means that header file existed
+                String json;
+                try {
+                    json = FileUtils.readFileToString(failureFile.headerFile,
+                                                      charset);
+                } catch (IOException e) {
+                    throw new LoadException("Failed to read header file %s",
+                                            failureFile.headerFile);
+                }
+                List<String> header = JsonUtil.convertList(json, String.class);
+                source.header(header.toArray(new String[] {}));
+            }
             // Set failure data path
-            source.path(filePair.getRight().getAbsolutePath());
+            source.path(failureFile.dataFile.getAbsolutePath());
             source.skippedLine().regex(Constants.SKIPPED_LINE_REGEX);
             struct.input(source);
             // Add to target structs
@@ -138,22 +140,30 @@ public class LoadMapping implements Checkable {
         return targetStructs;
     }
 
-    private Map<String, Pair<File, File>> collectInputFiles(File pathDir) {
+    private Map<String, FailureFile> groupFailureFiles(File pathDir) {
         File[] subFiles = pathDir.listFiles();
-        E.checkArgument(subFiles != null && subFiles.length == 2,
-                        "Every input struct should have️ a pair of " +
-                        "data file and header file");
-        Arrays.sort(subFiles, Comparator.comparing(File::getName));
-        Map<String, Pair<File, File>> inputFiles = new LinkedHashMap<>();
-        for (int i = 0; i < subFiles.length; i += 2) {
-            File dataFile = subFiles[i];
-            File headerFile = subFiles[i + 1];
-            // TODO: check data file and header file has same preifx
-            int idx = dataFile.getName().lastIndexOf(Constants.DOT_STR);
-            String inputId = dataFile.getName().substring(0, idx);
-            inputFiles.put(inputId, Pair.of(headerFile, dataFile));
+        E.checkArgument(subFiles != null && subFiles.length >= 1,
+                        "Every input struct should have a failure data file, " +
+                        "and a header file if need it");
+        Map<String, FailureFile> failureFiles = new LinkedHashMap<>();
+        for (File subFile : subFiles) {
+            String inputId = LoadUtil.getFileNamePrefix(subFile);
+            String suffix = LoadUtil.getFileNameSuffix(subFile);
+            FailureFile failureFile = failureFiles.get(inputId);
+            if (failureFile == null) {
+                failureFile = new FailureFile();
+            }
+            if (Constants.FAILURE_SUFFIX.equals(suffix)) {
+                failureFile.dataFile = subFile;
+            } else {
+                E.checkArgument(Constants.HEADER_SUFFIX.equals(suffix),
+                                "The failure data file must end with %s or %s",
+                                Constants.FAILURE_SUFFIX, Constants.HEADER_SUFFIX);
+                failureFile.headerFile = subFile;
+            }
+            failureFiles.put(inputId, failureFile);
         }
-        return inputFiles;
+        return failureFiles;
     }
 
     public InputStruct struct(String id) {
@@ -164,5 +174,13 @@ public class LoadMapping implements Checkable {
         }
         throw new IllegalArgumentException(String.format(
                   "There is no input struct with id '%s'", id));
+    }
+
+    private static class FailureFile {
+
+        // Maybe null
+        private File headerFile;
+        // Can't be null
+        private File dataFile;
     }
 }

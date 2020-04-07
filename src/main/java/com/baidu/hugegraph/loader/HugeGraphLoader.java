@@ -55,13 +55,22 @@ public final class HugeGraphLoader {
 
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
-    private boolean inited;
+    /*
+     * TODO: find a more graceful way to express loader end succeed or fialed
+     */
+    private boolean succeed;
     private LoadContext context;
     private LoadMapping mapping;
     private TaskManager manager;
 
     public static void main(String[] args) {
-        HugeGraphLoader loader = new HugeGraphLoader(args);
+        HugeGraphLoader loader;
+        try {
+            loader = new HugeGraphLoader(args);
+        } catch (Throwable e) {
+            Printer.printError("Failed to start loading", e);
+            return;
+        }
         loader.load();
     }
 
@@ -74,16 +83,11 @@ public final class HugeGraphLoader {
     }
 
     public HugeGraphLoader(LoadOptions options, LoadMapping mapping) {
-        try {
-            this.context = new LoadContext(options);
-            this.mapping = mapping;
-            this.manager = new TaskManager(this.context);
-            this.addShutdownHook();
-            this.inited = true;
-        } catch (Throwable e) {
-            this.inited = false;
-            Printer.printError("Failed to construct load context", e);
-        }
+        this.context = new LoadContext(options);
+        this.mapping = mapping;
+        this.manager = new TaskManager(this.context);
+        this.addShutdownHook();
+        this.succeed = true;
     }
 
     private void addShutdownHook() {
@@ -97,11 +101,7 @@ public final class HugeGraphLoader {
         return this.context;
     }
 
-    public void load() {
-        if (!this.inited) {
-            this.stopThenShutdown();
-            return;
-        }
+    public boolean load() {
         try {
             // Clear schema if needed
             this.clearAllDataIfNeeded();
@@ -118,6 +118,7 @@ public final class HugeGraphLoader {
         } finally {
             this.stopThenShutdown();
         }
+        return this.succeed;
     }
 
     private void clearAllDataIfNeeded() {
@@ -184,6 +185,7 @@ public final class HugeGraphLoader {
         // Load input structs one by one
         for (InputStruct struct : structs) {
             if (this.context.stopped()) {
+                this.succeed = false;
                 break;
             }
             if (struct.skip()) {

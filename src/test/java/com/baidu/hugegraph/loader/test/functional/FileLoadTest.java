@@ -37,6 +37,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.omg.CORBA.DynAnyPackage.Invalid;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
@@ -530,9 +531,10 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
     }
 
     @Test
@@ -729,9 +731,11 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
+        // Invalid mapping file
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
     }
 
     @Test
@@ -1047,9 +1051,10 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
-        });
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
     }
 
     @Test
@@ -1955,13 +1960,10 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
+        HugeGraphLoader.main(args);
 
-        Assert.assertThrows(SerializeException.class, () -> {
-            HugeGraphLoader.main(args);
-        }, e -> {
-            String expect = "Failed to deserialize json";
-            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
-        });
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(0, vertices.size());
     }
 
     @Test
@@ -2020,20 +2022,16 @@ public class FileLoadTest extends LoadTest {
                 "incremental_mode_and_load_failure/struct"));
         File failureDataDir = FileUtils.getFile(structPath(
                 "incremental_mode_and_load_failure/struct/failure-data/"));
-        File[] subDirs = failureDataDir.listFiles();
-        Assert.assertNotNull(subDirs);
-        Assert.assertEquals(1, subDirs.length);
-
-        File personFailureDir = subDirs[0];
-        File[] files = personFailureDir.listFiles();
+        File[] files = failureDataDir.listFiles();
         Assert.assertNotNull(files);
-        Assert.assertEquals(1, files.length);
+        Assert.assertEquals(2, files.length);
+
         File personFailureFile = files[0];
         List<String> personFailureLines = FileUtils.readLines(personFailureFile,
                                                               Constants.CHARSET);
-        Assert.assertEquals(3, personFailureLines.size());
+        Assert.assertEquals(2, personFailureLines.size());
         Assert.assertEquals("marko,应该是数字,Beijing",
-                            personFailureLines.get(2));
+                            personFailureLines.get(1));
 
         // 2nd time, incremental-mode
         args = new String[]{
@@ -2084,38 +2082,30 @@ public class FileLoadTest extends LoadTest {
         });
 
         Thread.sleep(1000);
-        subDirs = failureDataDir.listFiles();
-        Assert.assertNotNull(subDirs);
-        Assert.assertEquals(2, subDirs.length);
-
-        personFailureDir = subDirs[0];
-        files = personFailureDir.listFiles();
+        files = failureDataDir.listFiles();
         Assert.assertNotNull(files);
-        Assert.assertEquals(1, files.length);
+        Assert.assertEquals(4, files.length);
+
         personFailureFile = files[0];
         personFailureLines = FileUtils.readLines(personFailureFile,
                                                  Constants.CHARSET);
-        Assert.assertEquals(3, personFailureLines.size());
+        Assert.assertEquals(2, personFailureLines.size());
         Assert.assertEquals("marko,应该是数字,Beijing",
-                            personFailureLines.get(2));
+                            personFailureLines.get(1));
 
-        File softwareFailureDir = subDirs[1];
-        files = softwareFailureDir.listFiles();
-        Assert.assertNotNull(files);
-        Assert.assertEquals(1, files.length);
-        File softwareFailureFile = files[0];
+        File softwareFailureFile = files[2];
         List<String> softwareFailureLines = FileUtils.readLines(
                                             softwareFailureFile, GBK);
-        Assert.assertEquals(3, softwareFailureLines.size());
-        Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(2));
+        Assert.assertEquals(2, softwareFailureLines.size());
+        Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(1));
 
         // TODO: Change only one line first, and make the second line go wrong
         // modify person and software failure file
-        personFailureLines.remove(2);
+        personFailureLines.remove(1);
         personFailureLines.add("marko,29,Beijing");
         FileUtils.writeLines(personFailureFile, personFailureLines, false);
         // modify software failure file
-        softwareFailureLines.remove(2);
+        softwareFailureLines.remove(1);
         softwareFailureLines.add("lop,java,328");
         FileUtils.writeLines(softwareFailureFile, softwareFailureLines, false);
 
@@ -2151,7 +2141,7 @@ public class FileLoadTest extends LoadTest {
                 InputItemProgress loadedItem = loadedItems.iterator().next();
                 Assert.assertTrue(loadedItem instanceof FileItemProgress);
                 FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals(3, fileItem.offset());
+                Assert.assertEquals(2, fileItem.offset());
             } else if (id.equals("2")) {
                 Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
                 Assert.assertEquals(1, loadedItems.size());
@@ -2159,7 +2149,7 @@ public class FileLoadTest extends LoadTest {
                 InputItemProgress loadedItem = loadedItems.iterator().next();
                 Assert.assertTrue(loadedItem instanceof FileItemProgress);
                 FileItemProgress fileItem = (FileItemProgress) loadedItem;
-                Assert.assertEquals(3, fileItem.offset());
+                Assert.assertEquals(2, fileItem.offset());
             }
         });
 
@@ -2237,13 +2227,10 @@ public class FileLoadTest extends LoadTest {
                          "reload_json_failure_files/struct"));
         File failureDir = FileUtils.getFile(structPath(
                           "reload_json_failure_files/struct/failure-data/"));
-        File[] subDirs = failureDir.listFiles();
-        Assert.assertNotNull(subDirs);
-        Assert.assertEquals(1, subDirs.length);
-
-        File[] files = subDirs[0].listFiles();
+        File[] files = failureDir.listFiles();
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.length);
+
         File knowsFailureFile = files[0];
         List<String> failureLines = FileUtils.readLines(knowsFailureFile,
                                                         Constants.CHARSET);
