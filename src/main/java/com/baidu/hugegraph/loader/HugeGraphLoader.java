@@ -38,7 +38,6 @@ import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.executor.GroovyExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.executor.LoadStatus;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
@@ -56,9 +55,10 @@ public final class HugeGraphLoader {
 
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
-    private final LoadContext context;
-    private final LoadMapping mapping;
-    private final TaskManager manager;
+    private boolean inited;
+    private LoadContext context;
+    private LoadMapping mapping;
+    private TaskManager manager;
 
     public static void main(String[] args) {
         HugeGraphLoader loader = new HugeGraphLoader(args);
@@ -74,15 +74,21 @@ public final class HugeGraphLoader {
     }
 
     public HugeGraphLoader(LoadOptions options, LoadMapping mapping) {
-        this.context = new LoadContext(options);
-        this.mapping = mapping;
-        this.manager = new TaskManager(this.context);
-        this.addShutdownHook();
+        try {
+            this.context = new LoadContext(options);
+            this.mapping = mapping;
+            this.manager = new TaskManager(this.context);
+            this.addShutdownHook();
+            this.inited = true;
+        } catch (Throwable e) {
+            this.inited = false;
+            Printer.printError("Failed to construct load context", e);
+        }
     }
 
     private void addShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOG.info("Shutdown hook has been triggered");
+            LOG.info("Shutdown hook was triggered");
             this.stopThenShutdown();
         }));
     }
@@ -92,6 +98,10 @@ public final class HugeGraphLoader {
     }
 
     public void load() {
+        if (!this.inited) {
+            this.stopThenShutdown();
+            return;
+        }
         try {
             // Clear schema if needed
             this.clearAllDataIfNeeded();
@@ -171,11 +181,9 @@ public final class HugeGraphLoader {
     }
 
     private void load(List<InputStruct> structs) {
-        boolean succeed = true;
         // Load input structs one by one
         for (InputStruct struct : structs) {
             if (this.context.stopped()) {
-                succeed = false;
                 break;
             }
             if (struct.skip()) {
@@ -191,9 +199,6 @@ public final class HugeGraphLoader {
                 throw new LoadException("Failed to init input reader", e);
             }
         }
-        if (succeed) {
-            this.context.stopLoading(LoadStatus.SUCCEED);
-        }
     }
 
     /**
@@ -206,15 +211,7 @@ public final class HugeGraphLoader {
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context, struct);
         int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
-        // TODO: check isInterrupted and stoppped is too much too scattered now
         for (boolean finished = false; !finished;) {
-
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
             if (this.context.stopped()) {
                 return;
             }
@@ -282,7 +279,7 @@ public final class HugeGraphLoader {
             Printer.printError("More than %s reading error, stop loading " +
                                "and waiting all load tasks stopped",
                                options.maxReadErrors);
-            this.context.stopLoading(LoadStatus.FAILED);
+            this.context.stopLoading();
         } else {
             // Write to current mapping's parse failure log
             this.context.failureLogger(struct).write(e);
@@ -302,7 +299,7 @@ public final class HugeGraphLoader {
                     Printer.printError("More than %s parse errors, stop " +
                                        "parsing and waiting all insert tasks " +
                                        "stopped", options.maxParseErrors);
-                    this.context.stopLoading(LoadStatus.FAILED);
+                    this.context.stopLoading();
                 }
             }
         }
@@ -310,15 +307,16 @@ public final class HugeGraphLoader {
 
     private void stopThenShutdown() {
         LOG.info("Stop loading then shutdown HugeGraphLoader");
+        if (this.context == null) {
+            return;
+        }
         try {
-            /*
-             * It may come here normally or abnormally. If it has been
-             * marked before, the marking here will not take effect.
-             */
-            this.context.stopLoading(LoadStatus.FAILED);
-            // Wait all insert tasks stopped before exit
-            this.manager.waitFinished();
-            this.manager.shutdown();
+            this.context.stopLoading();
+            if (this.manager != null) {
+                // Wait all insert tasks stopped before exit
+                this.manager.waitFinished();
+                this.manager.shutdown();
+            }
         } finally {
             this.context.close();
         }

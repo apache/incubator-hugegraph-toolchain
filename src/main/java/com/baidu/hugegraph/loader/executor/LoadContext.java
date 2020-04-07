@@ -33,7 +33,6 @@ import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
 public final class LoadContext {
@@ -43,7 +42,7 @@ public final class LoadContext {
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
 
-    private volatile LoadStatus status;
+    private volatile boolean stopped;
     private final LoadOptions options;
     private final LoadSummary summary;
     // The old progress just used to read
@@ -57,7 +56,7 @@ public final class LoadContext {
 
     public LoadContext(LoadOptions options) {
         this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
-        this.status = LoadStatus.RUNNING;
+        this.stopped = false;
         this.options = options;
         this.summary = new LoadSummary();
         this.oldProgress = LoadProgress.parse(options);
@@ -71,26 +70,12 @@ public final class LoadContext {
         return this.timestamp;
     }
 
-    public LoadStatus status() {
-        return this.status;
-    }
-
     public boolean stopped() {
-        return this.status.stopped();
+        return this.stopped;
     }
 
-    public void stopLoading(LoadStatus status) {
-        /*
-         * The marking behavior of the upper layer may be speculative.
-         * If it has been marked before, skip this marking
-         */
-        if (this.status.stopped()) {
-            return;
-        }
-        E.checkArgument(status.stopped(), String.format(
-                        "The status must be %s or %s when mark stopped",
-                        LoadStatus.SUCCEED, LoadStatus.FAILED));
-        this.status = status;
+    public void stopLoading() {
+        this.stopped = true;
     }
 
     public LoadOptions options() {

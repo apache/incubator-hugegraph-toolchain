@@ -30,7 +30,6 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.executor.LoadStatus;
 import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -89,7 +88,7 @@ public class SingleInsertTask extends InsertTask {
                                        "insert tasks stopped",
                                        this.options().maxInsertErrors,
                                        this.type().string());
-                    this.context.stopLoading(LoadStatus.FAILED);
+                    this.context.stopLoading();
                 }
             }
         }

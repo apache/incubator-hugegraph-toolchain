@@ -37,7 +37,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -145,28 +144,28 @@ public final class FailLogger {
         File dedupFile = new File(this.file.getAbsolutePath() +
                                    Constants.DEDUP_SUFFIX);
         try (InputStream is = new FileInputStream(this.file);
-             Reader reader = new InputStreamReader(is, charset);
-             BufferedReader br = new BufferedReader(reader);
+             Reader ir = new InputStreamReader(is, charset);
+             BufferedReader reader = new BufferedReader(ir);
              // upper is input, below is output
              OutputStream os = new FileOutputStream(dedupFile);
-             Writer writer = new OutputStreamWriter(os, charset);
-             BufferedWriter bw = new BufferedWriter(writer)) {
+             Writer ow = new OutputStreamWriter(os, charset);
+             BufferedWriter writer = new BufferedWriter(ow)) {
             Set<Integer> writedLines = new HashSet<>();
             HashFunction hashFunc = Hashing.murmur3_32();
             for (String tipsLine, dataLine;
-                 (tipsLine = br.readLine()) != null &&
-                 (dataLine = br.readLine()) != null;) {
+                 (tipsLine = reader.readLine()) != null &&
+                 (dataLine = reader.readLine()) != null;) {
                 /*
                  * Hash data line to remove duplicate lines
                  * Misjudgment may occur, but the probability is extremely low
                  */
                 int hash = hashFunc.hashString(dataLine, charset).asInt();
                 if (!writedLines.contains(hash)) {
-                    bw.write(tipsLine);
-                    bw.newLine();
-                    bw.write(dataLine);
-                    bw.newLine();
-                    // Add
+                    writer.write(tipsLine);
+                    writer.newLine();
+                    writer.write(dataLine);
+                    writer.newLine();
+                    // Save the hash value of writed line
                     writedLines.add(hash);
                 }
             }
