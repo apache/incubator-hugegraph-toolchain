@@ -103,6 +103,13 @@ public class EdgeAPI extends GraphAPI {
     public Edges list(Object vertexId, Direction direction,
                       String label, Map<String, Object> properties,
                       int offset, String page, int limit) {
+        return this.list(vertexId, direction, label, properties, false,
+                         offset, page, limit);
+    }
+
+    public Edges list(Object vertexId, Direction direction, String label,
+                      Map<String, Object> properties, boolean keepP,
+                      int offset, String page, int limit) {
         checkOffset(offset);
         checkLimit(limit, "Limit");
         String vid = GraphAPI.formatVertexId(vertexId, true);
@@ -112,6 +119,7 @@ public class EdgeAPI extends GraphAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("properties", props);
+        params.put("keep_start_p", keepP);
         params.put("offset", offset);
         params.put("limit", limit);
         params.put("page", page);

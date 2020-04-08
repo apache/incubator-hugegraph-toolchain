@@ -227,8 +227,8 @@ public class BatchUpdateElementApiTest extends BaseApiTest {
             Whitebox.setInternalState(req1, "vertices", vertices);
             vertexAPI.update(req1);
         }, e -> {
-            String expect = "The batch body can't contain null record";
-            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
+            Assert.assertContains("The batch body can't contain null record",
+                                  e.toString());
         });
 
         BatchVertexRequest req2 = batchVertexRequest("list", "old", "old",

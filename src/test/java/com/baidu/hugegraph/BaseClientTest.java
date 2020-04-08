@@ -102,7 +102,7 @@ public class BaseClientTest {
     protected static Vertex getVertex(String label, String key, String value) {
         Map<String, Object> params = ImmutableMap.of(key, value);
         List<Vertex> vertices = graph().listVertices(label, params);
-        assert vertices.size() == 1;
+        Assert.assertEquals(1, vertices.size());
         return vertices.get(0);
     }
 
@@ -113,7 +113,7 @@ public class BaseClientTest {
     protected static Edge getEdge(String label, String key, String value) {
         Map<String, Object> params = ImmutableMap.of(key, value);
         List<Edge> edges = graph().listEdges(label, params);
-        assert edges.size() == 1;
+        Assert.assertEquals(1, edges.size());
         return edges.get(0);
     }
 

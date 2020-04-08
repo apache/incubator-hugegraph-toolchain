@@ -19,24 +19,31 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.baidu.hugegraph.BaseClientTest;
 import com.baidu.hugegraph.exception.InvalidOperationException;
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterators;
 
 public class EdgeTest extends BaseFuncTest {
 
+    @Override
     @Before
     public void setup() {
         BaseClientTest.initPropertyKey();
@@ -45,6 +52,7 @@ public class EdgeTest extends BaseFuncTest {
         BaseClientTest.initVertex();
     }
 
+    @Override
     @After
     public void teardown() throws Exception {
         BaseFuncTest.clearData();
@@ -481,6 +489,156 @@ public class EdgeTest extends BaseFuncTest {
             Assert.assertEquals(joshId, edge.targetId());
             Assert.assertEquals("knows", edge.label());
         }
+    }
+
+    @Test
+    public void testGetEdgesByLabelAndPropertiesWithRangeCondition()
+                throws ParseException {
+        schema().indexLabel("knowsByDate").range()
+                .onE("knows").by("date").create();
+        schema().indexLabel("createdByDate").range()
+                .onE("created").by("date").create();
+
+        BaseClientTest.initEdge();
+
+        Date expected = DateUtils.parseDate("2014-01-10", "yyyy-MM-dd");
+        Date expected2 = DateUtils.parseDate("2016-01-10", "yyyy-MM-dd");
+
+        Map<String, Object> properties = ImmutableMap.of("date",
+                                                         "P.eq(\"2014-1-10\")");
+        List<Edge> edges = graph().listEdges("created", properties);
+
+        Assert.assertEquals(1, edges.size());
+        for (Edge e : edges) {
+            Assert.assertEquals("created", e.label());
+            Assert.assertEquals(expected.getTime(), e.property("date"));
+        }
+
+        properties = ImmutableMap.of("date", "P.gt(\"2014-1-10\")");
+        edges = graph().listEdges("created", properties);
+        Assert.assertEquals(3, edges.size());
+        for (Edge e : edges) {
+            Assert.assertEquals("created", e.label());
+            Assert.assertGt(expected.getTime(), e.property("date"));
+        }
+
+        properties = ImmutableMap.of("date", "P.gte(\"2014-1-10\")");
+        edges = graph().listEdges("created", properties);
+        Assert.assertEquals(4, edges.size());
+        for (Edge e : edges) {
+            Assert.assertEquals("created", e.label());
+            Assert.assertGte(expected.getTime(), e.property("date"));
+        }
+
+        properties = ImmutableMap.of("date", "P.lt(\"2014-1-10\")");
+        edges = graph().listEdges(null, properties);
+        Assert.assertEquals(2, edges.size());
+        for (Edge e : edges) {
+            Assert.assertEquals("knows", e.label());
+            Assert.assertLt(expected.getTime(), e.property("date"));
+        }
+
+        properties = ImmutableMap.of("date", "P.lte(\"2014-1-10\")");
+        edges = graph().listEdges(null, properties);
+        Assert.assertEquals(3, edges.size());
+        for (Edge e : edges) {
+            Assert.assertLte(expected.getTime(), e.property("date"));
+        }
+
+        properties = ImmutableMap.of("date",
+                                     "P.between(\"2014-1-10\",\"2016-1-10\")");
+        edges = graph().listEdges(null, properties);
+        Assert.assertEquals(2, edges.size());
+        for (Edge e : edges) {
+            Assert.assertEquals("created", e.label());
+            Assert.assertGte(expected.getTime(), e.property("date"));
+            Assert.assertLt(expected2.getTime(), e.property("date"));
+        }
+
+        properties = ImmutableMap.of("date",
+                                     "P.inside(\"2014-1-10\",\"2016-1-10\")");
+        edges = graph().listEdges(null, properties);
+        Assert.assertEquals(1, edges.size());
+        for (Edge e : edges) {
+            Assert.assertEquals("created", e.label());
+            Assert.assertGt(expected.getTime(), e.property("date"));
+            Assert.assertLt(expected2.getTime(), e.property("date"));
+        }
+
+        properties = ImmutableMap.of("date",
+                                     "P.within(\"2014-1-10\",\"2016-1-10\")");
+        edges = graph().listEdges(null, properties);
+        Assert.assertEquals(2, edges.size());
+        for (Edge e : edges) {
+            Assert.assertEquals("created", e.label());
+            Assert.assertGte(expected.getTime(), e.property("date"));
+            Assert.assertLte(expected2.getTime(), e.property("date"));
+        }
+    }
+
+    @Test
+    public void testGetEdgesByLabelAndPropertiesWithKeepP()
+                throws ParseException {
+        schema().indexLabel("createdByCity").secondary()
+                .onE("created").by("city").create();
+        schema().indexLabel("createdByDate").secondary()
+                .onE("created").by("date").create();
+
+        BaseClientTest.initEdge();
+
+        Map<String, Object> properties = ImmutableMap.of("date",
+                                                         "P.eq(\"2014-1-10\")");
+        List<Edge> edges = graph().listEdges("created", properties, false);
+        Assert.assertEquals(1, edges.size());
+
+        Assert.assertThrows(ServerException.class, () -> {
+            graph().listEdges("created", properties, true);
+        }, e -> {
+            Assert.assertContains("Expected date format is:", e.getMessage());
+        });
+
+        Map<String, Object> properties2 = ImmutableMap.of("city", "P.gt(1)");
+        edges = graph().listEdges("created", properties2, true);
+        Assert.assertEquals(0, edges.size());
+
+        edges = graph().listEdges("created", properties2, true, 3);
+        Assert.assertEquals(0, edges.size());
+    }
+
+    @Test
+    public void testIterateEdgesByLabel() {
+        BaseClientTest.initEdge();
+
+        Iterator<Edge> edges = graph().iterateEdges("created", 1);
+        Assert.assertEquals(4, Iterators.size(edges));
+
+        edges = graph().iterateEdges("knows", 1);
+        Assert.assertEquals(2, Iterators.size(edges));
+    }
+
+    @Test
+    public void testIterateEdgesByVertexId() {
+        BaseClientTest.initEdge();
+
+        Object markoId = getVertexId("person", "name", "marko");
+
+        Iterator<Edge> edges = graph().iterateEdges(markoId, 1);
+        Assert.assertEquals(3, Iterators.size(edges));
+
+        edges = graph().iterateEdges(markoId, Direction.OUT, 1);
+        Assert.assertEquals(3, Iterators.size(edges));
+
+        edges = graph().iterateEdges(markoId, Direction.OUT, "knows", 1);
+        Assert.assertEquals(2, Iterators.size(edges));
+
+        edges = graph().iterateEdges(markoId, Direction.OUT, "created", 1);
+        Assert.assertEquals(1, Iterators.size(edges));
+
+        Map<String, Object> properties = ImmutableMap.of("date",
+                                                         "P.gt(\"2012-1-1\")");
+        edges = graph().iterateEdges(markoId, Direction.OUT, "knows",
+                                     properties, 1);
+        Assert.assertEquals(2, Iterators.size(edges));
     }
 
     private static void assertContains(List<Edge> edges, Object source,
