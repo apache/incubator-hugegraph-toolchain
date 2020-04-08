@@ -102,7 +102,7 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals(2, father.userdata().size());
         Assert.assertEquals("one-to-many",
                             father.userdata().get("multiplicity"));
-        long createTime = (long) father.userdata().get("create_time");
+        long createTime = (long) father.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -115,7 +115,7 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals(2, write.userdata().size());
         Assert.assertEquals("many-to-many",
                             write.userdata().get("multiplicity"));
-        createTime = (long) write.userdata().get("create_time");
+        createTime = (long) write.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
     }
@@ -135,7 +135,7 @@ public class EdgeLabelTest extends BaseFuncTest {
                                  .properties("weight")
                                  .create();
         Assert.assertEquals(1, father.userdata().size());
-        long createTime = (long) father.userdata().get("create_time");
+        long createTime = (long) father.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -145,7 +145,7 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals(2, father.userdata().size());
         Assert.assertEquals("one-to-many",
                             father.userdata().get("multiplicity"));
-        Assert.assertEquals(createTime, father.userdata().get("create_time"));
+        Assert.assertEquals(createTime, father.userdata().get("~create_time"));
     }
 
     @Test
@@ -172,7 +172,7 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals("one-to-many",
                             write.userdata().get("multiplicity"));
         Assert.assertEquals("picture2", write.userdata().get("icon"));
-        long createTime = (long) write.userdata().get("create_time");
+        long createTime = (long) write.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -182,7 +182,7 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals(2, write.userdata().size());
         Assert.assertEquals("one-to-many",
                             write.userdata().get("multiplicity"));
-        Assert.assertEquals(createTime, write.userdata().get("create_time"));
+        Assert.assertEquals(createTime, write.userdata().get("~create_time"));
     }
 
     @Test

@@ -20,49 +20,44 @@
 package com.baidu.hugegraph.api.traverser;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
-import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.util.E;
 
-public class ShortestPathAPI extends TraversersAPI {
+public class JaccardSimilarityAPI extends TraversersAPI {
 
-    public ShortestPathAPI(RestClient client, String graph) {
+    private static final String JACCARD_SIMILARITY = "jaccard_similarity";
+
+    public JaccardSimilarityAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "shortestpath";
+        return "jaccardsimilarity";
     }
 
-    public Path get(Object sourceId, Object targetId,
-                    Direction direction, String label, int maxDepth,
-                    long degree, long skipDegree, long capacity) {
-        String source = GraphAPI.formatVertexId(sourceId, false);
-        String target = GraphAPI.formatVertexId(targetId, false);
-
-        checkPositive(maxDepth, "Max depth of shortest path");
+    public double get(Object vertexId, Object otherId, Direction direction,
+                      String label, long degree) {
+        this.client.checkApiVersion("0.51", "jaccard similarity");
+        String vertex = GraphAPI.formatVertexId(vertexId, false);
+        String other = GraphAPI.formatVertexId(otherId, false);
         checkDegree(degree);
-        checkCapacity(capacity);
-        checkSkipDegree(skipDegree, degree, capacity);
-
         Map<String, Object> params = new LinkedHashMap<>();
-        params.put("source", source);
-        params.put("target", target);
+        params.put("vertex", vertex);
+        params.put("other", other);
         params.put("direction", direction);
         params.put("label", label);
-        params.put("max_depth", maxDepth);
         params.put("max_degree", degree);
-        params.put("skip_degree", skipDegree);
-        params.put("capacity", capacity);
         RestResult result = this.client.get(this.path(), params);
-        List<Object> vertices = result.readList("path", Object.class);
-        return new Path(vertices);
+        @SuppressWarnings("unchecked")
+        Map<String, Double> jaccard = result.readObject(Map.class);
+        E.checkState(jaccard.containsKey(JACCARD_SIMILARITY),
+                     "The result doesn't have key '%s'", JACCARD_SIMILARITY);
+        return jaccard.get(JACCARD_SIMILARITY);
     }
 }

@@ -20,49 +20,49 @@
 package com.baidu.hugegraph.api.traverser;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.api.graph.GraphAPI;
+import com.baidu.hugegraph.api.traverser.structure.WeightedPaths;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
-import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.util.E;
 
-public class ShortestPathAPI extends TraversersAPI {
+public class SingleSourceShortestPathAPI extends TraversersAPI {
 
-    public ShortestPathAPI(RestClient client, String graph) {
+    public SingleSourceShortestPathAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "shortestpath";
+        return "singlesourceshortestpath";
     }
 
-    public Path get(Object sourceId, Object targetId,
-                    Direction direction, String label, int maxDepth,
-                    long degree, long skipDegree, long capacity) {
+    public WeightedPaths get(Object sourceId, Direction direction, String label,
+                             String weight, long degree, long skipDegree,
+                             long capacity, long limit, boolean withVertex) {
+        this.client.checkApiVersion("0.51", "single source shortest path");
         String source = GraphAPI.formatVertexId(sourceId, false);
-        String target = GraphAPI.formatVertexId(targetId, false);
 
-        checkPositive(maxDepth, "Max depth of shortest path");
+        E.checkNotNull(weight, "weight");
         checkDegree(degree);
         checkCapacity(capacity);
         checkSkipDegree(skipDegree, degree, capacity);
+        checkLimit(limit);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);
-        params.put("target", target);
         params.put("direction", direction);
         params.put("label", label);
-        params.put("max_depth", maxDepth);
+        params.put("weight", weight);
         params.put("max_degree", degree);
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
+        params.put("limit", limit);
+        params.put("with_vertex", withVertex);
         RestResult result = this.client.get(this.path(), params);
-        List<Object> vertices = result.readList("path", Object.class);
-        return new Path(vertices);
+        return result.readObject(WeightedPaths.class);
     }
 }

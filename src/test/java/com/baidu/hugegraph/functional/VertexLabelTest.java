@@ -54,7 +54,7 @@ public class VertexLabelTest extends BaseFuncTest {
                                    .create();
         Assert.assertEquals(2, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
-        long createTime = (long) player.userdata().get("create_time");
+        long createTime = (long) player.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -66,7 +66,7 @@ public class VertexLabelTest extends BaseFuncTest {
         // The same key user data will be overwritten
         Assert.assertEquals(2, runner.userdata().size());
         Assert.assertEquals("player", runner.userdata().get("super_vl"));
-        createTime = (long) runner.userdata().get("create_time");
+        createTime = (long) runner.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
     }
@@ -79,7 +79,7 @@ public class VertexLabelTest extends BaseFuncTest {
                                    .properties("name")
                                    .create();
         Assert.assertEquals(1, player.userdata().size());
-        long createTime = (long) player.userdata().get("create_time");
+        long createTime = (long) player.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -88,7 +88,7 @@ public class VertexLabelTest extends BaseFuncTest {
                        .append();
         Assert.assertEquals(2, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
-        Assert.assertEquals(createTime, player.userdata().get("create_time"));
+        Assert.assertEquals(createTime, player.userdata().get("~create_time"));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class VertexLabelTest extends BaseFuncTest {
         Assert.assertEquals(3, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
         Assert.assertEquals("picture1", player.userdata().get("icon"));
-        long createTime = (long) player.userdata().get("create_time");
+        long createTime = (long) player.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -112,7 +112,7 @@ public class VertexLabelTest extends BaseFuncTest {
                        .eliminate();
         Assert.assertEquals(2, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
-        Assert.assertEquals(createTime, player.userdata().get("create_time"));
+        Assert.assertEquals(createTime, player.userdata().get("~create_time"));
     }
 
     @Test

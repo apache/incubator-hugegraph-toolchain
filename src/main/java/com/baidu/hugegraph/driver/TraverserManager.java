@@ -22,11 +22,13 @@ package com.baidu.hugegraph.driver;
 import java.util.Iterator;
 import java.util.List;
 
+import com.baidu.hugegraph.api.traverser.AllShortestPathsAPI;
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedCrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
 import com.baidu.hugegraph.api.traverser.EdgesAPI;
 import com.baidu.hugegraph.api.traverser.FusiformSimilarityAPI;
+import com.baidu.hugegraph.api.traverser.JaccardSimilarityAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
 import com.baidu.hugegraph.api.traverser.NeighborRankAPI;
@@ -34,8 +36,11 @@ import com.baidu.hugegraph.api.traverser.PathsAPI;
 import com.baidu.hugegraph.api.traverser.PersonalRankAPI;
 import com.baidu.hugegraph.api.traverser.RaysAPI;
 import com.baidu.hugegraph.api.traverser.RingsAPI;
+import com.baidu.hugegraph.api.traverser.SameNeighborsAPI;
 import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
+import com.baidu.hugegraph.api.traverser.SingleSourceShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
+import com.baidu.hugegraph.api.traverser.WeightedShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.structure.CrosspointsRequest;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedCrosspoints;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedPaths;
@@ -43,6 +48,8 @@ import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarity;
 import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarityRequest;
 import com.baidu.hugegraph.api.traverser.structure.PathsRequest;
 import com.baidu.hugegraph.api.traverser.structure.Ranks;
+import com.baidu.hugegraph.api.traverser.structure.WeightedPath;
+import com.baidu.hugegraph.api.traverser.structure.WeightedPaths;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -60,11 +67,16 @@ import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
 
+
 public class TraverserManager {
 
     private final GraphManager graphManager;
-
+    private JaccardSimilarityAPI jaccardSimilarityAPI;
+    private SameNeighborsAPI sameNeighborsAPI;
     private ShortestPathAPI shortestPathAPI;
+    private AllShortestPathsAPI allShortestPathsAPI;
+    private SingleSourceShortestPathAPI singleSourceShortestPathAPI;
+    private WeightedShortestPathAPI weightedShortestPathAPI;
     private PathsAPI pathsAPI;
     private CrosspointsAPI crosspointsAPI;
     private KoutAPI koutAPI;
@@ -82,7 +94,14 @@ public class TraverserManager {
     public TraverserManager(RestClient client, GraphManager graphManager) {
         this.graphManager = graphManager;
         String graph = graphManager.graph();
+        this.jaccardSimilarityAPI = new JaccardSimilarityAPI(client, graph);
+        this.sameNeighborsAPI = new SameNeighborsAPI(client, graph);
         this.shortestPathAPI = new ShortestPathAPI(client, graph);
+        this.allShortestPathsAPI = new AllShortestPathsAPI(client, graph);
+        this.singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(
+                                               client, graph);
+        this.weightedShortestPathAPI = new WeightedShortestPathAPI(
+                                           client, graph);
         this.pathsAPI = new PathsAPI(client, graph);
         this.crosspointsAPI = new CrosspointsAPI(client, graph);
         this.koutAPI = new KoutAPI(client, graph);
@@ -90,13 +109,54 @@ public class TraverserManager {
         this.ringsAPI = new RingsAPI(client, graph);
         this.raysAPI = new RaysAPI(client, graph);
         this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
-        this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client,
-                                                                     graph);
+        this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(
+                                            client, graph);
         this.fusiformSimilarityAPI = new FusiformSimilarityAPI(client, graph);
         this.neighborRankAPI = new NeighborRankAPI(client, graph);
         this.personalRankAPI = new PersonalRankAPI(client, graph);
         this.verticesAPI = new VerticesAPI(client, graph);
         this.edgesAPI = new EdgesAPI(client, graph);
+    }
+
+    public double jaccardSimilarity(Object vertexId, Object otherId) {
+        return this.jaccardSimilarity(vertexId, otherId, DEFAULT_DEGREE);
+    }
+
+    public double jaccardSimilarity(Object vertexId, Object otherId,
+                                    long degree) {
+        return this.jaccardSimilarity(vertexId, otherId, Direction.BOTH,
+                                      null, degree);
+    }
+
+    public double jaccardSimilarity(Object vertexId, Object otherId,
+                                    Direction direction, String label,
+                                    long degree) {
+        return this.jaccardSimilarityAPI.get(vertexId, otherId, direction,
+                                             label, degree);
+    }
+
+    public List<Object> sameNeighbors(Object vertexId, Object otherId) {
+        return this.sameNeighbors(vertexId, otherId, DEFAULT_DEGREE);
+    }
+
+    public List<Object> sameNeighbors(Object vertexId, Object otherId,
+                                      long degree) {
+        return this.sameNeighbors(vertexId, otherId, Direction.BOTH,
+                                  null, degree);
+    }
+
+    public List<Object> sameNeighbors(Object vertexId, Object otherId,
+                                      Direction direction, String label,
+                                      long degree) {
+        return this.sameNeighbors(vertexId, otherId, direction, label,
+                                  degree, DEFAULT_PATHS_LIMIT);
+    }
+
+    public List<Object> sameNeighbors(Object vertexId, Object otherId,
+                                      Direction direction, String label,
+                                      long degree, long limit) {
+        return this.sameNeighborsAPI.get(vertexId, otherId, direction,
+                                         label, degree, limit);
     }
 
     public Path shortestPath(Object sourceId, Object targetId, int maxDepth) {
@@ -128,6 +188,98 @@ public class TraverserManager {
                              long degree, long skipDegree, long capacity) {
         return this.shortestPathAPI.get(sourceId, targetId, direction, label,
                                         maxDepth, degree, skipDegree, capacity);
+    }
+
+    public List<Path> allShortestPaths(Object sourceId, Object targetId,
+                                       int maxDepth) {
+        return this.allShortestPaths(sourceId, targetId, Direction.BOTH,
+                                     null, maxDepth);
+    }
+
+    public List<Path> allShortestPaths(Object sourceId, Object targetId,
+                                       Direction direction, int maxDepth) {
+        return this.allShortestPaths(sourceId, targetId, direction,
+                                     null, maxDepth);
+    }
+
+    public List<Path> allShortestPaths(Object sourceId, Object targetId,
+                                       Direction direction, String label,
+                                       int maxDepth) {
+        return this.allShortestPaths(sourceId, targetId, direction,
+                                     label, maxDepth, DEFAULT_DEGREE,
+                                     DEFAULT_CAPACITY);
+    }
+
+    public List<Path> allShortestPaths(Object sourceId, Object targetId,
+                                       Direction direction, String label,
+                                       int maxDepth, long degree,
+                                       long capacity) {
+        return this.allShortestPaths(sourceId, targetId, direction, label,
+                                     maxDepth, degree, 0L, capacity);
+    }
+
+    public List<Path> allShortestPaths(Object sourceId, Object targetId,
+                                       Direction direction, String label,
+                                       int maxDepth, long degree,
+                                       long skipDegree, long capacity) {
+        return this.allShortestPathsAPI.get(sourceId, targetId, direction,
+                                            label, maxDepth, degree,
+                                            skipDegree, capacity);
+    }
+
+    public WeightedPaths singleSourceShortestPath(Object sourceId,
+                                                  String weight,
+                                                  boolean withVertex) {
+        return this.singleSourceShortestPath(sourceId, Direction.BOTH, null,
+                                             weight, withVertex);
+    }
+
+    public WeightedPaths singleSourceShortestPath(Object sourceId,
+                                                  Direction direction,
+                                                  String label, String weight,
+                                                  boolean withVertex) {
+        return this.singleSourceShortestPath(sourceId, direction, label, weight,
+                                             DEFAULT_DEGREE, 0L,
+                                             DEFAULT_CAPACITY,
+                                             DEFAULT_PATHS_LIMIT, withVertex);
+    }
+
+    public WeightedPaths singleSourceShortestPath(Object sourceId,
+                                                  Direction direction,
+                                                  String label, String weight,
+                                                  long degree, long skipDegree,
+                                                  long capacity, long limit,
+                                                  boolean withVertex) {
+        return this.singleSourceShortestPathAPI.get(sourceId, direction, label,
+                                                    weight, degree, skipDegree,
+                                                    capacity, limit,
+                                                    withVertex);
+    }
+
+    public WeightedPath weightedShortestPath(Object sourceId,  Object targetId,
+                                             String weight, boolean withVertex) {
+        return this.weightedShortestPath(sourceId, targetId, Direction.BOTH,
+                                         null, weight, withVertex);
+    }
+
+    public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
+                                             Direction direction, String label,
+                                             String weight,
+                                             boolean withVertex) {
+        return this.weightedShortestPath(sourceId, targetId, direction, label,
+                                         weight, DEFAULT_DEGREE, 0L,
+                                         DEFAULT_CAPACITY, withVertex);
+    }
+
+    public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
+                                             Direction direction,
+                                             String label, String weight,
+                                             long degree, long skipDegree,
+                                             long capacity, boolean withVertex) {
+        return this.weightedShortestPathAPI.get(sourceId, targetId,direction,
+                                                label, weight, degree,
+                                                skipDegree, capacity,
+                                                withVertex);
     }
 
     public List<Path> paths(Object sourceId, Object targetId, int maxDepth) {

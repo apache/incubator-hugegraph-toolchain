@@ -28,22 +28,22 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Path;
-import com.baidu.hugegraph.util.E;
 
-public class ShortestPathAPI extends TraversersAPI {
+public class AllShortestPathsAPI extends TraversersAPI {
 
-    public ShortestPathAPI(RestClient client, String graph) {
+    public AllShortestPathsAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "shortestpath";
+        return "allshortestpaths";
     }
 
-    public Path get(Object sourceId, Object targetId,
-                    Direction direction, String label, int maxDepth,
-                    long degree, long skipDegree, long capacity) {
+    public List<Path> get(Object sourceId, Object targetId,
+                          Direction direction, String label, int maxDepth,
+                          long degree, long skipDegree, long capacity) {
+        this.client.checkApiVersion("0.51", "all shortest path");
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
 
@@ -62,7 +62,6 @@ public class ShortestPathAPI extends TraversersAPI {
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
         RestResult result = this.client.get(this.path(), params);
-        List<Object> vertices = result.readList("path", Object.class);
-        return new Path(vertices);
+        return result.readList("paths", Path.class);
     }
 }

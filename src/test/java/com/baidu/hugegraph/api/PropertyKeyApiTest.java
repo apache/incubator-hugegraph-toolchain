@@ -304,7 +304,7 @@ public class PropertyKeyApiTest extends BaseApiTest {
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
-        long createTime = (long) age.userdata().get("create_time");
+        long createTime = (long) age.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -316,7 +316,7 @@ public class PropertyKeyApiTest extends BaseApiTest {
         // The same key user data will be overwritten
         Assert.assertEquals(2, id.userdata().size());
         Assert.assertEquals(18, id.userdata().get("length"));
-        createTime = (long) id.userdata().get("create_time");
+        createTime = (long) id.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -328,7 +328,7 @@ public class PropertyKeyApiTest extends BaseApiTest {
         Assert.assertEquals(2, sex.userdata().size());
         Assert.assertEquals(ImmutableList.of("male", "female"),
                             sex.userdata().get("range"));
-        createTime = (long) sex.userdata().get("create_time");
+        createTime = (long) sex.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
     }

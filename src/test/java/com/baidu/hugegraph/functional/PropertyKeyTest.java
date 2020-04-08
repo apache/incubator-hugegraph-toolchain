@@ -54,7 +54,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
-        long createTime = (long) age.userdata().get("create_time");
+        long createTime = (long) age.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -65,7 +65,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         // The same key user data will be overwritten
         Assert.assertEquals(2, id.userdata().size());
         Assert.assertEquals(18, id.userdata().get("length"));
-        createTime = (long) id.userdata().get("create_time");
+        createTime = (long) id.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -76,7 +76,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(2, sex.userdata().size());
         Assert.assertEquals(ImmutableList.of("male", "female"),
                             sex.userdata().get("range"));
-        createTime = (long) sex.userdata().get("create_time");
+        createTime = (long) sex.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
     }
@@ -89,7 +89,7 @@ public class PropertyKeyTest extends BaseFuncTest {
                                 .create();
         Assert.assertEquals(2, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
-        long createTime = (long) age.userdata().get("create_time");
+        long createTime = (long) age.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -100,7 +100,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(1, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
-        Assert.assertEquals(createTime, age.userdata().get("create_time"));
+        Assert.assertEquals(createTime, age.userdata().get("~create_time"));
     }
 
     @Test
@@ -113,7 +113,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
-        long createTime = (long) age.userdata().get("create_time");
+        long createTime = (long) age.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -122,7 +122,7 @@ public class PropertyKeyTest extends BaseFuncTest {
                     .eliminate();
         Assert.assertEquals(2, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
-        Assert.assertEquals(createTime, age.userdata().get("create_time"));
+        Assert.assertEquals(createTime, age.userdata().get("~create_time"));
     }
 
     @Test

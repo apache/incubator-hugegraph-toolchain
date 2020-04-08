@@ -57,7 +57,7 @@ public class IndexLabelTest extends BaseFuncTest {
                                         .create();
         Assert.assertEquals(2, personByCity.userdata().size());
         Assert.assertEquals("secondary", personByCity.userdata().get("type"));
-        long createTime = (long) personByCity.userdata().get("create_time");
+        long createTime = (long) personByCity.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -71,7 +71,7 @@ public class IndexLabelTest extends BaseFuncTest {
                                        .create();
         Assert.assertEquals(2, personByAge.userdata().size());
         Assert.assertEquals("range", personByAge.userdata().get("type"));
-        createTime = (long) personByAge.userdata().get("create_time");
+        createTime = (long) personByAge.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
     }
@@ -88,7 +88,7 @@ public class IndexLabelTest extends BaseFuncTest {
                                         .ifNotExist()
                                         .create();
         Assert.assertEquals(1, personByCity.userdata().size());
-        long createTime = (long) personByCity.userdata().get("create_time");
+        long createTime = (long) personByCity.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -98,7 +98,7 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals(2, personByCity.userdata().size());
         Assert.assertEquals("secondary", personByCity.userdata().get("type"));
         Assert.assertEquals(createTime,
-                            personByCity.userdata().get("create_time"));
+                            personByCity.userdata().get("~create_time"));
     }
 
     @Test
@@ -117,7 +117,7 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals(3, personByCity.userdata().size());
         Assert.assertEquals("secondary", personByCity.userdata().get("type"));
         Assert.assertEquals("picture", personByCity.userdata().get("icon"));
-        long createTime = (long) personByCity.userdata().get("create_time");
+        long createTime = (long) personByCity.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -127,7 +127,7 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals(2, personByCity.userdata().size());
         Assert.assertEquals("picture", personByCity.userdata().get("icon"));
         Assert.assertEquals(createTime,
-                            personByCity.userdata().get("create_time"));
+                            personByCity.userdata().get("~create_time"));
     }
 
     @Test

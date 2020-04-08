@@ -103,12 +103,11 @@ public class RingsRaysApiTest extends BaseApiTest {
 
         paths = ringsAPI.get(markoId, Direction.BOTH, null,
                              3, false, -1L, -1L, -1L);
-        Assert.assertEquals(2, paths.size());
+        Assert.assertEquals(1, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, joshId, lopId, markoId);
         List<Object> path2 = ImmutableList.of(markoId, lopId, joshId, markoId);
         List<List<Object>> expectedPaths = ImmutableList.of(path1, path2);
         Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
-        Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
     }
 
     @Test
@@ -128,12 +127,11 @@ public class RingsRaysApiTest extends BaseApiTest {
     public void testRingsSourceInRing() {
         List<Path> paths = ringsAPI.get(1, Direction.BOTH, null,
                                         3, true, -1L, -1L, -1L);
-        Assert.assertEquals(2, paths.size());
+        Assert.assertEquals(1, paths.size());
         List<Object> path1 = ImmutableList.of(1, 3, 2, 1);
         List<Object> path2 = ImmutableList.of(1, 2, 3, 1);
         List<List<Object>> expectedPaths = ImmutableList.of(path1, path2);
         Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
-        Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
 
         paths = ringsAPI.get(2, Direction.OUT, null,
                              2, true, -1L, -1L, -1L);
@@ -151,7 +149,7 @@ public class RingsRaysApiTest extends BaseApiTest {
     public void testRingsWithoutSourceInRing() {
         List<Path> paths = ringsAPI.get(1, Direction.BOTH, null,
                                         3, false, -1L, -1L, -1L);
-        Assert.assertEquals(4, paths.size());
+        Assert.assertEquals(3, paths.size());
         List<Object> path1 = ImmutableList.of(1, 3, 2, 3);
         List<Object> path2 = ImmutableList.of(1, 3, 2, 1);
         List<Object> path3 = ImmutableList.of(1, 2, 3, 1);
@@ -161,7 +159,6 @@ public class RingsRaysApiTest extends BaseApiTest {
         Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(2).objects()));
-        Assert.assertTrue(expectedPaths.contains(paths.get(3).objects()));
 
         paths = ringsAPI.get(2, Direction.OUT, null,
                              3, false, -1L, -1L, -1L);
@@ -174,13 +171,12 @@ public class RingsRaysApiTest extends BaseApiTest {
 
         paths = ringsAPI.get(2, Direction.BOTH, null,
                              3, false, -1L, -1L, -1L);
-        Assert.assertEquals(3, paths.size());
+        Assert.assertEquals(2, paths.size());
         List<Object> path7 = ImmutableList.of(2, 3, 1, 2);
         List<Object> path8 = ImmutableList.of(2, 1, 3, 2);
         expectedPaths = ImmutableList.of(path5, path7, path8);
         Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
-        Assert.assertTrue(expectedPaths.contains(paths.get(2).objects()));
     }
 
     @Test

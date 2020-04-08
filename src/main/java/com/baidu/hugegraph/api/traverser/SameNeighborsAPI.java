@@ -27,42 +27,35 @@ import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
-import com.baidu.hugegraph.structure.graph.Path;
-import com.baidu.hugegraph.util.E;
 
-public class ShortestPathAPI extends TraversersAPI {
+public class SameNeighborsAPI extends TraversersAPI {
 
-    public ShortestPathAPI(RestClient client, String graph) {
+    private static final String SAME_NEIGHBORS = "same_neighbors";
+
+    public SameNeighborsAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "shortestpath";
+        return "sameneighbors";
     }
 
-    public Path get(Object sourceId, Object targetId,
-                    Direction direction, String label, int maxDepth,
-                    long degree, long skipDegree, long capacity) {
-        String source = GraphAPI.formatVertexId(sourceId, false);
-        String target = GraphAPI.formatVertexId(targetId, false);
-
-        checkPositive(maxDepth, "Max depth of shortest path");
+    public List<Object> get(Object vertexId, Object otherId,
+                            Direction direction, String label,
+                            long degree, long limit) {
+        this.client.checkApiVersion("0.51", "same neighbors");
+        String vertex = GraphAPI.formatVertexId(vertexId, false);
+        String other = GraphAPI.formatVertexId(otherId, false);
         checkDegree(degree);
-        checkCapacity(capacity);
-        checkSkipDegree(skipDegree, degree, capacity);
-
         Map<String, Object> params = new LinkedHashMap<>();
-        params.put("source", source);
-        params.put("target", target);
+        params.put("vertex", vertex);
+        params.put("other", other);
         params.put("direction", direction);
         params.put("label", label);
-        params.put("max_depth", maxDepth);
         params.put("max_degree", degree);
-        params.put("skip_degree", skipDegree);
-        params.put("capacity", capacity);
+        params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        List<Object> vertices = result.readList("path", Object.class);
-        return new Path(vertices);
+        return result.readList(SAME_NEIGHBORS, Object.class);
     }
 }

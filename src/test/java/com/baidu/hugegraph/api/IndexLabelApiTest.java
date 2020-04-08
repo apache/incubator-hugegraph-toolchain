@@ -354,7 +354,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertEquals(3, personByAge.userdata().size());
         Assert.assertEquals(0, personByAge.userdata().get("min"));
         Assert.assertEquals(100, personByAge.userdata().get("max"));
-        long createTime = (long) personByAge.userdata().get("create_time");
+        long createTime = (long) personByAge.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -369,7 +369,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         // The same key user data will be overwritten
         Assert.assertEquals(2, personByCity.userdata().size());
         Assert.assertEquals(18, personByCity.userdata().get("length"));
-        createTime = (long) personByCity.userdata().get("create_time");
+        createTime = (long) personByCity.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -384,7 +384,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertEquals(2, bookByName.userdata().size());
         Assert.assertEquals(ImmutableList.of("xx", "yy"),
                             bookByName.userdata().get("option"));
-        createTime = (long) bookByName.userdata().get("create_time");
+        createTime = (long) bookByName.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
     }

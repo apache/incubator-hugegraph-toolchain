@@ -472,7 +472,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals(2, father.userdata().size());
         Assert.assertEquals("one-to-many",
                             father.userdata().get("multiplicity"));
-        long createTime = (long) father.userdata().get("create_time");
+        long createTime = (long) father.userdata().get("~create_time");
         long now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
 
@@ -487,7 +487,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals(2, write.userdata().size());
         Assert.assertEquals("many-to-many",
                             write.userdata().get("multiplicity"));
-        createTime = (long) write.userdata().get("create_time");
+        createTime = (long) write.userdata().get("~create_time");
         now = new Date().getTime();
         Assert.assertTrue(createTime <= now);
     }
