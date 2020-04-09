@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2023,6 +2024,7 @@ public class FileLoadTest extends LoadTest {
         File failureDataDir = FileUtils.getFile(structPath(
                 "incremental_mode_and_load_failure/struct/failure-data/"));
         File[] files = failureDataDir.listFiles();
+        Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(2, files.length);
 
@@ -2083,6 +2085,7 @@ public class FileLoadTest extends LoadTest {
 
         Thread.sleep(1000);
         files = failureDataDir.listFiles();
+        Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(4, files.length);
 
@@ -2228,6 +2231,7 @@ public class FileLoadTest extends LoadTest {
         File failureDir = FileUtils.getFile(structPath(
                           "reload_json_failure_files/struct/failure-data/"));
         File[] files = failureDir.listFiles();
+        Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.length);
 

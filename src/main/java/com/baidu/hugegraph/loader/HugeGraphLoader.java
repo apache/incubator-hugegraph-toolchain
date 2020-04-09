@@ -56,7 +56,7 @@ public final class HugeGraphLoader {
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
     /*
-     * TODO: find a more graceful way to express loader end succeed or fialed
+     * TODO: use a more graceful way to express loader end succeed or failed
      */
     private boolean succeed;
     private LoadContext context;
