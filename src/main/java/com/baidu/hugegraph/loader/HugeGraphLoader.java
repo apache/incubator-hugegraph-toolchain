@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.Record;
-import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -56,55 +55,70 @@ public final class HugeGraphLoader {
 
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
-    private final LoadContext context;
-    private final LoadMapping mapping;
-    private final TaskManager manager;
+    /*
+     * TODO: use a more graceful way to express loader end succeed or failed
+     */
+    private boolean succeed;
+    private LoadContext context;
+    private LoadMapping mapping;
+    private TaskManager manager;
 
     public static void main(String[] args) {
-        HugeGraphLoader loader = new HugeGraphLoader(args);
+        HugeGraphLoader loader;
+        try {
+            loader = new HugeGraphLoader(args);
+        } catch (Throwable e) {
+            Printer.printError("Failed to start loading", e);
+            return;
+        }
         loader.load();
     }
 
     public HugeGraphLoader(String[] args) {
-        LoadOptions options = LoadOptions.parseOptions(args);
-        try {
-            this.context = LoadContext.init(options);
-            this.mapping = LoadMapping.of(options.file);
-            this.manager = new TaskManager();
-        } catch (Throwable e) {
-            LoadContext.destroy();
-            throw e;
-        }
+        this(LoadOptions.parseOptions(args));
+    }
+
+    public HugeGraphLoader(LoadOptions options) {
+        this(options, LoadMapping.of(options.file));
+    }
+
+    public HugeGraphLoader(LoadOptions options, LoadMapping mapping) {
+        this.context = new LoadContext(options);
+        this.mapping = mapping;
+        this.manager = new TaskManager(this.context);
         this.addShutdownHook();
+        this.succeed = true;
     }
 
     private void addShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOG.info("Shutdown hook was triggered");
             this.stopThenShutdown();
         }));
     }
 
-    public void load() {
+    public LoadContext context() {
+        return this.context;
+    }
+
+    public boolean load() {
         try {
             // Clear schema if needed
             this.clearAllDataIfNeeded();
             // Create schema
             this.createSchema();
-            // Init schema cache
-            this.initSchemaCache();
             this.loadInputs();
             // Print load summary
-            Printer.printSummary();
+            Printer.printSummary(this.context);
         } catch (Throwable e) {
             Printer.printError("Failed to load", e);
             if (this.context.options().testMode) {
                 throw e;
-            } else {
-                System.exit(-1);
             }
         } finally {
             this.stopThenShutdown();
         }
+        return this.succeed;
     }
 
     private void clearAllDataIfNeeded() {
@@ -115,52 +129,39 @@ public final class HugeGraphLoader {
 
         int requestTimeout = options.timeout;
         options.timeout = options.clearTimeout;
-        HugeClient client = HugeClientHolder.get(options);
+        HugeClient client = HugeClientHolder.create(options);
         String message = "I'm sure to delete all data";
 
         LOG.info("Prepare to clear the data of graph {}", options.graph);
         client.graphs().clear(options.graph, message);
         LOG.info("The graph {} has been cleared successfully", options.graph);
 
-        // Close HugeClient and set the original timeout back if needed
-        if (requestTimeout != options.clearTimeout) {
-            HugeClientHolder.close();
-            options.timeout = requestTimeout;
-        }
+        options.timeout = requestTimeout;
+        client.close();
     }
 
     private void createSchema() {
         LoadOptions options = this.context.options();
-        if (StringUtils.isEmpty(options.schema)) {
-            return;
+        if (!StringUtils.isEmpty(options.schema)) {
+            File file = FileUtils.getFile(options.schema);
+            HugeClient client = this.context.client();
+            GroovyExecutor groovyExecutor = new GroovyExecutor();
+            groovyExecutor.bind(Constants.GROOVY_SCHEMA, client.schema());
+            String script;
+            try {
+                script = FileUtils.readFileToString(file, Constants.CHARSET);
+            } catch (IOException e) {
+                throw new LoadException("Failed to read schema file '%s'", e,
+                                        options.schema);
+            }
+            groovyExecutor.execute(script, client);
         }
-        File schemaFile = FileUtils.getFile(options.schema);
-        HugeClient client = HugeClientHolder.get(options);
-        GroovyExecutor groovyExecutor = new GroovyExecutor();
-        groovyExecutor.bind(Constants.GROOVY_SCHEMA, client.schema());
-        String script;
-        try {
-            script = FileUtils.readFileToString(schemaFile, Constants.CHARSET);
-        } catch (IOException e) {
-            throw new LoadException("Read schema file '%s' error",
-                                    e, options.schema);
-        }
-        groovyExecutor.execute(script, client);
-    }
-
-    private void initSchemaCache() {
-        HugeClient client = HugeClientHolder.get(this.context.options());
-        SchemaCache cache = new SchemaCache(client);
-        if (cache.isEmpty()) {
-            throw new InitException("There is no schema in HugeGraphServer, " +
-                                    "please create it at first");
-        }
-        this.context.schemaCache(cache);
+        this.context.updateSchemaCache();
     }
 
     private void loadInputs() {
         LOG.info("Start loading");
-        Printer.printRealtimeProgress();
+        Printer.printRealtimeProgress(this.context);
         LoadOptions options = this.context.options();
 
         this.context.summary().startTimer();
@@ -177,13 +178,14 @@ public final class HugeGraphLoader {
         } finally {
             this.context.summary().stopTimer();
         }
-        Printer.printFinalProgress();
+        Printer.printFinalProgress(this.context);
     }
 
     private void load(List<InputStruct> structs) {
         // Load input structs one by one
         for (InputStruct struct : structs) {
             if (this.context.stopped()) {
+                this.succeed = false;
                 break;
             }
             if (struct.skip()) {
@@ -208,10 +210,13 @@ public final class HugeGraphLoader {
     private void load(InputStruct struct, InputReader reader) {
         LOG.info("Start parsing and loading '{}'", struct);
         LoadMetrics metrics = this.context.summary().metrics(struct);
-        ParseTaskBuilder taskBuilder = new ParseTaskBuilder(struct);
+        ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context, struct);
         int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
         for (boolean finished = false; !finished;) {
+            if (this.context.stopped()) {
+                return;
+            }
             try {
                 if (reader.hasNext()) {
                     lines.add(reader.next());
@@ -274,7 +279,7 @@ public final class HugeGraphLoader {
         if (options.maxReadErrors != Constants.NO_LIMIT &&
             failures >= options.maxReadErrors) {
             Printer.printError("More than %s reading error, stop loading " +
-                               "and waiting all load tasks finished",
+                               "and waiting all load tasks stopped",
                                options.maxReadErrors);
             this.context.stopLoading();
         } else {
@@ -295,7 +300,7 @@ public final class HugeGraphLoader {
                 if (!this.context.stopped()) {
                     Printer.printError("More than %s parse errors, stop " +
                                        "parsing and waiting all insert tasks " +
-                                       "finished", options.maxParseErrors);
+                                       "stopped", options.maxParseErrors);
                     this.context.stopLoading();
                 }
             }
@@ -304,13 +309,18 @@ public final class HugeGraphLoader {
 
     private void stopThenShutdown() {
         LOG.info("Stop loading then shutdown HugeGraphLoader");
+        if (this.context == null) {
+            return;
+        }
         try {
             this.context.stopLoading();
-            // Wait all insert tasks finished before exit
-            this.manager.waitFinished();
-            this.manager.shutdown();
+            if (this.manager != null) {
+                // Wait all insert tasks stopped before exit
+                this.manager.waitFinished();
+                this.manager.shutdown();
+            }
         } finally {
-            LoadContext.destroy();
+            this.context.close();
         }
     }
 }

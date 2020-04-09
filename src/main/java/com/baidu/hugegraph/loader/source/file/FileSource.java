@@ -24,6 +24,7 @@ import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.util.E;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -47,17 +48,33 @@ public class FileSource extends AbstractSource {
     @JsonProperty("compression")
     private Compression compression;
     @JsonProperty("batch_size")
-    private int batchSize = 500;
+    private int batchSize;
 
     public FileSource() {
-        this.path = null;
-        this.filter = new FileFilter();
-        this.format = FileFormat.CSV;
-        this.delimiter = Constants.COMMA_STR;
-        this.dateFormat = Constants.DATE_FORMAT;
-        this.timeZone = Constants.TIME_ZONE;
-        this.skippedLine = new SkippedLine();
-        this.compression = Compression.NONE;
+        this(null, new FileFilter(), FileFormat.CSV, Constants.COMMA_STR,
+             Constants.DATE_FORMAT, Constants.TIME_ZONE, new SkippedLine(),
+             Compression.NONE, 500);
+    }
+
+    @JsonCreator
+    public FileSource(@JsonProperty("path") String path,
+                      @JsonProperty("filter") FileFilter filter,
+                      @JsonProperty("format") FileFormat format,
+                      @JsonProperty("delimiter") String delimiter,
+                      @JsonProperty("date_format") String dateFormat,
+                      @JsonProperty("time_zone") String timeZone,
+                      @JsonProperty("skipped_line") SkippedLine skippedLine,
+                      @JsonProperty("compression") Compression compression,
+                      @JsonProperty("batch_size") Integer batchSize) {
+        this.path = path;
+        this.filter = filter != null ? filter : new FileFilter();
+        this.format = format != null ? format : FileFormat.CSV;
+        this.delimiter = delimiter != null ? delimiter : this.format.delimiter();
+        this.dateFormat = dateFormat != null ? dateFormat : Constants.DATE_FORMAT;
+        this.timeZone = timeZone != null ? timeZone : Constants.TIME_ZONE;
+        this.skippedLine = skippedLine != null ? skippedLine : new SkippedLine();
+        this.compression = compression != null ? compression : Compression.NONE;
+        this.batchSize = batchSize != null ? batchSize : 500;
     }
 
     @Override
@@ -98,8 +115,16 @@ public class FileSource extends AbstractSource {
         return this.filter;
     }
 
+    public void filter(FileFilter filter) {
+        this.filter = filter;
+    }
+
     public FileFormat format() {
         return this.format;
+    }
+
+    public void format(FileFormat format) {
+        this.format = format;
     }
 
     public String delimiter() {
@@ -114,20 +139,40 @@ public class FileSource extends AbstractSource {
         return this.dateFormat;
     }
 
+    public void dateFormat(String dateFormat) {
+        this.dateFormat = dateFormat;
+    }
+
     public String timeZone() {
         return this.timeZone;
+    }
+
+    public void timeZone(String timeZone) {
+        this.timeZone = timeZone;
     }
 
     public SkippedLine skippedLine() {
         return this.skippedLine;
     }
 
+    public void skippedLine(SkippedLine skippedLine) {
+        this.skippedLine = skippedLine;
+    }
+
     public Compression compression() {
         return this.compression;
     }
 
+    public void compression(Compression compression) {
+        this.compression = compression;
+    }
+
     public int batchSize() {
         return this.batchSize;
+    }
+
+    public void batchSize(int batchSize) {
+        this.batchSize = batchSize;
     }
 
     @Override

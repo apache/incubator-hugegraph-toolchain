@@ -62,9 +62,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     private final CharsetEncoder encoder;
     private final ByteBuffer buffer;
 
-    public ElementBuilder(InputStruct struct) {
+    public ElementBuilder(LoadContext context, InputStruct struct) {
         this.struct = struct;
-        this.schema = LoadContext.get().schemaCache();
+        this.schema = context.schemaCache();
         this.encoder = Constants.CHARSET.newEncoder();
         this.buffer = ByteBuffer.allocate(Constants.VERTEX_ID_LIMIT);
     }

@@ -50,10 +50,10 @@ public final class Constants {
     public static final String SKIPPED_LINE_REGEX = "(^#|^//).*|";
     public static final String FAILURE = "failure";
     public static final String FAILURE_DATA = "failure-data";
-    public static final String READ_FAILURE_SUFFIX = "read-error";
-    public static final String PARSE_FAILURE_SUFFIX = "parse-error";
-    public static final String INSERT_FAILURE_SUFFIX = "insert-error";
-    public static final String TEMP_FAILURE_SUFFIX = ".temp";
+    public static final String FAILURE_SUFFIX = ".error";
+    public static final String HEADER_SUFFIX = ".header";
+    public static final String TEMP_SUFFIX = ".temp";
+    public static final String DEDUP_SUFFIX = ".dedup";
     public static final String LOAD_PROGRESS = "load-progress";
 
     public static final String PARSE_WORKER = "parse-worker-%s";
@@ -61,6 +61,11 @@ public final class Constants {
     public static final String SINGLE_WORKER = "single-worker-%d";
     public static final long BATCH_PRINT_FREQ = 10_000_000L;
     public static final long SINGLE_PRINT_FREQ = 10_000L;
+
+    public static final int STATUS_OK = 200;
+    public static final int STATUS_BAD_REQUEST = 400;
+    public static final int STATUS_UNAUTHORIZED = 401;
+    public static final int STATUS_NOT_FOUND = 404;
 
     public static final int NO_LIMIT = -1;
     public static final int VERTEX_ID_LIMIT = 128;

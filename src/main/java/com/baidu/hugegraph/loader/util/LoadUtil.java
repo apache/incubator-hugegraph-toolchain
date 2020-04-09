@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.loader.util;
 
+import java.io.File;
+
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.util.E;
@@ -33,6 +35,19 @@ public final class LoadUtil {
                         Constants.JSON_SUFFIX);
         int lastDotIdx = structFileName.lastIndexOf(Constants.DOT_STR);
         return structFileName.substring(0, lastDotIdx);
+    }
+
+    public static String getFileNamePrefix(File file) {
+        String fileName = file.getName();
+        int lastDotIdx = fileName.lastIndexOf(Constants.DOT_STR);
+        return fileName.substring(0, lastDotIdx);
+    }
+
+    public static String getFileNameSuffix(File file) {
+        String fileName = file.getName();
+        int lastDotIdx = fileName.lastIndexOf(Constants.DOT_STR);
+        // With '.'
+        return fileName.substring(lastDotIdx);
     }
 
     public static void exitWithUsage(JCommander commander, int code) {

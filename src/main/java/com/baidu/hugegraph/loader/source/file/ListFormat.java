@@ -20,11 +20,11 @@
 package com.baidu.hugegraph.loader.source.file;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.Sets;
 
 public final class ListFormat {
 
@@ -42,23 +42,45 @@ public final class ListFormat {
     private Set<String> ignoredElems;
 
     public ListFormat() {
-        this.startSymbol = DEFAULT_START_SYMBOL;
-        this.endSymbol = DEFAULT_END_SYMBOL;
-        this.elemDelimiter = DEFAULT_ELEM_DELIMITER;
-        this.ignoredElems = new HashSet<>();
-        this.ignoredElems.add(Constants.EMPTY_STR);
+        this(DEFAULT_START_SYMBOL, DEFAULT_END_SYMBOL, DEFAULT_ELEM_DELIMITER);
+    }
+
+    public ListFormat(String startSymbol, String endSymbol,
+                      String elemDelimiter) {
+        this(startSymbol, endSymbol, elemDelimiter,
+             Sets.newHashSet(Constants.EMPTY_STR));
+    }
+
+    public ListFormat(String startSymbol, String endSymbol,
+                      String elemDelimiter, Set<String> ignoredElems) {
+        this.startSymbol = startSymbol;
+        this.endSymbol = endSymbol;
+        this.elemDelimiter = elemDelimiter;
+        this.ignoredElems = ignoredElems;
     }
 
     public String startSymbol() {
         return this.startSymbol;
     }
 
+    public void startSymbol(String startSymbol) {
+        this.startSymbol = startSymbol;
+    }
+
     public String endSymbol() {
         return this.endSymbol;
     }
 
+    public void endSymbol(String endSymbol) {
+        this.endSymbol = endSymbol;
+    }
+
     public String elemDelimiter() {
         return this.elemDelimiter;
+    }
+
+    public void elemDelimiter(String elemDelimiter) {
+        this.elemDelimiter = elemDelimiter;
     }
 
     public Set<String> ignoredElems() {

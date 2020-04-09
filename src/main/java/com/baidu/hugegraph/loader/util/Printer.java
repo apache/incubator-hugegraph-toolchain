@@ -27,6 +27,7 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.metrics.LoadReport;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
+import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.util.Log;
 import com.baidu.hugegraph.util.TimeUtil;
 
@@ -38,17 +39,23 @@ public final class Printer {
     private static final String SLASH = "/";
     private static final String DIVIDE_LINE = StringUtils.repeat('-', 50);
 
-    private static final LoadContext context = LoadContext.get();
-
-    public static void printRealtimeProgress() {
+    public static void printRealtimeProgress(LoadContext context) {
         LoadOptions options = context.options();
         if (!options.printProgress) {
             return;
         }
+        System.out.println(String.format(">> HugeGraphLoader worked in %s",
+                           options.workModeString()));
+        if (options.incrementalMode) {
+            LoadProgress progress = context.oldProgress();
+            System.out.println(String.format(
+                               "vertices/edges loaded before this time: %s/%s",
+                               progress.vertexLoaded(), progress.edgeLoaded()));
+        }
         System.out.print("vertices/edges has been loaded this time : ");
     }
 
-    public static void printFinalProgress() {
+    public static void printFinalProgress(LoadContext context) {
         LoadOptions options = context.options();
         if (!options.printProgress) {
             return;
@@ -59,7 +66,7 @@ public final class Printer {
         System.out.println(vertexLoaded + SLASH + edgeLoaded);
     }
 
-    public static void printSummary() {
+    public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
         // Just log vertices/edges metrics
         log(DIVIDE_LINE);
@@ -103,13 +110,14 @@ public final class Printer {
         printAndLog("edge parse success", report.edgeParseSuccess());
         printAndLog("edge parse failure", report.edgeParseFailure());
         printAndLog("edge insert success", report.edgeInsertSuccess());
-        printAndLog("edge insert failure", report.edgeParseFailure());
+        printAndLog("edge insert failure", report.edgeInsertFailure());
     }
 
     private static void printMeterReport(LoadSummary summary) {
         printAndLog("meter metrics");
         printAndLog("total time", TimeUtil.readableTime(summary.totalTime()));
-        printAndLog("vertex load rate(vertices/s)", summary.loadRate(ElemType.VERTEX));
+        printAndLog("vertex load rate(vertices/s)",
+                    summary.loadRate(ElemType.VERTEX));
         printAndLog("edge load rate(edges/s)", summary.loadRate(ElemType.EDGE));
     }
 
@@ -130,8 +138,8 @@ public final class Printer {
         System.err.println(formatMsg);
     }
 
-    public static void printProgress(ElemType type, long frequency,
-                                     int batchSize) {
+    public static void printProgress(LoadContext context, ElemType type,
+                                     long frequency, int batchSize) {
         LoadSummary summary = context.summary();
         long vertexLoaded = summary.vertexLoaded();
         long edgeLoaded = summary.edgeLoaded();
@@ -171,13 +179,11 @@ public final class Printer {
     }
 
     private static void printAndLog(String key, long value) {
-        String msg = String.format("    %-30s: %-20d", key, value);
-        printAndLog(msg);
+        printAndLog(String.format("    %-30s: %-20d", key, value));
     }
 
     private static void printAndLog(String key, String value) {
-        String msg = String.format("    %-30s: %-20s", key, value);
-        printAndLog(msg);
+        printAndLog(String.format("    %-30s: %-20s", key, value));
     }
 
     private static String backward(int length) {

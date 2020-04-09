@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -42,8 +43,9 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
 
-    public EdgeBuilder(InputStruct struct, EdgeMapping mapping) {
-        super(struct);
+    public EdgeBuilder(LoadContext context, InputStruct struct,
+                       EdgeMapping mapping) {
+        super(context, struct);
         this.mapping = mapping;
         this.edgeLabel = this.getEdgeLabel(this.mapping.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());

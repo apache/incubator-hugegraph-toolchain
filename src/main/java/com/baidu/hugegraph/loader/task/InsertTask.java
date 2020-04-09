@@ -34,7 +34,6 @@ import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadMetrics;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
-import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -56,10 +55,10 @@ public abstract class InsertTask implements Runnable {
     protected final ElementMapping mapping;
     protected final List<Record> batch;
 
-    public InsertTask(InputStruct struct, ElementMapping mapping,
-                      List<Record> batch) {
+    public InsertTask(LoadContext context, InputStruct struct,
+                      ElementMapping mapping, List<Record> batch) {
         assert batch != null;
-        this.context = LoadContext.get();
+        this.context = context;
         this.struct = struct;
         this.mapping = mapping;
         this.batch = batch;
@@ -93,7 +92,7 @@ public abstract class InsertTask implements Runnable {
 
     @SuppressWarnings("unchecked")
     protected void addBatch(List<Record> batch, boolean checkVertex) {
-        HugeClient client = HugeClientHolder.get(this.options());
+        HugeClient client = this.context.client();
         List<GraphElement> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));
         if (this.type().isVertex()) {
@@ -105,7 +104,7 @@ public abstract class InsertTask implements Runnable {
 
     @SuppressWarnings("unchecked")
     protected void updateBatch(List<Record> batch, boolean checkVertex) {
-        HugeClient client = HugeClientHolder.get(this.options());
+        HugeClient client = this.context.client();
         List<GraphElement> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));
         // CreateIfNotExist dose not support false now

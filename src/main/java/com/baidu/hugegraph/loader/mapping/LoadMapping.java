@@ -23,7 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.MappingUtil;
 import com.baidu.hugegraph.util.E;
@@ -107,18 +110,60 @@ public class LoadMapping implements Checkable {
         if (!pathDir.exists()) {
             return targetStructs;
         }
-
-        File[] inputDirs = pathDir.listFiles();
-        for (File inputDir : inputDirs) {
-            String inputId = inputDir.getName();
+        Map<String, FailureFile> failureFiles = this.groupFailureFiles(pathDir);
+        for (String inputId : failureFiles.keySet()) {
             InputStruct struct = this.struct(inputId);
+            String charset = struct.input().charset();
+            FailureFile failureFile = failureFiles.get(inputId);
+
             FileSource source = struct.input().asFileSource();
+            if (failureFile.headerFile != null) {
+                // It means that header file existed
+                String json;
+                try {
+                    json = FileUtils.readFileToString(failureFile.headerFile,
+                                                      charset);
+                } catch (IOException e) {
+                    throw new LoadException("Failed to read header file %s",
+                                            failureFile.headerFile);
+                }
+                List<String> header = JsonUtil.convertList(json, String.class);
+                source.header(header.toArray(new String[] {}));
+            }
             // Set failure data path
-            source.path(inputDir.getPath());
+            source.path(failureFile.dataFile.getAbsolutePath());
+            source.skippedLine().regex(Constants.SKIPPED_LINE_REGEX);
             struct.input(source);
+            // Add to target structs
             targetStructs.add(struct);
         }
         return targetStructs;
+    }
+
+    private Map<String, FailureFile> groupFailureFiles(File pathDir) {
+        File[] subFiles = pathDir.listFiles();
+        E.checkArgument(subFiles != null && subFiles.length >= 1,
+                        "Every input struct should have a failure data file, " +
+                        "and a header file if need it");
+        Map<String, FailureFile> failureFiles = new LinkedHashMap<>();
+        for (File subFile : subFiles) {
+            String inputId = LoadUtil.getFileNamePrefix(subFile);
+            String suffix = LoadUtil.getFileNameSuffix(subFile);
+            FailureFile failureFile = failureFiles.get(inputId);
+            if (failureFile == null) {
+                failureFile = new FailureFile();
+            }
+            if (Constants.FAILURE_SUFFIX.equals(suffix)) {
+                failureFile.dataFile = subFile;
+            } else {
+                E.checkArgument(Constants.HEADER_SUFFIX.equals(suffix),
+                                "The failure data file must end with %s or %s",
+                                Constants.FAILURE_SUFFIX, Constants.HEADER_SUFFIX);
+                failureFile.headerFile = subFile;
+            }
+            failureFiles.put(inputId, failureFile);
+        }
+        return failureFiles;
     }
 
     public InputStruct struct(String id) {
@@ -129,5 +174,13 @@ public class LoadMapping implements Checkable {
         }
         throw new IllegalArgumentException(String.format(
                   "There is no input struct with id '%s'", id));
+    }
+
+    private static class FailureFile {
+
+        // Maybe null
+        private File headerFile;
+        // Can't be null
+        private File dataFile;
     }
 }

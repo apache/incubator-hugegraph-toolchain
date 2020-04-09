@@ -37,7 +37,7 @@ public final class LoadOptions {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 
-    private final int CPUS = Runtime.getRuntime().availableProcessors();
+    private static final int CPUS = Runtime.getRuntime().availableProcessors();
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
@@ -170,6 +170,16 @@ public final class LoadOptions {
     @Parameter(names = {"--help"}, help = true,
                description = "Print usage of HugeGraphLoader")
     public boolean help;
+
+    public String workModeString() {
+        if (this.incrementalMode) {
+            return "INCREMENTAL MODE";
+        } else if (this.failureMode) {
+            return "FAILURE MODE";
+        } else {
+            return "NORMAL MODE";
+        }
+    }
 
     public static LoadOptions parseOptions(String[] args) {
         LoadOptions options = new LoadOptions();
