@@ -101,19 +101,19 @@ public class FileLineFetcher extends LineFetcher {
             assert this.reader != null;
             try {
                 String line = this.reader.readLine();
-                this.reader.close();
                 if (!StringUtils.isEmpty(line)) {
                     header = this.parser.split(line);
                     break;
                 }
             } catch (IOException e) {
-                try {
-                    this.reader.close();
-                } catch (IOException ignored) {
-                    LOG.warn("Failed to close reader of '{}'", readable);
-                }
                 throw new LoadException("Failed to read header from '%s'",
                                         e, readable);
+            } finally {
+                try {
+                    this.closeReader();
+                } catch (IOException e) {
+                    LOG.warn("Failed to close reader of '{}'", readable);
+                }
             }
         }
         return header;

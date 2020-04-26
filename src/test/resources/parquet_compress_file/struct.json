@@ -1,0 +1,21 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "target/test-classes/parquet_compress_file/vertex_person.parquet",
+        "format": "CSV",
+        "charset": "UTF-8",
+        "compression": "PARQUET",
+        "date_format": "yyyy-MM-dd",
+        "time_zone": "GMT+8",
+        "list_format": {
+          "start_symbol": "[",
+          "elem_delimiter": ";",
+          "end_symbol": "]"
+        }
+      }
+    }
+  ]
+}

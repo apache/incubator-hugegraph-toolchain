@@ -43,7 +43,9 @@ public enum Compression {
 
     LZ4_FRAMED("lz4-framed"),
 
-    ORC("orc");
+    ORC("orc"),
+
+    PARQUET("parquet");
 
     private String name;
 

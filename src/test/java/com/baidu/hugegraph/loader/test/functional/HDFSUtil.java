@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.test.functional;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -28,6 +29,7 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 
@@ -114,6 +116,17 @@ public class HDFSUtil implements IOUtil {
                           "compression format",
                           Arrays.asList(lines), path, compression), e);
             }
+        }
+    }
+
+    @Override
+    public void move(String srcPath, String destPath) {
+        try {
+            FileUtil.copy(new File(srcPath), this.hdfs, new Path(destPath),
+                          false, this.conf);
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                      "Failed to move file '%s' to '%s'", srcPath, destPath));
         }
     }
 

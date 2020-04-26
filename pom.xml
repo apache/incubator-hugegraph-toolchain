@@ -228,6 +228,18 @@
                     <groupId>com.sun.jersey.contribs</groupId>
                     <artifactId>jersey-guice</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.parquet</groupId>
+                    <artifactId>parquet-hadoop-bundle</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.parquet</groupId>
+                    <artifactId>parquet-column</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>libfb303</artifactId>
+                    <groupId>org.apache.thrift</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
     </dependencies>

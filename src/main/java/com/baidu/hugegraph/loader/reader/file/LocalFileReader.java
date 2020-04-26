@@ -76,6 +76,8 @@ public class LocalFileReader extends FileReader {
     protected FileLineFetcher createLineFetcher() {
         if (Compression.ORC == this.source().compression()) {
             return new OrcFileLineFetcher(this.source());
+        } else if (Compression.PARQUET == this.source().compression()) {
+            return new ParquetFileLineFetcher(this.source());
         } else {
             return new FileLineFetcher(this.source());
         }

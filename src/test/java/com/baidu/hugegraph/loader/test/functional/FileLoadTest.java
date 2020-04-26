@@ -38,7 +38,6 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.omg.CORBA.DynAnyPackage.Invalid;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.SchemaManager;
@@ -55,7 +54,6 @@ import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -2352,6 +2350,37 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(5.0D, vertex.property("p_double"));
         Assert.assertEquals("marko", vertex.property("p_string"));
         Assert.assertEquals(now.toEpochMilli(), vertex.property("p_date"));
+    }
+
+    // @Test
+    /**
+     * I don't know why the file copied to target/test-classed has changed.
+     * md5 src/test/resources/parquet_compress_file/vertex_person.parquet
+     * 8838d33a5e8dd3e851069160aa1ac4bb
+     * md5 target/test-classes/parquet_compress_file/vertex_person.parquet
+     * 8f486d8055c46361743ff4de14faee10
+     */
+    public void testParquetCompressFile() {
+        /*
+         * The content of origin vertex_person file is
+         * marko,28,[Beijing;Shanghai]
+         * vadas,27,Hongkong
+         * josh,18,Beijing
+         * peter,35,Shanghai
+         * "linary",26,"Wuhan"
+         */
+        String[] args = new String[]{
+                "-f", structPath("parquet_compress_file/struct.json"),
+                "-s", configPath("parquet_compress_file/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(5, vertices.size());
     }
 
     @Test
