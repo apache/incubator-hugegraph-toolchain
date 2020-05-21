@@ -2352,14 +2352,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(now.toEpochMilli(), vertex.property("p_date"));
     }
 
-    // @Test
-    /**
-     * I don't know why the file copied to target/test-classes has changed.
-     * md5 src/test/resources/parquet_compress_file/vertex_person.parquet
-     * 8838d33a5e8dd3e851069160aa1ac4bb
-     * md5 target/test-classes/parquet_compress_file/vertex_person.parquet
-     * 8f486d8055c46361743ff4de14faee10
-     */
+    @Test
     public void testParquetCompressFile() {
         /*
          * The content of origin vertex_person file is
