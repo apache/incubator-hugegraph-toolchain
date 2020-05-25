@@ -84,10 +84,19 @@ public class OrcFileLineFetcher extends FileLineFetcher {
 
     @Override
     public String[] readHeader(List<Readable> readables) {
-        this.openReader(readables.get(0));
-        StructObjectInspector inspector = (StructObjectInspector)
-                                          this.reader.getObjectInspector();
-        return this.parseHeader(inspector);
+        Readable readable = readables.get(0);
+        this.openReader(readable);
+        StructObjectInspector inspector;
+        try {
+            inspector = (StructObjectInspector) this.reader.getObjectInspector();
+            return this.parseHeader(inspector);
+        } finally {
+            try {
+                this.closeReader();
+            } catch (IOException e) {
+                LOG.warn("Failed to close reader of '{}'", readable);
+            }
+        }
     }
 
     @Override

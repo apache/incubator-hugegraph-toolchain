@@ -87,6 +87,8 @@ public interface IOUtil {
         }
     }
 
+    public void move(String srcPath, String destPath);
+
     public void delete();
 
     public void close();

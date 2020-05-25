@@ -29,9 +29,9 @@ import java.util.Arrays;
 
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.conf.Configuration;
 
 import com.baidu.hugegraph.loader.source.file.Compression;
-import org.apache.hadoop.conf.Configuration;
 
 public class FileUtil implements IOUtil {
 
@@ -89,6 +89,16 @@ public class FileUtil implements IOUtil {
                           "compression format",
                           Arrays.asList(lines), path, compression), e);
             }
+        }
+    }
+
+    @Override
+    public void move(String srcPath, String destPath) {
+        try {
+            FileUtils.moveFile(new File(srcPath), new File(destPath));
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                      "Failed to move file '%s' to '%s'", srcPath, destPath));
         }
     }
 
