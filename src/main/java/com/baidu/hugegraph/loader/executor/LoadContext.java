@@ -42,6 +42,7 @@ public final class LoadContext {
     // The time at the beginning of loading, accurate to seconds
     private final String timestamp;
 
+    private volatile boolean closed;
     private volatile boolean stopped;
     private final LoadOptions options;
     private final LoadSummary summary;
@@ -56,6 +57,7 @@ public final class LoadContext {
 
     public LoadContext(LoadOptions options) {
         this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
+        this.closed = false;
         this.stopped = false;
         this.options = options;
         this.summary = new LoadSummary();
@@ -115,6 +117,9 @@ public final class LoadContext {
     }
 
     public void close() {
+        if (this.closed) {
+            return;
+        }
         LOG.info("Ready to close failure loggers");
         for (FailLogger logger : this.loggers.values()) {
             logger.close();
@@ -134,5 +139,6 @@ public final class LoadContext {
         LOG.info("Ready to close HugeClient");
         this.client.close();
         LOG.info("Close HugeClient successfully");
+        this.closed = true;
     }
 }

@@ -248,7 +248,6 @@ public class FileLoadTest extends LoadTest {
                      "\"li,nary\",26,\"Wu,han\"");
         String[] args1 = new String[]{
                 "-f", structPath("clear_schema_before_load/struct.json"),
-                "-s", configPath("clear_schema_before_load/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
@@ -769,8 +768,9 @@ public class FileLoadTest extends LoadTest {
          * NOTE: Although the cardinality of the property is set in schema
          * declaration, client will deserialize it to list type in default.
          */
-        Assert.assertEquals(ImmutableList.of("20171210", "20180101"),
-                            edge.property("time"));
+        List<String> props = (List<String>) edge.property("time");
+        Assert.assertTrue(props.contains("20171210"));
+        Assert.assertTrue(props.contains("20180101"));
     }
 
     @Test
@@ -2037,8 +2037,6 @@ public class FileLoadTest extends LoadTest {
         args = new String[]{
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
-                "-s",
-                configPath("incremental_mode_and_load_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "true",
@@ -2114,8 +2112,6 @@ public class FileLoadTest extends LoadTest {
         args = new String[]{
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
-                "-s",
-                configPath("incremental_mode_and_load_failure/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--incremental-mode", "false",
@@ -2211,7 +2207,6 @@ public class FileLoadTest extends LoadTest {
         // Load failure data without modification
         args = new String[]{
                 "-f", structPath("reload_json_failure_files/struct.json"),
-                "-s", configPath("reload_json_failure_files/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--failure-mode", "true",
@@ -2370,6 +2365,12 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
+        if (this.ioUtil instanceof HDFSUtil) {
+            HDFSUtil hdfsUtil = (HDFSUtil) this.ioUtil;
+            hdfsUtil.copy(configPath(
+                          "parquet_compress_file/vertex_person.parquet"),
+                          "hdfs://localhost:8020/files/vertex_person.parquet");
+        }
         HugeGraphLoader.main(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();

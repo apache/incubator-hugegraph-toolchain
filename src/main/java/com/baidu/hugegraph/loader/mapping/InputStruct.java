@@ -63,6 +63,9 @@ public class InputStruct implements Checkable {
                         "at same time, need specify at least one");
         this.vertices.forEach(VertexMapping::check);
         this.edges.forEach(EdgeMapping::check);
+
+        this.vertices.forEach(vm -> vm.checkFieldsValid(this.input));
+        this.edges.forEach(em -> em.checkFieldsValid(this.input));
     }
 
     public String id() {

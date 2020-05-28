@@ -93,6 +93,17 @@ public final class JsonUtil {
         return MAPPER.convertValue(node, clazz);
     }
 
+    public static <T> Set<T> convertSet(String json, Class<T> clazz) {
+        JavaType type = MAPPER.getTypeFactory().constructCollectionType(
+                                                LinkedHashSet.class, clazz);
+        try {
+            return MAPPER.readValue(json, type);
+        } catch (JsonProcessingException e) {
+            LOG.error("Failed to deserialize json", e);
+            throw new DeserializeException("Failed to deserialize json", e);
+        }
+    }
+
     public static <T> Set<T> convertSet(JsonNode node, Class<T> clazz) {
         JavaType type = MAPPER.getTypeFactory().constructCollectionType(
                                                 LinkedHashSet.class, clazz);
