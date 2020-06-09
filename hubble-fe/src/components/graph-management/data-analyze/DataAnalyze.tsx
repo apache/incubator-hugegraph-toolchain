@@ -4,7 +4,9 @@ import { useRoute, useLocation, Params } from 'wouter';
 import { Modal, Button } from '@baidu/one-ui';
 
 import DataAnalyzeContent from './DataAnalyzeContent';
-import DataAnalyzeDrawer from './DataAnalyzeDrawer';
+import DataAnalyzeInfoDrawer from './DataAnalyzeInfoDrawer';
+import DynamicAddNode from './DynamicAddNode';
+import DynamicAddEdge from './DynamicAddEdge';
 import {
   AppStoreContext,
   GraphManagementStoreContext,
@@ -39,6 +41,8 @@ const DataAnalyze: React.FC = observer(() => {
       appStore.setCurrentId(Number(params.id));
       dataAnalyzeStore.setCurrentId(Number(params.id));
       dataAnalyzeStore.fetchValueTypes();
+      dataAnalyzeStore.fetchVertexTypes();
+      dataAnalyzeStore.fetchEdgeTypes();
       dataAnalyzeStore.fetchAllNodeColors();
       dataAnalyzeStore.fetchAllEdgeColors();
     }
@@ -47,7 +51,9 @@ const DataAnalyze: React.FC = observer(() => {
   return (
     <section className="data-analyze">
       <DataAnalyzeContent />
-      <DataAnalyzeDrawer />
+      <DataAnalyzeInfoDrawer />
+      <DynamicAddNode />
+      <DynamicAddEdge />
       <Modal
         title="无法访问"
         footer={[

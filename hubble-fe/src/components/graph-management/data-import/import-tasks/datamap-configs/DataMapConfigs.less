@@ -1,0 +1,376 @@
+.import-tasks {
+  &-data-map {
+    margin-bottom: 40px;
+  }
+
+  &-data-map-tooltip {
+    background: #fff;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 16px;
+    font-size: 14px;
+
+    &-text {
+      margin-bottom: 8px;
+
+      &:nth-child(2) {
+        color: #e64552;
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    &.no-display {
+      display: none;
+    }
+  }
+
+  &-data-type-info-wrapper {
+    // margin-bottom: 16px;
+    padding: 24px 16px;
+    height: 100px;
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    display: flex;
+    position: relative;
+  }
+
+  &-data-type-info {
+    display: flex;
+    flex-direction: column;
+    padding-right: 8px;
+    // flex: 1;
+
+    &:nth-child(1) {
+      // width: 24%;
+      flex: 1 0;
+
+      & img.collpase {
+        transform: rotate(-90deg);
+        transition: transform 0.3s;
+      }
+
+      & img.expand {
+        transform: rotate(0deg);
+        transition: transform 0.3s;
+      }
+    }
+
+    &:nth-child(2) {
+      flex: 1 0;
+    }
+
+    &:nth-child(3) {
+      flex: 1 0;
+    }
+
+    &:last-child {
+      padding-right: 0;
+      width: 168px;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    & > div {
+      display: flex;
+    }
+
+    &-title {
+      font-size: 12px;
+      line-height: 18px;
+      color: #666;
+    }
+
+    &-content {
+      max-width: 180px;
+      margin-top: 13px;
+      font-size: 16px;
+      line-height: 22px;
+      color: #333;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+
+  &-data-options {
+    display: flex;
+    line-height: 32px;
+    margin-bottom: 32px;
+    font-size: 14px;
+    align-items: center;
+
+    &-title {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      width: 62px;
+      margin-right: 44px;
+      color: #333;
+      font-size: 14px;
+
+      &.in-card {
+        width: 76px;
+      }
+    }
+
+    &-value-maps {
+      width: 650px;
+      background-color: #f5f5f5;
+      margin-bottom: 16px;
+      padding: 16px 40px;
+    }
+
+    &-expand-table {
+      width: 80%;
+      display: flex;
+      flex-direction: column;
+
+      &-row {
+        display: flex;
+        margin-bottom: 8px;
+
+        &:first-child {
+          margin-bottom: 12px;
+        }
+      }
+
+      &-column {
+        height: 32px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+        line-height: 32px;
+
+        &:nth-child(1) {
+          flex-basis: 30%;
+        }
+
+        &:nth-child(2) {
+          flex-basis: 30%;
+        }
+
+        &:nth-child(3) {
+          flex-basis: 30%;
+        }
+
+        &:last-child {
+          flex-basis: 10%;
+          justify-content: center;
+        }
+      }
+    }
+
+    &-expand-dropdown {
+      width: 382px;
+      max-height: 328px;
+      overflow: auto;
+      background: #fff;
+      box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
+      border-radius: 3px;
+      color: #333;
+
+      & > div {
+        padding: 0 16px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    &-expand-values {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &-expand-value {
+      display: flex;
+      margin-bottom: 32px;
+
+      &:nth-last-child(2) {
+        margin-bottom: 16px;
+      }
+
+      &:nth-last-child(1) {
+        margin-bottom: 0;
+      }
+
+      & img {
+        margin: 0 2px;
+      }
+
+      &-column {
+        height: 32px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+        line-height: 32px;
+
+        &:nth-child(1) {
+          width: 30%;
+        }
+
+        &:nth-child(2) {
+          width: 30%;
+        }
+
+        &:nth-child(3) {
+          width: 30%;
+        }
+
+        &:nth-child(4) {
+          width: 10%;
+        }
+      }
+    }
+
+    &-expand-info {
+      display: flex;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      & > span {
+        font-size: 14px;
+        line-height: 32px;
+
+        &:nth-child(1) {
+          width: 60px;
+        }
+      }
+
+      & > img {
+        margin: 0 6px;
+      }
+    }
+
+    &-expand-input {
+      margin-top: 12px;
+
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+  }
+
+  &-data-type-manipulations {
+    display: flex;
+    margin-left: auto;
+  }
+
+  &-data-map-manipulations {
+    width: 100%;
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+  }
+
+  &-data-map-configs {
+    padding: 0 16px;
+    width: 100%;
+    overflow: auto;
+  }
+
+  // &-data-map-config-header {
+  //   display: flex;
+  //   margin-bottom: 16px;
+
+  //   & > span {
+  //     font-weight: 900;
+  //     line-height: 24px;
+  //   }
+
+  //   & img {
+  //     cursor: pointer;
+  //   }
+
+  //   &-expand {
+  //     margin-left: 9.7px;
+  //     transition: transform 0.3s;
+  //   }
+
+  //   &-collpase {
+  //     margin-left: 9.7px;
+  //     transform: rotate(-180deg);
+  //     transition: transform 0.3s;
+  //   }
+  // }
+
+  &-data-map-config-card {
+    // prevent box-shadow being cliped
+    // margin: 0 3px;
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+
+  &-data-map-config-view {
+    width: 100%;
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 0 0 3px 3px;
+    margin-bottom: 16px;
+    padding: 16px;
+    // position: absolute;
+    // top: 100px;
+    // left: 0;
+    z-index: 9;
+  }
+}
+
+.import-tasks-tooltips {
+  width: 368px;
+  background: #fff;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  padding: 24px;
+  font-size: 14px;
+  color: #333;
+
+  & p {
+    margin: 0;
+
+    &:nth-of-type(1) {
+      margin-bottom: 16px;
+      font-weight: 900;
+      font-size: 16px;
+      color: #000;
+    }
+
+    &:nth-of-type(2) {
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: #333;
+    }
+  }
+}
+
+/* override */
+
+.import-tasks-data-options
+  .new-fc-one-checkbox-group.new-fc-one-checkbox-group-medium.new-fc-one-checkbox-group-row {
+  line-height: normal;
+}
+
+// reveal scrollbar by auto, directly override style on <Menu /> will both set internal wrapper and <ul> itself, which cause shrinks on <Menu />.
+.import-tasks-step-wrapper
+  > .new-fc-one-menu-inline-box.new-fc-one-menu-inline-medium
+  > ul {
+  overflow: auto;
+}
+
+.import-tasks-data-map-configs
+  .new-fc-one-input-error.new-fc-one-input-error-layer {
+  word-break: keep-all;
+}

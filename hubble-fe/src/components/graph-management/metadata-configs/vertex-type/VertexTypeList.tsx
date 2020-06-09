@@ -794,12 +794,12 @@ const VertexTypeList: React.FC = observer(() => {
                       >
                         {metadataPropertyStore.metadataProperties
                           .filter(
-                            property =>
+                            (property) =>
                               vertexTypeStore.selectedVertexType!.properties.find(
                                 ({ name }) => name === property.name
                               ) === undefined
                           )
-                          .map(property => (
+                          .map((property) => (
                             <div key={property.name}>
                               <span>
                                 <Checkbox
@@ -807,7 +807,7 @@ const VertexTypeList: React.FC = observer(() => {
                                     [
                                       ...vertexTypeStore.addedPropertiesInSelectedVertextType
                                     ].findIndex(
-                                      propertyIndex =>
+                                      (propertyIndex) =>
                                         propertyIndex === property.name
                                     ) !== -1
                                   }
@@ -830,7 +830,7 @@ const VertexTypeList: React.FC = observer(() => {
                                         ...vertexTypeStore.editedSelectedVertexType,
                                         append_properties: [
                                           ...addedPropertiesInSelectedVertextType
-                                        ].map(propertyName => {
+                                        ].map((propertyName) => {
                                           const currentProperty = vertexTypeStore.newVertexType.properties.find(
                                             ({ name }) => name === propertyName
                                           );
@@ -916,10 +916,10 @@ const VertexTypeList: React.FC = observer(() => {
                     )}
                     {vertexTypeStore
                       .selectedVertexType!.property_indexes.filter(
-                        propertyIndex =>
+                        (propertyIndex) =>
                           isUndefined(
                             vertexTypeStore.editedSelectedVertexType.remove_property_indexes.find(
-                              removedPropertyName =>
+                              (removedPropertyName) =>
                                 removedPropertyName === propertyIndex.name
                             )
                           )
@@ -1203,16 +1203,16 @@ const VertexTypeList: React.FC = observer(() => {
                                         .append_properties
                                     )
                                     .filter(
-                                      property =>
+                                      (property) =>
                                         !vertexTypeStore.selectedVertexType!.primary_keys.includes(
                                           property.name
                                         )
                                     )
-                                    .map(property => {
+                                    .map((property) => {
                                       const order = vertexTypeStore.editedSelectedVertexType.append_property_indexes[
                                         index
                                       ].fields.findIndex(
-                                        name => name === property.name
+                                        (name) => name === property.name
                                       );
 
                                       const multiSelectOptionClassName = classnames(
@@ -1248,7 +1248,7 @@ const VertexTypeList: React.FC = observer(() => {
                                       vertexTypeStore.editedSelectedVertexType
                                         .append_properties
                                     )
-                                    .filter(property => {
+                                    .filter((property) => {
                                       const matchedProperty = metadataPropertyStore.metadataProperties.find(
                                         ({ name }) => name === property.name
                                       );
@@ -1276,7 +1276,7 @@ const VertexTypeList: React.FC = observer(() => {
                                       vertexTypeStore.editedSelectedVertexType
                                         .append_properties
                                     )
-                                    .filter(property => {
+                                    .filter((property) => {
                                       const matchedProperty = metadataPropertyStore.metadataProperties.find(
                                         ({ name }) => name === property.name
                                       );
@@ -1413,7 +1413,7 @@ const VertexTypeList: React.FC = observer(() => {
                       }
                     )}
                     {isEditVertex && (
-                      <div
+                      <span
                         onClick={() => {
                           if (
                             vertexTypeStore.editedSelectedVertexType
@@ -1444,7 +1444,7 @@ const VertexTypeList: React.FC = observer(() => {
                         }}
                       >
                         新增一组
-                      </div>
+                      </span>
                     )}
                   </div>
                 </div>

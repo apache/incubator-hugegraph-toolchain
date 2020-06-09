@@ -28,6 +28,25 @@ export interface GraphEdge {
   target: string;
 }
 
+export interface GraphView {
+  vertices: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export interface NewGraphData {
+  id?: string;
+  label: string;
+  properties: {
+    nullable: Map<string, string>;
+    nonNullable: Map<string, string>;
+  };
+}
+
+export interface EditableProperties {
+  nonNullable: Map<string, string>;
+  nullable: Map<string, string>;
+}
+
 export interface QueryResult {
   table_view: {
     header: string[];
@@ -36,14 +55,11 @@ export interface QueryResult {
   json_view: {
     data: dict<any>[];
   };
-  graph_view: {
-    vertices: GraphNode[];
-    edges: GraphEdge[];
-  };
+  graph_view: GraphView;
   type: string;
 }
 
-export type FetchGraphReponse = responseData<QueryResult>;
+export type FetchGraphResponse = responseData<QueryResult>;
 
 export interface ValueTypes {
   name: string;

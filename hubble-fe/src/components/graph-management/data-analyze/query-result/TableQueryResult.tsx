@@ -8,7 +8,7 @@ const TableQueryResult: React.FC = observer(() => {
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
 
   const columnConfigs = dataAnalyzeStore.originalGraphData.data.table_view.header.map(
-    title => ({
+    (title) => ({
       title,
       dataIndex: title,
       render(text: any) {
@@ -16,7 +16,7 @@ const TableQueryResult: React.FC = observer(() => {
           return <PathItem items={text} />;
         }
 
-        return typeof text !== 'object' ? text : JSON.stringify(text);
+        return JSON.stringify(text);
       }
     })
   );

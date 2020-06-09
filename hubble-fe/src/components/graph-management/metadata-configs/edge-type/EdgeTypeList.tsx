@@ -764,12 +764,12 @@ const EdgeTypeList: React.FC = observer(() => {
                         >
                           {metadataPropertyStore.metadataProperties
                             .filter(
-                              property =>
+                              (property) =>
                                 edgeTypeStore.selectedEdgeType!.properties.find(
                                   ({ name }) => name === property.name
                                 ) === undefined
                             )
-                            .map(property => (
+                            .map((property) => (
                               <div key={property.name}>
                                 <span>
                                   <Checkbox
@@ -777,7 +777,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                       [
                                         ...edgeTypeStore.addedPropertiesInSelectedEdgeType
                                       ].findIndex(
-                                        propertyIndex =>
+                                        (propertyIndex) =>
                                           propertyIndex === property.name
                                       ) !== -1
                                     }
@@ -800,7 +800,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                           ...edgeTypeStore.editedSelectedEdgeType,
                                           append_properties: [
                                             ...addedPropertiesInSelectedVertextType
-                                          ].map(propertyName => {
+                                          ].map((propertyName) => {
                                             const currentProperty = edgeTypeStore.newEdgeType.properties.find(
                                               ({ name }) =>
                                                 name === propertyName
@@ -888,10 +888,10 @@ const EdgeTypeList: React.FC = observer(() => {
                       )}
                       {edgeTypeStore
                         .selectedEdgeType!.property_indexes.filter(
-                          propertyIndex =>
+                          (propertyIndex) =>
                             isUndefined(
                               edgeTypeStore.editedSelectedEdgeType.remove_property_indexes.find(
-                                removedPropertyName =>
+                                (removedPropertyName) =>
                                   removedPropertyName === propertyIndex.name
                               )
                             )
@@ -1179,11 +1179,11 @@ const EdgeTypeList: React.FC = observer(() => {
                                         edgeTypeStore.editedSelectedEdgeType
                                           .append_properties
                                       )
-                                      .map(property => {
+                                      .map((property) => {
                                         const order = edgeTypeStore.editedSelectedEdgeType.append_property_indexes[
                                           index
                                         ].fields.findIndex(
-                                          name => name === property.name
+                                          (name) => name === property.name
                                         );
 
                                         const multiSelectOptionClassName = classnames(
@@ -1219,7 +1219,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                         edgeTypeStore.editedSelectedEdgeType
                                           .append_properties
                                       )
-                                      .filter(property => {
+                                      .filter((property) => {
                                         const matchedProperty = metadataPropertyStore.metadataProperties.find(
                                           ({ name }) => name === property.name
                                         );
@@ -1247,7 +1247,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                         edgeTypeStore.editedSelectedEdgeType
                                           .append_properties
                                       )
-                                      .filter(property => {
+                                      .filter((property) => {
                                         const matchedProperty = metadataPropertyStore.metadataProperties.find(
                                           ({ name }) => name === property.name
                                         );
@@ -1385,7 +1385,7 @@ const EdgeTypeList: React.FC = observer(() => {
                         }
                       )}
                       {isEditEdge && (
-                        <div
+                        <span
                           onClick={() => {
                             if (
                               edgeTypeStore.editedSelectedEdgeType
@@ -1416,7 +1416,7 @@ const EdgeTypeList: React.FC = observer(() => {
                           }}
                         >
                           新增一组
-                        </div>
+                        </span>
                       )}
                     </div>
                   </div>

@@ -1,13 +1,28 @@
 import { createContext } from 'react';
 import { observable, action, flow, computed, runInAction } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
-import { isUndefined } from 'lodash-es';
+import { isUndefined, cloneDeep, isEmpty, remove } from 'lodash-es';
+import vis from 'vis-network';
+import isInt from 'validator/lib/isInt';
+import isUUID from 'validator/lib/isUUID';
 
 import {
   GraphData,
   GraphDataResponse
 } from '../types/GraphManagementStore/graphManagementStore';
-import { checkIfLocalNetworkOffline } from '../utils';
+import {
+  initalizeErrorInfo,
+  initalizeRequestStatus,
+  createGraphNode,
+  createGraphEdge,
+  createGraphEditableProperties,
+  createNewGraphDataConfig
+} from '../factory/dataAnalyzeStore';
+import {
+  checkIfLocalNetworkOffline,
+  convertArrayToString,
+  validateGraphProperty
+} from '../utils';
 
 import { baseUrl, responseData, dict } from '../types/common';
 import {
@@ -15,17 +30,24 @@ import {
   RuleMap,
   FetchColorSchemas,
   FetchFilteredPropertyOptions,
+  NewGraphData,
   GraphNode,
   GraphEdge,
-  FetchGraphReponse,
+  GraphView,
+  FetchGraphResponse,
   ValueTypes,
   AddQueryCollectionParams,
   ExecutionLogs,
   ExecutionLogsResponse,
   FavoriteQuery,
-  FavoriteQueryResponse
+  FavoriteQueryResponse,
+  EditableProperties
 } from '../types/GraphManagementStore/dataAnalyzeStore';
-import { VertexTypeListResponse } from '../types/GraphManagementStore/metadataConfigsStore';
+import {
+  VertexTypeListResponse,
+  VertexType,
+  EdgeType
+} from '../types/GraphManagementStore/metadataConfigsStore';
 import { EdgeTypeListResponse } from '../types/GraphManagementStore/metadataConfigsStore';
 
 const ruleMap: RuleMap = {
@@ -53,6 +75,7 @@ export class DataAnalyzeStore {
   @observable favoritePopUp = '';
   @observable graphInfoDataSet = '';
   @observable codeEditorText = '';
+  @observable dynamicAddGraphDataStatus = '';
   @observable favoriteQueriesSortOrder: Record<
     'time' | 'name',
     'desc' | 'asc' | ''
@@ -61,21 +84,36 @@ export class DataAnalyzeStore {
     name: ''
   };
 
+  // vis instance
+  @observable.ref visNetwork: vis.Network | null = null;
+  @observable.ref visDataSet: Record<'nodes' | 'edges', any> | null = null;
+  @observable.ref visCurrentCoordinates = {
+    domX: '',
+    domY: '',
+    canvasX: '',
+    canvasY: ''
+  };
+
   // Mutate this variable to let mobx#reaction fires it's callback and set value for CodeEditor
   @observable pulse = false;
 
   // datas
   @observable.ref idList: { id: number; name: string }[] = [];
   @observable.ref valueTypes: Record<string, string> = {};
+  @observable.ref vertexTypes: VertexType[] = [];
+  @observable.ref edgeTypes: EdgeType[] = [];
   @observable.ref colorSchemas: ColorSchemas = {};
   @observable.ref colorList: string[] = [];
   @observable.ref colorMappings: Record<string, string> = {};
   @observable.ref edgeColorMappings: Record<string, string> = {};
   @observable.ref
-  originalGraphData: FetchGraphReponse = {} as FetchGraphReponse;
-  @observable.ref graphData: FetchGraphReponse = {} as FetchGraphReponse;
+  originalGraphData: FetchGraphResponse = {} as FetchGraphResponse;
   @observable.ref
-  expandedGraphData: FetchGraphReponse = {} as FetchGraphReponse;
+  graphData: FetchGraphResponse = {} as FetchGraphResponse;
+  @observable.ref
+  expandedGraphData: FetchGraphResponse = {} as FetchGraphResponse;
+  @observable.ref
+  relatedGraphEdges: string[] = [];
   @observable vertexCollection = new Set();
   @observable edgeCollection = new Set();
   @observable.ref executionLogData: ExecutionLogs[] = [];
@@ -97,28 +135,24 @@ export class DataAnalyzeStore {
     properties: [] as dict<any>[]
   };
 
-  @observable selectedGraphData: GraphNode = {
-    id: '',
-    label: '',
-    properties: {}
-  };
-
-  @observable selectedGraphLinkData: GraphEdge = {
-    id: '',
-    source: '',
-    target: '',
-    label: '',
-    properties: {}
-  };
-
-  @observable.ref rightClickedGraphData: GraphNode = {
-    id: '',
-    label: '',
-    properties: {}
-  };
+  @observable
+  newGraphNodeConfigs: NewGraphData = createNewGraphDataConfig();
+  @observable
+  newGraphEdgeConfigs: NewGraphData = createNewGraphDataConfig();
+  @observable selectedGraphData: GraphNode = createGraphNode();
+  @observable
+  editedSelectedGraphDataProperties = createGraphEditableProperties();
+  @observable selectedGraphLinkData: GraphEdge = createGraphEdge();
+  // @observable
+  // editedSelectedGraphEdgeProperties = createGraphEditableProperties();
+  @observable.ref rightClickedGraphData: GraphNode = createGraphNode();
 
   @observable pageConfigs: {
-    [key: string]: { pageNumber: number; pageTotal: number; pageSize?: number };
+    [key: string]: {
+      pageNumber: number;
+      pageTotal: number;
+      pageSize?: number;
+    };
   } = {
     tableResult: {
       pageNumber: 1,
@@ -136,91 +170,8 @@ export class DataAnalyzeStore {
     }
   };
 
-  @observable.shallow requestStatus = {
-    fetchIdList: 'standby',
-    fetchValueTypes: 'standby',
-    fetchColorSchemas: 'standby',
-    fetchColorList: 'standby',
-    fetchAllNodeColors: 'standby',
-    fetchAllEdgeColors: 'standby',
-    fetchGraphs: 'standby',
-    expandGraphNode: 'standby',
-    filteredGraphData: 'standby',
-    fetchRelatedVertex: 'standby',
-    fetchFilteredPropertyOptions: 'standby',
-    addQueryCollection: 'standby',
-    editQueryCollection: 'standby',
-    deleteQueryCollection: 'standby',
-    fetchExecutionLogs: 'standby',
-    fetchFavoriteQueries: 'standby'
-  };
-
-  @observable errorInfo = {
-    fetchIdList: {
-      code: NaN,
-      message: ''
-    },
-    fetchValueTypes: {
-      code: NaN,
-      message: ''
-    },
-    fetchColorSchemas: {
-      code: NaN,
-      message: ''
-    },
-    fetchColorList: {
-      code: NaN,
-      message: ''
-    },
-    fetchAllNodeColors: {
-      code: NaN,
-      message: ''
-    },
-    fetchAllEdgeColors: {
-      code: NaN,
-      message: ''
-    },
-    fetchGraphs: {
-      code: NaN,
-      message: ''
-    },
-    expandGraphNode: {
-      code: NaN,
-      message: ''
-    },
-    filteredGraphData: {
-      code: NaN,
-      message: ''
-    },
-    fetchRelatedVertex: {
-      code: NaN,
-      message: ''
-    },
-    filteredPropertyOptions: {
-      code: NaN,
-      message: ''
-    },
-    addQueryCollection: {
-      code: NaN,
-      message: ''
-    },
-    editQueryCollection: {
-      code: NaN,
-      message: ''
-    },
-    fetchExecutionLogs: {
-      code: NaN,
-      message: ''
-    },
-    fetchFavoriteQueries: {
-      code: NaN,
-      message: ''
-    },
-    deleteQueryCollection: {
-      code: NaN,
-      message: ''
-    }
-  };
+  @observable.shallow requestStatus = initalizeRequestStatus();
+  @observable errorInfo = initalizeErrorInfo();
 
   @computed get graphNodes(): GraphNode[] {
     return this.originalGraphData.data.graph_view.vertices.map(
@@ -243,7 +194,7 @@ export class DataAnalyzeStore {
                 .map(([key, value]) => {
                   return `<div class="tooltip-fields">
                             <div>${key}: </div>
-                            <div>${value}</div>
+                            <div>${convertArrayToString(value, '，')}</div>
                           </div>`;
                 })
                 .join('')}
@@ -280,7 +231,7 @@ export class DataAnalyzeStore {
   }
 
   @computed get graphEdges(): GraphEdge[] {
-    return this.originalGraphData.data.graph_view.edges.map(edge => ({
+    return this.originalGraphData.data.graph_view.edges.map((edge) => ({
       ...edge,
       from: edge.source,
       to: edge.target,
@@ -300,7 +251,7 @@ export class DataAnalyzeStore {
           .map(([key, value]) => {
             return `<div class="tooltip-fields">
                       <div>${key}: </div>
-                      <div>${value}</div>
+                      <div>${convertArrayToString(value, '，')}</div>
                     </div>`;
           })
           .join('')}
@@ -316,6 +267,172 @@ export class DataAnalyzeStore {
   @action
   setFullScreenReuslt(flag: boolean) {
     this.isFullScreenReuslt = flag;
+  }
+
+  @action
+  setDynamicAddGraphDataStatus(status: string) {
+    this.dynamicAddGraphDataStatus = status;
+  }
+
+  @action
+  setNewGraphDataConfig<T extends keyof NewGraphData>(
+    type: 'vertex' | 'edge',
+    key: T,
+    value: NewGraphData[T]
+  ) {
+    if (type === 'vertex') {
+      this.newGraphNodeConfigs[key] = value;
+    } else {
+      this.newGraphEdgeConfigs[key] = value;
+    }
+  }
+
+  @action
+  setNewGraphDataConfigProperties(
+    type: 'vertex' | 'edge',
+    nullable: 'nullable' | 'nonNullable',
+    key: string,
+    value: string
+  ) {
+    if (type === 'vertex') {
+      if (nullable === 'nullable') {
+        this.newGraphNodeConfigs.properties.nullable.set(key, value);
+      } else {
+        this.newGraphNodeConfigs.properties.nonNullable.set(key, value);
+      }
+    } else {
+      if (nullable === 'nullable') {
+        this.newGraphEdgeConfigs.properties.nullable.set(key, value);
+      } else {
+        this.newGraphEdgeConfigs.properties.nonNullable.set(key, value);
+      }
+    }
+  }
+
+  @action
+  syncNewGraphDataProperties(type: 'vertex' | 'edge') {
+    const config =
+      type === 'vertex' ? this.newGraphNodeConfigs : this.newGraphEdgeConfigs;
+    config.properties.nonNullable.clear();
+    config.properties.nullable.clear();
+
+    const selectedLabel =
+      type === 'vertex'
+        ? this.vertexTypes.find(({ name }) => name === config.label)
+        : this.edgeTypes.find(({ name }) => name === config.label);
+
+    if (!isUndefined(selectedLabel)) {
+      const nonNullableProperties = selectedLabel.properties.filter(
+        ({ nullable }) => !nullable
+      );
+
+      nonNullableProperties.forEach(({ name }) => {
+        config.properties.nonNullable.set(name, '');
+      });
+
+      const nullableProperties = selectedLabel.properties.filter(
+        ({ nullable }) => nullable
+      );
+
+      nullableProperties.forEach(({ name }) => {
+        config.properties.nullable.set(name, '');
+      });
+    }
+  }
+
+  @action
+  syncGraphEditableProperties(type: 'vertex' | 'edge') {
+    Object.values(this.editedSelectedGraphDataProperties).forEach(
+      (property) => {
+        property.clear();
+      }
+    );
+
+    const selectedLabel =
+      type === 'vertex'
+        ? this.vertexTypes.find(
+            ({ name }) => name === this.selectedGraphData.label
+          )
+        : this.edgeTypes.find(
+            ({ name }) => name === this.selectedGraphLinkData.label
+          );
+
+    if (!isUndefined(selectedLabel)) {
+      const selectedGraphData =
+        type === 'vertex' ? this.selectedGraphData : this.selectedGraphLinkData;
+      const selectedGraphDataPropertKeys = Object.keys(
+        type === 'vertex'
+          ? this.selectedGraphData.properties
+          : this.selectedGraphLinkData.properties
+      );
+
+      // to keep sort of primary keys, need to iter it first
+      if (type === 'vertex') {
+        (selectedLabel as VertexType).primary_keys.forEach((name) => {
+          if (selectedGraphDataPropertKeys.includes(name)) {
+            this.editedSelectedGraphDataProperties.primary.set(
+              name,
+              convertArrayToString(selectedGraphData.properties[name])
+            );
+
+            remove(selectedGraphDataPropertKeys, (key) => key === name);
+          }
+        });
+      }
+
+      selectedLabel.properties
+        .filter(({ nullable }) => !nullable)
+        .forEach(({ name }) => {
+          if (selectedGraphDataPropertKeys.includes(name)) {
+            this.editedSelectedGraphDataProperties.nonNullable.set(
+              name,
+              convertArrayToString(selectedGraphData.properties[name])
+            );
+          }
+
+          remove(selectedGraphDataPropertKeys, (key) => key === name);
+        });
+
+      selectedLabel.properties
+        .filter(({ nullable }) => nullable)
+        .forEach(({ name }) => {
+          if (selectedGraphDataPropertKeys.includes(name)) {
+            this.editedSelectedGraphDataProperties.nullable.set(
+              name,
+              convertArrayToString(selectedGraphData.properties[name])
+            );
+          }
+        });
+    }
+  }
+
+  @action
+  resetNewGraphData(type: 'vertex' | 'edge') {
+    if (type === 'vertex') {
+      this.newGraphNodeConfigs = createNewGraphDataConfig();
+    } else {
+      this.newGraphEdgeConfigs = createNewGraphDataConfig();
+    }
+  }
+
+  @action
+  setVisNetwork(visNetwork: vis.Network) {
+    this.visNetwork = visNetwork;
+  }
+
+  @action
+  setVisDataSet(visDataSet: Record<'nodes' | 'edges', any>) {
+    this.visDataSet = visDataSet;
+  }
+
+  @action
+  setVisCurrentCoordinates(coordinates: {
+    domX: string;
+    domY: string;
+    canvasX: string;
+    canvasY: string;
+  }) {
+    this.visCurrentCoordinates = coordinates;
   }
 
   @action
@@ -469,6 +586,277 @@ export class DataAnalyzeStore {
     };
   }
 
+  @observable validateAddGraphNodeErrorMessage: NewGraphData | null = null;
+  @observable validateAddGraphEdgeErrorMessage: NewGraphData | null = null;
+  @observable
+  validateEditableGraphDataPropertyErrorMessage: EditableProperties | null = null;
+
+  @action
+  initValidateAddGraphDataErrorMessage(type: 'vertex' | 'edge') {
+    const config =
+      type === 'vertex' ? this.newGraphNodeConfigs : this.newGraphEdgeConfigs;
+    const nonNullable = new Map([...config.properties.nonNullable]);
+    const nullable = new Map([...config.properties.nullable]);
+
+    if (type === 'vertex') {
+      this.validateAddGraphNodeErrorMessage = {
+        id: '',
+        label: '',
+        properties: {
+          nonNullable,
+          nullable
+        }
+      };
+    } else {
+      this.validateAddGraphEdgeErrorMessage = {
+        id: '',
+        label: '',
+        properties: {
+          nonNullable,
+          nullable
+        }
+      };
+    }
+  }
+
+  @action
+  editGraphDataProperties(
+    nullable: 'nonNullable' | 'nullable',
+    key: string,
+    value: string
+  ) {
+    this.editedSelectedGraphDataProperties[nullable].set(key, value);
+  }
+
+  @action
+  initValidateEditGraphDataPropertiesErrorMessage() {
+    this.validateEditableGraphDataPropertyErrorMessage = {
+      nonNullable: new Map(),
+      nullable: new Map()
+    };
+
+    this.editedSelectedGraphDataProperties.nonNullable.forEach((value, key) => {
+      this.validateEditableGraphDataPropertyErrorMessage!.nonNullable.set(
+        key,
+        ''
+      );
+    });
+
+    this.editedSelectedGraphDataProperties.nullable.forEach((value, key) => {
+      this.validateEditableGraphDataPropertyErrorMessage!.nullable.set(key, '');
+    });
+  }
+
+  @action
+  validateAddGraphNode(
+    idStrategy: string,
+    initial = false,
+    category?: 'id' | 'nonNullable' | 'nullable',
+    key?: string
+  ) {
+    if (category === 'id') {
+      if (idStrategy === 'CUSTOMIZE_STRING') {
+        this.validateAddGraphNodeErrorMessage!.id =
+          initial || !isEmpty(this.newGraphNodeConfigs.id)
+            ? ''
+            : '非法的数据格式';
+      }
+
+      if (idStrategy === 'CUSTOMIZE_NUMBER') {
+        this.validateAddGraphNodeErrorMessage!.id =
+          initial || isInt(this.newGraphNodeConfigs.id!)
+            ? ''
+            : '非法的数据格式';
+      }
+
+      if (idStrategy === 'CUSTOMIZE_UUID') {
+        this.validateAddGraphNodeErrorMessage!.id =
+          initial || isUUID(String(this.newGraphNodeConfigs.id), 4)
+            ? ''
+            : '非法的数据格式';
+      }
+    }
+
+    if (category === 'nonNullable') {
+      if (
+        initial ||
+        isEmpty(this.newGraphNodeConfigs.properties.nonNullable.get(key!))
+      ) {
+        this.validateAddGraphNodeErrorMessage?.properties.nonNullable.set(
+          key!,
+          '此项不能为空'
+        );
+
+        return;
+      }
+
+      if (
+        initial ||
+        !validateGraphProperty(
+          this.valueTypes[key!],
+          this.newGraphNodeConfigs.properties.nonNullable.get(key!)!
+        )
+      ) {
+        this.validateAddGraphNodeErrorMessage?.properties.nonNullable.set(
+          key!,
+          '非法的数据格式'
+        );
+
+        return;
+      }
+
+      this.validateAddGraphNodeErrorMessage?.properties.nonNullable.set(
+        key!,
+        ''
+      );
+    }
+
+    if (category === 'nullable') {
+      if (
+        initial ||
+        !validateGraphProperty(
+          this.valueTypes[key!],
+          this.newGraphNodeConfigs.properties.nullable.get(key!)!,
+          true
+        )
+      ) {
+        this.validateAddGraphNodeErrorMessage?.properties.nullable.set(
+          key!,
+          '非法的数据格式'
+        );
+
+        return;
+      }
+
+      this.validateAddGraphNodeErrorMessage?.properties.nullable.set(key!, '');
+    }
+  }
+
+  @action
+  validateAddGraphEdge(
+    category: 'id' | 'nonNullable' | 'nullable',
+    initial = false,
+    key?: string
+  ) {
+    if (category === 'id') {
+      this.validateAddGraphEdgeErrorMessage!.id =
+        initial || !isEmpty(this.newGraphEdgeConfigs.id)
+          ? ''
+          : '非法的数据格式';
+    }
+
+    if (category === 'nonNullable') {
+      if (
+        initial ||
+        isEmpty(this.newGraphEdgeConfigs.properties.nonNullable.get(key!))
+      ) {
+        this.validateAddGraphEdgeErrorMessage?.properties.nonNullable.set(
+          key!,
+          '此项不能为空'
+        );
+
+        return;
+      }
+
+      if (
+        initial ||
+        !validateGraphProperty(
+          this.valueTypes[key!],
+          this.newGraphEdgeConfigs.properties.nonNullable.get(key!)!
+        )
+      ) {
+        this.validateAddGraphEdgeErrorMessage?.properties.nonNullable.set(
+          key!,
+          '非法的数据格式'
+        );
+
+        return;
+      }
+
+      this.validateAddGraphEdgeErrorMessage?.properties.nonNullable.set(
+        key!,
+        ''
+      );
+    }
+
+    if (category === 'nullable') {
+      if (
+        initial ||
+        !validateGraphProperty(
+          this.valueTypes[key!],
+          this.newGraphEdgeConfigs.properties.nullable.get(key!)!,
+          true
+        )
+      ) {
+        this.validateAddGraphEdgeErrorMessage?.properties.nullable.set(
+          key!,
+          '非法的数据格式'
+        );
+
+        return;
+      }
+
+      this.validateAddGraphEdgeErrorMessage?.properties.nullable.set(key!, '');
+    }
+  }
+
+  @action
+  validateGraphDataEditableProperties(
+    type: 'nonNullable' | 'nullable',
+    key: string
+  ) {
+    if (type === 'nonNullable') {
+      if (
+        isEmpty(this.editedSelectedGraphDataProperties?.nonNullable.get(key))
+      ) {
+        this.validateEditableGraphDataPropertyErrorMessage?.nonNullable.set(
+          key,
+          '此项不能为空'
+        );
+
+        return;
+      }
+
+      if (
+        !validateGraphProperty(
+          this.valueTypes[key!],
+          this.editedSelectedGraphDataProperties?.nonNullable.get(key)
+        )
+      ) {
+        this.validateEditableGraphDataPropertyErrorMessage?.nonNullable.set(
+          key,
+          '非法的数据格式'
+        );
+
+        return;
+      }
+
+      this.validateEditableGraphDataPropertyErrorMessage?.nonNullable.set(
+        key,
+        ''
+      );
+    }
+
+    if (type === 'nullable') {
+      if (
+        !validateGraphProperty(
+          this.valueTypes[key!],
+          this.editedSelectedGraphDataProperties?.nullable.get(key),
+          true
+        )
+      ) {
+        this.validateEditableGraphDataPropertyErrorMessage?.nullable.set(
+          key,
+          '非法的数据格式'
+        );
+
+        return;
+      }
+
+      this.validateEditableGraphDataPropertyErrorMessage?.nullable.set(key, '');
+    }
+  }
+
   @action
   resetRightClickedGraphData() {
     this.rightClickedGraphData = {
@@ -502,26 +890,25 @@ export class DataAnalyzeStore {
     this.isShowGraphInfo = false;
     this.isFullScreenReuslt = false;
     this.codeEditorText = '';
-    this.graphData = {} as FetchGraphReponse;
+    this.dynamicAddGraphDataStatus = '';
+    this.graphData = {} as FetchGraphResponse;
+
+    this.visNetwork = null;
+    this.visDataSet = null;
+    this.visCurrentCoordinates = {
+      domX: '',
+      domY: '',
+      canvasX: '',
+      canvasY: ''
+    };
 
     this.isSearched = {
       status: false,
       value: ''
     };
 
-    this.selectedGraphData = {
-      id: '',
-      label: '',
-      properties: {}
-    };
-
-    this.selectedGraphLinkData = {
-      id: '',
-      source: '',
-      target: '',
-      label: '',
-      properties: {}
-    };
+    this.selectedGraphData = createGraphNode();
+    this.selectedGraphLinkData = createGraphEdge();
 
     this.pageConfigs = {
       tableResult: {
@@ -540,98 +927,15 @@ export class DataAnalyzeStore {
       }
     };
 
-    this.requestStatus = {
-      fetchIdList: 'standby',
-      fetchValueTypes: 'standby',
-      fetchColorSchemas: 'standby',
-      fetchColorList: 'standby',
-      fetchGraphs: 'standby',
-      fetchAllNodeColors: 'standby',
-      fetchAllEdgeColors: 'standby',
-      expandGraphNode: 'standby',
-      filteredGraphData: 'standby',
-      fetchRelatedVertex: 'standby',
-      fetchFilteredPropertyOptions: 'standby',
-      addQueryCollection: 'standby',
-      editQueryCollection: 'standby',
-      deleteQueryCollection: 'standby',
-      fetchExecutionLogs: 'standby',
-      fetchFavoriteQueries: 'standby'
-    };
-
-    this.errorInfo = {
-      fetchIdList: {
-        code: NaN,
-        message: ''
-      },
-      fetchValueTypes: {
-        code: NaN,
-        message: ''
-      },
-      fetchColorSchemas: {
-        code: NaN,
-        message: ''
-      },
-      fetchColorList: {
-        code: NaN,
-        message: ''
-      },
-      fetchAllNodeColors: {
-        code: NaN,
-        message: ''
-      },
-      fetchAllEdgeColors: {
-        code: NaN,
-        message: ''
-      },
-      fetchGraphs: {
-        code: NaN,
-        message: ''
-      },
-      expandGraphNode: {
-        code: NaN,
-        message: ''
-      },
-      filteredGraphData: {
-        code: NaN,
-        message: ''
-      },
-      fetchRelatedVertex: {
-        code: NaN,
-        message: ''
-      },
-      filteredPropertyOptions: {
-        code: NaN,
-        message: ''
-      },
-      addQueryCollection: {
-        code: NaN,
-        message: ''
-      },
-      editQueryCollection: {
-        code: NaN,
-        message: ''
-      },
-      fetchExecutionLogs: {
-        code: NaN,
-        message: ''
-      },
-      fetchFavoriteQueries: {
-        code: NaN,
-        message: ''
-      },
-      deleteQueryCollection: {
-        code: NaN,
-        message: ''
-      }
-    };
-
+    this.requestStatus = initalizeRequestStatus();
+    this.errorInfo = initalizeErrorInfo();
     this.clearFilteredGraphQueryOptions();
   }
 
   @action
   dispose() {
     this.resetIdState();
+    this.vertexTypes = [];
     this.idList = [];
   }
 
@@ -697,12 +1001,44 @@ export class DataAnalyzeStore {
     }
   });
 
+  fetchVertexTypes = flow(function* fetchVertexTypeList(
+    this: DataAnalyzeStore
+  ) {
+    this.requestStatus.fetchVertexTypeList = 'pending';
+
+    try {
+      const result: AxiosResponse<responseData<
+        VertexTypeListResponse
+      >> = yield axios
+        .get<responseData<VertexTypeListResponse>>(
+          `${baseUrl}/${this.currentId}/schema/vertexlabels`,
+          {
+            params: {
+              page_size: -1
+            }
+          }
+        )
+        .catch(checkIfLocalNetworkOffline);
+
+      if (result.data.status !== 200) {
+        this.errorInfo.fetchVertexTypeList.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      this.vertexTypes = result.data.data.records;
+      this.requestStatus.fetchVertexTypeList = 'success';
+    } catch (error) {
+      this.requestStatus.fetchVertexTypeList = 'failed';
+      this.errorInfo.fetchVertexTypeList.message = error.message;
+    }
+  });
+
   fetchColorSchemas = flow(function* fetchColorSchemas(this: DataAnalyzeStore) {
     this.requestStatus.fetchColorSchemas = 'pending';
 
     try {
       const result: AxiosResponse<FetchColorSchemas> = yield axios.get<
-        FetchGraphReponse
+        FetchGraphResponse
       >(`${baseUrl}/${this.currentId}/schema/vertexlabels/style`);
 
       if (result.data.status !== 200) {
@@ -773,6 +1109,32 @@ export class DataAnalyzeStore {
     }
   });
 
+  fetchEdgeTypes = flow(function* fetchEdgeTypes(this: DataAnalyzeStore) {
+    this.requestStatus.fetchEdgeTypes = 'pending';
+
+    try {
+      const result: AxiosResponse<responseData<
+        EdgeTypeListResponse
+      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
+        params: {
+          page_no: 1,
+          page_size: -1
+        }
+      });
+
+      if (result.data.status !== 200) {
+        throw new Error(result.data.message);
+      }
+
+      this.edgeTypes = result.data.data.records;
+      this.requestStatus.fetchEdgeTypes = 'success';
+    } catch (error) {
+      this.requestStatus.fetchEdgeTypes = 'failed';
+      this.errorInfo.fetchEdgeTypes.message = error.message;
+      console.error(error.message);
+    }
+  });
+
   fetchAllEdgeColors = flow(function* fetchAllEdgeColors(
     this: DataAnalyzeStore
   ) {
@@ -811,10 +1173,13 @@ export class DataAnalyzeStore {
     this.isLoadingGraph = true;
 
     try {
-      const result: AxiosResponse<FetchGraphReponse> = yield axios
-        .post<FetchGraphReponse>(`${baseUrl}/${this.currentId}/gremlin-query`, {
-          content: this.codeEditorText
-        })
+      const result: AxiosResponse<FetchGraphResponse> = yield axios
+        .post<FetchGraphResponse>(
+          `${baseUrl}/${this.currentId}/gremlin-query`,
+          {
+            content: this.codeEditorText
+          }
+        )
         .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
@@ -857,6 +1222,134 @@ export class DataAnalyzeStore {
     }
   });
 
+  addGraphNode = flow(function* addGraphNode(this: DataAnalyzeStore) {
+    this.requestStatus.addGraphNode = 'pending';
+
+    try {
+      const properties: Record<string, string> = {};
+      this.newGraphNodeConfigs.properties.nonNullable.forEach((value, key) => {
+        properties[key] = value;
+      });
+      this.newGraphNodeConfigs.properties.nullable.forEach((value, key) => {
+        properties[key] = value;
+      });
+
+      const result: AxiosResponse<responseData<GraphView>> = yield axios.post(
+        `${baseUrl}/${this.currentId}/graph/vertex`,
+        {
+          id: this.newGraphNodeConfigs.id,
+          label: this.newGraphNodeConfigs.label,
+          properties
+        }
+      );
+
+      if (result.data.status !== 200) {
+        this.errorInfo.addGraphNode.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      const mergedGraphData = cloneDeep(this.graphData);
+      mergedGraphData.data.graph_view.vertices.push(
+        ...result.data.data.vertices
+      );
+
+      this.graphData = mergedGraphData;
+      this.requestStatus.addGraphNode = 'success';
+
+      return result.data.data.vertices;
+    } catch (error) {
+      this.requestStatus.addGraphNode = 'failed';
+      this.errorInfo.addGraphNode.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  fetchRelatedEdges = flow(function* fetchRelatedEdges(this: DataAnalyzeStore) {
+    this.requestStatus.fetchRelatedEdges = 'pending';
+    try {
+      const result: AxiosResponse<responseData<string[]>> = yield axios.get<
+        responseData<string[]>
+      >(
+        `${baseUrl}/${this.currentId}/schema/vertexlabels/${this.rightClickedGraphData.label}/link`
+      );
+
+      if (result.data.status !== 200) {
+        this.errorInfo.fetchRelatedEdges.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      this.relatedGraphEdges = result.data.data;
+      this.requestStatus.fetchRelatedEdges = 'success';
+    } catch (error) {
+      this.requestStatus.fetchRelatedEdges = 'failed';
+      this.errorInfo.fetchRelatedEdges.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  addGraphEdge = flow(function* addGraphEdge(this: DataAnalyzeStore) {
+    this.requestStatus.addGraphEdge = 'pending';
+
+    try {
+      const vertices = [
+        this.rightClickedGraphData.id,
+        this.newGraphEdgeConfigs.id
+      ];
+
+      if (this.dynamicAddGraphDataStatus === 'inEdge') {
+        vertices.reverse();
+      }
+
+      const properties: Record<string, string> = {};
+      this.newGraphEdgeConfigs.properties.nonNullable.forEach((value, key) => {
+        properties[key] = value;
+      });
+      this.newGraphEdgeConfigs.properties.nullable.forEach((value, key) => {
+        properties[key] = value;
+      });
+
+      const result: AxiosResponse<responseData<GraphView>> = yield axios.post(
+        `${baseUrl}/${this.currentId}/graph/edge`,
+        {
+          label: this.newGraphEdgeConfigs.label,
+          source: vertices[0],
+          target: vertices[1],
+          properties
+        }
+      );
+
+      if (result.data.status !== 200) {
+        this.errorInfo.addGraphEdge.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      const mergedGraphData = cloneDeep(this.graphData);
+      const filteredVertices: GraphNode[] = [];
+
+      result.data.data.vertices.forEach((vertex) => {
+        if (this.visDataSet!.nodes.get(vertex.id) === null) {
+          filteredVertices.push(vertex);
+        }
+      });
+
+      mergedGraphData.data.graph_view.vertices.push(...filteredVertices);
+      mergedGraphData.data.graph_view.edges.push(...result.data.data.edges);
+
+      this.graphData = mergedGraphData;
+      this.requestStatus.addGraphEdge = 'success';
+
+      return {
+        originalVertices: result.data.data.vertices,
+        vertices: filteredVertices,
+        edges: result.data.data.edges
+      };
+    } catch (error) {
+      this.requestStatus.addGraphEdge = 'failed';
+      this.errorInfo.addGraphEdge.message = error.message;
+      console.error(error.message);
+    }
+  });
+
   expandGraphNode = flow(function* expandGraphNode(
     this: DataAnalyzeStore,
     // double click on a node, or right click a node
@@ -866,7 +1359,7 @@ export class DataAnalyzeStore {
     this.requestStatus.expandGraphNode = 'pending';
 
     try {
-      const result: AxiosResponse<FetchGraphReponse> = yield axios.put(
+      const result: AxiosResponse<FetchGraphResponse> = yield axios.put(
         `${baseUrl}/${this.currentId}/gremlin-query`,
         {
           vertex_id: nodeId || this.rightClickedGraphData.id,
@@ -917,21 +1410,21 @@ export class DataAnalyzeStore {
       const vertexCollection = new Set();
       const edgeCollection = new Set();
 
-      const mergeData: FetchGraphReponse = {
+      const mergeData: FetchGraphResponse = {
         ...newGraphData,
         data: {
           ...newGraphData.data,
           graph_view: {
             vertices: this.graphData.data.graph_view.vertices
               .concat(newGraphData.data.graph_view.vertices)
-              .filter(item => {
+              .filter((item) => {
                 const isDuplicate = vertexCollection.has(item.id);
                 vertexCollection.add(item.id);
                 return !isDuplicate;
               }),
             edges: this.graphData.data.graph_view.edges
               .concat(newGraphData.data.graph_view.edges)
-              .filter(item => {
+              .filter((item) => {
                 const isDuplicate = edgeCollection.has(item.id);
                 edgeCollection.add(item.id);
                 return !isDuplicate;
@@ -952,7 +1445,7 @@ export class DataAnalyzeStore {
   @action
   hideGraphNode(nodeId: any) {
     this.graphData.data.graph_view.vertices = this.graphData.data.graph_view.vertices.filter(
-      data => data.id !== this.rightClickedGraphData.id
+      (data) => data.id !== this.rightClickedGraphData.id
     );
 
     // only delete node in vertexCollection, not edges in EdgeCollection
@@ -961,6 +1454,101 @@ export class DataAnalyzeStore {
     // assign new object to observable
     this.graphData = { ...this.graphData };
   }
+
+  updateGraphProperties = flow(function* updateGraphProperties(
+    this: DataAnalyzeStore
+  ) {
+    this.requestStatus.updateGraphProperties = 'pending';
+
+    const { id, label, properties } =
+      this.graphInfoDataSet === 'node'
+        ? this.selectedGraphData
+        : this.selectedGraphLinkData;
+
+    const editedProperties: Record<string, string | Array<string>> = {
+      ...Object.fromEntries([
+        ...this.editedSelectedGraphDataProperties.primary
+      ]),
+      ...Object.fromEntries([
+        ...this.editedSelectedGraphDataProperties.nonNullable
+      ]),
+      ...Object.fromEntries([
+        ...this.editedSelectedGraphDataProperties.nullable
+      ])
+    };
+
+    // check if originial type is Array
+    Object.entries(editedProperties).forEach(([key, value]) => {
+      if (Array.isArray(properties[key])) {
+        if ((value as string).includes(',')) {
+          editedProperties[key] = (value as string).split(',');
+        }
+
+        if ((value as string).includes('，')) {
+          editedProperties[key] = (value as string).split('，');
+        }
+      }
+    });
+
+    try {
+      const result: AxiosResponse<responseData<
+        GraphNode | GraphEdge
+      >> = yield axios.put<responseData<GraphNode | GraphEdge>>(
+        `${baseUrl}/${this.currentId}/graph/${
+          this.graphInfoDataSet === 'node' ? 'vertex' : 'edge'
+        }/${encodeURIComponent(id)}`,
+        this.graphInfoDataSet === 'node'
+          ? {
+              id,
+              label,
+              properties: editedProperties
+            }
+          : {
+              id,
+              label,
+              properties: editedProperties,
+              source: this.selectedGraphLinkData.source,
+              target: this.selectedGraphLinkData.target
+            }
+      );
+
+      if (result.data.status !== 200) {
+        this.errorInfo.updateGraphProperties.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      const graphData = cloneDeep(this.graphData);
+      if (this.graphInfoDataSet === 'node') {
+        const vertex = graphData.data.graph_view.vertices.find(
+          ({ id }) => id === result.data.data.id
+        );
+
+        if (!isUndefined(vertex)) {
+          vertex.id = result.data.data.id;
+          vertex.label = result.data.data.label;
+          vertex.properties = result.data.data.properties;
+        }
+      } else {
+        const edge = graphData.data.graph_view.edges.find(
+          ({ id }) => id === result.data.data.id
+        );
+
+        if (!isUndefined(edge)) {
+          edge.id = result.data.data.id;
+          edge.label = result.data.data.label;
+          edge.properties = result.data.data.properties;
+        }
+      }
+
+      this.graphData = graphData;
+      this.requestStatus.updateGraphProperties = 'success';
+      return result.data.data;
+    } catch (error) {
+      this.requestStatus.updateGraphProperties = 'failed';
+      this.errorInfo.updateGraphProperties.message = error.message;
+      console.error(error.message);
+    }
+  });
 
   // require list of edge type options in QueryFilteredOptions
   fetchRelatedVertex = flow(function* fetchRelatedVertex(
@@ -1022,7 +1610,7 @@ export class DataAnalyzeStore {
     this.requestStatus.filteredGraphData = 'pending';
 
     try {
-      const result: AxiosResponse<FetchGraphReponse> = yield axios.put(
+      const result: AxiosResponse<FetchGraphResponse> = yield axios.put(
         `${baseUrl}/${this.currentId}/gremlin-query`,
         {
           vertex_id: this.rightClickedGraphData.id,
@@ -1082,21 +1670,21 @@ export class DataAnalyzeStore {
       const vertexCollection = new Set();
       const edgeCollection = new Set();
 
-      const mergeData: FetchGraphReponse = {
+      const mergeData: FetchGraphResponse = {
         ...newGraphData,
         data: {
           ...newGraphData.data,
           graph_view: {
             vertices: this.graphData.data.graph_view.vertices
               .concat(newGraphData.data.graph_view.vertices)
-              .filter(item => {
+              .filter((item) => {
                 const isDuplicate = vertexCollection.has(item.id);
                 vertexCollection.add(item.id);
                 return !isDuplicate;
               }),
             edges: this.graphData.data.graph_view.edges
               .concat(newGraphData.data.graph_view.edges)
-              .filter(item => {
+              .filter((item) => {
                 const isDuplicate = edgeCollection.has(item.id);
                 edgeCollection.add(item.id);
                 return !isDuplicate;

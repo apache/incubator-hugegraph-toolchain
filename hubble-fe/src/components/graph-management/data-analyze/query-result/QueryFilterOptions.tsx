@@ -5,6 +5,7 @@ import vis from 'vis-network';
 import { Message } from '@baidu/one-ui';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
+import { convertArrayToString } from '../../../../stores/utils';
 
 const getRuleOptions = (ruleType: string = '') => {
   switch (ruleType.toLowerCase()) {
@@ -167,7 +168,7 @@ const QueryFilterOptions: React.FC<{
             onChange={handleEdgeSelectChange('type')}
             dropdownClassName="data-analyze-sidebar-select"
           >
-            {dataAnalyzeStore.graphDataEdgeTypes.map(type => (
+            {dataAnalyzeStore.graphDataEdgeTypes.map((type) => (
               <Select.Option value={type} key={type}>
                 {type}
               </Select.Option>
@@ -186,7 +187,7 @@ const QueryFilterOptions: React.FC<{
             onChange={handleEdgeSelectChange('direction')}
             dropdownClassName="data-analyze-sidebar-select"
           >
-            {['IN', 'OUT', 'BOTH'].map(value => (
+            {['IN', 'OUT', 'BOTH'].map((value) => (
               <Select.Option value={value} key={value}>
                 {value}
               </Select.Option>
@@ -228,7 +229,10 @@ const QueryFilterOptions: React.FC<{
                             .map(([key, value]) => {
                               return `<div class="tooltip-fields">
                                         <div>${key}: </div>
-                                        <div>${value}</div>
+                                        <div>${convertArrayToString(
+                                          value,
+                                          '，'
+                                        )}</div>
                                       </div>
                                       `;
                             })
@@ -270,7 +274,7 @@ const QueryFilterOptions: React.FC<{
                 );
 
                 dataAnalyzeStore.expandedGraphData.data.graph_view.edges.forEach(
-                  edge => {
+                  (edge) => {
                     visGraphEdges.add({
                       ...edge,
                       from: edge.source,
@@ -291,7 +295,10 @@ const QueryFilterOptions: React.FC<{
                           .map(([key, value]) => {
                             return `<div class="tooltip-fields">
                                       <div>${key}: </div>
-                                      <div>${value}</div>
+                                      <div>${convertArrayToString(
+                                        value,
+                                        '，'
+                                      )}</div>
                                     </div>`;
                           })
                           .join('')}
@@ -380,12 +387,12 @@ const QueryFilterOptions: React.FC<{
                 >
                   {dataAnalyzeStore.filteredPropertyOptions
                     .filter(
-                      option =>
+                      (option) =>
                         !dataAnalyzeStore.filteredGraphQueryOptions.properties
-                          .map(property => property.property)
+                          .map((property) => property.property)
                           .includes(option)
                     )
-                    .map(prop => (
+                    .map((prop) => (
                       <Select.Option value={prop} key={prop}>
                         {prop}
                       </Select.Option>
@@ -410,7 +417,7 @@ const QueryFilterOptions: React.FC<{
                   }
                 >
                   {getRuleOptions(dataAnalyzeStore.valueTypes[property]).map(
-                    value => (
+                    (value) => (
                       <Select.Option value={value} key={value}>
                         {value}
                       </Select.Option>

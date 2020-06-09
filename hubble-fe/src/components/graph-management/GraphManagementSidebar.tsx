@@ -2,8 +2,12 @@ import React, { useState, useCallback, useContext, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import classnames from 'classnames';
 import { useLocation, useRoute } from 'wouter';
+import { Select, Tooltip, PopLayer, Menu } from '@baidu/one-ui';
 
-import { Select, Tooltip, PopLayer } from '@baidu/one-ui';
+import {
+  GraphManagementStoreContext,
+  DataAnalyzeStoreContext
+} from '../../stores';
 
 import BackIcon from '../../assets/imgs/ic_topback.svg';
 import ArrowIcon from '../../assets/imgs/ic_arrow_white.svg';
@@ -13,22 +17,20 @@ import MetaDataManagementIconNormal from '../../assets/imgs/ic_yuanshuju_normal.
 import MetaDataManagementIconPressed from '../../assets/imgs/ic_yuanshuju_pressed.svg';
 import SidebarExpandIcon from '../../assets/imgs/ic_cebianzhankai.svg';
 import SidebarCollapseIcon from '../../assets/imgs/ic_cebianshouqi.svg';
-import {
-  GraphManagementStoreContext,
-  DataAnalyzeStoreContext
-} from '../../stores';
+import DataImportIconNormal from '../../assets/imgs/ic_guanli_normal.svg';
+import DataImportIconPressed from '../../assets/imgs/ic_guanli_pressed.svg';
 
 const GraphManagementSidebar: React.FC = observer(() => {
-  const [match, params] = useRoute('/graph-management/:id/:category');
+  const [match, params] = useRoute(
+    '/graph-management/:id/:category/:subCategory?'
+  );
 
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
   const [_, setLocation] = useLocation();
   // caution
-  const [sidebarIndex, setSidebarIndex] = useState(0);
+  const [sidebarKey, setSidebarKey] = useState('');
   const [isShowNamePop, switchShowNamePop] = useState(false);
-  const optionClassName = 'data-analyze-sidebar-options';
-  const activeOptionClassName = optionClassName + ' selected';
 
   const sidebarWrapperClassName = classnames({
     'data-analyze-sidebar': true,
@@ -50,16 +52,27 @@ const GraphManagementSidebar: React.FC = observer(() => {
     expand: graphManagementStore.isExpanded
   });
 
-  const handleOptionClick = useCallback(
-    (index: number) => () => {
-      setSidebarIndex(index);
+  const sidebarMenuItemClassName = classnames({
+    'data-analyze-sidebar-menu-item': true,
+    expand: graphManagementStore.isExpanded
+  });
 
-      switch (index) {
-        case 0:
+  const handleOptionClick = useCallback(
+    (key: string) => {
+      setSidebarKey(key);
+
+      switch (key) {
+        case 'data-analyze':
           setLocation(`/graph-management/${params!.id}/data-analyze`);
           return;
-        case 1:
+        case 'metadata-configs':
           setLocation(`/graph-management/${params!.id}/metadata-configs`);
+          return;
+        case 'import-tasks':
+          setLocation(
+            `/graph-management/${params!.id}/data-import/import-tasks`
+          );
+          return;
       }
     },
     [params, setLocation]
@@ -88,12 +101,20 @@ const GraphManagementSidebar: React.FC = observer(() => {
 
     switch (params.category) {
       case 'data-analyze':
-        setSidebarIndex(0);
+        setSidebarKey('data-analyze');
         return;
 
       case 'metadata-configs':
-        setSidebarIndex(1);
+        setSidebarKey('metadata-configs');
         return;
+
+      case 'data-import': {
+        if (params.subCategory === 'import-tasks') {
+          setSidebarKey('import-tasks');
+        }
+
+        return;
+      }
     }
   }, [params]);
 
@@ -181,75 +202,79 @@ const GraphManagementSidebar: React.FC = observer(() => {
           </>
         )}
       </li>
-      {sidebarIndex === 0 ? (
-        <li className={activeOptionClassName} onClick={handleOptionClick(0)}>
-          <Tooltip
-            placement="right"
-            title={graphManagementStore.isExpanded ? '' : '数据分析'}
-            type="dark"
+      <div>
+        <Menu
+          mode="inline"
+          selectedKeys={[sidebarKey]}
+          inlineCollapsed={!graphManagementStore.isExpanded}
+          onClick={(e: any) => {
+            handleOptionClick(e.key);
+          }}
+          style={{
+            width: graphManagementStore.isExpanded ? 200 : 60
+          }}
+        >
+          <Menu.Item key="data-analyze">
+            <div className={sidebarMenuItemClassName}>
+              <img
+                src={
+                  sidebarKey === 'data-analyze'
+                    ? DataAnalyzeIconPressed
+                    : DataAnalyzeIconNormal
+                }
+                alt="数据分析"
+              />
+              <div>数据分析</div>
+            </div>
+          </Menu.Item>
+          <Menu.Item key="metadata-configs">
+            <div className={sidebarMenuItemClassName}>
+              <img
+                src={
+                  sidebarKey === 'metadata-configs'
+                    ? MetaDataManagementIconPressed
+                    : MetaDataManagementIconNormal
+                }
+                alt="元数据配置"
+              />
+              <div>元数据配置</div>
+            </div>
+          </Menu.Item>
+          <Menu.Item key="import-tasks">
+            <div className={sidebarMenuItemClassName}>
+              <img
+                src={
+                  sidebarKey === 'import-tasks'
+                    ? DataImportIconPressed
+                    : DataImportIconNormal
+                }
+                alt="数据导入"
+              />
+              <div>数据导入</div>
+            </div>
+          </Menu.Item>
+          {/* <Menu.SubMenu
+            key="sub-data-import"
+            title={
+              <div className={sidebarMenuItemClassName}>
+                <img
+                  src={
+                    sidebarKey === 'import-tasks'
+                      ? DataImportIconPressed
+                      : DataImportIconNormal
+                  }
+                  alt="数据导入"
+                />
+                <div>数据导入</div>
+              </div>
+            }
           >
-            <img src={DataAnalyzeIconPressed} alt="数据分析" />
-          </Tooltip>
-          {graphManagementStore.isExpanded && <span>数据分析</span>}
-        </li>
-      ) : (
-        <li className={optionClassName} onClick={handleOptionClick(0)}>
-          <Tooltip
-            placement="right"
-            title={graphManagementStore.isExpanded ? '' : '数据分析'}
-            type="dark"
-          >
-            <img src={DataAnalyzeIconNormal} alt="数据分析" />
-          </Tooltip>
-          {graphManagementStore.isExpanded && <span>数据分析</span>}
-        </li>
-      )}
-      {sidebarIndex === 1 ? (
-        <li className={activeOptionClassName} onClick={handleOptionClick(1)}>
-          <Tooltip
-            placement="right"
-            title={graphManagementStore.isExpanded ? '' : '元数据配置'}
-            type="dark"
-          >
-            <img src={MetaDataManagementIconPressed} alt="元数据配置" />
-          </Tooltip>
-          {graphManagementStore.isExpanded && <span>元数据配置</span>}
-        </li>
-      ) : (
-        <li className={optionClassName} onClick={handleOptionClick(1)}>
-          <Tooltip
-            placement="right"
-            title={graphManagementStore.isExpanded ? '' : '元数据配置'}
-            type="dark"
-          >
-            <img src={MetaDataManagementIconNormal} alt="元数据配置" />
-          </Tooltip>
-          {graphManagementStore.isExpanded && <span>元数据配置</span>}
-        </li>
-      )}
-      {/* {sidebarIndex === 2 ? (
-          <li className={activeOptionClassName} onClick={handleOptionClick(2)}>
-            <Tooltip
-              placement="right"
-              title={isExpand ? '' : '数据管理'}
-              type="dark"
-            >
-              <img src={ManagementIconPressed} alt="数据管理" />
-            </Tooltip>
-            {isExpand && <span>数据管理</span>}
-          </li>
-        ) : (
-          <li className={optionClassName} onClick={handleOptionClick(2)}>
-            <Tooltip
-              placement="right"
-              title={isExpand ? '' : '数据管理'}
-              type="dark"
-            >
-              <img src={ManagementIconNormal} alt="数据管理" />
-            </Tooltip>
-            {isExpand && <span>数据管理</span>}
-          </li>
-        )} */}
+            <Menu.Item key="import-tasks">
+              <div style={{ marginLeft: 24 }}>导入任务</div>
+            </Menu.Item>
+          </Menu.SubMenu> */}
+        </Menu>
+      </div>
       <li
         className="data-analyze-sidebar-expand-control"
         onClick={handleExpandClick}
@@ -277,7 +302,7 @@ const GraphSelectMenu: React.FC<GraphSelectMenuProps> = observer(
     const [_, setLocation] = useLocation();
 
     const handleSelectDropdownId = useCallback(
-      id => (e: any) => {
+      (id) => (e: any) => {
         const targetClassName = (e.target as Element).className;
 
         if (

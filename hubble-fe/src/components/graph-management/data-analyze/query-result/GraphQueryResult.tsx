@@ -6,14 +6,17 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
-import { isUndefined, isEmpty } from 'lodash-es';
+import { size, isUndefined, isEmpty } from 'lodash-es';
 import { saveAs } from 'file-saver';
 import vis from 'vis-network';
 import 'vis-network/styles/vis-network.min.css';
-import { Message } from '@baidu/one-ui';
+import { Message, Tooltip } from '@baidu/one-ui';
 
 import QueryFilterOptions from './QueryFilterOptions';
+import GraphPopOver from './GraphPopOver';
 import { DataAnalyzeStoreContext } from '../../../../stores';
+import { convertArrayToString } from '../../../../stores/utils';
+
 import ZoomInIcon from '../../../../assets/imgs/ic_fangda_16.svg';
 import ZoomOutIcon from '../../../../assets/imgs/ic_suoxiao_16.svg';
 import CenterIcon from '../../../../assets/imgs/ic_middle_16.svg';
@@ -22,6 +25,7 @@ import FullScreenIcon from '../../../../assets/imgs/ic_quanping_16.svg';
 import ResetScreenIcon from '../../../../assets/imgs/ic_tuichuquanping_16.svg';
 import LoadingBackIcon from '../../../../assets/imgs/ic_loading_back.svg';
 import LoadingFrontIcon from '../../../../assets/imgs/ic_loading_front.svg';
+import AddNodeIcon from '../../../../assets/imgs/ic_add_node.svg';
 
 export interface GraphQueryResult {
   hidden: boolean;
@@ -35,6 +39,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
   const legendWrapper = useRef<HTMLDivElement>(null);
   const [showLoadingGraphs, switchShowLoadingGraphs] = useState(true);
   const [isPopover, switchIsPopover] = useState(false);
+  const [isAfterDragging, switchAfterDragging] = useState(false);
   const [nodeTooltipX, setNodeToolTipX] = useState(0);
   const [nodeTooltipY, setNodeToolTipY] = useState(0);
   const [legendStep, setLegendStep] = useState(0);
@@ -132,6 +137,9 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                 properties: node.properties
               });
 
+              dataAnalyzeStore.syncGraphEditableProperties('vertex');
+              dataAnalyzeStore.initValidateEditGraphDataPropertiesErrorMessage();
+
               if (
                 dataAnalyzeStore.graphInfoDataSet !== 'node' ||
                 !dataAnalyzeStore.isShowGraphInfo
@@ -172,6 +180,9 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                 source: node.source,
                 target: node.target
               });
+
+              dataAnalyzeStore.syncGraphEditableProperties('edge');
+              dataAnalyzeStore.initValidateEditGraphDataPropertiesErrorMessage();
 
               if (
                 dataAnalyzeStore.graphInfoDataSet !== 'edge' ||
@@ -225,7 +236,10 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                             .map(([key, value]) => {
                               return `<div class="tooltip-fields">
                                         <div>${key}: </div>
-                                        <div>${value}</div>
+                                        <div>${convertArrayToString(
+                                          value,
+                                          '，'
+                                        )}</div>
                                       </div>`;
                             })
                             .join('')}
@@ -266,7 +280,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                 );
 
                 dataAnalyzeStore.expandedGraphData.data.graph_view.edges.forEach(
-                  edge => {
+                  (edge) => {
                     graphEdges.add({
                       ...edge,
                       from: edge.source,
@@ -287,7 +301,10 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                             .map(([key, value]) => {
                               return `<div class="tooltip-fields">
                                         <div>${key}: </div>
-                                        <div>${value}</div>
+                                        <div>${convertArrayToString(
+                                          value,
+                                          '，'
+                                        )}</div>
                                       </div>`;
                             })
                             .join('')}
@@ -312,10 +329,12 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           }
         });
 
-        network.on('oncontext', async e => {
+        network.on('oncontext', async (e) => {
           // disable default context menu
           e.event.preventDefault();
 
+          // It's weird that sometimes e.nodes is empty when right click on node
+          // thus using coordinate to work as expect
           const nodeId = network.getNodeAt(e.pointer.DOM);
           const node = dataAnalyzeStore.graphData.data.graph_view.vertices.find(
             ({ id }) => id === nodeId
@@ -331,17 +350,69 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             switchIsPopover(true);
 
             network.selectNodes([nodeId]);
+            // setNodeToolTipX(e.pointer.canvas.x);
+            // setNodeToolTipY(e.pointer.canvas.y);
             setNodeToolTipX(e.pointer.DOM.x);
             setNodeToolTipY(e.pointer.DOM.y);
+            dataAnalyzeStore.setVisCurrentCoordinates({
+              domX: e.pointer.DOM.x,
+              domY: e.pointer.DOM.y,
+              canvasX: e.pointer.canvas.x,
+              canvasY: e.pointer.canvas.y
+            });
 
             await dataAnalyzeStore.fetchRelatedVertex();
-            dataAnalyzeStore.fetchFilteredPropertyOptions(
-              dataAnalyzeStore.graphDataEdgeTypes[0]
-            );
+
+            if (size(dataAnalyzeStore.graphDataEdgeTypes) !== 0) {
+              dataAnalyzeStore.fetchFilteredPropertyOptions(
+                dataAnalyzeStore.graphDataEdgeTypes[0]
+              );
+            }
+          } else {
+            const edgeId = network.getEdgeAt(e.pointer.DOM);
+
+            // if not click on edge
+            if (isUndefined(edgeId)) {
+              dataAnalyzeStore.resetRightClickedGraphData();
+              setNodeToolTipX(e.pointer.DOM.x);
+              setNodeToolTipY(e.pointer.DOM.y);
+              dataAnalyzeStore.setVisCurrentCoordinates({
+                domX: e.pointer.DOM.x,
+                domY: e.pointer.DOM.y,
+                canvasX: e.pointer.canvas.x,
+                canvasY: e.pointer.canvas.y
+              });
+              switchIsPopover(true);
+            }
           }
         });
 
-        network.on('dragEnd', e => {
+        network.on('dragging', () => {
+          const node = dataAnalyzeStore.visDataSet?.nodes.get(
+            dataAnalyzeStore.rightClickedGraphData.id
+          );
+
+          if (node !== null) {
+            const position = network.getPositions(node.id);
+            setNodeToolTipX(network.canvasToDOM(position[node.id]).x);
+            setNodeToolTipY(network.canvasToDOM(position[node.id]).y);
+            switchAfterDragging(true);
+          }
+        });
+
+        network.on('zoom', () => {
+          const node = dataAnalyzeStore.visDataSet?.nodes.get(
+            dataAnalyzeStore.rightClickedGraphData.id
+          );
+
+          if (node !== null) {
+            const position = network.getPositions(node.id);
+            setNodeToolTipX(network.canvasToDOM(position[node.id]).x);
+            setNodeToolTipY(network.canvasToDOM(position[node.id]).y);
+          }
+        });
+
+        network.on('dragEnd', (e) => {
           if (!isEmpty(e.nodes)) {
             network.unselectAll();
           }
@@ -352,8 +423,14 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
         });
 
         setGraph(network);
+        dataAnalyzeStore.setVisNetwork(network);
       }
     } else {
+      dataAnalyzeStore.setVisDataSet({
+        nodes: visGraphNodes,
+        edges: visGraphEdges
+      });
+
       redrawGraphs();
     }
   }, [
@@ -393,7 +470,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
         ref={resultWrapper}
         style={{
           zIndex: hidden ? -1 : 0,
-          margin: '-9px'
+          margin: '-9px',
+          overflow: 'hidden'
         }}
       >
         <div
@@ -432,7 +510,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                     ({ label }) => label
                   )
                 )
-              ).map(label => {
+              ).map((label) => {
                 return (
                   <div
                     style={{
@@ -440,6 +518,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                       marginRight: 14,
                       alignItems: 'center'
                     }}
+                    key={label}
                   >
                     <div
                       style={{
@@ -459,6 +538,16 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           </div>
 
           <div>
+            <img
+              src={AddNodeIcon}
+              alt="添加顶点"
+              title="添加顶点"
+              onClick={() => {
+                if (graph) {
+                  dataAnalyzeStore.setDynamicAddGraphDataStatus('vertex');
+                }
+              }}
+            />
             <img
               src={ZoomInIcon}
               alt="放大"
@@ -545,9 +634,11 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
         </div>
         <div ref={graphWrapper}></div>
         {isPopover && (
-          <GraphPopover
+          <GraphPopOver
             x={nodeTooltipX}
             y={nodeTooltipY}
+            isAfterDragging={isAfterDragging}
+            switchAfterDragging={switchAfterDragging}
             switchIsPopover={switchIsPopover}
             visNetwork={graph}
             visGraphNodes={visGraphNodes}
@@ -582,190 +673,5 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
     </>
   );
 });
-
-const GraphPopover: React.FC<{
-  x: number;
-  y: number;
-  switchIsPopover: (state: boolean) => void;
-  visNetwork: vis.Network | null;
-  visGraphNodes: vis.DataSetNodes;
-  visGraphEdges: vis.DataSetEdges;
-}> = observer(
-  ({ x, y, switchIsPopover, visNetwork, visGraphNodes, visGraphEdges }) => {
-    const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
-    const popoverWrapperRef = useRef<HTMLDivElement>(null);
-
-    const handleOutSideClick = useCallback(
-      (e: MouseEvent) => {
-        // if clicked element is not on dropdown, collpase it
-        if (
-          popoverWrapperRef.current &&
-          !popoverWrapperRef.current.contains(e.target as Element)
-        ) {
-          switchIsPopover(false);
-        }
-      },
-      [switchIsPopover]
-    );
-
-    useEffect(() => {
-      document.addEventListener('click', handleOutSideClick, false);
-
-      return () => {
-        document.removeEventListener('click', handleOutSideClick, false);
-      };
-    }, [handleOutSideClick]);
-
-    return (
-      <div
-        className="graph-pop-over"
-        onContextMenu={e => e.preventDefault()}
-        style={{ top: y, left: x }}
-        ref={popoverWrapperRef}
-      >
-        <div
-          className="graph-pop-over-item"
-          onClick={async () => {
-            await dataAnalyzeStore.expandGraphNode();
-
-            if (dataAnalyzeStore.requestStatus.expandGraphNode === 'success') {
-              dataAnalyzeStore.expandedGraphData.data.graph_view.vertices.forEach(
-                ({ id, label, properties }) => {
-                  visGraphNodes.add({
-                    id,
-                    label: id.length <= 15 ? id : id.slice(0, 15) + '...',
-                    vLabel: label,
-                    properties,
-                    title: `
-                      <div class="tooltip-fields">
-                        <div>顶点类型：</div>
-                        <div>${label}</div>
-                      </div>
-                      <div class="tooltip-fields">
-                        <div>顶点ID：</div>
-                        <div>${id}</div>
-                      </div>
-                      ${Object.entries(properties)
-                        .map(([key, value]) => {
-                          return `<div class="tooltip-fields">
-                                    <div>${key}: </div>
-                                    <div>${value}</div>
-                                  </div>`;
-                        })
-                        .join('')}
-                    `,
-                    color: {
-                      background:
-                        dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                      border:
-                        dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                      highlight: {
-                        background: '#fb6a02',
-                        border: '#fb6a02'
-                      },
-                      hover: { background: '#ec3112', border: '#ec3112' }
-                    },
-                    chosen: {
-                      node(
-                        values: any,
-                        id: string,
-                        selected: boolean,
-                        hovering: boolean
-                      ) {
-                        if (hovering || selected) {
-                          values.shadow = true;
-                          values.shadowColor = 'rgba(0, 0, 0, 0.6)';
-                          values.shadowX = 0;
-                          values.shadowY = 0;
-                          values.shadowSize = 25;
-                        }
-
-                        if (selected) {
-                          values.size = 30;
-                        }
-                      }
-                    }
-                  });
-                }
-              );
-
-              dataAnalyzeStore.expandedGraphData.data.graph_view.edges.forEach(
-                edge => {
-                  visGraphEdges.add({
-                    ...edge,
-                    from: edge.source,
-                    to: edge.target,
-                    font: {
-                      color: '#666'
-                    },
-                    title: `
-                      <div class="tooltip-fields">
-                        <div>边类型：</div>
-                        <div>${edge.label}</div>
-                      </div>
-                      <div class="tooltip-fields">
-                        <div>边ID：</div>
-                        <div>${edge.id}</div>
-                      </div>
-                      ${Object.entries(edge.properties)
-                        .map(([key, value]) => {
-                          return `<div class="tooltip-fields">
-                                    <div>${key}: </div>
-                                    <div>${value}</div>
-                                  </div>
-                                `;
-                        })
-                        .join('')}
-                    `,
-                    color: {
-                      color: dataAnalyzeStore.edgeColorMappings[edge.label],
-                      highlight: dataAnalyzeStore.edgeColorMappings[edge.label],
-                      hover: dataAnalyzeStore.edgeColorMappings[edge.label]
-                    }
-                  });
-                }
-              );
-
-              dataAnalyzeStore.resetRightClickedGraphData();
-              switchIsPopover(false);
-            } else {
-              Message.error({
-                content: dataAnalyzeStore.errorInfo.expandGraphNode.message,
-                size: 'medium',
-                showCloseIcon: false
-              });
-            }
-          }}
-        >
-          展开
-        </div>
-        <div
-          className="graph-pop-over-item"
-          onClick={() => {
-            dataAnalyzeStore.switchShowFilterBoard(true);
-            switchIsPopover(false);
-          }}
-        >
-          查询
-        </div>
-        <div
-          className="graph-pop-over-item"
-          onClick={() => {
-            if (visNetwork !== null) {
-              visGraphNodes.remove([dataAnalyzeStore.rightClickedGraphData.id]);
-              dataAnalyzeStore.hideGraphNode(
-                dataAnalyzeStore.rightClickedGraphData.id
-              );
-              dataAnalyzeStore.resetRightClickedGraphData();
-              switchIsPopover(false);
-            }
-          }}
-        >
-          隐藏
-        </div>
-      </div>
-    );
-  }
-);
 
 export default GraphQueryResult;

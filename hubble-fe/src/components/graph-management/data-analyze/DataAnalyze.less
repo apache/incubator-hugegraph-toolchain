@@ -52,6 +52,25 @@
       }
     }
 
+    &-menu-item {
+      display: flex;
+      align-items: center;
+      // make it center
+      padding-left: 2px;
+
+      & > div {
+        margin-left: 16px;
+      }
+
+      &.expand {
+        padding-left: 0;
+
+        & > div {
+          margin-left: 7.8px;
+        }
+      }
+    }
+
     &-go-back {
       height: 47.7px;
       border-bottom: 1px solid #e0e0e0;
@@ -101,26 +120,6 @@
           display: block;
           margin: 0 auto;
         }
-      }
-    }
-
-    &-options {
-      height: 32px;
-      margin-bottom: 8px;
-      cursor: pointer;
-
-      &:hover {
-        background: #f5f5f5;
-      }
-
-      &.selected {
-        background: #f2f7ff;
-        color: #2b65ff;
-      }
-
-      & > span {
-        margin-left: 7.8px;
-        font-size: 14px;
       }
     }
 
@@ -658,6 +657,66 @@
       & > div:last-child {
         flex-basis: 75%;
       }
+
+      &-disabled {
+        color: #999;
+      }
+    }
+  }
+
+  &-graph-node-edit {
+    font-size: 14px;
+  }
+
+  &-dynamic-add-options {
+    margin-top: 4px;
+    font-size: 14px;
+    line-height: 30px;
+    color: #333;
+  }
+
+  &-dynamic-add-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32px;
+
+    & > div:first-child {
+      width: 84px;
+      line-height: 22px;
+      margin-right: 24px;
+      text-align: right;
+    }
+
+    &-with-expand {
+      align-items: flex-start;
+
+      & > div:first-child {
+        line-height: 32px;
+      }
+    }
+
+    &-expands {
+      display: flex;
+      flex-direction: column;
+      width: calc(100% - 180px);
+    }
+
+    &-expand {
+      display: flex;
+      margin-bottom: 32px;
+
+      &:first-child {
+        margin-bottom: 16px;
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      & > div {
+        flex-basis: 50%;
+        line-height: 32px;
+      }
     }
   }
 
@@ -691,7 +750,7 @@
 
   .graph-pop-over {
     width: 126px;
-    height: 104px;
+    // height: 104px;
     padding: 4px 0;
     background: #fff;
     border-radius: 3px;
@@ -839,6 +898,15 @@
   background-color: #fafafa;
   color: #ccc;
   cursor: not-allowed;
+}
+
+.new-fc-one-tooltip-inner > .data-analyze-sidebar-menu-item > div {
+  margin-left: 4px;
+}
+
+.new-fc-one-menu-inline-box .new-fc-one-menu-item-selected {
+  color: #2b65ff;
+  border-right: 2px solid #2b65ff;
 }
 
 .query-result-filter-options-property-filter
