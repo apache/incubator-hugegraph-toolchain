@@ -7,6 +7,44 @@
     <groupId>com.baidu.hugegraph</groupId>
     <artifactId>hugegraph-loader</artifactId>
     <version>0.10.3</version>
+    <packaging>jar</packaging>
+
+    <name>hugegraph-loader</name>
+    <url>https://github.com/hugegraph/hugegraph-loader</url>
+
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/hugegraph/hugegraph-loader</url>
+        <connection>https://github.com/hugegraph/hugegraph-loader</connection>
+        <developerConnection>https://github.com/hugegraph/hugegraph-loader
+        </developerConnection>
+    </scm>
+    <developers>
+        <developer>
+            <name>lizhangmei</name>
+            <email>lizhangmei@baidu.com</email>
+        </developer>
+        <developer>
+            <name>zhoney</name>
+            <email>zhangyi89817@126.com</email>
+        </developer>
+        <developer>
+            <name>liningrui</name>
+            <email>liningrui@vip.qq.com</email>
+        </developer>
+    </developers>
 
     <properties>
         <release.name>hugegraph-loader</release.name>
@@ -285,6 +323,53 @@
             <properties>
                 <test-classes>**/JDBCLoadTest.java</test-classes>
             </properties>
+        </profile>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>2.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>2.9.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

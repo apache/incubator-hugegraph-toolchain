@@ -129,7 +129,7 @@ public final class Printer {
         System.err.println(formatMsg);
     }
 
-    public static void printError(String message, RuntimeException e) {
+    public static void printError(String message, Throwable e) {
         String formatMsg;
         if (!StringUtils.isEmpty(e.getMessage())) {
             formatMsg = String.format("%s, cause: %s", message, e.getMessage());
