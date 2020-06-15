@@ -19,8 +19,10 @@
 
 package com.baidu.hugegraph.loader.mapping;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +30,7 @@ import com.baidu.hugegraph.api.graph.structure.UpdateStrategy;
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -84,6 +87,35 @@ public abstract class ElementMapping implements Checkable {
                                 "The value in value_mapping can't be null");
             });
         });
+    }
+
+    public void checkFieldsValid(InputSource source) {
+        if (source.header() == null) {
+            return;
+        }
+        List<String> header = Arrays.asList(source.header());
+        if (!this.selectedFields.isEmpty()) {
+            E.checkArgument(header.containsAll(this.selectedFields),
+                            "The all keys %s of selected must be existed " +
+                            "in header %s", this.selectedFields, header);
+        }
+        if (!this.ignoredFields.isEmpty()) {
+            E.checkArgument(header.containsAll(this.ignoredFields),
+                            "The all keys %s of ignored must be existed "+
+                            "in header %s", this.ignoredFields, header);
+        }
+        if (!this.mappingFields.isEmpty()) {
+            E.checkArgument(header.containsAll(this.mappingFields.keySet()),
+                            "The all keys %s of field_mapping must be " +
+                            "existed in header",
+                            this.mappingFields.keySet(), header);
+        }
+        if (!this.mappingValues.isEmpty()) {
+            E.checkArgument(header.containsAll(this.mappingValues.keySet()),
+                            "The all keys %s of value_mapping must be " +
+                            "existed in header",
+                            this.mappingValues.keySet(), header);
+        }
     }
 
     public String label() {

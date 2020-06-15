@@ -120,13 +120,13 @@ public class HDFSUtil implements IOUtil {
     }
 
     @Override
-    public void move(String srcPath, String destPath) {
+    public void copy(String srcPath, String destPath) {
         try {
             FileUtil.copy(new File(srcPath), this.hdfs, new Path(destPath),
                           false, this.conf);
         } catch (IOException e) {
             throw new RuntimeException(String.format(
-                      "Failed to move file '%s' to '%s'", srcPath, destPath));
+                      "Failed to copy file '%s' to '%s'", srcPath, destPath));
         }
     }
 

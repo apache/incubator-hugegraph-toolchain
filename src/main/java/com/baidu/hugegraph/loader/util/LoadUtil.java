@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.util;
 
 import java.io.File;
+import java.lang.reflect.UndeclaredThrowableException;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -53,5 +54,19 @@ public final class LoadUtil {
     public static void exitWithUsage(JCommander commander, int code) {
         commander.usage();
         System.exit(code);
+    }
+
+    public static RuntimeException targetRuntimeException(Throwable t) {
+        Throwable e;
+        if (t instanceof UndeclaredThrowableException) {
+            e = ((UndeclaredThrowableException) t).getUndeclaredThrowable()
+                                                  .getCause();
+        } else {
+            e = t;
+        }
+        if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
+        }
+        return new RuntimeException(e);
     }
 }

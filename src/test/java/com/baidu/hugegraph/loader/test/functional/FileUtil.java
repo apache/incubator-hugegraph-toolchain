@@ -93,12 +93,12 @@ public class FileUtil implements IOUtil {
     }
 
     @Override
-    public void move(String srcPath, String destPath) {
+    public void copy(String srcPath, String destPath) {
         try {
-            FileUtils.moveFile(new File(srcPath), new File(destPath));
+            FileUtils.copyFile(new File(srcPath), new File(destPath));
         } catch (IOException e) {
             throw new RuntimeException(String.format(
-                      "Failed to move file '%s' to '%s'", srcPath, destPath));
+                      "Failed to copy file '%s' to '%s'", srcPath, destPath));
         }
     }
 

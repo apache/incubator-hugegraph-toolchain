@@ -91,11 +91,15 @@ public final class LoadSummary {
     }
 
     public void startTimer() {
-        this.totalTimer.start();
+        if (!this.totalTimer.isStarted()) {
+            this.totalTimer.start();
+        }
     }
 
     public void stopTimer() {
-        this.totalTimer.stop();
+        if (!this.totalTimer.isStopped()) {
+            this.totalTimer.stop();
+        }
     }
 
     public long loadRate(ElemType type) {

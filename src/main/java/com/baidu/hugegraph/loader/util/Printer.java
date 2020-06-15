@@ -130,8 +130,12 @@ public final class Printer {
     }
 
     public static void printError(String message, Throwable e) {
-        String formatMsg = String.format("%s, cause: %s",
-                                         message, e.getMessage());
+        String formatMsg;
+        if (!StringUtils.isEmpty(e.getMessage())) {
+            formatMsg = String.format("%s, cause: %s", message, e.getMessage());
+        } else {
+            formatMsg = String.format("%s, please see log for detail", message);
+        }
         LOG.error(formatMsg, e);
         // Print an empty line
         System.err.println();

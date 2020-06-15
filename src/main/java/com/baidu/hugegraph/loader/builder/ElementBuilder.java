@@ -162,6 +162,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
     private void customizeId(VertexLabel vertexLabel, Vertex vertex,
                              String idField, Object idValue) {
+        E.checkArgumentNotNull(idField, "The vertex id field can't be null");
+        E.checkArgumentNotNull(idValue, "The vertex id value can't be null");
         IdStrategy idStrategy = vertexLabel.idStrategy();
         if (idStrategy.isCustomizeString()) {
             String id = (String) idValue;
@@ -576,6 +578,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
         @Override
         public List<Vertex> buildVertices(boolean withProperty) {
+            E.checkArgument(this.pkValues != null,
+                            "The primary values shouldn't be null");
             List<Vertex> vertices = new ArrayList<>(this.pkValues.size());
             for (Object pkValue : this.pkValues) {
                 pkValue = convertPropertyValue(this.pkName, pkValue);

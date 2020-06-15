@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
@@ -179,7 +180,12 @@ public class HDFSFileReader extends FileReader {
             }
             byte[] bytes;
             try {
-                bytes = this.hdfs.getFileChecksum(this.path).getBytes();
+                FileChecksum checksum = this.hdfs.getFileChecksum(this.path);
+                if (checksum == null) {
+                    throw new LoadException("The checksum of HDFS path '%s' " +
+                                            "is null", this.path);
+                }
+                bytes = checksum.getBytes();
             } catch (IOException e) {
                 throw new LoadException("Failed to calculate checksum " +
                                         "for HDFS path '%s'", e, this.path);
