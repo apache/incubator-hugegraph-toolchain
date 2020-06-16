@@ -45,8 +45,6 @@ public class PropertyKeyEntity implements SchemaEntity, Timefiable {
     @JsonProperty("cardinality")
     private Cardinality cardinality;
 
-    // TODO: add aggregateType
-
     @JsonProperty("create_time")
     private Date createTime;
 

@@ -89,6 +89,7 @@ public class SchemaController extends BaseController {
             Map<String, String> properties = new LinkedHashMap<>();
             this.fillProperties(properties, entity, propertyKeys);
             vertex.put("properties", properties);
+            vertex.put("~style", entity.getStyle());
             vertices.add(vertex);
         }
 
@@ -110,6 +111,7 @@ public class SchemaController extends BaseController {
             Map<String, String> properties = new LinkedHashMap<>();
             this.fillProperties(properties, entity, propertyKeys);
             edge.put("properties", properties);
+            edge.put("~style", entity.getStyle());
             edges.add(edge);
         }
         return new SchemaView(vertices, edges);

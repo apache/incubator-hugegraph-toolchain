@@ -25,7 +25,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.baidu.hugegraph.advisor.CustomInterceptor;
+import com.baidu.hugegraph.handler.CustomInterceptor;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {

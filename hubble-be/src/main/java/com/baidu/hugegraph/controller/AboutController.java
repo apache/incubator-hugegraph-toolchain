@@ -28,8 +28,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.baidu.hugegraph.advisor.MessageSourceHandler;
 import com.baidu.hugegraph.common.Constant;
+import com.baidu.hugegraph.handler.MessageSourceHandler;
 import com.baidu.hugegraph.license.LicenseVerifier;
 import com.baidu.hugegraph.util.Bytes;
 
@@ -45,7 +45,7 @@ public class AboutController extends BaseController {
         LicenseVerifier verifier = LicenseVerifier.instance();
         Map<String, Object> about = new LinkedHashMap<>();
         about.put("name", Constant.SERVER_NAME);
-        about.put("version", "1.2.0");
+        about.put("version", "1.3.0");
         about.put("edition", verifier.edition());
         about.put("allowed_graphs", verifier.allowedGraphs());
         long datasize = verifier.allowedDataSize();

@@ -20,8 +20,11 @@
 package com.baidu.hugegraph.entity.query;
 
 import java.util.List;
+import java.util.Set;
 
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
@@ -49,6 +52,26 @@ public class AdjacentQuery {
 
     @JsonProperty("conditions")
     private List<Condition> conditions;
+
+    @JsonProperty("adjacent_vertices")
+    private Set<String> adjacentVertices;
+
+    @JsonProperty("adjacent_edges")
+    private Set<String> adjacentEdges;
+
+    public boolean retainVertex(Vertex vertex) {
+        if (this.adjacentVertices == null) {
+            return true;
+        }
+        return !this.adjacentVertices.contains(vertex.id().toString());
+    }
+
+    public boolean retainEdge(Edge edge) {
+        if (this.adjacentEdges == null) {
+            return true;
+        }
+        return !this.adjacentEdges.contains(edge.id());
+    }
 
     @Data
     @NoArgsConstructor

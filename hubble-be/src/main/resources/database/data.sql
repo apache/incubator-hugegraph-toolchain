@@ -1,5 +1,5 @@
 SELECT 1;
--- INSERT INTO `graph_connection`(name, graph, host, port, create_time) VALUES ('first_connection', 'hugegraph', 'localhost', 8080, sysdate);
+-- INSERT INTO `graph_connection`(name, graph, host, port, timeout, create_time) VALUES ('s', 'hugegraph', 'localhost', 8080, 60, sysdate);
 
 -- INSERT INTO `gremlin_collection`(name, content, create_time) VALUES ('first_gremlin', 'g.V().limit(10)', sysdate);
 

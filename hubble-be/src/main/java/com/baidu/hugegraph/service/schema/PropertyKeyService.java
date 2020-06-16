@@ -221,7 +221,7 @@ public class PropertyKeyService extends SchemaService {
         removeBatch(names, client, consumer, SchemaType.PROPERTY_KEY);
     }
 
-    private static PropertyKeyEntity convert(PropertyKey propertyKey) {
+    public static PropertyKeyEntity convert(PropertyKey propertyKey) {
         if (propertyKey == null) {
             return null;
         }
@@ -233,8 +233,8 @@ public class PropertyKeyService extends SchemaService {
                                 .build();
     }
 
-    private static PropertyKey convert(PropertyKeyEntity entity,
-                                       HugeClient client) {
+    public static PropertyKey convert(PropertyKeyEntity entity,
+                                      HugeClient client) {
         if (entity == null) {
             return null;
         }

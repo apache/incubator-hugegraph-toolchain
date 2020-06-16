@@ -21,6 +21,8 @@ package com.baidu.hugegraph.util;
 
 import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -33,6 +35,15 @@ public final class SerializeUtil {
         public void serialize(Long value, JsonGenerator generator,
                               SerializerProvider provider) throws IOException {
             generator.writeString(TimeUtil.readableTime(value));
+        }
+    }
+
+    public static class SizeSerializer extends JsonSerializer<Long> {
+
+        @Override
+        public void serialize(Long value, JsonGenerator generator,
+                              SerializerProvider provider) throws IOException {
+            generator.writeString(FileUtils.byteCountToDisplaySize(value));
         }
     }
 }

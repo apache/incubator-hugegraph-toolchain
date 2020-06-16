@@ -34,10 +34,13 @@ public class GremlinResult {
 
     @JsonProperty("type")
     private Type type;
+
     @JsonProperty("json_view")
     private JsonView jsonView;
+
     @JsonProperty("table_view")
     private TableView tableView;
+
     @JsonProperty("graph_view")
     private GraphView graphView;
 

@@ -28,6 +28,7 @@ import org.springframework.util.CollectionUtils;
 import com.baidu.hugegraph.config.ConfigListOption;
 import com.baidu.hugegraph.config.ConfigOption;
 import com.baidu.hugegraph.config.OptionHolder;
+import com.baidu.hugegraph.util.Bytes;
 import com.baidu.hugegraph.util.HubbleUtil;
 
 public class HubbleOptions extends OptionHolder {
@@ -146,7 +147,7 @@ public class HubbleOptions extends OptionHolder {
             new ConfigOption<>(
                     "gremlin.batch_query_ids",
                     "The ids count for every batch.",
-                    rangeInt(1, 500),
+                    rangeInt(1, 250),
                     100
             );
 
@@ -158,19 +159,35 @@ public class HubbleOptions extends OptionHolder {
                     500
             );
 
-    public static final ConfigOption<Integer> INDEXLABEL_REBUILD_TIMEOUT =
+    public static final ConfigOption<String> UPLOAD_FILE_LOCATION =
             new ConfigOption<>(
-                    "indexlabel.rebuild.timeout",
-                    "The timeout in seconds for waiting to create index label.",
-                    rangeInt(-1, Integer.MAX_VALUE),
-                    30
+                    "upload_file.location",
+                    "The location of uploaded files.",
+                    disallowEmpty(),
+                    "./upload-files"
             );
 
-    public static final ConfigOption<Integer> INDEXLABEL_REMOVE_TIMEOUT =
+    public static final ConfigListOption<String> UPLOAD_FILE_FORMAT_LIST =
+            new ConfigListOption<>(
+                    "upload_file.format_list",
+                    "The format white list available for uploading file.",
+                    null,
+                    "csv"
+            );
+
+    public static final ConfigOption<Long> UPLOAD_SINGLE_FILE_SIZE_LIMIT =
             new ConfigOption<>(
-                    "indexlabel.remove.timeout",
-                    "The timeout in seconds for waiting to remove index label.",
-                    rangeInt(-1, Integer.MAX_VALUE),
-                    30
+                    "upload_file.single_file_size_limit",
+                    "The single file size(MB) limit.",
+                    positiveInt(),
+                    1 * Bytes.GB
+            );
+
+    public static final ConfigOption<Long> UPLOAD_TOTAL_FILE_SIZE_LIMIT =
+            new ConfigOption<>(
+                    "upload_file.total_file_size_limit",
+                    "The total file size(MB) limit.",
+                    positiveInt(),
+                    10 * Bytes.GB
             );
 }

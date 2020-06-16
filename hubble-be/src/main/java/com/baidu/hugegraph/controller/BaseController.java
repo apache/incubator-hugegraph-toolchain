@@ -33,8 +33,8 @@ public abstract class BaseController {
     public static final String ORDER_ASC = "asc";
     public static final String ORDER_DESC = "desc";
 
-    public void checkIdSameAsBody(int id, Identifiable newEntity) {
-        Ex.check(newEntity.getId() != null, () -> id == newEntity.getId(),
+    public void checkIdSameAsBody(Object id, Identifiable newEntity) {
+        Ex.check(newEntity.getId() != null, () -> id.equals(newEntity.getId()),
                  "common.param.path-id-should-same-as-body",
                  id, newEntity.getId());
     }

@@ -21,5 +21,5 @@ package com.baidu.hugegraph.common;
 
 public interface Identifiable {
 
-    Integer getId();
+    Object getId();
 }

@@ -50,6 +50,8 @@ public final class Constant {
     public static final String EDITION_COMMUNITY = "community";
     public static final String EDITION_COMMERCIAL = "commercial";
 
+    public static final String MAPPING_FILE_NAME = "mapping.json";
+
     public static final int STATUS_OK = 200;
     public static final int STATUS_BAD_REQUEST = 400;
     public static final int STATUS_UNAUTHORIZED = 401;

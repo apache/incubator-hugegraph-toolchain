@@ -22,6 +22,7 @@ package com.baidu.hugegraph.util;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -46,5 +47,9 @@ public final class HubbleUtil {
             return false;
         }
         return c1 == null || CollectionUtils.isEqualCollection(c1, c2);
+    }
+
+    public static String generateSimpleId() {
+        return UUID.randomUUID().toString();
     }
 }

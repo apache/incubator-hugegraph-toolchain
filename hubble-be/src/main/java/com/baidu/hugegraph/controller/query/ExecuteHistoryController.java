@@ -42,15 +42,15 @@ public class ExecuteHistoryController extends GremlinController {
     private ExecuteHistoryService service;
 
     @GetMapping
-    public IPage<ExecuteHistory> listAll(@PathVariable("connId") int connId,
-                                         @RequestParam(name = "page_no",
-                                                       required = false,
-                                                       defaultValue = "1")
-                                         int pageNo,
-                                         @RequestParam(name = "page_size",
-                                                       required = false,
-                                                       defaultValue = "10")
-                                         int pageSize) {
+    public IPage<ExecuteHistory> list(@PathVariable("connId") int connId,
+                                      @RequestParam(name = "page_no",
+                                                    required = false,
+                                                    defaultValue = "1")
+                                      int pageNo,
+                                      @RequestParam(name = "page_size",
+                                                    required = false,
+                                                    defaultValue = "10")
+                                      int pageSize) {
         return this.service.list(connId, pageNo, pageSize);
     }
 

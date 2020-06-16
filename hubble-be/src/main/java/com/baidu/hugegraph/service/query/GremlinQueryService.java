@@ -140,8 +140,15 @@ public class GremlinQueryService {
             Path path = iter.next().getPath();
             List<Object> objects = path.objects();
             assert objects.size() == 3;
-            edges.add((Edge) objects.get(1));
-            vertices.add((Vertex) objects.get(2));
+            Edge edge = (Edge) objects.get(1);
+            Vertex vertex = (Vertex) objects.get(2);
+            // Filter vertices and edges that existed in query
+            if (query.retainEdge(edge)) {
+                edges.add(edge);
+            }
+            if (query.retainVertex(vertex)) {
+                vertices.add(vertex);
+            }
         }
         // Build graph view
         GraphView graphView = new GraphView(vertices, edges);
@@ -467,8 +474,16 @@ public class GremlinQueryService {
 
         Map<Object, Vertex> vertices = new HashMap<>(vertexIds.size());
         Iterables.partition(vertexIds, batchSize).forEach(batch -> {
-            List<Vertex> results = client.traverser().vertices(batch);
-            results.forEach(vertex -> vertices.put(vertex.id(), vertex));
+            List<String> escapedIds = batch.stream()
+                                           .map(GremlinUtil::escapeId)
+                                           .collect(Collectors.toList());
+            String ids = StringUtils.join(escapedIds, ",");
+            String gremlin = String.format("g.V(%s)", ids);
+            ResultSet resultSet = client.gremlin().gremlin(gremlin).execute();
+            for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext();) {
+                Vertex vertex = iter.next().getVertex();
+                vertices.put(vertex.id(), vertex);
+            }
         });
         return vertices;
     }

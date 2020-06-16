@@ -20,9 +20,12 @@
 package com.baidu.hugegraph.entity.schema;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -55,6 +58,16 @@ public interface SchemaLabelEntity extends SchemaEntity {
                    .filter(Property::isNullable)
                    .map(Property::getName)
                    .collect(Collectors.toSet());
+    }
+
+    @JsonIgnore
+    @SuppressWarnings("unchecked")
+    default Set<String> getNonNullableProps() {
+        if (this.getProperties() == null) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(CollectionUtils.subtract(this.getPropNames(),
+                                                      this.getNullableProps()));
     }
 
     @JsonIgnore

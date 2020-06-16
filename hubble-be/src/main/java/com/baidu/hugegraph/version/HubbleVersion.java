@@ -33,7 +33,7 @@ public final class HubbleVersion {
 
     // The second parameter of Version.of() is for IDE running without JAR
     public static final Version VERSION = Version.of(HubbleVersion.class,
-                                                     "1.2.0");
+                                                     "1.3.0");
 
     public static void check() {
         // Check version of hugegraph-common & hugegraph-client

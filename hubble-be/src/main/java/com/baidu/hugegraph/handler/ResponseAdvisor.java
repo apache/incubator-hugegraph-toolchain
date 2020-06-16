@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.advisor;
+package com.baidu.hugegraph.handler;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
