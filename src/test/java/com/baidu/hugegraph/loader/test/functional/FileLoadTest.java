@@ -2875,4 +2875,47 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(0, vertices.size());
         Assert.assertEquals(0, edges.size());
     }
+
+    @Test
+    public void testReadReachedMaxLines() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     "marko,29,Beijing",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,java,328",
+                     "ripple,java,199");
+
+        String[] args = new String[]{
+                "-f", structPath("read_reached_max_lines/struct.json"),
+                "-s", configPath("read_reached_max_lines/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--max-read-lines", "4",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(4, vertices.size());
+
+        args = new String[]{
+                "-f", structPath("read_reached_max_lines/struct.json"),
+                "-s", configPath("read_reached_max_lines/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--max-read-lines", "6",
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(6, vertices.size());
+    }
 }

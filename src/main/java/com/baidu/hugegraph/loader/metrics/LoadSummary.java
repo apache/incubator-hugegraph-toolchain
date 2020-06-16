@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.metrics;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -66,6 +67,22 @@ public final class LoadSummary {
         } else {
             this.edgeLoaded.add(count);
         }
+    }
+
+    public long totalReadLines() {
+        Collection<LoadMetrics> metricsList = this.inputMetricsMap.values();
+        long lines = 0L;
+        for (LoadMetrics metrics : metricsList) {
+            lines += metrics.readSuccess();
+            lines += metrics.readFailure();
+        }
+        return lines;
+    }
+
+    public long totalReadSuccess() {
+        return this.inputMetricsMap.values().stream()
+                                   .map(LoadMetrics::readSuccess)
+                                   .reduce(0L, Long::sum);
     }
 
     public long totalReadFailures() {
