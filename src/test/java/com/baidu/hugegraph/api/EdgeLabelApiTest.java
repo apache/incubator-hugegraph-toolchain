@@ -33,6 +33,7 @@ import com.baidu.hugegraph.structure.constant.Frequency;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -457,12 +458,6 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testAddEdgeLabelWithUserData() {
-        schema().vertexLabel("book")
-                .properties("name")
-                .primaryKeys("name")
-                .ifNotExist()
-                .create();
-
         EdgeLabel father = schema().edgeLabel("father")
                                    .link("person", "person")
                                    .properties("weight")
@@ -472,9 +467,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals(2, father.userdata().size());
         Assert.assertEquals("one-to-many",
                             father.userdata().get("multiplicity"));
-        long createTime = (long) father.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) father.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         EdgeLabel write = schema().edgeLabel("write")
                                   .link("person", "book")
@@ -487,8 +482,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals(2, write.userdata().size());
         Assert.assertEquals("many-to-many",
                             write.userdata().get("multiplicity"));
-        createTime = (long) write.userdata().get("~create_time");
-        now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        time = (String) write.userdata().get("~create_time");
+        createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
     }
 }

@@ -29,6 +29,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
 public class PropertyKeyTest extends BaseFuncTest {
@@ -54,9 +55,9 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
-        long createTime = (long) age.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) age.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         PropertyKey id = schema.propertyKey("id")
                                .userdata("length", 15)
@@ -65,9 +66,9 @@ public class PropertyKeyTest extends BaseFuncTest {
         // The same key user data will be overwritten
         Assert.assertEquals(2, id.userdata().size());
         Assert.assertEquals(18, id.userdata().get("length"));
-        createTime = (long) id.userdata().get("~create_time");
-        now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        time = (String) id.userdata().get("~create_time");
+        createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         PropertyKey sex = schema.propertyKey("sex")
                                 .userdata("range",
@@ -76,9 +77,9 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(2, sex.userdata().size());
         Assert.assertEquals(ImmutableList.of("male", "female"),
                             sex.userdata().get("range"));
-        createTime = (long) sex.userdata().get("~create_time");
-        now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        time = (String) sex.userdata().get("~create_time");
+        createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
     }
 
     @Test
@@ -89,9 +90,9 @@ public class PropertyKeyTest extends BaseFuncTest {
                                 .create();
         Assert.assertEquals(2, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
-        long createTime = (long) age.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) age.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         age = schema.propertyKey("age")
                     .userdata("min", 1)
@@ -100,7 +101,8 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(1, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
-        Assert.assertEquals(createTime, age.userdata().get("~create_time"));
+        time = (String) age.userdata().get("~create_time");
+        Assert.assertEquals(createTime, DateUtil.parse(time));
     }
 
     @Test
@@ -113,16 +115,17 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
-        long createTime = (long) age.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) age.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         age = schema.propertyKey("age")
                     .userdata("max", "")
                     .eliminate();
         Assert.assertEquals(2, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
-        Assert.assertEquals(createTime, age.userdata().get("~create_time"));
+        time = (String) age.userdata().get("~create_time");
+        Assert.assertEquals(createTime, DateUtil.parse(time));
     }
 
     @Test

@@ -71,9 +71,9 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(outVId, edge.sourceId());
         Assert.assertEquals(inVId, edge.targetId());
-        Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.date("2017-03-24"),
-                                    "city", "Hongkong");
+        String date = Utils.formatDate("2017-03-24");
+        Map<String, Object> props = ImmutableMap.of("date", date,
+                                                    "city", "Hongkong");
         Assert.assertEquals(props, edge.properties());
     }
 
@@ -131,9 +131,9 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(outVId, edge.sourceId());
         Assert.assertEquals(inVId, edge.targetId());
-        Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.date("2017-03-24"),
-                                    "city", "Hongkong");
+        String date = Utils.formatDate("2017-03-24");
+        Map<String, Object> props = ImmutableMap.of("date", date,
+                                                    "city", "Hongkong");
         Assert.assertEquals(props, edge.properties());
     }
 
@@ -280,9 +280,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, created.sourceId());
             Assert.assertEquals(software.id() + ":Software-" + i,
                                 created.targetId());
-            Map<String, Object> props = ImmutableMap.of(
-                                        "date", Utils.date("2017-03-24"),
-                                        "city", "Hongkong");
+            String date = Utils.formatDate("2017-03-24");
+            Map<String, Object> props = ImmutableMap.of("date", date,
+                                                        "city", "Hongkong");
             Assert.assertEquals(props, created.properties());
         }
 
@@ -294,8 +294,8 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, know.sourceId());
             Assert.assertEquals(person.id() + ":Person-" + (i + 50),
                                 know.targetId());
-            Map<String, Object> props = ImmutableMap.of("date",
-                                                        Utils.date("2017-03-24"));
+            String date = Utils.formatDate("2017-03-24");
+            Map<String, Object> props = ImmutableMap.of("date", date);
             Assert.assertEquals(props, know.properties());
         }
     }
@@ -374,9 +374,9 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, created.sourceId());
             Assert.assertEquals(software.id() + ":Software-" + i,
                                 created.targetId());
-            Map<String, Object> props = ImmutableMap.of(
-                                        "date", Utils.date("2017-03-24"),
-                                        "city", "Hongkong");
+            String date = Utils.formatDate("2017-03-24");
+            Map<String, Object> props = ImmutableMap.of("date", date,
+                                                        "city", "Hongkong");
             Assert.assertEquals(props, created.properties());
         }
 
@@ -388,8 +388,8 @@ public class EdgeApiTest extends BaseApiTest {
             Assert.assertEquals(person.id() + ":Person-" + i, know.sourceId());
             Assert.assertEquals(person.id() + ":Person-" + (i + 50),
                                 know.targetId());
-            Map<String, Object> props = ImmutableMap.of("date",
-                                                        Utils.date("2017-03-24"));
+            String date = Utils.formatDate("2017-03-24");
+            Map<String, Object> props = ImmutableMap.of("date", date);
             Assert.assertEquals(props, know.properties());
         }
     }
@@ -538,8 +538,7 @@ public class EdgeApiTest extends BaseApiTest {
             // TODO: id to be modified
             edgeAPI.get(edgeId);
         }, e -> {
-            String expect = String.format("Edge id must be formatted as 4~5 " +
-                                          "parts, but got 1 parts, '%s'",
+            String expect = String.format("edge with id '%s' does not exist",
                                           edgeId);
             Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
         });

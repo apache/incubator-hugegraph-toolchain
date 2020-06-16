@@ -64,7 +64,8 @@ public class VertexTest extends BaseFuncTest {
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("city", "Beijing");
-        props = ImmutableMap.of("name", "vadas", "age", 19, "city", "Beijing");
+        props = ImmutableMap.of("name", "vadas", "age", 19,
+                                "city", "Beijing");
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -96,16 +97,17 @@ public class VertexTest extends BaseFuncTest {
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
-        Map<String, Object> props = ImmutableMap.of("name", "vadas",
-                                                    "age", 19,
-                                                    "time", ImmutableList.of(
-                                                    Utils.date("2012-10-10")));
+        Map<String, Object> props = ImmutableMap.of(
+                                    "name", "vadas", "age", 19,
+                                    "time", ImmutableList.of(
+                                            Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2014-02-14");
-        props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of(Utils.date("2012-10-10"),
-                                                 Utils.date("2014-02-14")));
+        props = ImmutableMap.of("name", "vadas", "age", 19,
+                                "time", ImmutableList.of(
+                                        Utils.formatDate("2012-10-10"),
+                                        Utils.formatDate("2014-02-14")));
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -124,16 +126,17 @@ public class VertexTest extends BaseFuncTest {
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
-        Map<String, Object> props = ImmutableMap.of("name", "vadas",
-                                                    "age", 19,
-                                                    "time", ImmutableList.of(
-                                                    Utils.date("2012-10-10")));
+        Map<String, Object> props = ImmutableMap.of(
+                                    "name", "vadas", "age", 19,
+                                    "time", ImmutableList.of(
+                                            Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2014-02-14");
-        props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of(Utils.date("2012-10-10"),
-                                                 Utils.date("2014-02-14")));
+        props = ImmutableMap.of("name", "vadas", "age", 19,
+                                "time", ImmutableList.of(
+                                        Utils.formatDate("2012-10-10"),
+                                        Utils.formatDate("2014-02-14")));
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -152,16 +155,17 @@ public class VertexTest extends BaseFuncTest {
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
-        Map<String, Object> props = ImmutableMap.of("name", "vadas",
-                                                    "age", 19,
-                                                    "time", ImmutableList.of(
-                                                    Utils.date("2012-10-10")));
+        Map<String, Object> props = ImmutableMap.of(
+                                    "name", "vadas", "age", 19,
+                                    "time", ImmutableList.of(
+                                            Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2012-10-10");
-        props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of(Utils.date("2012-10-10"),
-                                                 Utils.date("2012-10-10")));
+        props = ImmutableMap.of("name", "vadas", "age", 19,
+                                "time", ImmutableList.of(
+                                        Utils.formatDate("2012-10-10"),
+                                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -180,15 +184,16 @@ public class VertexTest extends BaseFuncTest {
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
-        Map<String, Object> props = ImmutableMap.of("name", "vadas",
-                                                    "age", 19,
-                                                    "time", ImmutableList.of(
-                                                    Utils.date("2012-10-10")));
+        Map<String, Object> props = ImmutableMap.of(
+                                    "name", "vadas", "age", 19,
+                                    "time", ImmutableList.of(
+                                            Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2012-10-10");
-        props = ImmutableMap.of("name", "vadas", "age", 19, "time",
-                                ImmutableList.of(Utils.date("2012-10-10")));
+        props = ImmutableMap.of("name", "vadas", "age", 19,
+                                "time", ImmutableList.of(
+                                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
     }
 

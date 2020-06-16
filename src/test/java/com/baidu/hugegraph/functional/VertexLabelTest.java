@@ -30,6 +30,7 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
 public class VertexLabelTest extends BaseFuncTest {
@@ -54,9 +55,9 @@ public class VertexLabelTest extends BaseFuncTest {
                                    .create();
         Assert.assertEquals(2, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
-        long createTime = (long) player.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) player.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         VertexLabel runner = schema.vertexLabel("runner")
                                    .properties("name")
@@ -66,9 +67,9 @@ public class VertexLabelTest extends BaseFuncTest {
         // The same key user data will be overwritten
         Assert.assertEquals(2, runner.userdata().size());
         Assert.assertEquals("player", runner.userdata().get("super_vl"));
-        createTime = (long) runner.userdata().get("~create_time");
-        now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        time = (String) runner.userdata().get("~create_time");
+        createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
     }
 
     @Test
@@ -79,16 +80,17 @@ public class VertexLabelTest extends BaseFuncTest {
                                    .properties("name")
                                    .create();
         Assert.assertEquals(1, player.userdata().size());
-        long createTime = (long) player.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) player.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         player = schema.vertexLabel("player")
                        .userdata("super_vl", "person")
                        .append();
         Assert.assertEquals(2, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
-        Assert.assertEquals(createTime, player.userdata().get("~create_time"));
+        time = (String) player.userdata().get("~create_time");
+        Assert.assertEquals(createTime, DateUtil.parse(time));
     }
 
     @Test
@@ -103,16 +105,17 @@ public class VertexLabelTest extends BaseFuncTest {
         Assert.assertEquals(3, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
         Assert.assertEquals("picture1", player.userdata().get("icon"));
-        long createTime = (long) player.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) player.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         player = schema.vertexLabel("player")
                        .userdata("icon", "")
                        .eliminate();
         Assert.assertEquals(2, player.userdata().size());
         Assert.assertEquals("person", player.userdata().get("super_vl"));
-        Assert.assertEquals(createTime, player.userdata().get("~create_time"));
+        time = (String) player.userdata().get("~create_time");
+        Assert.assertEquals(createTime, DateUtil.parse(time));
     }
 
     @Test

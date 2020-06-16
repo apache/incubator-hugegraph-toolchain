@@ -147,8 +147,8 @@ public class VertexApiTest extends BaseApiTest {
         Vertex vertex = vertexAPI.create(log);
         Assert.assertEquals("log", vertex.label());
         Assert.assertEquals(123456, vertex.id());
-        Map<String, Object> props = ImmutableMap.of("date",
-                                                    Utils.date("2018-01-01"));
+        String date = Utils.formatDate("2018-01-01");
+        Map<String, Object> props = ImmutableMap.of("date", date);
         Assert.assertEquals(props, vertex.properties());
     }
 
@@ -168,8 +168,8 @@ public class VertexApiTest extends BaseApiTest {
         Assert.assertEquals("user", vertex.label());
         Assert.assertEquals("835e1153-9281-4957-8691-cf79258e90eb",
                             vertex.id());
-        Map<String, Object> props = ImmutableMap.of("date",
-                                                    Utils.date("2018-01-01"));
+        String date = Utils.formatDate("2018-01-01");
+        Map<String, Object> props = ImmutableMap.of("date", date);
         Assert.assertEquals(props, vertex.properties());
 
         // NOTE: must clean here due to type info

@@ -27,9 +27,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.baidu.hugegraph.date.SafeDateFormat;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.T;
@@ -40,9 +40,13 @@ import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert.ThrowableRunnable;
+import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
 public final class Utils {
+
+    private static final String DF = "yyyy-MM-dd HH:mm:ss.SSS";
+    private static final SafeDateFormat DATE_FORMAT = new SafeDateFormat(DF);
 
     public static void assertResponseError(int status, ThrowableRunnable run) {
         Assert.assertThrows(ServerException.class, run, (e) -> {
@@ -305,10 +309,14 @@ public final class Utils {
 
     public static long date(String date, String pattern) {
         try {
-            return DateUtils.parseDate(date, pattern).getTime();
+            return DateUtil.parse(date, pattern).getTime();
         } catch (ParseException e) {
             throw new RuntimeException(String.format(
                       "Failed to parse date '%s'", date));
         }
+    }
+
+    public static String formatDate(String date) {
+        return DATE_FORMAT.format(DateUtil.parse(date));
     }
 }

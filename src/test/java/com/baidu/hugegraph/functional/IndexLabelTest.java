@@ -29,6 +29,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
 public class IndexLabelTest extends BaseFuncTest {
@@ -57,9 +58,9 @@ public class IndexLabelTest extends BaseFuncTest {
                                         .create();
         Assert.assertEquals(2, personByCity.userdata().size());
         Assert.assertEquals("secondary", personByCity.userdata().get("type"));
-        long createTime = (long) personByCity.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) personByCity.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         IndexLabel personByAge = schema.indexLabel("personByAge")
                                        .onV("person")
@@ -71,9 +72,9 @@ public class IndexLabelTest extends BaseFuncTest {
                                        .create();
         Assert.assertEquals(2, personByAge.userdata().size());
         Assert.assertEquals("range", personByAge.userdata().get("type"));
-        createTime = (long) personByAge.userdata().get("~create_time");
-        now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        time = (String) personByAge.userdata().get("~create_time");
+        createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
     }
 
     @Test
@@ -88,17 +89,17 @@ public class IndexLabelTest extends BaseFuncTest {
                                         .ifNotExist()
                                         .create();
         Assert.assertEquals(1, personByCity.userdata().size());
-        long createTime = (long) personByCity.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) personByCity.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         personByCity = schema.indexLabel("personByCity")
                              .userdata("type", "secondary")
                              .append();
         Assert.assertEquals(2, personByCity.userdata().size());
         Assert.assertEquals("secondary", personByCity.userdata().get("type"));
-        Assert.assertEquals(createTime,
-                            personByCity.userdata().get("~create_time"));
+        time = (String) personByCity.userdata().get("~create_time");
+        Assert.assertEquals(createTime, DateUtil.parse(time));
     }
 
     @Test
@@ -117,17 +118,17 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals(3, personByCity.userdata().size());
         Assert.assertEquals("secondary", personByCity.userdata().get("type"));
         Assert.assertEquals("picture", personByCity.userdata().get("icon"));
-        long createTime = (long) personByCity.userdata().get("~create_time");
-        long now = new Date().getTime();
-        Assert.assertTrue(createTime <= now);
+        String time = (String) personByCity.userdata().get("~create_time");
+        Date createTime = DateUtil.parse(time);
+        Assert.assertTrue(createTime.before(DateUtil.now()));
 
         personByCity = schema.indexLabel("personByCity")
                              .userdata("type", "secondary")
                              .eliminate();
         Assert.assertEquals(2, personByCity.userdata().size());
         Assert.assertEquals("picture", personByCity.userdata().get("icon"));
-        Assert.assertEquals(createTime,
-                            personByCity.userdata().get("~create_time"));
+        time = (String) personByCity.userdata().get("~create_time");
+        Assert.assertEquals(createTime, DateUtil.parse(time));
     }
 
     @Test
