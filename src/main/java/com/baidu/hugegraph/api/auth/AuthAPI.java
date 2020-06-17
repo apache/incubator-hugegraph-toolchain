@@ -17,31 +17,36 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure;
+package com.baidu.hugegraph.api.auth;
 
-import java.util.Objects;
+import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.auth.AuthElement;
 
-public abstract class Element {
+public abstract class AuthAPI extends API {
 
-    public abstract String type();
+    private static final String PATH = "graphs/%s/auth/%s";
 
-    public abstract Object id();
-
-    @Override
-    public int hashCode() {
-        return this.id().hashCode();
+    public AuthAPI(RestClient client, String graph) {
+        super(client);
+        this.path(PATH, graph, this.type());
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof Element)) {
-            return false;
+    public static String formatEntityId(Object id) {
+        if (id == null) {
+            return null;
+        } else if (id instanceof AuthElement) {
+            id = ((AuthElement) id).id();
         }
-        return Objects.equals(this.id(), ((Element) other).id());
+        return String.valueOf(id);
     }
 
-    @Override
-    public String toString() {
-        return String.format("%s(type %s)", this.id(), this.type());
+    public static String formatRelationId(Object id) {
+        if (id == null) {
+            return null;
+        } else if (id instanceof AuthElement) {
+            id = ((AuthElement) id).id();
+        }
+        return String.valueOf(id);
     }
 }

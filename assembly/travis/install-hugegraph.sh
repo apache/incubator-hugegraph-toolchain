@@ -2,6 +2,8 @@
 
 set -ev
 
+TRAVIS_DIR=`dirname $0`
+
 if [ $# -ne 1 ]; then
     echo "Must pass base branch name of pull request"
     exit 1
@@ -12,13 +14,13 @@ HUGEGRAPH_BRANCH=$CLIENT_BRANCH
 
 HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
 
-git clone $HUGEGRAPH_GIT_URL || exit 1
+git clone $HUGEGRAPH_GIT_URL
 
 cd hugegraph
 
-git checkout $HUGEGRAPH_BRANCH || exit 1
+git checkout $HUGEGRAPH_BRANCH
 
-mvn package -DskipTests || exit 1
+mvn package -DskipTests
 
 mv hugegraph-*.tar.gz ../
 
@@ -30,6 +32,10 @@ tar -zxvf hugegraph-*.tar.gz
 
 cd hugegraph-*
 
-bin/init-store.sh || exit 1
+cp ../$TRAVIS_DIR/conf/* conf
 
-bin/start-hugegraph.sh || exit 1
+echo -e "pa" | bin/init-store.sh
+
+bin/start-hugegraph.sh
+
+cd ../

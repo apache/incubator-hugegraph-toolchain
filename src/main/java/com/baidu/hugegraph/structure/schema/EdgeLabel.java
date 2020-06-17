@@ -29,8 +29,10 @@ import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties({"index_labels", "status", "ttl"})
 public class EdgeLabel extends SchemaLabel {
 
     @JsonProperty("frequency")

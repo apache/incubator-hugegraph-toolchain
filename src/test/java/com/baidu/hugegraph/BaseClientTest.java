@@ -9,6 +9,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
+import com.baidu.hugegraph.driver.AuthManager;
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GraphsManager;
 import com.baidu.hugegraph.driver.GremlinManager;
@@ -30,18 +31,24 @@ import com.google.common.collect.ImmutableMap;
 
 public class BaseClientTest {
 
-    protected static String BASE_URL = "http://127.0.0.1:8080";
-    protected static String GRAPH = "hugegraph";
+    protected static final String BASE_URL = "http://127.0.0.1:8080";
+    protected static final String GRAPH = "hugegraph";
+    protected static final String USERNAME = "admin";
+    protected static final String PASSWORD = "pa";
+    protected static final int TIMEOUT = 10;
 
     private static HugeClient client;
 
     protected static HugeClient open() {
-        return new HugeClient(BASE_URL, GRAPH);
+        client = new HugeClient(BASE_URL, GRAPH, USERNAME, PASSWORD);
+        return client;
     }
 
     @BeforeClass
     public static void init() {
-        client = open();
+        if (client == null) {
+            open();
+        }
     }
 
     @AfterClass
@@ -72,6 +79,11 @@ public class BaseClientTest {
     public static TaskManager task() {
         Assert.assertNotNull("Not opened client", client);
         return client.task();
+    }
+
+    public static AuthManager auth() {
+        Assert.assertNotNull("Not opened client", client);
+        return client.auth();
     }
 
     public static GraphsManager graphs() {

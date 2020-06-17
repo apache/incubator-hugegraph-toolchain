@@ -95,11 +95,18 @@ public class BaseApiTest extends BaseClientTest {
     protected static RebuildAPI rebuildAPI;
     protected static GraphsAPI graphsAPI;
 
+    protected static RestClient initClient() {
+        client = new RestClient(BASE_URL, USERNAME, PASSWORD, TIMEOUT);
+        return client;
+    }
+
     @BeforeClass
     public static void init() {
         BaseClientTest.init();
+        if (client == null) {
+            initClient();
+        }
 
-        client = new RestClient(BASE_URL, 5);
         versionAPI = new VersionAPI(client);
         client.apiVersion(VersionUtil.Version.of(versionAPI.get().get("api")));
 
@@ -141,6 +148,7 @@ public class BaseApiTest extends BaseClientTest {
 
         clearData();
         client.close();
+        client = null;
 
         BaseClientTest.clear();
     }
@@ -189,7 +197,7 @@ public class BaseApiTest extends BaseClientTest {
     }
 
     protected static void waitUntilTaskCompleted(long taskId) {
-        taskAPI.waitUntilTaskSuccess(taskId, 5L);
+        taskAPI.waitUntilTaskSuccess(taskId, TIMEOUT);
     }
 
     protected static void waitUntilTaskCompleted(long taskId, long timeout) {

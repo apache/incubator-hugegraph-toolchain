@@ -17,31 +17,38 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure;
+package com.baidu.hugegraph.structure.auth;
 
-import java.util.Objects;
+public enum HugePermission {
 
-public abstract class Element {
+    NONE(0x00),
 
-    public abstract String type();
+    READ(0x01),
+    WRITE(0x02),
+    DELETE(0x04),
+    EXECUTE(0x08),
 
-    public abstract Object id();
+    ANY(0x7f);
 
-    @Override
-    public int hashCode() {
-        return this.id().hashCode();
+    private final byte code;
+
+    HugePermission(int code) {
+        assert code < 256;
+        this.code = (byte) code;
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof Element)) {
-            return false;
+    public byte code() {
+        return this.code;
+    }
+
+    public String string() {
+        return this.name().toLowerCase();
+    }
+
+    public boolean match(HugePermission other) {
+        if (other == ANY) {
+            return this == ANY;
         }
-        return Objects.equals(this.id(), ((Element) other).id());
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s(type %s)", this.id(), this.type());
+        return (this.code & other.code) != 0;
     }
 }

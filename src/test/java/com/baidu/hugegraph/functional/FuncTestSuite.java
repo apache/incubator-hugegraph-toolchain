@@ -32,6 +32,7 @@ import org.junit.runners.Suite;
     EdgeTest.class,
     BatchInsertTest.class,
     GraphManagerTest.class,
+    AuthManagerTest.class,
     TraverserManagerTest.class,
     MetricsManagerTest.class
 })

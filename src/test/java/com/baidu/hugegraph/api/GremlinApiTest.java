@@ -194,18 +194,16 @@ public class GremlinApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             client().post("gremlin", "{");
         }, e -> {
-            String msg = "body could not be parsed";
-            Assert.assertTrue(e.getMessage().contains(msg));
+            Assert.assertContains("body could not be parsed", e.getMessage());
         });
 
         GremlinRequest request = new GremlinRequest("g.V2()");
         Assert.assertThrows(ServerException.class, () -> {
             gremlin().execute(request);
         }, e -> {
-            String msg = "No signature of method: org.apache.tinkerpop." +
-                         "gremlin.process.traversal.dsl.graph." +
-                         "GraphTraversalSource.V2()";
-            Assert.assertTrue(e.getMessage().contains(msg));
+            Assert.assertContains("No signature of method: ", e.getMessage());
+            Assert.assertContains(".V2() is applicable for argument types: ()",
+                                  e.getMessage());
         });
     }
 
@@ -216,7 +214,7 @@ public class GremlinApiTest extends BaseApiTest {
             gremlin().execute(request);
         }, e -> {
             String msg = "Not allowed to call System.exit() via Gremlin";
-            Assert.assertTrue(e.getMessage().contains(msg));
+            Assert.assertContains(msg, e.getMessage());
         });
     }
 }

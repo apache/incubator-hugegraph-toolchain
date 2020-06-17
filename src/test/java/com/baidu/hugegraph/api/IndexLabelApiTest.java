@@ -55,6 +55,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         BaseApiTest.initEdgeLabel();
     }
 
+    @Override
     @After
     public void teardown() throws Exception {
         List<Long> taskIds = new ArrayList<>();
@@ -415,7 +416,7 @@ public class IndexLabelApiTest extends BaseApiTest {
             indexLabelAPI.create(personByAge1).indexLabel();
         }, (e) -> {
             String msg = "Not support userdata until api version 0.50";
-            Assert.assertTrue(e.getMessage().contains(msg));
+            Assert.assertContains(msg, e.getMessage());
         });
 
         IndexLabel personByAge2 = schema().indexLabel("personByAge2")
@@ -426,8 +427,8 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertThrows(NotSupportException.class, () -> {
             indexLabelAPI.append(personByAge2);
         }, (e) -> {
-            String msg = "action append on index label";
-            Assert.assertTrue(e.getMessage().contains(msg));
+            Assert.assertContains("action append on index label",
+                                  e.getMessage());
         });
 
         IndexLabel personByAge3 = schema().indexLabel("personByAge3")
@@ -438,8 +439,8 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertThrows(NotSupportException.class, () -> {
             indexLabelAPI.eliminate(personByAge3);
         }, (e) -> {
-            String msg = "action eliminate on index label";
-            Assert.assertTrue(e.getMessage().contains(msg));
+            Assert.assertContains("action eliminate on index label",
+                                  e.getMessage());
         });
 
         client().apiVersion(originApiVersion);

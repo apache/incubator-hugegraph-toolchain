@@ -24,10 +24,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class SchemaElement extends Element {
 
     @JsonProperty("id")
@@ -48,6 +46,7 @@ public abstract class SchemaElement extends Element {
         this.checkExist = true;
     }
 
+    @Override
     public Long id() {
         return this.id;
     }

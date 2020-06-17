@@ -17,31 +17,30 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure;
+package com.baidu.hugegraph.structure.auth;
 
-import java.util.Objects;
+import java.util.Date;
 
-public abstract class Element {
+import com.baidu.hugegraph.structure.Element;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    public abstract String type();
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public abstract class AuthElement extends Element {
 
-    public abstract Object id();
+    public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
 
-    @Override
-    public int hashCode() {
-        return this.id().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof Element)) {
-            return false;
-        }
-        return Objects.equals(this.id(), ((Element) other).id());
-    }
+    @JsonProperty("id")
+    protected Object id;
 
     @Override
-    public String toString() {
-        return String.format("%s(type %s)", this.id(), this.type());
+    public Object id() {
+        return this.id;
     }
+
+    public abstract Date createTime();
+
+    public abstract Date updateTime();
+
+    public abstract String creator();
 }

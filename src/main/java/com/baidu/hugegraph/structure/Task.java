@@ -77,43 +77,43 @@ public class Task {
     }
 
     public String name() {
-        return name;
+        return this.name;
     }
 
     public String status() {
-        return status;
+        return this.status;
     }
 
     public String callable() {
-        return callable;
+        return this.callable;
     }
 
     public long createTime() {
-        return create;
+        return this.create;
     }
 
     public long updateTime() {
-        return update;
+        return this.update;
     }
 
     public long progress() {
-        return progress;
+        return this.progress;
     }
 
     public long retries() {
-        return retries;
+        return this.retries;
     }
 
     public String input() {
-        return input;
+        return this.input;
     }
 
     public Object result() {
-        return result;
+        return this.result;
     }
 
     public String description() {
-        return description;
+        return this.description;
     }
 
     public Set<Long> dependencies() {
@@ -163,6 +163,11 @@ public class Task {
         }
 
         return map;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Task(id=%s)", this.id);
     }
 
     public static final class P {

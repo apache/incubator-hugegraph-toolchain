@@ -27,6 +27,13 @@ public enum HugeType {
     PROPERTY_KEY(3, "propertykeys"),
     INDEX_LABEL(4, "indexlabels"),
 
+    // Auth
+    TARGET(50, "targets"),
+    GROUP(51, "groups"),
+    USER(52, "users"),
+    ACCESS(53, "accesses"),
+    BELONG(54, "belongs"),
+
     // Data
     VERTEX(101, "vertices"),
     EDGE(120, "edges"),

@@ -48,9 +48,10 @@ public class HugeClient implements Closeable {
     private GraphManager graph;
     private GremlinManager gremlin;
     private TraverserManager traverser;
-    private VariablesManager variables;
+    private VariablesManager variable;
     private JobManager job;
     private TaskManager task;
+    private AuthManager auth;
     private MetricsManager metrics;
 
     public HugeClient(String url, String graph) {
@@ -118,16 +119,17 @@ public class HugeClient implements Closeable {
         this.graph = new GraphManager(client, graph);
         this.gremlin = new GremlinManager(client, graph, this.graph);
         this.traverser = new TraverserManager(client, this.graph);
-        this.variables = new VariablesManager(client, graph);
+        this.variable = new VariablesManager(client, graph);
         this.job = new JobManager(client, graph);
         this.task = new TaskManager(client, graph);
+        this.auth = new AuthManager(client, graph);
         this.metrics = new MetricsManager(client);
     }
 
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.38", "0.56",
+        VersionUtil.check(apiVersion, "0.38", "0.57",
                           "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
     }
@@ -153,7 +155,7 @@ public class HugeClient implements Closeable {
     }
 
     public VariablesManager variables() {
-        return this.variables;
+        return this.variable;
     }
 
     public JobManager job() {
@@ -162,6 +164,10 @@ public class HugeClient implements Closeable {
 
     public TaskManager task() {
         return this.task;
+    }
+
+    public AuthManager auth() {
+        return this.auth;
     }
 
     public MetricsManager metrics() {

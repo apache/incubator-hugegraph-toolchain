@@ -32,24 +32,29 @@ public class ServerException extends RuntimeException {
     private static final String[] EXCEPTION_KEYS = {"exception",
                                                     "Exception-Class"};
     private static final String[] MESSAGE_KEYS = {"message"};
-    private static final String[] CAUSE_KEYS = {"cause", "stackTrace"};
+    private static final String[] CAUSE_KEYS = {"cause", "exceptions"};
+    private static final String[] TRACE_KEYS = {"trace", "stackTrace"};
+
 
     private int status = 0;
     private String exception;
     private String message;
     private String cause;
+    private Object trace;
 
     public static ServerException fromResponse(Response response) {
         RestResult rs = new RestResult(response);
         ServerException exception = new ServerException(rs.content());
+        exception.status(response.getStatus());
         try {
             @SuppressWarnings("unchecked")
-            Map<String, String> json = rs.readObject(Map.class);
-            exception.exception = getByKeys(json, EXCEPTION_KEYS);
-            exception.message = getByKeys(json, MESSAGE_KEYS);
-            exception.cause = getByKeys(json, CAUSE_KEYS);
+            Map<String, Object> json = rs.readObject(Map.class);
+            exception.exception = (String) getByKeys(json, EXCEPTION_KEYS);
+            exception.message =  (String) getByKeys(json, MESSAGE_KEYS);
+            exception.cause =  (String) getByKeys(json, CAUSE_KEYS);
+            exception.trace = getByKeys(json, TRACE_KEYS);
         } catch (Exception ignored) {}
-        exception.status(response.getStatus());
+
         return exception;
     }
 
@@ -71,6 +76,10 @@ public class ServerException extends RuntimeException {
 
     public String cause() {
         return this.cause;
+    }
+
+    public Object trace() {
+        return this.trace;
     }
 
     @Override
@@ -101,7 +110,7 @@ public class ServerException extends RuntimeException {
         return (message != null) ? (s + ": " + message) : s;
     }
 
-    private static String getByKeys(Map<String, String> json, String[] keys) {
+    private static Object getByKeys(Map<String, Object> json, String[] keys) {
         for (String key : keys) {
             if (json.containsKey(key)) {
                 return json.get(key);
