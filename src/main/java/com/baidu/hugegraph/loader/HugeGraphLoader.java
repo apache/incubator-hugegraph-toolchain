@@ -213,7 +213,8 @@ public final class HugeGraphLoader {
         LOG.info("Start parsing and loading '{}'", struct);
         LoadMetrics metrics = this.context.summary().metrics(struct);
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context, struct);
-        int batchSize = this.context.options().batchSize;
+
+        final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
         for (boolean finished = false; !finished;) {
             try {
@@ -232,7 +233,11 @@ public final class HugeGraphLoader {
                 this.succeed = false;
                 return;
             }
-
+            // If readed max allowed lines, stop loading
+            boolean reachedMaxReadLines = this.reachedMaxReadLines();
+            if (reachedMaxReadLines) {
+                finished = true;
+            }
             if (lines.size() >= batchSize || finished) {
                 List<ParseTask> tasks = taskBuilder.build(lines);
                 for (ParseTask task : tasks) {
@@ -248,7 +253,12 @@ public final class HugeGraphLoader {
                     this.succeed = false;
                     return;
                 }
-
+                // TODO: stopped status should be success
+                if (reachedMaxReadLines) {
+                    LOG.warn("Read lines exceed limit, stopped loading tasks");
+                    this.context.stopLoading();
+                    return;
+                }
                 lines = new ArrayList<>(batchSize);
             }
         }
@@ -306,6 +316,14 @@ public final class HugeGraphLoader {
                 }
             }
         }
+    }
+
+    private boolean reachedMaxReadLines() {
+        final long maxReadLines = this.context.options().maxReadLines;
+        if (maxReadLines == -1L) {
+            return false;
+        }
+        return this.context.summary().totalReadLines() >= maxReadLines;
     }
 
     /**

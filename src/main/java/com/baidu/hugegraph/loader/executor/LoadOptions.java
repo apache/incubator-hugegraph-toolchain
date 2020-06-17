@@ -124,19 +124,19 @@ public final class LoadOptions {
 
     @Parameter(names = {"--max-read-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The maximum number of rows that read error " +
+               description = "The maximum number of lines that read error " +
                              "before exiting")
     public int maxReadErrors = 1;
 
     @Parameter(names = {"--max-parse-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The maximum number of rows that parse error " +
+               description = "The maximum number of lines that parse error " +
                              "before exiting")
     public int maxParseErrors = 1;
 
     @Parameter(names = {"--max-insert-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
-               description = "The maximum number of rows that insert error " +
+               description = "The maximum number of lines that insert error " +
                              "before exiting")
     public int maxInsertErrors = 500;
 
@@ -154,6 +154,12 @@ public final class LoadOptions {
                validateWith = {PositiveValidator.class},
                description = "Setting the interval time before retrying")
     public int retryInterval = 10;
+
+    @Parameter(names = {"--max-read-lines"}, arity = 1,
+               validateWith = {PositiveValidator.class},
+               description = "The maximum number of read lines, when reached " +
+                             "this number, the load task will stop")
+    public long maxReadLines = -1L;
 
     @Parameter(names = {"--dry-run"}, arity = 1,
                description = "Dry run means that only parse but doesn't load")
