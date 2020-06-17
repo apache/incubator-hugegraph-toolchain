@@ -159,7 +159,7 @@ public final class LoadOptions {
                validateWith = {PositiveValidator.class},
                description = "The maximum number of read lines, when reached " +
                              "this number, the load task will stop")
-    public long maxReadLines = -1;
+    public long maxReadLines = -1L;
 
     @Parameter(names = {"--dry-run"}, arity = 1,
                description = "Dry run means that only parse but doesn't load")

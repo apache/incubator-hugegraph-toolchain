@@ -320,7 +320,7 @@ public final class HugeGraphLoader {
 
     private boolean reachedMaxReadLines() {
         final long maxReadLines = this.context.options().maxReadLines;
-        if (maxReadLines == -1) {
+        if (maxReadLines == -1L) {
             return false;
         }
         return this.context.summary().totalReadLines() >= maxReadLines;
