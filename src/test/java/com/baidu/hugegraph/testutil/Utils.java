@@ -21,6 +21,7 @@ package com.baidu.hugegraph.testutil;
 
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -318,5 +319,9 @@ public final class Utils {
 
     public static String formatDate(String date) {
         return DATE_FORMAT.format(DateUtil.parse(date));
+    }
+
+    public static String formatDate(Date date) {
+        return DATE_FORMAT.format(date);
     }
 }

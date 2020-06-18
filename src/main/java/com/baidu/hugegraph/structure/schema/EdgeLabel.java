@@ -29,10 +29,8 @@ import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties({"index_labels", "status", "ttl"})
 public class EdgeLabel extends SchemaLabel {
 
     @JsonProperty("frequency")
@@ -43,12 +41,18 @@ public class EdgeLabel extends SchemaLabel {
     private String targetLabel;
     @JsonProperty("sort_keys")
     private List<String> sortKeys;
+    @JsonProperty("ttl")
+    private long ttl;
+    @JsonProperty("ttl_start_time")
+    private String ttlStartTime;
 
     @JsonCreator
     public EdgeLabel(@JsonProperty("name") String name) {
         super(name);
         this.frequency = Frequency.DEFAULT;
         this.sortKeys = new CopyOnWriteArrayList<>();
+        this.ttl = 0L;
+        this.ttlStartTime = null;
     }
 
     @Override
@@ -77,12 +81,28 @@ public class EdgeLabel extends SchemaLabel {
         return this.sortKeys;
     }
 
+    public long ttl() {
+        return this.ttl;
+    }
+
+    public String ttlStartTime() {
+        return this.ttlStartTime;
+    }
+
     @Override
     public String toString() {
         return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
-                             "sortKeys=%s, nullableKeys=%s, properties=%s}",
+                             "sortKeys=%s, indexLabels=%s, nullableKeys=%s, " +
+                             "properties=%s, ttl=%s, ttlStartTime=%s, " +
+                             "status=%s}",
                              this.name, this.sourceLabel, this.targetLabel,
-                             this.sortKeys, this.nullableKeys, this.properties);
+                             this.sortKeys, this.indexLabels,
+                             this.nullableKeys, this.properties, this.ttl,
+                             this.ttlStartTime, this.status);
+    }
+
+    public EdgeLabelV53 switchV53() {
+        return new EdgeLabelV53(this);
     }
 
     public interface Builder extends SchemaBuilder<EdgeLabel> {
@@ -104,6 +124,10 @@ public class EdgeLabel extends SchemaLabel {
         Builder singleTime();
 
         Builder multiTimes();
+
+        Builder ttl(long ttl);
+
+        Builder ttlStartTime(String ttlStartTime);
 
         Builder enableLabelIndex(boolean enable);
 
@@ -211,6 +235,20 @@ public class EdgeLabel extends SchemaLabel {
             return this;
         }
 
+
+        @Override
+        public Builder ttl(long ttl) {
+            E.checkArgument(ttl >= 0L, "The ttl must >= 0, but got: %s", ttl);
+            this.edgeLabel.ttl = ttl;
+            return this;
+        }
+
+        @Override
+        public Builder ttlStartTime(String ttlStartTime) {
+            this.edgeLabel.ttlStartTime = ttlStartTime;
+            return this;
+        }
+
         @Override
         public Builder enableLabelIndex(boolean enable) {
             this.edgeLabel.enableLabelIndex = enable;
@@ -235,6 +273,69 @@ public class EdgeLabel extends SchemaLabel {
             E.checkArgument(this.edgeLabel.frequency == Frequency.DEFAULT,
                             "Not allowed to change frequency for " +
                             "edge label '%s'", this.edgeLabel.name);
+        }
+    }
+
+    public static class EdgeLabelV53 extends SchemaLabel {
+
+        @JsonProperty("frequency")
+        private Frequency frequency;
+        @JsonProperty("source_label")
+        private String sourceLabel;
+        @JsonProperty("target_label")
+        private String targetLabel;
+        @JsonProperty("sort_keys")
+        private List<String> sortKeys;
+
+        @JsonCreator
+        public EdgeLabelV53(@JsonProperty("name") String name) {
+            super(name);
+            this.frequency = Frequency.DEFAULT;
+            this.sortKeys = new CopyOnWriteArrayList<>();
+        }
+
+        private EdgeLabelV53(EdgeLabel edgeLabel) {
+            super(edgeLabel.name);
+            this.frequency = edgeLabel.frequency;
+            this.sortKeys = edgeLabel.sortKeys;
+            this.sourceLabel = edgeLabel.sourceLabel;
+            this.targetLabel = edgeLabel.targetLabel;
+            this.id = edgeLabel.id();
+            this.properties = edgeLabel.properties();
+            this.userdata = edgeLabel.userdata();
+            this.checkExist = edgeLabel.checkExist();
+            this.nullableKeys = edgeLabel.nullableKeys;
+            this.enableLabelIndex = edgeLabel.enableLabelIndex;
+        }
+
+        public Frequency frequency() {
+            return this.frequency;
+        }
+
+        public List<String> sortKeys() {
+            return this.sortKeys;
+        }
+
+        public String sourceLabel() {
+            return this.sourceLabel;
+        }
+
+        public String targetLabel() {
+            return this.targetLabel;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
+                                 "sortKeys=%s, nullableKeys=%s, properties=%s}",
+                                 this.name, this.sourceLabel, this.targetLabel,
+                                 this.sortKeys, this.nullableKeys,
+                                 this.properties);
+        }
+
+        @Override
+        public String type() {
+            return HugeType.EDGE_LABEL.string();
         }
     }
 }

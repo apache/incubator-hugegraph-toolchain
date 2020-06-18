@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -27,12 +28,15 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableMap;
 
 public class EdgeApiTest extends BaseApiTest {
@@ -249,6 +253,139 @@ public class EdgeApiTest extends BaseApiTest {
 
         Utils.assertResponseError(400, () -> {
             edgeAPI.create(edge);
+        });
+    }
+
+    @Test
+    public void testAddEdgeWithTtl() {
+        SchemaManager schema = schema();
+        schema.propertyKey("place").asText().ifNotExist().create();
+        schema.edgeLabel("read").link("person", "book")
+              .properties("place", "date")
+              .ttl(3000L)
+              .enableLabelIndex(true)
+              .ifNotExist()
+              .create();
+
+        Vertex baby = graph().addVertex(T.label, "person", "name", "Baby",
+                                        "age", 3, "city", "Beijing");
+        Vertex java = graph().addVertex(T.label, "book", T.id, "java",
+                                        "name", "Java in action");
+        Edge edge = baby.addEdge("read", java, "place", "library of school",
+                                 "date", "2019-12-23 12:00:00");
+
+        Edge result = graph().getEdge(edge.id());
+        Assert.assertEquals("read", result.label());
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("book", edge.targetLabel());
+        Assert.assertEquals(baby.id(), edge.sourceId());
+        Assert.assertEquals(java.id(), edge.targetId());
+        Map<String, Object> props = ImmutableMap.of("place",
+                                                    "library of school",
+                                                    "date",
+                                                    "2019-12-23 12:00:00.000");
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        result = graph().getEdge(edge.id());
+        Assert.assertEquals("read", result.label());
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("book", edge.targetLabel());
+        Assert.assertEquals(baby.id(), edge.sourceId());
+        Assert.assertEquals(java.id(), edge.targetId());
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        result = graph().getEdge(edge.id());
+        Assert.assertEquals("read", result.label());
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("book", edge.targetLabel());
+        Assert.assertEquals(baby.id(), edge.sourceId());
+        Assert.assertEquals(java.id(), edge.targetId());
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        Assert.assertThrows(ServerException.class, () -> {
+            graph().getEdge(edge.id());
+        }, e -> {
+            Assert.assertContains("edge with id", e.getMessage());
+            Assert.assertContains("does not exist", e.getMessage());
+        });
+    }
+
+    @Test
+    public void testAddEdgeWithTtlAndTtlStartTime() {
+        SchemaManager schema = schema();
+        schema.propertyKey("place").asText().ifNotExist().create();
+        schema.edgeLabel("borrow").link("person", "book")
+              .properties("place", "date")
+              .ttl(3000L)
+              .ttlStartTime("date")
+              .enableLabelIndex(true)
+              .ifNotExist()
+              .create();
+
+        Vertex baby = graph().addVertex(T.label, "person", "name", "Baby",
+                                        "age", 3, "city", "Beijing");
+        Vertex java = graph().addVertex(T.label, "book", T.id, "java",
+                                        "name", "Java in action");
+        long date = DateUtil.now().getTime() - 1000L;
+        String dateString = Utils.formatDate(new Date(date));
+        Edge edge = baby.addEdge("borrow", java, "place", "library of school",
+                                 "date", date);
+
+        Edge result = graph().getEdge(edge.id());
+        Assert.assertEquals("borrow", result.label());
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("book", edge.targetLabel());
+        Assert.assertEquals(baby.id(), edge.sourceId());
+        Assert.assertEquals(java.id(), edge.targetId());
+        Map<String, Object> props = ImmutableMap.of("place",
+                                                    "library of school",
+                                                    "date",
+                                                    dateString);
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        result = graph().getEdge(edge.id());
+        Assert.assertEquals("borrow", result.label());
+        Assert.assertEquals("person", edge.sourceLabel());
+        Assert.assertEquals("book", edge.targetLabel());
+        Assert.assertEquals(baby.id(), edge.sourceId());
+        Assert.assertEquals(java.id(), edge.targetId());
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        Assert.assertThrows(ServerException.class, () -> {
+            graph().getEdge(edge.id());
+        }, e -> {
+            Assert.assertContains("edge with id", e.getMessage());
+            Assert.assertContains("does not exist", e.getMessage());
         });
     }
 

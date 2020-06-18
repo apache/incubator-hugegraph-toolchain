@@ -35,7 +35,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties({"properties", "status"})
+@JsonIgnoreProperties({"properties"})
 public class IndexLabel extends SchemaElement {
 
     @JsonProperty("base_type")
@@ -78,9 +78,9 @@ public class IndexLabel extends SchemaElement {
     @Override
     public String toString() {
         return String.format("{name=%s, baseType=%s, baseValue=%s, " +
-                             "indexType=%s, fields=%s}",
+                             "indexType=%s, fields=%s, status=%s}",
                              this.name, this.baseType, this.baseValue,
-                             this.indexType, this.fields);
+                             this.indexType, this.fields, this.status);
     }
 
     public IndexLabelV49 switchV49() {

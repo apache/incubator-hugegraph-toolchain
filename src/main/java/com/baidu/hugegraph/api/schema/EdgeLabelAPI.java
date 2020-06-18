@@ -42,7 +42,14 @@ public class EdgeLabelAPI extends SchemaAPI {
     }
 
     public EdgeLabel create(EdgeLabel edgeLabel) {
-        RestResult result = this.client.post(this.path(), edgeLabel);
+        Object el = edgeLabel;
+        if (this.client.apiVersionLt("0.54")) {
+            E.checkArgument(edgeLabel.ttl() == 0L &&
+                            edgeLabel.ttlStartTime() == null,
+                            "Not support ttl until api version 0.54");
+            el = edgeLabel.switchV53();
+        }
+        RestResult result = this.client.post(this.path(), el);
         return result.readObject(EdgeLabel.class);
     }
 

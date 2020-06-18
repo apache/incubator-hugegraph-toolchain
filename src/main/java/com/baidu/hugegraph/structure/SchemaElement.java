@@ -24,8 +24,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class SchemaElement extends Element {
 
     @JsonProperty("id")
@@ -38,12 +40,15 @@ public abstract class SchemaElement extends Element {
     protected boolean checkExist;
     @JsonProperty("user_data")
     protected Map<String, Object> userdata;
+    @JsonProperty("status")
+    protected String status;
 
     public SchemaElement(String name) {
         this.name = name;
         this.properties = new ConcurrentSkipListSet<>();
         this.userdata = new ConcurrentHashMap<>();
         this.checkExist = true;
+        this.status = null;
     }
 
     @Override
@@ -65,6 +70,10 @@ public abstract class SchemaElement extends Element {
 
     public Map<String, Object> userdata() {
         return this.userdata;
+    }
+
+    public String status() {
+        return this.status;
     }
 
     public boolean checkExist() {

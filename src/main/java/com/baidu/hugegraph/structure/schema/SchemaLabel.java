@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.structure.schema;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -31,15 +33,22 @@ public abstract class SchemaLabel extends SchemaElement {
     protected Set<String> nullableKeys;
     @JsonProperty("enable_label_index")
     protected Boolean enableLabelIndex;
+    @JsonProperty("index_labels")
+    protected List<String> indexLabels;
 
     public SchemaLabel(String name) {
         super(name);
         this.nullableKeys = new ConcurrentSkipListSet<>();
+        this.indexLabels = new ArrayList<>();
         this.enableLabelIndex = null;
     }
 
     public Set<String> nullableKeys() {
         return this.nullableKeys;
+    }
+
+    public List<String> indexLabels() {
+        return this.indexLabels;
     }
 
     public boolean enableLabelIndex() {

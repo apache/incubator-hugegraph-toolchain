@@ -218,6 +218,67 @@ public class EdgeLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateWithTtl() {
+        EdgeLabel edgeLabel = schema().edgeLabel("created1")
+                                      .sourceLabel("person")
+                                      .targetLabel("software")
+                                      .frequency(Frequency.SINGLE)
+                                      .properties("date", "city")
+                                      .build();
+        edgeLabel = edgeLabelAPI.create(edgeLabel);
+
+        Assert.assertEquals("created1", edgeLabel.name());
+        Assert.assertEquals("person", edgeLabel.sourceLabel());
+        Assert.assertEquals("software", edgeLabel.targetLabel());
+        Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
+        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
+        Set<String> props = ImmutableSet.of("date", "city");
+        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertTrue(props.containsAll(edgeLabel.properties()));
+        Assert.assertEquals(0L, edgeLabel.ttl());
+        Assert.assertNull(edgeLabel.ttlStartTime());
+
+        edgeLabel = schema().edgeLabel("created2")
+                            .sourceLabel("person")
+                            .targetLabel("software")
+                            .frequency(Frequency.SINGLE)
+                            .properties("date", "city")
+                            .ttl(3000L)
+                            .build();
+        edgeLabel = edgeLabelAPI.create(edgeLabel);
+
+        Assert.assertEquals("created2", edgeLabel.name());
+        Assert.assertEquals("person", edgeLabel.sourceLabel());
+        Assert.assertEquals("software", edgeLabel.targetLabel());
+        Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
+        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
+        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertTrue(props.containsAll(edgeLabel.properties()));
+        Assert.assertEquals(3000L, edgeLabel.ttl());
+        Assert.assertNull(edgeLabel.ttlStartTime());
+
+        edgeLabel = schema().edgeLabel("created3")
+                            .sourceLabel("person")
+                            .targetLabel("software")
+                            .frequency(Frequency.SINGLE)
+                            .properties("date", "city")
+                            .ttl(3000L)
+                            .ttlStartTime("date")
+                            .build();
+        edgeLabel = edgeLabelAPI.create(edgeLabel);
+
+        Assert.assertEquals("created3", edgeLabel.name());
+        Assert.assertEquals("person", edgeLabel.sourceLabel());
+        Assert.assertEquals("software", edgeLabel.targetLabel());
+        Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
+        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
+        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertTrue(props.containsAll(edgeLabel.properties()));
+        Assert.assertEquals(3000L, edgeLabel.ttl());
+        Assert.assertEquals("date", edgeLabel.ttlStartTime());
+    }
+
+    @Test
     public void testAppend() {
         EdgeLabel edgeLabel1 = schema().edgeLabel("created")
                                        .sourceLabel("person")

@@ -29,22 +29,26 @@ import com.baidu.hugegraph.structure.constant.IdStrategy;
 import com.baidu.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties({"index_labels", "status", "ttl"})
 public class VertexLabel extends SchemaLabel {
 
     @JsonProperty("id_strategy")
     private IdStrategy idStrategy;
     @JsonProperty("primary_keys")
     private List<String> primaryKeys;
+    @JsonProperty("ttl")
+    private long ttl;
+    @JsonProperty("ttl_start_time")
+    private String ttlStartTime;
 
     @JsonCreator
     public VertexLabel(@JsonProperty("name") String name) {
         super(name);
         this.idStrategy = IdStrategy.DEFAULT;
         this.primaryKeys = new CopyOnWriteArrayList<>();
+        this.ttl = 0L;
+        this.ttlStartTime = null;
     }
 
     @Override
@@ -60,12 +64,27 @@ public class VertexLabel extends SchemaLabel {
         return this.primaryKeys;
     }
 
+    public long ttl() {
+        return this.ttl;
+    }
+
+    public String ttlStartTime() {
+        return this.ttlStartTime;
+    }
+
     @Override
     public String toString() {
         return String.format("{name=%s, idStrategy=%s, primaryKeys=%s, " +
-                             "nullableKeys=%s, properties=%s}",
+                             "indexLabels=%s, nullableKeys=%s, properties=%s," +
+                             " ttl=%s, ttlStartTime=%s, status=%s}",
                              this.name, this.idStrategy, this.primaryKeys,
-                             this.nullableKeys, this.properties);
+                             this.indexLabels, this.nullableKeys,
+                             this.properties, this.ttl, this.ttlStartTime,
+                             this.status);
+    }
+
+    public VertexLabelV53 switchV53() {
+        return new VertexLabelV53(this);
     }
 
     public interface Builder extends SchemaBuilder<VertexLabel> {
@@ -87,6 +106,10 @@ public class VertexLabel extends SchemaLabel {
         Builder primaryKeys(String... keys);
 
         Builder nullableKeys(String... keys);
+
+        Builder ttl(long ttl);
+
+        Builder ttlStartTime(String ttlStartTime);
 
         Builder enableLabelIndex(boolean enable);
 
@@ -197,6 +220,19 @@ public class VertexLabel extends SchemaLabel {
         }
 
         @Override
+        public Builder ttl(long ttl) {
+            E.checkArgument(ttl >= 0L, "The ttl must >= 0, but got: %s", ttl);
+            this.vertexLabel.ttl = ttl;
+            return this;
+        }
+
+        @Override
+        public Builder ttlStartTime(String ttlStartTime) {
+            this.vertexLabel.ttlStartTime = ttlStartTime;
+            return this;
+        }
+
+        @Override
         public Builder enableLabelIndex(boolean enable) {
             this.vertexLabel.enableLabelIndex = enable;
             return this;
@@ -220,6 +256,54 @@ public class VertexLabel extends SchemaLabel {
             E.checkArgument(this.vertexLabel.idStrategy == IdStrategy.DEFAULT,
                             "Not allowed to change id strategy for " +
                             "vertex label '%s'", this.vertexLabel.name);
+        }
+    }
+
+    public static class VertexLabelV53 extends SchemaLabel {
+
+        @JsonProperty("id_strategy")
+        private IdStrategy idStrategy;
+        @JsonProperty("primary_keys")
+        private List<String> primaryKeys;
+
+        @JsonCreator
+        public VertexLabelV53(@JsonProperty("name") String name) {
+            super(name);
+            this.idStrategy = IdStrategy.DEFAULT;
+            this.primaryKeys = new CopyOnWriteArrayList<>();
+        }
+
+        private VertexLabelV53(VertexLabel vertexLabel) {
+            super(vertexLabel.name);
+            this.idStrategy = vertexLabel.idStrategy;
+            this.primaryKeys = vertexLabel.primaryKeys;
+            this.id = vertexLabel.id();
+            this.properties = vertexLabel.properties();
+            this.userdata = vertexLabel.userdata();
+            this.checkExist = vertexLabel.checkExist();
+            this.nullableKeys = vertexLabel.nullableKeys;
+            this.enableLabelIndex = vertexLabel.enableLabelIndex;
+        }
+
+        public IdStrategy idStrategy() {
+            return this.idStrategy;
+        }
+
+        public List<String> primaryKeys() {
+            return this.primaryKeys;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("{name=%s, idStrategy=%s, primaryKeys=%s, " +
+                                 "nullableKeys=%s, properties=%s}",
+                                 this.name, this.idStrategy, this.primaryKeys,
+                                 this.nullableKeys, this.properties);
+        }
+
+        @Override
+        public String type() {
+            return HugeType.VERTEX_LABEL.string();
         }
     }
 }

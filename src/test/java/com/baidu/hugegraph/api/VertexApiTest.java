@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.api;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,10 +29,13 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
+import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableMap;
 
 public class VertexApiTest extends BaseApiTest {
@@ -223,6 +227,108 @@ public class VertexApiTest extends BaseApiTest {
                                                     "city", "Shanghai",
                                                     "age", 20);
         Assert.assertEquals(props, vertex.properties());
+    }
+
+    @Test
+    public void testCreateVertexWithTtl() {
+        SchemaManager schema = schema();
+        schema.vertexLabel("fan")
+              .properties("name", "age", "city")
+              .primaryKeys("name")
+              .ttl(3000L)
+              .ifNotExist()
+              .create();
+
+        Vertex vertex = graph().addVertex(T.label, "fan", "name", "Baby",
+                                          "age", 3, "city", "Beijing");
+
+        Vertex result = graph().getVertex(vertex.id());
+        Assert.assertEquals("fan", result.label());
+        Map<String, Object> props = ImmutableMap.of("name", "Baby",
+                                                    "city", "Beijing",
+                                                    "age", 3);
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        result = graph().getVertex(vertex.id());
+        Assert.assertEquals("fan", result.label());
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        result = graph().getVertex(vertex.id());
+        Assert.assertEquals("fan", result.label());
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        Assert.assertThrows(ServerException.class, () -> {
+            graph().getVertex(vertex.id());
+        }, e -> {
+            Assert.assertContains("vertex with id", e.getMessage());
+            Assert.assertContains("does not exist", e.getMessage());
+        });
+    }
+
+    @Test
+    public void testCreateVertexWithTtlAndTtlStartTime() {
+        SchemaManager schema = schema();
+        schema.vertexLabel("follower")
+              .properties("name", "age", "city", "date")
+              .primaryKeys("name")
+              .ttl(3000L)
+              .ttlStartTime("date")
+              .ifNotExist()
+              .create();
+        long date = DateUtil.now().getTime() - 1000L;
+        String dateString = Utils.formatDate(new Date(date));
+        Vertex vertex = graph().addVertex(T.label, "follower", "name", "Baby",
+                                          "age", 3, "city", "Beijing",
+                                          "date", date);
+
+        Vertex result = graph().getVertex(vertex.id());
+        Assert.assertEquals("follower", result.label());
+        Map<String, Object> props = ImmutableMap.of("name", "Baby",
+                                                    "city", "Beijing",
+                                                    "age", 3,
+                                                    "date", dateString);
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        result = graph().getVertex(vertex.id());
+        Assert.assertEquals("follower", result.label());
+        Assert.assertEquals(props, result.properties());
+
+        try {
+            Thread.sleep(1100L);
+        } catch (InterruptedException e) {
+            // Ignore
+        }
+
+        Assert.assertThrows(ServerException.class, () -> {
+            graph().getVertex(vertex.id());
+        }, e -> {
+            Assert.assertContains("vertex with id", e.getMessage());
+            Assert.assertContains("does not exist", e.getMessage());
+        });
     }
 
     @Test

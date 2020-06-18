@@ -45,7 +45,14 @@ public class VertexLabelAPI extends SchemaAPI {
         if (vertexLabel.idStrategy().isCustomizeUuid()) {
             this.client.checkApiVersion("0.46", "customize UUID strategy");
         }
-        RestResult result = this.client.post(this.path(), vertexLabel);
+        Object vl = vertexLabel;
+        if (this.client.apiVersionLt("0.54")) {
+            E.checkArgument(vertexLabel.ttl() == 0L &&
+                            vertexLabel.ttlStartTime() == null,
+                            "Not support ttl until api version 0.54");
+            vl = vertexLabel.switchV53();
+        }
+        RestResult result = this.client.post(this.path(), vl);
         return result.readObject(VertexLabel.class);
     }
 

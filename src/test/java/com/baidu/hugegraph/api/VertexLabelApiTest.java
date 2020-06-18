@@ -239,6 +239,52 @@ public class VertexLabelApiTest extends BaseApiTest {
     }
 
     @Test
+    public void testCreateWithTtl() {
+        VertexLabel vertexLabel = schema().vertexLabel("person1")
+                                          .useAutomaticId()
+                                          .properties("name", "age", "date")
+                                          .build();
+        vertexLabel = vertexLabelAPI.create(vertexLabel);
+
+        Assert.assertEquals("person1", vertexLabel.name());
+        Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
+        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Set<String> props = ImmutableSet.of("name", "age", "date");
+        Assert.assertEquals(props, vertexLabel.properties());
+        Assert.assertEquals(0L, vertexLabel.ttl());
+        Assert.assertNull(vertexLabel.ttlStartTime());
+
+        vertexLabel = schema().vertexLabel("person2")
+                              .useAutomaticId()
+                              .properties("name", "age", "date")
+                              .ttl(3000L)
+                              .build();
+        vertexLabel = vertexLabelAPI.create(vertexLabel);
+
+        Assert.assertEquals("person2", vertexLabel.name());
+        Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
+        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertEquals(props, vertexLabel.properties());
+        Assert.assertEquals(3000L, vertexLabel.ttl());
+        Assert.assertNull(vertexLabel.ttlStartTime());
+
+        vertexLabel = schema().vertexLabel("person3")
+                              .useAutomaticId()
+                              .properties("name", "age", "date")
+                              .ttl(3000L)
+                              .ttlStartTime("date")
+                              .build();
+        vertexLabel = vertexLabelAPI.create(vertexLabel);
+
+        Assert.assertEquals("person3", vertexLabel.name());
+        Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
+        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertEquals(props, vertexLabel.properties());
+        Assert.assertEquals(3000L, vertexLabel.ttl());
+        Assert.assertEquals("date", vertexLabel.ttlStartTime());
+    }
+
+    @Test
     public void testAppend() {
         VertexLabel vertexLabel1 = schema().vertexLabel("person")
                                            .useAutomaticId()
