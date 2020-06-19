@@ -36,6 +36,7 @@ import com.baidu.hugegraph.api.schema.PropertyKeyAPI;
 import com.baidu.hugegraph.api.schema.VertexLabelAPI;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.api.traverser.AllShortestPathsAPI;
+import com.baidu.hugegraph.api.traverser.CountAPI;
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedCrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
@@ -82,6 +83,7 @@ public class BaseApiTest extends BaseClientTest {
     protected static CrosspointsAPI crosspointsAPI;
     protected static KoutAPI koutAPI;
     protected static KneighborAPI kneighborAPI;
+    protected static CountAPI countAPI;
     protected static RingsAPI ringsAPI;
     protected static RaysAPI raysAPI;
     protected static CustomizedPathsAPI customizedPathsAPI;
@@ -128,6 +130,7 @@ public class BaseApiTest extends BaseClientTest {
         crosspointsAPI = new CrosspointsAPI(client, GRAPH);
         koutAPI = new KoutAPI(client, GRAPH);
         kneighborAPI = new KneighborAPI(client, GRAPH);
+        countAPI = new CountAPI(client, GRAPH);
         ringsAPI = new RingsAPI(client, GRAPH);
         raysAPI = new RaysAPI(client, GRAPH);
         customizedPathsAPI = new CustomizedPathsAPI(client, GRAPH);

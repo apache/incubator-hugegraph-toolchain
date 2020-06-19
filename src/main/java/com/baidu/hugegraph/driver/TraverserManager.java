@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.baidu.hugegraph.api.traverser.AllShortestPathsAPI;
+import com.baidu.hugegraph.api.traverser.CountAPI;
 import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedCrosspointsAPI;
 import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
@@ -41,6 +42,7 @@ import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.SingleSourceShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.api.traverser.WeightedShortestPathAPI;
+import com.baidu.hugegraph.api.traverser.structure.CountRequest;
 import com.baidu.hugegraph.api.traverser.structure.CrosspointsRequest;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedCrosspoints;
 import com.baidu.hugegraph.api.traverser.structure.CustomizedPaths;
@@ -81,6 +83,7 @@ public class TraverserManager {
     private CrosspointsAPI crosspointsAPI;
     private KoutAPI koutAPI;
     private KneighborAPI kneighborAPI;
+    private CountAPI countAPI;
     private RingsAPI ringsAPI;
     private RaysAPI raysAPI;
     private CustomizedPathsAPI customizedPathsAPI;
@@ -106,6 +109,7 @@ public class TraverserManager {
         this.crosspointsAPI = new CrosspointsAPI(client, graph);
         this.koutAPI = new KoutAPI(client, graph);
         this.kneighborAPI = new KneighborAPI(client, graph);
+        this.countAPI = new CountAPI(client, graph);
         this.ringsAPI = new RingsAPI(client, graph);
         this.raysAPI = new RaysAPI(client, graph);
         this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
@@ -377,6 +381,10 @@ public class TraverserManager {
                                   long degree, long limit) {
         return this.kneighborAPI.get(sourceId, direction, label, depth,
                                      degree, limit);
+    }
+
+    public long count(CountRequest request) {
+        return this.countAPI.post(request);
     }
 
     public List<Path> rings(Object sourceId, int depth) {

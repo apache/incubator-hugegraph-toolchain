@@ -45,6 +45,7 @@ import com.baidu.hugegraph.api.auth.UserApiTest;
     RestoreApiTest.class,
 
     TraverserApiTest.class,
+    CountApiTest.class,
     RingsRaysApiTest.class,
     SameNeighborsApiTest.class,
     JaccardSimilarityApiTest.class,
