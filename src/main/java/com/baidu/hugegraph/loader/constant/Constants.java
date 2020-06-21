@@ -30,6 +30,7 @@ public final class Constants {
 
     public static final Charset CHARSET = Charsets.UTF_8;
     public static final String HTTP_PREFIX = "http://";
+    public static final String HTTPS_PREFIX = "https://";
     public static final String JSON_SUFFIX = ".json";
     public static final String GROOVY_SCHEMA = "schema";
 

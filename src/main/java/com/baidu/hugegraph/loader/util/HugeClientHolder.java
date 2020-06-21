@@ -30,12 +30,24 @@ public final class HugeClientHolder {
 
     public static HugeClient create(LoadOptions options) {
         String address;
-        if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
+        if (!options.host.startsWith(Constants.HTTP_PREFIX) &&
+            !options.host.startsWith(Constants.HTTPS_PREFIX)) {
             address = Constants.HTTP_PREFIX + options.host + ":" + options.port;
+            if (options.protocol != null && options.protocol.equals("https")) {
+                address = Constants.HTTPS_PREFIX + options.host + ":" + options.port;
+            }
         } else {
             address = options.host + ":" + options.port;
         }
         try {
+            if (options.protocol != null && options.protocol.equals("https")) {
+                String username = options.username != null ? options.username :
+                        options.graph;
+                return new HugeClient(address, options.graph, username, options.token,
+                                      options.timeout, options.protocol, options.maxConnections,
+                                      options.maxConnectionsPerRoute, options.trustStoreFile,
+                                      options.trustStorePassword);
+            }
             if (options.token == null) {
                 return new HugeClient(address, options.graph, options.timeout,
                                       options.maxConnections,
