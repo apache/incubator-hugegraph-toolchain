@@ -75,12 +75,12 @@ public final class LoadOptions {
                              " are: http or https")
     public String protocol = "http";
 
-    @Parameter(names = {"--trustStoreFile"}, arity = 1,
+    @Parameter(names = {"--trust-store-file"}, arity = 1,
                description = "The path of client truststore file used when https" +
                              "protocol is enabled")
     public String trustStoreFile = "";
 
-    @Parameter(names = {"--trustStorePassword"}, arity = 1,
+    @Parameter(names = {"--trust-store-password"}, arity = 1,
                description = "The password of the path of the client truststore " +
                              "file used when the https protocol is enabled")
     public String trustStorePassword = "";
@@ -276,8 +276,8 @@ public final class LoadOptions {
         public void validate(String name, String value) {
             if (!SSL_PROTOCOL.contains(value.toUpperCase())) {
                 throw new ParameterException(String.format(
-                        "Invalid --protocol '%s', valid value is %s",
-                        value, SSL_PROTOCOL));
+                          "Invalid --protocol '%s', valid value is %s", value,
+                          SSL_PROTOCOL));
             }
         }
     }

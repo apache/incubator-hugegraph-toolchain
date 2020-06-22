@@ -42,7 +42,7 @@ public final class HugeClientHolder {
         try {
             if (options.protocol != null && options.protocol.equals("https")) {
                 String username = options.username != null ? options.username :
-                        options.graph;
+                                  options.graph;
                 return new HugeClient(address, options.graph, username, options.token,
                                       options.timeout, options.protocol, options.maxConnections,
                                       options.maxConnectionsPerRoute, options.trustStoreFile,
