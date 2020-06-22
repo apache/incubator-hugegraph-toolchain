@@ -19,13 +19,14 @@
 
 package com.baidu.hugegraph.structure.schema;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 
 public abstract class SchemaLabel extends SchemaElement {
 
@@ -39,7 +40,7 @@ public abstract class SchemaLabel extends SchemaElement {
     public SchemaLabel(String name) {
         super(name);
         this.nullableKeys = new ConcurrentSkipListSet<>();
-        this.indexLabels = new ArrayList<>();
+        this.indexLabels = null;
         this.enableLabelIndex = null;
     }
 
@@ -48,7 +49,10 @@ public abstract class SchemaLabel extends SchemaElement {
     }
 
     public List<String> indexLabels() {
-        return this.indexLabels;
+        if (this.indexLabels == null) {
+            return ImmutableList.of();
+        }
+        return Collections.unmodifiableList(this.indexLabels);
     }
 
     public boolean enableLabelIndex() {
