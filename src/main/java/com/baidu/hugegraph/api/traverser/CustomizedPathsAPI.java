@@ -21,8 +21,8 @@ package com.baidu.hugegraph.api.traverser;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
-import com.baidu.hugegraph.api.traverser.structure.CustomizedPaths;
-import com.baidu.hugegraph.api.traverser.structure.PathsRequest;
+import com.baidu.hugegraph.structure.traverser.CustomizedPaths;
+import com.baidu.hugegraph.structure.traverser.PathsRequest;
 
 public class CustomizedPathsAPI extends TraversersAPI {
 

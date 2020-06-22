@@ -17,11 +17,33 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.traverser.structure;
+package com.baidu.hugegraph.structure.traverser;
 
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
 
-public class Ranks extends LinkedHashMap<Object, Double> {
+import com.baidu.hugegraph.structure.graph.Path;
+import com.baidu.hugegraph.structure.graph.Vertex;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    private static final long serialVersionUID = -517025731560925613L;
+public class CustomizedCrosspoints {
+
+    @JsonProperty
+    private List<Object> crosspoints;
+    @JsonProperty
+    private List<Path> paths;
+    @JsonProperty
+    private Set<Vertex> vertices;
+
+    public List<Object> crosspoints() {
+        return this.crosspoints;
+    }
+
+    public List<Path> paths() {
+        return this.paths;
+    }
+
+    public Set<Vertex> vertices() {
+        return this.vertices;
+    }
 }

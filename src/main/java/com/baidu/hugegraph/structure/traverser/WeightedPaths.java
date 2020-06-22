@@ -17,42 +17,26 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.traverser.structure;
+package com.baidu.hugegraph.structure.traverser;
 
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CustomizedPaths {
+public class WeightedPaths {
 
     @JsonProperty
-    private List<Paths> paths;
+    private Map<Object, WeightedPath.Path> paths;
     @JsonProperty
     private Set<Vertex> vertices;
 
-    public List<Paths> paths() {
+    public Map<Object, WeightedPath.Path> paths() {
         return this.paths;
     }
 
     public Set<Vertex> vertices() {
         return this.vertices;
-    }
-
-    public static class Paths {
-
-        @JsonProperty
-        private List<Object> objects;
-        @JsonProperty
-        private List<Double> weights;
-
-        public List<Object> objects() {
-            return this.objects;
-        }
-
-        public List<Double> weights() {
-            return this.weights;
-        }
     }
 }

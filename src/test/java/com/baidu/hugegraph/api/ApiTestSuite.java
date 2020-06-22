@@ -27,6 +27,19 @@ import com.baidu.hugegraph.api.auth.BelongApiTest;
 import com.baidu.hugegraph.api.auth.GroupApiTest;
 import com.baidu.hugegraph.api.auth.TargetApiTest;
 import com.baidu.hugegraph.api.auth.UserApiTest;
+import com.baidu.hugegraph.api.traverser.AllShortestPathsApiTest;
+import com.baidu.hugegraph.api.traverser.CommonTraverserApiTest;
+import com.baidu.hugegraph.api.traverser.CountApiTest;
+import com.baidu.hugegraph.api.traverser.CustomizedPathsApiTest;
+import com.baidu.hugegraph.api.traverser.FusiformSimilarityApiTest;
+import com.baidu.hugegraph.api.traverser.JaccardSimilarityApiTest;
+import com.baidu.hugegraph.api.traverser.NeighborRankApiTest;
+import com.baidu.hugegraph.api.traverser.PersonalRankApiTest;
+import com.baidu.hugegraph.api.traverser.RingsRaysApiTest;
+import com.baidu.hugegraph.api.traverser.SameNeighborsApiTest;
+import com.baidu.hugegraph.api.traverser.ShortestPathApiTest;
+import com.baidu.hugegraph.api.traverser.SingleSourceShortestPathApiTest;
+import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -37,6 +50,7 @@ import com.baidu.hugegraph.api.auth.UserApiTest;
 
     VertexApiTest.class,
     EdgeApiTest.class,
+    BatchUpdateElementApiTest.class,
 
     GremlinApiTest.class,
     VariablesApiTest.class,
@@ -44,7 +58,7 @@ import com.baidu.hugegraph.api.auth.UserApiTest;
     JobApiTest.class,
     RestoreApiTest.class,
 
-    TraverserApiTest.class,
+    CommonTraverserApiTest.class,
     CountApiTest.class,
     RingsRaysApiTest.class,
     SameNeighborsApiTest.class,
@@ -57,7 +71,6 @@ import com.baidu.hugegraph.api.auth.UserApiTest;
     FusiformSimilarityApiTest.class,
     NeighborRankApiTest.class,
     PersonalRankApiTest.class,
-    BatchUpdateElementApiTest.class,
 
     TargetApiTest.class,
     GroupApiTest.class,

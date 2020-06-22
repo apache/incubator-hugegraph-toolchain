@@ -35,26 +35,6 @@ import com.baidu.hugegraph.api.schema.IndexLabelAPI;
 import com.baidu.hugegraph.api.schema.PropertyKeyAPI;
 import com.baidu.hugegraph.api.schema.VertexLabelAPI;
 import com.baidu.hugegraph.api.task.TaskAPI;
-import com.baidu.hugegraph.api.traverser.AllShortestPathsAPI;
-import com.baidu.hugegraph.api.traverser.CountAPI;
-import com.baidu.hugegraph.api.traverser.CrosspointsAPI;
-import com.baidu.hugegraph.api.traverser.CustomizedCrosspointsAPI;
-import com.baidu.hugegraph.api.traverser.CustomizedPathsAPI;
-import com.baidu.hugegraph.api.traverser.EdgesAPI;
-import com.baidu.hugegraph.api.traverser.FusiformSimilarityAPI;
-import com.baidu.hugegraph.api.traverser.JaccardSimilarityAPI;
-import com.baidu.hugegraph.api.traverser.KneighborAPI;
-import com.baidu.hugegraph.api.traverser.KoutAPI;
-import com.baidu.hugegraph.api.traverser.NeighborRankAPI;
-import com.baidu.hugegraph.api.traverser.PathsAPI;
-import com.baidu.hugegraph.api.traverser.PersonalRankAPI;
-import com.baidu.hugegraph.api.traverser.RaysAPI;
-import com.baidu.hugegraph.api.traverser.RingsAPI;
-import com.baidu.hugegraph.api.traverser.SameNeighborsAPI;
-import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
-import com.baidu.hugegraph.api.traverser.SingleSourceShortestPathAPI;
-import com.baidu.hugegraph.api.traverser.VerticesAPI;
-import com.baidu.hugegraph.api.traverser.WeightedShortestPathAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
 import com.baidu.hugegraph.api.version.VersionAPI;
 import com.baidu.hugegraph.client.RestClient;
@@ -63,39 +43,22 @@ import com.baidu.hugegraph.util.VersionUtil;
 
 public class BaseApiTest extends BaseClientTest {
 
-    private static RestClient client;
+    protected static RestClient client;
 
     protected static VersionAPI versionAPI;
+    protected static GraphsAPI graphsAPI;
+
     protected static PropertyKeyAPI propertyKeyAPI;
     protected static VertexLabelAPI vertexLabelAPI;
     protected static EdgeLabelAPI edgeLabelAPI;
     protected static IndexLabelAPI indexLabelAPI;
+
     protected static VertexAPI vertexAPI;
     protected static EdgeAPI edgeAPI;
+
     protected static VariablesAPI variablesAPI;
-    protected static SameNeighborsAPI sameNeighborsAPI;
-    protected static JaccardSimilarityAPI jaccardSimilarityAPI;
-    protected static ShortestPathAPI shortestPathAPI;
-    protected static AllShortestPathsAPI allShortestPathsAPI;
-    protected static SingleSourceShortestPathAPI singleSourceShortestPathAPI;
-    protected static WeightedShortestPathAPI weightedShortestPathAPI;
-    protected static PathsAPI pathsAPI;
-    protected static CrosspointsAPI crosspointsAPI;
-    protected static KoutAPI koutAPI;
-    protected static KneighborAPI kneighborAPI;
-    protected static CountAPI countAPI;
-    protected static RingsAPI ringsAPI;
-    protected static RaysAPI raysAPI;
-    protected static CustomizedPathsAPI customizedPathsAPI;
-    protected static CustomizedCrosspointsAPI customizedCrosspointsAPI;
-    protected static FusiformSimilarityAPI fusiformSimilarityAPI;
-    protected static NeighborRankAPI neighborRankAPI;
-    protected static PersonalRankAPI personalRankAPI;
-    protected static VerticesAPI verticesAPI;
-    protected static EdgesAPI edgesAPI;
     protected static TaskAPI taskAPI;
     protected static RebuildAPI rebuildAPI;
-    protected static GraphsAPI graphsAPI;
 
     protected static RestClient initClient() {
         client = new RestClient(BASE_URL, USERNAME, PASSWORD, TIMEOUT);
@@ -112,37 +75,19 @@ public class BaseApiTest extends BaseClientTest {
         versionAPI = new VersionAPI(client);
         client.apiVersion(VersionUtil.Version.of(versionAPI.get().get("api")));
 
+        graphsAPI = new GraphsAPI(client);
+
         propertyKeyAPI = new PropertyKeyAPI(client, GRAPH);
         vertexLabelAPI = new VertexLabelAPI(client, GRAPH);
         edgeLabelAPI = new EdgeLabelAPI(client, GRAPH);
         indexLabelAPI = new IndexLabelAPI(client, GRAPH);
+
         vertexAPI = new VertexAPI(client, GRAPH);
         edgeAPI = new EdgeAPI(client, GRAPH);
+
         variablesAPI = new VariablesAPI(client, GRAPH);
-        sameNeighborsAPI = new SameNeighborsAPI(client, GRAPH);
-        jaccardSimilarityAPI = new JaccardSimilarityAPI(client, GRAPH);
-        shortestPathAPI = new ShortestPathAPI(client, GRAPH);
-        allShortestPathsAPI = new AllShortestPathsAPI(client, GRAPH);
-        singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(client,
-                                                                      GRAPH);
-        weightedShortestPathAPI = new WeightedShortestPathAPI(client, GRAPH);
-        pathsAPI = new PathsAPI(client, GRAPH);
-        crosspointsAPI = new CrosspointsAPI(client, GRAPH);
-        koutAPI = new KoutAPI(client, GRAPH);
-        kneighborAPI = new KneighborAPI(client, GRAPH);
-        countAPI = new CountAPI(client, GRAPH);
-        ringsAPI = new RingsAPI(client, GRAPH);
-        raysAPI = new RaysAPI(client, GRAPH);
-        customizedPathsAPI = new CustomizedPathsAPI(client, GRAPH);
-        customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client, GRAPH);
-        fusiformSimilarityAPI = new FusiformSimilarityAPI(client, GRAPH);
-        neighborRankAPI = new NeighborRankAPI(client, GRAPH);
-        personalRankAPI = new PersonalRankAPI(client, GRAPH);
-        verticesAPI = new VerticesAPI(client, GRAPH);
-        edgesAPI = new EdgesAPI(client, GRAPH);
         taskAPI = new TaskAPI(client, GRAPH);
         rebuildAPI = new RebuildAPI(client, GRAPH);
-        graphsAPI = new GraphsAPI(client);
     }
 
     @AfterClass

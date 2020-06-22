@@ -21,9 +21,9 @@ package com.baidu.hugegraph.api.traverser;
 
 import java.util.Map;
 
-import com.baidu.hugegraph.api.traverser.structure.CountRequest;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.traverser.CountRequest;
 import com.baidu.hugegraph.util.E;
 
 public class CountAPI extends TraversersAPI {

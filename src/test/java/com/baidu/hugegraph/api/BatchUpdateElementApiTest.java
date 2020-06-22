@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.api;
 
-import static com.baidu.hugegraph.api.graph.structure.UpdateStrategy.INTERSECTION;
+import static com.baidu.hugegraph.structure.graph.UpdateStrategy.INTERSECTION;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,13 +30,13 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
-import com.baidu.hugegraph.api.graph.structure.BatchVertexRequest;
-import com.baidu.hugegraph.api.graph.structure.UpdateStrategy;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
+import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.testutil.Assert;

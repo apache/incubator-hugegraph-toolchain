@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.traverser.structure;
+package com.baidu.hugegraph.structure.traverser;
 
 import java.util.Map;
 import java.util.Set;

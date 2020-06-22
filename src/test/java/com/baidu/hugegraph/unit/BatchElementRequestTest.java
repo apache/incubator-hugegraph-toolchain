@@ -19,17 +19,17 @@
 
 package com.baidu.hugegraph.unit;
 
-import static com.baidu.hugegraph.api.graph.structure.UpdateStrategy.INTERSECTION;
+import static com.baidu.hugegraph.structure.graph.UpdateStrategy.INTERSECTION;
 
 import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
 
-import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
-import com.baidu.hugegraph.api.graph.structure.BatchVertexRequest;
-import com.baidu.hugegraph.api.graph.structure.UpdateStrategy;
+import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
+import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Whitebox;

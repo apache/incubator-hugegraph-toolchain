@@ -17,33 +17,23 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.traverser.structure;
+package com.baidu.hugegraph.structure.graph;
 
-import java.util.List;
-import java.util.Set;
+public enum UpdateStrategy {
 
-import com.baidu.hugegraph.structure.graph.Path;
-import com.baidu.hugegraph.structure.graph.Vertex;
-import com.fasterxml.jackson.annotation.JsonProperty;
+    SUM,
 
-public class CustomizedCrosspoints {
+    BIGGER,
 
-    @JsonProperty
-    private List<Object> crosspoints;
-    @JsonProperty
-    private List<Path> paths;
-    @JsonProperty
-    private Set<Vertex> vertices;
+    SMALLER,
 
-    public List<Object> crosspoints() {
-        return this.crosspoints;
-    }
+    UNION,
 
-    public List<Path> paths() {
-        return this.paths;
-    }
+    INTERSECTION,
 
-    public Set<Vertex> vertices() {
-        return this.vertices;
-    }
+    APPEND,
+
+    ELIMINATE,
+
+    OVERRIDE
 }

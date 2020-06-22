@@ -25,12 +25,12 @@ import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 
-import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.NotAllCreatedException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Edges;
 import com.google.common.collect.ImmutableMap;

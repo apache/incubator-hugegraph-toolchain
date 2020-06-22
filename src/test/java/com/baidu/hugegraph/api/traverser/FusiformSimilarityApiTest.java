@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api;
+package com.baidu.hugegraph.api.traverser;
 
 import java.util.Map;
 import java.util.Set;
@@ -26,18 +26,18 @@ import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarity;
-import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarity.Similar;
-import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarityRequest;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.traverser.FusiformSimilarity;
+import com.baidu.hugegraph.structure.traverser.FusiformSimilarity.Similar;
+import com.baidu.hugegraph.structure.traverser.FusiformSimilarityRequest;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-public class FusiformSimilarityApiTest extends BaseApiTest {
+public class FusiformSimilarityApiTest extends TraverserApiTest {
 
     @BeforeClass
     public static void prepareSchemaAndGraph() {

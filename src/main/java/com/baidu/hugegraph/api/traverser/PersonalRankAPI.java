@@ -19,10 +19,10 @@
 
 package com.baidu.hugegraph.api.traverser;
 
-import com.baidu.hugegraph.api.traverser.structure.Ranks;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Traverser;
+import com.baidu.hugegraph.structure.traverser.Ranks;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

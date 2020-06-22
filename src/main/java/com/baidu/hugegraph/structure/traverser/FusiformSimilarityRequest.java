@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.traverser.structure;
+package com.baidu.hugegraph.structure.traverser;
 
 import com.baidu.hugegraph.api.traverser.TraversersAPI;
 import com.baidu.hugegraph.structure.constant.Direction;

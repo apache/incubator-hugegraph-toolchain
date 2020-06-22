@@ -22,6 +22,7 @@ package com.baidu.hugegraph.client;
 import javax.ws.rs.core.Response;
 
 import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.rest.AbstractRestClient;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.serializer.PathDeserializer;
@@ -31,7 +32,7 @@ import com.baidu.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.util.VersionUtil.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-public class RestClient extends com.baidu.hugegraph.rest.RestClient {
+public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api;
+package com.baidu.hugegraph.api.traverser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,18 +26,18 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.baidu.hugegraph.api.traverser.NeighborRankAPI;
-import com.baidu.hugegraph.api.traverser.structure.Ranks;
+import com.baidu.hugegraph.api.BaseApiTest;
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.traverser.Ranks;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableMap;
 
-public class NeighborRankApiTest extends BaseApiTest {
+public class NeighborRankApiTest extends TraverserApiTest {
 
     @BeforeClass
     public static void initNeighborRankGraph() {

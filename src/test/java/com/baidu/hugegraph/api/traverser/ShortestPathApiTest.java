@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api;
+package com.baidu.hugegraph.api.traverser;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableList;
 
-public class ShortestPathApiTest extends BaseApiTest {
+public class ShortestPathApiTest extends TraverserApiTest {
 
     @BeforeClass
     public static void initShortestPathGraph() {

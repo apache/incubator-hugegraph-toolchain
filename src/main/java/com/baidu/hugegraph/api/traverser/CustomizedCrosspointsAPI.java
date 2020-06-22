@@ -21,8 +21,8 @@ package com.baidu.hugegraph.api.traverser;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
-import com.baidu.hugegraph.api.traverser.structure.CrosspointsRequest;
-import com.baidu.hugegraph.api.traverser.structure.CustomizedCrosspoints;
+import com.baidu.hugegraph.structure.traverser.CrosspointsRequest;
+import com.baidu.hugegraph.structure.traverser.CustomizedCrosspoints;
 
 public class CustomizedCrosspointsAPI extends TraversersAPI {
 

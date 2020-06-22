@@ -17,13 +17,12 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.graph.structure;
+package com.baidu.hugegraph.structure.graph;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

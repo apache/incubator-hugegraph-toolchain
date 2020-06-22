@@ -19,10 +19,10 @@
 
 package com.baidu.hugegraph.api.traverser;
 
-import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarity;
-import com.baidu.hugegraph.api.traverser.structure.FusiformSimilarityRequest;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.traverser.FusiformSimilarity;
+import com.baidu.hugegraph.structure.traverser.FusiformSimilarityRequest;
 
 public class FusiformSimilarityAPI extends TraversersAPI {
 

@@ -17,23 +17,11 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.graph.structure;
+package com.baidu.hugegraph.structure.traverser;
 
-public enum UpdateStrategy {
+import java.util.LinkedHashMap;
 
-    SUM,
+public class Ranks extends LinkedHashMap<Object, Double> {
 
-    BIGGER,
-
-    SMALLER,
-
-    UNION,
-
-    INTERSECTION,
-
-    APPEND,
-
-    ELIMINATE,
-
-    OVERRIDE
+    private static final long serialVersionUID = -517025731560925613L;
 }
