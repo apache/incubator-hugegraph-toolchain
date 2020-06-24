@@ -63,7 +63,9 @@ const ErrorLogs: React.FC = observer(() => {
         position: 'relative',
         top: 76,
         left: '10vw',
-        lineHeight: 1.5
+        lineHeight: 2,
+        whiteSpace: 'pre',
+        fontSize: 14
       }}
     >
       <div>{serverDataImportStore.errorLogs}</div>

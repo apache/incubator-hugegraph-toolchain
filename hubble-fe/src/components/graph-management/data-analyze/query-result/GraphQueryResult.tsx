@@ -6,7 +6,7 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
-import { size, isUndefined, isEmpty } from 'lodash-es';
+import { size, isUndefined, isEmpty, cloneDeep } from 'lodash-es';
 import { saveAs } from 'file-saver';
 import vis from 'vis-network';
 import 'vis-network/styles/vis-network.min.css';
@@ -15,7 +15,12 @@ import { Message, Tooltip } from '@baidu/one-ui';
 import QueryFilterOptions from './QueryFilterOptions';
 import GraphPopOver from './GraphPopOver';
 import { DataAnalyzeStoreContext } from '../../../../stores';
-import { convertArrayToString } from '../../../../stores/utils';
+import { addGraphNodes, addGraphEdges } from '../../../../stores/utils';
+
+import type {
+  GraphNode,
+  GraphEdge
+} from '../../../../stores/types/GraphManagementStore/dataAnalyzeStore';
 
 import ZoomInIcon from '../../../../assets/imgs/ic_fangda_16.svg';
 import ZoomOutIcon from '../../../../assets/imgs/ic_suoxiao_16.svg';
@@ -46,12 +51,6 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
   const [legendWidth, setlegendWitdh] = useState(0);
 
   const [graph, setGraph] = useState<vis.Network | null>(null);
-  const [visGraphNodes, setVisGraphNodes] = useState<vis.DataSetNodes | null>(
-    null
-  );
-  const [visGraphEdges, setVisGraphEdges] = useState<vis.DataSetNodes | null>(
-    null
-  );
 
   const redrawGraphs = useCallback(() => {
     if (graph) {
@@ -67,17 +66,14 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
     const width = getComputedStyle(resultWrapper.current!).width as string;
     const height = getComputedStyle(resultWrapper.current!).height as string;
 
-    if (!graph) {
-      const graphNodes = new vis.DataSet(dataAnalyzeStore.graphNodes);
-      const graphEdges = new vis.DataSet(dataAnalyzeStore.graphEdges);
+    const graphNodes = new vis.DataSet(dataAnalyzeStore.graphNodes);
+    const graphEdges = new vis.DataSet(dataAnalyzeStore.graphEdges);
 
+    if (!graph) {
       const data = {
         nodes: graphNodes,
         edges: graphEdges
       };
-
-      setVisGraphNodes(graphNodes);
-      setVisGraphEdges(graphEdges);
 
       const layout: vis.Options = {
         width,
@@ -86,13 +82,18 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           shape: 'dot'
         },
         edges: {
-          arrows: 'to',
           arrowStrikethrough: false,
-          width: 1.5,
           color: {
             color: 'rgba(92, 115, 230, 0.8)',
             hover: 'rgba(92, 115, 230, 1)',
             highlight: 'rgba(92, 115, 230, 1)'
+          },
+          scaling: {
+            min: 1,
+            max: 3,
+            label: {
+              enabled: false
+            }
           }
         },
         interaction: {
@@ -103,6 +104,9 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           solver: 'forceAtlas2Based',
           timestep: 0.3,
           stabilization: { iterations: 150 }
+          // forceAtlas2Based: {
+          //   gravitationalConstant: Math.log(dataAnalyzeStore.nodeCount) * -35 //-60
+          // }
         }
       };
 
@@ -165,20 +169,20 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             timer = window.setTimeout(() => {
               const edgeId = edges[0];
 
-              const node = dataAnalyzeStore.graphData.data.graph_view.edges.find(
+              const edge = dataAnalyzeStore.graphData.data.graph_view.edges.find(
                 ({ id }) => id === edgeId
               );
 
-              if (isUndefined(node)) {
+              if (isUndefined(edge)) {
                 return;
               }
 
               dataAnalyzeStore.changeSelectedGraphLinkData({
-                id: node.id,
-                label: node.label,
-                properties: node.properties,
-                source: node.source,
-                target: node.target
+                id: edge.id,
+                label: edge.label,
+                properties: edge.properties,
+                source: edge.source,
+                target: edge.target
               });
 
               dataAnalyzeStore.syncGraphEditableProperties('edge');
@@ -192,7 +196,7 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                 dataAnalyzeStore.switchShowScreenInfo(true);
               }
 
-              // close filter board after click on node
+              // close filter board after click on edge
               dataAnalyzeStore.switchShowFilterBoard(false);
               // reset status, or click blank area won't collpase the drawer
               dataAnalyzeStore.switchClickOnNodeOrEdge(false);
@@ -203,7 +207,6 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
         network.on('doubleClick', async ({ nodes }) => {
           clearTimeout(timer);
           dataAnalyzeStore.switchClickOnNodeOrEdge(false);
-
           if (!isEmpty(nodes)) {
             const nodeId = nodes[0];
             const node = dataAnalyzeStore.graphData.data.graph_view.vertices.find(
@@ -211,112 +214,36 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             );
 
             if (!isUndefined(node)) {
+              if (
+                isUndefined(
+                  dataAnalyzeStore.vertexTypes.find(
+                    ({ name }) => name === node.label
+                  )
+                )
+              ) {
+                return;
+              }
+
               await dataAnalyzeStore.expandGraphNode(node.id, node.label);
 
               if (
                 dataAnalyzeStore.requestStatus.expandGraphNode === 'success'
               ) {
-                dataAnalyzeStore.expandedGraphData.data.graph_view.vertices.forEach(
-                  ({ id, label, properties }) => {
-                    graphNodes.add({
-                      id,
-                      label: id.length <= 15 ? id : id.slice(0, 15) + '...',
-                      vLabel: label,
-                      properties,
-                      title: `
-                          <div class="tooltip-fields">
-                            <div>顶点类型：</div>
-                            <div>${label}</div>
-                          </div>
-                          <div class="tooltip-fields">
-                            <div>顶点ID：</div>
-                            <div>${id}</div>
-                          </div>
-                          ${Object.entries(properties)
-                            .map(([key, value]) => {
-                              return `<div class="tooltip-fields">
-                                        <div>${key}: </div>
-                                        <div>${convertArrayToString(
-                                          value,
-                                          '，'
-                                        )}</div>
-                                      </div>`;
-                            })
-                            .join('')}
-                        `,
-                      color: {
-                        background:
-                          dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                        border:
-                          dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                        highlight: {
-                          background: '#fb6a02',
-                          border: '#fb6a02'
-                        },
-                        hover: { background: '#ec3112', border: '#ec3112' }
-                      },
-                      chosen: {
-                        node(
-                          values: any,
-                          id: string,
-                          selected: boolean,
-                          hovering: boolean
-                        ) {
-                          if (hovering || selected) {
-                            values.shadow = true;
-                            values.shadowColor = 'rgba(0, 0, 0, 0.6)';
-                            values.shadowX = 0;
-                            values.shadowY = 0;
-                            values.shadowSize = 25;
-                          }
-
-                          if (selected) {
-                            values.size = 30;
-                          }
-                        }
-                      }
-                    });
-                  }
+                addGraphNodes(
+                  dataAnalyzeStore.expandedGraphData.data.graph_view.vertices,
+                  dataAnalyzeStore.visDataSet?.nodes,
+                  dataAnalyzeStore.vertexSizeMappings,
+                  dataAnalyzeStore.colorMappings,
+                  dataAnalyzeStore.vertexWritingMappings
                 );
 
-                dataAnalyzeStore.expandedGraphData.data.graph_view.edges.forEach(
-                  (edge) => {
-                    graphEdges.add({
-                      ...edge,
-                      from: edge.source,
-                      to: edge.target,
-                      font: {
-                        color: '#666'
-                      },
-                      title: `
-                          <div class="tooltip-fields">
-                            <div>边类型：</div>
-                            <div>${edge.label}</div>
-                          </div>
-                          <div class="tooltip-fields">
-                            <div>边ID：</div>
-                            <div>${edge.id}</div>
-                          </div>
-                          ${Object.entries(edge.properties)
-                            .map(([key, value]) => {
-                              return `<div class="tooltip-fields">
-                                        <div>${key}: </div>
-                                        <div>${convertArrayToString(
-                                          value,
-                                          '，'
-                                        )}</div>
-                                      </div>`;
-                            })
-                            .join('')}
-                        `,
-                      color: {
-                        color: dataAnalyzeStore.edgeColorMappings[edge.label],
-                        highlight:
-                          dataAnalyzeStore.edgeColorMappings[edge.label],
-                        hover: dataAnalyzeStore.edgeColorMappings[edge.label]
-                      }
-                    });
-                  }
+                addGraphEdges(
+                  dataAnalyzeStore.expandedGraphData.data.graph_view.edges,
+                  dataAnalyzeStore.visDataSet?.edges,
+                  dataAnalyzeStore.edgeColorMappings,
+                  dataAnalyzeStore.edgeThicknessMappings,
+                  dataAnalyzeStore.edgeWithArrowMappings,
+                  dataAnalyzeStore.edgeWritingMappings
                 );
               }
             } else {
@@ -426,10 +353,19 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
         dataAnalyzeStore.setVisNetwork(network);
       }
     } else {
-      dataAnalyzeStore.setVisDataSet({
-        nodes: visGraphNodes,
-        edges: visGraphEdges
-      });
+      if (!dataAnalyzeStore.isGraphLoaded) {
+        graph.setData({
+          nodes: graphNodes,
+          edges: graphEdges
+        });
+
+        dataAnalyzeStore.setVisDataSet({
+          nodes: graphNodes,
+          edges: graphEdges
+        });
+
+        dataAnalyzeStore.switchGraphLoaded(true);
+      }
 
       redrawGraphs();
     }
@@ -640,19 +576,10 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             isAfterDragging={isAfterDragging}
             switchAfterDragging={switchAfterDragging}
             switchIsPopover={switchIsPopover}
-            visNetwork={graph}
-            visGraphNodes={visGraphNodes}
-            visGraphEdges={visGraphEdges}
           />
         )}
       </div>
-      {dataAnalyzeStore.isShowFilterBoard && (
-        <QueryFilterOptions
-          visNetwork={graph}
-          visGraphNodes={visGraphNodes}
-          visGraphEdges={visGraphEdges}
-        />
-      )}
+      {dataAnalyzeStore.isShowFilterBoard && <QueryFilterOptions />}
       {showLoadingGraphs && (
         <div className="graph-loading-placeholder">
           <div className="query-result-loading-bg">

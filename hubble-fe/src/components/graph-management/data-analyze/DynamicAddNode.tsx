@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import { Drawer, Select, Input, Button, Message } from '@baidu/one-ui';
 
 import { DataAnalyzeStoreContext } from '../../../stores';
-import { convertArrayToString } from '../../../stores/utils';
+import { addGraphNodes } from '../../../stores/utils';
 import { isUndefined, isEmpty } from 'lodash-es';
 
 const IDStrategyMappings: Record<string, string> = {
@@ -109,67 +109,13 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
                 return;
               }
 
-              newGraphNodes.forEach(({ id, label, properties }) => {
-                dataAnalyzeStore.visDataSet?.nodes.add({
-                  id,
-                  label: id.length <= 15 ? id : id.slice(0, 15) + '...',
-                  vLabel: label,
-                  properties,
-                  title: `
-                    <div class="tooltip-fields">
-                      <div>顶点类型：</div>
-                      <div>${label}</div>
-                    </div>
-                    <div class="tooltip-fields">
-                      <div>顶点ID：</div>
-                      <div>${id}</div>
-                    </div>
-                    ${Object.entries(properties)
-                      .map(([key, value]) => {
-                        return `<div class="tooltip-fields">
-                                  <div>${key}: </div>
-                                  <div>${convertArrayToString(
-                                    value,
-                                    '，'
-                                  )}</div>
-                                </div>`;
-                      })
-                      .join('')}
-                  `,
-                  color: {
-                    background:
-                      dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                    border: dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                    highlight: {
-                      background: '#fb6a02',
-                      border: '#fb6a02'
-                    },
-                    hover: { background: '#ec3112', border: '#ec3112' }
-                  },
-                  chosen: {
-                    node(
-                      values: any,
-                      id: string,
-                      selected: boolean,
-                      hovering: boolean
-                    ) {
-                      if (hovering || selected) {
-                        values.shadow = true;
-                        values.shadowColor = 'rgba(0, 0, 0, 0.6)';
-                        values.shadowX = 0;
-                        values.shadowY = 0;
-                        values.shadowSize = 25;
-                      }
-
-                      if (selected) {
-                        values.size = 30;
-                      }
-                    }
-                  },
-                  x: dataAnalyzeStore.visCurrentCoordinates.canvasX,
-                  y: dataAnalyzeStore.visCurrentCoordinates.canvasY
-                });
-              });
+              addGraphNodes(
+                newGraphNodes,
+                dataAnalyzeStore.visDataSet?.nodes,
+                dataAnalyzeStore.vertexSizeMappings,
+                dataAnalyzeStore.colorMappings,
+                dataAnalyzeStore.vertexWritingMappings
+              );
 
               dataAnalyzeStore.visNetwork?.selectNodes(
                 newGraphNodes.map(({ id }) => id)

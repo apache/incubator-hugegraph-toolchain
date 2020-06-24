@@ -1,12 +1,17 @@
 import { observable, action, flow, computed } from 'mobx';
 import axios from 'axios';
-import { isUndefined } from 'lodash-es';
+import { isUndefined, cloneDeep, clone } from 'lodash-es';
 
 import vis from 'vis-network';
 import { MetadataConfigsRootStore } from './metadataConfigsStore';
-import { checkIfLocalNetworkOffline } from '../../utils';
-import { baseUrl } from '../../types/common';
 import {
+  checkIfLocalNetworkOffline,
+  vertexRadiusMapping,
+  edgeWidthMapping
+} from '../../utils';
+
+import { baseUrl } from '../../types/common';
+import type {
   GraphViewData,
   DrawerTypes
 } from '../../types/GraphManagementStore/metadataConfigsStore';
@@ -18,8 +23,14 @@ export class GraphViewStore {
     this.metadataConfigsRootStore = MetadataConfigsRootStore;
   }
 
-  colorMappings: Record<string, string> = {};
-  edgeColorMappings: Record<string, string> = {};
+  @observable.ref colorMappings: Record<string, string> = {};
+  @observable.ref vertexSizeMappings: Record<string, string> = {};
+  @observable.ref vertexWritingMappings: Record<string, string[]> = {};
+  @observable.ref edgeColorMappings: Record<string, string> = {};
+  @observable.ref edgeWithArrowMappings: Record<string, boolean> = {};
+  @observable.ref edgeThicknessMappings: Record<string, string> = {};
+  @observable.ref edgeWritingMappings: Record<string, string[]> = {};
+
   @observable currentDrawer: DrawerTypes = '';
   @observable currentSelected = '';
   @observable isNodeOrEdgeClicked = false;
@@ -54,7 +65,9 @@ export class GraphViewStore {
         return {
           id,
           label: id.length <= 15 ? id : id.slice(0, 15) + '...',
-          vLabel: label,
+          vLabel: id,
+          value: vertexRadiusMapping[this.vertexSizeMappings[label]],
+          font: { size: 16 },
           properties,
           title: `
             <div class="metadata-graph-view-tooltip-fields">
@@ -72,7 +85,7 @@ export class GraphViewStore {
                     : value.toLowerCase();
 
                 const primaryKeyIndex = primary_keys.findIndex(
-                  primaryKey => primaryKey === key
+                  (primaryKey) => primaryKey === key
                 );
 
                 return `<div class="metadata-graph-view-tooltip-fields">
@@ -109,7 +122,7 @@ export class GraphViewStore {
               }
 
               if (selected) {
-                values.size = 30;
+                values.size += 5;
               }
             }
           }
@@ -128,45 +141,46 @@ export class GraphViewStore {
         return {
           id,
           label,
+          properties,
+          source,
+          target,
           from: source,
           to: target,
-          font: {
-            color: '#666'
-          },
+          font: { size: 16, strokeWidth: 0, color: '#666' },
+          arrows: this.edgeWithArrowMappings[label] === true ? 'to' : '',
+          value: edgeWidthMapping[this.edgeThicknessMappings[label]],
           title: `
-          <div class="metadata-graph-view-tooltip-fields">
-            <div>边类型：</div>
-            <div style="min-width: 60px; max-width: 145px; marigin-right: 0">${label}</div>
-          </div>
-          <div class="metadata-graph-view-tooltip-fields">
-            <div style="max-width: 120px">关联属性及类型：</div>
-          </div>
-          ${Object.entries(properties)
-            .map(([key, value]) => {
-              const convertedValue =
-                value.toLowerCase() === 'text' ? 'string' : value.toLowerCase();
+            <div class="metadata-graph-view-tooltip-fields">
+              <div>边类型：</div>
+              <div style="min-width: 60px; max-width: 145px; marigin-right: 0">${label}</div>
+            </div>
+            <div class="metadata-graph-view-tooltip-fields">
+              <div style="max-width: 120px">关联属性及类型：</div>
+            </div>
+            ${Object.entries(properties)
+              .map(([key, value]) => {
+                const convertedValue =
+                  value.toLowerCase() === 'text'
+                    ? 'string'
+                    : value.toLowerCase();
 
-              const sortKeyIndex = sort_keys.findIndex(
-                sortKey => sortKey === key
-              );
+                const sortKeyIndex = sort_keys.findIndex(
+                  (sortKey) => sortKey === key
+                );
 
-              return `<div class="metadata-graph-view-tooltip-fields">
-                        <div>${key}: </div>
-                        <div>${convertedValue}</div>
-                        <div>${
-                          sortKeyIndex === -1
-                            ? ''
-                            : `(区分键${sortKeyIndex + 1})`
-                        }</div>
-                      </div>`;
-            })
-            .join('')}
+                return `<div class="metadata-graph-view-tooltip-fields">
+                          <div>${key}: </div>
+                          <div>${convertedValue}</div>
+                          <div>${
+                            sortKeyIndex === -1
+                              ? ''
+                              : `(区分键${sortKeyIndex + 1})`
+                          }</div>
+                        </div>`;
+              })
+              .join('')}
           `,
-          color: {
-            color: this.edgeColorMappings[label] || '#5c73e6',
-            highlight: this.edgeColorMappings[label] || '#5c73e6',
-            hover: this.edgeColorMappings[label] || '#5c73e6'
-          }
+          color: this.edgeColorMappings[label] || '#5c73e6'
         };
       }
     );
@@ -199,6 +213,7 @@ export class GraphViewStore {
 
   @action
   dispose() {
+    this.edgeColorMappings = {};
     this.currentDrawer = '';
     this.currentSelected = '';
     this.colorMappings = {};
@@ -224,16 +239,35 @@ export class GraphViewStore {
   fetchGraphViewData = flow(function* fetchGraphViewData(
     this: GraphViewStore,
     colorMappings?: Record<string, string>,
-    edgeColorMappings?: Record<string, string>
+    vertexSizeMappings?: Record<string, string>,
+    vertexWritingMappings?: Record<string, string[]>,
+    edgeColorMappings?: Record<string, string>,
+    edgeThicknessMappings?: Record<string, string>,
+    edgeWithArrowMappings?: Record<string, boolean>,
+    edgeWritingMappings?: Record<string, string[]>
   ) {
     this.requestStatus.fetchGraphViewData = 'pending';
 
     if (!isUndefined(colorMappings)) {
       this.colorMappings = colorMappings;
     }
-
+    if (!isUndefined(vertexSizeMappings)) {
+      this.vertexSizeMappings = vertexSizeMappings;
+    }
+    if (!isUndefined(vertexWritingMappings)) {
+      this.vertexWritingMappings = vertexWritingMappings;
+    }
     if (!isUndefined(edgeColorMappings)) {
       this.edgeColorMappings = edgeColorMappings;
+    }
+    if (!isUndefined(edgeThicknessMappings)) {
+      this.edgeThicknessMappings = edgeThicknessMappings;
+    }
+    if (!isUndefined(edgeWithArrowMappings)) {
+      this.edgeWithArrowMappings = edgeWithArrowMappings;
+    }
+    if (!isUndefined(edgeWritingMappings)) {
+      this.edgeWritingMappings = edgeWritingMappings;
     }
 
     try {

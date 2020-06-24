@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import { Drawer, Select, Input, Button, Message } from '@baidu/one-ui';
 
 import { DataAnalyzeStoreContext } from '../../../stores';
-import { convertArrayToString } from '../../../stores/utils';
+import { addGraphNodes, addGraphEdges } from '../../../stores/utils';
 import { isUndefined, isEmpty } from 'lodash-es';
 
 const IDStrategyMappings: Record<string, string> = {
@@ -92,103 +92,22 @@ const DataAnalyzeAddEdge: React.FC = observer(() => {
             if (!isUndefined(graphViewData)) {
               const { vertices, originalVertices, edges } = graphViewData;
 
-              vertices.forEach(({ id, label, properties }) => {
-                dataAnalyzeStore.visDataSet?.nodes.add({
-                  id,
-                  label: id.length <= 15 ? id : id.slice(0, 15) + '...',
-                  vLabel: label,
-                  properties,
-                  title: `
-                    <div class="tooltip-fields">
-                      <div>顶点类型：</div>
-                      <div>${label}</div>
-                    </div>
-                    <div class="tooltip-fields">
-                      <div>顶点ID：</div>
-                      <div>${id}</div>
-                    </div>
-                    ${Object.entries(properties)
-                      .map(([key, value]) => {
-                        return `<div class="tooltip-fields">
-                                  <div>${key}: </div>
-                                  <div>${convertArrayToString(
-                                    value,
-                                    '，'
-                                  )}</div>
-                                </div>`;
-                      })
-                      .join('')}
-                  `,
-                  color: {
-                    background:
-                      dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                    border: dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                    highlight: {
-                      background: '#fb6a02',
-                      border: '#fb6a02'
-                    },
-                    hover: { background: '#ec3112', border: '#ec3112' }
-                  },
-                  chosen: {
-                    node(
-                      values: any,
-                      id: string,
-                      selected: boolean,
-                      hovering: boolean
-                    ) {
-                      if (hovering || selected) {
-                        values.shadow = true;
-                        values.shadowColor = 'rgba(0, 0, 0, 0.6)';
-                        values.shadowX = 0;
-                        values.shadowY = 0;
-                        values.shadowSize = 25;
-                      }
+              addGraphNodes(
+                vertices,
+                dataAnalyzeStore.visDataSet?.nodes,
+                dataAnalyzeStore.vertexSizeMappings,
+                dataAnalyzeStore.colorMappings,
+                dataAnalyzeStore.vertexWritingMappings
+              );
 
-                      if (selected) {
-                        values.size = 30;
-                      }
-                    }
-                  }
-                });
-              });
-
-              edges.forEach((edge) => {
-                dataAnalyzeStore.visDataSet?.edges.add({
-                  ...edge,
-                  from: edge.source,
-                  to: edge.target,
-                  font: {
-                    color: '#666'
-                  },
-                  title: `
-                      <div class="tooltip-fields">
-                        <div>边类型：</div>
-                        <div>${edge.label}</div>
-                      </div>
-                      <div class="tooltip-fields">
-                        <div>边ID：</div>
-                        <div>${edge.id}</div>
-                      </div>
-                      ${Object.entries(edge.properties)
-                        .map(([key, value]) => {
-                          return `<div class="tooltip-fields">
-                                    <div>${key}: </div>
-                                    <div>${convertArrayToString(
-                                      value,
-                                      '，'
-                                    )}</div>
-                                  </div>
-                                `;
-                        })
-                        .join('')}
-                    `,
-                  color: {
-                    color: dataAnalyzeStore.edgeColorMappings[edge.label],
-                    highlight: dataAnalyzeStore.edgeColorMappings[edge.label],
-                    hover: dataAnalyzeStore.edgeColorMappings[edge.label]
-                  }
-                });
-              });
+              addGraphEdges(
+                edges,
+                dataAnalyzeStore.visDataSet?.edges,
+                dataAnalyzeStore.edgeColorMappings,
+                dataAnalyzeStore.edgeThicknessMappings,
+                dataAnalyzeStore.edgeWithArrowMappings,
+                dataAnalyzeStore.edgeWritingMappings
+              );
 
               dataAnalyzeStore.visNetwork?.selectNodes(
                 originalVertices.map(({ id }) => id)

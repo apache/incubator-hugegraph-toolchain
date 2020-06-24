@@ -4,7 +4,7 @@ import classnames from 'classnames';
 import { isEmpty, size, isUndefined, range } from 'lodash-es';
 import { DndProvider, useDrop, DropTargetMonitor } from 'react-dnd';
 import { useTranslation } from 'react-i18next';
-import Backend, { NativeTypes } from 'react-dnd-html5-backend';
+import { HTML5Backend, NativeTypes } from 'react-dnd-html5-backend';
 import { Button, Progress, Message } from '@baidu/one-ui';
 
 import { DataImportRootStoreContext } from '../../../../stores';
@@ -27,7 +27,7 @@ const UploadEntry: React.FC = observer(() => {
 
   return (
     <>
-      <DndProvider backend={Backend}>
+      <DndProvider backend={HTML5Backend}>
         <FileDropZone />
       </DndProvider>
       <div className="import-tasks-manipulation-wrapper">

@@ -511,8 +511,8 @@ const MetadataProperties: React.FC = observer(() => {
 
   // these would be called before <MetadataConfigs /> rendered, pre-load some data here
   useEffect(() => {
-    dataAnalyzeStore.fetchAllNodeColors();
-    dataAnalyzeStore.fetchAllEdgeColors();
+    dataAnalyzeStore.fetchAllNodeStyle();
+    dataAnalyzeStore.fetchAllEdgeStyle();
   }, [dataAnalyzeStore]);
 
   useEffect(() => {

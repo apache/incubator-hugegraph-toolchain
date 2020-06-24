@@ -19,6 +19,7 @@ import ActiveShowGraphIcon from '../../../assets/imgs/ic_tumoshi_white.svg';
 import ShowGraphIcon from '../../../assets/imgs/ic_tumoshi_black.svg';
 
 const MetadataConfig: React.FC = observer(() => {
+  const { vertexTypeStore } = useContext(MetadataConfigsRootStore);
   const appStore = useContext(AppStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const graphManagementStore = useContext(GraphManagementStoreContext);
@@ -65,8 +66,8 @@ const MetadataConfig: React.FC = observer(() => {
       appStore.setCurrentId(Number(params.id));
       // fetch node colors
       dataAnalyzeStore.setCurrentId(Number(params.id));
-      dataAnalyzeStore.fetchAllNodeColors();
-      dataAnalyzeStore.fetchAllEdgeColors();
+      dataAnalyzeStore.fetchAllNodeStyle();
+      dataAnalyzeStore.fetchAllEdgeStyle();
       metadataConfigRootStore.setCurrentId(Number(params.id));
       metadataConfigRootStore.fetchIdList();
     }

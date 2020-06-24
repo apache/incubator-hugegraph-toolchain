@@ -16,6 +16,11 @@ import {
   EdgeTypeValidatePropertyIndexes
 } from '../../types/GraphManagementStore/metadataConfigsStore';
 
+import SelectedSolidArrowIcon from '../../../assets/imgs/ic_arrow_selected.svg';
+import NoSelectedSolidArrowIcon from '../../../assets/imgs/ic_arrow.svg';
+import SelectedSolidStraightIcon from '../../../assets/imgs/ic_straight_selected.svg';
+import NoSelectedSolidStraightIcon from '../../../assets/imgs/ic_straight.svg';
+
 export class EdgeTypeStore {
   metadataConfigsRootStore: MetadataConfigsRootStore;
 
@@ -50,13 +55,44 @@ export class EdgeTypeStore {
     '#5c73e6',
     '#569380',
     '#8ecc93',
-    '#f79767',
-    '#f06667',
-    '#c990c0',
+    '#fe9227',
+    '#fe5b5d',
+    '#fd6ace',
     '#4d8dda',
     '#57c7e3',
     '#ffe081',
-    '#da7194'
+    '#c570ff',
+    '#2b65ff',
+    '#0eb880',
+    '#76c100',
+    '#ed7600',
+    '#e65055',
+    '#a64ee6',
+    '#108cee',
+    '#00b5d9',
+    '#f2ca00',
+    '#e048ae'
+  ];
+
+  @observable.ref edgeShapeSchemas = [
+    {
+      blackicon: NoSelectedSolidArrowIcon,
+      blueicon: SelectedSolidArrowIcon,
+      flag: true,
+      shape: 'solid'
+    },
+    {
+      blackicon: NoSelectedSolidStraightIcon,
+      blueicon: SelectedSolidStraightIcon,
+      flag: false,
+      shape: 'solid'
+    }
+  ];
+
+  @observable.ref thicknessSchemas = [
+    { ch: '粗', en: 'THICK' },
+    { ch: '中', en: 'NORMAL' },
+    { ch: '细', en: 'FINE' }
   ];
 
   @observable edgeTypeListPageConfig: PageConfig = {
@@ -76,7 +112,10 @@ export class EdgeTypeStore {
     open_label_index: false,
     style: {
       color: '#5c73e6',
-      icon: null
+      icon: null,
+      with_arrow: true,
+      thickness: 'NORMAL',
+      display_fields: ['~id']
     }
   };
 
@@ -90,7 +129,10 @@ export class EdgeTypeStore {
     remove_property_indexes: [],
     style: {
       color: null,
-      icon: null
+      icon: null,
+      with_arrow: null,
+      thickness: 'NORMAL',
+      display_fields: []
     }
   };
 
@@ -124,7 +166,8 @@ export class EdgeTypeStore {
     targetLabel: '',
     properties: '',
     sortKeys: '',
-    propertyIndexes: []
+    propertyIndexes: [],
+    displayFeilds: []
   };
 
   @observable.shallow validateEditEdgeTypeErrorMessage: Record<
@@ -233,7 +276,10 @@ export class EdgeTypeStore {
       open_label_index: false,
       style: {
         color: '#5c73e6',
-        icon: null
+        icon: null,
+        with_arrow: true,
+        thickness: 'NORMAL',
+        display_fields: ['~id']
       }
     };
   }
@@ -251,7 +297,10 @@ export class EdgeTypeStore {
       remove_property_indexes: [],
       style: {
         color: null,
-        icon: null
+        icon: null,
+        with_arrow: null,
+        thickness: 'NORMAL',
+        display_fields: []
       }
     };
 
@@ -397,6 +446,14 @@ export class EdgeTypeStore {
       }
     }
 
+    if (category === 'displayFeilds') {
+      if (this.newEdgeType.style.display_fields.length === 0) {
+        !initial &&
+          (this.validateNewEdgeTypeErrorMessage.displayFeilds = '此项为必填项');
+        isReady = false;
+      }
+    }
+
     if (category === 'propertyIndexes') {
       this.isAddNewPropertyIndexReady = true;
       this.validateNewEdgeTypeErrorMessage.propertyIndexes = this.newEdgeType.property_indexes.map(
@@ -456,7 +513,8 @@ export class EdgeTypeStore {
       this.validateNewEdgeType('targetLabel', initial) &&
       this.validateNewEdgeType('properties', initial) &&
       this.validateNewEdgeType('sortKeys', initial) &&
-      this.validateNewEdgeType('propertyIndexes', initial);
+      this.validateNewEdgeType('propertyIndexes', initial) &&
+      this.validateNewEdgeType('displayFeilds', initial);
   }
 
   @action
@@ -573,7 +631,7 @@ export class EdgeTypeStore {
             this.checkedReusableData!.propertyindex_conflicts.find(
               ({ entity }) =>
                 !isUndefined(
-                  entity.fields.find(fieldName => fieldName === newValue)
+                  entity.fields.find((fieldName) => fieldName === newValue)
                 )
             )
           ) ||
@@ -584,13 +642,13 @@ export class EdgeTypeStore {
                   entity.properties.find(({ name }) => name === newValue)
                 ) ||
                 !isUndefined(
-                  entity.primary_keys.find(key => key === newValue)
+                  entity.primary_keys.find((key) => key === newValue)
                 ) ||
                 !isUndefined(
                   entity.property_indexes.find(
                     ({ fields }) =>
                       !isUndefined(
-                        fields.find(fieldName => fieldName === newValue)
+                        fields.find((fieldName) => fieldName === newValue)
                       )
                   )
                 )
@@ -602,12 +660,14 @@ export class EdgeTypeStore {
                 !isUndefined(
                   entity.properties.find(({ name }) => name === newValue)
                 ) ||
-                !isUndefined(entity.sort_keys.find(key => key === newValue)) ||
+                !isUndefined(
+                  entity.sort_keys.find((key) => key === newValue)
+                ) ||
                 !isUndefined(
                   entity.property_indexes.find(
                     ({ fields }) =>
                       !isUndefined(
-                        fields.find(fieldName => fieldName === newValue)
+                        fields.find((fieldName) => fieldName === newValue)
                       )
                   )
                 )
@@ -697,7 +757,7 @@ export class EdgeTypeStore {
           }
 
           const sortKeyIndex = entity.sort_keys.findIndex(
-            key => key === originalValue
+            (key) => key === originalValue
           );
 
           if (sortKeyIndex !== -1) {
@@ -707,7 +767,7 @@ export class EdgeTypeStore {
 
           entity.property_indexes.forEach(({ fields }) => {
             const mutatePropertyIndexIndex = fields.findIndex(
-              fieldName => fieldName === originalValue
+              (fieldName) => fieldName === originalValue
             );
 
             if (mutatePropertyIndexIndex !== -1) {
@@ -731,7 +791,7 @@ export class EdgeTypeStore {
 
             // current vertex belongs to which edge
             const mutateEdgeIndex = editedCheckedReusableData!.edgelabel_conflicts.findIndex(
-              edge =>
+              (edge) =>
                 edge.entity.source_label === entity.name ||
                 edge.entity.target_label === entity.name
             );
@@ -741,7 +801,7 @@ export class EdgeTypeStore {
           }
 
           const primaryKeyIndex = entity.primary_keys.findIndex(
-            key => key === originalValue
+            (key) => key === originalValue
           );
 
           if (primaryKeyIndex !== -1) {
@@ -752,7 +812,7 @@ export class EdgeTypeStore {
 
           entity.property_indexes.forEach(({ fields }) => {
             const mutatePropertyIndexIndex = fields.findIndex(
-              fieldName => fieldName === originalValue
+              (fieldName) => fieldName === originalValue
             );
 
             if (mutatePropertyIndexIndex !== -1) {
@@ -766,7 +826,7 @@ export class EdgeTypeStore {
       editedCheckedReusableData!.propertyindex_conflicts.forEach(
         ({ entity }, index) => {
           const mutateIndex = entity.fields.findIndex(
-            fieldName => fieldName === originalValue
+            (fieldName) => fieldName === originalValue
           );
 
           if (mutateIndex !== -1) {
@@ -878,7 +938,7 @@ export class EdgeTypeStore {
           );
         }
 
-        deletedPropertyIndexNames.forEach(propertyIndexName => {
+        deletedPropertyIndexNames.forEach((propertyIndexName) => {
           editedCheckedReusableData.vertexlabel_conflicts.forEach(
             ({ entity }) => {
               remove(
@@ -905,7 +965,7 @@ export class EdgeTypeStore {
 
         deletedPropertyNames
           .filter(
-            propertyName =>
+            (propertyName) =>
               !isUndefined(
                 editedCheckedReusableData.vertexlabel_conflicts.find(
                   ({ entity }) =>
@@ -927,7 +987,7 @@ export class EdgeTypeStore {
                 )
               )
           )
-          .forEach(propertyName => {
+          .forEach((propertyName) => {
             remove(
               editedCheckedReusableData.propertykey_conflicts,
               ({ entity }) => entity.name === propertyName
@@ -944,7 +1004,7 @@ export class EdgeTypeStore {
         // remove property in property index
         editedCheckedReusableData.propertyindex_conflicts.forEach(
           ({ entity }) => {
-            remove(entity.fields, name => name === deletedName);
+            remove(entity.fields, (name) => name === deletedName);
           }
         );
 
@@ -1050,7 +1110,8 @@ export class EdgeTypeStore {
         targetLabel: '',
         properties: '',
         sortKeys: '',
-        propertyIndexes: []
+        propertyIndexes: [],
+        displayFeilds: []
       };
 
       return;
@@ -1118,7 +1179,10 @@ export class EdgeTypeStore {
       remove_property_indexes: [],
       style: {
         color: null,
-        icon: null
+        icon: null,
+        with_arrow: null,
+        thickness: 'NORMAL',
+        display_fields: []
       }
     };
     this.resetValidateNewEdgeTypeMessage();
@@ -1257,7 +1321,7 @@ export class EdgeTypeStore {
 
     const combinedParams = Array.isArray(selectedEdgeTypeIndexes)
       ? selectedEdgeTypeIndexes
-          .map(propertyIndex => 'names=' + this.edgeTypes[propertyIndex].name)
+          .map((propertyIndex) => 'names=' + this.edgeTypes[propertyIndex].name)
           .join('&')
       : `names=${selectedEdgeTypeIndexes}`;
 
@@ -1308,7 +1372,7 @@ export class EdgeTypeStore {
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels/check_conflict`,
           {
-            edgelabels: selectedEdgeTypes.map(selectedEdgeType =>
+            edgelabels: selectedEdgeTypes.map((selectedEdgeType) =>
               this.reusableEdgeTypes.find(
                 ({ name }) => name === selectedEdgeType
               )

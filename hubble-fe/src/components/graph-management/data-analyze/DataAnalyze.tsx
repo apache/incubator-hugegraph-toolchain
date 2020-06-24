@@ -43,8 +43,8 @@ const DataAnalyze: React.FC = observer(() => {
       dataAnalyzeStore.fetchValueTypes();
       dataAnalyzeStore.fetchVertexTypes();
       dataAnalyzeStore.fetchEdgeTypes();
-      dataAnalyzeStore.fetchAllNodeColors();
-      dataAnalyzeStore.fetchAllEdgeColors();
+      dataAnalyzeStore.fetchAllNodeStyle();
+      dataAnalyzeStore.fetchAllEdgeStyle();
     }
   }, [dataAnalyzeStore, match, (params as Params).id]);
 

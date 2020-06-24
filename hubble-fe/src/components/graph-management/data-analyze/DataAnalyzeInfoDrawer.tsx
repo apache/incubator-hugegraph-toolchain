@@ -1,7 +1,7 @@
 import React, { useState, useContext, useCallback, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import classnames from 'classnames';
-import { isUndefined } from 'lodash-es';
+import { isUndefined, update } from 'lodash-es';
 import { Drawer, Input, Button, Message } from '@baidu/one-ui';
 
 import { DataAnalyzeStoreContext } from '../../../stores';
@@ -96,10 +96,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
                       .map(([key, value]) => {
                         return `<div class="tooltip-fields">
                                   <div>${key}: </div>
-                                  <div>${convertArrayToString(
-                                    value,
-                                    '，'
-                                  )}</div>
+                                  <div>${convertArrayToString(value)}</div>
                                 </div>`;
                       })
                       .join('')}
@@ -124,10 +121,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
                         .map(([key, value]) => {
                           return `<div class="tooltip-fields">
                                     <div>${key}: </div>
-                                    <div>${convertArrayToString(
-                                      value,
-                                      '，'
-                                    )}</div>
+                                    <div>${convertArrayToString(value)}</div>
                                   </div>
                                 `;
                         })
@@ -207,7 +201,11 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
           ([key, value], primaryKeyIndex) => (
             <div className={graphInfoItemClassName} key={key}>
               <div>
-                {key}(主键{`${primaryKeyIndex + 1}`})：
+                {key}(
+                {dataAnalyzeStore.graphInfoDataSet === 'node'
+                  ? '主键'
+                  : '区分键'}
+                {`${primaryKeyIndex + 1}`})：
               </div>
               <div>{value}</div>
             </div>
@@ -226,7 +224,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
           >
             <div>{key}: </div>
             {!isEdit ? (
-              <div>{convertArrayToString(value, '，')}</div>
+              <div>{convertArrayToString(value)}</div>
             ) : (
               <div>
                 <Input
@@ -279,7 +277,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
             >
               <div>{key}: </div>
               {!isEdit ? (
-                <div>{convertArrayToString(value, '，')}</div>
+                <div>{convertArrayToString(value)}</div>
               ) : (
                 <div>
                   <Input

@@ -24,12 +24,18 @@ import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/me
 import { EdgeTypeValidatePropertyIndexes } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
 import {
   mapMetadataProperties,
-  generateGraphModeId
+  generateGraphModeId,
+  edgeWidthMapping,
+  formatVertexIdText
 } from '../../../../stores/utils';
 
 import BlueArrowIcon from '../../../../assets/imgs/ic_arrow_blue.svg';
 import HintIcon from '../../../../assets/imgs/ic_question_mark.svg';
 import closeIcon from '../../../../assets/imgs/ic_close_16.svg';
+import SelectedSoilidArrowIcon from '../../../../assets/imgs/ic_arrow_selected.svg';
+import NoSelectedSoilidArrowIcon from '../../../../assets/imgs/ic_arrow.svg';
+import SelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight_selected.svg';
+import NoSelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight.svg';
 
 const CreateEdge: React.FC = observer(() => {
   const {
@@ -119,12 +125,12 @@ const CreateEdge: React.FC = observer(() => {
             graphViewStore.visDataSet!.edges.add({
               ...rest,
               id: generateGraphModeId(name, source_label, target_label),
-              label: name,
+              label: name.length <= 15 ? name : name.slice(0, 15) + '...',
               from: source_label,
               to: target_label,
-              font: {
-                color: '#666'
-              },
+              value: edgeWidthMapping[style.thickness],
+              font: { size: 16, strokeWidth: 0, color: '#666' },
+              arrows: style.with_arrow === true ? 'to' : '',
               title: `
                 <div class="metadata-graph-view-tooltip-fields">
                   <div>边类型：</div>
@@ -141,7 +147,7 @@ const CreateEdge: React.FC = observer(() => {
                         : value.toLowerCase();
 
                     const sortKeyIndex = sort_keys.findIndex(
-                      sortKey => sortKey === key
+                      (sortKey) => sortKey === key
                     );
 
                     return `<div class="metadata-graph-view-tooltip-fields">
@@ -234,11 +240,31 @@ const CreateEdge: React.FC = observer(() => {
                   }
                 }}
               />
+            </div>
+            <div className="metadata-graph-drawer-options">
+              <div
+                className="metadata-graph-drawer-options-name"
+                style={{ width: 118, marginRight: 0 }}
+              >
+                <span className="metdata-essential-form-options">*</span>
+                <span>边样式:</span>
+              </div>
               <div className="metadata-graph-drawer-options-colors">
                 <Select
                   width={66}
                   size="medium"
-                  value={edgeTypeStore.newEdgeType.style.color}
+                  style={{ marginRight: 12 }}
+                  value={
+                    <div
+                      className="new-vertex-type-select"
+                      style={{
+                        background: edgeTypeStore.newEdgeType.style.color!.toLowerCase(),
+                        marginTop: 5
+                      }}
+                    ></div>
+                  }
+                  prefixCls="new-fc-one-select-another"
+                  dropdownMatchSelectWidth={false}
                   onChange={(value: string) => {
                     edgeTypeStore.mutateNewEdgeType({
                       ...edgeTypeStore.newEdgeType,
@@ -249,20 +275,125 @@ const CreateEdge: React.FC = observer(() => {
                     });
                   }}
                 >
-                  {edgeTypeStore.colorSchemas.map((color: string) => (
-                    <Select.Option value={color} key={color}>
-                      <div
-                        className="metadata-graph-drawer-options-color"
+                  {edgeTypeStore.colorSchemas.map(
+                    (color: string, index: number) => (
+                      <Select.Option
+                        value={color}
+                        key={color}
                         style={{
-                          background: color
+                          display: 'inline-block',
+                          marginLeft: index % 5 === 0 ? 8 : 0,
+                          marginTop: index < 5 ? 6 : 2,
+                          width: 31
                         }}
-                      ></div>
+                      >
+                        <div
+                          className={
+                            edgeTypeStore.newEdgeType.style.color === color
+                              ? 'new-vertex-type-options-border new-vertex-type-options-color'
+                              : 'new-vertex-type-options-no-border new-vertex-type-options-color'
+                          }
+                          style={{
+                            background: color,
+                            marginLeft: -4,
+                            marginTop: 4.4
+                          }}
+                        ></div>
+                      </Select.Option>
+                    )
+                  )}
+                </Select>
+              </div>
+
+              <div className="new-vertex-type-options-colors">
+                <Select
+                  width={66}
+                  size="medium"
+                  value={
+                    edgeTypeStore.newEdgeType.style.with_arrow ? (
+                      <div>
+                        <img src={NoSelectedSoilidArrowIcon} />
+                      </div>
+                    ) : (
+                      <div>
+                        <img src={NoSelectedSoilidStraightIcon} />
+                      </div>
+                    )
+                  }
+                  onChange={(e: any) => {
+                    edgeTypeStore.mutateNewEdgeType({
+                      ...edgeTypeStore.newEdgeType,
+                      style: {
+                        ...edgeTypeStore.newEdgeType.style,
+                        with_arrow: e[0] && e[1] === 'solid'
+                      }
+                    });
+                  }}
+                >
+                  {edgeTypeStore.edgeShapeSchemas.map((item, index) => (
+                    <Select.Option
+                      value={[item.flag, item.shape]}
+                      key={item.flag}
+                      style={{ width: 66 }}
+                    >
+                      <div
+                        className="new-vertex-type-options-color"
+                        style={{
+                          marginTop: 6,
+                          marginLeft: 5
+                        }}
+                      >
+                        <img
+                          src={
+                            edgeTypeStore.newEdgeType.style.with_arrow ===
+                            item.flag
+                              ? item.blueicon
+                              : item.blackicon
+                          }
+                          alt="toogleEdgeArrow"
+                        />
+                      </div>
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              <div className="new-vertex-type-options-colors">
+                <Select
+                  width={66}
+                  size="medium"
+                  value={edgeTypeStore.newEdgeType.style.thickness}
+                  style={{ paddingLeft: 7 }}
+                  onChange={(value: string) => {
+                    edgeTypeStore.mutateNewEdgeType({
+                      ...edgeTypeStore.newEdgeType,
+                      style: {
+                        ...edgeTypeStore.newEdgeType.style,
+                        thickness: value
+                      }
+                    });
+                  }}
+                >
+                  {edgeTypeStore.thicknessSchemas.map((value, index) => (
+                    <Select.Option
+                      value={value.en}
+                      key={value.en}
+                      style={{ width: 66 }}
+                    >
+                      <div
+                        className="new-vertex-type-options-color"
+                        style={{
+                          marginTop: 4,
+                          marginLeft: 5
+                        }}
+                      >
+                        {value.ch}
+                      </div>
                     </Select.Option>
                   ))}
                 </Select>
               </div>
             </div>
-
             <div className="metadata-graph-drawer-options">
               <div
                 className="metadata-graph-drawer-options-name"
@@ -457,7 +588,7 @@ const CreateEdge: React.FC = observer(() => {
                   className="metadata-configs-content-dropdown"
                   ref={dropdownWrapperRef}
                 >
-                  {metadataPropertyStore.metadataProperties.map(property => (
+                  {metadataPropertyStore.metadataProperties.map((property) => (
                     <div key={property.name}>
                       <span>
                         <Checkbox
@@ -465,7 +596,7 @@ const CreateEdge: React.FC = observer(() => {
                             [
                               ...edgeTypeStore.addedPropertiesInSelectedEdgeType
                             ].findIndex(
-                              propertyIndex => propertyIndex === property.name
+                              (propertyIndex) => propertyIndex === property.name
                             ) !== -1
                           }
                           onChange={() => {
@@ -486,7 +617,7 @@ const CreateEdge: React.FC = observer(() => {
                               ...edgeTypeStore.newEdgeType,
                               properties: [
                                 ...addedPropertiesIndexInSelectedEdgeType
-                              ].map(propertyName => {
+                              ].map((propertyName) => {
                                 const currentProperty = edgeTypeStore.newEdgeType.properties.find(
                                   ({ name }) => name === propertyName
                                 );
@@ -541,9 +672,9 @@ const CreateEdge: React.FC = observer(() => {
                 >
                   {edgeTypeStore.newEdgeType.properties
                     .filter(({ nullable }) => !nullable)
-                    .map(item => {
+                    .map((item) => {
                       const order = edgeTypeStore.newEdgeType.sort_keys.findIndex(
-                        name => name === item.name
+                        (name) => name === item.name
                       );
 
                       const multiSelectOptionClassName = classnames({
@@ -564,7 +695,81 @@ const CreateEdge: React.FC = observer(() => {
                 </Select>
               </div>
             )}
+            <div className="metadata-graph-drawer-options">
+              <div
+                className="metadata-graph-drawer-options-name"
+                style={{ width: 118, marginRight: 10 }}
+              >
+                <span className="metdata-essential-form-options">*</span>
+                <span>边展示内容:</span>
+              </div>
+              <Select
+                width={430}
+                mode="multiple"
+                size="medium"
+                placeholder="请选择边展示内容"
+                showSearch={false}
+                onChange={(value: string[]) => {
+                  edgeTypeStore.mutateNewEdgeType({
+                    ...edgeTypeStore.newEdgeType,
+                    style: {
+                      ...edgeTypeStore.newEdgeType.style,
+                      display_fields: value
+                    }
+                  });
 
+                  edgeTypeStore.validateAllNewEdgeType(true);
+                  edgeTypeStore.validateNewEdgeType('displayFeilds');
+                }}
+                value={edgeTypeStore.newEdgeType.style.display_fields.map(
+                  (field) => formatVertexIdText(field, '边类型')
+                )}
+              >
+                {edgeTypeStore.newEdgeType.properties
+                  .concat({ name: '~id', nullable: false })
+                  .filter(({ nullable }) => !nullable)
+                  .map((item) => {
+                    const order = edgeTypeStore.newEdgeType.style.display_fields.findIndex(
+                      (name) => name === item.name
+                    );
+
+                    const multiSelectOptionClassName = classnames({
+                      'metadata-configs-sorted-multiSelect-option': true,
+                      'metadata-configs-sorted-multiSelect-option-selected':
+                        order !== -1
+                    });
+
+                    return (
+                      <Select.Option
+                        value={formatVertexIdText(item.name, '边类型')}
+                        key={item.name}
+                      >
+                        <div className={multiSelectOptionClassName}>
+                          <div
+                            style={{
+                              backgroundColor: edgeTypeStore.newEdgeType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#2b65ff'
+                                : '#fff',
+                              borderColor: edgeTypeStore.newEdgeType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#fff'
+                                : '#e0e0e0'
+                            }}
+                          >
+                            {order !== -1 ? order + 1 : ''}
+                          </div>
+                          <div style={{ color: '#333' }}>
+                            {formatVertexIdText(item.name, '边类型')}
+                          </div>
+                        </div>
+                      </Select.Option>
+                    );
+                  })}
+              </Select>
+            </div>
             <div
               className="metadata-title metadata-graph-drawer-title"
               style={{
@@ -745,11 +950,11 @@ const CreateEdge: React.FC = observer(() => {
                         >
                           {type === 'SECONDARY' &&
                             edgeTypeStore.newEdgeType.properties.map(
-                              property => {
+                              (property) => {
                                 const order = edgeTypeStore.newEdgeType.property_indexes[
                                   index
                                 ].fields.findIndex(
-                                  name => name === property.name
+                                  (name) => name === property.name
                                 );
 
                                 const multiSelectOptionClassName = classnames({
@@ -774,7 +979,7 @@ const CreateEdge: React.FC = observer(() => {
 
                           {type === 'RANGE' &&
                             edgeTypeStore.newEdgeType.properties
-                              .filter(property => {
+                              .filter((property) => {
                                 const matchedProperty = metadataPropertyStore.metadataProperties.find(
                                   ({ name }) => name === property.name
                                 );
@@ -798,7 +1003,7 @@ const CreateEdge: React.FC = observer(() => {
 
                           {type === 'SEARCH' &&
                             edgeTypeStore.newEdgeType.properties
-                              .filter(property => {
+                              .filter((property) => {
                                 const matchedProperty = metadataPropertyStore.metadataProperties.find(
                                   ({ name }) => name === property.name
                                 );

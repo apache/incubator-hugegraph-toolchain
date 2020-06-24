@@ -6,8 +6,8 @@ export function initalizeRequestStatus() {
     fetchColorSchemas: 'standby',
     fetchColorList: 'standby',
     fetchEdgeTypes: 'standby',
-    fetchAllNodeColors: 'standby',
-    fetchAllEdgeColors: 'standby',
+    fetchAllNodeStyle: 'standby',
+    fetchAllEdgeStyle: 'standby',
     fetchGraphs: 'standby',
     addGraphNode: 'standby',
     fetchRelatedEdges: 'standby',
@@ -51,11 +51,11 @@ export function initalizeErrorInfo() {
       code: NaN,
       message: ''
     },
-    fetchAllNodeColors: {
+    fetchAllNodeStyle: {
       code: NaN,
       message: ''
     },
-    fetchAllEdgeColors: {
+    fetchAllEdgeStyle: {
       code: NaN,
       message: ''
     },

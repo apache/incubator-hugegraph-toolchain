@@ -182,7 +182,12 @@ const GraphDataView: React.FC = observer(() => {
   useEffect(() => {
     graphViewStore.fetchGraphViewData(
       dataAnalyzeStore.colorMappings,
-      dataAnalyzeStore.edgeColorMappings
+      dataAnalyzeStore.vertexSizeMappings,
+      dataAnalyzeStore.vertexWritingMappings,
+      dataAnalyzeStore.edgeColorMappings,
+      dataAnalyzeStore.edgeThicknessMappings,
+      dataAnalyzeStore.edgeWithArrowMappings,
+      dataAnalyzeStore.edgeWritingMappings
     );
 
     return () => {
@@ -190,7 +195,12 @@ const GraphDataView: React.FC = observer(() => {
     };
   }, [
     dataAnalyzeStore.colorMappings,
+    dataAnalyzeStore.vertexSizeMappings,
+    dataAnalyzeStore.vertexWritingMappings,
     dataAnalyzeStore.edgeColorMappings,
+    dataAnalyzeStore.edgeThicknessMappings,
+    dataAnalyzeStore.edgeWithArrowMappings,
+    dataAnalyzeStore.edgeWritingMappings,
     graphViewStore
   ]);
 
@@ -209,13 +219,18 @@ const GraphDataView: React.FC = observer(() => {
           shape: 'dot'
         },
         edges: {
-          arrows: 'to',
           arrowStrikethrough: false,
-          width: 1.5,
           color: {
             color: 'rgba(92, 115, 230, 0.8)',
             hover: 'rgba(92, 115, 230, 1)',
             highlight: 'rgba(92, 115, 230, 1)'
+          },
+          scaling: {
+            min: 1,
+            max: 3,
+            label: {
+              enabled: false
+            }
           }
         },
         interaction: {
@@ -246,7 +261,7 @@ const GraphDataView: React.FC = observer(() => {
 
             if (graphViewStore.graphViewData !== null) {
               const index = vertexTypeStore.vertexTypes.findIndex(
-                vertex => vertex.name === String(nodeId)
+                (vertex) => vertex.name === String(nodeId)
               );
 
               if (index === -1) {
@@ -254,6 +269,18 @@ const GraphDataView: React.FC = observer(() => {
               }
 
               vertexTypeStore.selectVertexType(index);
+              // check also needs style infos
+              vertexTypeStore.mutateEditedSelectedVertexType({
+                ...vertexTypeStore.editedSelectedVertexType,
+                style: {
+                  color: vertexTypeStore.selectedVertexType!.style.color,
+                  icon: null,
+                  size: vertexTypeStore.selectedVertexType!.style.size,
+                  display_fields: vertexTypeStore.selectedVertexType!.style
+                    .display_fields
+                }
+              });
+
               graphViewStore.setCurrentDrawer('check-vertex');
               graphViewStore.switchNodeOrEdgeClicked(true);
             }
@@ -266,7 +293,7 @@ const GraphDataView: React.FC = observer(() => {
 
             if (graphViewStore.graphViewData !== null) {
               const index = edgeTypeStore.edgeTypes.findIndex(
-                edge =>
+                (edge) =>
                   generateGraphModeId(
                     edge.name,
                     edge.source_label,
@@ -279,13 +306,26 @@ const GraphDataView: React.FC = observer(() => {
               }
 
               edgeTypeStore.selectEdgeType(index);
+              // check also needs style infos
+              edgeTypeStore.mutateEditedSelectedEdgeType({
+                ...edgeTypeStore.editedSelectedEdgeType,
+                style: {
+                  color: edgeTypeStore.selectedEdgeType!.style.color,
+                  icon: null,
+                  with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
+                  thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
+                  display_fields: edgeTypeStore.selectedEdgeType!.style
+                    .display_fields
+                }
+              });
+
               graphViewStore.setCurrentDrawer('check-edge');
               graphViewStore.switchNodeOrEdgeClicked(true);
             }
           }
         });
 
-        network.on('dragEnd', e => {
+        network.on('dragEnd', (e) => {
           if (!isEmpty(e.nodes)) {
             network.unselectAll();
           }

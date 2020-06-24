@@ -22,12 +22,18 @@ import TooltipTrigger from 'react-popper-tooltip';
 import HintIcon from '../../../../assets/imgs/ic_question_mark.svg';
 
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore';
+import { formatVertexIdText } from '../../../../stores/utils';
+
+import type { VertexTypeValidatePropertyIndexes } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
+
 import BlueArrowIcon from '../../../../assets/imgs/ic_arrow_blue.svg';
 import closeIcon from '../../../../assets/imgs/ic_close_16.svg';
+
 import './NewVertexType.less';
-import { VertexTypeValidatePropertyIndexes } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
 
 const NewVertexType: React.FC = observer(() => {
+  const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const { metadataPropertyStore, vertexTypeStore } = useContext(
     MetadataConfigsRootStore
   );
@@ -104,34 +110,106 @@ const NewVertexType: React.FC = observer(() => {
               }
             }}
           />
+        </div>
+
+        <div className="new-vertex-type-options">
+          <div className="new-vertex-type-options-name">
+            <span className="metdata-essential-form-options">*</span>
+            <span>顶点样式：</span>
+          </div>
           <div className="new-vertex-type-options-colors">
             <Select
               width={66}
               size="medium"
-              value={vertexTypeStore.newVertexType.style.color}
+              value={
+                <div
+                  className="new-vertex-type-select"
+                  style={{
+                    background: vertexTypeStore.newVertexType.style.color!.toLowerCase(),
+                    marginTop: 5
+                  }}
+                ></div>
+              }
+              prefixCls="new-fc-one-select-another"
+              dropdownMatchSelectWidth={false}
               onChange={(value: string) => {
                 vertexTypeStore.mutateNewProperty({
                   ...vertexTypeStore.newVertexType,
                   style: {
                     ...vertexTypeStore.newVertexType.style,
-                    color: value
+                    color: value,
+                    size: vertexTypeStore.newVertexType.style.size
                   }
                 });
               }}
             >
-              {vertexTypeStore.colorSchemas.map((color: string) => (
-                <Select.Option value={color} key={color}>
+              {vertexTypeStore.colorSchemas.map(
+                (color: string, index: number) => (
+                  <Select.Option
+                    value={color}
+                    key={color}
+                    style={{
+                      display: 'inline-block',
+                      marginLeft: index % 5 === 0 ? 8 : 0,
+                      marginTop: index < 5 ? 6 : 2,
+                      width: 31
+                    }}
+                  >
+                    <div
+                      className={
+                        vertexTypeStore.newVertexType.style.color === color
+                          ? 'new-vertex-type-options-border new-vertex-type-options-color'
+                          : 'new-vertex-type-options-no-border new-vertex-type-options-color'
+                      }
+                      style={{
+                        background: color,
+                        marginLeft: -4,
+                        marginTop: 4.4
+                      }}
+                    ></div>
+                  </Select.Option>
+                )
+              )}
+            </Select>
+          </div>
+          <div className="new-vertex-type-options-sizes">
+            <Select
+              width={67}
+              size="medium"
+              value={vertexTypeStore.newVertexType.style.size}
+              style={{ paddingLeft: 7 }}
+              getPopupContainer={(e: any) => e.parentNode}
+              onChange={(value: string) => {
+                vertexTypeStore.mutateNewProperty({
+                  ...vertexTypeStore.newVertexType,
+                  style: {
+                    ...vertexTypeStore.newVertexType.style,
+                    size: value
+                  }
+                });
+              }}
+            >
+              {vertexTypeStore.vertexSizeSchemas.map((value, index) => (
+                <Select.Option
+                  value={value.en}
+                  key={value.en}
+                  style={{ width: 66 }}
+                >
                   <div
                     className="new-vertex-type-options-color"
                     style={{
-                      background: color
+                      marginTop: 2.5,
+                      marginLeft: 5
                     }}
-                  ></div>
+                  >
+                    {value.ch}
+                  </div>
                 </Select.Option>
               ))}
             </Select>
           </div>
         </div>
+
         <div className="new-vertex-type-options">
           <div className="new-vertex-type-options-name">
             <span className="metdata-essential-form-options">*</span>
@@ -189,7 +267,6 @@ const NewVertexType: React.FC = observer(() => {
                     const currentProperties = cloneDeep(
                       vertexTypeStore.newVertexType.properties
                     );
-
                     return (
                       <div
                         className="metadata-selected-properties"
@@ -245,7 +322,7 @@ const NewVertexType: React.FC = observer(() => {
               className="metadata-configs-content-dropdown"
               ref={dropdownWrapperRef}
             >
-              {metadataPropertyStore.metadataProperties.map(property => (
+              {metadataPropertyStore.metadataProperties.map((property) => (
                 <div key={property.name}>
                   <span>
                     <Checkbox
@@ -253,7 +330,7 @@ const NewVertexType: React.FC = observer(() => {
                         [
                           ...vertexTypeStore.addedPropertiesInSelectedVertextType
                         ].findIndex(
-                          propertyIndex => propertyIndex === property.name
+                          (propertyIndex) => propertyIndex === property.name
                         ) !== -1
                       }
                       onChange={() => {
@@ -272,7 +349,7 @@ const NewVertexType: React.FC = observer(() => {
                           ...vertexTypeStore.newVertexType,
                           properties: [
                             ...addedPropertiesInSelectedVertextType
-                          ].map(propertyName => {
+                          ].map((propertyName) => {
                             const currentProperty = vertexTypeStore.newVertexType.properties.find(
                               ({ name }) => name === propertyName
                             );
@@ -323,9 +400,9 @@ const NewVertexType: React.FC = observer(() => {
             >
               {vertexTypeStore.newVertexType.properties
                 .filter(({ nullable }) => !nullable)
-                .map(item => {
+                .map((item) => {
                   const order = vertexTypeStore.newVertexType.primary_keys.findIndex(
-                    name => name === item.name
+                    (name) => name === item.name
                   );
 
                   const multiSelectOptionClassName = classnames({
@@ -346,6 +423,81 @@ const NewVertexType: React.FC = observer(() => {
             </Select>
           </div>
         )}
+
+        <div className="new-vertex-type-options">
+          <div className="new-vertex-type-options-name">
+            <span className="metdata-essential-form-options">*</span>
+            <span>顶点展示内容：</span>
+          </div>
+          <Select
+            width={420}
+            mode="multiple"
+            size="medium"
+            placeholder="请选择顶点展示内容"
+            showSearch={false}
+            onChange={(value: string[]) => {
+              vertexTypeStore.mutateNewProperty({
+                ...vertexTypeStore.newVertexType,
+                style: {
+                  ...vertexTypeStore.newVertexType.style,
+                  display_fields: value.map((field) =>
+                    formatVertexIdText(field, '顶点ID', true)
+                  )
+                }
+              });
+
+              vertexTypeStore.validateAllNewVertexType(true);
+              vertexTypeStore.validateNewVertexType('displayFeilds');
+            }}
+            value={vertexTypeStore.newVertexType.style.display_fields.map(
+              (field) => formatVertexIdText(field, '顶点ID')
+            )}
+          >
+            {vertexTypeStore.newVertexType.properties
+              .concat({ name: '~id', nullable: false })
+              .filter(({ nullable }) => !nullable)
+              .map((item) => {
+                const order = vertexTypeStore.newVertexType.style.display_fields.findIndex(
+                  (name) => name === item.name
+                );
+
+                const multiSelectOptionClassName = classnames({
+                  'metadata-configs-sorted-multiSelect-option': true,
+                  'metadata-configs-sorted-multiSelect-option-selected':
+                    order !== -1
+                });
+
+                return (
+                  <Select.Option
+                    value={formatVertexIdText(item.name, '顶点ID')}
+                    key={item.name}
+                  >
+                    <div className={multiSelectOptionClassName}>
+                      <div
+                        style={{
+                          backgroundColor: vertexTypeStore.newVertexType.style.display_fields.includes(
+                            item.name
+                          )
+                            ? '#2b65ff'
+                            : '#fff',
+                          borderColor: vertexTypeStore.newVertexType.style.display_fields.includes(
+                            item.name
+                          )
+                            ? '#fff'
+                            : '#e0e0e0'
+                        }}
+                      >
+                        {order !== -1 ? order + 1 : ''}
+                      </div>
+                      <div style={{ color: '#333' }}>
+                        {formatVertexIdText(item.name, '顶点ID')}
+                      </div>
+                    </div>
+                  </Select.Option>
+                );
+              })}
+          </Select>
+        </div>
 
         <div
           className="metadata-title new-vertex-type-title"
@@ -520,15 +672,17 @@ const NewVertexType: React.FC = observer(() => {
                       {type === 'SECONDARY' &&
                         vertexTypeStore.newVertexType.properties
                           .filter(
-                            property =>
+                            (property) =>
                               !vertexTypeStore.newVertexType.primary_keys.includes(
                                 property.name
                               )
                           )
-                          .map(property => {
+                          .map((property) => {
                             const order = vertexTypeStore.newVertexType.property_indexes[
                               index
-                            ].fields.findIndex(name => name === property.name);
+                            ].fields.findIndex(
+                              (name) => name === property.name
+                            );
 
                             const multiSelectOptionClassName = classnames({
                               'metadata-configs-sorted-multiSelect-option': true,
@@ -551,7 +705,7 @@ const NewVertexType: React.FC = observer(() => {
 
                       {type === 'RANGE' &&
                         vertexTypeStore.newVertexType.properties
-                          .filter(property => {
+                          .filter((property) => {
                             const matchedProperty = metadataPropertyStore.metadataProperties.find(
                               ({ name }) => name === property.name
                             );
@@ -575,7 +729,7 @@ const NewVertexType: React.FC = observer(() => {
 
                       {type === 'SEARCH' &&
                         vertexTypeStore.newVertexType.properties
-                          .filter(property => {
+                          .filter((property) => {
                             const matchedProperty = metadataPropertyStore.metadataProperties.find(
                               ({ name }) => name === property.name
                             );
@@ -737,7 +891,17 @@ const NewVertexType: React.FC = observer(() => {
               if (!vertexTypeStore.isCreatedReady) {
                 return;
               }
+              const id = vertexTypeStore.newVertexType.name;
+              if (vertexTypeStore.newVertexType.style.color !== null) {
+                dataAnalyzeStore.colorMappings[
+                  id
+                ] = vertexTypeStore.newVertexType.style.color!;
+              }
 
+              if (vertexTypeStore.newVertexType.style.size !== null) {
+                dataAnalyzeStore.vertexSizeMappings[id] =
+                  vertexTypeStore.newVertexType.style.size;
+              }
               await vertexTypeStore.addVertexType();
 
               if (vertexTypeStore.requestStatus.addVertexType === 'success') {

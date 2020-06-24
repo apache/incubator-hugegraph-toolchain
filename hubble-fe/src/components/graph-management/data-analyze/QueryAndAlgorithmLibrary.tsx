@@ -49,6 +49,8 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
 
   const handleQueryExecution = useCallback(async () => {
     if (codeEditor.current) {
+      // graph reload
+      dataAnalyzeStore.switchGraphLoaded(false);
       // remove graph data filter board
       dataAnalyzeStore.switchShowFilterBoard(false);
       dataAnalyzeStore.clearFilteredGraphQueryOptions();

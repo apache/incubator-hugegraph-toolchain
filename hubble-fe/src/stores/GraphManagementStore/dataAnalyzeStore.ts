@@ -1,15 +1,11 @@
 import { createContext } from 'react';
 import { observable, action, flow, computed, runInAction } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
-import { isUndefined, cloneDeep, isEmpty, remove } from 'lodash-es';
+import { isUndefined, cloneDeep, isEmpty, remove, size } from 'lodash-es';
 import vis from 'vis-network';
 import isInt from 'validator/lib/isInt';
 import isUUID from 'validator/lib/isUUID';
 
-import {
-  GraphData,
-  GraphDataResponse
-} from '../types/GraphManagementStore/graphManagementStore';
 import {
   initalizeErrorInfo,
   initalizeRequestStatus,
@@ -21,11 +17,17 @@ import {
 import {
   checkIfLocalNetworkOffline,
   convertArrayToString,
-  validateGraphProperty
+  validateGraphProperty,
+  vertexRadiusMapping,
+  edgeWidthMapping
 } from '../utils';
 
 import { baseUrl, responseData, dict } from '../types/common';
-import {
+import type {
+  GraphData,
+  GraphDataResponse
+} from '../types/GraphManagementStore/graphManagementStore';
+import type {
   ColorSchemas,
   RuleMap,
   FetchColorSchemas,
@@ -43,12 +45,12 @@ import {
   FavoriteQueryResponse,
   EditableProperties
 } from '../types/GraphManagementStore/dataAnalyzeStore';
-import {
+import type {
   VertexTypeListResponse,
   VertexType,
   EdgeType
 } from '../types/GraphManagementStore/metadataConfigsStore';
-import { EdgeTypeListResponse } from '../types/GraphManagementStore/metadataConfigsStore';
+import type { EdgeTypeListResponse } from '../types/GraphManagementStore/metadataConfigsStore';
 
 const ruleMap: RuleMap = {
   大于: 'gt',
@@ -67,12 +69,14 @@ export class DataAnalyzeStore {
   @observable searchText = '';
   @observable isSidebarExpanded = false;
   @observable isLoadingGraph = false;
+  @observable isGraphLoaded = false;
   @observable isFullScreenReuslt = false;
   @observable isShowFilterBoard = false;
   // right-side drawer
   @observable isShowGraphInfo = false;
   @observable isClickOnNodeOrEdge = false;
   @observable favoritePopUp = '';
+  // whether user selects vertex or edge
   @observable graphInfoDataSet = '';
   @observable codeEditorText = '';
   @observable dynamicAddGraphDataStatus = '';
@@ -105,7 +109,12 @@ export class DataAnalyzeStore {
   @observable.ref colorSchemas: ColorSchemas = {};
   @observable.ref colorList: string[] = [];
   @observable.ref colorMappings: Record<string, string> = {};
+  @observable.ref vertexSizeMappings: Record<string, string> = {};
+  @observable.ref vertexWritingMappings: Record<string, string[]> = {};
   @observable.ref edgeColorMappings: Record<string, string> = {};
+  @observable.ref edgeWithArrowMappings: Record<string, boolean> = {};
+  @observable.ref edgeThicknessMappings: Record<string, string> = {};
+  @observable.ref edgeWritingMappings: Record<string, string[]> = {};
   @observable.ref
   originalGraphData: FetchGraphResponse = {} as FetchGraphResponse;
   @observable.ref
@@ -176,28 +185,38 @@ export class DataAnalyzeStore {
   @computed get graphNodes(): GraphNode[] {
     return this.originalGraphData.data.graph_view.vertices.map(
       ({ id, label, properties }) => {
+        const joinedLabel = this.vertexWritingMappings[label]
+          .map((field) => (field === '~id' ? id : properties[field]))
+          .filter((label) => label !== undefined && label !== null)
+          .join('-');
+
         return {
           id,
-          label: id.length <= 15 ? id : id.slice(0, 15) + '...',
+          label:
+            size(joinedLabel) <= 15
+              ? joinedLabel
+              : joinedLabel.slice(0, 15) + '...',
           vLabel: label,
+          value: vertexRadiusMapping[this.vertexSizeMappings[label]],
+          font: { size: 16 },
           properties,
           title: `
-              <div class="tooltip-fields">
-                <div>顶点类型：</div>
-                <div>${label}</div>
-              </div>
-              <div class="tooltip-fields">
-                <div>顶点ID：</div>
-                <div>${id}</div>
-              </div>
-              ${Object.entries(properties)
-                .map(([key, value]) => {
-                  return `<div class="tooltip-fields">
-                            <div>${key}: </div>
-                            <div>${convertArrayToString(value, '，')}</div>
-                          </div>`;
-                })
-                .join('')}
+            <div class="tooltip-fields">
+              <div>顶点类型：</div>
+              <div>${label}</div>
+            </div>
+            <div class="tooltip-fields">
+              <div>顶点ID：</div>
+              <div>${id}</div>
+            </div>
+            ${Object.entries(properties)
+              .map(([key, value]) => {
+                return `<div class="tooltip-fields">
+                          <div>${key}: </div>
+                          <div>${convertArrayToString(value)}</div>
+                        </div>`;
+              })
+              .join('')}
           `,
           color: {
             background: this.colorMappings[label] || '#5c73e6',
@@ -221,7 +240,7 @@ export class DataAnalyzeStore {
               }
 
               if (selected) {
-                values.size = 30;
+                values.size += 5;
               }
             }
           }
@@ -231,37 +250,58 @@ export class DataAnalyzeStore {
   }
 
   @computed get graphEdges(): GraphEdge[] {
-    return this.originalGraphData.data.graph_view.edges.map((edge) => ({
-      ...edge,
-      from: edge.source,
-      to: edge.target,
-      font: {
-        color: '#666'
-      },
-      title: `
-        <div class="tooltip-fields">
-          <div>边类型：</div>
-          <div>${edge.label}</div>
-        </div>
-        <div class="tooltip-fields">
-          <div>边ID：</div>
-          <div>${edge.id}</div>
-        </div>
-        ${Object.entries(edge.properties)
-          .map(([key, value]) => {
-            return `<div class="tooltip-fields">
-                      <div>${key}: </div>
-                      <div>${convertArrayToString(value, '，')}</div>
-                    </div>`;
-          })
-          .join('')}
-      `
-    }));
+    return this.originalGraphData.data.graph_view.edges.map(
+      ({ id, label, source, target, properties }) => {
+        const joinedLabel = this.edgeWritingMappings[label]
+          .map((field) => (field === '~id' ? label : properties[field]))
+          .join('-');
+
+        return {
+          id,
+          label:
+            joinedLabel.length <= 15
+              ? joinedLabel
+              : joinedLabel.slice(0, 15) + '...',
+          properties,
+          source,
+          target,
+          from: source,
+          to: target,
+          font: { size: 16, strokeWidth: 0, color: '#666' },
+          arrows: this.edgeWithArrowMappings[label] ? 'to' : '',
+          color: this.edgeColorMappings[label],
+          value: edgeWidthMapping[this.edgeThicknessMappings[label]],
+          title: `
+            <div class="tooltip-fields">
+              <div>边类型：</div>
+            <div>${label}</div>
+            </div>
+            <div class="tooltip-fields">
+              <div>边ID：</div>
+              <div>${id}</div>
+            </div>
+            ${Object.entries(properties)
+              .map(([key, value]) => {
+                return `<div class="tooltip-fields">
+                            <div>${key}: </div>
+                            <div>${convertArrayToString(value)}</div>
+                          </div>`;
+              })
+              .join('')}
+          `
+        };
+      }
+    );
   }
 
   @action
   setCurrentId(id: number) {
     this.currentId = id;
+  }
+
+  @action
+  switchGraphLoaded(flag: boolean) {
+    this.isGraphLoaded = flag;
   }
 
   @action
@@ -369,6 +409,17 @@ export class DataAnalyzeStore {
       // to keep sort of primary keys, need to iter it first
       if (type === 'vertex') {
         (selectedLabel as VertexType).primary_keys.forEach((name) => {
+          if (selectedGraphDataPropertKeys.includes(name)) {
+            this.editedSelectedGraphDataProperties.primary.set(
+              name,
+              convertArrayToString(selectedGraphData.properties[name])
+            );
+
+            remove(selectedGraphDataPropertKeys, (key) => key === name);
+          }
+        });
+      } else {
+        (selectedLabel as EdgeType).sort_keys.forEach((name) => {
           if (selectedGraphDataPropertKeys.includes(name)) {
             this.editedSelectedGraphDataProperties.primary.set(
               name,
@@ -887,6 +938,7 @@ export class DataAnalyzeStore {
     this.searchText = '';
     this.isSidebarExpanded = false;
     this.isLoadingGraph = false;
+    this.isGraphLoaded = false;
     this.isShowGraphInfo = false;
     this.isFullScreenReuslt = false;
     this.codeEditorText = '';
@@ -1076,11 +1128,8 @@ export class DataAnalyzeStore {
     }
   });
 
-  fetchAllNodeColors = flow(function* fetchAllNodeColors(
-    this: DataAnalyzeStore
-  ) {
-    this.requestStatus.fetchAllNodeColors = 'pending';
-
+  fetchAllNodeStyle = flow(function* fetchAllNodeStyle(this: DataAnalyzeStore) {
+    this.requestStatus.fetchAllNodeStyle = 'pending';
     try {
       const result: AxiosResponse<responseData<
         VertexTypeListResponse
@@ -1099,12 +1148,18 @@ export class DataAnalyzeStore {
         if (style.color !== null) {
           this.colorMappings[name] = style.color;
         }
+        if (style.size !== null) {
+          this.vertexSizeMappings[name] = style.size;
+        }
+        if (style.display_fields.length !== 0) {
+          this.vertexWritingMappings[name] = style.display_fields;
+        }
       });
 
-      this.requestStatus.fetchAllNodeColors = 'success';
+      this.requestStatus.fetchAllNodeStyle = 'success';
     } catch (error) {
-      this.requestStatus.fetchAllNodeColors = 'failed';
-      this.errorInfo.fetchAllNodeColors.message = error.message;
+      this.requestStatus.fetchAllNodeStyle = 'failed';
+      this.errorInfo.fetchAllNodeStyle.message = error.message;
       console.error(error.message);
     }
   });
@@ -1135,10 +1190,8 @@ export class DataAnalyzeStore {
     }
   });
 
-  fetchAllEdgeColors = flow(function* fetchAllEdgeColors(
-    this: DataAnalyzeStore
-  ) {
-    this.requestStatus.fetchAllEdgeColors = 'pending';
+  fetchAllEdgeStyle = flow(function* fetchAllEdgeStyle(this: DataAnalyzeStore) {
+    this.requestStatus.fetchAllEdgeStyle = 'pending';
 
     try {
       const result: AxiosResponse<responseData<
@@ -1158,12 +1211,21 @@ export class DataAnalyzeStore {
         if (style.color !== null) {
           this.edgeColorMappings[name] = style.color;
         }
+        if (style.with_arrow !== null) {
+          this.edgeWithArrowMappings[name] = style.with_arrow;
+        }
+        if (style.thickness !== null) {
+          this.edgeThicknessMappings[name] = style.thickness;
+        }
+        if (style.display_fields.length !== 0) {
+          this.edgeWritingMappings[name] = style.display_fields;
+        }
       });
 
-      this.requestStatus.fetchAllEdgeColors = 'success';
+      this.requestStatus.fetchAllEdgeStyle = 'success';
     } catch (error) {
-      this.requestStatus.fetchAllEdgeColors = 'failed';
-      this.errorInfo.fetchAllEdgeColors.message = error.message;
+      this.requestStatus.fetchAllEdgeStyle = 'failed';
+      this.errorInfo.fetchAllEdgeStyle.message = error.message;
       console.error(error.message);
     }
   });

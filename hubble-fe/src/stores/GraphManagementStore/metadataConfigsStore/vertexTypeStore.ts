@@ -1,4 +1,5 @@
 import { observable, action, flow, computed } from 'mobx';
+import { useContext } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { cloneDeep, isUndefined, remove } from 'lodash-es';
 
@@ -49,13 +50,31 @@ export class VertexTypeStore {
     '#5c73e6',
     '#569380',
     '#8ecc93',
-    '#f79767',
-    '#f06667',
-    '#c990c0',
+    '#fe9227',
+    '#fe5b5d',
+    '#fd6ace',
     '#4d8dda',
     '#57c7e3',
     '#ffe081',
-    '#da7194'
+    '#c570ff',
+    '#2b65ff',
+    '#0eb880',
+    '#76c100',
+    '#ed7600',
+    '#e65055',
+    '#a64ee6',
+    '#108cee',
+    '#00b5d9',
+    '#f2ca00',
+    '#e048ae'
+  ];
+
+  @observable.ref vertexSizeSchemas = [
+    { ch: '超小', en: 'TINY' },
+    { ch: '小', en: 'SMALL' },
+    { ch: '中', en: 'NORMAL' },
+    { ch: '大', en: 'BIG' },
+    { ch: '超大', en: 'HUGE' }
   ];
 
   @observable.shallow newVertexType: VertexType = {
@@ -67,7 +86,9 @@ export class VertexTypeStore {
     open_label_index: false,
     style: {
       color: '#5c73e6',
-      icon: null
+      icon: null,
+      size: 'NORMAL',
+      display_fields: ['~id']
     }
   };
 
@@ -85,8 +106,10 @@ export class VertexTypeStore {
     append_property_indexes: [],
     remove_property_indexes: [],
     style: {
-      color: null,
-      icon: null
+      color: '#5c73e6',
+      icon: null,
+      size: 'NORMAL',
+      display_fields: ['~id']
     }
   };
 
@@ -119,6 +142,7 @@ export class VertexTypeStore {
     name: '',
     properties: '',
     primaryKeys: '',
+    displayFeilds: '',
     propertyIndexes: []
   };
 
@@ -238,7 +262,9 @@ export class VertexTypeStore {
       open_label_index: false,
       style: {
         color: '#5c73e6',
-        icon: null
+        icon: null,
+        size: 'NORMAL',
+        display_fields: ['~id']
       }
     };
   }
@@ -255,8 +281,10 @@ export class VertexTypeStore {
       append_property_indexes: [],
       remove_property_indexes: [],
       style: {
-        color: null,
-        icon: null
+        color: '#5c73e6',
+        icon: null,
+        size: 'NORMAL',
+        display_fields: ['~id']
       }
     };
 
@@ -373,6 +401,15 @@ export class VertexTypeStore {
       }
     }
 
+    if (category === 'displayFeilds') {
+      if (this.newVertexType.style.display_fields.length === 0) {
+        !initial &&
+          (this.validateNewVertexTypeErrorMessage.displayFeilds =
+            '此项为必填项');
+        isReady = false;
+      }
+    }
+
     if (category === 'propertyIndexes') {
       this.isAddNewPropertyIndexReady = true;
 
@@ -431,7 +468,8 @@ export class VertexTypeStore {
       this.validateNewVertexType('name', initial) &&
       this.validateNewVertexType('properties', initial) &&
       this.validateNewVertexType('primaryKeys', initial) &&
-      this.validateNewVertexType('propertyIndexes', initial);
+      this.validateNewVertexType('propertyIndexes', initial) &&
+      this.validateNewVertexType('displayFeilds', initial);
   }
 
   @action
@@ -445,7 +483,6 @@ export class VertexTypeStore {
           type: '',
           properties: ''
         };
-
         if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(name)) {
           if (!initial) {
             if (name.length !== 0) {
@@ -526,7 +563,7 @@ export class VertexTypeStore {
             this.checkedReusableData!.propertyindex_conflicts.find(
               ({ entity }) =>
                 !isUndefined(
-                  entity.fields.find(fieldName => fieldName === newValue)
+                  entity.fields.find((fieldName) => fieldName === newValue)
                 )
             )
           ) ||
@@ -537,13 +574,13 @@ export class VertexTypeStore {
                   entity.properties.find(({ name }) => name === newValue)
                 ) ||
                 !isUndefined(
-                  entity.primary_keys.find(key => key === newValue)
+                  entity.primary_keys.find((key) => key === newValue)
                 ) ||
                 !isUndefined(
                   entity.property_indexes.find(
                     ({ fields }) =>
                       !isUndefined(
-                        fields.find(fieldName => fieldName === newValue)
+                        fields.find((fieldName) => fieldName === newValue)
                       )
                   )
                 )
@@ -609,7 +646,7 @@ export class VertexTypeStore {
           }
 
           const primaryKeyIndex = entity.primary_keys.findIndex(
-            key => key === originalValue
+            (key) => key === originalValue
           );
 
           if (primaryKeyIndex !== -1) {
@@ -619,7 +656,7 @@ export class VertexTypeStore {
 
           entity.property_indexes.forEach(({ fields }) => {
             const mutatePropertyIndexIndex = fields.findIndex(
-              fieldName => fieldName === originalValue
+              (fieldName) => fieldName === originalValue
             );
 
             if (mutatePropertyIndexIndex !== -1) {
@@ -633,7 +670,7 @@ export class VertexTypeStore {
       editedCheckedReusableData!.propertyindex_conflicts.forEach(
         ({ entity }, index) => {
           const mutateIndex = entity.fields.findIndex(
-            fieldName => fieldName === originalValue
+            (fieldName) => fieldName === originalValue
           );
 
           if (mutateIndex !== -1) {
@@ -697,7 +734,7 @@ export class VertexTypeStore {
           return;
         }
 
-        deletedPropertyIndexNames.forEach(propertyIndexName => {
+        deletedPropertyIndexNames.forEach((propertyIndexName) => {
           remove(
             editedCheckedReusableData.propertyindex_conflicts,
             ({ entity }) => entity.name === propertyIndexName
@@ -706,7 +743,7 @@ export class VertexTypeStore {
 
         deletedPropertyNames
           .filter(
-            propertyName =>
+            (propertyName) =>
               !isUndefined(
                 editedCheckedReusableData.vertexlabel_conflicts.find(
                   ({ entity }) =>
@@ -718,7 +755,7 @@ export class VertexTypeStore {
                 )
               )
           )
-          .forEach(propertyName => {
+          .forEach((propertyName) => {
             remove(
               editedCheckedReusableData.propertykey_conflicts,
               ({ entity }) => entity.name === propertyName
@@ -735,7 +772,7 @@ export class VertexTypeStore {
         // remove property in property index
         editedCheckedReusableData.propertyindex_conflicts.forEach(
           ({ entity }) => {
-            remove(entity.fields, name => name === deletedName);
+            remove(entity.fields, (name) => name === deletedName);
           }
         );
 
@@ -806,6 +843,7 @@ export class VertexTypeStore {
         name: '',
         properties: '',
         primaryKeys: '',
+        displayFeilds: '',
         propertyIndexes: []
       };
 
@@ -947,7 +985,7 @@ export class VertexTypeStore {
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/check_using`,
           {
             names: selectedPropertyIndexes.map(
-              propertyIndex => this.vertexTypes[propertyIndex].name
+              (propertyIndex) => this.vertexTypes[propertyIndex].name
             )
           }
         )
@@ -1034,7 +1072,9 @@ export class VertexTypeStore {
 
     const combinedParams = Array.isArray(selectedVertexTypeIndexes)
       ? selectedVertexTypeIndexes
-          .map(propertyIndex => 'names=' + this.vertexTypes[propertyIndex].name)
+          .map(
+            (propertyIndex) => 'names=' + this.vertexTypes[propertyIndex].name
+          )
           .join('&')
       : `names=${selectedVertexTypeIndexes}`;
 
@@ -1083,7 +1123,7 @@ export class VertexTypeStore {
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/check_conflict`,
           {
-            vertexlabels: selectedVertexTypes.map(selectedVertexType =>
+            vertexlabels: selectedVertexTypes.map((selectedVertexType) =>
               this.reusableVertexTypes.find(
                 ({ name }) => name === selectedVertexType
               )

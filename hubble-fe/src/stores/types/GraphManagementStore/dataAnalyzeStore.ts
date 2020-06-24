@@ -1,3 +1,4 @@
+import { Node, Edge } from 'vis-network';
 import { dict, responseData } from '../common';
 import { EdgeType } from './metadataConfigsStore';
 
@@ -12,15 +13,16 @@ export interface FetchColorSchemas {
 
 export type FetchFilteredPropertyOptions = responseData<EdgeType>;
 
-export interface GraphNode {
+export interface GraphNode extends Node {
   id: string;
   label: string;
   properties: dict<any>;
+  chosen?: any;
   vLabel?: string;
   style?: dict<string | number>;
 }
 
-export interface GraphEdge {
+export interface GraphEdge extends Edge {
   id: string;
   label: string;
   properties: dict<any>;

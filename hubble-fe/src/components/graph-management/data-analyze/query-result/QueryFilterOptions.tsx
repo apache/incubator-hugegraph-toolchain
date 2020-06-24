@@ -1,11 +1,10 @@
 import React, { useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
 import { Select, Input, NumberBox, Calendar } from '@baidu/one-ui';
-import vis from 'vis-network';
 import { Message } from '@baidu/one-ui';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
-import { convertArrayToString } from '../../../../stores/utils';
+import { addGraphNodes, addGraphEdges } from '../../../../stores/utils';
 
 const getRuleOptions = (ruleType: string = '') => {
   switch (ruleType.toLowerCase()) {
@@ -28,11 +27,7 @@ const getRuleOptions = (ruleType: string = '') => {
   }
 };
 
-const QueryFilterOptions: React.FC<{
-  visNetwork: vis.Network | null;
-  visGraphNodes: vis.DataSetNodes;
-  visGraphEdges: vis.DataSetEdges;
-}> = observer(({ visNetwork, visGraphNodes, visGraphEdges }) => {
+const QueryFilterOptions: React.FC = observer(() => {
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
   const line = dataAnalyzeStore.filteredGraphQueryOptions.line;
   const properties = dataAnalyzeStore.filteredGraphQueryOptions.properties;
@@ -209,113 +204,26 @@ const QueryFilterOptions: React.FC<{
               if (
                 dataAnalyzeStore.requestStatus.filteredGraphData === 'success'
               ) {
-                dataAnalyzeStore.expandedGraphData.data.graph_view.vertices.forEach(
-                  ({ id, label, properties }) => {
-                    visGraphNodes.add({
-                      id,
-                      label: id.length <= 15 ? id : id.slice(0, 15) + '...',
-                      vLabel: label,
-                      properties,
-                      title: `
-                          <div class="tooltip-fields">
-                            <div>顶点类型：</div>
-                            <div>${label}</div>
-                          </div>
-                          <div class="tooltip-fields">
-                            <div>顶点ID：</div>
-                            <div>${id}</div>
-                          </div>
-                          ${Object.entries(properties)
-                            .map(([key, value]) => {
-                              return `<div class="tooltip-fields">
-                                        <div>${key}: </div>
-                                        <div>${convertArrayToString(
-                                          value,
-                                          '，'
-                                        )}</div>
-                                      </div>
-                                      `;
-                            })
-                            .join('')}
-                        `,
-                      color: {
-                        background:
-                          dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                        border:
-                          dataAnalyzeStore.colorMappings[label] || '#5c73e6',
-                        highlight: {
-                          background: '#fb6a02',
-                          border: '#fb6a02'
-                        },
-                        hover: { background: '#ec3112', border: '#ec3112' }
-                      },
-                      chosen: {
-                        node(
-                          values: any,
-                          id: string,
-                          selected: boolean,
-                          hovering: boolean
-                        ) {
-                          if (hovering || selected) {
-                            values.shadow = true;
-                            values.shadowColor = 'rgba(0, 0, 0, 0.6)';
-                            values.shadowX = 0;
-                            values.shadowY = 0;
-                            values.shadowSize = 25;
-                          }
-
-                          if (selected) {
-                            values.size = 30;
-                          }
-                        }
-                      }
-                    });
-                  }
+                addGraphNodes(
+                  dataAnalyzeStore.expandedGraphData.data.graph_view.vertices,
+                  dataAnalyzeStore.visDataSet?.nodes,
+                  dataAnalyzeStore.vertexSizeMappings,
+                  dataAnalyzeStore.colorMappings,
+                  dataAnalyzeStore.vertexWritingMappings
                 );
 
-                dataAnalyzeStore.expandedGraphData.data.graph_view.edges.forEach(
-                  (edge) => {
-                    visGraphEdges.add({
-                      ...edge,
-                      from: edge.source,
-                      to: edge.target,
-                      font: {
-                        color: '#666'
-                      },
-                      title: `
-                        <div class="tooltip-fields">
-                          <div>边类型：</div>
-                          <div>${edge.label}</div>
-                        </div>
-                        <div class="tooltip-fields">
-                          <div>边ID：</div>
-                          <div>${edge.id}</div>
-                        </div>
-                        ${Object.entries(edge.properties)
-                          .map(([key, value]) => {
-                            return `<div class="tooltip-fields">
-                                      <div>${key}: </div>
-                                      <div>${convertArrayToString(
-                                        value,
-                                        '，'
-                                      )}</div>
-                                    </div>`;
-                          })
-                          .join('')}
-                      `,
-                      color: {
-                        color: dataAnalyzeStore.edgeColorMappings[edge.label],
-                        highlight:
-                          dataAnalyzeStore.edgeColorMappings[edge.label],
-                        hover: dataAnalyzeStore.edgeColorMappings[edge.label]
-                      }
-                    });
-                  }
+                addGraphEdges(
+                  dataAnalyzeStore.expandedGraphData.data.graph_view.edges,
+                  dataAnalyzeStore.visDataSet?.edges,
+                  dataAnalyzeStore.edgeColorMappings,
+                  dataAnalyzeStore.edgeThicknessMappings,
+                  dataAnalyzeStore.edgeWithArrowMappings,
+                  dataAnalyzeStore.edgeWritingMappings
                 );
 
                 // highlight new vertices
-                if (visNetwork !== null) {
-                  visNetwork.selectNodes(
+                if (dataAnalyzeStore.visNetwork !== null) {
+                  dataAnalyzeStore.visNetwork.selectNodes(
                     dataAnalyzeStore.expandedGraphData.data.graph_view.vertices
                       .map(({ id }) => id)
                       .concat([dataAnalyzeStore.rightClickedGraphData.id]),
@@ -341,8 +249,8 @@ const QueryFilterOptions: React.FC<{
               dataAnalyzeStore.switchShowFilterBoard(false);
               dataAnalyzeStore.clearFilteredGraphQueryOptions();
 
-              if (visNetwork) {
-                visNetwork.unselectAll();
+              if (dataAnalyzeStore.visNetwork !== null) {
+                dataAnalyzeStore.visNetwork.unselectAll();
               }
             }}
           >
