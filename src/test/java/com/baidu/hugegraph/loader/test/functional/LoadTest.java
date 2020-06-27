@@ -40,7 +40,7 @@ public class LoadTest {
     protected static final String CONFIRM_CLEAR = "I'm sure to delete all data";
     protected static final String URL = String.format("http://%s:%s",
                                                       SERVER, PORT);
-    protected static final HugeClient CLIENT = new HugeClient(URL, GRAPH);
+    protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH).build();
 
     public static String configPath(String fileName) {
         return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();
