@@ -92,6 +92,7 @@ public final class DataTypeUtil {
         if (rawValue instanceof Number) {
             return ((Number) rawValue).longValue();
         } else if (rawValue instanceof String) {
+            // trim() is a little time consuming
             return parseLong(((String) rawValue).trim());
         }
         throw new IllegalArgumentException(String.format(
