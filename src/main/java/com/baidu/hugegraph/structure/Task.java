@@ -19,11 +19,8 @@
 
 package com.baidu.hugegraph.structure;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
-import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
 
@@ -67,6 +64,9 @@ public class Task {
 
     @JsonProperty(P.DEPENDENCIES)
     private Set<Long> dependencies;
+
+    @JsonProperty(P.SERVER)
+    private String server;
 
     public long id() {
         return this.id;
@@ -120,6 +120,10 @@ public class Task {
         return this.dependencies;
     }
 
+    public String server() {
+        return this.server;
+    }
+
     public boolean completed() {
         return ImmutableSet.of("success", "failed", "cancelled")
                            .contains(this.status);
@@ -129,40 +133,12 @@ public class Task {
         return "cancelled".equals(this.status);
     }
 
-    public boolean success() {
-        return "success".equals(this.status);
+    public boolean cancelling() {
+        return "cancelling".equals(this.status);
     }
 
-    public Map<String, Object> asMap() {
-        E.checkState(this.name != null, "Task name can't be null");
-
-        Map<String, Object> map = new HashMap<>();
-
-        map.put(P.ID, this.id);
-        map.put(P.TYPE, this.type);
-        map.put(P.NAME, this.name);
-        map.put(P.CALLABLE, this.callable);
-        map.put(P.STATUS, this.status);
-        map.put(P.PROGRESS, this.progress);
-        map.put(P.CREATE, this.create);
-        map.put(P.RETRIES, this.retries);
-        if (this.description != null) {
-            map.put(P.DESCRIPTION, this.description);
-        }
-        if (this.update != 0) {
-            map.put(P.UPDATE, this.update);
-        }
-        if (this.input != null) {
-            map.put(P.INPUT, this.input);
-        }
-        if (this.result != null) {
-            map.put(P.RESULT, this.result);
-        }
-        if (this.dependencies != null) {
-            map.put(P.DEPENDENCIES, this.dependencies);
-        }
-
-        return map;
+    public boolean success() {
+        return "success".equals(this.status);
     }
 
     @Override
@@ -185,5 +161,6 @@ public class Task {
         public static final String INPUT = "task_input";
         public static final String RESULT = "task_result";
         public static final String DEPENDENCIES = "task_dependencies";
+        public static final String SERVER = "task_server";
     }
 }

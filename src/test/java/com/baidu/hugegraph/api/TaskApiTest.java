@@ -258,6 +258,15 @@ public class TaskApiTest extends BaseApiTest {
         }
         // Cancel async task
         Task task = taskAPI.cancel(taskId);
+        Assert.assertTrue(task.cancelling());
+
+        try {
+            Thread.sleep(1000L);
+        } catch (InterruptedException e) {
+            // ignored
+        }
+
+        task = taskAPI.get(taskId);
         Assert.assertTrue(task.cancelled());
 
         resultSet = gremlin().execute(request);
