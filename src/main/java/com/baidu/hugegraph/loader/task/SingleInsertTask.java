@@ -51,7 +51,7 @@ public class SingleInsertTask extends InsertTask {
         for (Record record : this.batch) {
             try {
                 if (this.mapping.updateStrategies().isEmpty()) {
-                    this.addSingle(this.options(), record);
+                    this.insertSingle(this.options(), record);
                 } else {
                     this.updateSingle(this.options(), record);
                 }
@@ -94,8 +94,8 @@ public class SingleInsertTask extends InsertTask {
         }
     }
 
-    private void addSingle(LoadOptions options, Record record) {
-        this.addBatch(ImmutableList.of(record), options.checkVertex);
+    private void insertSingle(LoadOptions options, Record record) {
+        this.insertBatch(ImmutableList.of(record), options.checkVertex);
     }
 
     private void updateSingle(LoadOptions options, Record record) {

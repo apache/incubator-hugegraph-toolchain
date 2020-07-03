@@ -143,6 +143,9 @@ public abstract class ElementMapping implements Checkable {
     }
 
     public String mappingField(String fieldName) {
+        if (this.mappingFields.isEmpty()) {
+            return fieldName;
+        }
         String mappingName = this.mappingFields.get(fieldName);
         return mappingName != null ? mappingName : fieldName;
     }
@@ -156,6 +159,9 @@ public abstract class ElementMapping implements Checkable {
     }
 
     public Object mappingValue(String fieldName, String rawValue) {
+        if (this.mappingValues.isEmpty()) {
+            return rawValue;
+        }
         Object mappingValue = rawValue;
         Map<String, Object> values = this.mappingValues.get(fieldName);
         if (values != null) {

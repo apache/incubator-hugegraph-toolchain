@@ -91,7 +91,7 @@ public abstract class InsertTask implements Runnable {
     }
 
     @SuppressWarnings("unchecked")
-    protected void addBatch(List<Record> batch, boolean checkVertex) {
+    protected void insertBatch(List<Record> batch, boolean checkVertex) {
         HugeClient client = this.context.client();
         List<GraphElement> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));

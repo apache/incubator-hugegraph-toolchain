@@ -112,6 +112,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         String mappedKey = mapping.mappingField(fieldName);
         Set<String> nullableKeys = this.schemaLabel().nullableKeys();
         Set<Object> nullValues = mapping.nullValues();
+        if (nullableKeys.isEmpty() || nullValues.isEmpty()) {
+            return true;
+        }
         return !nullableKeys.contains(mappedKey) ||
                !nullValues.contains(fieldValue);
     }

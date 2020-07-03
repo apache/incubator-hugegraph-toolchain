@@ -51,7 +51,7 @@ public class BatchInsertTask extends InsertTask {
         do {
             try {
                 if (this.mapping.updateStrategies().isEmpty()) {
-                    this.addBatch(this.batch, this.options().checkVertex);
+                    this.insertBatch(this.batch, this.options().checkVertex);
                 } else {
                     this.updateBatch(this.batch, this.options().checkVertex);
                 }
@@ -72,7 +72,7 @@ public class BatchInsertTask extends InsertTask {
             }
         } while (retryCount > 0 && retryCount <= this.options().retryTimes);
 
-        // TODO：need to write to error log when when addBatch fails
+        // TODO：need to write to error log when when insertBatch fails
         int count = this.batch.size();
         // This metrics just for current element mapping
         this.plusLoadSuccess(count);
