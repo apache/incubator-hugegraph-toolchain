@@ -25,23 +25,16 @@ import javax.ws.rs.ProcessingException;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.version.ClientVersion;
 
 public class HugeClient implements Closeable {
 
-    private static final int CPUS = Runtime.getRuntime().availableProcessors();
-
-    private static final int DEFAULT_TIMEOUT = 20;
-    private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 2 * CPUS;
-    private static final int DEFAULT_MAX_CONNS = 4 * CPUS;
-
     static {
         ClientVersion.check();
     }
-
     private final RestClient client;
-
     private VersionManager version;
     private GraphsManager graphs;
     private SchemaManager schema;
@@ -54,53 +47,30 @@ public class HugeClient implements Closeable {
     private AuthManager auth;
     private MetricsManager metrics;
 
-    public HugeClient(String url, String graph) {
-        this(url, graph, DEFAULT_TIMEOUT);
-    }
-
-    public HugeClient(String url, String graph, int timeout) {
-        this(url, graph, timeout, DEFAULT_MAX_CONNS,
-             DEFAULT_MAX_CONNS_PER_ROUTE);
-    }
-
-    public HugeClient(String url, String graph, int timeout,
-                      int maxConns, int maxConnsPerRoute) {
+    public HugeClient(HugeClientBuilder builder) {
         try {
-            this.client = new RestClient(url, timeout, maxConns,
-                                         maxConnsPerRoute);
+            this.client = new RestClient(builder.url(),
+                                         builder.username(),
+                                         builder.password(),
+                                         builder.timeout(),
+                                         builder.maxConns(),
+                                         builder.maxConnsPerRoute(),
+                                         builder.protocol(),
+                                         builder.trustStoreFile(),
+                                         builder.trustStorePassword());
         } catch (ProcessingException e) {
-            throw new ServerException("Failed to connect url '%s'", url);
+            throw new ClientException("Failed to connect url '%s'", builder.url());
         }
         try {
-            this.initManagers(this.client, graph);
+            this.initManagers(this.client, builder.graph());
         } catch (Throwable e) {
             this.client.close();
             throw e;
         }
     }
 
-    public HugeClient(String url, String graph,
-                      String username, String password) {
-        this(url, graph, username, password, DEFAULT_TIMEOUT);
-    }
-
-    public HugeClient(String url, String graph,
-                      String username, String password,
-                      int timeout) {
-        this(url, graph, username, password, timeout, DEFAULT_MAX_CONNS,
-             DEFAULT_MAX_CONNS_PER_ROUTE);
-    }
-
-    public HugeClient(String url, String graph,
-                      String username, String password,
-                      int timeout, int maxConns, int maxConnsPerRoute) {
-        try {
-            this.client = new RestClient(url, username, password, timeout,
-                                         maxConns, maxConnsPerRoute);
-        } catch (ProcessingException e) {
-            throw new ServerException("Failed to connect url '%s'", url);
-        }
-        this.initManagers(this.client, graph);
+    public static HugeClientBuilder builder(String url, String graph) {
+        return new HugeClientBuilder(url, graph);
     }
 
     @Override

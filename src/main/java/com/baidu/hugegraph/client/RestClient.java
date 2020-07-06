@@ -44,24 +44,16 @@ public class RestClient extends AbstractRestClient {
         RestResult.registerModule(module);
     }
 
-    public RestClient(String url, int timeout) {
-        super(url, timeout * SECOND);
-    }
-
-    public RestClient(String url, int timeout, int maxConns,
-                      int maxConnsPerRoute) {
-        super(url, timeout * SECOND, maxConns, maxConnsPerRoute);
-    }
-
     public RestClient(String url, String username, String password,
                       int timeout) {
         super(url, username, password, timeout * SECOND);
     }
 
-    public RestClient(String url, String username, String password,
-                      int timeout, int maxConns, int maxConnsPerRoute) {
-        super(url, username, password, timeout * SECOND,
-              maxConns, maxConnsPerRoute);
+    public RestClient(String url, String username, String password, int timeout,
+                      int maxConns, int maxConnsPerRoute, String protocol,
+                      String trustStoreFile, String trustStorePassword) {
+        super(url, username, password, timeout * SECOND, maxConns,
+              maxConnsPerRoute, protocol, trustStoreFile, trustStorePassword);
     }
 
     public void apiVersion(Version version) {

@@ -24,6 +24,7 @@ import java.util.List;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.driver.HugeClientBuilder;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -32,8 +33,8 @@ public class BatchExample {
 
     public static void main(String[] args) {
         // If connect failed will throw a exception.
-        HugeClient hugeClient = new HugeClient("http://localhost:8080",
-                                               "hugegraph");
+        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                   "hugegraph").build();
 
         SchemaManager schema = hugeClient.schema();
 

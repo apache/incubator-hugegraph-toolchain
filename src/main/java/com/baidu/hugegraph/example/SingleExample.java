@@ -26,6 +26,7 @@ import java.util.List;
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.driver.HugeClientBuilder;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -38,8 +39,8 @@ public class SingleExample {
 
     public static void main(String[] args) throws IOException {
         // If connect failed will throw a exception.
-        HugeClient hugeClient = new HugeClient("http://localhost:8080",
-                                               "hugegraph");
+        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                   "hugegraph").build();
 
         SchemaManager schema = hugeClient.schema();
 

@@ -2,6 +2,7 @@ package com.baidu.hugegraph.example;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.driver.HugeClientBuilder;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -10,8 +11,8 @@ public class MovieExample {
 
     public static void main(String[] args) {
         // If connect failed will throw a exception.
-        HugeClient hugeClient = new HugeClient("http://localhost:8080",
-                                               "movie");
+        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                   "hugegraph").build();
 
         SchemaManager schema = hugeClient.schema();
 

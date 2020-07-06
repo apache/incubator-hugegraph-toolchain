@@ -34,7 +34,8 @@ import org.junit.runners.Suite;
     GraphManagerTest.class,
     AuthManagerTest.class,
     TraverserManagerTest.class,
-    MetricsManagerTest.class
+    MetricsManagerTest.class,
+    HugeClientHttpsTest.class
 })
 public class FuncTestSuite {
 }
