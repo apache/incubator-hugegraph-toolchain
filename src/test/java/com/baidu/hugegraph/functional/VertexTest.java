@@ -198,6 +198,25 @@ public class VertexTest extends BaseFuncTest {
     }
 
     @Test
+    public void testAddVertexWithMapProperties() {
+        Map<String, Object> properties = ImmutableMap.of("name", "vadas",
+                                                         "age", 19,
+                                                         "city", "Beijing");
+        // 1st param is label
+        Vertex vadas = graph().addVertex("person", properties);
+        Map<String, Object> props = ImmutableMap.of("name", "vadas",
+                                                    "age", 19,
+                                                    "city", "Beijing");
+        Assert.assertEquals(props, vadas.properties());
+
+        properties = ImmutableMap.of("name", "java in action", "price", 88);
+        // 1st param is label, 2nd param is id
+        Vertex java = graph().addVertex("book", "ISBN-1", properties);
+        props = ImmutableMap.of("name", "java in action", "price", 88);
+        Assert.assertEquals(props, java.properties());
+    }
+
+    @Test
     public void testRemoveVertexProperty() {
         Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
                                          "age", 19, "city", "Beijing");

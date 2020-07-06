@@ -73,6 +73,18 @@ public class GraphManager {
         return this.addVertex(vertex);
     }
 
+    public Vertex addVertex(String label, Map<String, Object> properties) {
+        return this.addVertex(label, null, properties);
+    }
+
+    public Vertex addVertex(String label, Object id,
+                            Map<String, Object> properties) {
+        Vertex vertex = new Vertex(label);
+        vertex.id(id);
+        this.attachProperties(vertex, properties);
+        return this.addVertex(vertex);
+    }
+
     public Vertex getVertex(Object vertexId) {
         Vertex vertex = this.vertexAPI.get(vertexId);
         this.attachManager(vertex);
@@ -209,6 +221,20 @@ public class GraphManager {
 
     public Edge addEdge(Object sourceId, String label, Object targetId,
                         Object... properties) {
+        Edge edge = new Edge(label);
+        edge.sourceId(sourceId);
+        edge.targetId(targetId);
+        this.attachProperties(edge, properties);
+        return this.addEdge(edge);
+    }
+
+    public Edge addEdge(Vertex source, String label, Vertex target,
+                        Map<String, Object> properties) {
+        return this.addEdge(source.id(), label, target.id(), properties);
+    }
+
+    public Edge addEdge(Object sourceId, String label, Object targetId,
+                        Map<String, Object> properties) {
         Edge edge = new Edge(label);
         edge.sourceId(sourceId);
         edge.targetId(targetId);
@@ -439,6 +465,15 @@ public class GraphManager {
             if (!properties[i].equals(T.id) &&
                 !properties[i].equals(T.label)) {
                 element.property((String) properties[i], properties[i + 1]);
+            }
+        }
+    }
+
+    private void attachProperties(GraphElement element,
+                                  Map<String, Object> properties) {
+        if (properties != null) {
+            for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                element.property(entry.getKey(), entry.getValue());
             }
         }
     }

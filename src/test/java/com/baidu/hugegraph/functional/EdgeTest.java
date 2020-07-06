@@ -34,6 +34,7 @@ import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Edge;
+import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.baidu.hugegraph.util.DateUtil;
@@ -230,6 +231,20 @@ public class EdgeTest extends BaseFuncTest {
         props = ImmutableMap.of("date", Utils.formatDate("2017-03-24"),
                                 "time", ImmutableList.of(
                                         Utils.formatDate("2012-10-10")));
+        Assert.assertEquals(props, created.properties());
+    }
+
+    @Test
+    public void testAddEdgeWithMapProperties() {
+        Vertex peter = getVertex("person", "name", "peter");
+        Vertex lop = getVertex("software", "name", "lop");
+
+        Map<String, Object> properties = ImmutableMap.of("date", "2017-03-24",
+                                                         "city", "HongKong");
+        Edge created = graph().addEdge(peter, "created", lop, properties);
+        Map<String, Object> props = ImmutableMap.of(
+                                    "date", Utils.formatDate("2017-03-24"),
+                                    "city", "HongKong");
         Assert.assertEquals(props, created.properties());
     }
 

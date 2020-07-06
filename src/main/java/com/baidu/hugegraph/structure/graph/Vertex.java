@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.structure.graph;
 
+import java.util.Map;
+
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
@@ -45,6 +47,13 @@ public class Vertex extends GraphElement {
     }
 
     public Edge addEdge(String label, Vertex vertex, Object... properties) {
+        E.checkNotNull(label, "The edge label can not be null.");
+        E.checkNotNull(vertex, "The target vertex can not be null.");
+        return this.manager.addEdge(this, label, vertex, properties);
+    }
+
+    public Edge addEdge(String label, Vertex vertex,
+                        Map<String, Object> properties) {
         E.checkNotNull(label, "The edge label can not be null.");
         E.checkNotNull(vertex, "The target vertex can not be null.");
         return this.manager.addEdge(this, label, vertex, properties);
