@@ -247,7 +247,7 @@ public class SchemaController extends BaseController {
             String pkName = property.getName();
             service.checkExist(pkName, connId);
             Ex.check(mustNullable, property::isNullable,
-                     "schema.propertykey.must-be-nullable");
+                     "schema.propertykey.must-be-nullable", pkName);
         }
     }
 

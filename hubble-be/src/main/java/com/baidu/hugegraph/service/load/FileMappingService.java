@@ -143,8 +143,8 @@ public class FileMappingService {
             return false;
         }
 
-        File newFile = new File(dir.getAbsolutePath() + ".all");
-        File destFile = new File(dir.getAbsolutePath());
+        File newFile = new File(dir.getPath() + ".all");
+        File destFile = new File(dir.getPath());
         if (partFiles.length == 1) {
             try {
                 // Rename file to dest file
@@ -242,7 +242,7 @@ public class FileMappingService {
 
     public String moveToNextLevelDir(FileMapping mapping) {
         File currFile = new File(mapping.getPath());
-        String destPath = Paths.get(currFile.getParentFile().getAbsolutePath(),
+        String destPath = Paths.get(currFile.getParentFile().getPath(),
                                     FILE_PREIFX + mapping.getId())
                                .toString();
         File destDir = new File(destPath);

@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -221,6 +222,12 @@ public class GraphConnectionController extends BaseController {
                  "common.param.cannot-be-null", "port");
         Ex.check(port != null, () -> 0 < port && port <= 65535,
                  "graph-connection.port.must-be-in-range", "[1, 65535]", port);
+
+        Ex.check((StringUtils.isEmpty(newEntity.getUsername()) &&
+                 StringUtils.isEmpty(newEntity.getPassword())) ||
+                 (!StringUtils.isEmpty(newEntity.getUsername()) &&
+                 StringUtils.isEmpty(newEntity.getPassword())),
+                 "graph-connection.username-or-password.must-be-same-status");
 
         Ex.check(newEntity.getCreateTime() == null,
                  "common.param.must-be-null", "create_time");

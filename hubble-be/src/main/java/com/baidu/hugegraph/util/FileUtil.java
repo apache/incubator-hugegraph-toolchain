@@ -34,6 +34,10 @@ public final class FileUtil {
         return countLines(new File(path));
     }
 
+    /**
+     * NOTE: If there is no blank line at the end of the file,
+     * one line will be missing
+     */
     public static long countLines(File file) {
         if (!file.exists()) {
             throw new IllegalArgumentException(String.format(

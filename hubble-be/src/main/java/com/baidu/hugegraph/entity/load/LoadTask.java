@@ -192,7 +192,20 @@ public class LoadTask implements Runnable {
             this.fileTotalLines == 0) {
             return 0;
         } else {
-            return (int) ((double) this.fileReadLines / this.fileTotalLines * 100);
+            long totalLines = this.fileTotalLines;
+            if (this.fileTotalLines < this.fileReadLines) {
+                /*
+                 * The line counted is one less than actually read,
+                 * it caused by FileUtil.countLines
+                 */
+                Ex.check(this.fileTotalLines + 1 == this.fileReadLines,
+                         "The file total lines must be >= read lines or " +
+                         "one less than read lines, but got total lines %s, " +
+                         "read lines %s",
+                         this.fileTotalLines, this.fileReadLines);
+                totalLines = this.fileTotalLines + 1;
+            }
+            return (int) ((double) this.fileReadLines / totalLines * 100);
         }
     }
 

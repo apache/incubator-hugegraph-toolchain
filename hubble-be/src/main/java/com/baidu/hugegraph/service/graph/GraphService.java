@@ -35,8 +35,8 @@ import com.baidu.hugegraph.entity.schema.PropertyKeyEntity;
 import com.baidu.hugegraph.entity.schema.SchemaLabelEntity;
 import com.baidu.hugegraph.entity.schema.VertexLabelEntity;
 import com.baidu.hugegraph.exception.ExternalException;
-import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.baidu.hugegraph.loader.source.file.ListFormat;
 import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.service.schema.EdgeLabelService;
@@ -118,7 +118,6 @@ public class GraphService {
         GraphManager graph = client.graph();
         EdgeHolder edgeHolder = this.buildEdge(connId, entity);
         // TODO: client should add updateEdge()
-        graph.removeEdge(entity.getId());
         return graph.addEdge(edgeHolder.edge);
     }
 
@@ -182,7 +181,9 @@ public class GraphService {
             Object value;
             try {
                 // DataTypeUtil.convert in loader need param InputSource
-                InputSource source = new FileSource();
+                FileSource source = new FileSource();
+                ListFormat listFormat = new ListFormat("[", "]", ",");
+                source.listFormat(listFormat);
                 value = DataTypeUtil.convert(rawValue, propertyKey, source);
             } catch (IllegalArgumentException e) {
                 throw new ExternalException("graph.property.convert.failed",
