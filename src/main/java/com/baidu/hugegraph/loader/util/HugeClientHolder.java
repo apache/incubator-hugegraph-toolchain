@@ -34,7 +34,7 @@ public final class HugeClientHolder {
             !options.host.startsWith(Constants.HTTPS_PREFIX)) {
             address = Constants.HTTP_PREFIX + options.host + ":" + options.port;
             if (options.protocol != null &&
-                options.protocol.equals("https")) {
+                options.protocol.equals(LoadOptions.HTTPS_SCHEMA)) {
                 address = Constants.HTTPS_PREFIX + options.host + ":" + options.port;
             }
         } else {

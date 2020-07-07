@@ -39,6 +39,8 @@ public final class LoadOptions {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 
+    public static final String HTTPS_SCHEMA = "https";
+    public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
@@ -71,7 +73,7 @@ public final class LoadOptions {
 
     @Parameter(names = {"--protocol"}, arity = 1,
                validateWith = {ProtocolValidator.class},
-               description = "The Protocol of HugeGraph-Server,allowed values " +
+               description = "The protocol of HugeGraphServer, allowed values " +
                              "are: http or https")
     public String protocol = "http";
 
@@ -81,8 +83,8 @@ public final class LoadOptions {
     public String trustStoreFile = "";
 
     @Parameter(names = {"--trust-store-password"}, arity = 1,
-               description = "The password of the path of the client truststore " +
-                             "file used when the https protocol is enabled")
+               description = "The password of the client truststore file used " +
+                             "when the https protocol is enabled")
     public String trustStorePassword = "";
 
     @Parameter(names = {"--token"}, arity = 1,
@@ -233,7 +235,7 @@ public final class LoadOptions {
                         "The graph must be specified");
         // Check option "-h"
         if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
-            if (options.protocol.equals("http")) {
+            if (options.protocol.equals(HTTP_SCHEMA)) {
                 options.host = Constants.HTTP_PREFIX + options.host;
             } else {
                 options.host = Constants.HTTPS_PREFIX + options.host;
@@ -270,12 +272,12 @@ public final class LoadOptions {
     public static class ProtocolValidator implements IParameterValidator {
 
         private static final Set<String> SSL_PROTOCOL = ImmutableSet.of(
-                "HTTP", "HTTPS"
+                HTTP_SCHEMA, HTTPS_SCHEMA
         );
 
         @Override
         public void validate(String name, String value) {
-            if (!SSL_PROTOCOL.contains(value.toUpperCase())) {
+            if (!SSL_PROTOCOL.contains(value.toLowerCase())) {
                 throw new ParameterException(String.format(
                           "Invalid --protocol '%s', valid value is %s",
                           value, SSL_PROTOCOL));
