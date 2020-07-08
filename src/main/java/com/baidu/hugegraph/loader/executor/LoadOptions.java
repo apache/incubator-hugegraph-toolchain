@@ -84,7 +84,7 @@ public final class LoadOptions {
 
     @Parameter(names = {"--trust-store-password"}, arity = 1,
                description = "The password of the client truststore file used " +
-                             "when the https protocol is enabled")
+                             "when https protocol is enabled")
     public String trustStorePassword = "";
 
     @Parameter(names = {"--token"}, arity = 1,

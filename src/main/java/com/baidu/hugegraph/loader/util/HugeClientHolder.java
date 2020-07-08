@@ -41,7 +41,7 @@ public final class HugeClientHolder {
             address = options.host + ":" + options.port;
         }
 
-        String username = (options.username != null) ?
+        String username = options.username != null ?
                           options.username :
                           options.graph;
         try {
