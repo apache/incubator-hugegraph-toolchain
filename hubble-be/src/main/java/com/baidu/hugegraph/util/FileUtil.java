@@ -30,7 +30,7 @@ import com.baidu.hugegraph.exception.InternalException;
 
 public final class FileUtil {
 
-    public static long countLines(String path) {
+    public static int countLines(String path) {
         return countLines(new File(path));
     }
 
@@ -38,18 +38,25 @@ public final class FileUtil {
      * NOTE: If there is no blank line at the end of the file,
      * one line will be missing
      */
-    public static long countLines(File file) {
+    public static int countLines(File file) {
         if (!file.exists()) {
             throw new IllegalArgumentException(String.format(
                       "The file %s doesn't exist", file));
         }
         long fileLength = file.length();
+        assert fileLength > 0;
         LineNumberReader lineReader = null;
         try {
             FileReader fileReader = new FileReader(file);
             lineReader = new LineNumberReader(fileReader);
-            lineReader.skip(fileLength);
-            return lineReader.getLineNumber();
+            /*
+             * The last character may be an EOL or a non-EOL character.
+             * If it is the EOL, need to add 1 line; if it is the non-EOL,
+             * also need to add 1 line, because the next character means the EOF
+             * and should also be counted as a line.
+             */
+            lineReader.skip(fileLength - 1);
+            return lineReader.getLineNumber() + 1;
         } catch (IOException e) {
             throw new InternalException("Failed to count lines of file %s",
                                         file);

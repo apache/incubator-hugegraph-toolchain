@@ -19,13 +19,19 @@
 
 package com.baidu.hugegraph.unit;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.Test;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    EntityUtilTest.class,
-    FileUtilTest.class
-})
-public class UnitTestSuite {
+import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.util.FileUtil;
+
+public class FileUtilTest {
+
+    @Test
+    public void testCountLines() {
+        int lines = FileUtil.countLines("target/test-classes/files/file_with_empty_line");
+        Assert.assertEquals(3, lines);
+
+        lines = FileUtil.countLines("target/test-classes/files/file_without_empty_line");
+        Assert.assertEquals(3, lines);
+    }
 }
