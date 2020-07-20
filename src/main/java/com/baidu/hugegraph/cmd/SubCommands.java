@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 
@@ -43,6 +44,7 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 public class SubCommands {
 
@@ -519,6 +521,31 @@ public class SubCommands {
         public int timeout = 30;
     }
 
+    public static class Protocol {
+
+        @Parameter(names = {"--protocol"}, arity = 1,
+                   validateWith = {ProtocolValidator.class},
+                   description = "The Protocol of HugeGraph-Server, allowed values " +
+                                 "are: http or https")
+        public String protocol = "http";
+    }
+
+    public static class TrustStoreFile {
+
+        @Parameter(names = {"--trust-store-file"}, arity = 1,
+                   description = "The path of client truststore file used when https " +
+                                 "protocol is enabled")
+        public String trustStoreFile = "";
+    }
+
+    public static class TrustStorePassword {
+
+        @Parameter(names = {"--trust-store-password"}, arity = 1,
+                   description = "The password of the client truststore file " +
+                                 "used when the https protocol is enabled")
+        public String trustStorePassword = "";
+    }
+
     public static class HugeTypes {
 
         @Parameter(names = {"--huge-types", "-t"},
@@ -742,6 +769,22 @@ public class SubCommands {
         }
     }
 
+    public static class ProtocolValidator implements IParameterValidator {
+
+        private static final Set<String> PROTOCOLS = ImmutableSet.of(
+                "HTTP", "HTTPS"
+        );
+
+        @Override
+        public void validate(String name, String value) {
+            if (!PROTOCOLS.contains(value.toUpperCase())) {
+                throw new ParameterException(String.format(
+                          "Invalid --protocol '%s', valid value is %s",
+                          value, PROTOCOLS));
+            }
+        }
+    }
+
     public static class TaskStatusValidator implements IParameterValidator {
 
         @Override
@@ -758,7 +801,7 @@ public class SubCommands {
 
         @Override
         public void validate(String name, String value) {
-            String regex = "^(http://)?"
+            String regex = "^((http)(s?)://)?"
                     // IP URL, like: 10.0.0.1
                     + "(((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)"
                     + "(\\.((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)){3}"

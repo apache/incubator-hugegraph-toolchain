@@ -19,7 +19,7 @@ abs_path() {
 
 BIN=`abs_path`
 TOP="$(cd $BIN/../ && pwd)"
-LIB=$TOP/lib
+LIB=$TOP/lib:$JAVA_HOME/lib/ext:$JAVA_HOME/jre/lib/ext
 
 . $BIN/util.sh
 
@@ -30,6 +30,7 @@ if [ -n "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME"/bin/java
 else
     JAVA=java
+    echo "Warning: please set JAVA_HOME variable, otherwise some libraries related to https may be missing"
 fi
 
 cd $TOP

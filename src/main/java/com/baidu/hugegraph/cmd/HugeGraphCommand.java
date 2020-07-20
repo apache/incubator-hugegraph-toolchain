@@ -64,6 +64,17 @@ public class HugeGraphCommand {
     @ParametersDelegate
     private SubCommands.Timeout timeout = new SubCommands.Timeout();
 
+    @ParametersDelegate
+    private SubCommands.Protocol protocol = new SubCommands.Protocol();
+
+    @ParametersDelegate
+    private SubCommands.TrustStoreFile trustStoreFile =
+                                       new SubCommands.TrustStoreFile();
+
+    @ParametersDelegate
+    private SubCommands.TrustStorePassword trustStorePassword =
+                                           new SubCommands.TrustStorePassword();
+
     public HugeGraphCommand() {
         this.subCommands = new SubCommands();
     }
@@ -107,6 +118,30 @@ public class HugeGraphCommand {
 
     public void timeout(int timeout) {
         this.timeout.timeout = timeout;
+    }
+
+    public String protocol() {
+        return this.protocol.protocol;
+    }
+
+    public void protocol(String protocol) {
+        this.protocol.protocol = protocol;
+    }
+
+    public String trustStoreFile () {
+        return this.trustStoreFile.trustStoreFile;
+    }
+
+    public void trustStoreFile(String trustStoreFile) {
+        this.trustStoreFile.trustStoreFile = trustStoreFile;
+    }
+
+    public String trustStorePassword () {
+        return this.trustStorePassword.trustStorePassword;
+    }
+
+    public void trustStorePassword(String trustStorePassword) {
+        this.trustStorePassword.trustStorePassword = trustStorePassword;
     }
 
     public JCommander jCommander() {
@@ -311,7 +346,10 @@ public class HugeGraphCommand {
             ConnectionInfo info = new ConnectionInfo(this.url(), this.graph(),
                                                      this.username(),
                                                      this.password(),
-                                                     this.timeout());
+                                                     this.timeout(),
+                                                     this.protocol(),
+                                                     this.trustStoreFile(),
+                                                     this.trustStorePassword());
             return clz.getConstructor(ToolClient.ConnectionInfo.class)
                       .newInstance(info);
         } catch (Exception e) {
