@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.options;
 
+import static com.baidu.hugegraph.config.OptionChecker.allowValues;
 import static com.baidu.hugegraph.config.OptionChecker.disallowEmpty;
 import static com.baidu.hugegraph.config.OptionChecker.positiveInt;
 import static com.baidu.hugegraph.config.OptionChecker.rangeInt;
@@ -189,5 +190,32 @@ public class HubbleOptions extends OptionHolder {
                     "The total file size(MB) limit.",
                     positiveInt(),
                     10 * Bytes.GB
+            );
+
+    public static final ConfigOption<String> SERVER_PROTOCOL =
+            new ConfigOption<>(
+                    "server.protocol",
+                    "The protocol of HugeGraphServer, allowed values are: " +
+                    "http or https",
+                    allowValues("http", "https"),
+                    "http"
+            );
+
+    public static final ConfigOption<String> CLIENT_TRUSTSTORE_FILE =
+            new ConfigOption<>(
+                    "ssl.client_truststore_file",
+                    "The path of client truststore file used when https " +
+                    "protocol is enabled",
+                    null,
+                    ""
+            );
+
+    public static final ConfigOption<String> CLIENT_TRUSTSTORE_PASSWORD =
+            new ConfigOption<>(
+                    "ssl.client_truststore_password",
+                    "The password of the client truststore " +
+                    "file used when the https protocol is enabled",
+                    null,
+                    ""
             );
 }

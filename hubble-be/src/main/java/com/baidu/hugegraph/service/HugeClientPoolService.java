@@ -44,6 +44,8 @@ public final class HugeClientPoolService
     private HugeConfig config;
     @Autowired
     private GraphConnectionService connService;
+    @Autowired
+    private SettingSSLService sslService;
 
     @PreDestroy
     public void destroy() {
@@ -70,6 +72,7 @@ public final class HugeClientPoolService
             int timeout = this.config.get(HubbleOptions.CLIENT_REQUEST_TIMEOUT);
             connection.setTimeout(timeout);
         }
+        connection = sslService.configSSL(this.config, connection);
         client = HugeClientUtil.tryConnect(connection);
         this.put(id, client);
         return client;

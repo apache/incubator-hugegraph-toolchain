@@ -46,6 +46,7 @@ import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
+import com.baidu.hugegraph.service.SettingSSLService;
 import com.baidu.hugegraph.service.license.LicenseService;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HubbleUtil;
@@ -71,6 +72,8 @@ public class GraphConnectionController extends BaseController {
     private HugeClientPoolService poolService;
     @Autowired
     private LicenseService licenseService;
+    @Autowired
+    private SettingSSLService sslService;
 
     @GetMapping
     public Response list(@RequestParam(name = "content", required = false)
@@ -113,6 +116,7 @@ public class GraphConnectionController extends BaseController {
             throw new ExternalException("graph-connection.not-exist.id", id);
         }
         if (!this.poolService.containsKey(id)) {
+            entity = sslService.configSSL(this.config, entity);
             HugeClient client = HugeClientUtil.tryConnect(entity);
             this.poolService.put(entity, client);
         }
@@ -135,6 +139,7 @@ public class GraphConnectionController extends BaseController {
 
         newEntity.setTimeout(config.get(HubbleOptions.CLIENT_REQUEST_TIMEOUT));
         // Do connect test, failure will throw an exception
+        newEntity = sslService.configSSL(this.config, newEntity);
         HugeClient client = HugeClientUtil.tryConnect(newEntity);
         newEntity.setCreateTime(HubbleUtil.nowDate());
 
@@ -166,6 +171,7 @@ public class GraphConnectionController extends BaseController {
         GraphConnection entity = this.mergeEntity(oldEntity, newEntity);
         // Make sure the updated connection doesn't conflict with exists
         this.checkEntityUnique(entity, false);
+        entity = sslService.configSSL(this.config, entity);
         HugeClient client = HugeClientUtil.tryConnect(entity);
         // Check current graph's data size
         LicenseService.VerifyResult verifyResult;

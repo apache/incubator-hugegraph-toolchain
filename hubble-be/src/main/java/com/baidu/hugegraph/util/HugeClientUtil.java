@@ -32,6 +32,8 @@ import com.baidu.hugegraph.structure.gremlin.ResultSet;
 
 public final class HugeClientUtil {
 
+    private static final String DEFAULT_PROTOCOL = "http";
+
     public static HugeClient tryConnect(GraphConnection connection) {
         String graph = connection.getGraph();
         String host = connection.getHost();
@@ -39,18 +41,28 @@ public final class HugeClientUtil {
         String username = connection.getUsername();
         String password = connection.getPassword();
         int timeout = connection.getTimeout();
+        String protocol = connection.getProtocol() == null ?
+                          DEFAULT_PROTOCOL :
+                          connection.getProtocol();
+        String trustStoreFile = connection.getTrustStoreFile();
+        String trustStorePassword = connection.getTrustStorePassword();
 
         String url = UriComponentsBuilder.newInstance()
-                                         .scheme("http")
+                                         .scheme(DEFAULT_PROTOCOL)
                                          .host(host).port(port)
                                          .toUriString();
+        if (username == null) {
+            username = "";
+            password = "";
+        }
         HugeClient client;
         try {
-            if (username != null) {
-                client = new HugeClient(url, graph, username, password, timeout);
-            } else {
-                client = new HugeClient(url, graph, timeout);
-            }
+            client = HugeClient.builder(url, graph)
+                               .configUser(username, password)
+                               .configTimeout(timeout)
+                               .configSSL(protocol, trustStoreFile,
+                                          trustStorePassword)
+                               .build();
         } catch (IllegalStateException e) {
             String message = e.getMessage();
             if (message != null && message.startsWith("The version")) {

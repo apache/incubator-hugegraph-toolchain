@@ -40,6 +40,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.baidu.hugegraph.common.Constant;
+import com.baidu.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.entity.enums.LoadStatus;
 import com.baidu.hugegraph.entity.load.EdgeMapping;
@@ -61,6 +62,7 @@ import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.util.MappingUtil;
 import com.baidu.hugegraph.mapper.load.LoadTaskMapper;
+import com.baidu.hugegraph.service.SettingSSLService;
 import com.baidu.hugegraph.service.schema.EdgeLabelService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.util.Ex;
@@ -85,6 +87,10 @@ public class LoadTaskService {
 
     @Autowired
     private LoadTaskExecutor taskExecutor;
+    @Autowired
+    private SettingSSLService sslService;
+    @Autowired
+    private HugeConfig config;
 
     private Map<Integer, LoadTask> taskContainer;
 
@@ -137,6 +143,7 @@ public class LoadTaskService {
     }
 
     public LoadTask start(GraphConnection connection, FileMapping fileMapping) {
+        connection = sslService.configSSL(this.config, connection);
         LoadTask task = this.buildLoadTask(connection, fileMapping);
         if (this.save(task) != 1) {
             throw new InternalException("entity.insert.failed", task);
@@ -313,6 +320,9 @@ public class LoadTaskService {
         options.port = connection.getPort();
         options.graph = connection.getGraph();
         options.token = connection.getPassword();
+        options.protocol = connection.getProtocol();
+        options.trustStoreFile = connection.getTrustStoreFile();
+        options.trustStorePassword = connection.getTrustStorePassword();
         // Fill with load parameters
         LoadParameter parameter = fileMapping.getLoadParameter();
         options.checkVertex = parameter.isCheckVertex();
