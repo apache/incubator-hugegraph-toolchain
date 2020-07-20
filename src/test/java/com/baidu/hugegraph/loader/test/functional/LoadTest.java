@@ -37,10 +37,22 @@ public class LoadTest {
     protected static final String GRAPH = "hugegraph";
     protected static final String SERVER = "127.0.0.1";
     protected static final int PORT = 8080;
+    protected static final int HTTPS_PORT = 8443;
     protected static final String CONFIRM_CLEAR = "I'm sure to delete all data";
     protected static final String URL = String.format("http://%s:%s",
                                                       SERVER, PORT);
-    protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH).build();
+    protected static final String HTTPS_URL = String.format("https://%s:%s",
+                                                            SERVER, HTTPS_PORT);
+    protected static final String PROTOCOL = "https";
+    protected static final String TRUST_STORE_FILE = "src/test/resources/cacerts.jks";
+    protected static final String TRUST_STORE_PASSWORD = "changeit";
+    protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH)
+                                                         .build();
+    protected static final HugeClient HTTPS_CLIENT = HugeClient.builder(HTTPS_URL, GRAPH)
+                                                               .configSSL(PROTOCOL,
+                                                                          TRUST_STORE_FILE,
+                                                                          TRUST_STORE_PASSWORD)
+                                                               .build();
 
     public static String configPath(String fileName) {
         return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();
