@@ -44,7 +44,7 @@ public class LoadTest {
     protected static final String HTTPS_URL = String.format("https://%s:%s",
                                                             SERVER, HTTPS_PORT);
     protected static final String PROTOCOL = "https";
-    protected static final String TRUST_STORE_FILE = "src/test/resources/cacerts.jks";
+    protected static final String TRUST_STORE_FILE = "assembly/travis/conf/cacerts.jks";
     protected static final String TRUST_STORE_PASSWORD = "changeit";
     protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH)
                                                          .build();

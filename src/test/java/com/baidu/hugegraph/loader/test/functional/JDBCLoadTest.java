@@ -27,7 +27,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
+import com.baidu.hugegraph.loader.executor.LoadOptions;
+import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
@@ -208,27 +211,5 @@ public class JDBCLoadTest extends LoadTest {
                        "age", 29, "city", "Beijing");
         assertContains(vertices, "person", "name", "vadas",
                        "age", 27, "city", "Shanghai");
-    }
-
-    @Test
-    public void testHttpsClientEmptyTable() {
-        String[] args = new String[]{
-                "-f", configPath("jdbc_customized_schema/struct.json"),
-                "-s", configPath("jdbc_customized_schema/schema.groovy"),
-                "-g", GRAPH,
-                "-h", SERVER,
-                "--protocol", PROTOCOL,
-                "--trust-store-file", TRUST_STORE_FILE,
-                "--trust-store-password", TRUST_STORE_PASSWORD,
-                "--batch-insert-threads", "2",
-                "--test-mode", "true"
-        };
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = HTTPS_CLIENT.graph().listVertices();
-        List<Edge> edges = HTTPS_CLIENT.graph().listEdges();
-
-        Assert.assertEquals(0, vertices.size());
-        Assert.assertEquals(0, edges.size());
     }
 }

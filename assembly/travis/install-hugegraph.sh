@@ -14,6 +14,12 @@ wget ${HUGEGRAPH_LINK} || exit 1
 
 tar -zxvf hugegraph-${VERSION}.tar.gz
 
+HTTPS_SERVER_DIR="hugegraph_https"
+
+mkdir $HTTPS_SERVER_DIR
+
+cp -r hugegraph-${VERSION}/. $HTTPS_SERVER_DIR
+
 cd hugegraph-${VERSION}
 
 bin/init-store.sh || exit 1
@@ -22,31 +28,9 @@ bin/start-hugegraph.sh || exit 1
 
 cd ../
 
-HTTPS_SERVER_DIR="hugegraph_https"
-
-HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
-
-mkdir $HTTPS_SERVER_DIR
-
 cd $HTTPS_SERVER_DIR
 
-git clone $HUGEGRAPH_GIT_URL
-
-cd hugegraph
-
-mvn package -DskipTests
-
-mv hugegraph-*.tar.gz ../
-
-cd ../
-
-rm -rf hugegraph
-
-tar -zxvf hugegraph-*.tar.gz
-
-cd hugegraph-*
-
-cp ../../$TRAVIS_DIR/conf/server.keystore conf
+cp ../$TRAVIS_DIR/conf/server.keystore conf
 
 REST_SERVER_CONFIG="conf/rest-server.properties"
 
@@ -68,4 +52,4 @@ bin/init-store.sh
 
 bin/start-hugegraph.sh
 
-cd ../../
+cd ../
