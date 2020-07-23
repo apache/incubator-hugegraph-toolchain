@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
-import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;
@@ -35,6 +33,8 @@ import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadMetrics;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
+import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.google.common.collect.ImmutableSet;
@@ -46,6 +46,9 @@ public abstract class InsertTask implements Runnable {
     );
 
     public static final String[] UNACCEPTABLE_MESSAGES = {
+            // org.apache.http.conn.HttpHostConnectException
+            "Connection refused",
+            "The server is being shutting down",
             "not allowed to insert, because already exist a vertex " +
             "with same id and different label"
     };
