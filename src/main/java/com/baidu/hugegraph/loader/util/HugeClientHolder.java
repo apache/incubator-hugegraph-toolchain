@@ -29,22 +29,18 @@ import com.baidu.hugegraph.rest.ClientException;
 public final class HugeClientHolder {
 
     public static HugeClient create(LoadOptions options) {
-        String address;
+        String address = options.host + ":" + options.port;
         if (!options.host.startsWith(Constants.HTTP_PREFIX) &&
             !options.host.startsWith(Constants.HTTPS_PREFIX)) {
             if (options.protocol != null &&
                 options.protocol.equals(LoadOptions.HTTPS_SCHEMA)) {
-                address = Constants.HTTPS_PREFIX + options.host + ":" + options.port;
+                address = Constants.HTTPS_PREFIX + address;
             } else {
-                address = Constants.HTTP_PREFIX + options.host + ":" + options.port;
+                address = Constants.HTTP_PREFIX + address;
             }
-        } else {
-            address = options.host + ":" + options.port;
         }
-
         String username = options.username != null ?
-                          options.username :
-                          options.graph;
+                          options.username : options.graph;
         try {
             return HugeClient.builder(address, options.graph)
                              .configUser(username, options.token)
