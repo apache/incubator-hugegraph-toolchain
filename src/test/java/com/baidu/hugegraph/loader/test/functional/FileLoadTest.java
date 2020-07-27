@@ -2918,4 +2918,57 @@ public class FileLoadTest extends LoadTest {
         vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(6, vertices.size());
     }
+
+    @Test
+    public void testHttpsClientValueMapping() {
+        ioUtil.write("vertex_person.csv",
+                     "tiny,1,1,1",
+                     "mary,2,2,2");
+        String[] args = new String[]{
+                "-f", structPath("value_mapping/struct.json"),
+                "-s", configPath("value_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(HTTPS_PORT),
+                "--protocol", PROTOCOL,
+                "--trust-store-file", TRUST_STORE_FILE,
+                "--trust-store-password", TRUST_STORE_PASSWORD,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = HTTPS_CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+    }
+
+    @Test
+    public void testHttpsHolderClientValueMapping() {
+        ioUtil.write("vertex_person.csv",
+                     "marko,3,3,3",
+                     "vadas,4,4,4");
+        String[] args = new String[]{
+                "-f", structPath("value_mapping/struct.json"),
+                "-s", configPath("value_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(HTTPS_PORT),
+                "--protocol", PROTOCOL,
+                "--trust-store-file", TRUST_STORE_FILE,
+                "--trust-store-password", TRUST_STORE_PASSWORD,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+        LoadOptions options = new LoadOptions();
+        options.host = SERVER;
+        options.port = HTTPS_PORT;
+        options.graph = GRAPH;
+        options.protocol = PROTOCOL;
+        options.trustStoreFile = TRUST_STORE_FILE;
+        options.trustStorePassword = TRUST_STORE_PASSWORD;
+        HugeClient client = HugeClientHolder.create(options);
+        List<Vertex> vertices = client.graph().listVertices();
+        Assert.assertEquals(4, vertices.size());
+    }
 }

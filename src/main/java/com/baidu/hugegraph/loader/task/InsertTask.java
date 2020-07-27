@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.baidu.hugegraph.api.graph.structure.BatchEdgeRequest;
-import com.baidu.hugegraph.api.graph.structure.BatchVertexRequest;
+import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
+import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.ElemType;

@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -32,11 +33,14 @@ import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.google.common.collect.ImmutableSet;
 
 public final class LoadOptions {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 
+    public static final String HTTPS_SCHEMA = "https";
+    public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
@@ -66,6 +70,22 @@ public final class LoadOptions {
     @Parameter(names = {"--username"}, arity = 1,
                description = "The username of graph for authentication")
     public String username = null;
+
+    @Parameter(names = {"--protocol"}, arity = 1,
+               validateWith = {ProtocolValidator.class},
+               description = "The protocol of HugeGraphServer, allowed values " +
+                             "are: http or https")
+    public String protocol = "http";
+
+    @Parameter(names = {"--trust-store-file"}, arity = 1,
+               description = "The path of client truststore file used when https " +
+                             "protocol is enabled")
+    public String trustStoreFile = "";
+
+    @Parameter(names = {"--trust-store-password"}, arity = 1,
+               description = "The password of the client truststore file used " +
+                             "when https protocol is enabled")
+    public String trustStorePassword = "";
 
     @Parameter(names = {"--token"}, arity = 1,
                description = "The token of graph for authentication")
@@ -215,7 +235,11 @@ public final class LoadOptions {
                         "The graph must be specified");
         // Check option "-h"
         if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
-            options.host = Constants.HTTP_PREFIX + options.host;
+            if (options.protocol.equals(HTTP_SCHEMA)) {
+                options.host = Constants.HTTP_PREFIX + options.host;
+            } else {
+                options.host = Constants.HTTPS_PREFIX + options.host;
+            }
         }
         // Check option --incremental-mode and --failure-mode
         E.checkArgument(!(options.incrementalMode && options.failureMode),
@@ -234,13 +258,29 @@ public final class LoadOptions {
 
         @Override
         public void validate(String name, String value) {
-            String regex = "^(http://)?"
+            String regex = "^((http)(s?)://)?"
                     + "(([0-9]{1,3}\\.){3}[0-9]{1,3}" // IP URL, like: 10.0.0.1
                     + "|" // Or domain name
                     + "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
                           "Invalid url value of args '%s': '%s'", name, value));
+            }
+        }
+    }
+
+    public static class ProtocolValidator implements IParameterValidator {
+
+        private static final Set<String> SSL_PROTOCOL = ImmutableSet.of(
+                HTTP_SCHEMA, HTTPS_SCHEMA
+        );
+
+        @Override
+        public void validate(String name, String value) {
+            if (!SSL_PROTOCOL.contains(value.toLowerCase())) {
+                throw new ParameterException(String.format(
+                          "Invalid --protocol '%s', valid value is %s",
+                          value, SSL_PROTOCOL));
             }
         }
     }
