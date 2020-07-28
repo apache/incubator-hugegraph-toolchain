@@ -46,6 +46,8 @@ public class IndexLabel extends SchemaElement {
     protected IndexType indexType;
     @JsonProperty("fields")
     protected List<String> fields;
+    @JsonProperty("rebuild")
+    protected boolean rebuild = true;
 
     @JsonCreator
     public IndexLabel(@JsonProperty("name") String name) {
@@ -75,6 +77,10 @@ public class IndexLabel extends SchemaElement {
         return this.fields;
     }
 
+    public boolean rebuild() {
+        return this.rebuild;
+    }
+
     @Override
     public String toString() {
         return String.format("{name=%s, baseType=%s, baseValue=%s, " +
@@ -85,6 +91,10 @@ public class IndexLabel extends SchemaElement {
 
     public IndexLabelV49 switchV49() {
         return new IndexLabelV49(this);
+    }
+
+    public IndexLabelV56 switchV56() {
+        return new IndexLabelV56(this);
     }
 
     public interface Builder extends SchemaBuilder<IndexLabel> {
@@ -112,6 +122,8 @@ public class IndexLabel extends SchemaElement {
         Builder userdata(String key, Object val);
 
         Builder ifNotExist();
+
+        Builder rebuild(boolean rebuild);
     }
 
     public static class BuilderImpl implements Builder {
@@ -229,6 +241,12 @@ public class IndexLabel extends SchemaElement {
             this.indexLabel.checkExist = false;
             return this;
         }
+
+        @Override
+        public Builder rebuild(boolean rebuild) {
+            this.indexLabel.rebuild = rebuild;
+            return this;
+        }
     }
 
     public static class CreatedIndexLabel {
@@ -248,13 +266,34 @@ public class IndexLabel extends SchemaElement {
         }
     }
 
-    @JsonIgnoreProperties({"properties", "user_data"})
+    @JsonIgnoreProperties({"rebuild"})
+    public static class IndexLabelV56 extends IndexLabel {
+
+        public IndexLabelV56(IndexLabel indexLabel) {
+            super(indexLabel.name);
+            E.checkArgument(indexLabel.rebuild,
+                            "The rebuild of indexlabel must be true");
+            this.baseType = indexLabel.baseType;
+            this.baseValue = indexLabel.baseValue;
+            this.indexType = indexLabel.indexType;
+            this.fields = indexLabel.fields;
+        }
+
+        @Override
+        public boolean rebuild() {
+            throw new NotSupportException("rebuild for index label");
+        }
+    }
+
+    @JsonIgnoreProperties({"properties", "user_data", "rebuild"})
     public static class IndexLabelV49 extends IndexLabel {
 
         public IndexLabelV49(IndexLabel indexLabel) {
             super(indexLabel.name);
             E.checkArgument(indexLabel.userdata.isEmpty(),
                             "The userdata of indexlabel must be empty");
+            E.checkArgument(indexLabel.rebuild,
+                            "The rebuild of indexlabel must be true");
             this.baseType = indexLabel.baseType;
             this.baseValue = indexLabel.baseValue;
             this.indexType = indexLabel.indexType;

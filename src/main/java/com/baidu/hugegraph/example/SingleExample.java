@@ -26,7 +26,6 @@ import java.util.List;
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.driver.HugeClientBuilder;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;

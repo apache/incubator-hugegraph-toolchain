@@ -113,7 +113,7 @@ public class ShortestPathApiTest extends TraverserApiTest {
 
     @Test
     public void testShortestPathWithDegree() {
-        Path path = shortestPathAPI.get(1, 6, Direction.BOTH,
+        Path path = shortestPathAPI.get(1, 6, Direction.OUT,
                                         null, 6, 1L, 0L, -1L);
         /*
          * Following results can be guaranteed in RocksDB backend,

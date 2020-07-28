@@ -19,12 +19,17 @@
 
 package com.baidu.hugegraph.structure;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
 
 public class Task {
+
+    public static final long TASK_ID_NULL = 0L;
 
     @JsonProperty
     private long id;
@@ -139,6 +144,41 @@ public class Task {
 
     public boolean success() {
         return "success".equals(this.status);
+    }
+
+    public Map<String, Object> asMap() {
+        E.checkState(this.name != null, "Task name can't be null");
+
+        Map<String, Object> map = new HashMap<>();
+
+        map.put(P.ID, this.id);
+        map.put(P.TYPE, this.type);
+        map.put(P.NAME, this.name);
+        map.put(P.CALLABLE, this.callable);
+        map.put(P.STATUS, this.status);
+        map.put(P.PROGRESS, this.progress);
+        map.put(P.CREATE, this.create);
+        map.put(P.RETRIES, this.retries);
+        if (this.description != null) {
+            map.put(P.DESCRIPTION, this.description);
+        }
+        if (this.update != 0) {
+            map.put(P.UPDATE, this.update);
+        }
+        if (this.input != null) {
+            map.put(P.INPUT, this.input);
+        }
+        if (this.result != null) {
+            map.put(P.RESULT, this.result);
+        }
+        if (this.dependencies != null) {
+            map.put(P.DEPENDENCIES, this.dependencies);
+        }
+        if (this.server != null) {
+            map.put(P.SERVER, this.server);
+        }
+
+        return map;
     }
 
     @Override

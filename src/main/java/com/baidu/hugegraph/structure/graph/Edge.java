@@ -91,9 +91,9 @@ public class Edge extends GraphElement {
         if (this.targetId == null && this.target != null) {
             this.targetId = this.target.id();
         }
-        if (this.sourceId == null) {
+        if (this.targetId == null) {
             throw new InvalidOperationException(
-                      "Must set source vertex id or add vertices " +
+                      "Must set target vertex id or add vertices " +
                       "before add edges");
         }
         return this.targetId;

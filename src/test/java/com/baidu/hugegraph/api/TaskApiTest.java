@@ -22,6 +22,7 @@ package com.baidu.hugegraph.api;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.After;
@@ -271,5 +272,22 @@ public class TaskApiTest extends BaseApiTest {
 
         resultSet = gremlin().execute(request);
         Assert.assertTrue(resultSet.size() < 10);
+    }
+
+    @Test
+    public void testTaskAsMap() {
+        IndexLabel personByCity = schema().getIndexLabel("personByCity");
+        long taskId = rebuildAPI.rebuild(personByCity);
+
+        Task task = taskAPI.get(taskId);
+
+        Assert.assertNotNull(task);
+        Assert.assertEquals(taskId, task.id());
+        waitUntilTaskCompleted(taskId);
+
+        task = taskAPI.get(taskId);
+        Map<String, Object> taskMap = task.asMap();
+        Assert.assertEquals("rebuild_index", taskMap.get(Task.P.TYPE));
+        Assert.assertEquals("success", taskMap.get(Task.P.STATUS));
     }
 }

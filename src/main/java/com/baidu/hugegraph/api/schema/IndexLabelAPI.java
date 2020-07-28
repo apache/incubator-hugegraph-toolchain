@@ -55,7 +55,15 @@ public class IndexLabelAPI extends SchemaAPI {
             E.checkArgument(indexLabel.userdata() == null ||
                             indexLabel.userdata().isEmpty(),
                             "Not support userdata until api version 0.50");
+            E.checkArgument(indexLabel.rebuild(),
+                            "Not support rebuild of indexlabel until api " +
+                            "version 0.57");
             il = indexLabel.switchV49();
+        } else if (this.client.apiVersionLt("0.57")) {
+            E.checkArgument(indexLabel.rebuild(),
+                            "Not support rebuild of indexlabel until api " +
+                            "version 0.57");
+            il = indexLabel.switchV56();
         }
 
         RestResult result = this.client.post(this.path(), il);
