@@ -54,6 +54,7 @@ import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
+import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -2957,8 +2958,20 @@ public class FileLoadTest extends LoadTest {
         };
         HugeGraphLoader.main(args);
 
-        List<Vertex> vertices = HTTPS_CLIENT.graph().listVertices();
-        Assert.assertEquals(2, vertices.size());
+        try {
+            HugeClient httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
+                                               .configSSL(PROTOCOL,
+                                                          TRUST_STORE_FILE,
+                                                          TRUST_STORE_PASSWORD)
+                                               .build();
+            List<Vertex> vertices = httpsClient.graph().listVertices();
+            Assert.assertEquals(2, vertices.size());
+        } catch (ClientException e) {
+            Throwable cause = e.getCause();
+            Assert.assertNotNull(cause);
+            Assert.assertTrue(cause.getMessage().contains(
+                              "Connection refused (Connection refused)"));
+        }
     }
 
     @Test
@@ -2979,6 +2992,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
         LoadOptions options = new LoadOptions();
         options.host = SERVER;
         options.port = HTTPS_PORT;
@@ -2986,8 +3000,13 @@ public class FileLoadTest extends LoadTest {
         options.protocol = PROTOCOL;
         options.trustStoreFile = TRUST_STORE_FILE;
         options.trustStorePassword = TRUST_STORE_PASSWORD;
-        HugeClient client = HugeClientHolder.create(options);
-        List<Vertex> vertices = client.graph().listVertices();
-        Assert.assertEquals(4, vertices.size());
+        try {
+            HugeClient client = HugeClientHolder.create(options);
+            List<Vertex> vertices = client.graph().listVertices();
+            Assert.assertEquals(4, vertices.size());
+        } catch (LoadException e) {
+            Assert.assertTrue(e.getMessage().startsWith("The service"));
+            Assert.assertTrue(e.getMessage().endsWith("is unavailable"));
+        }
     }
 }

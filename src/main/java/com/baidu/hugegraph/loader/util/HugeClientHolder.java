@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.util;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.driver.HugeClientBuilder;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -29,11 +30,12 @@ import com.baidu.hugegraph.rest.ClientException;
 public final class HugeClientHolder {
 
     public static HugeClient create(LoadOptions options) {
+        boolean useHttps = options.protocol != null &&
+                           options.protocol.equals(LoadOptions.HTTPS_SCHEMA);
         String address = options.host + ":" + options.port;
         if (!options.host.startsWith(Constants.HTTP_PREFIX) &&
             !options.host.startsWith(Constants.HTTPS_PREFIX)) {
-            if (options.protocol != null &&
-                options.protocol.equals(LoadOptions.HTTPS_SCHEMA)) {
+            if (useHttps) {
                 address = Constants.HTTPS_PREFIX + address;
             } else {
                 address = Constants.HTTP_PREFIX + address;
@@ -41,15 +43,18 @@ public final class HugeClientHolder {
         }
         String username = options.username != null ?
                           options.username : options.graph;
+        HugeClientBuilder builder;
         try {
-            return HugeClient.builder(address, options.graph)
-                             .configUser(username, options.token)
-                             .configTimeout(options.timeout)
-                             .configPool(options.maxConnections,
-                                         options.maxConnectionsPerRoute)
-                             .configSSL(options.protocol, options.trustStoreFile,
-                                        options.trustStorePassword)
-                             .build();
+            builder = HugeClient.builder(address, options.graph)
+                                .configUser(username, options.token)
+                                .configTimeout(options.timeout)
+                                .configPool(options.maxConnections,
+                                            options.maxConnectionsPerRoute);
+            if (useHttps) {
+                builder.configSSL(options.protocol, options.trustStoreFile,
+                                  options.trustStorePassword);
+            }
+            return builder.build();
         } catch (IllegalStateException e) {
             String message = e.getMessage();
             if (message != null && message.startsWith("The version")) {
