@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { observer } from 'mobx-react';
 import { useRoute, useLocation, Params } from 'wouter';
 import classnames from 'classnames';
+import { AnimatePresence } from 'framer-motion';
 import { Radio, Menu, Modal, Button } from '@baidu/one-ui';
 
 import { MetadataProperties } from './property';
@@ -19,7 +20,6 @@ import ActiveShowGraphIcon from '../../../assets/imgs/ic_tumoshi_white.svg';
 import ShowGraphIcon from '../../../assets/imgs/ic_tumoshi_black.svg';
 
 const MetadataConfig: React.FC = observer(() => {
-  const { vertexTypeStore } = useContext(MetadataConfigsRootStore);
   const appStore = useContext(AppStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const graphManagementStore = useContext(GraphManagementStoreContext);
@@ -45,13 +45,13 @@ const MetadataConfig: React.FC = observer(() => {
   const renderListView = () => {
     switch (selectedMenuItem) {
       case 'property':
-        return <MetadataProperties />;
+        return <MetadataProperties key="metadata-property" />;
       case 'vertex-type':
-        return <VertexTypeList />;
+        return <VertexTypeList key="vertex-type-list" />;
       case 'edge-type':
-        return <EdgeTypeList />;
+        return <EdgeTypeList key="edge-type-list" />;
       case 'property-index':
-        return <PropertyIndex />;
+        return <PropertyIndex key="property-index-list" />;
     }
   };
 
@@ -117,7 +117,9 @@ const MetadataConfig: React.FC = observer(() => {
               <Menu.Item key="edge-type">边类型</Menu.Item>
               <Menu.Item key="property-index">属性索引</Menu.Item>
             </Menu>
-            {renderListView()}
+            <AnimatePresence exitBeforeEnter>
+              {renderListView()}
+            </AnimatePresence>
           </>
         ) : (
           <GraphView />

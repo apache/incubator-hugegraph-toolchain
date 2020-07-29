@@ -8,6 +8,9 @@ import DataAnalyzeStoreContext, {
 import DataImportRootStoreContext, {
   DataImportRootStore
 } from './GraphManagementStore/dataImportStore/dataImportRootStore';
+import ImportManagerStoreContext, {
+  ImportManagerStore
+} from './GraphManagementStore/dataImportStore/ImportManagerStore';
 
 export {
   AppStore,
@@ -17,5 +20,7 @@ export {
   DataAnalyzeStore,
   DataAnalyzeStoreContext,
   DataImportRootStore,
-  DataImportRootStoreContext
+  DataImportRootStoreContext,
+  ImportManagerStore,
+  ImportManagerStoreContext
 };

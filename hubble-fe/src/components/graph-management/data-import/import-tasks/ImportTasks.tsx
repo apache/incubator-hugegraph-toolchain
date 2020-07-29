@@ -21,7 +21,10 @@ const ImportTasks: React.FC = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataImportRootStore = useContext(DataImportRootStoreContext);
   const { dataMapStore, serverDataImportStore } = dataImportRootStore;
-  const [, params] = useRoute('/graph-management/:id/data-import/import-tasks');
+  const [, params] = useRoute(
+    '/graph-management/:id/data-import/:jobId/import-tasks'
+  );
+  const [, setLocation] = useLocation();
   const { t } = useTranslation();
 
   const steps = useMemo(
@@ -41,6 +44,7 @@ const ImportTasks: React.FC = observer(() => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    dataImportRootStore.setCurrentJobId(Number(params!.jobId));
 
     graphManagementStore.fetchIdList();
     dataImportRootStore.setCurrentId(Number(params!.id));
@@ -59,7 +63,15 @@ const ImportTasks: React.FC = observer(() => {
     <section className={wrapperClassName}>
       <div className="import-tasks-breadcrumb-wrapper">
         <Breadcrumb size="small">
-          <Breadcrumb.Item>{t('breadcrumb.first')}</Breadcrumb.Item>
+          <Breadcrumb.Item
+            onClick={() => {
+              setLocation(
+                `/graph-management/${params!.id}/data-import/import-manager`
+              );
+            }}
+          >
+            {t('breadcrumb.first')}
+          </Breadcrumb.Item>
           <Breadcrumb.Item>{t('breadcrumb.second')}</Breadcrumb.Item>
         </Breadcrumb>
       </div>
@@ -113,11 +125,14 @@ const ImportTasks: React.FC = observer(() => {
                   dataImportRootStore.resetAllFileInfos();
                   dataMapStore.dispose();
                   serverDataImportStore.dispose();
+                  dataImportRootStore.dispose();
 
-                  dataImportRootStore.setCurrentStep(1);
+                  setLocation(
+                    `/graph-management/${params!.id}/data-import/import-manager`
+                  );
                 }}
               >
-                {t('data-import-status.re-import')}
+                {t('data-import-status.move-to-import-manager')}
               </Button>
             </div>
           </div>

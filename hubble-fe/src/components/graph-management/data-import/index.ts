@@ -1,3 +1,3 @@
-import { ImportTasks } from './import-tasks';
+import { ImportTasks, ImportManager, JobDetails } from './import-tasks';
 
-export { ImportTasks };
+export { ImportTasks, ImportManager, JobDetails };

@@ -1,15 +1,20 @@
-import React, { useContext, useEffect } from 'react';
-import { Route, useRoute } from 'wouter';
-import { observer } from 'mobx-react';
+import React from 'react';
+import { Route } from 'wouter';
+
 import { AppBar } from './common';
 import {
   GraphManagement,
   DataAnalyze,
   MetadataConfigs,
-  ImportTasks
+  ImportTasks,
+  ImportManager,
+  JobDetails
 } from './graph-management';
+import {
+  TaskErrorLogs,
+  JobErrorLogs
+} from './graph-management/data-import/import-tasks/error-logs';
 import GraphManagementSidebar from './graph-management/GraphManagementSidebar';
-import { DataImportRootStoreContext } from '../stores';
 
 const App: React.FC = () => {
   return (
@@ -18,7 +23,11 @@ const App: React.FC = () => {
       <GraphManagementSidebar />
       <Route
         path="/graph-management/:id/data-import/import-tasks/:taskId/error-log"
-        component={ErrorLogs}
+        component={TaskErrorLogs}
+      />
+      <Route
+        path="/graph-management/:id/data-import/import-manager/:jobId/error-log"
+        component={JobErrorLogs}
       />
       <Route
         path="/graph-management/:id/data-analyze"
@@ -29,48 +38,21 @@ const App: React.FC = () => {
         component={MetadataConfigs}
       />
       <Route
-        path="/graph-management/:id/data-import/import-tasks"
+        path="/graph-management/:id/data-import/:jobId/import-tasks"
         component={ImportTasks}
+      />
+      <Route
+        path="/graph-management/:id/data-import/import-manager/:jobId/details"
+        component={JobDetails}
+      />
+      <Route
+        path="/graph-management/:id/data-import/import-manager"
+        component={ImportManager}
       />
       <Route path="/graph-management" component={GraphManagement} />
       <Route path="/" component={GraphManagement} />
     </div>
   );
 };
-
-const ErrorLogs: React.FC = observer(() => {
-  const dataImportRootStore = useContext(DataImportRootStoreContext);
-  const { serverDataImportStore } = dataImportRootStore;
-  const [, params] = useRoute(
-    '/graph-management/:id/data-import/import-tasks/:taskId/error-log'
-  );
-
-  useEffect(() => {
-    serverDataImportStore.checkErrorLogs(
-      Number(params!.taskId),
-      Number(params!.id)
-    );
-  }, [params!.id, params!.taskId]);
-
-  return (
-    <section
-      style={{
-        width: '80vw',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 16,
-        position: 'relative',
-        top: 76,
-        left: '10vw',
-        lineHeight: 2,
-        whiteSpace: 'pre',
-        fontSize: 14
-      }}
-    >
-      <div>{serverDataImportStore.errorLogs}</div>
-    </section>
-  );
-});
 
 export default App;

@@ -4,8 +4,8 @@ import { isUndefined, isEmpty, size, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import { Input, Select, Checkbox } from '@baidu/one-ui';
-import TooltipTrigger from 'react-popper-tooltip';
 
+import { Tooltip } from '../../../../common';
 import { DataImportRootStoreContext } from '../../../../../stores';
 import {
   VertexType,
@@ -263,54 +263,29 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
             <span className="import-tasks-data-options-title in-card">
               {t('data-configs.type.edge.source-ID-strategy')}:
             </span>
-            <TooltipTrigger
-              tooltipShown={selectedSourceVertex.id_strategy === 'AUTOMATIC'}
+            <Tooltip
               placement="bottom-start"
+              tooltipShown={selectedSourceVertex.id_strategy === 'AUTOMATIC'}
               modifiers={{
                 offset: {
                   offset: '0, 10'
                 }
               }}
-              tooltip={({
-                arrowRef,
-                tooltipRef,
-                getArrowProps,
-                getTooltipProps,
-                placement
-              }) => (
-                <div
-                  {...getTooltipProps({
-                    ref: tooltipRef,
-                    className: 'import-tasks-tooltips'
-                  })}
-                >
-                  <div
-                    {...getArrowProps({
-                      ref: arrowRef,
-                      className: 'tooltip-arrow',
-                      'data-placement': placement
-                    })}
-                  />
-                  <span>
-                    {t('data-configs.type.hint.lack-support-for-automatic')}
-                  </span>
-                </div>
-              )}
-            >
-              {({ getTriggerProps, triggerRef }) => (
-                <span
-                  {...getTriggerProps({
-                    ref: triggerRef
-                  })}
-                >
-                  {t(
-                    `data-configs.type.ID-strategy.${selectedSourceVertex?.id_strategy}`
-                  )}
-                  {selectedSourceVertex?.id_strategy === 'PRIMARY_KEY' &&
-                    `-${selectedSourceVertex?.primary_keys.join('，')}`}
+              tooltipWrapperProps={{
+                className: 'import-tasks-tooltips'
+              }}
+              tooltipWrapper={
+                <span>
+                  {t('data-configs.type.hint.lack-support-for-automatic')}
                 </span>
+              }
+            >
+              {t(
+                `data-configs.type.ID-strategy.${selectedSourceVertex?.id_strategy}`
               )}
-            </TooltipTrigger>
+              {selectedSourceVertex?.id_strategy === 'PRIMARY_KEY' &&
+                `-${selectedSourceVertex?.primary_keys.join('，')}`}
+            </Tooltip>
           </div>
         )}
         {edgeMap.source_fields.map((idField, fieldIndex) => {
@@ -398,54 +373,29 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
             <span className="import-tasks-data-options-title in-card">
               {t('data-configs.type.edge.target-ID-strategy')}:
             </span>
-            <TooltipTrigger
-              tooltipShown={selectedTargetVertex.id_strategy === 'AUTOMATIC'}
+            <Tooltip
               placement="bottom-start"
+              tooltipShown={selectedTargetVertex.id_strategy === 'AUTOMATIC'}
               modifiers={{
                 offset: {
                   offset: '0, 10'
                 }
               }}
-              tooltip={({
-                arrowRef,
-                tooltipRef,
-                getArrowProps,
-                getTooltipProps,
-                placement
-              }) => (
-                <div
-                  {...getTooltipProps({
-                    ref: tooltipRef,
-                    className: 'import-tasks-tooltips'
-                  })}
-                >
-                  <div
-                    {...getArrowProps({
-                      ref: arrowRef,
-                      className: 'tooltip-arrow',
-                      'data-placement': placement
-                    })}
-                  />
-                  <span>
-                    {t('data-configs.type.hint.lack-support-for-automatic')}
-                  </span>
-                </div>
-              )}
-            >
-              {({ getTriggerProps, triggerRef }) => (
-                <span
-                  {...getTriggerProps({
-                    ref: triggerRef
-                  })}
-                >
-                  {t(
-                    `data-configs.type.ID-strategy.${selectedTargetVertex?.id_strategy}`
-                  )}
-                  {selectedTargetVertex?.id_strategy === 'PRIMARY_KEY' &&
-                    `-${selectedTargetVertex?.primary_keys.join('，')}`}
+              tooltipWrapperProps={{
+                className: 'import-tasks-tooltips'
+              }}
+              tooltipWrapper={
+                <span>
+                  {t('data-configs.type.hint.lack-support-for-automatic')}
                 </span>
+              }
+            >
+              {t(
+                `data-configs.type.ID-strategy.${selectedTargetVertex?.id_strategy}`
               )}
-            </TooltipTrigger>
+              {selectedTargetVertex?.id_strategy === 'PRIMARY_KEY' &&
+                `-${selectedTargetVertex?.primary_keys.join('，')}`}
+            </Tooltip>
           </div>
         )}
         {edgeMap.target_fields.map((idField, fieldIndex) => {
@@ -858,7 +808,7 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                           : dataMapStore.newEdgeType.null_values.checked
                       }
                     >
-                      <Checkbox value="NULL">Nullable</Checkbox>
+                      <Checkbox value="NULL">NULL/null</Checkbox>
                       <Checkbox value={''}>
                         {t(
                           'data-configs.type.edge.advance.nullable-list.empty'

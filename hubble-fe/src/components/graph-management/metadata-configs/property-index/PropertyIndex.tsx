@@ -1,12 +1,30 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import Highlighter from 'react-highlight-words';
+import { motion } from 'framer-motion';
 import { Input, Table } from '@baidu/one-ui';
 
+import { LoadingDataView } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
-import LoadingBackIcon from '../../../../assets/imgs/ic_loading_back.svg';
-import LoadingFrontIcon from '../../../../assets/imgs/ic_loading_front.svg';
 import './PropertyIndex.less';
+
+const variants = {
+  initial: {
+    opacity: 0
+  },
+  animate: {
+    opacity: 1,
+    transition: {
+      duration: 0.7
+    }
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      duration: 0.3
+    }
+  }
+};
 
 const IndexTypeMappings: Record<string, string> = {
   SECONDARY: '二级索引',
@@ -18,6 +36,11 @@ const PropertyIndex: React.FC = observer(() => {
   const { metadataPropertyIndexStore } = useContext(MetadataConfigsRootStore);
   const [preLoading, switchPreLoading] = useState(true);
   const [currentTab, switchCurrentTab] = useState<'vertex' | 'edge'>('vertex');
+
+  const isLoading =
+    preLoading ||
+    metadataPropertyIndexStore.requestStatus.fetchMetadataPropertIndexes ===
+      'pending';
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     metadataPropertyIndexStore.mutateSearchWords(e.target.value);
@@ -78,7 +101,7 @@ const PropertyIndex: React.FC = observer(() => {
         ] = metadataPropertyIndexStore.collpaseInfo;
 
         const startIndex = collpaseStartIndexes.findIndex(
-          indexNumber => indexNumber === index
+          (indexNumber) => indexNumber === index
         );
 
         return startIndex !== -1
@@ -156,7 +179,12 @@ const PropertyIndex: React.FC = observer(() => {
   ];
 
   return (
-    <div>
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={variants}
+    >
       <div className="vertex-index-tab-wrapper">
         <div
           onClick={() => {
@@ -200,63 +228,59 @@ const PropertyIndex: React.FC = observer(() => {
         </div>
       </div>
       <div className="vertex-index-wrapper">
-        {preLoading ||
-        metadataPropertyIndexStore.requestStatus.fetchMetadataPropertIndexes ===
-          'pending' ? (
-          <div
-            className="metadata-configs-content-loading-wrapper"
-            style={{ height: 'calc(100vh - 272px)' }}
-          >
-            <div className="metadata-configs-content-loading-bg">
-              <img
-                className="metadata-configs-content-loading-back"
-                src={LoadingBackIcon}
-                alt="加载背景"
+        <div className="metadata-configs-content-header">
+          <Input.Search
+            size="medium"
+            width={200}
+            placeholder="请输入搜索关键字"
+            value={metadataPropertyIndexStore.searchWords}
+            onChange={handleSearchChange}
+            onSearch={handleSearch}
+            onClearClick={handleClearSearch}
+            isShowDropDown={false}
+            disabled={isLoading}
+          />
+        </div>
+        <Table
+          bordered
+          columns={columnConfigs}
+          locale={{
+            emptyText: (
+              <LoadingDataView
+                isLoading={isLoading}
+                emptyView={
+                  metadataPropertyIndexStore.isSearched.status ? (
+                    <span>无结果</span>
+                  ) : (
+                    <span>您暂时还没有任何索引</span>
+                  )
+                }
               />
-              <img
-                className="metadata-configs-content-loading-front"
-                src={LoadingFrontIcon}
-                alt="加载 spinner"
-              />
-            </div>
-            <span>数据加载中...</span>
-          </div>
-        ) : (
-          <>
-            <div className="metadata-configs-content-header">
-              <Input.Search
-                size="medium"
-                width={200}
-                placeholder="请输入搜索关键字"
-                value={metadataPropertyIndexStore.searchWords}
-                onChange={handleSearchChange}
-                onSearch={handleSearch}
-                onClearClick={handleClearSearch}
-                isShowDropDown={false}
-              />
-            </div>
-            <Table
-              bordered
-              columns={columnConfigs}
-              dataSource={metadataPropertyIndexStore.metadataPropertyIndexes}
-              pagination={{
-                hideOnSinglePage: false,
-                pageNo:
-                  metadataPropertyIndexStore.metadataPropertyIndexPageConfig
-                    .pageNumber,
-                pageSize: 10,
-                showSizeChange: false,
-                showPageJumper: false,
-                total:
-                  metadataPropertyIndexStore.metadataPropertyIndexPageConfig
-                    .pageTotal,
-                onPageNoChange: handlePageNumberChange
-              }}
-            />
-          </>
-        )}
+            )
+          }}
+          dataSource={
+            isLoading ? [] : metadataPropertyIndexStore.metadataPropertyIndexes
+          }
+          pagination={
+            isLoading
+              ? null
+              : {
+                  hideOnSinglePage: false,
+                  pageNo:
+                    metadataPropertyIndexStore.metadataPropertyIndexPageConfig
+                      .pageNumber,
+                  pageSize: 10,
+                  showSizeChange: false,
+                  showPageJumper: false,
+                  total:
+                    metadataPropertyIndexStore.metadataPropertyIndexPageConfig
+                      .pageTotal,
+                  onPageNoChange: handlePageNumberChange
+                }
+          }
+        />
       </div>
-    </div>
+    </motion.div>
   );
 });
 

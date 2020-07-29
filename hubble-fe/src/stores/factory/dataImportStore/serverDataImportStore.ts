@@ -3,6 +3,7 @@ import { LoadParameter } from '../../types/GraphManagementStore/dataImportStore'
 export function initRequestStatus() {
   return {
     fetchImportTasks: 'standby',
+    fetchAllImportTasks: 'standby',
     startImport: 'standby',
     pauseImport: 'standby',
     resumeImport: 'standby',
@@ -16,6 +17,10 @@ export function initRequestStatus() {
 export function initErrorInfo() {
   return {
     fetchImportTasks: {
+      code: NaN,
+      message: ''
+    },
+    fetchAllImportTasks: {
       code: NaN,
       message: ''
     },

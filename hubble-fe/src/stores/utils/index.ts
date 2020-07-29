@@ -1,4 +1,4 @@
-import { size } from 'lodash-es';
+import { isUndefined, size } from 'lodash-es';
 import isInt from 'validator/lib/isInt';
 import isFloat from 'validator/lib/isFloat';
 import isBoolean from 'validator/lib/isBoolean';
@@ -15,7 +15,6 @@ import type {
   VertexTypeProperty,
   MetadataProperty
 } from '../types/GraphManagementStore/metadataConfigsStore';
-import { isUndefined } from 'util';
 
 /* variables */
 
@@ -37,7 +36,7 @@ export const edgeWidthMapping: Record<string, number> = {
 
 export function checkIfLocalNetworkOffline(error: any) {
   if (!error.response) {
-    throw new Error('网络错误，请查看您的本地连接');
+    throw new Error('网络异常，请稍后重试');
   }
 }
 

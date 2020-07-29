@@ -4,8 +4,8 @@ import { isUndefined, isEmpty, size, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import { Input, Select, Checkbox } from '@baidu/one-ui';
-import TooltipTrigger from 'react-popper-tooltip';
 
+import { Tooltip } from '../../../../common';
 import TypeConfigManipulations from './TypeConfigManipulations';
 import { DataImportRootStoreContext } from '../../../../../stores';
 import { VertexType } from '../../../../../stores/types/GraphManagementStore/metadataConfigsStore';
@@ -14,7 +14,6 @@ import ArrowIcon from '../../../../../assets/imgs/ic_arrow_16.svg';
 import BlueArrowIcon from '../../../../../assets/imgs/ic_arrow_blue.svg';
 import CloseIcon from '../../../../../assets/imgs/ic_close_16.svg';
 import MapIcon from '../../../../../assets/imgs/ic_yingshe_16.svg';
-import { toJS } from 'mobx';
 
 export interface VertexMapProps {
   checkOrEdit: 'check' | 'edit' | boolean;
@@ -218,54 +217,25 @@ const VertexMap: React.FC<VertexMapProps> = observer(
             <span className="import-tasks-data-options-title in-card">
               {t('data-configs.type.vertex.ID-strategy')}:
             </span>
-            <TooltipTrigger
-              tooltipShown={isStrategyAutomatic}
+            <Tooltip
               placement="bottom-start"
+              tooltipShown={isStrategyAutomatic}
               modifiers={{
                 offset: {
                   offset: '0, 10'
                 }
               }}
-              tooltip={({
-                arrowRef,
-                tooltipRef,
-                getArrowProps,
-                getTooltipProps,
-                placement
-              }) => (
-                <div
-                  {...getTooltipProps({
-                    ref: tooltipRef,
-                    className: 'import-tasks-tooltips'
-                  })}
-                >
-                  <div
-                    {...getArrowProps({
-                      ref: arrowRef,
-                      className: 'tooltip-arrow',
-                      'data-placement': placement
-                    })}
-                  />
-                  <span>
-                    {t('data-configs.type.hint.lack-support-for-automatic')}
-                  </span>
-                </div>
-              )}
-            >
-              {({ getTriggerProps, triggerRef }) => (
-                <span
-                  {...getTriggerProps({
-                    ref: triggerRef
-                  })}
-                >
-                  {t(
-                    `data-configs.type.ID-strategy.${selectedVertex.id_strategy}`
-                  )}
-                  {selectedVertex.id_strategy === 'PRIMARY_KEY' &&
-                    `-${selectedVertex.primary_keys.join('，')}`}
+              tooltipWrapperProps={{ className: 'import-tasks-tooltips' }}
+              tooltipWrapper={
+                <span>
+                  {t('data-configs.type.hint.lack-support-for-automatic')}
                 </span>
-              )}
-            </TooltipTrigger>
+              }
+            >
+              {t(`data-configs.type.ID-strategy.${selectedVertex.id_strategy}`)}
+              {selectedVertex.id_strategy === 'PRIMARY_KEY' &&
+                `-${selectedVertex.primary_keys.join('，')}`}
+            </Tooltip>
           </div>
         )}
         {vertexMap.id_fields.map((idField, fieldIndex) => {
@@ -696,7 +666,7 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                           : dataMapStore.newVertexType.null_values.checked
                       }
                     >
-                      <Checkbox value="NULL">Nullable</Checkbox>
+                      <Checkbox value="NULL">NULL/null</Checkbox>
                       <Checkbox value={''}>
                         {t(
                           'data-configs.type.vertex.advance.nullable-list.empty'
@@ -1506,19 +1476,36 @@ const VertexMap: React.FC<VertexMapProps> = observer(
               !dataMapStore.allowAddPropertyMapping('vertex') ||
               !dataMapStore.isValidateSave
             }
-            onCreate={() => {
+            onCreate={async () => {
               dataMapStore.switchAddNewTypeConfig(false);
               dataMapStore.switchEditTypeConfig(false);
 
-              isEdit
-                ? dataMapStore.updateVertexMap(
-                    'upgrade',
-                    dataMapStore.selectedFileId
-                  )
-                : dataMapStore.updateVertexMap(
-                    'add',
-                    dataMapStore.selectedFileId
-                  );
+              // really weird! if import task comes from import-manager
+              // datamapStore.fileMapInfos cannot be updated in <TypeConfigs />
+              // though it's already re-rendered
+              if (dataMapStore.isIrregularProcess) {
+                isEdit
+                  ? await dataMapStore.updateVertexMap(
+                      'upgrade',
+                      dataMapStore.selectedFileId
+                    )
+                  : await dataMapStore.updateVertexMap(
+                      'add',
+                      dataMapStore.selectedFileId
+                    );
+
+                dataMapStore.fetchDataMaps();
+              } else {
+                isEdit
+                  ? dataMapStore.updateVertexMap(
+                      'upgrade',
+                      dataMapStore.selectedFileId
+                    )
+                  : dataMapStore.updateVertexMap(
+                      'add',
+                      dataMapStore.selectedFileId
+                    );
+              }
 
               onCancelCreateVertex();
               dataMapStore.resetNewMap('vertex');

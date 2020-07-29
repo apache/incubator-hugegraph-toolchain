@@ -1,4 +1,4 @@
-import React, { useContext, useCallback } from 'react';
+import React, { useContext, useCallback, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react';
 import { isEmpty, size } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
@@ -28,9 +28,14 @@ const commonInputProps = {
   errorLocation: 'layer'
 };
 
-const ImportConfigs: React.FC = observer(() => {
+export interface ImportConfigsProps {
+  height?: string;
+}
+
+const ImportConfigs: React.FC<ImportConfigsProps> = observer(({ height }) => {
   const dataImportRootStore = useContext(DataImportRootStoreContext);
   const { serverDataImportStore, dataMapStore } = dataImportRootStore;
+  const timerId = useRef(NaN);
   const { t } = useTranslation();
 
   const columnConfigs = [
@@ -137,10 +142,12 @@ const ImportConfigs: React.FC = observer(() => {
       }
     },
     {
-      title: t('server-data-import.import-details.column-titles.manipulations'),
+      title: !serverDataImportStore.readOnly
+        ? t('server-data-import.import-details.column-titles.manipulations')
+        : '',
       width: '15%',
       render(_: never, rowData: Record<string, any>, taskIndex: number) {
-        return (
+        return !serverDataImportStore.readOnly ? (
           <div className="no-line-break">
             <ImportManipulations
               importStatus={rowData.status}
@@ -148,7 +155,7 @@ const ImportConfigs: React.FC = observer(() => {
               loopQuery={loopQueryImportData}
             />
           </div>
-        );
+        ) : null;
       }
     }
   ];
@@ -169,10 +176,16 @@ const ImportConfigs: React.FC = observer(() => {
         return;
       }
 
-      serverDataImportStore.fetchImportTasks(
-        serverDataImportStore.fileImportTaskIds
-      );
+      if (serverDataImportStore.isIrregularProcess) {
+        serverDataImportStore.fetchAllImportTasks();
+      } else {
+        serverDataImportStore.fetchImportTasks(
+          serverDataImportStore.fileImportTaskIds
+        );
+      }
     }, 500);
+
+    timerId.current = loopId;
   }, []);
 
   const expandClassName = classnames({
@@ -181,8 +194,30 @@ const ImportConfigs: React.FC = observer(() => {
     'import-tasks-step-content-header-collpase': !serverDataImportStore.isExpandImportConfig
   });
 
+  useEffect(() => {
+    // if comes from import manager
+    if (
+      !serverDataImportStore.readOnly &&
+      serverDataImportStore.isIrregularProcess
+    ) {
+      loopQueryImportData();
+    }
+
+    return () => {
+      if (!Object.is(NaN, timerId.current)) {
+        window.clearInterval(timerId.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="import-tasks-server-data-import-configs-wrapper">
+    <div
+      className="import-tasks-server-data-import-configs-wrapper"
+      style={{
+        height: height ? height : 'calc(100vh - 194px)',
+        overflow: 'auto'
+      }}
+    >
       <div className="import-tasks-step-content-header">
         <span>{t('server-data-import.import-settings.title')}</span>
         <img
@@ -230,6 +265,7 @@ const ImportConfigs: React.FC = observer(() => {
                       checked
                     );
                   }}
+                  disabled={serverDataImportStore.readOnly}
                 />
               </div>
             </div>
@@ -240,18 +276,24 @@ const ImportConfigs: React.FC = observer(() => {
                 )}
                 :
               </span>
-              <Input
-                {...commonInputProps}
-                value={serverDataImportStore.importConfigs?.max_parse_errors}
-                onChange={handleInputChange('max_parse_errors')}
-                errorMessage={
-                  serverDataImportStore.validateImportConfigErrorMessage
-                    .max_parse_errors
-                }
-                originInputProps={{
-                  onBlur: handleBlur('max_parse_errors')
-                }}
-              />
+              {!serverDataImportStore.readOnly ? (
+                <Input
+                  {...commonInputProps}
+                  value={serverDataImportStore.importConfigs?.max_parse_errors}
+                  onChange={handleInputChange('max_parse_errors')}
+                  errorMessage={
+                    serverDataImportStore.validateImportConfigErrorMessage
+                      .max_parse_errors
+                  }
+                  originInputProps={{
+                    onBlur: handleBlur('max_parse_errors')
+                  }}
+                />
+              ) : (
+                <div className="import-tasks-server-data-import-config-option-readonly-data">
+                  {serverDataImportStore.importConfigs?.max_parse_errors}
+                </div>
+              )}
             </div>
             <div className="import-tasks-server-data-import-config-option">
               <span>
@@ -260,18 +302,24 @@ const ImportConfigs: React.FC = observer(() => {
                 )}
                 :
               </span>
-              <Input
-                {...commonInputProps}
-                value={serverDataImportStore.importConfigs?.max_insert_errors}
-                onChange={handleInputChange('max_insert_errors')}
-                errorMessage={
-                  serverDataImportStore.validateImportConfigErrorMessage
-                    .max_insert_errors
-                }
-                originInputProps={{
-                  onBlur: handleBlur('max_insert_errors')
-                }}
-              />
+              {!serverDataImportStore.readOnly ? (
+                <Input
+                  {...commonInputProps}
+                  value={serverDataImportStore.importConfigs?.max_insert_errors}
+                  onChange={handleInputChange('max_insert_errors')}
+                  errorMessage={
+                    serverDataImportStore.validateImportConfigErrorMessage
+                      .max_insert_errors
+                  }
+                  originInputProps={{
+                    onBlur: handleBlur('max_insert_errors')
+                  }}
+                />
+              ) : (
+                <div className="import-tasks-server-data-import-config-option-readonly-data">
+                  {serverDataImportStore.importConfigs?.max_insert_errors}
+                </div>
+              )}
             </div>
           </div>
           <div className="import-tasks-server-data-import-config">
@@ -282,18 +330,24 @@ const ImportConfigs: React.FC = observer(() => {
                 )}
                 :
               </span>
-              <Input
-                {...commonInputProps}
-                value={serverDataImportStore.importConfigs?.retry_times}
-                onChange={handleInputChange('retry_times')}
-                errorMessage={
-                  serverDataImportStore.validateImportConfigErrorMessage
-                    .retry_times
-                }
-                originInputProps={{
-                  onBlur: handleBlur('retry_times')
-                }}
-              />
+              {!serverDataImportStore.readOnly ? (
+                <Input
+                  {...commonInputProps}
+                  value={serverDataImportStore.importConfigs?.retry_times}
+                  onChange={handleInputChange('retry_times')}
+                  errorMessage={
+                    serverDataImportStore.validateImportConfigErrorMessage
+                      .retry_times
+                  }
+                  originInputProps={{
+                    onBlur: handleBlur('retry_times')
+                  }}
+                />
+              ) : (
+                <div className="import-tasks-server-data-import-config-option-readonly-data">
+                  {serverDataImportStore.importConfigs?.retry_times}
+                </div>
+              )}
             </div>
             <div className="import-tasks-server-data-import-config-option">
               <span>
@@ -302,35 +356,47 @@ const ImportConfigs: React.FC = observer(() => {
                 )}
                 :
               </span>
-              <Input
-                {...commonInputProps}
-                value={serverDataImportStore.importConfigs?.retry_interval}
-                onChange={handleInputChange('retry_interval')}
-                errorMessage={
-                  serverDataImportStore.validateImportConfigErrorMessage
-                    .retry_interval
-                }
-                originInputProps={{
-                  onBlur: handleBlur('retry_interval')
-                }}
-              />
+              {!serverDataImportStore.readOnly ? (
+                <Input
+                  {...commonInputProps}
+                  value={serverDataImportStore.importConfigs?.retry_interval}
+                  onChange={handleInputChange('retry_interval')}
+                  errorMessage={
+                    serverDataImportStore.validateImportConfigErrorMessage
+                      .retry_interval
+                  }
+                  originInputProps={{
+                    onBlur: handleBlur('retry_interval')
+                  }}
+                />
+              ) : (
+                <div className="import-tasks-server-data-import-config-option-readonly-data">
+                  {serverDataImportStore.importConfigs?.retry_interval}
+                </div>
+              )}
             </div>
             <div className="import-tasks-server-data-import-config-option">
               <span>
                 {t('server-data-import.import-settings.InterpolationTimeout')}:
               </span>
-              <Input
-                {...commonInputProps}
-                value={serverDataImportStore.importConfigs?.insert_timeout}
-                onChange={handleInputChange('insert_timeout')}
-                errorMessage={
-                  serverDataImportStore.validateImportConfigErrorMessage
-                    .insert_timeout
-                }
-                originInputProps={{
-                  onBlur: handleBlur('retry_interval')
-                }}
-              />
+              {!serverDataImportStore.readOnly ? (
+                <Input
+                  {...commonInputProps}
+                  value={serverDataImportStore.importConfigs?.insert_timeout}
+                  onChange={handleInputChange('insert_timeout')}
+                  errorMessage={
+                    serverDataImportStore.validateImportConfigErrorMessage
+                      .insert_timeout
+                  }
+                  originInputProps={{
+                    onBlur: handleBlur('retry_interval')
+                  }}
+                />
+              ) : (
+                <div className="import-tasks-server-data-import-config-option-readonly-data">
+                  {serverDataImportStore.importConfigs?.insert_timeout}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -358,92 +424,105 @@ const ImportConfigs: React.FC = observer(() => {
         </>
       )}
 
-      <div className="import-tasks-server-data-import-manipulations">
-        <Button
-          size="medium"
-          style={{
-            width: 74,
-            marginRight: 16
-          }}
-          onClick={() => {
-            if (serverDataImportStore.isServerStartImport) {
-              dataMapStore.switchExpand('file', false);
+      {!serverDataImportStore.readOnly && (
+        <div className="import-tasks-server-data-import-manipulations">
+          <Button
+            size="medium"
+            style={{
+              width: 74,
+              marginRight: 16
+            }}
+            onClick={() => {
+              if (serverDataImportStore.isServerStartImport) {
+                dataMapStore.switchExpand('file', false);
+              }
+
+              dataImportRootStore.setCurrentStep(2);
+            }}
+          >
+            {t('server-data-import.manipulations.previous')}
+          </Button>
+          <Button
+            type="primary"
+            size="medium"
+            style={{
+              width: 88
+            }}
+            disabled={
+              Object.values(serverDataImportStore.importConfigs!).some(
+                (value) => value === ''
+              ) ||
+              Object.values(
+                serverDataImportStore.validateImportConfigErrorMessage
+              ).some((value) => !isEmpty(value))
             }
+            onClick={async () => {
+              if (serverDataImportStore.isImportFinished) {
+                dataImportRootStore.setCurrentStep(4);
+                return;
+              }
 
-            dataImportRootStore.setCurrentStep(2);
-          }}
-        >
-          {t('server-data-import.manipulations.previous')}
-        </Button>
-        <Button
-          type="primary"
-          size="medium"
-          style={{
-            width: 88
-          }}
-          disabled={
-            Object.values(serverDataImportStore.importConfigs!).some(
-              (value) => value === ''
-            ) ||
-            Object.values(
-              serverDataImportStore.validateImportConfigErrorMessage
-            ).some((value) => !isEmpty(value))
-          }
-          onClick={async () => {
-            if (serverDataImportStore.isImportFinished) {
-              dataImportRootStore.setCurrentStep(4);
-              return;
-            }
+              if (serverDataImportStore.isImporting) {
+                await Promise.all(
+                  serverDataImportStore.importTasks
+                    .filter(
+                      ({ status }) =>
+                        status === 'RUNNING' || status === 'PAUSED'
+                    )
+                    .map(({ id }) => serverDataImportStore.abortImport(id))
+                );
 
-            if (serverDataImportStore.isImporting) {
-              await Promise.all(
-                serverDataImportStore.importTasks
-                  .filter(
-                    ({ status }) => status === 'RUNNING' || status === 'PAUSED'
-                  )
-                  .map(({ id }) => serverDataImportStore.abortImport(id))
-              );
+                await serverDataImportStore.fetchImportTasks(
+                  serverDataImportStore.fileImportTaskIds
+                );
+                serverDataImportStore.switchFetchImportStatus('standby');
+                serverDataImportStore.switchImporting(false);
+                serverDataImportStore.switchImportFinished(true);
+                return;
+              }
 
-              await serverDataImportStore.fetchImportTasks(
-                serverDataImportStore.fileImportTaskIds
-              );
-              serverDataImportStore.switchFetchImportStatus('standby');
-              serverDataImportStore.switchImporting(false);
-              serverDataImportStore.switchImportFinished(true);
-              return;
-            }
+              serverDataImportStore.switchExpandImportConfig(false);
+              serverDataImportStore.switchImporting(true);
 
-            serverDataImportStore.switchExpandImportConfig(false);
-            serverDataImportStore.switchImporting(true);
+              if (!dataMapStore.isIrregularProcess) {
+                await serverDataImportStore.startImport(
+                  dataMapStore.fileMapInfos
+                    .filter(({ name }) =>
+                      dataImportRootStore.successFileUploadTaskNames.includes(
+                        name
+                      )
+                    )
+                    .map(({ id }) => id)
+                );
+              } else {
+                await serverDataImportStore.startImport(
+                  dataMapStore.fileMapInfos.map(({ id }) => id)
+                );
+              }
 
-            await serverDataImportStore.startImport(
-              dataMapStore.fileMapInfos
-                .filter(({ name }) =>
-                  dataImportRootStore.successFileUploadTaskNames.includes(name)
-                )
-                .map(({ id }) => id)
-            );
+              if (
+                serverDataImportStore.requestStatus.startImport === 'failed'
+              ) {
+                Message.error({
+                  content: serverDataImportStore.errorInfo.startImport.message,
+                  size: 'medium',
+                  showCloseIcon: false
+                });
 
-            if (serverDataImportStore.requestStatus.startImport === 'failed') {
-              Message.error({
-                content: serverDataImportStore.errorInfo.startImport.message,
-                size: 'medium',
-                showCloseIcon: false
-              });
+                return;
+              }
 
-              return;
-            }
-
-            loopQueryImportData();
-          }}
-        >
-          {serverDataImportStore.isImportFinished
-            ? t('server-data-import.manipulations.finished')
-            : serverDataImportStore.requestStatus.startImport === 'standby'
-            ? t('server-data-import.manipulations.start')
-            : t('server-data-import.manipulations.cancel')}
-        </Button>
-      </div>
+              loopQueryImportData();
+            }}
+          >
+            {serverDataImportStore.isImportFinished
+              ? t('server-data-import.manipulations.finished')
+              : serverDataImportStore.requestStatus.startImport === 'standby'
+              ? t('server-data-import.manipulations.start')
+              : t('server-data-import.manipulations.cancel')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 });

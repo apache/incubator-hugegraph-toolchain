@@ -1,13 +1,100 @@
 {
+  "breadcrumb": {
+    "first": "导入任务",
+    "second": "任务详情"
+  },
+  "import-manager": {
+    "hint": {
+      "empty-task": "您暂时还没有任何任务，立即创建",
+      "no-result": "无结果",
+      "creation-succeed": "创建成功",
+      "update-succeed": "编辑成功"
+    },
+    "manipulation": {
+      "create": "创建"
+    },
+    "placeholder": {
+      "input-job-name": "请输入任务名称搜索",
+      "input-valid-job-name": "允许出现中英文、数字、下划线",
+      "input-job-description": "请输入任务备注"
+    },
+    "list-column-title": {
+      "job-name": "任务名称",
+      "size": "大小",
+      "create-time": "创建时间",
+      "status": "状态",
+      "time-consuming": "任务耗时",
+      "manipulation": "操作"
+    },
+    "list-column-status": {
+      "DEFAULT": "未开始",
+      "SETTING": "设置中",
+      "IMPORTING": "导入中",
+      "FAILED": "失败",
+      "SUCCESS": "成功"
+    },
+    "list-column-manipulations": {
+      "start": "开始任务",
+      "resume-setting": "继续设置",
+      "resume-importing": "继续导入",
+      "check-error-log": "查看原因",
+      "delete": "删除"
+    },
+    "modal": {
+      "create-job": {
+        "title": "创建导入任务",
+        "job-name": "任务名称：",
+        "job-description": "任务备注："
+      },
+      "delete-job": {
+        "title": "删除任务",
+        "hint": "确认删除任务{{name}}吗?",
+        "sub-hint": "删除后该任务不可恢复"
+      },
+      "manipulations": {
+        "create": "创建",
+        "delete": "删除",
+        "cancel": "取消"
+      }
+    },
+    "validator": {
+      "no-empty": "此项为必填项",
+      "over-limit-size": "已超出字数限制",
+      "invalid-format": "请输入中英文、数字、下划线"
+    }
+  },
+  "import-job-details": {
+    "tabs": {
+      "basic-settings": "基础设置",
+      "uploaded-files": "上传文件",
+      "data-maps": "映射文件",
+      "import-details": "导入详情"
+    },
+    "basic": {
+      "job-name": "任务名称：",
+      "job-description": "任务备注：",
+      "modal": {
+        "edit-job": {
+          "title": "编辑导入任务",
+          "job-name": "任务名称：",
+          "job-description": "任务备注："
+        },
+        "manipulations": {
+          "save": "保存",
+          "cancel": "取消"
+        }
+      }
+    },
+    "manipulations": {
+      "edit": "编辑",
+      "resume-task": "继续任务"
+    }
+  },
   "step": {
     "first": "上传文件",
     "second": "设置数据映射",
     "third": "导入数据",
     "fourth": "完成"
-  },
-  "breadcrumb": {
-    "first": "导入任务",
-    "second": "新任务"
   },
   "upload-files": {
     "description": "点击或将文件拖拽到这里上传，可同时上传多个支持csv文件，单个1G以内，单次累计10G以内",
@@ -238,6 +325,6 @@
     "success": "已成功导入 {{number}} 个文件",
     "pause": "{{number}} 个文件暂停",
     "abort": "{{number}} 个文件中止",
-    "re-import": "再次导入文件"
+    "move-to-import-manager": "返回导入任务列表"
   }
 }

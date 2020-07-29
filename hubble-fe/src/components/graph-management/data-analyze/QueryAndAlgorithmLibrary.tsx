@@ -10,14 +10,15 @@ import { observer } from 'mobx-react';
 import CodeMirror from 'codemirror';
 import classnames from 'classnames';
 import { Button, Tooltip, Alert } from '@baidu/one-ui';
-import TooltipTrigger from 'react-popper-tooltip';
-
 import 'codemirror/lib/codemirror.css';
 import 'react-popper-tooltip/dist/styles.css';
 import 'codemirror/addon/display/placeholder';
 
+import { Tooltip as CustomTooltip } from '../../common';
 import Favorite from './common/Favorite';
 import { DataAnalyzeStoreContext } from '../../../stores';
+import { useMultiKeyPress } from '../../../hooks';
+
 import ArrowIcon from '../../../assets/imgs/ic_arrow_16.svg';
 
 const styles = {
@@ -39,6 +40,26 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
   const [isFavoritePop, switchFavoritePop] = useState(false);
   const codeContainer = useRef<HTMLTextAreaElement>(null);
   const codeEditor = useRef<CodeMirror.Editor>();
+  const keyPressed = useMultiKeyPress();
+
+  const isDisabledExec =
+    dataAnalyzeStore.codeEditorText.length === 0 ||
+    !codeRegexp.test(dataAnalyzeStore.codeEditorText) ||
+    dataAnalyzeStore.requestStatus.fetchGraphs === 'pending';
+
+  const isQueryShortcut = () => {
+    const isMacOS = navigator.platform.includes('Mac');
+
+    if (isMacOS) {
+      return keyPressed.has('MetaLeft') || keyPressed.has('MetaRight');
+    } else {
+      return (
+        keyPressed.has('Control') ||
+        keyPressed.has('ControlLeft') ||
+        keyPressed.has('ControlRight')
+      );
+    }
+  };
 
   const handleCodeExpandChange = useCallback(
     (flag: boolean) => () => {
@@ -123,6 +144,18 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
     }
   }, [dataAnalyzeStore]);
 
+  useEffect(() => {
+    if (keyPressed.has('Tab') && codeEditor.current) {
+      codeEditor.current.focus();
+    }
+
+    if (keyPressed.size === 2 && keyPressed.has('Enter') && !isDisabledExec) {
+      if (isQueryShortcut()) {
+        handleQueryExecution();
+      }
+    }
+  }, [keyPressed]);
+
   const codeEditWrapperClassName = classnames({
     'query-tab-code-edit': true,
     hide: !isCodeExpand,
@@ -193,18 +226,14 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
               title={
                 dataAnalyzeStore.codeEditorText.length === 0
                   ? '查询语句不能为空'
-                  : ''
+                  : '⌘ + Enter'
               }
               type="dark"
             >
               <Button
                 type="primary"
                 style={styles.primaryButton}
-                disabled={
-                  dataAnalyzeStore.codeEditorText.length === 0 ||
-                  !codeRegexp.test(dataAnalyzeStore.codeEditorText) ||
-                  dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
-                }
+                disabled={isDisabledExec}
                 onClick={handleQueryExecution}
               >
                 {dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
@@ -213,59 +242,36 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
               </Button>
             </Tooltip>
             {dataAnalyzeStore.codeEditorText.length !== 0 ? (
-              <TooltipTrigger
-                tooltipShown={dataAnalyzeStore.favoritePopUp === 'addFavorite'}
+              <CustomTooltip
                 placement="bottom-start"
-                tooltip={({
-                  arrowRef,
-                  tooltipRef,
-                  getArrowProps,
-                  getTooltipProps,
-                  placement
-                }) => (
-                  <div
-                    {...getTooltipProps({
-                      ref: tooltipRef,
-                      className: 'tooltips',
-                      style: {
-                        zIndex: 7
-                      }
-                    })}
-                  >
-                    <div
-                      {...getArrowProps({
-                        ref: arrowRef,
-                        className: 'tooltip-arrow',
-                        'data-placement': placement
-                      })}
-                    />
-                    <Favorite handlePop={switchFavoritePop} />
-                  </div>
-                )}
+                tooltipShown={dataAnalyzeStore.favoritePopUp === 'addFavorite'}
+                modifiers={{
+                  offset: {
+                    offset: '0, 10'
+                  }
+                }}
+                tooltipWrapperProps={{
+                  className: 'tooltips',
+                  style: {
+                    zIndex: 7
+                  }
+                }}
+                tooltipWrapper={<Favorite handlePop={switchFavoritePop} />}
+                childrenWrapperElement="div"
               >
-                {({ getTriggerProps, triggerRef }) => (
-                  <div
-                    {...getTriggerProps({
-                      ref: triggerRef
-                    })}
-                  >
-                    <Button
-                      style={styles.primaryButton}
-                      disabled={
-                        !codeRegexp.test(dataAnalyzeStore.codeEditorText)
-                      }
-                      onClick={() => {
-                        dataAnalyzeStore.setFavoritePopUp('addFavorite');
-                        dataAnalyzeStore.resetFavoriteRequestStatus('add');
-                        dataAnalyzeStore.resetFavoriteRequestStatus('edit');
-                        switchFavoritePop(true);
-                      }}
-                    >
-                      收藏
-                    </Button>
-                  </div>
-                )}
-              </TooltipTrigger>
+                <Button
+                  style={styles.primaryButton}
+                  disabled={!codeRegexp.test(dataAnalyzeStore.codeEditorText)}
+                  onClick={() => {
+                    dataAnalyzeStore.setFavoritePopUp('addFavorite');
+                    dataAnalyzeStore.resetFavoriteRequestStatus('add');
+                    dataAnalyzeStore.resetFavoriteRequestStatus('edit');
+                    switchFavoritePop(true);
+                  }}
+                >
+                  收藏
+                </Button>
+              </CustomTooltip>
             ) : (
               <Tooltip
                 placement="bottom"

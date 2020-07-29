@@ -1,0 +1,28 @@
+.table-data-loading {
+  &-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &-bg {
+    width: 144px;
+    height: 144px;
+    position: relative;
+    margin-bottom: 10px;
+  }
+
+  &-back {
+    position: absolute;
+    left: 22px;
+    top: 20px;
+  }
+
+  &-front {
+    position: absolute;
+    left: 57.1px;
+    top: 52.1px;
+    animation: loading-rotate 2s linear infinite;
+  }
+}

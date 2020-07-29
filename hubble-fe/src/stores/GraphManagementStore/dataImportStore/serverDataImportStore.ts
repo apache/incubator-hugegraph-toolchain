@@ -1,6 +1,6 @@
 import { observable, action, flow, computed } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
-import { size } from 'lodash-es';
+import { size, isUndefined } from 'lodash-es';
 import isInt from 'validator/lib/isInt';
 
 import { DataImportRootStore } from './dataImportRootStore';
@@ -8,7 +8,8 @@ import i18next from '../../../i18n';
 import { baseUrl, responseData } from '../../types/common';
 import {
   LoadParameter,
-  ImportTasks
+  ImportTasks,
+  AllImportTasksRecords
 } from '../../types/GraphManagementStore/dataImportStore';
 import {
   initRequestStatus,
@@ -27,80 +28,16 @@ export class ServerDataImportStore {
   @observable requestStatus = initRequestStatus();
   @observable errorInfo = initErrorInfo();
 
+  // v1.3.1
+  @observable readOnly = false;
+  @observable isIrregularProcess = false;
+
   @observable isExpandImportConfig = true;
   @observable isImporting = false;
   @observable isImportFinished = false;
   @observable importConfigs: LoadParameter | null = null;
   @observable
   validateImportConfigErrorMessage = createValidateFileInfoErrorMessage();
-
-  // @observable importTasks: ImportTasks[] = [
-  //   {
-  //     id: 1,
-  //     conn_id: 1,
-  //     file_id: 1,
-  //     vertices: ['name', 'person', 'age'],
-  //     edges: ['name', 'person', 'age'],
-  //     load_rate: 0.0,
-  //     load_progress: 100,
-  //     file_total_lines: 7,
-  //     file_read_lines: 7,
-  //     status: 'SUCCEED',
-  //     duration: '0s'
-  //   },
-  //   {
-  //     id: 2,
-  //     conn_id: 2,
-  //     file_id: 2,
-  //     vertices: ['name', 'person', 'age'],
-  //     edges: ['name', 'person', 'age'],
-  //     load_rate: 0.0,
-  //     load_progress: 70,
-  //     file_total_lines: 7,
-  //     file_read_lines: 7,
-  //     status: 'FAILED',
-  //     duration: '0s'
-  //   },
-  //   {
-  //     id: 3,
-  //     conn_id: 3,
-  //     file_id: 3,
-  //     vertices: ['name', 'person', 'age'],
-  //     edges: ['name', 'person', 'age'],
-  //     load_rate: 0.0,
-  //     load_progress: 30,
-  //     file_total_lines: 7,
-  //     file_read_lines: 7,
-  //     status: 'STOPPED',
-  //     duration: '0s'
-  //   },
-  //   {
-  //     id: 4,
-  //     conn_id: 4,
-  //     file_id: 4,
-  //     vertices: ['name', 'person', 'age'],
-  //     edges: ['name', 'person', 'age'],
-  //     load_rate: 0.0,
-  //     load_progress: 50,
-  //     file_total_lines: 7,
-  //     file_read_lines: 7,
-  //     status: 'PAUSED',
-  //     duration: '0s'
-  //   },
-  //   {
-  //     id: 5,
-  //     conn_id: 5,
-  //     file_id: 5,
-  //     vertices: ['name', 'person', 'age'],
-  //     edges: ['name', 'person', 'age'],
-  //     load_rate: 0.0,
-  //     load_progress: 20,
-  //     file_total_lines: 7,
-  //     file_read_lines: 7,
-  //     status: 'RUNNING',
-  //     duration: '0s'
-  //   }
-  // ];
 
   @observable importTasks: ImportTasks[] = [];
   @observable.ref fileImportTaskIds: number[] = [];
@@ -120,6 +57,16 @@ export class ServerDataImportStore {
 
   @computed get abortImportFileNumber() {
     return size(this.importTasks.filter(({ status }) => status === 'STOPPED'));
+  }
+
+  @action
+  switchReadOnly(isReadOnly: boolean) {
+    this.readOnly = isReadOnly;
+  }
+
+  @action
+  switchIrregularProcess(flag: boolean) {
+    this.isIrregularProcess = flag;
   }
 
   @action
@@ -183,6 +130,8 @@ export class ServerDataImportStore {
 
   @action
   dispose() {
+    this.readOnly = false;
+    this.isIrregularProcess = false;
     this.requestStatus = initRequestStatus();
     this.errorInfo = initErrorInfo();
     this.errorLogs = '';
@@ -206,8 +155,8 @@ export class ServerDataImportStore {
         ImportTasks[]
       >> = yield axios
         .get<responseData<ImportTasks[]>>(
-          `${baseUrl}/${
-            this.dataImportRootStore.currentId
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${
+            this.dataImportRootStore.currentJobId
           }/load-tasks/ids?${taskIds.map((id) => 'task_ids=' + id).join('&')}`
         )
         .catch(checkIfLocalNetworkOffline);
@@ -218,6 +167,41 @@ export class ServerDataImportStore {
       }
 
       this.importTasks = result.data.data;
+
+      if (!this.importTasks.some(({ status }) => status === 'RUNNING')) {
+        this.switchFetchImportStatus('pending');
+        this.switchImporting(false);
+        this.switchImportFinished(true);
+      }
+
+      this.requestStatus.fetchImportTasks = 'success';
+    } catch (error) {
+      this.requestStatus.fetchImportTasks = 'failed';
+      this.errorInfo.fetchImportTasks.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  fetchAllImportTasks = flow(function* fetchAllImportTasks(
+    this: ServerDataImportStore
+  ) {
+    this.requestStatus.fetchImportTasks = 'pending';
+
+    try {
+      const result: AxiosResponse<responseData<
+        AllImportTasksRecords
+      >> = yield axios
+        .get<responseData<AllImportTasksRecords>>(
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/load-tasks`
+        )
+        .catch(checkIfLocalNetworkOffline);
+
+      if (result.data.status !== 200) {
+        this.errorInfo.fetchImportTasks.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      this.importTasks = result.data.data.records;
 
       // for (const task of this.importTasks) {
       //   if (task.status === 'RUNNING') {
@@ -253,8 +237,8 @@ export class ServerDataImportStore {
         ImportTasks[]
       >> = yield axios
         .post<responseData<ImportTasks[]>>(
-          `${baseUrl}/${
-            this.dataImportRootStore.currentId
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${
+            this.dataImportRootStore.currentJobId
           }/load-tasks/start?${fileIds
             .map((id) => 'file_mapping_ids=' + id)
             .join('&')}`,
@@ -285,7 +269,7 @@ export class ServerDataImportStore {
     try {
       const result: AxiosResponse<responseData<ImportTasks>> = yield axios
         .post<responseData<ImportTasks>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/load-tasks/pause`,
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/load-tasks/pause`,
           {},
           {
             params: {
@@ -317,7 +301,7 @@ export class ServerDataImportStore {
     try {
       const result: AxiosResponse<responseData<ImportTasks>> = yield axios
         .post<responseData<ImportTasks>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/load-tasks/resume`,
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/load-tasks/resume`,
           {},
           {
             params: {
@@ -349,7 +333,7 @@ export class ServerDataImportStore {
     try {
       const result: AxiosResponse<responseData<ImportTasks>> = yield axios
         .post<responseData<ImportTasks>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/load-tasks/stop`,
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/load-tasks/stop`,
           {},
           {
             params: {
@@ -381,7 +365,7 @@ export class ServerDataImportStore {
     try {
       const result: AxiosResponse<responseData<ImportTasks>> = yield axios
         .post<responseData<ImportTasks>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/load-tasks/retry`,
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/load-tasks/retry`,
           {},
           {
             params: {
@@ -413,7 +397,7 @@ export class ServerDataImportStore {
     try {
       const result: AxiosResponse<responseData<null>> = yield axios
         .delete<responseData<null>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/load-tasks/${taskId}`
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/load-tasks/${taskId}`
         )
         .catch(checkIfLocalNetworkOffline);
 
@@ -440,8 +424,8 @@ export class ServerDataImportStore {
     try {
       const result: AxiosResponse<responseData<string>> = yield axios
         .get<responseData<string>>(
-          `${baseUrl}/${
-            id || this.dataImportRootStore.currentId
+          `${baseUrl}/${id || this.dataImportRootStore.currentId}/job-manager/${
+            this.dataImportRootStore.currentJobId
           }/load-tasks/${taskId}/reason`
         )
         .catch(checkIfLocalNetworkOffline);

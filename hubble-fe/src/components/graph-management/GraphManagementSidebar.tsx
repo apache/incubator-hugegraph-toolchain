@@ -22,7 +22,7 @@ import DataImportIconPressed from '../../assets/imgs/ic_guanli_pressed.svg';
 
 const GraphManagementSidebar: React.FC = observer(() => {
   const [match, params] = useRoute(
-    '/graph-management/:id/:category/:subCategory?'
+    '/graph-management/:id/:category/:subCategory?/:jobId?/:specifc?'
   );
 
   const graphManagementStore = useContext(GraphManagementStoreContext);
@@ -68,9 +68,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
         case 'metadata-configs':
           setLocation(`/graph-management/${params!.id}/metadata-configs`);
           return;
-        case 'import-tasks':
+        case 'data-import':
           setLocation(
-            `/graph-management/${params!.id}/data-import/import-tasks`
+            `/graph-management/${params!.id}/data-import/import-manager`
           );
           return;
       }
@@ -109,9 +109,10 @@ const GraphManagementSidebar: React.FC = observer(() => {
         return;
 
       case 'data-import': {
-        if (params.subCategory === 'import-tasks') {
-          setSidebarKey('import-tasks');
-        }
+        // if (params.subCategory === 'import-tasks') {
+        //   setSidebarKey('import-tasks');
+        // }
+        setSidebarKey('data-import');
 
         return;
       }
@@ -120,7 +121,7 @@ const GraphManagementSidebar: React.FC = observer(() => {
 
   // prevent ERROR: Rendered more hooks than during the previous render
   // if this block stays before any usexxx hooks, p/n render hooks is not equal
-  if (!match) {
+  if (!match || params?.specifc === 'error-log') {
     return null;
   }
 
@@ -240,11 +241,11 @@ const GraphManagementSidebar: React.FC = observer(() => {
               <div>元数据配置</div>
             </div>
           </Menu.Item>
-          <Menu.Item key="import-tasks">
+          <Menu.Item key="data-import">
             <div className={sidebarMenuItemClassName}>
               <img
                 src={
-                  sidebarKey === 'import-tasks'
+                  sidebarKey === 'data-import'
                     ? DataImportIconPressed
                     : DataImportIconNormal
                 }

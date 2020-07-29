@@ -17,8 +17,8 @@ import {
   Checkbox,
   Message
 } from '@baidu/one-ui';
-import TooltipTrigger from 'react-popper-tooltip';
 
+import { Tooltip } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import {
   mapMetadataProperties,
@@ -316,93 +316,72 @@ const CheckAndEditVertex: React.FC = observer(() => {
         >
           {isEditVertex ? '保存' : '编辑'}
         </Button>,
-        <TooltipTrigger
-          tooltipShown={isDeletePop}
+        <Tooltip
           placement="top-start"
-          tooltip={({
-            arrowRef,
-            tooltipRef,
-            getArrowProps,
-            getTooltipProps,
-            placement
-          }) => (
-            <div
-              {...getTooltipProps({
-                ref: tooltipRef,
-                className: 'metadata-properties-tooltips',
-                style: {
-                  zIndex: 1042
-                }
-              })}
-            >
-              <div
-                {...getArrowProps({
-                  ref: arrowRef,
-                  className: 'tooltip-arrow',
-                  'data-placement': placement
-                })}
-              />
-              <div ref={deleteWrapperRef}>
-                {vertexTypeStore.vertexTypeUsingStatus &&
-                vertexTypeStore.vertexTypeUsingStatus[
-                  vertexTypeStore.selectedVertexType!.name
-                ] ? (
-                  <p style={{ width: 200 }}>
-                    当前顶点类型正在使用中，不可删除。
-                  </p>
-                ) : (
-                  <>
-                    <p>确认删除此顶点？</p>
-                    <p>删除后无法恢复，请谨慎操作。</p>
+          tooltipShown={isDeletePop}
+          modifiers={{
+            offset: {
+              offset: '0, 15'
+            }
+          }}
+          tooltipWrapperProps={{
+            className: 'metadata-properties-tooltips',
+            style: {
+              zIndex: 1042
+            }
+          }}
+          tooltipWrapper={
+            <div ref={deleteWrapperRef}>
+              {vertexTypeStore.vertexTypeUsingStatus &&
+              vertexTypeStore.vertexTypeUsingStatus[
+                vertexTypeStore.selectedVertexType!.name
+              ] ? (
+                <p style={{ width: 200 }}>当前顶点类型正在使用中，不可删除。</p>
+              ) : (
+                <>
+                  <p>确认删除此顶点？</p>
+                  <p>删除后无法恢复，请谨慎操作。</p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      marginTop: 12,
+                      color: '#2b65ff',
+                      cursor: 'pointer'
+                    }}
+                  >
                     <div
-                      style={{
-                        display: 'flex',
-                        marginTop: 12,
-                        color: '#2b65ff',
-                        cursor: 'pointer'
+                      style={{ marginRight: 16, cursor: 'pointer' }}
+                      onClick={handleDeleteVertex}
+                    >
+                      确认
+                    </div>
+                    <div
+                      onClick={() => {
+                        switchDeletePop(false);
                       }}
                     >
-                      <div
-                        style={{ marginRight: 16, cursor: 'pointer' }}
-                        onClick={handleDeleteVertex}
-                      >
-                        确认
-                      </div>
-                      <div
-                        onClick={() => {
-                          switchDeletePop(false);
-                        }}
-                      >
-                        取消
-                      </div>
+                      取消
                     </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
-          )}
-        >
-          {({ getTriggerProps, triggerRef }) => (
-            <span
-              {...getTriggerProps({
-                ref: triggerRef,
-                onClick() {
-                  if (isEditVertex) {
-                    handleCloseDrawer();
-                    return;
-                  }
+          }
+          childrenProps={{
+            onClick() {
+              if (isEditVertex) {
+                handleCloseDrawer();
+                return;
+              }
 
-                  switchDeletePop(true);
-                }
-              })}
-              key="drawer-close"
-            >
-              <Button size="medium" style={{ width: 60 }}>
-                {isEditVertex ? '关闭' : '删除'}
-              </Button>
-            </span>
-          )}
-        </TooltipTrigger>
+              switchDeletePop(true);
+            }
+          }}
+        >
+          <Button size="medium" style={{ width: 60 }}>
+            {isEditVertex ? '关闭' : '删除'}
+          </Button>
+        </Tooltip>
       ]}
     >
       <div className="metadata-configs-drawer">
@@ -867,114 +846,95 @@ const CheckAndEditVertex: React.FC = observer(() => {
                           .map((field, index) => index + 1 + '.' + field)
                           .join(';')}
                       </span>
-
                       {isEditVertex && (
-                        <TooltipTrigger
-                          tooltipShown={index === deleteExistPopIndexInDrawer}
+                        <Tooltip
                           placement="bottom-end"
-                          tooltip={({
-                            arrowRef,
-                            tooltipRef,
-                            getArrowProps,
-                            getTooltipProps,
-                            placement
-                          }) => (
-                            <div
-                              {...getTooltipProps({
-                                ref: tooltipRef,
-                                className: 'metadata-properties-tooltips',
-                                style: { zIndex: 1041 }
-                              })}
-                            >
+                          tooltipShown={index === deleteExistPopIndexInDrawer}
+                          modifiers={{
+                            offset: {
+                              offset: '0, 10'
+                            }
+                          }}
+                          tooltipWrapperProps={{
+                            className: 'metadata-properties-tooltips',
+                            style: { zIndex: 1041 }
+                          }}
+                          tooltipWrapper={
+                            <div ref={deleteWrapperInDrawerRef}>
+                              <p
+                                style={{
+                                  width: 200,
+                                  lineHeight: '28px'
+                                }}
+                              >
+                                确认删除此属性？
+                              </p>
+                              <p
+                                style={{
+                                  width: 200,
+                                  lineHeight: '28px'
+                                }}
+                              >
+                                删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                              </p>
                               <div
-                                {...getArrowProps({
-                                  ref: arrowRef,
-                                  className: 'tooltip-arrow',
-                                  'data-placement': placement
-                                })}
-                              />
-                              <div ref={deleteWrapperInDrawerRef}>
-                                <p
-                                  style={{
-                                    width: 200,
-                                    lineHeight: '28px'
-                                  }}
-                                >
-                                  确认删除此属性？
-                                </p>
-                                <p
-                                  style={{
-                                    width: 200,
-                                    lineHeight: '28px'
-                                  }}
-                                >
-                                  删除索引后，无法根据此属性索引进行查询，请谨慎操作。
-                                </p>
+                                style={{
+                                  display: 'flex',
+                                  marginTop: 12,
+                                  color: '#2b65ff',
+                                  cursor: 'pointer'
+                                }}
+                              >
                                 <div
                                   style={{
-                                    display: 'flex',
-                                    marginTop: 12,
-                                    color: '#2b65ff',
+                                    marginRight: 16,
                                     cursor: 'pointer'
                                   }}
+                                  onClick={() => {
+                                    const removedPropertyIndexes = cloneDeep(
+                                      vertexTypeStore.editedSelectedVertexType
+                                        .remove_property_indexes
+                                    );
+
+                                    removedPropertyIndexes.push(
+                                      vertexTypeStore.selectedVertexType!
+                                        .property_indexes[index].name
+                                    );
+
+                                    vertexTypeStore.mutateEditedSelectedVertexType(
+                                      {
+                                        ...vertexTypeStore.editedSelectedVertexType,
+                                        remove_property_indexes: removedPropertyIndexes
+                                      }
+                                    );
+
+                                    setDeleteExistPopIndexInDrawer(null);
+                                    vertexTypeStore.validateEditVertexType(
+                                      true
+                                    );
+                                  }}
                                 >
-                                  <div
-                                    style={{
-                                      marginRight: 16,
-                                      cursor: 'pointer'
-                                    }}
-                                    onClick={() => {
-                                      const removedPropertyIndexes = cloneDeep(
-                                        vertexTypeStore.editedSelectedVertexType
-                                          .remove_property_indexes
-                                      );
-
-                                      removedPropertyIndexes.push(
-                                        vertexTypeStore.selectedVertexType!
-                                          .property_indexes[index].name
-                                      );
-
-                                      vertexTypeStore.mutateEditedSelectedVertexType(
-                                        {
-                                          ...vertexTypeStore.editedSelectedVertexType,
-                                          remove_property_indexes: removedPropertyIndexes
-                                        }
-                                      );
-
-                                      setDeleteExistPopIndexInDrawer(null);
-                                      vertexTypeStore.validateEditVertexType(
-                                        true
-                                      );
-                                    }}
-                                  >
-                                    确认
-                                  </div>
-                                  <div
-                                    onClick={() => {
-                                      setDeleteExistPopIndexInDrawer(null);
-                                    }}
-                                  >
-                                    取消
-                                  </div>
+                                  确认
+                                </div>
+                                <div
+                                  onClick={() => {
+                                    setDeleteExistPopIndexInDrawer(null);
+                                  }}
+                                >
+                                  取消
                                 </div>
                               </div>
                             </div>
-                          )}
-                        >
-                          {({ getTriggerProps, triggerRef }) => (
-                            <img
-                              {...getTriggerProps({
-                                ref: triggerRef,
-                                src: CloseIcon,
-                                alt: 'close',
-                                style: { cursor: 'pointer' },
-                                onClick() {
-                                  setDeleteExistPopIndexInDrawer(index);
-                                }
-                              })}
-                            />
-                          )}
-                        </TooltipTrigger>
+                          }
+                          childrenProps={{
+                            src: CloseIcon,
+                            alt: 'close',
+                            style: { cursor: 'pointer' },
+                            onClick() {
+                              setDeleteExistPopIndexInDrawer(index);
+                            }
+                          }}
+                        />
                       )}
                     </div>
                   </div>
@@ -1181,110 +1141,91 @@ const CheckAndEditVertex: React.FC = observer(() => {
                             ))}
                       </Select>
 
-                      <TooltipTrigger
-                        tooltipShown={index === deleteAddedPopIndexInDrawer}
+                      <Tooltip
                         placement="bottom-end"
-                        tooltip={({
-                          arrowRef,
-                          tooltipRef,
-                          getArrowProps,
-                          getTooltipProps,
-                          placement
-                        }) => (
-                          <div
-                            {...getTooltipProps({
-                              ref: tooltipRef,
-                              className: 'metadata-properties-tooltips',
-                              style: { zIndex: 1041 }
-                            })}
-                          >
+                        tooltipShown={index === deleteAddedPopIndexInDrawer}
+                        modifiers={{
+                          offset: {
+                            offset: '0, 10'
+                          }
+                        }}
+                        tooltipWrapperProps={{
+                          className: 'metadata-properties-tooltips',
+                          style: { zIndex: 1041 }
+                        }}
+                        tooltipWrapper={
+                          <div ref={deleteWrapperInDrawerRef}>
+                            <p
+                              style={{
+                                width: 200,
+                                lineHeight: '28px'
+                              }}
+                            >
+                              确认删除此属性？
+                            </p>
+                            <p
+                              style={{
+                                width: 200,
+                                lineHeight: '28px'
+                              }}
+                            >
+                              删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                            </p>
                             <div
-                              {...getArrowProps({
-                                ref: arrowRef,
-                                className: 'tooltip-arrow',
-                                'data-placement': placement
-                              })}
-                            />
-                            <div ref={deleteWrapperInDrawerRef}>
-                              <p
-                                style={{
-                                  width: 200,
-                                  lineHeight: '28px'
-                                }}
-                              >
-                                确认删除此属性？
-                              </p>
-                              <p
-                                style={{
-                                  width: 200,
-                                  lineHeight: '28px'
-                                }}
-                              >
-                                删除索引后，无法根据此属性索引进行查询，请谨慎操作。
-                              </p>
+                              style={{
+                                display: 'flex',
+                                marginTop: 12,
+                                color: '#2b65ff',
+                                cursor: 'pointer'
+                              }}
+                            >
                               <div
                                 style={{
-                                  display: 'flex',
-                                  marginTop: 12,
-                                  color: '#2b65ff',
+                                  marginRight: 16,
                                   cursor: 'pointer'
                                 }}
+                                onClick={() => {
+                                  const appendPropertyIndexes = cloneDeep(
+                                    vertexTypeStore.editedSelectedVertexType!
+                                      .append_property_indexes
+                                  );
+
+                                  appendPropertyIndexes.splice(index, 1);
+
+                                  vertexTypeStore.mutateEditedSelectedVertexType(
+                                    {
+                                      ...vertexTypeStore.editedSelectedVertexType,
+                                      append_property_indexes: appendPropertyIndexes
+                                    }
+                                  );
+
+                                  setDeleteAddedPopIndexInDrawer(null);
+                                  vertexTypeStore.validateEditVertexType(true);
+                                }}
                               >
-                                <div
-                                  style={{
-                                    marginRight: 16,
-                                    cursor: 'pointer'
-                                  }}
-                                  onClick={() => {
-                                    const appendPropertyIndexes = cloneDeep(
-                                      vertexTypeStore.editedSelectedVertexType!
-                                        .append_property_indexes
-                                    );
-
-                                    appendPropertyIndexes.splice(index, 1);
-
-                                    vertexTypeStore.mutateEditedSelectedVertexType(
-                                      {
-                                        ...vertexTypeStore.editedSelectedVertexType,
-                                        append_property_indexes: appendPropertyIndexes
-                                      }
-                                    );
-
-                                    setDeleteAddedPopIndexInDrawer(null);
-                                    vertexTypeStore.validateEditVertexType(
-                                      true
-                                    );
-                                  }}
-                                >
-                                  确认
-                                </div>
-                                <div
-                                  onClick={() => {
-                                    vertexTypeStore.resetEditedSelectedVertexType();
-                                    setDeleteAddedPopIndexInDrawer(null);
-                                  }}
-                                >
-                                  取消
-                                </div>
+                                确认
+                              </div>
+                              <div
+                                onClick={() => {
+                                  vertexTypeStore.resetEditedSelectedVertexType();
+                                  setDeleteAddedPopIndexInDrawer(null);
+                                }}
+                              >
+                                取消
                               </div>
                             </div>
                           </div>
-                        )}
-                      >
-                        {({ getTriggerProps, triggerRef }) => (
-                          <img
-                            {...getTriggerProps({
-                              ref: triggerRef,
-                              src: CloseIcon,
-                              alt: 'close',
-                              style: { cursor: 'pointer' },
-                              onClick() {
-                                setDeleteAddedPopIndexInDrawer(index);
-                              }
-                            })}
-                          />
-                        )}
-                      </TooltipTrigger>
+                        }
+                        childrenProps={{
+                          src: CloseIcon,
+                          alt: 'close',
+                          style: { cursor: 'pointer' },
+                          onClick() {
+                            setDeleteAddedPopIndexInDrawer(index);
+                          }
+                        }}
+                        childrenWrapperElement="img"
+                      />
                     </div>
                   </div>
                 );

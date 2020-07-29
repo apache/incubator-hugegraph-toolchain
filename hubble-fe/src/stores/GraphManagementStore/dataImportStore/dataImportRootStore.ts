@@ -35,6 +35,7 @@ export class DataImportRootStore {
   }
 
   @observable currentId: number | null = null;
+  @observable currentJobId: number | null = null;
   @observable currentStep = 1;
 
   @observable requestStatus = initRequestStatus();
@@ -74,6 +75,11 @@ export class DataImportRootStore {
   @action
   setCurrentId(id: number) {
     this.currentId = id;
+  }
+
+  @action
+  setCurrentJobId(id: number) {
+    this.currentJobId = id;
   }
 
   @action
@@ -149,6 +155,7 @@ export class DataImportRootStore {
   @action
   dispose() {
     this.currentId = null;
+    this.currentJobId = null;
     this.currentStep = 1;
     this.vertexTypes = [];
     this.edgeTypes = [];
@@ -171,7 +178,7 @@ export class DataImportRootStore {
 
     try {
       const result = yield axios.post<responseData<FileUploadResult>>(
-        `${baseUrl}/${this.currentId}/upload-file?total=1&index=1`,
+        `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/upload-file?total=1&index=1`,
         formData,
         {
           headers: {
@@ -217,7 +224,7 @@ export class DataImportRootStore {
       const result: AxiosResponse<responseData<
         FileUploadResult
       >> = yield axios.post<responseData<FileUploadResult>>(
-        `${baseUrl}/${this.currentId}/upload-file?total=${fileChunkTotal}&index=${fileChunkList.chunkIndex}&name=${fileName}`,
+        `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/upload-file?total=${fileChunkTotal}&index=${fileChunkList.chunkIndex}&name=${fileName}`,
         formData,
         {
           headers: {
@@ -249,7 +256,9 @@ export class DataImportRootStore {
 
     try {
       const result = yield axios.delete(
-        `${baseUrl}/${this.currentId}/upload-file?${fileNames
+        `${baseUrl}/${this.currentId}/job-manager/${
+          this.currentJobId
+        }/upload-file?${fileNames
           .map((fileName) => `names=${fileName}`)
           .join('&')}`
       );

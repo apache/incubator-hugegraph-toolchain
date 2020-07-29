@@ -311,9 +311,9 @@ export class MetadataPropertyStore {
         : this.metadataConfigsRootStore.currentId;
 
     try {
-      const result: AxiosResponse<
-        responseData<MetadataPropertyListResponse>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        MetadataPropertyListResponse
+      >> = yield axios
         .get(`${baseUrl}/${conn_id}/schema/propertykeys`, {
           params: {
             page_no: this.metadataPropertyPageConfig.pageNumber,
@@ -341,6 +341,7 @@ export class MetadataPropertyStore {
       if (options && typeof options.reuseId === 'number') {
         this.reuseableProperties = result.data.data.records;
       } else {
+        // this.metadataProperties = [];
         this.metadataProperties = result.data.data.records;
         this.metadataPropertyPageConfig.pageTotal = result.data.data.total;
       }
@@ -370,14 +371,14 @@ export class MetadataPropertyStore {
     this.requestStatus.checkIfUsing = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<Record<string, boolean>>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        Record<string, boolean>
+      >> = yield axios
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/check_using`,
           {
             names: selectedPropertyIndexes.map(
-              propertyIndex => this.metadataProperties[propertyIndex].name
+              (propertyIndex) => this.metadataProperties[propertyIndex].name
             )
           }
         )
@@ -438,7 +439,7 @@ export class MetadataPropertyStore {
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys?` +
             selectedPropertyIndexes
               .map(
-                propertyIndex =>
+                (propertyIndex) =>
                   'names=' + this.metadataProperties[propertyIndex].name
               )
               .join('&') +
@@ -474,13 +475,13 @@ export class MetadataPropertyStore {
     this.requestStatus.checkConflict = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<CheckedReusableData>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/check_conflict`,
           {
-            propertykeys: selectedNameList.map(selectedName =>
+            propertykeys: selectedNameList.map((selectedName) =>
               this.reuseableProperties.find(({ name }) => name === selectedName)
             )
           }
@@ -506,9 +507,9 @@ export class MetadataPropertyStore {
     this.requestStatus.recheckConflict = 'pending';
 
     try {
-      const result: AxiosResponse<
-        responseData<CheckedReusableData>
-      > = yield axios
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/recheck_conflict`,
           {

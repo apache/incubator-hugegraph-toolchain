@@ -6,7 +6,8 @@
     position: absolute;
     overflow: hidden;
     left: -20000px;
-    content: url(../../../assets/imgs/ic_tuzhanshi_hover.svg)
+    content:
+      url(../../../assets/imgs/ic_tuzhanshi_hover.svg)
       url(../../../assets/imgs/ic_biaoge_hover.svg)
       url(../../../assets/imgs/ic_json_hover.svg);
   }
@@ -250,7 +251,11 @@
       display: block;
       line-height: 22px;
       margin-bottom: 16px;
-      font-family: 'PingFangSC-Medium', 'Microsoft YaHei', '微软雅黑', Arial,
+      font-family:
+        'PingFangSC-Medium',
+        'Microsoft YaHei',
+        '微软雅黑',
+        Arial,
         sans-serif;
       font-weight: bold;
       color: #000;
@@ -652,6 +657,9 @@
 
       & > div:first-child {
         flex-basis: 25%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       & > div:last-child {
@@ -782,7 +790,11 @@
       display: block;
       line-height: 22px;
       margin-bottom: 16px;
-      font-family: 'PingFangSC-Medium', 'Microsoft YaHei', '微软雅黑', Arial,
+      font-family:
+        'PingFangSC-Medium',
+        'Microsoft YaHei',
+        '微软雅黑',
+        Arial,
         sans-serif;
       font-weight: bold;
       color: #000;
@@ -876,8 +888,7 @@
 }
 
 /* override */
-.data-analyze-sidebar-graph-selection.expand
-  .new-fc-one-select:not(.new-fc-one-select-disabled) {
+.data-analyze-sidebar-graph-selection.expand .new-fc-one-select:not(.new-fc-one-select-disabled) {
   border: 0;
 }
 
@@ -887,14 +898,12 @@
 }
 
 // dropdown from selection of ids(sidebar collapsed)
-.data-analyze-sidebar-dropdown-menu
-  > .new-fc-one-menu-vertical-box.new-fc-one-menu-vertical-medium {
+.data-analyze-sidebar-dropdown-menu > .new-fc-one-menu-vertical-box.new-fc-one-menu-vertical-medium {
   text-align: center;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
-.data-analyze-sidebar-dropdown-menu
-  .new-fc-one-menu-item.new-fc-one-menu-item-disabled {
+.data-analyze-sidebar-dropdown-menu .new-fc-one-menu-item.new-fc-one-menu-item-disabled {
   background-color: #fafafa;
   color: #ccc;
   cursor: not-allowed;
@@ -909,8 +918,7 @@
   border-right: 2px solid #2b65ff;
 }
 
-.query-result-filter-options-property-filter
-  .new-fc-one-btn.new-fc-one-calendar-title.new-fc-one-btn-normal.new-fc-one-btn-medium {
+.query-result-filter-options-property-filter .new-fc-one-btn.new-fc-one-calendar-title.new-fc-one-btn-normal.new-fc-one-btn-medium {
   width: 180px;
 }
 
@@ -962,8 +970,16 @@
 
 .CodeMirror {
   height: auto;
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica,
-    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial,
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Helvetica Neue',
+    Helvetica,
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    '微软雅黑',
+    Arial,
     sans-serif;
   font-weight: bold;
   -webkit-font-smoothing: antialiased;

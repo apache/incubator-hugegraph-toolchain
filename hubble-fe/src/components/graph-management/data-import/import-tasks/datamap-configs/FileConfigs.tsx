@@ -65,7 +65,10 @@ const FileConfigs: React.FC = observer(() => {
             </span>
             <Switch
               size="large"
-              disabled={serverDataImportStore.isServerStartImport}
+              disabled={
+                dataMapStore.readOnly ||
+                serverDataImportStore.isServerStartImport
+              }
               checked={dataMapStore.selectedFileInfo!.file_setting.has_header}
               onChange={(checked: boolean) => {
                 dataMapStore.setFileConfig('has_header', checked);
@@ -78,7 +81,10 @@ const FileConfigs: React.FC = observer(() => {
             </span>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <Radio.Group
-                disabled={serverDataImportStore.isServerStartImport}
+                disabled={
+                  dataMapStore.readOnly ||
+                  serverDataImportStore.isServerStartImport
+                }
                 value={
                   separators.includes(
                     dataMapStore.selectedFileInfo!.file_setting.delimiter
@@ -145,7 +151,10 @@ const FileConfigs: React.FC = observer(() => {
             </span>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <Radio.Group
-                disabled={serverDataImportStore.isServerStartImport}
+                disabled={
+                  dataMapStore.readOnly ||
+                  serverDataImportStore.isServerStartImport
+                }
                 value={
                   charsets.includes(
                     dataMapStore.selectedFileInfo!.file_setting.charset
@@ -212,7 +221,10 @@ const FileConfigs: React.FC = observer(() => {
             </span>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <Radio.Group
-                disabled={serverDataImportStore.isServerStartImport}
+                disabled={
+                  dataMapStore.readOnly ||
+                  serverDataImportStore.isServerStartImport
+                }
                 value={
                   dateFormat.includes(
                     dataMapStore.selectedFileInfo!.file_setting.date_format
@@ -279,7 +291,10 @@ const FileConfigs: React.FC = observer(() => {
               width={356}
               maxLen={48}
               countMode="en"
-              disabled={serverDataImportStore.isServerStartImport}
+              disabled={
+                dataMapStore.readOnly ||
+                serverDataImportStore.isServerStartImport
+              }
               value={dataMapStore.selectedFileInfo!.file_setting.skipped_line}
               onChange={(e: any) => {
                 dataMapStore.setFileConfig('skipped_line', e.value);
@@ -301,7 +316,10 @@ const FileConfigs: React.FC = observer(() => {
               {t('data-configs.file.timezone')}:
             </span>
             <Select
-              disabled={serverDataImportStore.isServerStartImport}
+              disabled={
+                dataMapStore.readOnly ||
+                serverDataImportStore.isServerStartImport
+              }
               width={140}
               size="medium"
               value={dataMapStore.selectedFileInfo!.file_setting.time_zone}
@@ -316,21 +334,22 @@ const FileConfigs: React.FC = observer(() => {
               ))}
             </Select>
           </div>
-          {!serverDataImportStore.isServerStartImport && (
-            <div className="import-tasks-data-options">
-              <span className="import-tasks-data-options-title"></span>
-              <Button
-                type="primary"
-                size="medium"
-                disabled={!dataMapStore.isValidateFileInfo}
-                onClick={() => {
-                  dataMapStore.updateFileConfig(dataMapStore.selectedFileId);
-                }}
-              >
-                {t('data-configs.file.save')}
-              </Button>
-            </div>
-          )}
+          {!dataMapStore.readOnly &&
+            !serverDataImportStore.isServerStartImport && (
+              <div className="import-tasks-data-options">
+                <span className="import-tasks-data-options-title"></span>
+                <Button
+                  type="primary"
+                  size="medium"
+                  disabled={!dataMapStore.isValidateFileInfo}
+                  onClick={() => {
+                    dataMapStore.updateFileConfig(dataMapStore.selectedFileId);
+                  }}
+                >
+                  {t('data-configs.file.save')}
+                </Button>
+              </div>
+            )}
         </>
       )}
     </div>

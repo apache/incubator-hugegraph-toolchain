@@ -8,7 +8,7 @@ import './ServerDataImport.less';
 const ServerDataImport: React.FC = observer(() => {
   return (
     <div className="import-tasks-step-wrapper" style={{ padding: '0 16px' }}>
-      <ImportConfigs />
+      <ImportConfigs height="calc(100vh - 234px)" />
     </div>
   );
 });

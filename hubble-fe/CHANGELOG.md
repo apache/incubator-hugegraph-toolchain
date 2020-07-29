@@ -1,3 +1,16 @@
+## 1.3.1 (2020-07-28)
+
+1.3.1 added support for data import from users by uploading their .csv files and setting data mappings.
+
+Users can create jobs and manage load tasks with each. Details of Jobs that failed or succeed can be checked out.
+
+#### :rocket: New Feature
+
+- data-import support
+- Job manager can handle different jobs, which could contain multiple load tasks
+
+<br />
+
 ## 1.2.1 (2020-02-27)
 
 1.2.1 added graph-mode view for metadata management. It supports all functions that list-mode has with better visual effect.

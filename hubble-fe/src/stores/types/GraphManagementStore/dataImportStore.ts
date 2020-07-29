@@ -1,5 +1,34 @@
 import { CancellablePromise } from 'mobx/lib/api/flow';
 
+export interface JobGlance {
+  name: string;
+  description: string;
+}
+
+export interface Job {
+  id: number;
+  conn_id: number;
+  job_name: string;
+  job_remarks: string;
+  job_size: string;
+  job_status: string;
+  job_duration: string;
+  update_time: string;
+  create_time: string;
+}
+
+export interface JobResponse {
+  records: Job[];
+  total: number;
+}
+
+export interface JobFailedReason {
+  task_id: number;
+  file_id: number;
+  file_name: string;
+  reason: string;
+}
+
 export interface FileUploadTask {
   name: string;
   size: number;
@@ -127,4 +156,8 @@ export interface ImportTasks {
   file_read_lines: number;
   status: string;
   duration: string;
+}
+
+export interface AllImportTasksRecords {
+  records: ImportTasks[];
 }

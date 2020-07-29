@@ -7,10 +7,10 @@ import React, {
 } from 'react';
 import { observer } from 'mobx-react';
 import { useTranslation } from 'react-i18next';
-import TooltipTrigger from 'react-popper-tooltip';
 import classnames from 'classnames';
 import { Button } from '@baidu/one-ui';
 
+import { Tooltip } from '../../../../common';
 import { DataImportRootStoreContext } from '../../../../../stores';
 import VertexMap from './VertexMap';
 import EdgeMap from './EdgeMap';
@@ -196,108 +196,109 @@ const TypeInfo: React.FC<TypeInfoProps> = observer(({ type, mapIndex }) => {
           </span>
         </div>
         <div className="import-tasks-data-type-info" ref={manipulationAreaRef}>
-          <Button
-            ref={editButtonRef}
-            size="medium"
-            style={{ width: 78, marginRight: 12 }}
-            disabled={
-              dataMapStore.isExpandTypeConfig ||
-              dataMapStore.isAddNewTypeConfig ||
-              serverDataImportStore.isServerStartImport
-            }
-            onClick={() => {
-              switchExpand(true);
-              setCheckOrEdit('edit');
-              dataMapStore.switchEditTypeConfig(true);
-              dataMapStore.syncEditMap(type, mapIndex);
-              dataMapStore.syncValidateNullAndValueMappings(type);
-            }}
-          >
-            {t('data-configs.manipulations.edit')}
-          </Button>
-          <TooltipTrigger
-            tooltipShown={isDeletePop}
-            placement="bottom-start"
-            tooltip={({
-              arrowRef,
-              tooltipRef,
-              getArrowProps,
-              getTooltipProps,
-              placement
-            }) => (
-              <div
-                {...getTooltipProps({
-                  ref: tooltipRef,
+          {!dataMapStore.readOnly && (
+            <>
+              <Button
+                ref={editButtonRef}
+                size="medium"
+                style={{ width: 78, marginRight: 12 }}
+                disabled={
+                  dataMapStore.isExpandTypeConfig ||
+                  dataMapStore.isAddNewTypeConfig ||
+                  serverDataImportStore.isServerStartImport
+                }
+                onClick={() => {
+                  switchExpand(true);
+                  setCheckOrEdit('edit');
+                  dataMapStore.switchEditTypeConfig(true);
+                  dataMapStore.syncEditMap(type, mapIndex);
+                  dataMapStore.syncValidateNullAndValueMappings(type);
+                }}
+              >
+                {t('data-configs.manipulations.edit')}
+              </Button>
+              <Tooltip
+                placement="bottom-end"
+                tooltipShown={isDeletePop}
+                modifiers={{
+                  offset: {
+                    offset: '0, 10'
+                  }
+                }}
+                tooltipWrapperProps={{
                   className: 'import-tasks-tooltips',
                   style: {
                     zIndex: 1042
                   }
-                })}
-              >
-                <div
-                  {...getArrowProps({
-                    ref: arrowRef,
-                    className: 'tooltip-arrow',
-                    'data-placement': placement
-                  })}
-                />
-                <div ref={deleteWrapperRef}>
-                  <p>{t('data-configs.manipulations.hints.delete-confirm')}</p>
-                  <p>{t('data-configs.manipulations.hints.warning')}</p>
-                  <div
-                    style={{
-                      display: 'flex',
-                      marginTop: 12,
-                      color: '#2b65ff',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <Button
-                      ref={deleteButtonRef}
-                      type="primary"
-                      size="medium"
-                      style={{ width: 60, marginRight: 12 }}
-                      disabled={serverDataImportStore.isServerStartImport}
-                      onClick={() => {
-                        type === 'vertex'
-                          ? dataMapStore.deleteVertexMap(mapIndex)
-                          : dataMapStore.deleteEdgeMap(mapIndex);
+                }}
+                tooltipWrapper={
+                  <div ref={deleteWrapperRef}>
+                    <p>
+                      {t('data-configs.manipulations.hints.delete-confirm')}
+                    </p>
+                    <p>{t('data-configs.manipulations.hints.warning')}</p>
+                    <div
+                      style={{
+                        display: 'flex',
+                        marginTop: 12,
+                        color: '#2b65ff',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Button
+                        ref={deleteButtonRef}
+                        type="primary"
+                        size="medium"
+                        style={{ width: 60, marginRight: 12 }}
+                        disabled={serverDataImportStore.isServerStartImport}
+                        onClick={async () => {
+                          // really weird! if import task comes from import-manager
+                          // datamapStore.fileMapInfos cannot be updated in <TypeConfigs />
+                          // though it's already re-rendered
+                          if (dataMapStore.isIrregularProcess) {
+                            type === 'vertex'
+                              ? await dataMapStore.deleteVertexMap(mapIndex)
+                              : await dataMapStore.deleteEdgeMap(mapIndex);
 
-                        switchDeletePop(false);
-                      }}
-                    >
-                      {t('data-configs.type.info.delete')}
-                    </Button>
-                    <Button
-                      size="medium"
-                      style={{ width: 60 }}
-                      onClick={() => {
-                        switchDeletePop(false);
-                      }}
-                    >
-                      {t('data-configs.manipulations.cancel')}
-                    </Button>
+                            dataMapStore.fetchDataMaps();
+                          } else {
+                            type === 'vertex'
+                              ? dataMapStore.deleteVertexMap(mapIndex)
+                              : dataMapStore.deleteEdgeMap(mapIndex);
+                          }
+                          // type === 'vertex'
+                          //   ? dataMapStore.deleteVertexMap(mapIndex)
+                          //   : dataMapStore.deleteEdgeMap(mapIndex);
+
+                          switchDeletePop(false);
+                        }}
+                      >
+                        {t('data-configs.type.info.delete')}
+                      </Button>
+                      <Button
+                        size="medium"
+                        style={{ width: 60 }}
+                        onClick={() => {
+                          switchDeletePop(false);
+                        }}
+                      >
+                        {t('data-configs.manipulations.cancel')}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-          >
-            {({ getTriggerProps, triggerRef }) => (
-              <span
-                {...getTriggerProps({
-                  ref: triggerRef,
+                }
+                childrenProps={{
                   onClick() {
                     switchDeletePop(true);
                   }
-                })}
-                key="drawer-close"
+                }}
               >
                 <Button size="medium" style={{ width: 78 }}>
                   {t('data-configs.manipulations.delete')}
                 </Button>
-              </span>
-            )}
-          </TooltipTrigger>
+              </Tooltip>
+            </>
+          )}
         </div>
       </div>
       {isExpand && Boolean(checkOrEdit) && type === 'vertex' && (

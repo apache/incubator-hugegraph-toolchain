@@ -23,7 +23,6 @@ import {
   ValueMapValidator
 } from '../../types/GraphManagementStore/dataImportStore';
 import { checkIfLocalNetworkOffline, validateGraphProperty } from '../../utils';
-import fileInfoData from './mock-data';
 
 export class DataMapStore {
   dataImportRootStore: DataImportRootStore;
@@ -32,11 +31,18 @@ export class DataMapStore {
     this.dataImportRootStore = dataImportRootStore;
   }
 
+  // v1.3.1: check details from import-manager
+  @observable readOnly = false;
+  // v1.3.1: task process comes from import-manager entrance
+  @observable isIrregularProcess = false;
+
   @observable isExpandFileConfig = true;
   // If one of the type info card is being edited
   @observable isExpandTypeConfig = false;
   @observable isAddNewTypeConfig = false;
   @observable fileMapInfos: FileMapInfo[] = [];
+  // v1.3.1: preFetched file mapping infos from import-manager
+  @observable preFetchedFileMapInfos: FileMapInfo[] = [];
   // @observable fileMapInfos: FileMapInfo[] = fileInfoData;
   @observable selectedFileId: number = NaN;
   @observable selectedFileInfo: FileMapInfo | null = null;
@@ -121,6 +127,16 @@ export class DataMapStore {
     return this.fileMapInfos.filter(({ name }) =>
       this.dataImportRootStore.fileList.map(({ name }) => name).includes(name)
     );
+  }
+
+  @action
+  switchReadOnly(isReadOnly: boolean) {
+    this.readOnly = isReadOnly;
+  }
+
+  @action
+  switchIrregularProcess(flag: boolean) {
+    this.isIrregularProcess = flag;
   }
 
   @action
@@ -979,8 +995,11 @@ export class DataMapStore {
   dispose() {
     this.resetDataMaps();
 
+    this.readOnly = false;
+    this.isIrregularProcess = false;
     this.isExpandFileConfig = true;
     this.fileMapInfos = [];
+    this.preFetchedFileMapInfos = [];
     this.selectedFileId = NaN;
     this.selectedFileInfo = null;
   }
@@ -991,7 +1010,7 @@ export class DataMapStore {
     try {
       const result: AxiosResponse<responseData<FileMapResult>> = yield axios
         .get<responseData<FileMapResult>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings`,
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings`,
           {
             params: {
               page_size: -1
@@ -1023,7 +1042,7 @@ export class DataMapStore {
     try {
       const result: AxiosResponse<responseData<FileMapInfo>> = yield axios
         .post<responseData<FileMapInfo>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${fileId}/file-setting`,
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/${fileId}/file-setting`,
           this.selectedFileInfo?.file_setting
         )
         .catch(checkIfLocalNetworkOffline);
@@ -1065,7 +1084,7 @@ export class DataMapStore {
 
           result = yield axios
             .post(
-              `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${fileId}/vertex-mappings`,
+              `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/${fileId}/vertex-mappings`,
               newVertexType
             )
             .catch(checkIfLocalNetworkOffline);
@@ -1083,7 +1102,7 @@ export class DataMapStore {
 
           result = yield axios
             .put(
-              `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${fileId}/vertex-mappings/${this.editedVertexMap?.id}`,
+              `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/${fileId}/vertex-mappings/${this.editedVertexMap?.id}`,
               editedVertexMap
             )
             .catch(checkIfLocalNetworkOffline);
@@ -1092,7 +1111,7 @@ export class DataMapStore {
         case 'delete':
           result = yield axios
             .delete(
-              `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${fileId}/vertex-mappings/${this.editedVertexMap?.id}`
+              `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/${fileId}/vertex-mappings/${this.editedVertexMap?.id}`
             )
             .catch(checkIfLocalNetworkOffline);
           break;
@@ -1135,7 +1154,7 @@ export class DataMapStore {
 
           result = yield axios
             .post(
-              `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${fileId}/edge-mappings`,
+              `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/${fileId}/edge-mappings`,
               newEdgeType
             )
             .catch(checkIfLocalNetworkOffline);
@@ -1153,7 +1172,7 @@ export class DataMapStore {
 
           result = yield axios
             .put(
-              `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${fileId}/edge-mappings/${this.editedEdgeMap?.id}`,
+              `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/${fileId}/edge-mappings/${this.editedEdgeMap?.id}`,
               this.editedEdgeMap
             )
             .catch(checkIfLocalNetworkOffline);
@@ -1162,7 +1181,7 @@ export class DataMapStore {
         case 'delete':
           result = yield axios
             .delete(
-              `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${fileId}/edge-mappings/${this.editedEdgeMap?.id}`
+              `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/${fileId}/edge-mappings/${this.editedEdgeMap?.id}`
             )
             .catch(checkIfLocalNetworkOffline);
           break;
@@ -1193,9 +1212,9 @@ export class DataMapStore {
         FileMapInfo
       >> = yield axios
         .delete<responseData<FileMapInfo>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${
-            this.selectedFileInfo!.id
-          }/vertex-mappings/${
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${
+            this.dataImportRootStore.currentJobId
+          }/file-mappings/${this.selectedFileInfo!.id}/vertex-mappings/${
             this.selectedFileInfo?.vertex_mappings[mapIndex].id
           }`
         )
@@ -1226,9 +1245,11 @@ export class DataMapStore {
         FileMapInfo
       >> = yield axios
         .delete<responseData<FileMapInfo>>(
-          `${baseUrl}/${this.dataImportRootStore.currentId}/file-mappings/${
-            this.selectedFileInfo!.id
-          }/edge-mappings/${this.selectedFileInfo?.edge_mappings[mapIndex].id}`
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${
+            this.dataImportRootStore.currentJobId
+          }/file-mappings/${this.selectedFileInfo!.id}/edge-mappings/${
+            this.selectedFileInfo?.edge_mappings[mapIndex].id
+          }`
         )
         .catch(checkIfLocalNetworkOffline);
 
