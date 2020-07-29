@@ -9,7 +9,7 @@ schema.propertyKey("price").asDouble().ifNotExist().create();
 schema.propertyKey("feel").asText().valueList().ifNotExist().create();
 schema.propertyKey("time").asText().valueSet().ifNotExist().create();
 
-schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name").ifNotExist().create();
+schema.vertexLabel("person").properties("name", "age", "city").primaryKeys("name", "age").ifNotExist().create();
 schema.vertexLabel("software").properties("name", "lang", "price").primaryKeys("name").ifNotExist().create();
 
 schema.edgeLabel("knows").sourceLabel("person").targetLabel("person").properties("date", "weight").ifNotExist().create();

@@ -2517,9 +2517,9 @@ public class FileLoadTest extends LoadTest {
     public void testVertexPrimaryValueEmpty() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
-                     ",29,Beijing", // primary value is empty
+                     ",29,Beijing",     // name is empty
                      "vadas,27,Hongkong",
-                     ",32,Beijing", // primary value is empty
+                     "josh,,Beijing",   // age is empty
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
         String[] args = new String[]{
@@ -2540,9 +2540,9 @@ public class FileLoadTest extends LoadTest {
     public void testSourceOrTargetPrimaryValueEmpty() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
-                     ",29,Beijing",
+                     ",29,Beijing",                 // name is empty
                      "vadas,27,Hongkong",
-                     ",32,Beijing",
+                     "josh,,Beijing",               // age is empty
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
         ioUtil.write("vertex_software.csv", GBK,
@@ -2550,11 +2550,11 @@ public class FileLoadTest extends LoadTest {
                      "lop,java,328",
                      "ripple,java,199");
         ioUtil.write("edge_created.csv",
-                     "source_name,target_name,date,weight",
-                     ",lop,20171210,0.4",
-                     ",lop,20091111,0.4",
-                     ",ripple,20171210,1.0",
-                     "peter,lop,20170324,0.2");
+                     "source_name,source_age,target_name,date,weight",
+                     ",29,lop,20171210,0.4",        // name is empty
+                     "josh,,lop,20091111,0.4",      // age is empty
+                     "josh,,ripple,20171210,1.0",   // age is empty
+                     "peter,35,lop,20170324,0.2");
 
         String[] args = new String[]{
                 "-f", structPath("source_or_target_pk_value_empty/struct.json"),
