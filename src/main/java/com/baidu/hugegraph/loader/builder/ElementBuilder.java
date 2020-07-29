@@ -230,6 +230,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                                   Object... primaryValues) {
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
+        boolean allEmpty = true;
         for (int i = 0; i < primaryValues.length; i++) {
             Object value = primaryValues[i];
             String pkValue;
@@ -243,10 +244,16 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                                                   Constants.SEARCH_LIST,
                                                   Constants.TARGET_LIST);
             }
+            if (!pkValue.isEmpty()) {
+                allEmpty = false;
+            }
             vertexKeysId.append(pkValue);
             vertexKeysId.append("!");
         }
-
+        if (allEmpty) {
+            // return null indicates that the primary values are all empty
+            return null;
+        }
         vertexId.append(vertexLabel.id()).append(":").append(vertexKeysId);
         vertexId.deleteCharAt(vertexId.length() - 1);
         return vertexId.toString();
@@ -492,6 +499,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 this.pkValues[i] = pkValue;
             }
             String id = spliceVertexId(vertexLabel, this.pkValues);
+            if (id == null) {
+                return ImmutableList.of();
+            }
             checkVertexIdLength(id);
 
             Vertex vertex = new Vertex(vertexLabel.name());
@@ -587,6 +597,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             for (Object pkValue : this.pkValues) {
                 pkValue = convertPropertyValue(this.pkName, pkValue);
                 String id = spliceVertexId(vertexLabel, pkValue);
+                if (id == null) {
+                    continue;
+                }
                 checkVertexIdLength(id);
 
                 Vertex vertex = new Vertex(vertexLabel.name());
