@@ -48,11 +48,6 @@ public class LoadTest {
     protected static final String TRUST_STORE_PASSWORD = "changeit";
     protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH)
                                                          .build();
-    protected static final HugeClient HTTPS_CLIENT = HugeClient.builder(HTTPS_URL, GRAPH)
-                                                               .configSSL(PROTOCOL,
-                                                                          TRUST_STORE_FILE,
-                                                                          TRUST_STORE_PASSWORD)
-                                                               .build();
 
     public static String configPath(String fileName) {
         return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();

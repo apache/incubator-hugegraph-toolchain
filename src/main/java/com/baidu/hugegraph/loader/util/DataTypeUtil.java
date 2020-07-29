@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
@@ -76,6 +77,7 @@ public final class DataTypeUtil {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static List<Object> splitField(String key, Object rawColumnValue,
                                           InputSource source) {
         E.checkArgument(rawColumnValue != null,
@@ -253,12 +255,22 @@ public final class DataTypeUtil {
         if (value instanceof Number) {
             return new Date(((Number) value).longValue());
         } else if (value instanceof String) {
-            try {
-                return DateUtil.parse((String) value, dateFormat, timeZone);
-            } catch (ParseException e) {
-                throw new IllegalArgumentException(String.format(
-                          "%s, expect format: %s",
-                          e.getMessage(), DateUtil.toPattern(dateFormat)));
+            if (Constants.TIMESTAMP.equals(dateFormat)) {
+                try {
+                    long timestamp = Long.parseLong((String) value);
+                    return new Date(timestamp);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException(String.format(
+                              "Invalid timestamp value '%s'", value));
+                }
+            } else {
+                try {
+                    return DateUtil.parse((String) value, dateFormat, timeZone);
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException(String.format(
+                              "%s, expect format: %s", e.getMessage(),
+                              DateUtil.toPattern(dateFormat)));
+                }
             }
         }
         throw new IllegalArgumentException(String.format(

@@ -9,7 +9,7 @@
         "charset": "UTF-8",
         "compression": "ORC",
         "date_format": "yyyy-MM-dd",
-        "time_zone": "GMT+0"
+        "time_zone": "GMT+8"
       }
     }
   ]

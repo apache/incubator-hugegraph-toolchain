@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
@@ -30,17 +31,19 @@ import com.baidu.hugegraph.structure.schema.VertexLabel;
 
 public final class SchemaCache {
 
+    private final HugeClient client;
     private final Map<String, PropertyKey> propertyKeys;
     private final Map<String, VertexLabel> vertexLabels;
     private final Map<String, EdgeLabel> edgeLabels;
 
-    public SchemaCache() {
+    public SchemaCache(HugeClient client) {
+        this.client = client;
         this.propertyKeys = new HashMap<>();
         this.vertexLabels = new HashMap<>();
         this.edgeLabels = new HashMap<>();
     }
 
-    public void updateAll(HugeClient client) {
+    public void updateAll() {
         this.propertyKeys.clear();
         client.schema().getPropertyKeys().forEach(pk -> {
             this.propertyKeys.put(pk.name(), pk);
@@ -58,8 +61,12 @@ public final class SchemaCache {
     public PropertyKey getPropertyKey(String name) {
         PropertyKey propertyKey = this.propertyKeys.get(name);
         if (propertyKey == null) {
-            throw new LoadException("The property key '%s' doesn't exist",
-                                    name);
+            try {
+                propertyKey = this.client.schema().getPropertyKey(name);
+            } catch (ServerException e) {
+                throw new LoadException("The property key '%s' doesn't exist",
+                                        name);
+            }
         }
         return propertyKey;
     }
@@ -67,8 +74,12 @@ public final class SchemaCache {
     public VertexLabel getVertexLabel(String name) {
         VertexLabel vertexLabel = this.vertexLabels.get(name);
         if (vertexLabel == null) {
-            throw new LoadException("The vertex label '%s' doesn't exist",
-                                    name);
+            try {
+                vertexLabel = this.client.schema().getVertexLabel(name);
+            } catch (ServerException e) {
+                throw new LoadException("The vertex label '%s' doesn't exist",
+                                        name);
+            }
         }
         return vertexLabel;
     }
@@ -76,7 +87,12 @@ public final class SchemaCache {
     public EdgeLabel getEdgeLabel(String name) {
         EdgeLabel edgeLabel = this.edgeLabels.get(name);
         if (edgeLabel == null) {
-            throw new LoadException("The edge label '%s' doesn't exist", name);
+            try {
+                edgeLabel = this.client.schema().getEdgeLabel(name);
+            } catch (ServerException e) {
+                throw new LoadException("The edge label '%s' doesn't exist",
+                                        name);
+            }
         }
         return edgeLabel;
     }

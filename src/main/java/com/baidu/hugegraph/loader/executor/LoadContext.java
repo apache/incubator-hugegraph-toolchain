@@ -65,7 +65,7 @@ public final class LoadContext {
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
         this.client = HugeClientHolder.create(options);
-        this.schemaCache = new SchemaCache();
+        this.schemaCache = new SchemaCache(this.client);
     }
 
     public String timestamp() {
@@ -113,7 +113,7 @@ public final class LoadContext {
 
     public void updateSchemaCache() {
         assert this.client != null;
-        this.schemaCache.updateAll(this.client);
+        this.schemaCache.updateAll();
     }
 
     public void close() {

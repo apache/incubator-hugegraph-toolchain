@@ -24,13 +24,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.constant.Unique;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
+import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.HashUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;

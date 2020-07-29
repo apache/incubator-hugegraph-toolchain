@@ -58,6 +58,13 @@ public class BatchInsertTask extends InsertTask {
                 break;
             } catch (ClientException e) {
                 LOG.debug("client exception: {}", e.getMessage());
+                Throwable cause = e.getCause();
+                if (cause != null && cause.getMessage() != null) {
+                    if (StringUtils.containsAny(cause.getMessage(),
+                                                UNACCEPTABLE_MESSAGES)) {
+                        throw e;
+                    }
+                }
                 retryCount = this.waitThenRetry(retryCount, e);
             } catch (ServerException e) {
                 String message = e.getMessage();

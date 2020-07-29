@@ -47,6 +47,7 @@ public final class Constants {
     public static final String TAB_STR = "\t";
     public static final String NULL_STR = "NULL";
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String TIMESTAMP = "timestamp";
     public static final String TIME_ZONE = "GMT+8";
     public static final String SKIPPED_LINE_REGEX = "(^#|^//).*|";
     public static final String FAILURE = "failure";

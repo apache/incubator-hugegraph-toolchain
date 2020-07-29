@@ -54,6 +54,7 @@ import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
+import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -618,9 +619,9 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
                             edge.property("feel"));
-        List<Long> expectedTimes = ImmutableList.of(
-                DateUtil.parse("2019-05-02", "yyyy-MM-dd").getTime(),
-                DateUtil.parse("2008-05-02", "yyyy-MM-dd").getTime()
+        List<String> expectedTimes = ImmutableList.of(
+                "2019-05-02 00:00:00.000",
+                "2008-05-02 00:00:00.000"
         );
         Assert.assertEquals(expectedTimes, edge.property("time"));
     }
@@ -653,10 +654,8 @@ public class FileLoadTest extends LoadTest {
                             edge.property("feel"));
         Assert.assertEquals(ArrayList.class, edge.property("time").getClass());
         List<?> list = (List<?>) edge.property("time");
-        Assert.assertTrue(list.contains(DateUtil.parse(
-                                        "2019-05-02", "yyyy-MM-dd").getTime()));
-        Assert.assertTrue(list.contains(DateUtil.parse(
-                                        "2008-05-02", "yyyy-MM-dd").getTime()));
+        Assert.assertTrue(list.contains("2019-05-02 00:00:00.000"));
+        Assert.assertTrue(list.contains("2008-05-02 00:00:00.000"));
     }
 
     @Test
@@ -1359,6 +1358,34 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testTimestampAsDateFormat() throws java.text.ParseException {
+        long t1 = DateUtil.parse("1992-10-01", "yyyy-MM-dd").getTime();
+        long t2 = DateUtil.parse("2000-01-01", "yyyy-MM-dd").getTime();
+        ioUtil.write("vertex_person_birth_date.csv",
+                     "marko," + t1 + ",Beijing",
+                     "vadas," + t2 + ",Hongkong");
+
+        // DateFormat is yyyy-MM-dd
+        String[] args = new String[]{
+                "-f", structPath("timestamp_as_dateformat/struct.json"),
+                "-s", configPath("timestamp_as_dateformat/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        Vertex marko = vertices.get(0);
+        Assert.assertEquals("1992-10-01 00:00:00.000", marko.property("birth"));
+
+        Vertex vadas = vertices.get(1);
+        Assert.assertEquals("2000-01-01 00:00:00.000", vadas.property("birth"));
+    }
+
+    @Test
     public void testDefaultTimeZoneGMT8() throws java.text.ParseException {
         ioUtil.write("vertex_person_birth_date.csv",
                      "marko,1992-10-01 12:00:00,Beijing",
@@ -1377,13 +1404,11 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, vertices.size());
 
         Vertex marko = CLIENT.graph().getVertex("1:marko");
-        Assert.assertEquals(DateUtil.parse("1992-10-01 12:00:00",
-                                           Constants.DATE_FORMAT).getTime(),
+        Assert.assertEquals("1992-10-01 12:00:00.000",
                             marko.property("birth"));
 
         Vertex vadas = CLIENT.graph().getVertex("1:vadas");
-        Assert.assertEquals(DateUtil.parse("2000-01-01 13:00:00",
-                                           Constants.DATE_FORMAT).getTime(),
+        Assert.assertEquals("2000-01-01 13:00:00.000",
                             vadas.property("birth"));
     }
 
@@ -1406,13 +1431,11 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, vertices.size());
 
         Vertex marko = CLIENT.graph().getVertex("1:marko");
-        Assert.assertEquals(DateUtil.parse("1992-10-01 20:00:00",
-                                           Constants.DATE_FORMAT).getTime(),
+        Assert.assertEquals("1992-10-01 20:00:00.000",
                             marko.property("birth"));
 
         Vertex vadas = CLIENT.graph().getVertex("1:vadas");
-        Assert.assertEquals(DateUtil.parse("2000-01-01 21:00:00",
-                                           Constants.DATE_FORMAT).getTime(),
+        Assert.assertEquals("2000-01-01 21:00:00.000",
                             vadas.property("birth"));
     }
 
@@ -1441,13 +1464,9 @@ public class FileLoadTest extends LoadTest {
 
         // TODO: Fix date property be saved as long in client
         assertContains(vertices, "person", "name", "marko", "age", 25,
-                       "birth",
-                       DateUtil.parse("1994-01-01", "yyyy-MM-dd").getTime(),
-                       "city", "Beijing");
+                       "birth", "1994-01-01 00:00:00.000", "city", "Beijing");
         assertContains(vertices, "person", "name", "vadas", "age", 30,
-                       "birth",
-                       DateUtil.parse("1989-01-01", "yyyy-MM-dd").getTime(),
-                       "city", "Shanghai");
+                       "birth", "1989-01-01 00:00:00.000", "city", "Shanghai");
     }
 
     @Test
@@ -2319,10 +2338,10 @@ public class FileLoadTest extends LoadTest {
                 "p_date:date" +
                 ">");
 
-        Date now = Date.valueOf("2019-12-09");
+        Date nowDate = Date.valueOf("2019-12-09");
         ioUtil.writeOrc("vertex_person.orc", typeInfo,
                         "marko", true, (byte) 1, 2, 3L,
-                        4.0F, 5.0D, "marko", now);
+                        4.0F, 5.0D, "marko", nowDate);
         String[] args = new String[]{
                 "-f", structPath("orc_compress_file/struct.json"),
                 "-s", configPath("orc_compress_file/schema.groovy"),
@@ -2344,7 +2363,8 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(4.0D, vertex.property("p_float"));
         Assert.assertEquals(5.0D, vertex.property("p_double"));
         Assert.assertEquals("marko", vertex.property("p_string"));
-        Assert.assertEquals(now.toEpochMilli(), vertex.property("p_date"));
+        Assert.assertEquals("2019-12-09 00:00:00.000",
+                            vertex.property("p_date"));
     }
 
     @Test
@@ -2938,8 +2958,20 @@ public class FileLoadTest extends LoadTest {
         };
         HugeGraphLoader.main(args);
 
-        List<Vertex> vertices = HTTPS_CLIENT.graph().listVertices();
-        Assert.assertEquals(2, vertices.size());
+        try {
+            HugeClient httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
+                                               .configSSL(PROTOCOL,
+                                                          TRUST_STORE_FILE,
+                                                          TRUST_STORE_PASSWORD)
+                                               .build();
+            List<Vertex> vertices = httpsClient.graph().listVertices();
+            Assert.assertEquals(2, vertices.size());
+        } catch (ClientException e) {
+            Throwable cause = e.getCause();
+            Assert.assertNotNull(cause);
+            Assert.assertTrue(cause.getMessage().contains(
+                              "Connection refused (Connection refused)"));
+        }
     }
 
     @Test
@@ -2960,6 +2992,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         HugeGraphLoader.main(args);
+
         LoadOptions options = new LoadOptions();
         options.host = SERVER;
         options.port = HTTPS_PORT;
@@ -2967,8 +3000,13 @@ public class FileLoadTest extends LoadTest {
         options.protocol = PROTOCOL;
         options.trustStoreFile = TRUST_STORE_FILE;
         options.trustStorePassword = TRUST_STORE_PASSWORD;
-        HugeClient client = HugeClientHolder.create(options);
-        List<Vertex> vertices = client.graph().listVertices();
-        Assert.assertEquals(4, vertices.size());
+        try {
+            HugeClient client = HugeClientHolder.create(options);
+            List<Vertex> vertices = client.graph().listVertices();
+            Assert.assertEquals(4, vertices.size());
+        } catch (LoadException e) {
+            Assert.assertTrue(e.getMessage().startsWith("The service"));
+            Assert.assertTrue(e.getMessage().endsWith("is unavailable"));
+        }
     }
 }
