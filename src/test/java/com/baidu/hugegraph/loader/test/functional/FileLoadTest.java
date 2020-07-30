@@ -2514,6 +2514,66 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testVertexPrimaryValueEmpty() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     ",29,Beijing",     // name is empty
+                     "vadas,27,Hongkong",
+                     "josh,,Beijing",   // age is empty
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        String[] args = new String[]{
+                "-f", structPath("vertex_pk_value_empty/struct.json"),
+                "-s", configPath("vertex_pk_value_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(3, vertices.size());
+    }
+
+    @Test
+    public void testSourceOrTargetPrimaryValueEmpty() {
+        ioUtil.write("vertex_person.csv",
+                     "name,age,city",
+                     ",29,Beijing",                 // name is empty
+                     "vadas,27,Hongkong",
+                     "josh,,Beijing",               // age is empty
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
+        ioUtil.write("vertex_software.csv", GBK,
+                     "name,lang,price",
+                     "lop,java,328",
+                     "ripple,java,199");
+        ioUtil.write("edge_created.csv",
+                     "source_name,source_age,target_name,date,weight",
+                     ",29,lop,20171210,0.4",        // name is empty
+                     "josh,,lop,20091111,0.4",      // age is empty
+                     "josh,,ripple,20171210,1.0",   // age is empty
+                     "peter,35,lop,20170324,0.2");
+
+        String[] args = new String[]{
+                "-f", structPath("source_or_target_pk_value_empty/struct.json"),
+                "-s", configPath("source_or_target_pk_value_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        List<Edge> edges = CLIENT.graph().listEdges();
+
+        Assert.assertEquals(5, vertices.size());
+        Assert.assertEquals(1, edges.size());
+    }
+
+    @Test
     public void testVertexIdColumnEmpty() {
         ioUtil.write("vertex_person.csv",
                      "id,name,age,city",

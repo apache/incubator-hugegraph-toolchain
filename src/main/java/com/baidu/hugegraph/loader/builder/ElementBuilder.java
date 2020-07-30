@@ -246,7 +246,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             vertexKeysId.append(pkValue);
             vertexKeysId.append("!");
         }
-
         vertexId.append(vertexLabel.id()).append(":").append(vertexKeysId);
         vertexId.deleteCharAt(vertexId.length() - 1);
         return vertexId.toString();
@@ -260,6 +259,17 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         E.checkArgument(r.isUnderflow(),
                         "The vertex id length exceeds limit %s : '%s'",
                         Constants.VERTEX_ID_LIMIT, id);
+    }
+
+    private boolean isEmptyPkValue(Object pkValue) {
+        if (pkValue == null) {
+            return true;
+        }
+        if (pkValue instanceof String) {
+            String pkValueStr = (String) pkValue;
+            return pkValueStr.isEmpty();
+        }
+        return false;
     }
 
     public abstract class VertexKVPairs {
@@ -487,6 +497,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         public List<Vertex> buildVertices(boolean withProperty) {
             checkPrimaryValuesValid(vertexLabel, this.pkValues);
             for (int i = 0; i < this.pkNames.size(); i++) {
+                if (isEmptyPkValue(this.pkValues[i])) {
+                    return ImmutableList.of();
+                }
                 Object pkValue = convertPropertyValue(this.pkNames.get(i),
                                                       this.pkValues[i]);
                 this.pkValues[i] = pkValue;
@@ -585,6 +598,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                             "The primary values shouldn't be null");
             List<Vertex> vertices = new ArrayList<>(this.pkValues.size());
             for (Object pkValue : this.pkValues) {
+                if (isEmptyPkValue(pkValue)) {
+                    continue;
+                }
                 pkValue = convertPropertyValue(this.pkName, pkValue);
                 String id = spliceVertexId(vertexLabel, pkValue);
                 checkVertexIdLength(id);

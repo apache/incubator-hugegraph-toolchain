@@ -234,7 +234,7 @@ public final class DataTypeUtil {
             }
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(String.format(
-                      "Failed to convert value(key='%s') '%s'(%s) to Number",
+                      "Failed to convert value(key=%s) '%s'(%s) to Number",
                       key, value, value.getClass()), e);
         }
     }
