@@ -28,7 +28,7 @@
   "edges": [
     {
       "label": "created",
-      "source": ["source_name"],
+      "source": ["source_name", "source_age"],
       "target": ["target_name"],
       "input": {
         "type": "${source_type}",
@@ -38,6 +38,7 @@
       },
       "field_mapping": {
         "source_name": "name",
+        "source_age": "age",
         "target_name": "name"
       }
     }
