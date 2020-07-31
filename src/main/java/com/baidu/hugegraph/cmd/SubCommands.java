@@ -165,15 +165,6 @@ public class SubCommands {
     @Parameters(commandDescription = "Migrate graph")
     public static class Migrate extends Backup {
 
-        @Parameter(names = {"--source-url"}, arity = 1,
-                   validateWith = {UrlValidator.class},
-                   description = "The source graph url to migrate")
-        public String sourceUrl = "http://127.0.0.1:8080";
-
-        @Parameter(names = {"--source-graph"}, arity = 1,
-                   description = "The source graph to migrate")
-        public String sourceGraph = "hugegraph";
-
         @Parameter(names = {"--target-url"}, arity = 1,
                    description = "The target graph url to migrate")
         public String targetUrl = "http://127.0.0.1:8081";
@@ -181,6 +172,18 @@ public class SubCommands {
         @Parameter(names = {"--target-graph"}, arity = 1,
                    description = "The target graph to migrate")
         public String targetGraph = "hugegraph";
+
+        @Parameter(names = {"--target-username"}, arity = 1,
+                   description = "The username of target graph")
+        public String targetUsername;
+
+        @Parameter(names = {"--target-password"}, arity = 1,
+                   description = "The password of target graph")
+        public String targetPassword;
+
+        @Parameter(names = {"--target-timeout"}, arity = 1,
+                   description = "The timeout to connect target graph")
+        public int targetTimeout;
 
         @Parameter(names = {"--graph-mode", "-m"}, arity = 1,
                    converter = GraphModeConverter.class,
@@ -193,20 +196,24 @@ public class SubCommands {
                                  "graph data after restored")
         public boolean clean = true;
 
-        public String sourceUrl() {
-            return this.sourceUrl;
-        }
-
-        public String sourceGraph() {
-            return this.sourceGraph;
-        }
-
         public String targetUrl() {
             return this.targetUrl;
         }
 
         public String targetGraph() {
             return this.targetGraph;
+        }
+
+        public String targetUsername() {
+            return this.targetUsername;
+        }
+
+        public String targetPassword() {
+            return this.targetPassword;
+        }
+
+        public int targetTimeout() {
+            return this.targetTimeout;
         }
 
         public GraphMode mode() {

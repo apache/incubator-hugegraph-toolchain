@@ -108,8 +108,16 @@ public class HugeGraphCommand {
         return this.username.username;
     }
 
+    public void username(String username) {
+        this.username.username = username;
+    }
+
     public String password() {
         return this.password.password;
+    }
+
+    public void password(String password) {
+        this.password.password = password;
     }
 
     public int timeout() {
@@ -194,15 +202,13 @@ public class HugeGraphCommand {
             case "migrate":
                 SubCommands.Migrate migrate = this.subCommand(subCmd);
                 Printer.print("Migrate graph '%s' from '%s' to '%s' as '%s'",
-                              migrate.sourceGraph(), migrate.sourceUrl(),
+                              this.graph(), this.url(),
                               migrate.targetUrl(), migrate.targetGraph());
 
                 // Backup source graph
                 if (this.timeout() < BACKUP_DEFAULT_TIMEOUT) {
                     this.timeout(BACKUP_DEFAULT_TIMEOUT);
                 }
-                this.url(migrate.sourceUrl());
-                this.graph(migrate.sourceGraph());
                 backup = convMigrate2Backup(migrate);
                 backupManager = manager(BackupManager.class);
                 backupManager.init(backup);
@@ -211,8 +217,11 @@ public class HugeGraphCommand {
                 // Restore source graph to target graph
                 this.url(migrate.targetUrl());
                 this.graph(migrate.targetGraph());
+                this.username(migrate.targetUsername());
+                this.password(migrate.targetPassword());
+                this.timeout(migrate.targetTimeout());
                 graphsManager = manager(GraphsManager.class);
-                GraphMode origin = graphsManager.mode(this.graph());
+                GraphMode origin = graphsManager.mode(migrate.targetGraph());
                 // Set target graph mode
                 mode = migrate.mode();
                 E.checkState(mode.maintaining(),
