@@ -75,6 +75,8 @@ export class DataAnalyzeStore {
   // right-side drawer
   @observable isShowGraphInfo = false;
   @observable isClickOnNodeOrEdge = false;
+  // v1.5.0: gremlin query mode
+  @observable queryMode: 'query' | 'task' = 'query';
   @observable favoritePopUp = '';
   // whether user selects vertex or edge
   @observable graphInfoDataSet = '';
@@ -307,6 +309,11 @@ export class DataAnalyzeStore {
   @action
   setFullScreenReuslt(flag: boolean) {
     this.isFullScreenReuslt = flag;
+  }
+
+  @action
+  setQueryMode(mode: 'query' | 'task') {
+    this.queryMode = mode;
   }
 
   @action
@@ -588,6 +595,7 @@ export class DataAnalyzeStore {
 
     const tempData: ExecutionLogs = {
       id: NaN,
+      async_id: NaN,
       type: 'GREMLIN',
       content: this.codeEditorText,
       status: 'RUNNING',
@@ -941,6 +949,8 @@ export class DataAnalyzeStore {
     this.isGraphLoaded = false;
     this.isShowGraphInfo = false;
     this.isFullScreenReuslt = false;
+    this.isClickOnNodeOrEdge = false;
+    this.queryMode = 'query';
     this.codeEditorText = '';
     this.dynamicAddGraphDataStatus = '';
     this.graphData = {} as FetchGraphResponse;
@@ -1231,6 +1241,8 @@ export class DataAnalyzeStore {
   });
 
   fetchGraphs = flow(function* fetchGraphs(this: DataAnalyzeStore) {
+    // reset request status of create async task
+    this.requestStatus.createAsyncTask = 'standby';
     this.requestStatus.fetchGraphs = 'pending';
     this.isLoadingGraph = true;
 
@@ -1280,6 +1292,34 @@ export class DataAnalyzeStore {
       this.isLoadingGraph = false;
       this.requestStatus.fetchGraphs = 'failed';
       this.errorInfo.fetchGraphs.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  createAsyncTask = flow(function* createAsyncTask(this: DataAnalyzeStore) {
+    // reset request status of fetch graphs
+    this.requestStatus.fetchGraphs = 'stanby';
+    this.requestStatus.createAsyncTask = 'pending';
+
+    try {
+      const result: AxiosResponse<FetchGraphResponse> = yield axios
+        .post<FetchGraphResponse>(
+          `${baseUrl}/${this.currentId}/gremlin-query/async-task`,
+          {
+            content: this.codeEditorText
+          }
+        )
+        .catch(checkIfLocalNetworkOffline);
+
+      if (result.data.status !== 200) {
+        this.errorInfo.createAsyncTask.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      this.requestStatus.createAsyncTask = 'success';
+    } catch (error) {
+      this.requestStatus.createAsyncTask = 'failed';
+      this.errorInfo.createAsyncTask.message = error.message;
       console.error(error.message);
     }
   });

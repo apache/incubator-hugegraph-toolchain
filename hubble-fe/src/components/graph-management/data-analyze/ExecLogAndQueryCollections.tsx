@@ -1,12 +1,17 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react';
 import classnames from 'classnames';
+import { isUndefined } from 'lodash-es';
 import Highlighter from 'react-highlight-words';
+import { useRoute, useLocation } from 'wouter';
 import { Table, Input, Button, Message } from '@baidu/one-ui';
 
 import { Tooltip } from '../../common';
 import Favorite from './common/Favorite';
-import { DataAnalyzeStoreContext } from '../../../stores';
+import {
+  DataAnalyzeStoreContext,
+  AsyncTasksStoreContext
+} from '../../../stores';
 import {
   ExecutionLogs,
   FavoriteQuery
@@ -27,8 +32,11 @@ const styles = {
 };
 
 const ExecLogAndQueryCollections: React.FC = observer(() => {
+  const asyncTasksStore = useContext(AsyncTasksStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
   const [tabIndex, setTabIndex] = useState(0);
+  const [, params] = useRoute('/graph-management/:id/data-analyze');
+  const [, setLocation] = useLocation();
 
   // popovers
   const [isFavoritePop, switchFavoritePop] = useState(false);
@@ -53,7 +61,11 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
       title: '执行类型',
       dataIndex: 'type',
       width: '15%',
-      align: 'center'
+      render(type: string) {
+        const specific = type === 'GREMLIN' ? 'GREMLIN 查询' : 'GREMLIN 任务';
+
+        return specific;
+      }
     },
     {
       title: '执行内容',
@@ -76,7 +88,19 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                 <div className="exec-log-status success">成功</div>
               </div>
             );
+          case 'ASYNC_TASK_SUCCESS':
+            return (
+              <div style={styles.tableCenter}>
+                <div className="exec-log-status success">提交成功</div>
+              </div>
+            );
           case 'RUNNING':
+            return (
+              <div style={styles.tableCenter}>
+                <div className="exec-log-status running">运行中</div>
+              </div>
+            );
+          case 'ASYNC_TASK_RUNNING':
             return (
               <div style={styles.tableCenter}>
                 <div className="exec-log-status running">运行中</div>
@@ -86,6 +110,12 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
             return (
               <div style={styles.tableCenter}>
                 <div className="exec-log-status failed">失败</div>
+              </div>
+            );
+          case 'ASYNC_TASK_FAILED':
+            return (
+              <div style={styles.tableCenter}>
+                <div className="exec-log-status failed">提交失败</div>
               </div>
             );
         }
@@ -104,6 +134,20 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
       render(_: string, rowData: ExecutionLogs, index: number) {
         return (
           <div>
+            {rowData.type !== 'GREMLIN' && (
+              <span
+                className="exec-log-manipulation"
+                onClick={() => {
+                  // mock search
+                  asyncTasksStore.mutateSearchWords(String(rowData.async_id));
+                  asyncTasksStore.switchSearchedStatus(true);
+
+                  setLocation(`/graph-management/${params!.id}/async-tasks`);
+                }}
+              >
+                详情
+              </span>
+            )}
             <Tooltip
               tooltipShown={
                 currentPopInTable === 'execLogs' &&
@@ -140,7 +184,10 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
             </Tooltip>
             <span
               className="exec-log-manipulation"
-              onClick={loadStatements(rowData.content)}
+              onClick={loadStatements(
+                rowData.content,
+                rowData.type === 'GREMLIN_ASYNC' ? 'task' : 'query'
+              )}
             >
               加载语句
             </span>
@@ -313,8 +360,14 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
   );
 
   const loadStatements = useCallback(
-    (content: string) => () => {
+    (content: string, type?: 'query' | 'task') => () => {
       if (!dataAnalyzeStore.isLoadingGraph) {
+        if (!isUndefined(type)) {
+          type === 'task'
+            ? dataAnalyzeStore.setQueryMode('task')
+            : dataAnalyzeStore.setQueryMode('query');
+        }
+
         switchFavoritePop(false);
         dataAnalyzeStore.mutateCodeEditorText(content);
         dataAnalyzeStore.triggerLoadingStatementsIntoEditor();

@@ -140,7 +140,7 @@ const CheckAndEditEdge: React.FC = observer(() => {
 
     if (edgeTypeStore.requestStatus.deleteEdgeType === 'success') {
       Message.success({
-        content: '已删除未使用项',
+        content: '删除成功',
         size: 'medium',
         showCloseIcon: false
       });

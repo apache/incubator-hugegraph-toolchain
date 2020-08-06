@@ -11,6 +11,9 @@ import DataImportRootStoreContext, {
 import ImportManagerStoreContext, {
   ImportManagerStore
 } from './GraphManagementStore/dataImportStore/ImportManagerStore';
+import AsyncTasksStoreContext, {
+  AsyncTasksStore
+} from './GraphManagementStore/asyncTasksStore';
 
 export {
   AppStore,
@@ -22,5 +25,7 @@ export {
   DataImportRootStore,
   DataImportRootStoreContext,
   ImportManagerStore,
-  ImportManagerStoreContext
+  ImportManagerStoreContext,
+  AsyncTasksStore,
+  AsyncTasksStoreContext
 };

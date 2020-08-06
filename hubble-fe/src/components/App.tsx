@@ -14,6 +14,8 @@ import {
   TaskErrorLogs,
   JobErrorLogs
 } from './graph-management/data-import/import-tasks/error-logs';
+import { AsyncTaskList } from './graph-management';
+import AsyncTaskResult from './graph-management/async-tasks/AsyncTaskResult';
 import GraphManagementSidebar from './graph-management/GraphManagementSidebar';
 
 const App: React.FC = () => {
@@ -28,6 +30,10 @@ const App: React.FC = () => {
       <Route
         path="/graph-management/:id/data-import/import-manager/:jobId/error-log"
         component={JobErrorLogs}
+      />
+      <Route
+        path="/graph-management/:id/async-tasks/:taskId/result"
+        component={AsyncTaskResult}
       />
       <Route
         path="/graph-management/:id/data-analyze"
@@ -48,6 +54,10 @@ const App: React.FC = () => {
       <Route
         path="/graph-management/:id/data-import/import-manager"
         component={ImportManager}
+      />
+      <Route
+        path="/graph-management/:id/async-tasks"
+        component={AsyncTaskList}
       />
       <Route path="/graph-management" component={GraphManagement} />
       <Route path="/" component={GraphManagement} />

@@ -309,6 +309,23 @@
     border-radius: 0 0 3px 3px;
   }
 
+  .query-choose-type-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 26px;
+    border-left: 1px solid #8cb8ff;
+    border-radius: 0 2px 2px 0;
+    background-color: #2b65ff;
+    margin-right: 12px;
+    cursor: pointer;
+
+    &-disabled {
+      background-color: #d9e6ff;
+      cursor: not-allowed;
+    }
+  }
+
   .query-result {
     display: flex;
     height: calc(100vh - 312px);

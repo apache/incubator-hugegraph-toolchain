@@ -19,6 +19,8 @@ import SidebarExpandIcon from '../../assets/imgs/ic_cebianzhankai.svg';
 import SidebarCollapseIcon from '../../assets/imgs/ic_cebianshouqi.svg';
 import DataImportIconNormal from '../../assets/imgs/ic_guanli_normal.svg';
 import DataImportIconPressed from '../../assets/imgs/ic_guanli_pressed.svg';
+import AsyncTaskManagerIconNormal from '../../assets/imgs/ic_renwuguanli_normal.svg';
+import AsyncTaskManagerIconPressed from '../../assets/imgs/ic_renwuguanli_pressed.svg';
 
 const GraphManagementSidebar: React.FC = observer(() => {
   const [match, params] = useRoute(
@@ -73,6 +75,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
             `/graph-management/${params!.id}/data-import/import-manager`
           );
           return;
+        case 'async-tasks':
+          setLocation(`/graph-management/${params!.id}/async-tasks`);
+          return;
       }
     },
     [params, setLocation]
@@ -109,13 +114,14 @@ const GraphManagementSidebar: React.FC = observer(() => {
         return;
 
       case 'data-import': {
-        // if (params.subCategory === 'import-tasks') {
-        //   setSidebarKey('import-tasks');
-        // }
         setSidebarKey('data-import');
 
         return;
       }
+
+      case 'async-tasks':
+        setSidebarKey('async-tasks');
+        return;
     }
   }, [params]);
 
@@ -274,6 +280,19 @@ const GraphManagementSidebar: React.FC = observer(() => {
               <div style={{ marginLeft: 24 }}>导入任务</div>
             </Menu.Item>
           </Menu.SubMenu> */}
+          <Menu.Item key="async-tasks">
+            <div className={sidebarMenuItemClassName}>
+              <img
+                src={
+                  sidebarKey === 'async-tasks'
+                    ? AsyncTaskManagerIconPressed
+                    : AsyncTaskManagerIconNormal
+                }
+                alt="任务管理"
+              />
+              <div>任务管理</div>
+            </div>
+          </Menu.Item>
         </Menu>
       </div>
       <li

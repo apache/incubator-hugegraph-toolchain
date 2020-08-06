@@ -122,6 +122,7 @@ export class EdgeTypeStore {
   @observable.ref edgeTypes: EdgeType[] = [];
 
   @observable.ref selectedEdgeType: EdgeType | null = null;
+  @observable.ref selectedEdgeTypeIndex: number[] = [];
 
   @observable.ref editedSelectedEdgeType: EditEdgeTypeParams = {
     append_properties: [],
@@ -231,6 +232,11 @@ export class EdgeTypeStore {
   @action
   mutateNewEdgeType(newEdgeType: EdgeType) {
     this.newEdgeType = newEdgeType;
+  }
+
+  @action
+  mutateSelectedEdgeTypeIndex(indexes: number[]) {
+    this.selectedEdgeTypeIndex = indexes;
   }
 
   @action
@@ -1173,6 +1179,7 @@ export class EdgeTypeStore {
     this.resetNewEdgeType();
     this.edgeTypes = [];
     this.selectedEdgeType = null;
+    this.selectedEdgeTypeIndex = [];
     this.editedSelectedEdgeType = {
       append_properties: [],
       append_property_indexes: [],

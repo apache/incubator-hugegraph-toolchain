@@ -2,14 +2,16 @@ import { merge } from 'lodash-es';
 import {
   CommonResources,
   GraphManagementSideBarResources,
-  DataImportResources
+  DataImportResources,
+  AsyncTasksResources
 } from './graph-managment';
 
 const translation = {
   translation: merge(
     CommonResources,
     GraphManagementSideBarResources,
-    DataImportResources
+    DataImportResources,
+    AsyncTasksResources
   )
 };
 

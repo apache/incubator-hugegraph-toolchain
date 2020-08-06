@@ -17,7 +17,7 @@ const TaskErrorLogs: React.FC = observer(() => {
       Number(params!.taskId),
       Number(params!.id)
     );
-  }, [params!.id, params!.taskId]);
+  }, [params!.id, params!.jobId]);
 
   return (
     <section className="task-error-logs">

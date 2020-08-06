@@ -68,7 +68,6 @@ const DataAnalyze: React.FC = observer(() => {
             返回首页
           </Button>
         ]}
-        // visible={dataAnalyzeStore.errorInfo.fetchExecutionLogs.code === 401}
         visible={Object.values(dataAnalyzeStore.errorInfo)
           .map(({ code }) => code)
           .includes(401)}

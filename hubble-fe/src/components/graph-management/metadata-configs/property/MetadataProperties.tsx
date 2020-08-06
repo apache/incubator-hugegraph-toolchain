@@ -8,7 +8,15 @@ import React, {
 import { observer } from 'mobx-react';
 import { isUndefined } from 'lodash-es';
 import { motion } from 'framer-motion';
-import { Input, Button, Table, Modal, Select, Message } from '@baidu/one-ui';
+import {
+  Input,
+  Button,
+  Table,
+  Modal,
+  Select,
+  Message,
+  Loading
+} from '@baidu/one-ui';
 import Highlighter from 'react-highlight-words';
 
 import { Tooltip, LoadingDataView } from '../../../common';
@@ -26,6 +34,14 @@ const styles = {
     width: 78
   },
   extraMargin: {
+    marginRight: 4
+  },
+  deleteWrapper: {
+    display: 'flex',
+    justifyContent: 'flex-end'
+  },
+  loading: {
+    padding: 0,
     marginRight: 4
   }
 };
@@ -69,10 +85,8 @@ const MetadataProperties: React.FC = observer(() => {
   const { metadataPropertyStore, graphViewStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('');
-  const [selectedRowKeys, mutateSelectedRowKeys] = useState<any[]>([]);
+  const [selectedRowKeys, mutateSelectedRowKeys] = useState<number[]>([]);
   const [isShowModal, switchShowModal] = useState(false);
-  const [popIndex, setPopIndex] = useState<number | null>(null);
-  const deleteWrapperRef = useRef<HTMLDivElement>(null);
 
   const isLoading =
     preLoading ||
@@ -128,6 +142,7 @@ const MetadataProperties: React.FC = observer(() => {
   };
 
   const handlePageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    mutateSelectedRowKeys([]);
     metadataPropertyStore.mutatePageNumber(Number(e.target.value));
     await metadataPropertyStore.fetchMetadataPropertyList();
 
@@ -140,14 +155,17 @@ const MetadataProperties: React.FC = observer(() => {
 
   const batchDeleteProperties = async () => {
     switchShowModal(false);
+    // need to set a copy in store since local row key state would be cleared
+    metadataPropertyStore.mutateSelectedMetadataProperyIndex(selectedRowKeys);
     mutateSelectedRowKeys([]);
     await metadataPropertyStore.deleteMetadataProperty(selectedRowKeys);
+    metadataPropertyStore.mutateSelectedMetadataProperyIndex([]);
 
     if (
       metadataPropertyStore.requestStatus.deleteMetadataProperty === 'success'
     ) {
       Message.success({
-        content: '已删除未使用项',
+        content: '删除成功',
         size: 'medium',
         showCloseIcon: false
       });
@@ -313,190 +331,15 @@ const MetadataProperties: React.FC = observer(() => {
       width: '15%',
       align: 'right',
       render(_: any, records: any, index: number) {
-        if (metadataPropertyStore.isCreateNewProperty === true && index === 0) {
-          return (
-            <div>
-              <span
-                className="metadata-properties-manipulation"
-                style={{
-                  marginRight: 16,
-                  color: metadataPropertyStore.isCreatedReady
-                    ? '#2b65ff'
-                    : '#999',
-                  cursor: 'pointer'
-                }}
-                onClick={async () => {
-                  metadataPropertyStore.validateNewProperty();
-
-                  if (!metadataPropertyStore.isCreatedReady) {
-                    return;
-                  }
-
-                  metadataPropertyStore.switchIsCreateNewProperty(false);
-                  await metadataPropertyStore.addMetadataProperty();
-
-                  if (
-                    metadataPropertyStore.requestStatus.addMetadataProperty ===
-                    'success'
-                  ) {
-                    Message.success({
-                      content: '创建成功',
-                      size: 'medium',
-                      showCloseIcon: false
-                    });
-                  }
-
-                  if (
-                    metadataPropertyStore.requestStatus.addMetadataProperty ===
-                    'failed'
-                  ) {
-                    Message.error({
-                      content: metadataPropertyStore.errorMessage,
-                      size: 'medium',
-                      showCloseIcon: false
-                    });
-                  }
-
-                  metadataPropertyStore.fetchMetadataPropertyList();
-                  metadataPropertyStore.resetNewProperties();
-                }}
-              >
-                创建
-              </span>
-              <span
-                className="metadata-properties-manipulation"
-                style={styles.extraMargin}
-                onClick={() => {
-                  metadataPropertyStore.switchIsCreateNewProperty(false);
-                  metadataPropertyStore.resetNewProperties();
-                  metadataPropertyStore.resetValidateNewProperty();
-
-                  if (metadataPropertyStore.metadataProperties.length === 0) {
-                    metadataPropertyStore.changeCurrentTabStatus('empty');
-                  }
-                }}
-              >
-                取消
-              </span>
-            </div>
-          );
-        }
-
         return (
-          <Tooltip
-            placement="bottom-end"
-            tooltipShown={index === popIndex}
-            modifiers={{
-              offset: {
-                offset: '0, 10'
-              }
-            }}
-            tooltipWrapperProps={{
-              className: 'metadata-properties-tooltips'
-            }}
-            tooltipWrapper={
-              <div ref={deleteWrapperRef}>
-                {metadataPropertyStore.metadataPropertyUsingStatus &&
-                metadataPropertyStore.metadataPropertyUsingStatus[
-                  records.name
-                ] ? (
-                  <p style={{ width: 200 }}>
-                    当前属性数据正在使用中，不可删除。
-                  </p>
-                ) : (
-                  <>
-                    <p>确认删除此属性？</p>
-                    <p>删除后无法恢复，请谨慎操作。</p>
-                    <div
-                      style={{
-                        display: 'flex',
-                        marginTop: 12,
-                        color: '#2b65ff',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <div
-                        style={{ marginRight: 16, cursor: 'pointer' }}
-                        onClick={async () => {
-                          setPopIndex(null);
-
-                          await metadataPropertyStore.deleteMetadataProperty([
-                            index
-                          ]);
-
-                          if (
-                            metadataPropertyStore.requestStatus
-                              .deleteMetadataProperty === 'success'
-                          ) {
-                            Message.success({
-                              content: '已删除未使用项',
-                              size: 'medium',
-                              showCloseIcon: false
-                            });
-
-                            metadataPropertyStore.fetchMetadataPropertyList();
-                          }
-
-                          if (
-                            metadataPropertyStore.requestStatus
-                              .deleteMetadataProperty === 'failed'
-                          ) {
-                            Message.error({
-                              content: metadataPropertyStore.errorMessage,
-                              size: 'medium',
-                              showCloseIcon: false
-                            });
-                          }
-                        }}
-                      >
-                        确认
-                      </div>
-                      <div
-                        onClick={() => {
-                          setPopIndex(null);
-                        }}
-                      >
-                        取消
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            }
-            childrenProps={{
-              className: 'metadata-properties-manipulation',
-              style: styles.extraMargin,
-              async onClick() {
-                await metadataPropertyStore.checkIfUsing([index]);
-
-                if (
-                  metadataPropertyStore.requestStatus.checkIfUsing === 'success'
-                ) {
-                  setPopIndex(index);
-                }
-              }
-            }}
-          >
-            删除
-          </Tooltip>
+          <MetadataPropertiesManipulation
+            propertyName={records.name}
+            propertyIndex={index}
+          />
         );
       }
     }
   ];
-
-  const handleOutSideClick = useCallback(
-    (e: MouseEvent) => {
-      if (
-        popIndex !== null &&
-        deleteWrapperRef &&
-        deleteWrapperRef.current &&
-        !deleteWrapperRef.current.contains(e.target as Element)
-      ) {
-        setPopIndex(null);
-      }
-    },
-    [deleteWrapperRef, popIndex]
-  );
 
   useEffect(() => {
     setTimeout(() => {
@@ -523,18 +366,6 @@ const MetadataProperties: React.FC = observer(() => {
     dataAnalyzeStore.fetchAllNodeStyle();
     dataAnalyzeStore.fetchAllEdgeStyle();
   }, [dataAnalyzeStore]);
-
-  useEffect(() => {
-    document.addEventListener('click', handleOutSideClick, false);
-
-    return () => {
-      document.removeEventListener('click', handleOutSideClick, false);
-    };
-  }, [handleOutSideClick]);
-
-  // if (metadataPropertyStore.currentTabStatus === 'empty') {
-  //   return <EmptyPropertyHints />;
-  // }
 
   if (metadataPropertyStore.currentTabStatus === 'reuse') {
     return <ReuseProperties />;
@@ -743,19 +574,234 @@ const MetadataProperties: React.FC = observer(() => {
   );
 });
 
+export interface MetadataPropertiesManipulationProps {
+  propertyName: string;
+  propertyIndex: number;
+  // allSelectedKeys: number[];
+}
+
+const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationProps> = observer(
+  ({ propertyName, propertyIndex }) => {
+    const { metadataPropertyStore } = useContext(MetadataConfigsRootStore);
+    const [isPopDeleteModal, switchPopDeleteModal] = useState(false);
+    const [isDeleting, switchDeleting] = useState(false);
+    const deleteWrapperRef = useRef<HTMLDivElement>(null);
+    const isDeleteOrBatchDeleting =
+      isDeleting ||
+      (metadataPropertyStore.requestStatus.deleteMetadataProperty ===
+        'pending' &&
+        metadataPropertyStore.selectedMetadataPropertyIndex.includes(
+          propertyIndex
+        ));
+
+    const handleOutSideClick = useCallback(
+      (e: MouseEvent) => {
+        if (
+          isPopDeleteModal &&
+          deleteWrapperRef &&
+          deleteWrapperRef.current &&
+          !deleteWrapperRef.current.contains(e.target as Element)
+        ) {
+          switchPopDeleteModal(false);
+        }
+      },
+      [deleteWrapperRef, isPopDeleteModal]
+    );
+
+    useEffect(() => {
+      document.addEventListener('click', handleOutSideClick, false);
+
+      return () => {
+        document.removeEventListener('click', handleOutSideClick, false);
+      };
+    }, [handleOutSideClick]);
+
+    if (
+      metadataPropertyStore.isCreateNewProperty === true &&
+      propertyIndex === 0
+    ) {
+      return (
+        <div>
+          <span
+            className="metadata-properties-manipulation"
+            style={{
+              marginRight: 16,
+              color: metadataPropertyStore.isCreatedReady ? '#2b65ff' : '#999',
+              cursor: 'pointer'
+            }}
+            onClick={async () => {
+              metadataPropertyStore.validateNewProperty();
+
+              if (!metadataPropertyStore.isCreatedReady) {
+                return;
+              }
+
+              metadataPropertyStore.switchIsCreateNewProperty(false);
+              await metadataPropertyStore.addMetadataProperty();
+
+              if (
+                metadataPropertyStore.requestStatus.addMetadataProperty ===
+                'success'
+              ) {
+                Message.success({
+                  content: '创建成功',
+                  size: 'medium',
+                  showCloseIcon: false
+                });
+              }
+
+              if (
+                metadataPropertyStore.requestStatus.addMetadataProperty ===
+                'failed'
+              ) {
+                Message.error({
+                  content: metadataPropertyStore.errorMessage,
+                  size: 'medium',
+                  showCloseIcon: false
+                });
+              }
+
+              metadataPropertyStore.fetchMetadataPropertyList();
+              metadataPropertyStore.resetNewProperties();
+            }}
+          >
+            创建
+          </span>
+          <span
+            className="metadata-properties-manipulation"
+            style={styles.extraMargin}
+            onClick={() => {
+              metadataPropertyStore.switchIsCreateNewProperty(false);
+              metadataPropertyStore.resetNewProperties();
+              metadataPropertyStore.resetValidateNewProperty();
+
+              if (metadataPropertyStore.metadataProperties.length === 0) {
+                metadataPropertyStore.changeCurrentTabStatus('empty');
+              }
+            }}
+          >
+            取消
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div style={styles.deleteWrapper}>
+        {isDeleteOrBatchDeleting && (
+          <Loading type="strong" style={styles.loading} />
+        )}
+        <Tooltip
+          placement="bottom-end"
+          tooltipShown={isPopDeleteModal}
+          modifiers={{
+            offset: {
+              offset: '0, 10'
+            }
+          }}
+          tooltipWrapperProps={{
+            className: 'metadata-properties-tooltips'
+          }}
+          tooltipWrapper={
+            <div ref={deleteWrapperRef}>
+              {metadataPropertyStore.metadataPropertyUsingStatus &&
+              metadataPropertyStore.metadataPropertyUsingStatus[
+                propertyName
+              ] ? (
+                <p style={{ width: 200 }}>当前属性数据正在使用中，不可删除。</p>
+              ) : (
+                <>
+                  <p className="metadata-properties-tooltips-title">
+                    确认删除此属性？
+                  </p>
+                  <p>确认删除此属性？删除后无法恢复，请谨慎操作</p>
+                  <p>删除元数据耗时较久，详情可在任务管理中查看</p>
+                  <div className="metadata-properties-tooltips-footer">
+                    <Button
+                      size="medium"
+                      type="primary"
+                      style={{ width: 60, marginRight: 12 }}
+                      onClick={async () => {
+                        switchPopDeleteModal(false);
+                        switchDeleting(true);
+
+                        await metadataPropertyStore.deleteMetadataProperty([
+                          propertyIndex
+                        ]);
+
+                        switchDeleting(false);
+
+                        if (
+                          metadataPropertyStore.requestStatus
+                            .deleteMetadataProperty === 'success'
+                        ) {
+                          Message.success({
+                            content: '删除成功',
+                            size: 'medium',
+                            showCloseIcon: false
+                          });
+
+                          metadataPropertyStore.fetchMetadataPropertyList();
+                        }
+
+                        if (
+                          metadataPropertyStore.requestStatus
+                            .deleteMetadataProperty === 'failed'
+                        ) {
+                          Message.error({
+                            content: metadataPropertyStore.errorMessage,
+                            size: 'medium',
+                            showCloseIcon: false
+                          });
+                        }
+                      }}
+                    >
+                      确认
+                    </Button>
+                    <Button
+                      size="medium"
+                      style={{ width: 60 }}
+                      onClick={() => {
+                        switchPopDeleteModal(false);
+                      }}
+                    >
+                      取消
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          }
+          childrenProps={{
+            className: 'metadata-properties-manipulation no-line-break',
+            style: styles.extraMargin,
+            title: isDeleteOrBatchDeleting ? '删除中' : '删除',
+            async onClick() {
+              if (isDeleteOrBatchDeleting) {
+                return;
+              }
+
+              await metadataPropertyStore.checkIfUsing([propertyIndex]);
+
+              if (
+                metadataPropertyStore.requestStatus.checkIfUsing === 'success'
+              ) {
+                switchPopDeleteModal(true);
+              }
+            }
+          }}
+        >
+          {isDeleteOrBatchDeleting ? '删除中' : '删除'}
+        </Tooltip>
+      </div>
+    );
+  }
+);
+
 const EmptyPropertyHints: React.FC = observer(() => {
   const { metadataPropertyStore } = useContext(MetadataConfigsRootStore);
 
   return (
-    // <div
-    //   className="metadata-configs-content-wrapper"
-    //   style={{
-    //     height: 'calc(100vh - 201px)',
-    //     display: 'flex',
-    //     justifyContent: 'center',
-    //     alignItems: 'center'
-    //   }}
-    // >
     <div
       style={{
         display: 'flex',
@@ -796,7 +842,6 @@ const EmptyPropertyHints: React.FC = observer(() => {
         </Button>
       </div>
     </div>
-    // </div>
   );
 });
 

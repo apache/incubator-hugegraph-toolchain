@@ -9,7 +9,9 @@ import { reaction } from 'mobx';
 import { observer } from 'mobx-react';
 import CodeMirror from 'codemirror';
 import classnames from 'classnames';
-import { Button, Tooltip, Alert } from '@baidu/one-ui';
+import { Button, Tooltip, Alert, Dropdown } from '@baidu/one-ui';
+import TooltipTrigger from 'react-popper-tooltip';
+
 import 'codemirror/lib/codemirror.css';
 import 'react-popper-tooltip/dist/styles.css';
 import 'codemirror/addon/display/placeholder';
@@ -20,11 +22,12 @@ import { DataAnalyzeStoreContext } from '../../../stores';
 import { useMultiKeyPress } from '../../../hooks';
 
 import ArrowIcon from '../../../assets/imgs/ic_arrow_16.svg';
+import QuestionMarkIcon from '../../../assets/imgs/ic_question_mark.svg';
 
 const styles = {
   primaryButton: {
     width: 72,
-    marginRight: 12
+    marginLeft: 12
   },
   alert: {
     margin: '16px 0'
@@ -70,23 +73,28 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
 
   const handleQueryExecution = useCallback(async () => {
     if (codeEditor.current) {
-      // graph reload
-      dataAnalyzeStore.switchGraphLoaded(false);
-      // remove graph data filter board
-      dataAnalyzeStore.switchShowFilterBoard(false);
-      dataAnalyzeStore.clearFilteredGraphQueryOptions();
-      // forbid edit when exec a query
-      codeEditor.current.setOption('readOnly', 'nocursor');
-      // add temp log into exec log
-      const timerId = dataAnalyzeStore.addTempExecLog();
+      if (dataAnalyzeStore.queryMode === 'query') {
+        // graph reload
+        dataAnalyzeStore.switchGraphLoaded(false);
+        // remove graph data filter board
+        dataAnalyzeStore.switchShowFilterBoard(false);
+        dataAnalyzeStore.clearFilteredGraphQueryOptions();
+        // forbid edit when exec a query
+        codeEditor.current.setOption('readOnly', 'nocursor');
+        // add temp log into exec log
+        const timerId = dataAnalyzeStore.addTempExecLog();
 
-      await dataAnalyzeStore.fetchGraphs();
-      codeEditor.current.setOption('readOnly', false);
+        await dataAnalyzeStore.fetchGraphs();
+        codeEditor.current.setOption('readOnly', false);
 
-      // fetch execution logs after query
-      await dataAnalyzeStore.fetchExecutionLogs();
-      // clear timer after fetching new exec logs
-      window.clearTimeout(timerId);
+        // fetch execution logs after query
+        await dataAnalyzeStore.fetchExecutionLogs();
+        // clear timer after fetching new exec logs
+        window.clearTimeout(timerId);
+      } else {
+        await dataAnalyzeStore.createAsyncTask();
+        dataAnalyzeStore.fetchExecutionLogs();
+      }
     }
   }, [dataAnalyzeStore]);
 
@@ -173,7 +181,7 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
             tabIndex === 0 ? 'query-tab-index active' : 'query-tab-index'
           }
         >
-          Gremlin 查询
+          Gremlin分析
         </div>
       </div>
       <div className="query-tab-content-wrapper">
@@ -221,25 +229,61 @@ const QueryAndAlgorithmLibrary: React.FC = observer(() => {
 
         {isCodeExpand && (
           <div className="query-tab-manipulations">
-            <Tooltip
+            <CustomTooltip
+              trigger="hover"
               placement="bottom"
-              title={
+              modifiers={{
+                offset: {
+                  offset: '0, 8'
+                }
+              }}
+              tooltipWrapperProps={{
+                className: 'tooltips-dark',
+                style: {
+                  zIndex: 7
+                }
+              }}
+              tooltipWrapper={
                 dataAnalyzeStore.codeEditorText.length === 0
                   ? '查询语句不能为空'
                   : '⌘ + Enter'
               }
+            >
+              <Dropdown.Button
+                options={[
+                  { label: '执行查询', value: 'query' },
+                  { label: '执行任务', value: 'task' }
+                ]}
+                trigger={['click']}
+                title={
+                  dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
+                    ? '执行中'
+                    : dataAnalyzeStore.queryMode === 'query'
+                    ? '执行查询'
+                    : '执行任务'
+                }
+                onHandleMenuClick={(e: any) => {
+                  dataAnalyzeStore.setQueryMode(e.key);
+                }}
+                onClickButton={handleQueryExecution}
+                size="small"
+                type="primary"
+                primaryType="primary"
+                disabled={
+                  dataAnalyzeStore.codeEditorText.length === 0 ||
+                  !codeRegexp.test(dataAnalyzeStore.codeEditorText) ||
+                  dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
+                }
+              />
+            </CustomTooltip>
+            <Tooltip
+              placement="bottomLeft"
+              title="查询模式适合30秒内可返回结果的小规模分析；任务模式适合较长时间返回结果的大规模分析，任务详情可在任务管理中查看"
               type="dark"
             >
-              <Button
-                type="primary"
-                style={styles.primaryButton}
-                disabled={isDisabledExec}
-                onClick={handleQueryExecution}
-              >
-                {dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
-                  ? '执行中'
-                  : '执行'}
-              </Button>
+              <div style={{ marginLeft: 6, paddingTop: 6 }}>
+                <img src={QuestionMarkIcon} alt="tips" />
+              </div>
             </Tooltip>
             {dataAnalyzeStore.codeEditorText.length !== 0 ? (
               <CustomTooltip

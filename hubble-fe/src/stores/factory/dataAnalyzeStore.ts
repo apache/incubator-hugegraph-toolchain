@@ -9,6 +9,7 @@ export function initalizeRequestStatus() {
     fetchAllNodeStyle: 'standby',
     fetchAllEdgeStyle: 'standby',
     fetchGraphs: 'standby',
+    createAsyncTask: 'standby',
     addGraphNode: 'standby',
     fetchRelatedEdges: 'standby',
     addGraphEdge: 'standby',
@@ -60,6 +61,10 @@ export function initalizeErrorInfo() {
       message: ''
     },
     fetchGraphs: {
+      code: NaN,
+      message: ''
+    },
+    createAsyncTask: {
       code: NaN,
       message: ''
     },

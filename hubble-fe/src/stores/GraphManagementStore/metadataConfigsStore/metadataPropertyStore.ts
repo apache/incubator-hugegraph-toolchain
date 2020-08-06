@@ -66,10 +66,13 @@ export class MetadataPropertyStore {
   > | null = null;
 
   @observable selectedMetadataProperty: MetadataProperty | null = null;
+  // table selection from user
+  @observable.ref selectedMetadataPropertyIndex: number[] = [];
 
   // reuse
   @observable reuseableProperties: MetadataProperty[] = [];
-  @observable checkedReusableProperties: CheckedReusableData | null = null;
+  @observable
+  checkedReusableProperties: CheckedReusableData | null = null;
   @observable
   editedCheckedReusableProperties: CheckedReusableData | null = null;
   @observable reusablePropertyNameChangeIndexes: Set<number> = new Set<
@@ -175,6 +178,11 @@ export class MetadataPropertyStore {
   @action
   mutateSelectedPropertyName(name: string) {
     this.selectedMetadataProperty!.name = name;
+  }
+
+  @action
+  mutateSelectedMetadataProperyIndex(indexes: number[]) {
+    this.selectedMetadataPropertyIndex = indexes;
   }
 
   @action
@@ -290,6 +298,7 @@ export class MetadataPropertyStore {
     this.metadataProperties = [];
     this.metadataPropertyUsingStatus = null;
     this.selectedMetadataProperty = null;
+    this.selectedMetadataPropertyIndex = [];
 
     this.resetValidateNewProperty();
     this.resetValidateRenameReuseProperty();

@@ -77,6 +77,7 @@ export interface AddQueryCollectionParams {
 
 export interface ExecutionLogs {
   id: number;
+  async_id: number;
   type: string;
   content: string;
   status: 'SUCCESS' | 'RUNNING' | 'FAILED';

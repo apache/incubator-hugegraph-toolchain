@@ -41,18 +41,6 @@ export class DataImportRootStore {
   @observable requestStatus = initRequestStatus();
   @observable errorInfo = initErrorInfo();
 
-  // @observable.ref fileUploadTasks: FileUploadTask[] = [
-  //   {
-  //     name: 'vertex_person.csv',
-  //     status: 'uploading',
-  //     chunkList: [],
-  //     chunkTotal: 200,
-  //     uploadedChunkTotal: 20,
-  //     pendingChunkIndexes: [],
-  //     failedChunkIndexes: [],
-  //     uploadedChunksIndexes: []
-  //   }
-  // ];
   @observable fileList: File[] = [];
   @observable fileUploadTasks: FileUploadTask[] = [];
   @observable fileUploadQueue: FileUploadQueue[] = [];
@@ -172,9 +160,6 @@ export class DataImportRootStore {
     this.requestStatus.uploadFiles = 'pending';
     const formData = new FormData();
     formData.append('file', file);
-    // this.fileList.forEach((file) => {
-    //   formData.append('files', file);
-    // });
 
     try {
       const result = yield axios.post<responseData<FileUploadResult>>(

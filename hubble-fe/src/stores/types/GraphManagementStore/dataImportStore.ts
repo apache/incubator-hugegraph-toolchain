@@ -98,8 +98,6 @@ export interface NullValues {
   customized: string[];
 }
 
-// export type NullValues = string[];
-
 export interface VertexMap {
   id?: string;
   label: string;

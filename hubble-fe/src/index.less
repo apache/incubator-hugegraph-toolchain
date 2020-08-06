@@ -76,31 +76,21 @@ code {
   word-wrap: break-word;
 
   // override tooltip-arrow
-  .tooltip-arrow {
-    height: 5.65px;
-    width: 5.65px;
-    position: absolute;
-
-    &::after {
-      border-style: initial;
-    }
-  }
-
   .tooltip-arrow[data-placement*='bottom'] {
-    margin-top: -0.3rem;
+    margin-top: -0.25rem;
   }
 
   .tooltip-arrow[data-placement*='bottom']::before {
     border-color: transparent transparent rgba(0, 0, 0, 0.8) transparent;
-    border-width: 0 0.5rem 0.4rem 0.5rem;
+    border-width: 0 0.3rem 0.3rem 0.3rem;
     position: absolute;
-    top: -1px;
+    top: 0;
   }
 
   .tooltip-arrow[data-placement*='bottom']::after {
     border-color: transparent transparent rgba(0, 0, 0, 0.8) transparent;
     // border-color: rgba(0, 0, 0, 0.8);
-    border-width: 0 0.5rem 0.4rem 0.5rem;
+    border-width: 0 0.3rem 0.3rem 0.3rem;
   }
 }
 
@@ -108,6 +98,21 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.message-wrapper {
+  font-size: 14px;
+  line-height: 22px;
+
+  &-title {
+    font-weight: 900;
+    margin: 3.6px 0 4px;
+  }
+
+  &-manipulation {
+    cursor: pointer;
+    color: #2b65ff;
+  }
 }
 
 /* overrides (global) */
@@ -213,4 +218,12 @@ code {
 .new-fc-one-select-selection__choice__remove svg.icon-close {
   width: 8px;
   height: 8px;
+}
+
+.new-fc-one-checkbox-wrapper .new-fc-one-checkbox-checked .new-fc-one-checkbox-inner {
+  background-color: @primary-color;
+
+  &::after {
+    background-color: @primary-color;
+  }
 }

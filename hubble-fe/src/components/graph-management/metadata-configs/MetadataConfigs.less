@@ -112,7 +112,7 @@
         margin: 8px 8px 0;
         width: 16px;
         height: 16px;
-        background: #3d88f2;
+        background: #2b65ff;
         border-radius: 2px;
         text-align: center;
         line-height: 14px;
@@ -126,14 +126,25 @@
   background: #fff;
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
   border-radius: 3px;
-  padding: 16px;
+  padding: 24px;
   font-size: 14px;
   color: #333;
 
-  & p {
-    margin: 0;
-    line-height: 28px;
+  &-title {
+    font-size: 16px;
+    font-weight: 900;
+    margin-bottom: 16px;
   }
+
+  &-footer {
+    display: flex;
+    margin-top: 24px;
+  }
+
+  // & p {
+  //   margin: 0;
+  //   line-height: 28px;
+  // }
 }
 
 .metadata-title {
@@ -227,6 +238,7 @@
 
   .new-fc-one-table {
     overflow: visible;
+    border: 0;
   }
 
   .new-fc-one-table table {

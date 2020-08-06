@@ -6,6 +6,7 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
+import { useLocation } from 'wouter';
 import classnames from 'classnames';
 import { motion } from 'framer-motion';
 import {
@@ -17,7 +18,8 @@ import {
   Input,
   Select,
   Checkbox,
-  Message
+  Message,
+  Loading
 } from '@baidu/one-ui';
 import { cloneDeep } from 'lodash-es';
 import { isEmpty, isUndefined } from 'lodash-es';
@@ -48,6 +50,14 @@ const styles = {
   },
   manipulation: {
     marginRight: 12
+  },
+  deleteWrapper: {
+    display: 'flex',
+    justifyContent: 'flex-end'
+  },
+  loading: {
+    padding: 0,
+    marginRight: 4
   }
 };
 
@@ -84,20 +94,14 @@ const propertyIndexTypeMappings: Record<string, string> = {
 };
 
 const VertexTypeList: React.FC = observer(() => {
-  const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
-  const {
-    metadataPropertyStore,
-    vertexTypeStore,
-    graphViewStore
-  } = metadataConfigsRootStore;
+  const { metadataPropertyStore, vertexTypeStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('');
   const [selectedRowKeys, mutateSelectedRowKeys] = useState<any[]>([]);
   const [isShowModal, switchShowModal] = useState(false);
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isEditVertex, switchIsEditVertex] = useState(false);
-  const [deletePopIndex, setDeletePopIndex] = useState<number | null>(null);
   const [
     deleteExistPopIndexInDrawer,
     setDeleteExistPopIndexInDrawer
@@ -106,9 +110,9 @@ const VertexTypeList: React.FC = observer(() => {
     deleteAddedPopIndexInDrawer,
     setDeleteAddedPopIndexInDrawer
   ] = useState<number | null>(null);
+  const [, setLocation] = useLocation();
 
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
-  const deleteWrapperRef = useRef<HTMLDivElement>(null);
   const deleteWrapperInDrawerRef = useRef<HTMLDivElement>(null);
 
   const isLoading =
@@ -143,12 +147,15 @@ const VertexTypeList: React.FC = observer(() => {
 
   const batchDeleteProperties = async () => {
     switchShowModal(false);
+    // need to set a copy in store since local row key state would be cleared
+    vertexTypeStore.mutateSelectedVertexTypeIndex(selectedRowKeys);
     mutateSelectedRowKeys([]);
     await vertexTypeStore.deleteVertexType(selectedRowKeys);
+    vertexTypeStore.mutateSelectedVertexTypeIndex([]);
 
     if (vertexTypeStore.requestStatus.deleteVertexType === 'success') {
       Message.success({
-        content: '已删除未使用项',
+        content: '删除成功',
         size: 'medium',
         showCloseIcon: false
       });
@@ -165,29 +172,6 @@ const VertexTypeList: React.FC = observer(() => {
       });
     }
   };
-
-  const handleOutSideClick = useCallback(
-    (e: MouseEvent) => {
-      if (
-        isAddProperty &&
-        isEditVertex &&
-        dropdownWrapperRef.current &&
-        !dropdownWrapperRef.current.contains(e.target as Element)
-      ) {
-        switchIsAddProperty(false);
-        return;
-      }
-
-      if (
-        deletePopIndex !== null &&
-        deleteWrapperRef.current &&
-        !deleteWrapperRef.current.contains(e.target as Element)
-      ) {
-        setDeletePopIndex(null);
-      }
-    },
-    [isAddProperty, isEditVertex, deletePopIndex]
-  );
 
   const columnConfigs = [
     {
@@ -305,120 +289,11 @@ const VertexTypeList: React.FC = observer(() => {
       width: '13%',
       render(_: any, records: any, index: number) {
         return (
-          <div>
-            <span
-              className="metadata-properties-manipulation"
-              style={styles.manipulation}
-              onClick={() => {
-                vertexTypeStore.selectVertexType(index);
-                vertexTypeStore.validateEditVertexType(true);
-                switchIsEditVertex(true);
-
-                vertexTypeStore.mutateEditedSelectedVertexType({
-                  ...vertexTypeStore.editedSelectedVertexType,
-                  style: {
-                    color: vertexTypeStore.selectedVertexType!.style.color,
-                    icon: null,
-                    size: vertexTypeStore.selectedVertexType!.style.size,
-                    display_fields: vertexTypeStore.selectedVertexType!.style
-                      .display_fields
-                  }
-                });
-              }}
-            >
-              编辑
-            </span>
-            <Tooltip
-              placement="bottom-end"
-              tooltipShown={index === deletePopIndex}
-              modifiers={{
-                offset: {
-                  offset: '0, 10'
-                }
-              }}
-              tooltipWrapperProps={{
-                className: 'metadata-properties-tooltips'
-              }}
-              tooltipWrapper={
-                <div ref={deleteWrapperRef}>
-                  {vertexTypeStore.vertexTypeUsingStatus &&
-                  vertexTypeStore.vertexTypeUsingStatus[records.name] ? (
-                    <p style={{ width: 200 }}>
-                      当前顶点类型正在使用中，不可删除。
-                    </p>
-                  ) : (
-                    <>
-                      <p>确认删除此顶点？</p>
-                      <p>删除后无法恢复，请谨慎操作。</p>
-                      <div
-                        style={{
-                          display: 'flex',
-                          marginTop: 12,
-                          color: '#2b65ff',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <div
-                          style={{ marginRight: 16, cursor: 'pointer' }}
-                          onClick={async () => {
-                            setDeletePopIndex(null);
-                            await vertexTypeStore.deleteVertexType([index]);
-
-                            if (
-                              vertexTypeStore.requestStatus.deleteVertexType ===
-                              'success'
-                            ) {
-                              Message.success({
-                                content: '已删除未使用项',
-                                size: 'medium',
-                                showCloseIcon: false
-                              });
-
-                              vertexTypeStore.fetchVertexTypeList();
-                            }
-
-                            if (
-                              vertexTypeStore.requestStatus.deleteVertexType ===
-                              'failed'
-                            ) {
-                              Message.error({
-                                content: vertexTypeStore.errorMessage,
-                                size: 'medium',
-                                showCloseIcon: false
-                              });
-                            }
-                          }}
-                        >
-                          确认
-                        </div>
-                        <div
-                          onClick={() => {
-                            setDeletePopIndex(null);
-                          }}
-                        >
-                          取消
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              }
-              childrenProps={{
-                className: 'metadata-properties-manipulation',
-                async onClick() {
-                  await vertexTypeStore.checkIfUsing([index]);
-
-                  if (
-                    vertexTypeStore.requestStatus.checkIfUsing === 'success'
-                  ) {
-                    setDeletePopIndex(index);
-                  }
-                }
-              }}
-            >
-              删除
-            </Tooltip>
-          </div>
+          <VertexTypeListManipulation
+            vertexName={records.name}
+            vertexIndex={index}
+            switchIsEditVertex={switchIsEditVertex}
+          />
         );
       }
     }
@@ -436,6 +311,18 @@ const VertexTypeList: React.FC = observer(() => {
   }, [sortOrder]);
 
   useEffect(() => {
+    return () => {
+      const messageComponents = document.querySelectorAll(
+        '.new-fc-one-message'
+      ) as NodeListOf<HTMLElement>;
+
+      messageComponents.forEach((messageComponent) => {
+        messageComponent.style.display = 'none';
+      });
+    };
+  });
+
+  useEffect(() => {
     if (metadataConfigsRootStore.currentId !== null) {
       metadataPropertyStore.fetchMetadataPropertyList({ fetchAll: true });
       vertexTypeStore.fetchVertexTypeList();
@@ -449,18 +336,6 @@ const VertexTypeList: React.FC = observer(() => {
     metadataConfigsRootStore.currentId,
     vertexTypeStore
   ]);
-
-  useEffect(() => {
-    document.addEventListener('click', handleOutSideClick, false);
-
-    return () => {
-      document.removeEventListener('click', handleOutSideClick, false);
-    };
-  }, [handleOutSideClick]);
-
-  // if (vertexTypeStore.currentTabStatus === 'empty') {
-  //   return <EmptyVertxTypeHints />;
-  // }
 
   if (vertexTypeStore.currentTabStatus === 'new') {
     return <NewVertexType />;
@@ -548,6 +423,7 @@ const VertexTypeList: React.FC = observer(() => {
                   showPageJumper: false,
                   total: vertexTypeStore.vertexListPageConfig.pageTotal,
                   onPageNoChange: (e: React.ChangeEvent<HTMLSelectElement>) => {
+                    mutateSelectedRowKeys([]);
                     vertexTypeStore.mutatePageNumber(Number(e.target.value));
                     vertexTypeStore.fetchVertexTypeList();
                   }
@@ -688,11 +564,46 @@ const VertexTypeList: React.FC = observer(() => {
                   if (
                     vertexTypeStore.requestStatus.updateVertexType === 'success'
                   ) {
-                    Message.success({
-                      content: '修改成功',
-                      size: 'medium',
-                      showCloseIcon: false
-                    });
+                    if (
+                      isEmpty(
+                        vertexTypeStore.editedSelectedVertexType
+                          .append_property_indexes
+                      )
+                    ) {
+                      Message.success({
+                        content: '修改成功',
+                        size: 'medium',
+                        showCloseIcon: false
+                      });
+                    } else {
+                      Message.success({
+                        content: (
+                          <div
+                            className="message-wrapper"
+                            style={{ width: 168 }}
+                          >
+                            <div className="message-wrapper-title">
+                              保存成功
+                            </div>
+                            <div style={{ marginBottom: 2 }}>
+                              创建索引可能耗时较久，详情可在任务管理中查看
+                            </div>
+                            <div
+                              className="message-wrapper-manipulation"
+                              style={{ marginBottom: 2 }}
+                              onClick={() => {
+                                setLocation(
+                                  `/graph-management/${metadataConfigsRootStore.currentId}/async-tasks`
+                                );
+                              }}
+                            >
+                              去任务管理查看
+                            </div>
+                          </div>
+                        ),
+                        duration: 60 * 60 * 24
+                      });
+                    }
                   }
 
                   switchIsEditVertex(false);
@@ -1626,19 +1537,178 @@ const VertexTypeList: React.FC = observer(() => {
   );
 });
 
+export interface VertexTypeListManipulation {
+  vertexName: string;
+  vertexIndex: number;
+  switchIsEditVertex: (flag: boolean) => void;
+}
+
+const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> = observer(
+  ({ vertexName, vertexIndex, switchIsEditVertex }) => {
+    const { vertexTypeStore } = useContext(MetadataConfigsRootStore);
+    const [isPopDeleteModal, switchPopDeleteModal] = useState(false);
+    const [isDeleting, switchDeleting] = useState(false);
+    const deleteWrapperRef = useRef<HTMLDivElement>(null);
+    const isDeleteOrBatchDeleting =
+      isDeleting ||
+      (vertexTypeStore.requestStatus.deleteVertexType === 'pending' &&
+        vertexTypeStore.selectedVertexTypeIndex.includes(vertexIndex));
+
+    const handleOutSideClick = useCallback(
+      (e: MouseEvent) => {
+        if (
+          isPopDeleteModal &&
+          deleteWrapperRef &&
+          deleteWrapperRef.current &&
+          !deleteWrapperRef.current.contains(e.target as Element)
+        ) {
+          switchPopDeleteModal(false);
+        }
+      },
+      [deleteWrapperRef, isPopDeleteModal]
+    );
+
+    useEffect(() => {
+      document.addEventListener('click', handleOutSideClick, false);
+
+      return () => {
+        document.removeEventListener('click', handleOutSideClick, false);
+      };
+    }, [handleOutSideClick]);
+
+    return (
+      <div style={{ display: 'flex' }} className="no-line-break">
+        <span
+          className="metadata-properties-manipulation"
+          style={styles.manipulation}
+          onClick={() => {
+            vertexTypeStore.selectVertexType(vertexIndex);
+            vertexTypeStore.validateEditVertexType(true);
+            switchIsEditVertex(true);
+
+            vertexTypeStore.mutateEditedSelectedVertexType({
+              ...vertexTypeStore.editedSelectedVertexType,
+              style: {
+                color: vertexTypeStore.selectedVertexType!.style.color,
+                icon: null,
+                size: vertexTypeStore.selectedVertexType!.style.size,
+                display_fields: vertexTypeStore.selectedVertexType!.style
+                  .display_fields
+              }
+            });
+          }}
+        >
+          编辑
+        </span>
+        <div className="no-line-break">
+          {isDeleteOrBatchDeleting && (
+            <Loading type="strong" style={styles.loading} />
+          )}
+          <Tooltip
+            placement="bottom-end"
+            tooltipShown={isPopDeleteModal}
+            modifiers={{
+              offset: {
+                offset: '0, 10'
+              }
+            }}
+            tooltipWrapperProps={{
+              className: 'metadata-properties-tooltips'
+            }}
+            tooltipWrapper={
+              <div ref={deleteWrapperRef}>
+                {vertexTypeStore.vertexTypeUsingStatus &&
+                vertexTypeStore.vertexTypeUsingStatus[vertexName] ? (
+                  <p style={{ width: 200 }}>
+                    当前顶点类型正在使用中，不可删除。
+                  </p>
+                ) : (
+                  <>
+                    <p className="metadata-properties-tooltips-title">
+                      确认删除此顶点？
+                    </p>
+                    <p>确认删除此属性？删除后无法恢复，请谨慎操作</p>
+                    <p>删除元数据耗时较久，详情可在任务管理中查看</p>
+                    <div className="metadata-properties-tooltips-footer">
+                      <Button
+                        size="medium"
+                        type="primary"
+                        style={{ width: 60, marginRight: 12 }}
+                        onClick={async () => {
+                          switchPopDeleteModal(false);
+                          switchDeleting(true);
+                          await vertexTypeStore.deleteVertexType([vertexIndex]);
+                          switchDeleting(false);
+
+                          if (
+                            vertexTypeStore.requestStatus.deleteVertexType ===
+                            'success'
+                          ) {
+                            Message.success({
+                              content: '删除成功',
+                              size: 'medium',
+                              showCloseIcon: false
+                            });
+
+                            vertexTypeStore.fetchVertexTypeList();
+                          }
+
+                          if (
+                            vertexTypeStore.requestStatus.deleteVertexType ===
+                            'failed'
+                          ) {
+                            Message.error({
+                              content: vertexTypeStore.errorMessage,
+                              size: 'medium',
+                              showCloseIcon: false
+                            });
+                          }
+                        }}
+                      >
+                        确认
+                      </Button>
+                      <Button
+                        size="medium"
+                        style={{ width: 60 }}
+                        onClick={() => {
+                          switchPopDeleteModal(false);
+                        }}
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            }
+            childrenProps={{
+              className: 'metadata-properties-manipulation',
+              title: isDeleteOrBatchDeleting ? '删除中' : '删除',
+              async onClick() {
+                if (isDeleteOrBatchDeleting) {
+                  return;
+                }
+
+                await vertexTypeStore.checkIfUsing([vertexIndex]);
+
+                if (vertexTypeStore.requestStatus.checkIfUsing === 'success') {
+                  switchPopDeleteModal(true);
+                }
+              }
+            }}
+          >
+            {isDeleteOrBatchDeleting ? '删除中' : '删除'}
+          </Tooltip>
+        </div>
+      </div>
+    );
+  }
+);
+
 const EmptyVertxTypeHints: React.FC = observer(() => {
   const { vertexTypeStore } = useContext(MetadataConfigsRootStore);
 
   return (
-    // <div
-    //   className="metadata-configs-content-wrapper"
-    //   style={{
-    //     height: 'calc(100vh - 201px)',
-    //     display: 'flex',
-    //     justifyContent: 'center',
-    //     alignItems: 'center'
-    //   }}
-    // >
     <div
       style={{
         display: 'flex',
@@ -1678,7 +1748,6 @@ const EmptyVertxTypeHints: React.FC = observer(() => {
         </Button>
       </div>
     </div>
-    // </div>
   );
 });
 

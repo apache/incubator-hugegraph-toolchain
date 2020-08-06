@@ -43,7 +43,6 @@ export class DataMapStore {
   @observable fileMapInfos: FileMapInfo[] = [];
   // v1.3.1: preFetched file mapping infos from import-manager
   @observable preFetchedFileMapInfos: FileMapInfo[] = [];
-  // @observable fileMapInfos: FileMapInfo[] = fileInfoData;
   @observable selectedFileId: number = NaN;
   @observable selectedFileInfo: FileMapInfo | null = null;
 
@@ -867,10 +866,6 @@ export class DataMapStore {
     }
 
     if (category === 'null_values') {
-      // remove(
-      //   mapping!.null_values.customized,
-      //   (_, index) => index === optionIndex
-      // );
       remove(
         this.validateAdvanceConfigErrorMessage.null_values,
         (_, index) => index === optionIndex
@@ -878,7 +873,6 @@ export class DataMapStore {
     }
 
     if (category === 'value_mappings') {
-      // remove(mapping!.value_mapping, (_, index) => index === optionIndex);
       remove(
         this.validateAdvanceConfigErrorMessage.value_mapping,
         (_, index) => index === optionIndex
@@ -886,10 +880,6 @@ export class DataMapStore {
     }
 
     if (category === 'value_mappings_value') {
-      // remove(
-      //   mapping!.value_mapping[optionIndex].values,
-      //   (_, index) => index === valueMappingValueIndex
-      // );
       remove(
         this.validateAdvanceConfigErrorMessage.value_mapping[optionIndex]
           .values,

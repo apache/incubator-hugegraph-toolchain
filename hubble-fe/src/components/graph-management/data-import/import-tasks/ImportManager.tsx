@@ -58,10 +58,6 @@ const ImportManager: React.FC = observer(() => {
     importManagerStore.mutateImportJobListPageNumber(1);
     importManagerStore.switchSearchedStatus(true);
     await importManagerStore.fetchImportJobList();
-
-    if (importManagerStore.requestStatus.fetchImportJobList === 'failed') {
-      // printError();
-    }
   };
 
   const handleClearSearch = () => {
@@ -466,9 +462,6 @@ const ImportManager: React.FC = observer(() => {
                       importManagerStore.mutateNewJob('description', e.value);
                       importManagerStore.validateJob('new', 'description');
                     }}
-                    // onBlur={() => {
-
-                    // }}
                     originInputProps={{
                       onBlur: () => {
                         importManagerStore.validateJob('new', 'description');
@@ -526,7 +519,6 @@ export const ImportManagerManipulation: React.FC<ImportManagerManipulationProps>
         dataMapStore.setSelectedFileId(dataMapStore.fileMapInfos[0].id);
         dataMapStore.setSelectedFileInfo();
 
-        // await serverDataImportStore.fetchAllImportTasks();
         serverDataImportStore.syncImportConfigs(
           dataMapStore.selectedFileInfo!.load_parameter
         );

@@ -6,6 +6,7 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
+import { useLocation } from 'wouter';
 import classnames from 'classnames';
 import { motion } from 'framer-motion';
 import {
@@ -17,7 +18,8 @@ import {
   Input,
   Select,
   Checkbox,
-  Message
+  Message,
+  Loading
 } from '@baidu/one-ui';
 import { isEmpty, isUndefined, cloneDeep } from 'lodash-es';
 
@@ -53,6 +55,14 @@ const styles = {
   },
   manipulation: {
     marginRight: 12
+  },
+  deleteWrapper: {
+    display: 'flex',
+    justifyContent: 'flex-end'
+  },
+  loading: {
+    padding: 0,
+    marginRight: 4
   }
 };
 
@@ -81,7 +91,6 @@ const propertyIndexTypeMappings: Record<string, string> = {
 };
 
 const EdgeTypeList: React.FC = observer(() => {
-  const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
   const { metadataPropertyStore, edgeTypeStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
@@ -90,7 +99,6 @@ const EdgeTypeList: React.FC = observer(() => {
   const [isShowModal, switchShowModal] = useState(false);
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isEditEdge, switchIsEditEdge] = useState(false);
-  const [deletePopIndex, setDeletePopIndex] = useState<number | null>(null);
   const [
     deleteExistPopIndexInDrawer,
     setDeleteExistPopIndexInDrawer
@@ -99,9 +107,9 @@ const EdgeTypeList: React.FC = observer(() => {
     deleteAddedPopIndexInDrawer,
     setDeleteAddedPopIndexInDrawer
   ] = useState<number | null>(null);
+  const [, setLocation] = useLocation();
 
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
-  const deleteWrapperRef = useRef<HTMLDivElement>(null);
   const deleteWrapperInDrawerRef = useRef<HTMLDivElement>(null);
 
   const isLoading =
@@ -134,12 +142,15 @@ const EdgeTypeList: React.FC = observer(() => {
 
   const batchDeleteProperties = async () => {
     switchShowModal(false);
+    // need to set a copy in store since local row key state would be cleared
+    edgeTypeStore.mutateSelectedEdgeTypeIndex(selectedRowKeys);
     mutateSelectedRowKeys([]);
     await edgeTypeStore.deleteEdgeType(selectedRowKeys);
+    edgeTypeStore.mutateSelectedEdgeTypeIndex([]);
 
     if (edgeTypeStore.requestStatus.deleteEdgeType === 'success') {
       Message.success({
-        content: '已删除未使用项',
+        content: '删除成功',
         size: 'medium',
         showCloseIcon: false
       });
@@ -156,29 +167,6 @@ const EdgeTypeList: React.FC = observer(() => {
       });
     }
   };
-
-  const handleOutSideClick = useCallback(
-    (e: MouseEvent) => {
-      if (
-        isEditEdge &&
-        isAddProperty &&
-        dropdownWrapperRef.current &&
-        !dropdownWrapperRef.current.contains(e.target as Element)
-      ) {
-        switchIsAddProperty(false);
-        return;
-      }
-
-      if (
-        deletePopIndex !== null &&
-        deleteWrapperRef.current &&
-        !deleteWrapperRef.current.contains(e.target as Element)
-      ) {
-        setDeletePopIndex(null);
-      }
-    },
-    [isAddProperty, isEditEdge, deletePopIndex]
-  );
 
   const columnConfigs = [
     {
@@ -308,107 +296,10 @@ const EdgeTypeList: React.FC = observer(() => {
       width: '12%',
       render(_: any, records: any, index: number) {
         return (
-          <div>
-            <span
-              className="metadata-properties-manipulation"
-              style={styles.manipulation}
-              onClick={() => {
-                edgeTypeStore.selectEdgeType(index);
-                edgeTypeStore.validateEditEdgeType(true);
-                switchIsEditEdge(true);
-
-                edgeTypeStore.mutateEditedSelectedEdgeType({
-                  ...edgeTypeStore.editedSelectedEdgeType,
-                  style: {
-                    color: edgeTypeStore.selectedEdgeType!.style.color,
-                    icon: null,
-                    with_arrow: edgeTypeStore.selectedEdgeType!.style
-                      .with_arrow,
-                    thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
-                    display_fields: edgeTypeStore.selectedEdgeType!.style
-                      .display_fields
-                  }
-                });
-              }}
-            >
-              编辑
-            </span>
-            <Tooltip
-              placement="bottom-end"
-              tooltipShown={index === deletePopIndex}
-              modifiers={{
-                offset: {
-                  offset: '0, 10'
-                }
-              }}
-              tooltipWrapperProps={{
-                className: 'metadata-properties-tooltips'
-              }}
-              tooltipWrapper={
-                <div ref={deleteWrapperRef}>
-                  <p>确认删除此边类型？</p>
-                  <p>删除后无法恢复，请谨慎操作。</p>
-                  <div
-                    style={{
-                      display: 'flex',
-                      marginTop: 12,
-                      color: '#2b65ff',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div
-                      style={{ marginRight: 16, cursor: 'pointer' }}
-                      onClick={async () => {
-                        setDeletePopIndex(null);
-                        await edgeTypeStore.deleteEdgeType([index]);
-
-                        if (
-                          edgeTypeStore.requestStatus.deleteEdgeType ===
-                          'success'
-                        ) {
-                          Message.success({
-                            content: '已删除未使用项',
-                            size: 'medium',
-                            showCloseIcon: false
-                          });
-
-                          edgeTypeStore.fetchEdgeTypeList();
-                        }
-
-                        if (
-                          edgeTypeStore.requestStatus.deleteEdgeType ===
-                          'failed'
-                        ) {
-                          Message.error({
-                            content: edgeTypeStore.errorMessage,
-                            size: 'medium',
-                            showCloseIcon: false
-                          });
-                        }
-                      }}
-                    >
-                      确认
-                    </div>
-                    <div
-                      onClick={() => {
-                        setDeletePopIndex(null);
-                      }}
-                    >
-                      取消
-                    </div>
-                  </div>
-                </div>
-              }
-              childrenProps={{
-                className: 'metadata-properties-manipulation',
-                onClick() {
-                  setDeletePopIndex(index);
-                }
-              }}
-            >
-              删除
-            </Tooltip>
-          </div>
+          <EdgeTypeListManipulation
+            edgeIndex={index}
+            switchIsEditEdge={switchIsEditEdge}
+          />
         );
       }
     }
@@ -426,6 +317,18 @@ const EdgeTypeList: React.FC = observer(() => {
   }, [sortOrder]);
 
   useEffect(() => {
+    return () => {
+      const messageComponents = document.querySelectorAll(
+        '.new-fc-one-message'
+      ) as NodeListOf<HTMLElement>;
+
+      messageComponents.forEach((messageComponent) => {
+        messageComponent.style.display = 'none';
+      });
+    };
+  });
+
+  useEffect(() => {
     if (metadataConfigsRootStore.currentId !== null) {
       metadataPropertyStore.fetchMetadataPropertyList({ fetchAll: true });
       edgeTypeStore.fetchEdgeTypeList();
@@ -439,18 +342,6 @@ const EdgeTypeList: React.FC = observer(() => {
     metadataConfigsRootStore.currentId,
     edgeTypeStore
   ]);
-
-  useEffect(() => {
-    document.addEventListener('click', handleOutSideClick, false);
-
-    return () => {
-      document.removeEventListener('click', handleOutSideClick, false);
-    };
-  }, [handleOutSideClick]);
-
-  // if (edgeTypeStore.currentTabStatus === 'empty') {
-  //   return <EmptyEdgeTypeHints />;
-  // }
 
   if (edgeTypeStore.currentTabStatus === 'new') {
     return <NewEdgeType />;
@@ -537,6 +428,7 @@ const EdgeTypeList: React.FC = observer(() => {
                   showPageJumper: false,
                   total: edgeTypeStore.edgeTypeListPageConfig.pageTotal,
                   onPageNoChange: (e: React.ChangeEvent<HTMLSelectElement>) => {
+                    mutateSelectedRowKeys([]);
                     edgeTypeStore.mutatePageNumber(Number(e.target.value));
                     edgeTypeStore.fetchEdgeTypeList();
                   }
@@ -654,11 +546,46 @@ const EdgeTypeList: React.FC = observer(() => {
                   if (
                     edgeTypeStore.requestStatus.updateEdgeType === 'success'
                   ) {
-                    Message.success({
-                      content: '修改成功',
-                      size: 'medium',
-                      showCloseIcon: false
-                    });
+                    if (
+                      isEmpty(
+                        edgeTypeStore.editedSelectedEdgeType
+                          .append_property_indexes
+                      )
+                    ) {
+                      Message.success({
+                        content: '修改成功',
+                        size: 'medium',
+                        showCloseIcon: false
+                      });
+                    } else {
+                      Message.success({
+                        content: (
+                          <div
+                            className="message-wrapper"
+                            style={{ width: 168 }}
+                          >
+                            <div className="message-wrapper-title">
+                              保存成功
+                            </div>
+                            <div style={{ marginBottom: 2 }}>
+                              创建索引可能耗时较久，详情可在任务管理中查看
+                            </div>
+                            <div
+                              className="message-wrapper-manipulation"
+                              style={{ marginBottom: 2 }}
+                              onClick={() => {
+                                setLocation(
+                                  `/graph-management/${metadataConfigsRootStore.currentId}/async-tasks`
+                                );
+                              }}
+                            >
+                              去任务管理查看
+                            </div>
+                          </div>
+                        ),
+                        duration: 60 * 60 * 24
+                      });
+                    }
                   }
 
                   switchIsEditEdge(false);
@@ -1712,19 +1639,163 @@ const EdgeTypeList: React.FC = observer(() => {
   );
 });
 
+export interface EdgeTypeListManipulation {
+  edgeIndex: number;
+  switchIsEditEdge: (flag: boolean) => void;
+}
+
+const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
+  ({ edgeIndex, switchIsEditEdge }) => {
+    const { edgeTypeStore } = useContext(MetadataConfigsRootStore);
+    const [isPopDeleteModal, switchPopDeleteModal] = useState(false);
+    const [isDeleting, switchDeleting] = useState(false);
+    const deleteWrapperRef = useRef<HTMLDivElement>(null);
+    const isDeleteOrBatchDeleting =
+      isDeleting ||
+      (edgeTypeStore.requestStatus.deleteEdgeType === 'pending' &&
+        edgeTypeStore.selectedEdgeTypeIndex.includes(edgeIndex));
+
+    const handleOutSideClick = useCallback(
+      (e: MouseEvent) => {
+        if (
+          isPopDeleteModal &&
+          deleteWrapperRef &&
+          deleteWrapperRef.current &&
+          !deleteWrapperRef.current.contains(e.target as Element)
+        ) {
+          switchPopDeleteModal(false);
+        }
+      },
+      [deleteWrapperRef, isPopDeleteModal]
+    );
+
+    useEffect(() => {
+      document.addEventListener('click', handleOutSideClick, false);
+
+      return () => {
+        document.removeEventListener('click', handleOutSideClick, false);
+      };
+    }, [handleOutSideClick]);
+
+    return (
+      <div style={{ display: 'flex' }} className="no-line-break">
+        <span
+          className="metadata-properties-manipulation"
+          style={styles.manipulation}
+          onClick={() => {
+            edgeTypeStore.selectEdgeType(edgeIndex);
+            edgeTypeStore.validateEditEdgeType(true);
+            switchIsEditEdge(true);
+
+            edgeTypeStore.mutateEditedSelectedEdgeType({
+              ...edgeTypeStore.editedSelectedEdgeType,
+              style: {
+                color: edgeTypeStore.selectedEdgeType!.style.color,
+                icon: null,
+                with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
+                thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
+                display_fields: edgeTypeStore.selectedEdgeType!.style
+                  .display_fields
+              }
+            });
+          }}
+        >
+          编辑
+        </span>
+        <div className="no-line-break">
+          {isDeleteOrBatchDeleting && (
+            <Loading type="strong" style={styles.loading} />
+          )}
+          <Tooltip
+            placement="bottom-end"
+            tooltipShown={isPopDeleteModal}
+            modifiers={{
+              offset: {
+                offset: '0, 10'
+              }
+            }}
+            tooltipWrapperProps={{
+              className: 'metadata-properties-tooltips'
+            }}
+            tooltipWrapper={
+              <div ref={deleteWrapperRef}>
+                <p className="metadata-properties-tooltips-title">
+                  确认删除此边类型？
+                </p>
+                <p>确认删除边类型？删除后无法恢复，请谨慎操作</p>
+                <p>删除元数据耗时较久，详情可在任务管理中查看</p>
+                <div className="metadata-properties-tooltips-footer">
+                  <Button
+                    size="medium"
+                    type="primary"
+                    style={{ width: 60, marginRight: 12 }}
+                    onClick={async () => {
+                      switchPopDeleteModal(false);
+                      switchDeleting(true);
+                      await edgeTypeStore.deleteEdgeType([edgeIndex]);
+                      switchDeleting(false);
+
+                      if (
+                        edgeTypeStore.requestStatus.deleteEdgeType === 'success'
+                      ) {
+                        Message.success({
+                          content: '删除成功',
+                          size: 'medium',
+                          showCloseIcon: false
+                        });
+
+                        edgeTypeStore.fetchEdgeTypeList();
+                      }
+
+                      if (
+                        edgeTypeStore.requestStatus.deleteEdgeType === 'failed'
+                      ) {
+                        Message.error({
+                          content: edgeTypeStore.errorMessage,
+                          size: 'medium',
+                          showCloseIcon: false
+                        });
+                      }
+                    }}
+                  >
+                    确认
+                  </Button>
+                  <Button
+                    size="medium"
+                    style={{ width: 60 }}
+                    onClick={() => {
+                      switchPopDeleteModal(false);
+                    }}
+                  >
+                    取消
+                  </Button>
+                </div>
+              </div>
+            }
+            childrenProps={{
+              className: 'metadata-properties-manipulation',
+              title: isDeleteOrBatchDeleting ? '删除中' : '删除',
+              onClick() {
+                if (isDeleteOrBatchDeleting) {
+                  return;
+                }
+
+                switchPopDeleteModal(true);
+              }
+            }}
+          >
+            {isDeleteOrBatchDeleting ? '删除中' : '删除'}
+          </Tooltip>
+        </div>
+      </div>
+    );
+  }
+);
+
 const EmptyEdgeTypeHints: React.FC = observer(() => {
   const { edgeTypeStore } = useContext(MetadataConfigsRootStore);
 
   return (
-    // <div
-    //   className="metadata-configs-content-wrapper"
-    //   style={{
-    //     height: 'calc(100vh - 201px)',
-    //     display: 'flex',
-    //     justifyContent: 'center',
-    //     alignItems: 'center'
-    //   }}
-    // >
     <div
       style={{
         display: 'flex',
@@ -1764,7 +1835,6 @@ const EmptyEdgeTypeHints: React.FC = observer(() => {
         </Button>
       </div>
     </div>
-    // </div>
   );
 });
 

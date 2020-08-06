@@ -1,3 +1,13 @@
+## 1.5.0 (2020-08-06)
+
+#### :rocket: New Feature
+
+- Add async task manager
+- Separate Gremlin query and task in data-analyze module, users can move to task details directly in history
+- Display `deleting` status in schema configurations
+
+<br />
+
 ## 1.3.1 (2020-07-28)
 
 1.3.1 added support for data import from users by uploading their .csv files and setting data mappings.

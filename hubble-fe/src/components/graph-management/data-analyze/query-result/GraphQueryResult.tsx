@@ -104,9 +104,6 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           solver: 'forceAtlas2Based',
           timestep: 0.3,
           stabilization: { iterations: 150 }
-          // forceAtlas2Based: {
-          //   gravitationalConstant: Math.log(dataAnalyzeStore.nodeCount) * -35 //-60
-          // }
         }
       };
 
@@ -277,8 +274,6 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             switchIsPopover(true);
 
             network.selectNodes([nodeId]);
-            // setNodeToolTipX(e.pointer.canvas.x);
-            // setNodeToolTipY(e.pointer.canvas.y);
             setNodeToolTipX(e.pointer.DOM.x);
             setNodeToolTipY(e.pointer.DOM.y);
             dataAnalyzeStore.setVisCurrentCoordinates({

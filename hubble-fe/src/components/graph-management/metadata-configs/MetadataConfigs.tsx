@@ -34,6 +34,14 @@ const MetadataConfig: React.FC = observer(() => {
   };
 
   const handleMenuItemChange = ({ key }: { key: string }) => {
+    // reset store current tab status to default
+    switch (selectedMenuItem) {
+      case 'vertex-type':
+        metadataConfigRootStore.vertexTypeStore.changeCurrentTabStatus('list');
+      case 'edge-type':
+        metadataConfigRootStore.edgeTypeStore.changeCurrentTabStatus('list');
+    }
+
     setSelectedMenuItem(key);
   };
 

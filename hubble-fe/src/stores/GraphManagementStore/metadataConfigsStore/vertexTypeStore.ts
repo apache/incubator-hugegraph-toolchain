@@ -100,6 +100,7 @@ export class VertexTypeStore {
   @observable isEditReady = true;
 
   @observable.ref selectedVertexType: VertexType | null = null;
+  @observable.ref selectedVertexTypeIndex: number[] = [];
   @observable.ref editedSelectedVertexType: EditVertexTypeParams = {
     append_properties: [],
     append_property_indexes: [],
@@ -216,6 +217,11 @@ export class VertexTypeStore {
   @action
   mutateNewProperty(newVertexType: VertexType) {
     this.newVertexType = newVertexType;
+  }
+
+  @action
+  mutateSelectedVertexTypeIndex(indexes: number[]) {
+    this.selectedVertexTypeIndex = indexes;
   }
 
   @action
@@ -904,6 +910,7 @@ export class VertexTypeStore {
 
     this.resetNewVertextType();
     this.selectedVertexType = null;
+    this.selectedVertexTypeIndex = [];
     this.resetEditedSelectedVertexType();
     this.vertexTypes = [];
     this.vertexTypeUsingStatus = null;
