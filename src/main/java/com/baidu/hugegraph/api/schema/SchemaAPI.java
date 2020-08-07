@@ -21,6 +21,7 @@ package com.baidu.hugegraph.api.schema;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.SchemaElement;
 
 public abstract class SchemaAPI extends API {
 
@@ -30,4 +31,6 @@ public abstract class SchemaAPI extends API {
         super(client);
         this.path(PATH, graph, this.type());
     }
+
+    protected abstract Object checkCreateOrUpdate(SchemaElement schemaElement);
 }

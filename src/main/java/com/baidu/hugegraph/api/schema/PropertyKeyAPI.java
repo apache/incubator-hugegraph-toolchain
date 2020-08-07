@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.util.E;
@@ -41,14 +42,7 @@ public class PropertyKeyAPI extends SchemaAPI {
     }
 
     public PropertyKey create(PropertyKey propertyKey) {
-        Object pkey = propertyKey;
-        if (this.client.apiVersionLt("0.47")) {
-            E.checkArgument(propertyKey.aggregateType().isNone(),
-                            "Not support aggregate property until " +
-                            "api version 0.47");
-            pkey = propertyKey.switchV46();
-        }
-
+        Object pkey = this.checkCreateOrUpdate(propertyKey);
         RestResult result = this.client.post(this.path(), pkey);
         return result.readObject(PropertyKey.class);
     }
@@ -56,16 +50,16 @@ public class PropertyKeyAPI extends SchemaAPI {
     public PropertyKey append(PropertyKey propertyKey) {
         String id = propertyKey.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), id,
-                                            propertyKey, params);
+        Object pkey = this.checkCreateOrUpdate(propertyKey);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
         return result.readObject(PropertyKey.class);
     }
 
     public PropertyKey eliminate(PropertyKey propertyKey) {
         String id = propertyKey.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), id,
-                                            propertyKey, params);
+        Object pkey = this.checkCreateOrUpdate(propertyKey);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
         return result.readObject(PropertyKey.class);
     }
 
@@ -90,5 +84,18 @@ public class PropertyKeyAPI extends SchemaAPI {
 
     public void delete(String name) {
         this.client.delete(this.path(), name);
+    }
+
+    @Override
+    protected Object checkCreateOrUpdate(SchemaElement schemaElement) {
+        PropertyKey propertyKey = (PropertyKey) schemaElement;
+        Object pkey = propertyKey;
+        if (this.client.apiVersionLt("0.47")) {
+            E.checkArgument(propertyKey.aggregateType().isNone(),
+                            "Not support aggregate property until " +
+                            "api version 0.47");
+            pkey = propertyKey.switchV46();
+        }
+        return pkey;
     }
 }

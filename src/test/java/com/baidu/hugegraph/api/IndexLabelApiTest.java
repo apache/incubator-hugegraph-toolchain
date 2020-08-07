@@ -419,7 +419,8 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             indexLabelAPI.create(personByAge1).indexLabel();
         }, (e) -> {
-            String msg = "Not support userdata until api version 0.50";
+            String msg = "Not support userdata of index label until api " +
+                         "version 0.50";
             Assert.assertContains(msg, e.getMessage());
         });
 

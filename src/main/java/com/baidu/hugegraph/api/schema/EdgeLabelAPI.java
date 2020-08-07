@@ -25,6 +25,7 @@ import java.util.Map;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.util.E;
@@ -42,13 +43,7 @@ public class EdgeLabelAPI extends SchemaAPI {
     }
 
     public EdgeLabel create(EdgeLabel edgeLabel) {
-        Object el = edgeLabel;
-        if (this.client.apiVersionLt("0.54")) {
-            E.checkArgument(edgeLabel.ttl() == 0L &&
-                            edgeLabel.ttlStartTime() == null,
-                            "Not support ttl until api version 0.54");
-            el = edgeLabel.switchV53();
-        }
+        Object el = this.checkCreateOrUpdate(edgeLabel);
         RestResult result = this.client.post(this.path(), el);
         return result.readObject(EdgeLabel.class);
     }
@@ -56,14 +51,16 @@ public class EdgeLabelAPI extends SchemaAPI {
     public EdgeLabel append(EdgeLabel edgeLabel) {
         String id = edgeLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), id, edgeLabel, params);
+        Object el = this.checkCreateOrUpdate(edgeLabel);
+        RestResult result = this.client.put(this.path(), id, el, params);
         return result.readObject(EdgeLabel.class);
     }
 
     public EdgeLabel eliminate(EdgeLabel edgeLabel) {
         String id = edgeLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), id, edgeLabel, params);
+        Object el = this.checkCreateOrUpdate(edgeLabel);
+        RestResult result = this.client.put(this.path(), id, el, params);
         return result.readObject(EdgeLabel.class);
     }
 
@@ -91,5 +88,18 @@ public class EdgeLabelAPI extends SchemaAPI {
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);
+    }
+
+    @Override
+    protected Object checkCreateOrUpdate(SchemaElement schemaElement) {
+        EdgeLabel edgeLabel = (EdgeLabel) schemaElement;
+        Object el = edgeLabel;
+        if (this.client.apiVersionLt("0.54")) {
+            E.checkArgument(edgeLabel.ttl() == 0L &&
+                            edgeLabel.ttlStartTime() == null,
+                            "Not support ttl until api version 0.54");
+            el = edgeLabel.switchV53();
+        }
+        return el;
     }
 }

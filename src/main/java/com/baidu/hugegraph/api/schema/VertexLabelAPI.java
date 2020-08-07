@@ -25,6 +25,7 @@ import java.util.Map;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
@@ -42,16 +43,7 @@ public class VertexLabelAPI extends SchemaAPI {
     }
 
     public VertexLabel create(VertexLabel vertexLabel) {
-        if (vertexLabel.idStrategy().isCustomizeUuid()) {
-            this.client.checkApiVersion("0.46", "customize UUID strategy");
-        }
-        Object vl = vertexLabel;
-        if (this.client.apiVersionLt("0.54")) {
-            E.checkArgument(vertexLabel.ttl() == 0L &&
-                            vertexLabel.ttlStartTime() == null,
-                            "Not support ttl until api version 0.54");
-            vl = vertexLabel.switchV53();
-        }
+        Object vl = this.checkCreateOrUpdate(vertexLabel);
         RestResult result = this.client.post(this.path(), vl);
         return result.readObject(VertexLabel.class);
     }
@@ -59,16 +51,16 @@ public class VertexLabelAPI extends SchemaAPI {
     public VertexLabel append(VertexLabel vertexLabel) {
         String id = vertexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), id,
-                                            vertexLabel, params);
+        Object vl = this.checkCreateOrUpdate(vertexLabel);
+        RestResult result = this.client.put(this.path(), id, vl, params);
         return result.readObject(VertexLabel.class);
     }
 
     public VertexLabel eliminate(VertexLabel vertexLabel) {
         String id = vertexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), id,
-                                            vertexLabel, params);
+        Object vl = this.checkCreateOrUpdate(vertexLabel);
+        RestResult result = this.client.put(this.path(), id, vl, params);
         return result.readObject(VertexLabel.class);
     }
 
@@ -96,5 +88,21 @@ public class VertexLabelAPI extends SchemaAPI {
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);
+    }
+
+    @Override
+    protected Object checkCreateOrUpdate(SchemaElement schemaElement) {
+        VertexLabel vertexLabel = (VertexLabel) schemaElement;
+        if (vertexLabel.idStrategy().isCustomizeUuid()) {
+            this.client.checkApiVersion("0.46", "customize UUID strategy");
+        }
+        Object vl = vertexLabel;
+        if (this.client.apiVersionLt("0.54")) {
+            E.checkArgument(vertexLabel.ttl() == 0L &&
+                            vertexLabel.ttlStartTime() == null,
+                            "Not support ttl until api version 0.54");
+            vl = vertexLabel.switchV53();
+        }
+        return vl;
     }
 }

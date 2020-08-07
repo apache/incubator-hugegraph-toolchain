@@ -26,6 +26,7 @@ import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
@@ -44,28 +45,7 @@ public class IndexLabelAPI extends SchemaAPI {
     }
 
     public IndexLabel.CreatedIndexLabel create(IndexLabel indexLabel) {
-        if (indexLabel.indexType() == IndexType.SHARD) {
-            this.client.checkApiVersion("0.43", "shard index");
-        } else if (indexLabel.indexType() == IndexType.UNIQUE) {
-            this.client.checkApiVersion("0.44", "unique index");
-        }
-
-        IndexLabel il = indexLabel;
-        if (this.client.apiVersionLt("0.50")) {
-            E.checkArgument(indexLabel.userdata() == null ||
-                            indexLabel.userdata().isEmpty(),
-                            "Not support userdata until api version 0.50");
-            E.checkArgument(indexLabel.rebuild(),
-                            "Not support rebuild of indexlabel until api " +
-                            "version 0.57");
-            il = indexLabel.switchV49();
-        } else if (this.client.apiVersionLt("0.57")) {
-            E.checkArgument(indexLabel.rebuild(),
-                            "Not support rebuild of indexlabel until api " +
-                            "version 0.57");
-            il = indexLabel.switchV56();
-        }
-
+        Object il = this.checkCreateOrUpdate(indexLabel);
         RestResult result = this.client.post(this.path(), il);
         return result.readObject(IndexLabel.CreatedIndexLabel.class);
     }
@@ -77,8 +57,8 @@ public class IndexLabelAPI extends SchemaAPI {
 
         String id = indexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), id,
-                                            indexLabel, params);
+        Object il = this.checkCreateOrUpdate(indexLabel);
+        RestResult result = this.client.put(this.path(), id, il, params);
         return result.readObject(IndexLabel.class);
     }
 
@@ -89,8 +69,8 @@ public class IndexLabelAPI extends SchemaAPI {
 
         String id = indexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), id,
-                                            indexLabel, params);
+        Object il = this.checkCreateOrUpdate(indexLabel);
+        RestResult result = this.client.put(this.path(), id, il, params);
         return result.readObject(IndexLabel.class);
     }
 
@@ -118,5 +98,33 @@ public class IndexLabelAPI extends SchemaAPI {
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);
+    }
+
+    @Override
+    protected Object checkCreateOrUpdate(SchemaElement schemaElement) {
+        IndexLabel indexLabel = (IndexLabel) schemaElement;
+        if (indexLabel.indexType() == IndexType.SHARD) {
+            this.client.checkApiVersion("0.43", "shard index");
+        } else if (indexLabel.indexType() == IndexType.UNIQUE) {
+            this.client.checkApiVersion("0.44", "unique index");
+        }
+
+        IndexLabel il = indexLabel;
+        if (this.client.apiVersionLt("0.50")) {
+            E.checkArgument(indexLabel.userdata() == null ||
+                            indexLabel.userdata().isEmpty(),
+                            "Not support userdata of index label until api " +
+                            "version 0.50");
+            E.checkArgument(indexLabel.rebuild(),
+                            "Not support rebuild of index label until api " +
+                            "version 0.57");
+            il = indexLabel.switchV49();
+        } else if (this.client.apiVersionLt("0.57")) {
+            E.checkArgument(indexLabel.rebuild(),
+                            "Not support rebuild of index label until api " +
+                            "version 0.57");
+            il = indexLabel.switchV56();
+        }
+        return il;
     }
 }
