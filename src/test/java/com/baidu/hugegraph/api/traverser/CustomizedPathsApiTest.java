@@ -325,7 +325,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
             customizedPathsAPI.post(request);
         }, e -> {
             String expect = "Exceed capacity '1' while finding customized paths";
-            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
+            Assert.assertContains(expect, e.getMessage());
         });
     }
 

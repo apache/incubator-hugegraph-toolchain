@@ -278,7 +278,6 @@ public class VertexApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             graph().getVertex(vertex.id());
         }, e -> {
-            Assert.assertContains("vertex with id", e.getMessage());
             Assert.assertContains("does not exist", e.getMessage());
         });
     }
@@ -326,7 +325,6 @@ public class VertexApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             graph().getVertex(vertex.id());
         }, e -> {
-            Assert.assertContains("vertex with id", e.getMessage());
             Assert.assertContains("does not exist", e.getMessage());
         });
     }

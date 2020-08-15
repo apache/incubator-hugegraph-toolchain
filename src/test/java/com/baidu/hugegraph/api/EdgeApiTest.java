@@ -323,7 +323,6 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             graph().getEdge(edge.id());
         }, e -> {
-            Assert.assertContains("edge with id", e.getMessage());
             Assert.assertContains("does not exist", e.getMessage());
         });
     }
@@ -384,7 +383,6 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             graph().getEdge(edge.id());
         }, e -> {
-            Assert.assertContains("edge with id", e.getMessage());
             Assert.assertContains("does not exist", e.getMessage());
         });
     }
@@ -675,9 +673,12 @@ public class EdgeApiTest extends BaseApiTest {
             // TODO: id to be modified
             edgeAPI.get(edgeId);
         }, e -> {
-            String expect = String.format("edge with id '%s' does not exist",
-                                          edgeId);
-            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
+            Assert.assertContains("Edge id must be formatted as 4~5 parts, " +
+                                  "but got 1 parts: 'not-exist-edge-id'",
+                                  e.getMessage());
+            Assert.assertInstanceOf(ServerException.class, e);
+            Assert.assertContains("NotFoundException",
+                                  ((ServerException) e).exception());
         });
     }
 
@@ -738,9 +739,8 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             edgeAPI.get(id);
         }, e -> {
-            String expect = String.format("edge with id '%s' does not exist",
-                                          id);
-            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
+            String expect = String.format("Edge '%s' does not exist", id);
+            Assert.assertContains(expect, e.getMessage());
         });
     }
 

@@ -188,7 +188,7 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
                                     0L, 10L);
         }, e -> {
             String expect = "Exceed capacity '10' while finding shortest path";
-            Assert.assertTrue(e.toString(), e.getMessage().contains(expect));
+            Assert.assertContains(expect, e.getMessage());
         });
     }
 
