@@ -3,18 +3,18 @@ import { observable, action, flow, computed } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
 import { isEmpty, size } from 'lodash-es';
 
-import { baseUrl, responseData } from '../../types/common';
+import i18next from '../../../i18n';
 import {
   Job,
   JobResponse
 } from '../../types/GraphManagementStore/dataImportStore';
-import i18next from '../../../i18n';
 import {
   initRequestStatus,
   initErrorInfo
 } from '../../factory/dataImportStore/importManagmentStore';
 import { checkIfLocalNetworkOffline } from '../../utils';
 
+import { baseUrl, responseData } from '../../types/common';
 import type {
   JobGlance,
   JobFailedReason

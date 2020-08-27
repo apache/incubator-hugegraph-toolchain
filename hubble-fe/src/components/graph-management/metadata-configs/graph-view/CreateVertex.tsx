@@ -21,7 +21,7 @@ import {
 } from '@baidu/one-ui';
 
 import { Tooltip as CustomTooltip } from '../../../common';
-import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore';
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import {
   vertexRadiusMapping,

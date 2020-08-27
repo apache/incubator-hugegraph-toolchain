@@ -24,7 +24,7 @@ const App: React.FC = () => {
       <AppBar />
       <GraphManagementSidebar />
       <Route
-        path="/graph-management/:id/data-import/import-tasks/:taskId/error-log"
+        path="/graph-management/:id/data-import/:jobId/import-tasks/:taskId/error-log"
         component={TaskErrorLogs}
       />
       <Route

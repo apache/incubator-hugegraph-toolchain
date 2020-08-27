@@ -416,17 +416,16 @@ export class ServerDataImportStore {
 
   checkErrorLogs = flow(function* checkErrorLogs(
     this: ServerDataImportStore,
-    taskId: number,
-    id?: number
+    id: number,
+    jobId: number,
+    taskId: number
   ) {
     this.requestStatus.checkErrorLogs = 'pending';
 
     try {
       const result: AxiosResponse<responseData<string>> = yield axios
         .get<responseData<string>>(
-          `${baseUrl}/${id || this.dataImportRootStore.currentId}/job-manager/${
-            this.dataImportRootStore.currentJobId
-          }/load-tasks/${taskId}/reason`
+          `${baseUrl}/${id}/job-manager/${jobId}/load-tasks/${taskId}/reason`
         )
         .catch(checkIfLocalNetworkOffline);
 

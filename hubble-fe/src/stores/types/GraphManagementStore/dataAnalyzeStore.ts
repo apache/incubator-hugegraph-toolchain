@@ -101,3 +101,17 @@ export type FavoriteQueryResponse = responseData<{
   records: FavoriteQuery[];
   total: number;
 }>;
+
+/* algorithm store  */
+
+export interface ShortestPathAlgorithmParams {
+  source: string;
+  target: string;
+  direction: string;
+  max_depth: string;
+  label: string;
+  max_degree: string;
+  skip_degree: string;
+  capacity: string;
+  limit: string;
+}

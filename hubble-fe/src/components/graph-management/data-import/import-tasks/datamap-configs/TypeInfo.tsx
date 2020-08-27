@@ -293,7 +293,15 @@ const TypeInfo: React.FC<TypeInfoProps> = observer(({ type, mapIndex }) => {
                   }
                 }}
               >
-                <Button size="medium" style={{ width: 78 }}>
+                <Button
+                  size="medium"
+                  style={{ width: 78 }}
+                  disabled={
+                    dataMapStore.isExpandTypeConfig ||
+                    dataMapStore.isAddNewTypeConfig ||
+                    serverDataImportStore.isServerStartImport
+                  }
+                >
                   {t('data-configs.manipulations.delete')}
                 </Button>
               </Tooltip>

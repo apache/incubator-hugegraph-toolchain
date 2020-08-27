@@ -36,6 +36,7 @@ export class DataImportRootStore {
 
   @observable currentId: number | null = null;
   @observable currentJobId: number | null = null;
+  @observable currentJobName: string = '';
   @observable currentStep = 1;
 
   @observable requestStatus = initRequestStatus();
@@ -68,6 +69,11 @@ export class DataImportRootStore {
   @action
   setCurrentJobId(id: number) {
     this.currentJobId = id;
+  }
+
+  @action
+  setCurrentJobName(name: string) {
+    this.currentJobName = name;
   }
 
   @action
@@ -144,6 +150,7 @@ export class DataImportRootStore {
   dispose() {
     this.currentId = null;
     this.currentJobId = null;
+    this.currentJobName = '';
     this.currentStep = 1;
     this.vertexTypes = [];
     this.edgeTypes = [];

@@ -241,10 +241,10 @@ const FileConfigs: React.FC = observer(() => {
                   }
                 }}
               >
-                <Radio value="yyyy-MM-dd">YYYY-MM-DD</Radio>
-                <Radio value="yyyy-MM-dd HH:mm:ss">YYYY-MM-DD HH:MM:SS</Radio>
+                <Radio value="yyyy-MM-dd">yyyy-MM-dd</Radio>
+                <Radio value="yyyy-MM-dd HH:mm:ss">yyyy-MM-dd HH:MM:SS</Radio>
                 <Radio value="yyyy-MM-dd HH:mm:ss.SSS">
-                  YYYY-MM-DD HH:MM:SS.SSS
+                  yyyy-MM-dd HH:mm:ss.SSS
                 </Radio>
                 <Radio value="custom">
                   {t('data-configs.file.code-type.custom')}

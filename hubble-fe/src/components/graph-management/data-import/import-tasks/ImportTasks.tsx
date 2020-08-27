@@ -72,7 +72,9 @@ const ImportTasks: React.FC = observer(() => {
           >
             {t('breadcrumb.first')}
           </Breadcrumb.Item>
-          <Breadcrumb.Item>{t('breadcrumb.second')}</Breadcrumb.Item>
+          <Breadcrumb.Item>
+            {dataImportRootStore.currentJobName}
+          </Breadcrumb.Item>
         </Breadcrumb>
       </div>
       <div className="import-tasks-content-wrapper">

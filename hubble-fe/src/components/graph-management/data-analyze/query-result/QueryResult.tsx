@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
+import { isEmpty } from 'lodash-es';
 import { useLocation } from 'wouter';
 import classnames from 'classnames';
 
@@ -26,6 +27,7 @@ const dataAnalyzeContentSidebarOptions = ['图', '表格', 'Json'];
 const QueryResult: React.FC<QueryResultProps> = observer(
   ({ sidebarIndex, handleSetSidebarIndex }) => {
     const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
+    const { algorithmAnalyzerStore } = dataAnalyzeStore;
     const asyncTasksStore = useContext(AsyncTasksStoreContext);
     const [, setLocation] = useLocation();
 
@@ -43,8 +45,23 @@ const QueryResult: React.FC<QueryResultProps> = observer(
       'query-result-fullscreen': dataAnalyzeStore.isFullScreenReuslt
     });
 
+    const dynHeightStyle: Record<string, string> = {};
+
+    if (
+      dataAnalyzeStore.currentTab === 'algorithm-analyze' &&
+      !algorithmAnalyzerStore.isCollapse
+    ) {
+      if (algorithmAnalyzerStore.currentAlgorithm === '') {
+        dynHeightStyle.height = 'calc(100vh - 441px)';
+      }
+
+      if (algorithmAnalyzerStore.currentAlgorithm === 'shortest-path') {
+        dynHeightStyle.height = 'calc(100vh - 555px)';
+      }
+    }
+
     return (
-      <div className={queryResutlClassName}>
+      <div className={queryResutlClassName} style={{ ...dynHeightStyle }}>
         {!dataAnalyzeStore.isFullScreenReuslt && (
           <div className="query-result-sidebar">
             {dataAnalyzeContentSidebarOptions.map((text, index) => (
@@ -72,14 +89,16 @@ const QueryResult: React.FC<QueryResultProps> = observer(
 
           {dataAnalyzeStore.requestStatus.fetchGraphs === 'success' &&
             dataAnalyzeStore.graphData.data.graph_view.vertices !== null &&
-            dataAnalyzeStore.graphData.data.graph_view.edges !== null && (
+            dataAnalyzeStore.graphData.data.graph_view.edges !== null &&
+            !isEmpty(dataAnalyzeStore.graphData.data.graph_view.vertices) && (
               <GraphQueryResult hidden={sidebarIndex !== 0} />
             )}
 
           {dataAnalyzeStore.requestStatus.fetchGraphs === 'success' &&
             sidebarIndex === 0 &&
             (dataAnalyzeStore.graphData.data.graph_view.vertices === null ||
-              dataAnalyzeStore.graphData.data.graph_view.edges === null) && (
+              dataAnalyzeStore.graphData.data.graph_view.edges === null ||
+              isEmpty(dataAnalyzeStore.graphData.data.graph_view.vertices)) && (
               <div className="query-result-content-empty">
                 <img src={EmptyIcon} alt="无图结果，请查看表格或Json数据" />
                 <span>无图结果，请查看表格或Json数据</span>

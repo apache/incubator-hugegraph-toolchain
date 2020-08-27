@@ -1,3 +1,11 @@
+## 1.6.0 (2020-08-14)
+
+#### :rocket: New Feature
+
+- Add analyzing algorithm tab in data-analyze module, only support shortest-path algorithm for now
+
+<br />
+
 ## 1.5.0 (2020-08-06)
 
 #### :rocket: New Feature

@@ -273,7 +273,9 @@ const ImportManager: React.FC = observer(() => {
             {t('breadcrumb.first')}
           </Breadcrumb.Item>
           {importManagerStore.selectedJob && (
-            <Breadcrumb.Item>{t('breadcrumb.second')}</Breadcrumb.Item>
+            <Breadcrumb.Item>
+              {importManagerStore.selectedJob.job_name}
+            </Breadcrumb.Item>
           )}
         </Breadcrumb>
       </div>
@@ -498,9 +500,10 @@ export const ImportManagerManipulation: React.FC<ImportManagerManipulationProps>
     const [, setLocation] = useLocation();
     const { t } = useTranslation();
 
-    const jumpToLoaction = (step: number) => async () => {
+    const jumpToLoaction = (step: number, jobName: string) => async () => {
       dataImportRootStore.setCurrentId(Number(params!.id));
       dataImportRootStore.setCurrentJobId(jobId);
+      dataImportRootStore.setCurrentJobName(jobName);
 
       if (step === 2) {
         await dataMapStore.fetchDataMaps();
@@ -535,17 +538,17 @@ export const ImportManagerManipulation: React.FC<ImportManagerManipulationProps>
     return (
       <div className="import-manager-table-manipulations">
         {status === 'DEFAULT' && (
-          <span onClick={jumpToLoaction(1)}>
+          <span onClick={jumpToLoaction(1, jobName)}>
             {t('import-manager.list-column-manipulations.start')}
           </span>
         )}
         {status === 'SETTING' && (
-          <span onClick={jumpToLoaction(2)}>
+          <span onClick={jumpToLoaction(2, jobName)}>
             {t('import-manager.list-column-manipulations.resume-setting')}
           </span>
         )}
         {status === 'IMPORTING' && (
-          <span onClick={jumpToLoaction(3)}>
+          <span onClick={jumpToLoaction(3, jobName)}>
             {t('import-manager.list-column-manipulations.resume-importing')}
           </span>
         )}

@@ -28,7 +28,7 @@ import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/me
 
 import NewEdgeType from './NewEdgeType';
 import ReuseEdgeTypes from './ReuseEdgeTypes';
-import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore';
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import type { EdgeTypeValidatePropertyIndexes } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
 
 import AddIcon from '../../../../assets/imgs/ic_add.svg';

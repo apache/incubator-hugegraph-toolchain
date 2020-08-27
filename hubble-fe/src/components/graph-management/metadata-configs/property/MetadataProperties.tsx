@@ -20,7 +20,7 @@ import {
 import Highlighter from 'react-highlight-words';
 
 import { Tooltip, LoadingDataView } from '../../../common';
-import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore';
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import AddIcon from '../../../../assets/imgs/ic_add.svg';
 import CloseIcon from '../../../../assets/imgs/ic_close_16.svg';

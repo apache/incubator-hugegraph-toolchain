@@ -4,7 +4,7 @@ import GraphManagementStoreContext, {
 } from './GraphManagementStore/graphManagementStore';
 import DataAnalyzeStoreContext, {
   DataAnalyzeStore
-} from './GraphManagementStore/dataAnalyzeStore';
+} from './GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import DataImportRootStoreContext, {
   DataImportRootStore
 } from './GraphManagementStore/dataImportStore/dataImportRootStore';

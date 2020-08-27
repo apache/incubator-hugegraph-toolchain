@@ -2,10 +2,10 @@ import { createContext } from 'react';
 import { observable, action, flow } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
 
-import { baseUrl, responseData } from '../types/common';
 import { initErrorInfo, initRequestStatus } from '../factory/asyncTasksStore';
 import { checkIfLocalNetworkOffline } from '../utils';
 
+import { baseUrl, responseData } from '../types/common';
 import type {
   AsyncTask,
   AsyncTaskListResponse

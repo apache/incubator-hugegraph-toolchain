@@ -10,7 +10,7 @@ import { VertexTypeList } from './vertex-type';
 import { EdgeTypeList } from './edge-type';
 import { PropertyIndex } from './property-index';
 import { GraphView } from './graph-view';
-import DataAnalyzeStore from '../../../stores/GraphManagementStore/dataAnalyzeStore';
+import DataAnalyzeStore from '../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import MetadataConfigsRootStore from '../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import './MetadataConfigs.less';
 import { AppStoreContext, GraphManagementStoreContext } from '../../../stores';

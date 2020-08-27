@@ -761,20 +761,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
             </Select>
           ) : (
             <div>
-              {(() => {
-                vertexTypeStore.selectedVertexType!.style.display_fields.forEach(
-                  (item, index) => {
-                    if (item === '~id') {
-                      vertexTypeStore.selectedVertexType!.style.display_fields[
-                        index
-                      ] = '顶点ID';
-                    }
-                  }
-                );
-                return vertexTypeStore.selectedVertexType!.style.display_fields.join(
-                  '-'
-                );
-              })()}
+              {vertexTypeStore.selectedVertexType?.style.display_fields
+                .map((field) => formatVertexIdText(field, '顶点ID'))
+                .join('-')}
             </div>
           )}
         </div>

@@ -9,19 +9,24 @@ const TaskErrorLogs: React.FC = observer(() => {
   const dataImportRootStore = useContext(DataImportRootStoreContext);
   const { serverDataImportStore } = dataImportRootStore;
   const [, params] = useRoute(
-    '/graph-management/:id/data-import/import-tasks/:jobId/error-log'
+    '/graph-management/:id/data-import/:jobId/import-tasks/:taskId/error-log'
   );
 
   useEffect(() => {
     serverDataImportStore.checkErrorLogs(
-      Number(params!.taskId),
-      Number(params!.id)
+      Number(params!.id),
+      Number(params!.jobId),
+      Number(params!.taskId)
     );
-  }, [params!.id, params!.jobId]);
+  }, [params!.id, params!.jobId, params!.taskId]);
 
   return (
     <section className="task-error-logs">
-      <div>{serverDataImportStore.errorLogs}</div>
+      <div>
+        {serverDataImportStore.requestStatus.checkErrorLogs === 'failed'
+          ? serverDataImportStore.errorInfo.checkErrorLogs.message
+          : serverDataImportStore.errorLogs}
+      </div>
     </section>
   );
 });

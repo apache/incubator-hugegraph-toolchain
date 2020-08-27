@@ -37,7 +37,9 @@ const JobErrorLogs: React.FC = observer(() => {
         Number(params!.jobId)
       );
 
-      setSelectedFileName(importManagerStore.failedReason[0].file_name);
+      if (importManagerStore.requestStatus.fetchFailedReason === 'success') {
+        setSelectedFileName(importManagerStore.failedReason[0].file_name);
+      }
     };
 
     init();
@@ -52,36 +54,45 @@ const JobErrorLogs: React.FC = observer(() => {
         variants={failedReasonVariants}
       >
         <div className="job-error-logs-content-wrapper">
-          <Menu
-            mode="inline"
-            needBorder={true}
-            style={{ width: 200, height: 'calc(100vh - 194px)' }}
-            selectedKeys={[selectedFileName]}
-            onClick={(e: any) => {
-              setSelectedFileName(e.key);
-            }}
-          >
-            {importManagerStore.failedReason.map(({ file_name }) => (
-              <Menu.Item key={file_name}>
-                <span>{file_name}</span>
-              </Menu.Item>
-            ))}
-          </Menu>
-          <div className="job-error-logs-content">
-            {importManagerStore.failedReason
-              .find(({ file_name }) => file_name === selectedFileName)
-              ?.reason.split('\n')
-              .map((text, index) => (
-                <div className="job-error-logs-content-item">
-                  <div className="job-error-logs-content-item-title">
-                    {index % 2 === 0 ? '失败原因：' : '失败位置：'}
-                  </div>
-                  <div className="job-error-logs-content-item-text">
-                    {text.replace('#### INSERT ERROR:', '')}
-                  </div>
-                </div>
-              ))}
-          </div>
+          {importManagerStore.requestStatus.fetchFailedReason === 'failed' ? (
+            <div className="job-error-logs-content-with-error-only">
+              {importManagerStore.errorInfo.fetchFailedReason.message}
+            </div>
+          ) : (
+            <>
+              <Menu
+                mode="inline"
+                needBorder={true}
+                style={{ width: 200, height: 'calc(100vh - 194px)' }}
+                selectedKeys={[selectedFileName]}
+                onClick={(e: any) => {
+                  setSelectedFileName(e.key);
+                }}
+              >
+                {importManagerStore.failedReason.map(({ file_name }) => (
+                  <Menu.Item key={file_name}>
+                    <span>{file_name}</span>
+                  </Menu.Item>
+                ))}
+              </Menu>
+              <div className="job-error-logs-content">
+                {importManagerStore.failedReason
+                  .find(({ file_name }) => file_name === selectedFileName)
+                  ?.reason.split('\n')
+                  .filter((reason) => reason !== '')
+                  .map((text, index) => (
+                    <div className="job-error-logs-content-item">
+                      <div className="job-error-logs-content-item-title">
+                        {index % 2 === 0 ? '失败原因：' : '失败位置：'}
+                      </div>
+                      <div className="job-error-logs-content-item-text">
+                        {text.replace('#### INSERT ERROR:', '')}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
     </section>

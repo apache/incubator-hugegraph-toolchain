@@ -4,6 +4,7 @@ import classnames from 'classnames';
 import { isUndefined } from 'lodash-es';
 import Highlighter from 'react-highlight-words';
 import { useRoute, useLocation } from 'wouter';
+import { useTranslation } from 'react-i18next';
 import { Table, Input, Button, Message } from '@baidu/one-ui';
 
 import { Tooltip } from '../../common';
@@ -12,10 +13,13 @@ import {
   DataAnalyzeStoreContext,
   AsyncTasksStoreContext
 } from '../../../stores';
-import {
+
+import type { TFunction } from 'i18next';
+import type {
   ExecutionLogs,
   FavoriteQuery
 } from '../../../stores/types/GraphManagementStore/dataAnalyzeStore';
+
 import ArrowIcon from '../../../assets/imgs/ic_arrow_16.svg';
 import EmptyIcon from '../../../assets/imgs/ic_sousuo_empty.svg';
 
@@ -36,6 +40,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
   const [tabIndex, setTabIndex] = useState(0);
   const [, params] = useRoute('/graph-management/:id/data-analyze');
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
   // popovers
@@ -53,30 +58,34 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
 
   const execLogsColumnConfigs = [
     {
-      title: '时间',
+      title: t('data-analyze.exec-logs.table-title.time'),
       dataIndex: 'create_time',
       width: '20%'
     },
     {
-      title: '执行类型',
+      title: t('data-analyze.exec-logs.table-title.type'),
       dataIndex: 'type',
       width: '15%',
       render(type: string) {
-        const specific = type === 'GREMLIN' ? 'GREMLIN 查询' : 'GREMLIN 任务';
-
-        return specific;
+        return t(`data-analyze.exec-logs.type.${type}`);
       }
     },
     {
-      title: '执行内容',
+      title: t('data-analyze.exec-logs.table-title.content'),
       dataIndex: 'content',
       width: '30%',
-      render(text: string) {
-        return <ExecutionContent content={text} highlightText="" />;
+      render(text: string, rowData: ExecutionLogs) {
+        return (
+          <ExecutionContent
+            type={rowData.type}
+            content={text}
+            highlightText=""
+          />
+        );
       }
     },
     {
-      title: '状态',
+      title: t('data-analyze.exec-logs.table-title.status'),
       dataIndex: 'status',
       width: '10%',
       align: 'center',
@@ -85,56 +94,68 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
           case 'SUCCESS':
             return (
               <div style={styles.tableCenter}>
-                <div className="exec-log-status success">成功</div>
+                <div className="exec-log-status success">
+                  {t('data-analyze.exec-logs.status.success')}
+                </div>
               </div>
             );
           case 'ASYNC_TASK_SUCCESS':
             return (
               <div style={styles.tableCenter}>
-                <div className="exec-log-status success">提交成功</div>
+                <div className="exec-log-status success">
+                  {t('data-analyze.exec-logs.status.async-success')}
+                </div>
               </div>
             );
           case 'RUNNING':
             return (
               <div style={styles.tableCenter}>
-                <div className="exec-log-status running">运行中</div>
+                <div className="exec-log-status running">
+                  {t('data-analyze.exec-logs.status.running')}
+                </div>
               </div>
             );
           case 'ASYNC_TASK_RUNNING':
             return (
               <div style={styles.tableCenter}>
-                <div className="exec-log-status running">运行中</div>
+                <div className="exec-log-status running">
+                  {t('data-analyze.exec-logs.status.running')}
+                </div>
               </div>
             );
           case 'FAILED':
             return (
               <div style={styles.tableCenter}>
-                <div className="exec-log-status failed">失败</div>
+                <div className="exec-log-status failed">
+                  {t('data-analyze.exec-logs.status.failed')}
+                </div>
               </div>
             );
           case 'ASYNC_TASK_FAILED':
             return (
               <div style={styles.tableCenter}>
-                <div className="exec-log-status failed">提交失败</div>
+                <div className="exec-log-status failed">
+                  {t('data-analyze.exec-logs.status.async-failed')}
+                </div>
               </div>
             );
         }
       }
     },
     {
-      title: '耗时',
+      title: t('data-analyze.exec-logs.table-title.duration'),
       dataIndex: 'duration',
       align: 'right',
       width: '10%'
     },
     {
-      title: '操作',
+      title: t('data-analyze.exec-logs.table-title.manipulation'),
       dataIndex: 'manipulation',
       width: '15%',
       render(_: string, rowData: ExecutionLogs, index: number) {
         return (
           <div>
-            {rowData.type !== 'GREMLIN' && (
+            {rowData.type === 'GREMLIN_ASYNC' && (
               <span
                 className="exec-log-manipulation"
                 onClick={() => {
@@ -224,9 +245,10 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
       title: '收藏语句',
       dataIndex: 'content',
       width: '40%',
-      render(text: string) {
+      render(text: string, rowData: FavoriteQuery) {
         return (
           <ExecutionContent
+            type={''}
             content={text}
             highlightText={dataAnalyzeStore.isSearched.value}
           />
@@ -527,14 +549,17 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
 
 // collpase and expand statement in table
 const ExecutionContent: React.FC<{
+  type: string;
   content: string;
   highlightText: string;
-}> = observer(({ content, highlightText }) => {
+}> = observer(({ type, content, highlightText }) => {
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
+  const { t } = useTranslation();
   const [isExpand, switchExpand] = useState(dataAnalyzeStore.isSearched.status);
-  const statements = content
-    .split('\n')
-    .filter((statement) => statement !== '');
+  const statements =
+    type === 'ALGORITHM'
+      ? formatAlgorithmStatement(content, 'shortest-path', t)
+      : content.split('\n').filter((statement) => statement !== '');
 
   const arrowIconClassName = classnames({
     'data-analyze-logs-favorite-content-icon': true,
@@ -640,5 +665,31 @@ export const DeleteConfirm: React.FC<DeleteConfirmProps> = observer(
     );
   }
 );
+
+function formatAlgorithmStatement(
+  content: string,
+  algorithmType: string,
+  translator: TFunction
+) {
+  const convertedString = content
+    .replace(/^.*\(/, '')
+    .replace(/\)$/, '')
+    .replace(/ /g, '');
+  const statements: string[] = [
+    translator(`data-analyze.algorithm-list.${algorithmType}`)
+  ];
+
+  convertedString.split(',').forEach((item) => {
+    const [key, value] = item.split('=');
+
+    statements.push(
+      `${translator(
+        `data-analyze.algorithm-forms.shortest-path.options.${key}`
+      )} ${value}`
+    );
+  });
+
+  return statements;
+}
 
 export default ExecLogAndQueryCollections;

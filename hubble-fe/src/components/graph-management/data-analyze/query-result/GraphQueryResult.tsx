@@ -6,21 +6,16 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
-import { size, isUndefined, isEmpty, cloneDeep } from 'lodash-es';
+import { size, isUndefined, isEmpty } from 'lodash-es';
 import { saveAs } from 'file-saver';
 import vis from 'vis-network';
 import 'vis-network/styles/vis-network.min.css';
-import { Message, Tooltip } from '@baidu/one-ui';
+import { Message } from '@baidu/one-ui';
 
 import QueryFilterOptions from './QueryFilterOptions';
 import GraphPopOver from './GraphPopOver';
 import { DataAnalyzeStoreContext } from '../../../../stores';
 import { addGraphNodes, addGraphEdges } from '../../../../stores/utils';
-
-import type {
-  GraphNode,
-  GraphEdge
-} from '../../../../stores/types/GraphManagementStore/dataAnalyzeStore';
 
 import ZoomInIcon from '../../../../assets/imgs/ic_fangda_16.svg';
 import ZoomOutIcon from '../../../../assets/imgs/ic_suoxiao_16.svg';

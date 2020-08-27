@@ -1,7 +1,6 @@
-import React, { useContext, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { observer } from 'mobx-react';
 import { useLocation } from 'wouter';
-import { AppStoreContext } from '../../stores';
 
 import './AppBar.less';
 

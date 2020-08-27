@@ -6,6 +6,7 @@ import vis from 'vis-network';
 import isInt from 'validator/lib/isInt';
 import isUUID from 'validator/lib/isUUID';
 
+import { AlgorithmAnalyzerStore } from './algorithmAnalyzerStore';
 import {
   initalizeErrorInfo,
   initalizeRequestStatus,
@@ -13,20 +14,20 @@ import {
   createGraphEdge,
   createGraphEditableProperties,
   createNewGraphDataConfig
-} from '../factory/dataAnalyzeStore';
+} from '../../factory/dataAnalyzeStore/dataAnalyzeStore';
 import {
   checkIfLocalNetworkOffline,
   convertArrayToString,
   validateGraphProperty,
   vertexRadiusMapping,
   edgeWidthMapping
-} from '../utils';
+} from '../../utils';
 
-import { baseUrl, responseData, dict } from '../types/common';
+import { baseUrl, responseData, dict } from '../../types/common';
 import type {
   GraphData,
   GraphDataResponse
-} from '../types/GraphManagementStore/graphManagementStore';
+} from '../../types/GraphManagementStore/graphManagementStore';
 import type {
   ColorSchemas,
   RuleMap,
@@ -43,14 +44,15 @@ import type {
   ExecutionLogsResponse,
   FavoriteQuery,
   FavoriteQueryResponse,
-  EditableProperties
-} from '../types/GraphManagementStore/dataAnalyzeStore';
+  EditableProperties,
+  ShortestPathAlgorithmParams
+} from '../../types/GraphManagementStore/dataAnalyzeStore';
 import type {
   VertexTypeListResponse,
   VertexType,
   EdgeType
-} from '../types/GraphManagementStore/metadataConfigsStore';
-import type { EdgeTypeListResponse } from '../types/GraphManagementStore/metadataConfigsStore';
+} from '../../types/GraphManagementStore/metadataConfigsStore';
+import type { EdgeTypeListResponse } from '../../types/GraphManagementStore/metadataConfigsStore';
 
 const ruleMap: RuleMap = {
   大于: 'gt',
@@ -64,8 +66,14 @@ const ruleMap: RuleMap = {
 
 export class DataAnalyzeStore {
   [key: string]: any;
+  algorithmAnalyzerStore: AlgorithmAnalyzerStore;
+
+  constructor() {
+    this.algorithmAnalyzerStore = new AlgorithmAnalyzerStore(this);
+  }
 
   @observable currentId: number | null = null;
+  @observable currentTab = 'gremlin-analyze';
   @observable searchText = '';
   @observable isSidebarExpanded = false;
   @observable isLoadingGraph = false;
@@ -187,10 +195,14 @@ export class DataAnalyzeStore {
   @computed get graphNodes(): GraphNode[] {
     return this.originalGraphData.data.graph_view.vertices.map(
       ({ id, label, properties }) => {
-        const joinedLabel = this.vertexWritingMappings[label]
-          .map((field) => (field === '~id' ? id : properties[field]))
-          .filter((label) => label !== undefined && label !== null)
-          .join('-');
+        // if user create new node or edge in query statement
+        // rather in schema manager, there's no style in default
+        const joinedLabel = !isUndefined(this.vertexWritingMappings[label])
+          ? this.vertexWritingMappings[label]
+              .map((field) => (field === '~id' ? id : properties[field]))
+              .filter((label) => label !== undefined && label !== null)
+              .join('-')
+          : id;
 
         return {
           id,
@@ -254,9 +266,13 @@ export class DataAnalyzeStore {
   @computed get graphEdges(): GraphEdge[] {
     return this.originalGraphData.data.graph_view.edges.map(
       ({ id, label, source, target, properties }) => {
-        const joinedLabel = this.edgeWritingMappings[label]
-          .map((field) => (field === '~id' ? label : properties[field]))
-          .join('-');
+        // if user create new node or edge in query statement
+        // rather in schema manager, there's no style in default
+        const joinedLabel = !isUndefined(this.edgeWritingMappings[label])
+          ? this.edgeWritingMappings[label]
+              .map((field) => (field === '~id' ? label : properties[field]))
+              .join('-')
+          : label;
 
         return {
           id,
@@ -269,7 +285,11 @@ export class DataAnalyzeStore {
           target,
           from: source,
           to: target,
-          font: { size: 16, strokeWidth: 0, color: '#666' },
+          font: {
+            size: 16,
+            strokeWidth: 0,
+            color: '#666'
+          },
           arrows: this.edgeWithArrowMappings[label] ? 'to' : '',
           color: this.edgeColorMappings[label],
           value: edgeWidthMapping[this.edgeThicknessMappings[label]],
@@ -299,6 +319,11 @@ export class DataAnalyzeStore {
   @action
   setCurrentId(id: number) {
     this.currentId = id;
+  }
+
+  @action
+  setCurrentTab(tab: string) {
+    this.currentTab = tab;
   }
 
   @action
@@ -645,8 +670,10 @@ export class DataAnalyzeStore {
     };
   }
 
-  @observable validateAddGraphNodeErrorMessage: NewGraphData | null = null;
-  @observable validateAddGraphEdgeErrorMessage: NewGraphData | null = null;
+  @observable
+  validateAddGraphNodeErrorMessage: NewGraphData | null = null;
+  @observable
+  validateAddGraphEdgeErrorMessage: NewGraphData | null = null;
   @observable
   validateEditableGraphDataPropertyErrorMessage: EditableProperties | null = null;
 
@@ -941,8 +968,51 @@ export class DataAnalyzeStore {
   }
 
   @action
+  resetSwitchTabState() {
+    this.isLoadingGraph = false;
+    this.isGraphLoaded = false;
+    this.isShowGraphInfo = false;
+    this.isClickOnNodeOrEdge = false;
+    this.queryMode = 'query';
+    this.codeEditorText = '';
+    this.dynamicAddGraphDataStatus = '';
+    this.graphData = {} as FetchGraphResponse;
+
+    this.visNetwork = null;
+    this.visDataSet = null;
+    this.visCurrentCoordinates = {
+      domX: '',
+      domY: '',
+      canvasX: '',
+      canvasY: ''
+    };
+
+    this.selectedGraphData = createGraphNode();
+    this.selectedGraphLinkData = createGraphEdge();
+
+    this.pageConfigs.tableResult = {
+      pageNumber: 1,
+      pageTotal: 0
+    };
+
+    this.requestStatus.fetchGraphs = 'standby';
+    this.requestStatus.createAsyncTask = 'standby';
+    this.errorInfo.fetchGraphs = {
+      code: NaN,
+      message: ''
+    };
+    this.errorInfo.createAsyncTask = {
+      code: NaN,
+      message: ''
+    };
+
+    this.clearFilteredGraphQueryOptions();
+  }
+
+  @action
   resetIdState() {
     this.currentId = null;
+    this.currentTab = 'gremlin-analyze';
     this.searchText = '';
     this.isSidebarExpanded = false;
     this.isLoadingGraph = false;
@@ -998,6 +1068,7 @@ export class DataAnalyzeStore {
   dispose() {
     this.resetIdState();
     this.vertexTypes = [];
+    this.edgeTypes = [];
     this.idList = [];
   }
 
@@ -1240,21 +1311,63 @@ export class DataAnalyzeStore {
     }
   });
 
-  fetchGraphs = flow(function* fetchGraphs(this: DataAnalyzeStore) {
+  fetchGraphs = flow(function* fetchGraphs(
+    this: DataAnalyzeStore,
+    algorithmConfigs?: { url: string; type: string }
+  ) {
     // reset request status of create async task
     this.requestStatus.createAsyncTask = 'standby';
     this.requestStatus.fetchGraphs = 'pending';
     this.isLoadingGraph = true;
 
-    try {
-      const result: AxiosResponse<FetchGraphResponse> = yield axios
-        .post<FetchGraphResponse>(
-          `${baseUrl}/${this.currentId}/gremlin-query`,
-          {
-            content: this.codeEditorText
+    let params: ShortestPathAlgorithmParams | null = null;
+
+    if (!isUndefined(algorithmConfigs)) {
+      switch (algorithmConfigs.type) {
+        case 'shortest-path': {
+          if (
+            this.algorithmAnalyzerStore.shortestPathAlgorithmParams.label ===
+            '__all__'
+          ) {
+            const clonedParams: ShortestPathAlgorithmParams = cloneDeep(
+              this.algorithmAnalyzerStore.shortestPathAlgorithmParams
+            );
+
+            delete clonedParams.label;
+            params = clonedParams;
+            break;
           }
-        )
-        .catch(checkIfLocalNetworkOffline);
+
+          params = this.algorithmAnalyzerStore.shortestPathAlgorithmParams;
+          break;
+        }
+        // default:
+        //   params = this.algorithmAnalyzerStore.shortestPathAlgorithmParams;
+      }
+    }
+
+    try {
+      let result: AxiosResponse<FetchGraphResponse>;
+
+      if (!isUndefined(algorithmConfigs)) {
+        result = yield axios
+          .post<FetchGraphResponse>(
+            `${baseUrl}/${this.currentId}/algorithms/${algorithmConfigs.url}`,
+            {
+              ...params
+            }
+          )
+          .catch(checkIfLocalNetworkOffline);
+      } else {
+        result = yield axios
+          .post<FetchGraphResponse>(
+            `${baseUrl}/${this.currentId}/gremlin-query`,
+            {
+              content: this.codeEditorText
+            }
+          )
+          .catch(checkIfLocalNetworkOffline);
+      }
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchGraphs.code = result.data.status;

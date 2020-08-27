@@ -1,0 +1,89 @@
+{
+  "data-analyze": {
+    "category": {
+      "gremlin-analyze": "Gremlin 分析",
+      "algorithm-analyze": "算法分析"
+    },
+    "manipulations": {
+      "execution": "执行",
+      "favorite": "收藏",
+      "reset": "重置"
+    },
+    "algorithm-list": {
+      "title": "算法目录",
+      "loop-detection": "环路检测",
+      "focus-detection": "交点检测",
+      "shortest-path": "最短路径",
+      "shortest-path-all": "全最短路径",
+      "relative-path-or-all-path": "关联路径/全部路径",
+      "model-similarity-algorithm": "模型相似度算法",
+      "real-time-recommendation": "实时推荐",
+      "k-step-neighbor": "k步邻居",
+      "k-hop-algorithm": "k跳算法",
+      "custom-path": "自定义路径",
+      "custom-intersection-detection": "自定义交点检测",
+      "radiographic-inspection": "射线检测",
+      "common-neighbor": "共同邻居",
+      "weighted-shortest-path": "带权最短路径",
+      "single-source-weighted-path": "单源带权路径",
+      "jaccard-similarity": "Jaccard相似度",
+      "personal-rank-recommendation-algorithm": "Personal Rank推荐算法"
+    },
+    "algorithm-forms": {
+      "shortest-path": {
+        "options": {
+          "source": "起点ID:",
+          "target": "终点ID:",
+          "direction": "方向:",
+          "max_depth": "最大步数:",
+          "maxDepth": "最大步数:",
+          "label": "边类型:",
+          "max_degree": "最大度数:",
+          "maxDegree": "最大度数:",
+          "skip_degree": "超级顶点度数:",
+          "skipDegree": "超级顶点度数:",
+          "capacity": "访问顶点最大值:"
+        },
+        "pre-value": "全部",
+        "placeholder": {
+          "input-source-id": "请输入起点ID",
+          "input-target-id": "请输入终点ID",
+          "input-integer": "请填写大于等于0的整数",
+          "input-positive-integer": "请填写大于0的整数",
+          "no-edge-types": "无边类型"
+        },
+        "hint": {
+          "max-depth": "为保证性能，建议不超过10步，推荐5步",
+          "skip-degree": "填写查询过程中需要跳过的顶点的最小的边数目，即当顶点的边数目大于超级顶点度数时，跳过该顶点，可用于规避超级点"
+        },
+        "validations": {
+          "no-empty": "该项不能为空",
+          "integer-only": "请填写大于等于0的整数",
+          "postive-integer-only": "请填写大于0的整数"
+        }
+      }
+    },
+    "exec-logs": {
+      "table-title": {
+        "time": "时间",
+        "type": "执行类型",
+        "content": "执行内容",
+        "status": "状态",
+        "duration": "耗时",
+        "manipulation": "操作"
+      },
+      "type": {
+        "GREMLIN": "GREMLIN 查询",
+        "GREMLIN_ASYNC": "GREMLIN 任务",
+        "ALGORITHM": "算法查询"
+      },
+      "status": {
+        "success": "成功",
+        "async-success": "提交成功",
+        "running": "运行中",
+        "failed": "失败",
+        "async-failed": "提交失败"
+      }
+    }
+  }
+}
