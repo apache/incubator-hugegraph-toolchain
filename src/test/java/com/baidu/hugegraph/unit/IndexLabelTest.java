@@ -83,7 +83,7 @@ public class IndexLabelTest {
 
         IndexLabel.IndexLabelV56 indexLabelV56 = indexLabel.switchV56();
 
-        String json = "{\"id\":0,\"name\":\"personByAge\",\"properties\":[]," +
+        String json = "{\"id\":0,\"name\":\"personByAge\"," +
                 "\"check_exist\":true,\"user_data\":{}," +
                 "\"base_type\":\"VERTEX_LABEL\",\"base_value\":\"person\"," +
                 "\"index_type\":\"SECONDARY\",\"fields\":[\"age\"]}";

@@ -266,7 +266,7 @@ public class IndexLabel extends SchemaElement {
         }
     }
 
-    @JsonIgnoreProperties({"rebuild"})
+    @JsonIgnoreProperties({"properties", "rebuild"})
     public static class IndexLabelV56 extends IndexLabel {
 
         public IndexLabelV56(IndexLabel indexLabel) {
