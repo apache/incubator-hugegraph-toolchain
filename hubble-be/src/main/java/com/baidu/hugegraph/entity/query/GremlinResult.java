@@ -72,6 +72,10 @@ public class GremlinResult {
             return this == EDGE;
         }
 
+        public boolean isPath() {
+            return this == PATH;
+        }
+
         public boolean isGraph() {
             return this == VERTEX || this == EDGE || this == PATH;
         }

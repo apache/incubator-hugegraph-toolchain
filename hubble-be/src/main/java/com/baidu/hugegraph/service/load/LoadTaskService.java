@@ -480,7 +480,7 @@ public class LoadTaskService {
             // set selected
             eMapping.selectedFields().addAll(sourceFields);
             eMapping.selectedFields().addAll(targetFields);
-            eMapping.selectedFields(fieldMappings.keySet());
+            eMapping.selectedFields().addAll(fieldMappings.keySet());
             // set null_values
             Set<Object> nullValues = new HashSet<>();
             nullValues.addAll(mapping.getNullValues().getChecked());

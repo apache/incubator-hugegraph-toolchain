@@ -196,7 +196,7 @@ public class LoadTask implements Runnable {
                  "The file total lines must be >= read lines, " +
                  "but got total lines %s, read lines %s",
                  this.fileTotalLines, this.fileReadLines);
-        return (int) ((double) this.fileReadLines / this.fileTotalLines * 100);
+        return (int) (0.5 + (double) this.fileReadLines / this.fileTotalLines * 100);
     }
 
     @JsonProperty("load_rate")

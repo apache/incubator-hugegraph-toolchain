@@ -74,4 +74,19 @@ public class FileSetting implements Mergeable {
     @MergeProperty
     @JsonProperty("list_format")
     private ListFormat listFormat = new ListFormat();
+
+    public void unescapeDelimiterIfNeeded() {
+        if ("\\t".equals(this.delimiter)) {
+            this.delimiter = "\t";
+        }
+        if (!",".equals(this.delimiter)) {
+            this.format = "TEXT";
+        }
+    }
+
+    public void escapeDelimiterIfNeeded() {
+        if ("\t".equals(this.delimiter)) {
+            this.delimiter = "\\t";
+        }
+    }
 }

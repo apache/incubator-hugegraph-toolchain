@@ -339,14 +339,14 @@ public class GremlinQueryService {
 
         if (!edges.isEmpty()) {
             if (vertices.isEmpty()) {
-                vertices = this.verticesOfEdge(edges, client);
+                vertices = this.verticesOfEdge(result, edges, client);
             } else {
                 // TODO: reduce the number of requests
-                vertices.putAll(this.verticesOfEdge(edges, client));
+                vertices.putAll(this.verticesOfEdge(result, edges, client));
             }
         } else {
             if (!vertices.isEmpty()) {
-                edges = this.edgesOfVertex(vertices, client);
+                edges = this.edgesOfVertex(result, vertices, client);
             }
         }
 
@@ -416,12 +416,13 @@ public class GremlinQueryService {
         return rawVertexId;
     }
 
-    private Map<String, Edge> edgesOfVertex(Map<Object, Vertex> vertices,
+    private Map<String, Edge> edgesOfVertex(TypedResult result,
+                                            Map<Object, Vertex> vertices,
                                             HugeClient client) {
-        int edgeLimit = this.config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT);
-        int batchSize = this.config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS);
-        int degreeLimit = this.config.get(
-                          HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT);
+        final HugeConfig config = this.config;
+        int batchSize = config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS);
+        int edgeLimit = config.get(HubbleOptions.GREMLIN_EDGES_TOTAL_LIMIT);
+        int degreeLimit = config.get(HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT);
 
         Set<Object> vertexIds = vertices.keySet();
         Map<String, Edge> edges = new HashMap<>(vertexIds.size());
@@ -431,8 +432,15 @@ public class GremlinQueryService {
                                            .collect(Collectors.toList());
             String ids = StringUtils.join(escapedIds, ",");
             // Any better way to find two vertices has linked?
-            String gremlin = String.format("g.V(%s).bothE().dedup().limit(%s)",
-                                           ids, edgeLimit);
+            String gremlin;
+            if (result.getType().isPath()) {
+                // If result type is path, the vertices count not too much in theory
+                gremlin = String.format("g.V(%s).bothE().local(limit(%s)).dedup()",
+                                        ids, degreeLimit);
+            } else {
+                gremlin = String.format("g.V(%s).bothE().dedup().limit(%s)",
+                                        ids, edgeLimit);
+            }
             ResultSet resultSet = client.gremlin().gremlin(gremlin).execute();
             // The edges count for per vertex
             Map<Object, Integer> degrees = new HashMap<>(resultSet.size());
@@ -462,7 +470,8 @@ public class GremlinQueryService {
         return edges;
     }
 
-    private Map<Object, Vertex> verticesOfEdge(Map<String, Edge> edges,
+    private Map<Object, Vertex> verticesOfEdge(TypedResult result,
+                                               Map<String, Edge> edges,
                                                HugeClient client) {
         int batchSize = this.config.get(HubbleOptions.GREMLIN_BATCH_QUERY_IDS);
 
