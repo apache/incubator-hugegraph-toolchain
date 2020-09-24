@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.builder.SchemaCache;
 import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -33,6 +34,7 @@ import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
+import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.util.Log;
 
 public final class LoadContext {
@@ -114,6 +116,27 @@ public final class LoadContext {
     public void updateSchemaCache() {
         assert this.client != null;
         this.schemaCache.updateAll();
+    }
+
+    public void setLoadingMode() {
+        String graph = this.client.graph().graph();
+        try {
+            this.client.graphs().mode(graph, GraphMode.LOADING);
+        } catch (ServerException e) {
+            if (e.getMessage().contains("Can not deserialize value of type")) {
+                LOG.warn("HugeGraphServer doesn't support loading mode");
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    public void unsetLoadingMode() {
+        String graph = this.client.graph().graph();
+        GraphMode mode = this.client.graphs().mode(graph);
+        if (mode.loading()) {
+            this.client.graphs().mode(graph, GraphMode.NONE);
+        }
     }
 
     public void close() {
