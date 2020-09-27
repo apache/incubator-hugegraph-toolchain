@@ -49,10 +49,10 @@ public final class Printer {
         if (options.incrementalMode) {
             LoadProgress progress = context.oldProgress();
             System.out.println(String.format(
-                               "vertices/edges loaded before this time: %s/%s",
+                               "vertices/edges loaded last time: %s/%s",
                                progress.vertexLoaded(), progress.edgeLoaded()));
         }
-        System.out.print("vertices/edges has been loaded this time : ");
+        System.out.print("vertices/edges loaded this time : ");
     }
 
     public static void printFinalProgress(LoadContext context) {

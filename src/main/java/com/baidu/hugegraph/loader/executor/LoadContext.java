@@ -46,6 +46,7 @@ public final class LoadContext {
 
     private volatile boolean closed;
     private volatile boolean stopped;
+    private volatile boolean noError;
     private final LoadOptions options;
     private final LoadSummary summary;
     // The old progress just used to read
@@ -61,6 +62,7 @@ public final class LoadContext {
         this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
         this.closed = false;
         this.stopped = false;
+        this.noError = true;
         this.options = options;
         this.summary = new LoadSummary();
         this.oldProgress = LoadProgress.parse(options);
@@ -74,12 +76,24 @@ public final class LoadContext {
         return this.timestamp;
     }
 
+    public boolean closed() {
+        return this.closed;
+    }
+
     public boolean stopped() {
         return this.stopped;
     }
 
     public void stopLoading() {
         this.stopped = true;
+    }
+
+    public boolean noError() {
+        return this.noError;
+    }
+
+    public void occuredError() {
+        this.noError = false;
     }
 
     public LoadOptions options() {
@@ -143,15 +157,13 @@ public final class LoadContext {
         if (this.closed) {
             return;
         }
-        LOG.info("Ready to close failure loggers");
         for (FailLogger logger : this.loggers.values()) {
             logger.close();
         }
         LOG.info("Close all failure loggers successfully");
 
-        LOG.info("Ready to write load progress");
-        this.newProgress.plusVertexLoaded(summary.vertexLoaded());
-        this.newProgress.plusEdgeLoaded(summary.edgeLoaded());
+        this.newProgress.plusVertexLoaded(this.summary.vertexLoaded());
+        this.newProgress.plusEdgeLoaded(this.summary.edgeLoaded());
         try {
             this.newProgress.write(this);
         } catch (IOException e) {
@@ -159,7 +171,6 @@ public final class LoadContext {
         }
         LOG.info("Write load progress successfully");
 
-        LOG.info("Ready to close HugeClient");
         this.client.close();
         LOG.info("Close HugeClient successfully");
         this.closed = true;

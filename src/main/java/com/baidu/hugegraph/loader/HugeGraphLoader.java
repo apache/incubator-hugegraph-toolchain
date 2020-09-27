@@ -56,10 +56,6 @@ public final class HugeGraphLoader {
 
     private static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
-    /*
-     * TODO: use a more graceful way to express loader end succeed or failed
-     */
-    private boolean succeed;
     private final LoadContext context;
     private final LoadMapping mapping;
     private final TaskManager manager;
@@ -88,7 +84,6 @@ public final class HugeGraphLoader {
         this.mapping = mapping;
         this.manager = new TaskManager(this.context);
         this.addShutdownHook();
-        this.succeed = true;
     }
 
     private void addShutdownHook() {
@@ -121,7 +116,7 @@ public final class HugeGraphLoader {
         } finally {
             this.stopThenShutdown();
         }
-        return this.succeed;
+        return this.context.noError();
     }
 
     private void clearAllDataIfNeeded() {
@@ -188,7 +183,6 @@ public final class HugeGraphLoader {
         // Load input structs one by one
         for (InputStruct struct : structs) {
             if (this.context.stopped()) {
-                this.succeed = false;
                 break;
             }
             if (struct.skip()) {
@@ -218,7 +212,11 @@ public final class HugeGraphLoader {
         final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
         for (boolean finished = false; !finished;) {
+            if (this.context.stopped()) {
+                break;
+            }
             try {
+                // Read next line from data source
                 if (reader.hasNext()) {
                     lines.add(reader.next());
                     metrics.increaseReadSuccess();
@@ -228,11 +226,6 @@ public final class HugeGraphLoader {
             } catch (ReadException e) {
                 metrics.increaseReadFailure();
                 this.handleReadFailure(struct, e);
-            }
-            if (this.context.stopped()) {
-                LOG.warn("Read errors exceed limit, load task stopped");
-                this.succeed = false;
-                return;
             }
             // If readed max allowed lines, stop loading
             boolean reachedMaxReadLines = this.reachedMaxReadLines();
@@ -248,17 +241,10 @@ public final class HugeGraphLoader {
                 reader.confirmOffset();
                 this.context.newProgress().markLoaded(struct, finished);
 
-                this.markStopIfNeeded();
-                if (this.context.stopped()) {
-                    LOG.warn("Parse errors exceed limit, stopped loading tasks");
-                    this.succeed = false;
-                    return;
-                }
-                // TODO: stopped status should be success
+                this.handleParseFailure();
                 if (reachedMaxReadLines) {
                     LOG.warn("Read lines exceed limit, stopped loading tasks");
                     this.context.stopLoading();
-                    return;
                 }
                 lines = new ArrayList<>(batchSize);
             }
@@ -271,8 +257,7 @@ public final class HugeGraphLoader {
     private void executeParseTask(InputStruct struct, ElementMapping mapping,
                                   ParseTaskBuilder.ParseTask task) {
         List<List<Record>> batches = task.get();
-        if (this.context.stopped() || this.context.options().dryRun ||
-            CollectionUtils.isEmpty(batches)) {
+        if (this.context.options().dryRun || CollectionUtils.isEmpty(batches)) {
             return;
         }
         for (List<Record> batch : batches) {
@@ -282,25 +267,25 @@ public final class HugeGraphLoader {
 
     private void handleReadFailure(InputStruct struct, ReadException e) {
         LOG.error("Read {} error", struct, e);
+        this.context.occuredError();
         LoadOptions options = this.context.options();
         if (options.testMode) {
             throw e;
         }
+        // Write to current mapping's read failure log
+        this.context.failureLogger(struct).write(e);
 
         long failures = this.context.summary().totalReadFailures();
         if (options.maxReadErrors != Constants.NO_LIMIT &&
             failures >= options.maxReadErrors) {
-            Printer.printError("More than %s reading error, stop loading " +
-                               "and waiting all load tasks stopped",
+            Printer.printError("More than %s read error, stop reading and " +
+                               "waiting all parse/insert tasks stopped",
                                options.maxReadErrors);
             this.context.stopLoading();
-        } else {
-            // Write to current mapping's parse failure log
-            this.context.failureLogger(struct).write(e);
         }
     }
 
-    private void markStopIfNeeded() {
+    private void handleParseFailure() {
         LoadOptions options = this.context.options();
         long failures = this.context.summary().totalParseFailures();
         if (options.maxParseErrors != Constants.NO_LIMIT &&
@@ -310,7 +295,7 @@ public final class HugeGraphLoader {
             }
             synchronized (this.context) {
                 if (!this.context.stopped()) {
-                    Printer.printError("More than %s parse errors, stop " +
+                    Printer.printError("More than %s parse error, stop " +
                                        "parsing and waiting all insert tasks " +
                                        "stopped", options.maxParseErrors);
                     this.context.stopLoading();
@@ -330,11 +315,11 @@ public final class HugeGraphLoader {
     /**
      * TODO: How to distinguish load task finished normally or abnormally
      */
-    private void stopThenShutdown() {
-        LOG.info("Stop loading then shutdown HugeGraphLoader");
-        if (this.context == null) {
+    private synchronized void stopThenShutdown() {
+        if (this.context.closed()) {
             return;
         }
+        LOG.info("Stop loading then shutdown HugeGraphLoader");
         try {
             this.context.stopLoading();
             if (this.manager != null) {
