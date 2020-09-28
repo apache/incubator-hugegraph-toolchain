@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,7 +42,9 @@ import com.baidu.hugegraph.base.ToolClient;
 import com.baidu.hugegraph.cmd.SubCommands;
 import com.baidu.hugegraph.concurrent.KeyLock;
 import com.baidu.hugegraph.exception.ToolsException;
+import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
@@ -64,7 +65,6 @@ public class BackupRestoreBaseManager extends RetryManager {
     private long startTime = 0L;
     protected static KeyLock locks = new KeyLock();
     private String logDir;
-    private Map<String, String> hdfsConf = new HashMap<>();
     protected Directory directory;
     private Map<String, OutputStream> outputStreams;
     private Map<String, InputStream> inputStreams;
@@ -104,8 +104,9 @@ public class BackupRestoreBaseManager extends RetryManager {
         this.directory.removeDirectory();
     }
 
-    protected void write(String path, HugeType type, List<?> list) {
-        OutputStream os = this.outputStream(path);
+    protected long write(String path, HugeType type,
+                         List<?> list, boolean compress) {
+        OutputStream os = this.outputStream(path, compress);
         ByteArrayOutputStream baos = new ByteArrayOutputStream(LBUF_SIZE);
         try {
             String key = String.format("{\"%s\": ", type.string());
@@ -113,10 +114,65 @@ public class BackupRestoreBaseManager extends RetryManager {
             this.client.mapper().writeValue(baos, list);
             baos.write("}\n".getBytes(API.CHARSET));
             os.write(baos.toByteArray());
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new ToolsException("Failed to serialize %s to %s",
                                      e, type, path);
         }
+        return list.size();
+    }
+
+    protected long write(String path, HugeType type, List<?> list,
+                         boolean compress, String format,
+                         String label, boolean allProperties,
+                         List<String> properties) {
+        if (format.equals("json")) {
+            return this.write(path, type, list, compress);
+        }
+
+        assert format.equals("text");
+        return this.writeText(path, type, list, compress, label,
+                              allProperties, properties);
+    }
+
+    protected long writeText(String path, HugeType type, List<?> list,
+                             boolean compress, String label,
+                             boolean allProperties, List<String> properties) {
+        OutputStream os = this.outputStream(path, compress);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(LBUF_SIZE);
+        StringBuilder builder = new StringBuilder(LBUF_SIZE);
+        long count = 0L;
+        try {
+            for (Object e : list) {
+                GraphElement element = (GraphElement) e;
+                if (label != null && !label.equals(element.label())) {
+                    continue;
+                }
+                count++;
+                if (type == HugeType.VERTEX) {
+                    builder.append(element.id()).append("\t");
+                } else {
+                    Edge edge = (Edge) e;
+                    builder.append(edge.sourceId()).append("\t")
+                           .append(edge.targetId()).append("\t");
+                }
+                if (allProperties) {
+                    for (Object value : element.properties().values()) {
+                        builder.append(value).append(",");
+                    }
+                } else {
+                    for (String property : properties) {
+                        builder.append(element.property(property)).append(",");
+                    }
+                }
+                builder.setCharAt(builder.length() - 1, '\n');
+            }
+            baos.write(builder.toString().getBytes(API.CHARSET));
+            os.write(baos.toByteArray());
+        } catch (Throwable e) {
+            throw new ToolsException("Failed to serialize %s to %s",
+                                     e, type, path);
+        }
+        return count;
     }
 
     protected void read(String file, HugeType type,
@@ -134,12 +190,12 @@ public class BackupRestoreBaseManager extends RetryManager {
         }
     }
 
-    private OutputStream outputStream(String file) {
+    private OutputStream outputStream(String file, boolean compress) {
         OutputStream os = this.outputStreams.get(file);
         if (os != null) {
             return os;
         }
-        os = this.directory.outputStream(file, true);
+        os = this.directory.outputStream(file, compress, true);
         OutputStream prev = this.outputStreams.putIfAbsent(file, os);
         if (prev != null) {
             closeAndIgnoreException(os);

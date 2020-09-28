@@ -122,12 +122,75 @@ public class SubCommands {
                    description = "Split size of shard")
         public long splitSize = 1024 * 1024L;
 
+        @Parameter(names = {"--format"}, arity = 1,
+                   validateWith = {FormatValidator.class},
+                   description = "File format, valid is [json, text]")
+        public String format = "json";
+
+        @Parameter(names = {"--compress"}, arity = 1,
+                   description = "compress flag")
+        public boolean compress = true;
+
+        @Parameter(names = {"--label"}, arity = 1,
+                   description = "Vertex or edge label, only valid when type " +
+                                 "is vertex or edge")
+        public String label;
+
+        @Parameter(names = {"--all-properties"}, arity = 1,
+                   description = "All properties to be backup flag")
+        public boolean allProperties = false;
+
+        @Parameter(names = {"--properties"}, arity = 1,
+                   description = "Vertex or edge properties to backup, " +
+                                 "only valid when type is vertex or edge")
+        public List<String> properties = ImmutableList.of();
+
         public long splitSize() {
             return this.splitSize;
         }
 
         public void splitSize(long splitSize) {
             this.splitSize = splitSize;
+        }
+
+        public String format() {
+            return this.format;
+        }
+
+        public void format(String format) {
+            this.format = format;
+        }
+
+        public boolean compress() {
+            return this.compress;
+        }
+
+        public void compress(boolean compress) {
+            this.compress = compress;
+        }
+
+        public String label() {
+            return this.label;
+        }
+
+        public void label(String label) {
+            this.label = label;
+        }
+
+        public boolean allProperties() {
+            return this.allProperties;
+        }
+
+        public void allProperties(boolean allProperties) {
+            this.allProperties = allProperties;
+        }
+
+        public List<String> properties() {
+            return this.properties;
+        }
+
+        public void properties(List<String> properties) {
+            this.properties = properties;
         }
     }
 
@@ -773,6 +836,22 @@ public class SubCommands {
                           "Read file '%s' error", value), e);
             }
             return content;
+        }
+    }
+
+    public static class FormatValidator implements IParameterValidator {
+
+        private static final Set<String> FORMATS = ImmutableSet.of(
+                "JSON", "TEXT"
+        );
+
+        @Override
+        public void validate(String name, String value) {
+            if (!FORMATS.contains(value.toUpperCase())) {
+                throw new ParameterException(String.format(
+                          "Invalid --format '%s', valid value is %s",
+                          value, FORMATS));
+            }
         }
     }
 

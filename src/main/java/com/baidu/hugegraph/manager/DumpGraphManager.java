@@ -91,7 +91,8 @@ public class DumpGraphManager extends BackupManager {
     }
 
     @Override
-    protected void write(String file, HugeType type, List<?> list) {
+    protected long write(String file, HugeType type,
+                         List<?> list, boolean compress) {
         switch (type) {
             case VERTEX:
                 for (Object vertex : list) {
@@ -106,5 +107,6 @@ public class DumpGraphManager extends BackupManager {
             default:
                 throw new AssertionError("Invalid type " + type);
         }
+        return list.size();
     }
 }

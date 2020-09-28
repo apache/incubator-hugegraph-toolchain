@@ -73,13 +73,13 @@ public class LocalDirectory extends Directory {
     }
 
     @Override
-    public String suffix() {
-        return ".zip";
+    public String suffix(boolean compress) {
+        return compress ? ".zip" : "";
     }
 
     @Override
     public InputStream inputStream(String file) {
-        if (file.endsWith(this.suffix())) {
+        if (file.endsWith(this.suffix(true))) {
             return this.zipInputStream(file);
         }
         // Keep compatible with version before 1.3.0, which backup data no zip
@@ -114,13 +114,17 @@ public class LocalDirectory extends Directory {
     }
 
     @Override
-    public OutputStream outputStream(String file, boolean override) {
-        String path = Paths.get(this.directory(), file + this.suffix())
+    public OutputStream outputStream(String file, boolean compress,
+                                     boolean override) {
+        String path = Paths.get(this.directory(), file + this.suffix(compress))
                            .toString();
         FileOutputStream os = null;
         ZipOutputStream zos = null;
         try {
             os = new FileOutputStream(path, !override);
+            if (!compress) {
+                return os;
+            }
             zos = new ZipOutputStream(os);
             ZipEntry entry = new ZipEntry(file);
             zos.putNextEntry(entry);

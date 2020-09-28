@@ -79,6 +79,11 @@ public class BackupManager extends BackupRestoreBaseManager {
 
     private long splitSize;
     private String backend;
+    private boolean compress;
+    private String format;
+    private String label;
+    private boolean allProperties;
+    private List<String> properties;
 
     public BackupManager(ToolClient.ConnectionInfo info) {
         super(info, "backup");
@@ -93,6 +98,18 @@ public class BackupManager extends BackupRestoreBaseManager {
         E.checkArgument(splitSize >= 1024 * 1024,
                         "Split size must >= 1M, but got %s", splitSize);
         this.splitSize(splitSize);
+        this.compress = backup.compress;
+        this.format = backup.format;
+        if (backup.label != null) {
+            E.checkArgument(backup.types().size() == 1 &&
+                            (backup.types().get(0) == HugeType.VERTEX ||
+                             backup.types().get(0) == HugeType.EDGE),
+                            "The label can only be set when " +
+                            "backup type is vertex or edge");
+        }
+        this.label = backup.label;
+        this.allProperties = backup.allProperties;
+        this.properties = backup.properties;
     }
 
     public void splitSize(long splitSize) {
@@ -246,9 +263,9 @@ public class BackupManager extends BackupRestoreBaseManager {
             if (vertexList == null || vertexList.isEmpty()) {
                 return;
             }
-            this.backup(HugeType.VERTEX, suffix.get(), vertexList);
+            long count = this.backup(HugeType.VERTEX, suffix.get(), vertexList);
 
-            this.vertexCounter.getAndAdd(vertexList.size());
+            this.vertexCounter.getAndAdd(count);
             Printer.printInBackward(this.vertexCounter.get());
         } while ((page = vertices.page()) != null);
     }
@@ -276,25 +293,29 @@ public class BackupManager extends BackupRestoreBaseManager {
             if (edgeList == null || edgeList.isEmpty()) {
                 return;
             }
-            this.backup(HugeType.EDGE, suffix.get(), edgeList);
+            long count = this.backup(HugeType.EDGE, suffix.get(), edgeList);
 
-            this.edgeCounter.getAndAdd(edgeList.size());
+            this.edgeCounter.getAndAdd(count);
             Printer.printInBackward(this.edgeCounter.get());
         } while ((page = edges.page()) != null);
     }
 
     private void backup(HugeType type, List<?> list) {
         String file = type.string();
-        this.write(file, type, list);
+        this.write(file, type, list, this.compress);
     }
 
-    private void backup(HugeType type, int number, List<?> list) {
+    private long backup(HugeType type, int number, List<?> list) {
         String file = type.string() + number;
         int size = list.size();
+        long count = 0L;
         for (int start = 0; start < size; start += BATCH) {
             int end = Math.min(start + BATCH, size);
-            this.write(file, type, list.subList(start, end));
+            count += this.write(file, type, list.subList(start, end),
+                                this.compress, this.format, this.label,
+                                this.allProperties, this.properties);
         }
+        return count;
     }
 
     private String initPage() {

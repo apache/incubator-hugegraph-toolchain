@@ -125,8 +125,8 @@ public class HdfsDirectory extends Directory {
     }
 
     @Override
-    public String suffix() {
-        return ".zip";
+    public String suffix(boolean compress) {
+        return compress ? ".zip" : "";
     }
 
     @Override
@@ -149,8 +149,9 @@ public class HdfsDirectory extends Directory {
     }
 
     @Override
-    public OutputStream outputStream(String file, boolean override) {
-        String path = this.path(file + this.suffix());
+    public OutputStream outputStream(String file, boolean compress,
+                                     boolean override) {
+        String path = this.path(file + this.suffix(compress));
         FileSystem fs = this.fileSystem();
         FSDataOutputStream os = null;
         ZipOutputStream zos = null;
@@ -160,6 +161,9 @@ public class HdfsDirectory extends Directory {
                 os = fs.create(dest, true);
             } else {
                 os = fs.append(dest);
+            }
+            if (!compress) {
+                return os;
             }
             zos = new ZipOutputStream(os);
             ZipEntry entry = new ZipEntry(file);

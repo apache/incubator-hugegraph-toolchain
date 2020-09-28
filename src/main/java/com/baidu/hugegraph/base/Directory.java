@@ -42,7 +42,7 @@ public abstract class Directory {
 
     public abstract List<String> files();
 
-    public abstract String suffix();
+    public abstract String suffix(boolean compress);
 
     public abstract void ensureDirectoryExist(boolean create);
 
@@ -50,7 +50,8 @@ public abstract class Directory {
 
     public abstract InputStream inputStream(String path);
 
-    public abstract OutputStream outputStream(String path, boolean override);
+    public abstract OutputStream outputStream(String path, boolean compress,
+                                              boolean override);
 
     public static void closeAndIgnoreException(Closeable stream) {
         if (stream == null) {
