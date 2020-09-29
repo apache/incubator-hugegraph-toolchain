@@ -104,6 +104,7 @@ public final class HugeGraphLoader {
 
     public boolean load() {
         try {
+            this.context.setLoadingMode();
             // Clear schema if needed
             this.clearAllDataIfNeeded();
             // Create schema
@@ -342,7 +343,11 @@ public final class HugeGraphLoader {
                 this.manager.shutdown();
             }
         } finally {
-            this.context.close();
+            try {
+                this.context.unsetLoadingMode();
+            } finally {
+                this.context.close();
+            }
         }
     }
 }

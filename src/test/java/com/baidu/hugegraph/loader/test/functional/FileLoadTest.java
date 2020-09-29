@@ -2309,15 +2309,13 @@ public class FileLoadTest extends LoadTest {
                 CLIENT.graph().getVertex(edge.sourceId());
             }, e -> {
                 ServerException se = (ServerException) e;
-                Assert.assertEquals("class javax.ws.rs.NotFoundException",
-                                    se.exception());
+                Assert.assertTrue(se.exception().contains("NotFoundException"));
             });
             Assert.assertThrows(ServerException.class, () -> {
                 CLIENT.graph().getVertex(edge.targetId());
             }, e -> {
                 ServerException se = (ServerException) e;
-                Assert.assertEquals("class javax.ws.rs.NotFoundException",
-                                    se.exception());
+                Assert.assertTrue(se.exception().contains("NotFoundException"));
             });
         });
     }
