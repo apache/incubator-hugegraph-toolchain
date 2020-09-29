@@ -36,21 +36,25 @@ import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.common.Response;
 import com.baidu.hugegraph.controller.BaseController;
 import com.baidu.hugegraph.entity.GraphConnection;
+import com.baidu.hugegraph.entity.enums.JobManagerStatus;
 import com.baidu.hugegraph.entity.load.FileMapping;
+import com.baidu.hugegraph.entity.load.JobManager;
 import com.baidu.hugegraph.entity.load.LoadTask;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.load.FileMappingService;
+import com.baidu.hugegraph.service.load.JobManagerService;
 import com.baidu.hugegraph.service.load.LoadTaskService;
 import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/load-tasks")
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/job-manager/{jobId}/load-tasks")
 public class LoadTaskController extends BaseController {
 
     private static final int LIMIT = 500;
@@ -59,6 +63,8 @@ public class LoadTaskController extends BaseController {
     private GraphConnectionService connService;
     @Autowired
     private FileMappingService fmService;
+    @Autowired
+    private JobManagerService jobService;
 
     private final LoadTaskService service;
 
@@ -69,6 +75,7 @@ public class LoadTaskController extends BaseController {
 
     @GetMapping
     public IPage<LoadTask> list(@PathVariable("connId") int connId,
+                                @PathVariable("jobId") int jobId,
                                 @RequestParam(name = "page_no",
                                               required = false,
                                               defaultValue = "1")
@@ -77,7 +84,7 @@ public class LoadTaskController extends BaseController {
                                               required = false,
                                               defaultValue = "10")
                                 int pageSize) {
-        return this.service.list(connId, pageNo, pageSize);
+        return this.service.list(connId, jobId, pageNo, pageSize);
     }
 
     @GetMapping("ids")
@@ -97,7 +104,13 @@ public class LoadTaskController extends BaseController {
 
     @PostMapping
     public LoadTask create(@PathVariable("connId") int connId,
+                           @PathVariable("jobId") int jobId,
                            @RequestBody LoadTask entity) {
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobManagerStatus.SETTING,
+                 "load.task.create.no-permission" );
         synchronized(this.service) {
             Ex.check(this.service.count() < LIMIT,
                      "load.task.reached-limit", LIMIT);
@@ -123,12 +136,19 @@ public class LoadTaskController extends BaseController {
 
     @PostMapping("start")
     public List<LoadTask> start(@PathVariable("connId") int connId,
+                                @PathVariable("jobId") int jobId,
                                 @RequestParam("file_mapping_ids")
                                 List<Integer> fileIds) {
         GraphConnection connection = this.connService.get(connId);
         if (connection == null) {
             throw new ExternalException("graph-connection.not-exist.id", connId);
         }
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check((jobEntity.getJobStatus() == JobManagerStatus.SETTING ||
+                  jobEntity.getJobStatus() == JobManagerStatus.IMPORTING),
+                  "load.task.start.no-permission" );
 
         List<LoadTask> tasks = new ArrayList<>();
         for (Integer fileId: fileIds) {
@@ -138,56 +158,118 @@ public class LoadTaskController extends BaseController {
             }
             tasks.add(this.service.start(connection, fileMapping));
         }
+        jobEntity.setJobStatus(JobManagerStatus.IMPORTING);
+        jobEntity.setUpdateTime( HubbleUtil.nowDate());
+        if (this.jobService.update(jobEntity) != 1) {
+            throw new InternalException("job-manager.entity.update.failed",
+                                        jobEntity);
+        }
         return tasks;
     }
 
     @PostMapping("pause")
     public LoadTask pause(@PathVariable("connId") int connId,
+                          @PathVariable("jobId") int jobId,
                           @RequestParam("task_id") int taskId) {
         GraphConnection connection = this.connService.get(connId);
         if (connection == null) {
             throw new ExternalException("graph-connection.not-exist.id", connId);
         }
-        return this.service.pause(taskId);
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobManagerStatus.IMPORTING,
+                 "load.task.pause.no-permission");
+        LoadTask task = this.service.pause(taskId);
+        jobEntity.setJobStatus(JobManagerStatus.IMPORTING);
+        jobEntity.setUpdateTime( HubbleUtil.nowDate());
+        if (this.jobService.update(jobEntity) != 1) {
+            throw new InternalException("job-manager.entity.update.failed",
+                                        jobEntity);
+        }
+        return task;
     }
 
     @PostMapping("resume")
     public LoadTask resume(@PathVariable("connId") int connId,
+                           @PathVariable("jobId") int jobId,
                            @RequestParam("task_id") int taskId) {
         GraphConnection connection = this.connService.get(connId);
         if (connection == null) {
             throw new ExternalException("graph-connection.not-exist.id", connId);
         }
-        return this.service.resume(taskId);
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobManagerStatus.IMPORTING,
+                 "load.task.pause.no-permission");
+        LoadTask task = this.service.resume(taskId);
+        jobEntity.setJobStatus(JobManagerStatus.IMPORTING);
+        jobEntity.setUpdateTime( HubbleUtil.nowDate());
+        if (this.jobService.update(jobEntity) != 1) {
+            throw new InternalException("job-manager.entity.update.failed",
+                                        jobEntity);
+        }
+        return task;
     }
 
     @PostMapping("stop")
     public LoadTask stop(@PathVariable("connId") int connId,
+                         @PathVariable("jobId") int jobId,
                          @RequestParam("task_id") int taskId) {
         GraphConnection connection = this.connService.get(connId);
         if (connection == null) {
             throw new ExternalException("graph-connection.not-exist.id", connId);
         }
-        return this.service.stop(taskId);
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobManagerStatus.IMPORTING,
+                 "load.task.pause.no-permission");
+        LoadTask task = this.service.stop(taskId);
+        jobEntity.setJobStatus(JobManagerStatus.IMPORTING);
+        jobEntity.setUpdateTime( HubbleUtil.nowDate());
+        if (this.jobService.update(jobEntity) != 1) {
+            throw new InternalException("job-manager.entity.update.failed",
+                                        jobEntity);
+        }
+        return task;
     }
 
     @PostMapping("retry")
     public LoadTask retry(@PathVariable("connId") int connId,
+                          @PathVariable("jobId") int jobId,
                           @RequestParam("task_id") int taskId) {
         GraphConnection connection = this.connService.get(connId);
         if (connection == null) {
             throw new ExternalException("graph-connection.not-exist.id", connId);
         }
-        return this.service.retry(taskId);
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobManagerStatus.IMPORTING,
+                 "load.task.pause.no-permission");
+        LoadTask task = this.service.retry(taskId);
+        jobEntity.setJobStatus(JobManagerStatus.IMPORTING);
+        jobEntity.setUpdateTime( HubbleUtil.nowDate());
+        if (this.jobService.update(jobEntity) != 1) {
+            throw new InternalException("job-manager.entity.update.failed",
+                                        jobEntity);
+        }
+        return task;
     }
 
     @GetMapping("{id}/reason")
     public Response reason(@PathVariable("connId") int connId,
+                           @PathVariable("jobId") int jobId,
                            @PathVariable("id") int id) {
         LoadTask task = this.service.get(id);
         if (task == null) {
             throw new ExternalException("load.task.not-exist.id", id);
         }
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
         Integer fileId = task.getFileId();
         FileMapping mapping = this.fmService.get(fileId);
         String reason = this.service.readLoadFailedReason(mapping);

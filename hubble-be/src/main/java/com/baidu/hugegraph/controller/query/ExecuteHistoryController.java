@@ -55,17 +55,19 @@ public class ExecuteHistoryController extends GremlinController {
     }
 
     @GetMapping("{id}")
-    public ExecuteHistory get(@PathVariable("id") int id) {
-        return this.service.get(id);
+    public ExecuteHistory get(@PathVariable("connId") int connId,
+                              @PathVariable("id") int id) {
+        return this.service.get(connId, id);
     }
 
     @DeleteMapping("{id}")
-    public ExecuteHistory delete(@PathVariable("id") int id) {
-        ExecuteHistory oldEntity = this.service.get(id);
+    public ExecuteHistory delete(@PathVariable("connId") int connId,
+                                 @PathVariable("id") int id) {
+        ExecuteHistory oldEntity = this.service.get(connId, id);
         if (oldEntity == null) {
             throw new ExternalException("execute-history.not-exist.id", id);
         }
-        if (this.service.remove(id) != 1) {
+        if (this.service.remove(connId, id) != 1) {
             throw new InternalException("entity.delete.failed", oldEntity);
         }
         return oldEntity;

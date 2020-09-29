@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.controller.load;
 
 import static com.baidu.hugegraph.service.load.FileMappingService.CONN_PREIFX;
+import static com.baidu.hugegraph.service.load.FileMappingService.JOB_PREIFX;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,11 +42,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.config.HugeConfig;
+import com.baidu.hugegraph.entity.enums.FileMappingStatus;
+import com.baidu.hugegraph.entity.enums.JobManagerStatus;
 import com.baidu.hugegraph.entity.load.FileMapping;
 import com.baidu.hugegraph.entity.load.FileUploadResult;
+import com.baidu.hugegraph.entity.load.JobManager;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.service.load.FileMappingService;
+import com.baidu.hugegraph.service.load.JobManagerService;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.FileUtil;
 import com.baidu.hugegraph.util.HubbleUtil;
@@ -54,56 +59,90 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/upload-file")
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/job-manager/{jobId}/upload-file")
 public class FileUploadController {
 
     @Autowired
     private HugeConfig config;
     @Autowired
     private FileMappingService service;
+    @Autowired
+    private JobManagerService jobService;
 
     @PostMapping
     public FileUploadResult upload(@PathVariable("connId") int connId,
+                                   @PathVariable("jobId") int jobId,
                                    @RequestParam("file") MultipartFile file,
                                    @RequestParam("name") String fileName,
                                    @RequestParam("total") int total,
                                    @RequestParam("index") int index) {
         // When front-end use multipart-upload mode,
         // file.getOriginalFilename() is blob, not actual file name
-        this.checkFileValid(connId, file, fileName);
+        JobManager jobEntity = this.jobService.get(jobId);
+        this.checkFileValid(connId, jobId, jobEntity, file, fileName);
 
         String location = this.config.get(HubbleOptions.UPLOAD_FILE_LOCATION);
-        this.ensureLocationExist(location, CONN_PREIFX + connId);
+        String path = Paths.get(CONN_PREIFX + connId, JOB_PREIFX + jobId)
+                           .toString();
+        this.ensureLocationExist(location, path);
         // Before merge: upload-files/conn-1/verson_person.csv/part-1
         // After merge: upload-files/conn-1/file-mapping-1/verson_person.csv
-        String dirPath = Paths.get(location, CONN_PREIFX + connId, fileName)
-                              .toString();
+        String filePath = Paths.get(location, path, fileName).toString();
         // Check destFile exist
         // Ex.check(!destFile.exists(), "load.upload.file.existed", fileName);
-        FileUploadResult result = this.service.uploadFile(file, index, dirPath);
+        FileUploadResult result = this.service.uploadFile(file, index, filePath);
         if (result.getStatus() == FileUploadResult.Status.FAILURE) {
             return result;
         }
+        // Verify the existence of fragmented files
+        FileMapping mapping = this.service.get(connId, jobId, fileName);
+        if (mapping != null) {
+            mapping.setJobId(jobId);
+            mapping.setFileStatus(FileMappingStatus.UPLOADING);
+            mapping.setFileIndex(mapping.getFileIndex() + "," + index);
+            mapping.setFileTotal(total);
+            if (this.service.update(mapping) != 1) {
+                throw new InternalException("entity.update.failed", mapping);
+            }
+        } else {
+            mapping = new FileMapping(connId, fileName, filePath);
+            mapping.setJobId(jobId);
+            mapping.setFileStatus(FileMappingStatus.UPLOADING);
+            mapping.setFileIndex(String.valueOf(index));
+            mapping.setFileTotal(total);
+            if (this.service.save(mapping) != 1) {
+                throw new InternalException("entity.insert.failed", mapping);
+            }
+        }
+       Integer mapId = mapping.getId();
         // Determine whether all the parts have been uploaded, then merge them
-        boolean merged = this.service.tryMergePartFiles(dirPath, total);
+        boolean merged = this.service.tryMergePartFiles(filePath, total);
         if (merged) {
             // Save file mapping
-            FileMapping mapping = new FileMapping(connId, fileName, dirPath);
+            mapping = new FileMapping(connId, fileName, filePath);
             // Read column names and values then fill it
             this.service.extractColumns(mapping);
+            mapping.setId(mapId);
+            mapping.setFileStatus(FileMappingStatus.COMPLETED);
             mapping.setTotalLines(FileUtil.countLines(mapping.getPath()));
             mapping.setTotalSize(FileUtils.sizeOf(new File(mapping.getPath())));
             mapping.setCreateTime(HubbleUtil.nowDate());
             // Will generate mapping id
-            if (this.service.save(mapping) != 1) {
-                throw new InternalException("entity.insert.failed", mapping);
-            }
+
             // Move to the directory corresponding to the file mapping Id
             String newPath = this.service.moveToNextLevelDir(mapping);
             // Update file mapping stored path
             mapping.setPath(newPath);
             if (this.service.update(mapping) != 1) {
                 throw new InternalException("entity.update.failed", mapping);
+            }
+            // Update Job Manager size
+            long jobSize = jobEntity.getJobSize() + mapping.getTotalSize();
+            jobEntity.setJobSize(jobSize);
+            jobEntity.setJobStatus(JobManagerStatus.SETTING);
+            if (this.jobService.update(jobEntity) != 1) {
+                throw new InternalException("job-manager.entity.update.failed",
+                                            jobEntity);
             }
             result.setId(mapping.getId());
         }
@@ -112,8 +151,15 @@ public class FileUploadController {
 
     @DeleteMapping
     public Map<String, Boolean> delete(@PathVariable("connId") int connId,
+                                       @PathVariable("jobId") int jobId,
                                        @RequestParam("names")
                                        List<String> fileNames) {
+
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobManagerStatus.SETTING,
+                 "deleted.file.no-permission" );
         Ex.check(fileNames.size() > 0, "load.upload.files.at-least-one");
         Map<String, Boolean> result = new LinkedHashMap<>();
         for (String fileName : fileNames) {
@@ -129,13 +175,26 @@ public class FileUploadController {
                     throw new InternalException("entity.delete.failed", mapping);
                 }
                 log.info("removed file mapping {}", mapping.getId());
+                long jobSize = jobEntity.getJobSize() - mapping.getTotalSize();
+                jobEntity.setJobSize(jobSize);
+                if (this.jobService.update(jobEntity) != 1) {
+                    throw new InternalException("job-manager.entity.update.failed",
+                                                jobEntity);
+                }
             }
             result.put(fileName, deleted);
         }
         return result;
     }
 
-    private void checkFileValid(int connId, MultipartFile file, String fileName) {
+
+    private void checkFileValid(int connId, int jobId, JobManager jobEntity,
+                                MultipartFile file, String fileName) {
+        Ex.check(jobEntity != null,
+                 "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobManagerStatus.DEFAULT ||
+                 jobEntity.getJobStatus() == JobManagerStatus.SETTING,
+                 "load.upload.file.no-permission" );
         // Now allowed to upload empty file
         Ex.check(!file.isEmpty(), "load.upload.file.cannot-be-empty");
         // Difficult: how to determine whether the file is csv or text
@@ -155,8 +214,10 @@ public class FileUploadController {
                  FileUtils.byteCountToDisplaySize(singleFileSizeLimit));
 
         // Check is there a file with the same name
-        FileMapping oldMapping = this.service.get(connId, fileName);
-        Ex.check(oldMapping == null, "load.upload.file.existed", fileName);
+        FileMapping oldMapping = this.service.get(connId, jobId, fileName);
+        Ex.check(oldMapping == null ||
+                 oldMapping.getFileStatus() == FileMappingStatus.UPLOADING,
+                 "load.upload.file.existed", fileName);
 
         long totalFileSizeLimit = this.config.get(
                                   HubbleOptions.UPLOAD_TOTAL_FILE_SIZE_LIMIT);

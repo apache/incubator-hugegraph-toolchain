@@ -65,6 +65,10 @@ public final class Constant {
             "[A-Za-z0-9\u4e00-\u9fa5_]{1,48}"
     );
 
+    public static final Pattern COMMON_REMARK_PATTERN = Pattern.compile(
+            "[A-Za-z0-9\u4e00-\u9fa5_]{1,200}"
+    );
+
     public static final Pattern SCHEMA_NAME_PATTERN = Pattern.compile(
             "[A-Za-z0-9\u4e00-\u9fa5_]{1,128}"
     );

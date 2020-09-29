@@ -21,17 +21,21 @@ package com.baidu.hugegraph.entity.enums;
 
 import com.baomidou.mybatisplus.core.enums.IEnum;
 
-public enum ExecuteType implements IEnum<Byte> {
+public enum JobManagerStatus implements IEnum<Byte> {
 
-    GREMLIN(0),
+    DEFAULT(0),
 
-    ALGORITHM(1),
+    SUCCESS(1),
 
-    GREMLIN_ASYNC(5);
+    FAILED(2),
+
+    SETTING(3),
+
+    IMPORTING(4);
 
     private byte code;
 
-    ExecuteType(int code) {
+    JobManagerStatus(int code) {
         assert code < 256;
         this.code = (byte) code;
     }
@@ -39,5 +43,13 @@ public enum ExecuteType implements IEnum<Byte> {
     @Override
     public Byte getValue() {
         return this.code;
+    }
+
+    public boolean isImporting() {
+        return this == IMPORTING;
+    }
+
+    public boolean isSetting() {
+        return this == SETTING;
     }
 }

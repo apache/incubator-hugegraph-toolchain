@@ -42,10 +42,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.entity.GraphConnection;
+import com.baidu.hugegraph.entity.enums.JobManagerStatus;
 import com.baidu.hugegraph.entity.enums.LoadStatus;
 import com.baidu.hugegraph.entity.load.EdgeMapping;
 import com.baidu.hugegraph.entity.load.FileMapping;
 import com.baidu.hugegraph.entity.load.FileSetting;
+import com.baidu.hugegraph.entity.load.JobManager;
 import com.baidu.hugegraph.entity.load.ListFormat;
 import com.baidu.hugegraph.entity.load.LoadParameter;
 import com.baidu.hugegraph.entity.load.LoadTask;
@@ -66,6 +68,7 @@ import com.baidu.hugegraph.service.SettingSSLService;
 import com.baidu.hugegraph.service.schema.EdgeLabelService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -110,9 +113,10 @@ public class LoadTaskService {
         return this.mapper.selectList(null);
     }
 
-    public IPage<LoadTask> list(int connId, int pageNo, int pageSize) {
+    public IPage<LoadTask> list(int connId, int jobId, int pageNo, int pageSize) {
         QueryWrapper<LoadTask> query = Wrappers.query();
         query.eq("conn_id", connId);
+        query.eq("job_id", jobId);
         query.orderByDesc("create_time");
         Page<LoadTask> page = new Page<>(pageNo, pageSize);
         return this.mapper.selectPage(page, query);
@@ -124,6 +128,18 @@ public class LoadTaskService {
 
     public int count() {
         return this.mapper.selectCount(null);
+    }
+
+    public int taskCountByJob(int jobId) {
+        QueryWrapper<LoadTask> query = Wrappers.query();
+        query.eq("job_id", jobId);
+        return this.mapper.selectCount(query);
+    }
+
+    public List<LoadTask> taskListByJob(int jobId) {
+        QueryWrapper<LoadTask> query = Wrappers.query();
+        query.eq("job_id", jobId);
+        return this.mapper.selectList(query);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -140,6 +156,12 @@ public class LoadTaskService {
     public int remove(int id) {
         this.taskContainer.remove(id);
         return this.mapper.deleteById(id);
+    }
+
+    public List<LoadTask> batchTasks(int job_id) {
+        QueryWrapper<LoadTask> query = Wrappers.query();
+        query.eq("job_id", job_id);
+        return this.mapper.selectList(query);
     }
 
     public LoadTask start(GraphConnection connection, FileMapping fileMapping) {

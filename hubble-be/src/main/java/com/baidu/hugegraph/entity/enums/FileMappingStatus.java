@@ -21,17 +21,15 @@ package com.baidu.hugegraph.entity.enums;
 
 import com.baomidou.mybatisplus.core.enums.IEnum;
 
-public enum ExecuteType implements IEnum<Byte> {
+public enum FileMappingStatus implements IEnum<Byte> {
 
-    GREMLIN(0),
+    UPLOADING(0),
 
-    ALGORITHM(1),
-
-    GREMLIN_ASYNC(5);
+    COMPLETED(1);
 
     private byte code;
 
-    ExecuteType(int code) {
+    FileMappingStatus(int code) {
         assert code < 256;
         this.code = (byte) code;
     }
@@ -39,5 +37,9 @@ public enum ExecuteType implements IEnum<Byte> {
     @Override
     public Byte getValue() {
         return this.code;
+    }
+
+    public boolean isUploading() {
+        return this == UPLOADING;
     }
 }

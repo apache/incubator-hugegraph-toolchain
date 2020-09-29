@@ -58,7 +58,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/file-mappings")
+@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/job-manager/{jobId}/file-mappings")
 public class FileMappingController extends BaseController {
 
     @Autowired
@@ -70,6 +70,7 @@ public class FileMappingController extends BaseController {
 
     @GetMapping
     public IPage<FileMapping> list(@PathVariable("connId") int connId,
+                                   @PathVariable("jobId") int jobId,
                                    @RequestParam(name = "page_no",
                                                  required = false,
                                                  defaultValue = "1")
@@ -78,7 +79,7 @@ public class FileMappingController extends BaseController {
                                                  required = false,
                                                  defaultValue = "10")
                                    int pageSize) {
-        return this.service.list(connId, pageNo, pageSize);
+        return this.service.list(connId, jobId, pageNo, pageSize);
     }
 
     @GetMapping("{id}")

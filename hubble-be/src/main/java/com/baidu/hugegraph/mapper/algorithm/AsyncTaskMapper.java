@@ -17,27 +17,15 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.enums;
+package com.baidu.hugegraph.mapper.algorithm;
 
-import com.baomidou.mybatisplus.core.enums.IEnum;
+import org.apache.ibatis.annotations.Mapper;
+import org.springframework.stereotype.Component;
 
-public enum ExecuteType implements IEnum<Byte> {
+import com.baidu.hugegraph.entity.algorithm.AsyncTask;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
-    GREMLIN(0),
-
-    ALGORITHM(1),
-
-    GREMLIN_ASYNC(5);
-
-    private byte code;
-
-    ExecuteType(int code) {
-        assert code < 256;
-        this.code = (byte) code;
-    }
-
-    @Override
-    public Byte getValue() {
-        return this.code;
-    }
+@Mapper
+@Component
+public interface AsyncTaskMapper extends BaseMapper<AsyncTask> {
 }

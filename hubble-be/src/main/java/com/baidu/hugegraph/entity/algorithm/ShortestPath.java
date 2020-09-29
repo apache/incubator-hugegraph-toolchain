@@ -17,27 +17,43 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.enums;
+package com.baidu.hugegraph.entity.algorithm;
 
-import com.baomidou.mybatisplus.core.enums.IEnum;
+import com.baidu.hugegraph.structure.constant.Direction;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public enum ExecuteType implements IEnum<Byte> {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    GREMLIN(0),
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ShortestPath {
 
-    ALGORITHM(1),
+    @JsonProperty("source")
+    private Object source;
 
-    GREMLIN_ASYNC(5);
+    @JsonProperty("target")
+    private Object target;
 
-    private byte code;
+    @JsonProperty("direction")
+    private Direction direction;
 
-    ExecuteType(int code) {
-        assert code < 256;
-        this.code = (byte) code;
-    }
+    @JsonProperty("label")
+    private String label;
 
-    @Override
-    public Byte getValue() {
-        return this.code;
-    }
+    @JsonProperty("max_depth")
+    private int maxDepth;
+
+    @JsonProperty("max_degree")
+    private long maxDegree;
+
+    @JsonProperty("skip_degree")
+    private long skipDegree;
+
+    @JsonProperty("capacity")
+    private long capacity;
 }

@@ -17,16 +17,11 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.query;
+package com.baidu.hugegraph.entity.algorithm;
 
 import java.util.Date;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
-import com.baidu.hugegraph.common.Identifiable;
-import com.baidu.hugegraph.common.Mergeable;
-import com.baidu.hugegraph.entity.enums.AsyncTaskStatus;
-import com.baidu.hugegraph.entity.enums.ExecuteStatus;
-import com.baidu.hugegraph.entity.enums.ExecuteType;
 import com.baidu.hugegraph.util.SerializeUtil;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -39,13 +34,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@TableName("execute_history")
-public class ExecuteHistory implements Identifiable, Mergeable {
+@Accessors(chain = true)
+@TableName(value = "async_task", autoResultMap = true)
+public class AsyncTask {
 
     @TableId(type = IdType.AUTO)
     @MergeProperty(useNew = false)
@@ -57,34 +54,50 @@ public class ExecuteHistory implements Identifiable, Mergeable {
     @JsonProperty("conn_id")
     private Integer connId;
 
-    @TableField(value = "async_id")
+    @TableField(value = "task_id")
     @MergeProperty
-    @JsonProperty("async_id")
-    private Long asyncId;
+    @JsonProperty("task_id")
+    private Integer taskId;
 
-    @TableField(value = "execute_type")
+    @TableField(value = "task_name")
     @MergeProperty
-    @JsonProperty("type")
-    private ExecuteType type;
+    @JsonProperty("task_name")
+    private String taskName;
 
+    @TableField(value = "task_reason")
     @MergeProperty
-    @JsonProperty("content")
-    private String content;
+    @JsonProperty("task_reason")
+    private String taskReason;
 
-    @TableField(value = "execute_status")
+    @TableField(value = "task_type")
     @MergeProperty
-    @JsonProperty("status")
-    private ExecuteStatus status;
+    @JsonProperty("task_type")
+    private Integer taskType;
 
-    @TableField(value = "async_status")
+    @TableField(value = "algorithm_name")
     @MergeProperty
-    @JsonProperty("async_status")
-    private AsyncTaskStatus asyncStatus;
+    @JsonProperty("algorithm_name")
+    private String algorithmName;
 
+    @TableField(value = "task_content")
     @MergeProperty
-    @JsonProperty("duration")
+    @JsonProperty("task_content")
+    private String taskContent;
+
+    @TableField(value = "task_status")
+    @MergeProperty
+    @JsonProperty("task_status")
+    private Integer taskStatus;
+
+    @TableField("task_duration")
+    @MergeProperty
+    @JsonProperty("task_duration")
     @JsonSerialize(using = SerializeUtil.DurationSerializer.class)
-    private Long duration;
+    private Long taskDuration;
+
+    @MergeProperty(useNew = false)
+    @JsonProperty("update_time")
+    private Date updateTime;
 
     @MergeProperty(useNew = false)
     @JsonProperty("create_time")

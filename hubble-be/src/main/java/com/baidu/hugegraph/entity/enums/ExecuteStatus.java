@@ -27,7 +27,13 @@ public enum ExecuteStatus implements IEnum<Byte> {
 
     SUCCESS(1),
 
-    FAILED(2);
+    FAILED(2),
+
+    ASYNC_TASK_RUNNING(3),
+
+    ASYNC_TASK_SUCCESS(4),
+
+    ASYNC_TASK_FAILED(5);
 
     private byte code;
 

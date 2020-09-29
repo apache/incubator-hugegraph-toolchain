@@ -17,16 +17,13 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.query;
+package com.baidu.hugegraph.entity.load;
 
 import java.util.Date;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
-import com.baidu.hugegraph.common.Identifiable;
-import com.baidu.hugegraph.common.Mergeable;
-import com.baidu.hugegraph.entity.enums.AsyncTaskStatus;
-import com.baidu.hugegraph.entity.enums.ExecuteStatus;
-import com.baidu.hugegraph.entity.enums.ExecuteType;
+import com.baidu.hugegraph.entity.enums.JobManagerStatus;
+import com.baidu.hugegraph.entity.enums.LoadStatus;
 import com.baidu.hugegraph.util.SerializeUtil;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -39,13 +36,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@TableName("execute_history")
-public class ExecuteHistory implements Identifiable, Mergeable {
+@Accessors(chain = true)
+@TableName(value = "job_manager", autoResultMap = true)
+public class JobManager {
 
     @TableId(type = IdType.AUTO)
     @MergeProperty(useNew = false)
@@ -57,35 +56,39 @@ public class ExecuteHistory implements Identifiable, Mergeable {
     @JsonProperty("conn_id")
     private Integer connId;
 
-    @TableField(value = "async_id")
+    @TableField(value = "job_name")
     @MergeProperty
-    @JsonProperty("async_id")
-    private Long asyncId;
+    @JsonProperty("job_name")
+    private String jobName;
 
-    @TableField(value = "execute_type")
+    @TableField(value = "job_remarks")
     @MergeProperty
-    @JsonProperty("type")
-    private ExecuteType type;
+    @JsonProperty("job_remarks")
+    private String jobRemarks;
 
+    @TableField(value = "job_size")
     @MergeProperty
-    @JsonProperty("content")
-    private String content;
+    @JsonProperty("job_size")
+    @JsonSerialize(using = SerializeUtil.SizeSerializer.class)
+    private long jobSize;
 
-    @TableField(value = "execute_status")
+    @TableField("job_status")
     @MergeProperty
-    @JsonProperty("status")
-    private ExecuteStatus status;
+    @JsonProperty("job_status")
+    private JobManagerStatus jobStatus;
 
-    @TableField(value = "async_status")
+    @TableField("job_duration")
     @MergeProperty
-    @JsonProperty("async_status")
-    private AsyncTaskStatus asyncStatus;
-
-    @MergeProperty
-    @JsonProperty("duration")
+    @JsonProperty("job_duration")
     @JsonSerialize(using = SerializeUtil.DurationSerializer.class)
-    private Long duration;
+    private long jobDuration;
 
+    @TableField("update_time")
+    @MergeProperty(useNew = false)
+    @JsonProperty("update_time")
+    private Date updateTime;
+
+    @TableField("create_time")
     @MergeProperty(useNew = false)
     @JsonProperty("create_time")
     private Date createTime;

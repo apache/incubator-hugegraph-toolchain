@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
+import com.baidu.hugegraph.entity.enums.FileMappingStatus;
 import com.baidu.hugegraph.handler.EdgeMappingTypeHandler;
 import com.baidu.hugegraph.handler.VertexMappingTypeHandler;
 import com.baidu.hugegraph.util.HubbleUtil;
@@ -59,6 +60,11 @@ public class FileMapping {
     @JsonIgnore
     private Integer connId;
 
+    @TableField(value = "job_id")
+    @MergeProperty
+    @JsonProperty("job_id")
+    private Integer jobId;
+
     @TableField("name")
     @JsonProperty("name")
     private String name;
@@ -75,6 +81,19 @@ public class FileMapping {
     @JsonProperty("total_size")
     @JsonSerialize(using = SerializeUtil.SizeSerializer.class)
     private long totalSize;
+
+    @TableField("file_status")
+    @MergeProperty
+    @JsonProperty("file_status")
+    private FileMappingStatus fileStatus;
+
+    @TableField("file_total")
+    @JsonProperty("file_total")
+    private long fileTotal;
+
+    @TableField("file_index")
+    @JsonProperty("file_index")
+    private String fileIndex;
 
     @TableField(value = "file_setting", typeHandler = JacksonTypeHandler.class)
     @JsonProperty("file_setting")

@@ -60,6 +60,7 @@ import lombok.extern.log4j.Log4j2;
 public class FileMappingService {
 
     public static final String CONN_PREIFX = "graph-connection-";
+    public static final String JOB_PREIFX = "job-";
     public static final String FILE_PREIFX = "file-mapping-";
 
     @Autowired
@@ -75,13 +76,22 @@ public class FileMappingService {
         return this.mapper.selectOne(query);
     }
 
+    public FileMapping get(int connId, int jobId, String fileName) {
+        QueryWrapper<FileMapping> query = Wrappers.query();
+        query.eq("conn_id", connId)
+             .eq("job_id", jobId)
+             .eq("name", fileName);
+        return this.mapper.selectOne(query);
+    }
+
     public List<FileMapping> listAll() {
         return this.mapper.selectList(null);
     }
 
-    public IPage<FileMapping> list(int connId, int pageNo, int pageSize) {
+    public IPage<FileMapping> list(int connId, int jobId, int pageNo, int pageSize) {
         QueryWrapper<FileMapping> query = Wrappers.query();
         query.eq("conn_id", connId);
+        query.eq("job_id", jobId);
         query.orderByDesc("create_time");
         Page<FileMapping> page = new Page<>(pageNo, pageSize);
         return this.mapper.selectPage(page, query);

@@ -55,8 +55,8 @@ import lombok.extern.log4j.Log4j2;
 @AllArgsConstructor
 @Builder
 @TableName(value = "load_task", autoResultMap = true)
-@JsonPropertyOrder({"id", "conn_id", "file_id", "file_name", "vertices", "edges",
-                    "load_rate", "load_progress", "file_total_lines",
+@JsonPropertyOrder({"id", "conn_id", "task_id" , "file_id", "file_name", "vertices",
+                    "edges", "load_rate", "load_progress", "file_total_lines",
                     "file_read_lines", "status", "duration", "create_time"})
 public class LoadTask implements Runnable {
 
@@ -73,6 +73,11 @@ public class LoadTask implements Runnable {
     @MergeProperty
     @JsonProperty("conn_id")
     private Integer connId;
+
+    @TableField(value = "job_id")
+    @MergeProperty
+    @JsonProperty("job_id")
+    private Integer jobId;
 
     @TableField(value = "file_id")
     @MergeProperty
@@ -129,6 +134,7 @@ public class LoadTask implements Runnable {
         this.loader = new HugeGraphLoader(options);
         this.id = null;
         this.connId = connection.getId();
+        this.jobId = mapping.getJobId();
         this.fileId = mapping.getId();
         this.fileName = mapping.getName();
         this.options = options;

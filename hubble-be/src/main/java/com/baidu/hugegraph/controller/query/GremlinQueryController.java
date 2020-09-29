@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.baidu.hugegraph.common.Constant;
+import com.baidu.hugegraph.entity.enums.AsyncTaskStatus;
 import com.baidu.hugegraph.entity.enums.ExecuteStatus;
 import com.baidu.hugegraph.entity.enums.ExecuteType;
 import com.baidu.hugegraph.entity.query.AdjacentQuery;
@@ -43,8 +44,8 @@ import com.baidu.hugegraph.entity.query.GremlinResult;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.query.ExecuteHistoryService;
 import com.baidu.hugegraph.service.query.GremlinQueryService;
-import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.google.common.collect.ImmutableSet;
 
 import lombok.extern.log4j.Log4j2;
@@ -72,9 +73,9 @@ public class GremlinQueryController extends GremlinController {
         // Insert execute history
         ExecuteStatus status = ExecuteStatus.RUNNING;
         ExecuteHistory history;
-        history = new ExecuteHistory(null, connId, ExecuteType.GREMLIN,
-                                     query.getContent(), status, -1L,
-                                     createTime);
+        history = new ExecuteHistory(null, connId, 0L, ExecuteType.GREMLIN,
+                                     query.getContent(), status, AsyncTaskStatus.UNKNOWN,
+                                     -1L, createTime);
         int rows = this.historyService.save(history);
         if (rows != 1) {
             throw new InternalException("entity.insert.failed", history);
@@ -93,6 +94,45 @@ public class GremlinQueryController extends GremlinController {
             long duration = timer.getTime(TimeUnit.MILLISECONDS);
             history.setStatus(status);
             history.setDuration(duration);
+            rows = this.historyService.update(history);
+            if (rows != 1) {
+                log.error("Failed to save execute history entity {}", history);
+            }
+        }
+    }
+
+    @PostMapping("async-task")
+    public ExecuteStatus executeAsyncTask(@PathVariable("connId") int connId,
+                                          @RequestBody GremlinQuery query) {
+        this.checkParamsValid(query);
+
+        Date createTime = HubbleUtil.nowDate();
+        // Insert execute history
+        ExecuteStatus status = ExecuteStatus.ASYNC_TASK_RUNNING;
+        ExecuteHistory history;
+        history = new ExecuteHistory(null, connId, 0L, ExecuteType.GREMLIN_ASYNC,
+                                     query.getContent(), status, AsyncTaskStatus.UNKNOWN,
+                                     -1L, createTime);
+        int rows = this.historyService.save(history);
+        if (rows != 1) {
+            throw new InternalException("entity.insert.failed", history);
+        }
+
+        StopWatch timer = StopWatch.createStarted();
+        long asyncId = 0L;
+        try {
+            asyncId = this.queryService.executeAsyncTask(connId, query);
+            status = ExecuteStatus.ASYNC_TASK_SUCCESS;
+            return status;
+        } catch (Throwable e) {
+            status = ExecuteStatus.ASYNC_TASK_FAILED;
+            throw e;
+        } finally {
+            timer.stop();
+            long duration = timer.getTime(TimeUnit.MILLISECONDS);
+            history.setStatus(status);
+            history.setDuration(duration);
+            history.setAsyncId(asyncId);
             rows = this.historyService.update(history);
             if (rows != 1) {
                 log.error("Failed to save execute history entity {}", history);

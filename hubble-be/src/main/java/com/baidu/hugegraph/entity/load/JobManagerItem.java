@@ -17,27 +17,31 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.enums;
+package com.baidu.hugegraph.entity.load;
 
-import com.baomidou.mybatisplus.core.enums.IEnum;
+import com.baidu.hugegraph.annotation.MergeProperty;
+import com.baidu.hugegraph.util.SerializeUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-public enum ExecuteType implements IEnum<Byte> {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    GREMLIN(0),
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class JobManagerItem {
 
-    ALGORITHM(1),
+    @MergeProperty
+    @JsonProperty("duration")
+    @JsonSerialize(using = SerializeUtil.DurationSerializer.class)
+    private Long duration;
 
-    GREMLIN_ASYNC(5);
-
-    private byte code;
-
-    ExecuteType(int code) {
-        assert code < 256;
-        this.code = (byte) code;
-    }
-
-    @Override
-    public Byte getValue() {
-        return this.code;
-    }
+    @MergeProperty
+    @JsonProperty("total_size")
+    @JsonSerialize(using = SerializeUtil.SizeSerializer.class)
+    private long totalSize;
 }

@@ -36,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import com.baidu.hugegraph.api.gremlin.GremlinRequest;
 import com.baidu.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.query.AdjacentQuery;
@@ -123,6 +124,17 @@ public class GremlinQueryService {
                             .tableView(tableView)
                             .graphView(graphView)
                             .build();
+    }
+
+    public Long executeAsyncTask(int connId, GremlinQuery query) {
+        HugeClient client = this.getClient(connId);
+
+        log.debug("The original gremlin ==> {}", query.getContent());
+        String gremlin = this.optimize(query.getContent());
+        log.debug("The optimized gremlin ==> {}", gremlin);
+        // Execute optimized gremlin query
+        GremlinRequest request = new GremlinRequest(gremlin);
+        return client.gremlin().executeAsTask(request);
     }
 
     public GremlinResult expandVertex(int connId, AdjacentQuery query) {

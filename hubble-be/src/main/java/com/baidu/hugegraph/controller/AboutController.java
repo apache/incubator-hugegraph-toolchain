@@ -45,7 +45,7 @@ public class AboutController extends BaseController {
         LicenseVerifier verifier = LicenseVerifier.instance();
         Map<String, Object> about = new LinkedHashMap<>();
         about.put("name", Constant.SERVER_NAME);
-        about.put("version", "1.3.0");
+        about.put("version", "1.5.0");
         about.put("edition", verifier.edition());
         about.put("allowed_graphs", verifier.allowedGraphs());
         long datasize = verifier.allowedDataSize();

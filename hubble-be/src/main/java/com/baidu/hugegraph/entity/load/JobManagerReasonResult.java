@@ -17,27 +17,36 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.enums;
+package com.baidu.hugegraph.entity.load;
 
-import com.baomidou.mybatisplus.core.enums.IEnum;
+import com.baidu.hugegraph.annotation.MergeProperty;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public enum ExecuteType implements IEnum<Byte> {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    GREMLIN(0),
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class JobManagerReasonResult {
 
-    ALGORITHM(1),
+    @MergeProperty
+    @JsonProperty("task_id")
+    private Integer taskId;
 
-    GREMLIN_ASYNC(5);
+    @MergeProperty
+    @JsonProperty("file_id")
+    private Integer fileId;
 
-    private byte code;
+    @MergeProperty
+    @JsonProperty("file_name")
+    private String fileName;
 
-    ExecuteType(int code) {
-        assert code < 256;
-        this.code = (byte) code;
-    }
-
-    @Override
-    public Byte getValue() {
-        return this.code;
-    }
+    @MergeProperty
+    @JsonProperty("reason")
+    private String reason;
 }
