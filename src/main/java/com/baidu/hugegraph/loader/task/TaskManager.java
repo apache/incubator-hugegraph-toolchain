@@ -51,8 +51,6 @@ public final class TaskManager {
     private final ExecutorService batchService;
     private final ExecutorService singleService;
 
-    private volatile boolean stopped;
-
     public TaskManager(LoadContext context) {
         this.context = context;
         this.options = context.options();
@@ -73,7 +71,6 @@ public final class TaskManager {
                             this.options.batchInsertThreads, BATCH_WORKER);
         this.singleService = ExecutorUtil.newFixedThreadPool(
                              this.options.singleInsertThreads, SINGLE_WORKER);
-        this.stopped = false;
     }
 
     private int batchSemaphoreNum() {
@@ -85,11 +82,7 @@ public final class TaskManager {
     }
 
     public void waitFinished() {
-        if (this.stopped) {
-            return;
-        }
-
-        LOG.info("Waiting for the insert tasks finish");
+        LOG.info("Waiting for the insert tasks finished");
         try {
             // Wait batch mode task stopped
             this.batchSemaphore.acquire(this.batchSemaphoreNum());
@@ -112,10 +105,7 @@ public final class TaskManager {
     }
 
     public void shutdown() {
-        this.stopped = true;
         long timeout = this.options.shutdownTimeout;
-
-        LOG.info("Ready to shutdown batch-mode tasks executor");
         try {
             this.batchService.shutdown();
             this.batchService.awaitTermination(timeout, TimeUnit.SECONDS);
@@ -129,7 +119,6 @@ public final class TaskManager {
             this.batchService.shutdownNow();
         }
 
-        LOG.debug("Ready to shutdown single-mode tasks executor");
         try {
             this.singleService.shutdown();
             this.singleService.awaitTermination(timeout, TimeUnit.SECONDS);
@@ -160,9 +149,7 @@ public final class TaskManager {
                      mapping.type(), e);
             this.submitInSingle(struct, mapping, batch);
             return null;
-        }).whenComplete((r, e) -> {
-            this.batchSemaphore.release();
-        });
+        }).whenComplete((r, e) -> this.batchSemaphore.release());
     }
 
     private void submitInSingle(InputStruct struct, ElementMapping mapping,

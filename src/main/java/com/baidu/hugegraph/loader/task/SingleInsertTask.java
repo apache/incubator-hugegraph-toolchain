@@ -30,7 +30,6 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.Printer;
@@ -68,12 +67,12 @@ public class SingleInsertTask extends InsertTask {
 
     private void handleInsertFailure(InsertException e) {
         LOG.error("Single insert {} error", this.type(), e);
+        this.context.occuredError();
         if (this.options().testMode) {
             throw e;
         }
-        FailLogger logger = this.context.failureLogger(this.struct);
         // Write to current mapping's insert failure log
-        logger.write(e);
+        this.context.failureLogger(this.struct).write(e);
 
         long failures = this.context.summary().totalInsertFailures();
         if (this.options().maxInsertErrors != Constants.NO_LIMIT &&

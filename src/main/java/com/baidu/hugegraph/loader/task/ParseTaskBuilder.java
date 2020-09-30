@@ -31,7 +31,6 @@ import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
-import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -122,12 +121,12 @@ public final class ParseTaskBuilder {
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {
         LOG.error("Parse {} error", mapping.type(), e);
+        this.context.occuredError();
         if (this.context.options().testMode) {
             throw e;
         }
         // Write to current mapping's parse failure log
-        FailLogger logger = this.context.failureLogger(this.struct);
-        logger.write(e);
+        this.context.failureLogger(this.struct).write(e);
     }
 
     public static class ParseTask implements Supplier<List<List<Record>>> {
