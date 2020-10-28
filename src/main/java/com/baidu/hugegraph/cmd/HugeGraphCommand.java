@@ -249,7 +249,7 @@ public class HugeGraphCommand {
                 dumpManager.init(dump);
                 dumpManager.dumpFormatter(dump.formatter());
                 dumpManager.retry(dump.retry());
-                dumpManager.dump(dump.directory());
+                dumpManager.dump();
                 break;
             case "graph-list":
                 graphsManager = manager(GraphsManager.class);
@@ -363,7 +363,12 @@ public class HugeGraphCommand {
                       .newInstance(info);
         } catch (Exception e) {
             throw new RuntimeException(String.format(
-                      "Construct manager failed for class '%s'", clz), e);
+                      "Construct manager failed for class '%s', please make " +
+                      "sure global arguments set correctly: " +
+                      "--url=%s,--graph=%s,--username=%s,--password=%s," +
+                      "--timeout=%s", clz.getSimpleName(), this.url(),
+                      this.graph(), this.username(), this.password(),
+                      this.timeout()), e);
         }
     }
 

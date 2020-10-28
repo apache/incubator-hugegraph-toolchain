@@ -30,6 +30,7 @@ import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.base.LocalDirectory;
 import com.baidu.hugegraph.base.Printer;
 import com.baidu.hugegraph.base.ToolClient;
+import com.baidu.hugegraph.cmd.SubCommands;
 import com.baidu.hugegraph.formatter.Formatter;
 import com.baidu.hugegraph.structure.JsonGraph;
 import com.baidu.hugegraph.structure.JsonGraph.JsonVertex;
@@ -59,7 +60,19 @@ public class DumpGraphManager extends BackupManager {
         this.dumpFormatter = Formatter.loadFormatter(formatter);
     }
 
-    public void dump(String outputDir) {
+    public void init(SubCommands.DumpGraph dump) {
+        assert dump.retry() > 0;
+        this.retry(dump.retry());
+        LocalDirectory.ensureDirectoryExist(dump.logDir());
+        this.logDir(dump.logDir());
+        this.directory(dump.directory(), dump.hdfsConf());
+        this.removeShardsFilesIfExists();
+        this.ensureDirectoryExist(true);
+        this.splitSize(dump.splitSize());
+    }
+
+    public void dump() {
+        String outputDir = this.directory.directory();
         LocalDirectory.ensureDirectoryExist(outputDir);
         this.startTimer();
 

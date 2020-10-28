@@ -81,7 +81,7 @@ public class BackupRestoreBaseManager extends RetryManager {
         this.retry(cmd.retry());
         LocalDirectory.ensureDirectoryExist(cmd.logDir());
         this.logDir(cmd.logDir());
-        this.directory = this.directory(cmd.directory(), cmd.hdfsConf());
+        this.directory(cmd.directory(), cmd.hdfsConf());
     }
 
     public void logDir(String logDir) {
@@ -218,13 +218,15 @@ public class BackupRestoreBaseManager extends RetryManager {
         return is;
     }
 
-    private Directory directory(String dir, Map<String, String> hdfsConf) {
-        // Local FS directory
+    protected void directory(String dir, Map<String, String> hdfsConf) {
         if (hdfsConf == null || hdfsConf.isEmpty()) {
-            return LocalDirectory.constructDir(dir, this.graph());
+            // Local FS directory
+            this.directory = LocalDirectory.constructDir(dir, this.graph());
+        } else {
+            // HDFS directory
+            this.directory = HdfsDirectory.constructDir(dir, this.graph(),
+                                                        hdfsConf);
         }
-        // HDFS directory
-        return HdfsDirectory.constructDir(dir, this.graph(), hdfsConf);
     }
 
     protected String fileWithPrefix(HugeType type) {

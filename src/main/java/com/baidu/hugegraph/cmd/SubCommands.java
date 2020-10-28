@@ -122,6 +122,9 @@ public class SubCommands {
                    description = "Split size of shard")
         public long splitSize = 1024 * 1024L;
 
+        @ParametersDelegate
+        private HugeTypes types = new HugeTypes();
+
         @Parameter(names = {"--format"}, arity = 1,
                    validateWith = {FormatValidator.class},
                    description = "File format, valid is [json, text]")
@@ -151,6 +154,14 @@ public class SubCommands {
 
         public void splitSize(long splitSize) {
             this.splitSize = splitSize;
+        }
+
+        public List<HugeType> types() {
+            return this.types.types;
+        }
+
+        public void types(List<HugeType> types) {
+            this.types.types = types;
         }
 
         public String format() {
@@ -204,6 +215,9 @@ public class SubCommands {
                                  "graph data after restored")
         public boolean clean = false;
 
+        @ParametersDelegate
+        private HugeTypes types = new HugeTypes();
+
         public boolean clean() {
             return this.clean;
         }
@@ -211,17 +225,37 @@ public class SubCommands {
         public void clean(boolean clean) {
             this.clean = clean;
         }
+
+        public List<HugeType> types() {
+            return this.types.types;
+        }
+
+        public void types(List<HugeType> types) {
+            this.types.types = types;
+        }
     }
 
     @Parameters(commandDescription = "Dump graph to files")
-    public static class DumpGraph extends Backup {
+    public static class DumpGraph extends BackupRestore {
 
         @Parameter(names = {"--formatter", "-f"}, arity = 1,
                    description = "Formatter to customize format of vertex/edge")
         public String formatter = "JsonFormatter";
 
+        @Parameter(names = {"--split-size", "-s"}, arity = 1,
+                   description = "Split size of shard")
+        public long splitSize = 1024 * 1024L;
+
         public String formatter() {
             return this.formatter;
+        }
+
+        public long splitSize() {
+            return this.splitSize;
+        }
+
+        public void splitSize(long splitSize) {
+            this.splitSize = splitSize;
         }
     }
 
@@ -505,9 +539,6 @@ public class SubCommands {
         public String logDir = "./logs";
 
         @ParametersDelegate
-        private HugeTypes types = new HugeTypes();
-
-        @ParametersDelegate
         private Retry retry = new Retry();
 
         @DynamicParameter(names = "-D",
@@ -520,10 +551,6 @@ public class SubCommands {
 
         public String logDir() {
             return this.logDir;
-        }
-
-        public List<HugeType> types() {
-            return this.types.types;
         }
 
         public int retry() {
@@ -540,10 +567,6 @@ public class SubCommands {
 
         public void logDir(String logDir) {
             this.logDir = logDir;
-        }
-
-        public void types(List<HugeType> types) {
-            this.types.types = types;
         }
 
         public void retry(int retry) {

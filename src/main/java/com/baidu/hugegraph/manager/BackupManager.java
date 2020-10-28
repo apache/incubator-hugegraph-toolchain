@@ -94,10 +94,7 @@ public class BackupManager extends BackupRestoreBaseManager {
         super.init(backup);
         this.removeShardsFilesIfExists();
         this.ensureDirectoryExist(true);
-        long splitSize = backup.splitSize();
-        E.checkArgument(splitSize >= 1024 * 1024,
-                        "Split size must >= 1M, but got %s", splitSize);
-        this.splitSize(splitSize);
+        this.splitSize(backup.splitSize());
         this.compress = backup.compress;
         this.format = backup.format;
         if (backup.label != null) {
@@ -113,6 +110,8 @@ public class BackupManager extends BackupRestoreBaseManager {
     }
 
     public void splitSize(long splitSize) {
+        E.checkArgument(splitSize >= 1024 * 1024,
+                        "Split size must >= 1M, but got %s", splitSize);
         this.splitSize = splitSize;
     }
 
@@ -447,7 +446,7 @@ public class BackupManager extends BackupRestoreBaseManager {
         return Paths.get(this.logDir(), shardsFile).toString();
     }
 
-    private void removeShardsFilesIfExists() {
+    protected void removeShardsFilesIfExists() {
         File logDir = new File(this.logDir());
         E.checkArgument(logDir.exists() && logDir.isDirectory(),
                         "The log directory '%s' not exists or is file",
