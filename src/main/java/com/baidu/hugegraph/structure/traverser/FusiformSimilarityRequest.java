@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class FusiformSimilarityRequest {
 
     @JsonProperty("sources")
-    private SourceVertices sources;
+    private VerticesArgs sources;
     @JsonProperty("label")
     public String label;
     @JsonProperty("direction")
@@ -66,11 +66,15 @@ public class FusiformSimilarityRequest {
         this.minSimilars = 1;
         this.top = 0;
         this.groupProperty = null;
-        this.minGroups = 1;
+        this.minGroups = 0;
         this.capacity = Traverser.DEFAULT_CAPACITY;
         this.limit = Traverser.DEFAULT_PATHS_LIMIT;
         this.withIntermediary = false;
         this.withVertex = false;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -91,14 +95,14 @@ public class FusiformSimilarityRequest {
     public static class Builder {
 
         private FusiformSimilarityRequest request;
-        private SourceVertices.Builder sourcesBuilder;
+        private VerticesArgs.Builder sourcesBuilder;
 
-        public Builder() {
+        private Builder() {
             this.request = new FusiformSimilarityRequest();
-            this.sourcesBuilder = new SourceVertices.Builder();
+            this.sourcesBuilder = VerticesArgs.builder();
         }
 
-        public SourceVertices.Builder sources() {
+        public VerticesArgs.Builder sources() {
             return this.sourcesBuilder;
         }
 
@@ -185,8 +189,10 @@ public class FusiformSimilarityRequest {
                                         "min neighbor count");
             TraversersAPI.checkPositive(request.minSimilars,
                                         "min similar count");
-            TraversersAPI.checkPositive(request.minGroups,
-                                        "min group count");
+            if (request.groupProperty != null) {
+                TraversersAPI.checkPositive(request.minGroups,
+                                            "min group count");
+            }
             TraversersAPI.checkAlpha(request.alpha);
             TraversersAPI.checkDegree(request.degree);
             TraversersAPI.checkCapacity(this.request.capacity);

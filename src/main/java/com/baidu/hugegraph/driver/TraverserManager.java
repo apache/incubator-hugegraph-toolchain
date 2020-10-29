@@ -21,6 +21,7 @@ package com.baidu.hugegraph.driver;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.baidu.hugegraph.api.traverser.AllShortestPathsAPI;
 import com.baidu.hugegraph.api.traverser.CountAPI;
@@ -40,6 +41,7 @@ import com.baidu.hugegraph.api.traverser.RingsAPI;
 import com.baidu.hugegraph.api.traverser.SameNeighborsAPI;
 import com.baidu.hugegraph.api.traverser.ShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.SingleSourceShortestPathAPI;
+import com.baidu.hugegraph.api.traverser.TemplatePathsAPI;
 import com.baidu.hugegraph.api.traverser.VerticesAPI;
 import com.baidu.hugegraph.api.traverser.WeightedShortestPathAPI;
 import com.baidu.hugegraph.client.RestClient;
@@ -54,11 +56,18 @@ import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.structure.traverser.CountRequest;
 import com.baidu.hugegraph.structure.traverser.CrosspointsRequest;
 import com.baidu.hugegraph.structure.traverser.CustomizedCrosspoints;
-import com.baidu.hugegraph.structure.traverser.CustomizedPaths;
+import com.baidu.hugegraph.structure.traverser.PathsWithVertices;
 import com.baidu.hugegraph.structure.traverser.FusiformSimilarity;
 import com.baidu.hugegraph.structure.traverser.FusiformSimilarityRequest;
+import com.baidu.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
+import com.baidu.hugegraph.structure.traverser.Kneighbor;
+import com.baidu.hugegraph.structure.traverser.KneighborRequest;
+import com.baidu.hugegraph.structure.traverser.Kout;
+import com.baidu.hugegraph.structure.traverser.KoutRequest;
+import com.baidu.hugegraph.structure.traverser.CustomizedPathsRequest;
 import com.baidu.hugegraph.structure.traverser.PathsRequest;
 import com.baidu.hugegraph.structure.traverser.Ranks;
+import com.baidu.hugegraph.structure.traverser.TemplatePathsRequest;
 import com.baidu.hugegraph.structure.traverser.WeightedPath;
 import com.baidu.hugegraph.structure.traverser.WeightedPaths;
 import com.baidu.hugegraph.util.E;
@@ -68,7 +77,6 @@ import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
-
 
 public class TraverserManager {
 
@@ -88,6 +96,7 @@ public class TraverserManager {
     private RaysAPI raysAPI;
     private CustomizedPathsAPI customizedPathsAPI;
     private CustomizedCrosspointsAPI customizedCrosspointsAPI;
+    private TemplatePathsAPI templatePathsAPI;
     private FusiformSimilarityAPI fusiformSimilarityAPI;
     private NeighborRankAPI neighborRankAPI;
     private PersonalRankAPI personalRankAPI;
@@ -115,6 +124,7 @@ public class TraverserManager {
         this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
         this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(
                                             client, graph);
+        this.templatePathsAPI = new TemplatePathsAPI(client, graph);
         this.fusiformSimilarityAPI = new FusiformSimilarityAPI(client, graph);
         this.neighborRankAPI = new NeighborRankAPI(client, graph);
         this.personalRankAPI = new PersonalRankAPI(client, graph);
@@ -137,6 +147,11 @@ public class TraverserManager {
                                     long degree) {
         return this.jaccardSimilarityAPI.get(vertexId, otherId, direction,
                                              label, degree);
+    }
+
+    public Map<Object, Double> jaccardSimilarity(
+                               SingleSourceJaccardSimilarityRequest request) {
+        return this.jaccardSimilarityAPI.post(request);
     }
 
     public List<Object> sameNeighbors(Object vertexId, Object otherId) {
@@ -311,6 +326,10 @@ public class TraverserManager {
                                  maxDepth, degree, capacity, limit);
     }
 
+    public PathsWithVertices paths(PathsRequest request) {
+        return this.pathsAPI.post(request);
+    }
+
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  int maxDepth) {
         return this.crosspoint(sourceId, targetId, Direction.BOTH, null,
@@ -361,6 +380,10 @@ public class TraverserManager {
                                 degree, capacity, limit);
     }
 
+    public Kout kout(KoutRequest request) {
+        return this.koutAPI.post(request);
+    }
+
     public List<Object> kneighbor(Object sourceId, int depth) {
         return this.kneighbor(sourceId, Direction.BOTH, null, depth);
     }
@@ -381,6 +404,10 @@ public class TraverserManager {
                                   long degree, long limit) {
         return this.kneighborAPI.get(sourceId, direction, label, depth,
                                      degree, limit);
+    }
+
+    public Kneighbor kneighbor(KneighborRequest request) {
+        return this.kneighborAPI.post(request);
     }
 
     public long count(CountRequest request) {
@@ -411,13 +438,17 @@ public class TraverserManager {
                                 capacity, limit);
     }
 
-    public CustomizedPaths customizedPaths(PathsRequest request) {
+    public PathsWithVertices customizedPaths(CustomizedPathsRequest request) {
         return this.customizedPathsAPI.post(request);
     }
 
     public CustomizedCrosspoints customizedCrosspointss(
                                  CrosspointsRequest request) {
         return this.customizedCrosspointsAPI.post(request);
+    }
+
+    public PathsWithVertices count(TemplatePathsRequest request) {
+        return this.templatePathsAPI.post(request);
     }
 
     public FusiformSimilarity fusiformSimilarity(

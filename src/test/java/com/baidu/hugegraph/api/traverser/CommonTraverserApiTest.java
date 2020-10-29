@@ -59,50 +59,6 @@ public class CommonTraverserApiTest extends TraverserApiTest {
     }
 
     @Test
-    public void testPaths() {
-        Object markoId = getVertexId("person", "name", "marko");
-        Object joshId = getVertexId("person", "name", "josh");
-        Object lopId = getVertexId("software", "name", "lop");
-        Object rippleId = getVertexId("software", "name", "ripple");
-
-        List<Path> paths = pathsAPI.get(markoId, rippleId, Direction.BOTH,
-                                        null, 3, -1L, -1L, 10);
-        Assert.assertEquals(2, paths.size());
-        List<Object> path1 = ImmutableList.of(markoId, joshId, rippleId);
-        List<Object> path2 = ImmutableList.of(markoId, lopId, joshId, rippleId);
-        List<List<Object>> expectedPaths = ImmutableList.of(path1, path2);
-        Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
-        Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
-    }
-
-    @Test
-    public void testPathsWithLimit() {
-        Object markoId = getVertexId("person", "name", "marko");
-        Object joshId = getVertexId("person", "name", "josh");
-        Object rippleId = getVertexId("software", "name", "ripple");
-
-        List<Path> paths = pathsAPI.get(markoId, rippleId, Direction.BOTH,
-                                        null, 3, -1L, -1L, 1);
-        Assert.assertEquals(1, paths.size());
-        List<Object> path1 = ImmutableList.of(markoId, joshId, rippleId);
-        Assert.assertEquals(path1, paths.get(0).objects());
-    }
-
-    @Test
-    public void testPathsWithCapacity() {
-        Object markoId = getVertexId("person", "name", "marko");
-        Object rippleId = getVertexId("software", "name", "ripple");
-
-        Assert.assertThrows(ServerException.class, () -> {
-            pathsAPI.get(markoId, rippleId, Direction.BOTH,
-                         null, 3, -1L, 2L, 1);
-        }, e -> {
-            String expect = "Exceed capacity '2' while finding paths";
-            Assert.assertContains(expect, e.getMessage());
-        });
-    }
-
-    @Test
     public void testCrosspoints() {
         Object markoId = getVertexId("person", "name", "marko");
         Object joshId = getVertexId("person", "name", "josh");
@@ -137,99 +93,12 @@ public class CommonTraverserApiTest extends TraverserApiTest {
     }
 
     @Test
-    public void testKoutNearest() {
-        Object markoId = getVertexId("person", "name", "marko");
-
-        long softwareId = vertexLabelAPI.get("software").id();
-
-        List<Object> vertices = koutAPI.get(markoId, Direction.OUT,
-                                            null, 2, true, -1L, -1L, -1L);
-        Assert.assertEquals(1, vertices.size());
-        Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
-    }
-
-    @Test
-    public void testKoutAll() {
-        Object markoId = getVertexId("person", "name", "marko");
-
-        long softwareId = vertexLabelAPI.get("software").id();
-
-        List<Object> vertices = koutAPI.get(markoId, Direction.OUT, null,
-                                            2, false, -1L, -1L, -1L);
-        Assert.assertEquals(2, vertices.size());
-        Assert.assertTrue(vertices.contains(softwareId + ":lop"));
-        Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
-    }
-
-    @Test
-    public void testKoutBothNearest() {
-        Object markoId = getVertexId("person", "name", "marko");
-
-        long personId = vertexLabelAPI.get("person").id();
-        long softwareId = vertexLabelAPI.get("software").id();
-
-        List<Object> vertices = koutAPI.get(markoId, Direction.BOTH,
-                                            null, 2, true, -1L, -1L, -1L);
-        Assert.assertEquals(2, vertices.size());
-        Assert.assertTrue(vertices.contains(personId + ":peter"));
-        Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
-    }
-
-    @Test
-    public void testKoutBothAll() {
-        Object markoId = getVertexId("person", "name", "marko");
-
-        long personId = vertexLabelAPI.get("person").id();
-        long softwareId = vertexLabelAPI.get("software").id();
-
-        List<Object> vertices = koutAPI.get(markoId, Direction.BOTH, null,
-                                            2, false, -1L, -1L, -1L);
-        Assert.assertEquals(5, vertices.size());
-        Assert.assertTrue(vertices.contains(personId + ":marko"));
-        Assert.assertTrue(vertices.contains(personId + ":josh"));
-        Assert.assertTrue(vertices.contains(personId + ":peter"));
-        Assert.assertTrue(vertices.contains(softwareId + ":lop"));
-        Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
-    }
-
-    @Test
-    public void testKoutBothAllWithCapacity() {
-        Object markoId = getVertexId("person", "name", "marko");
-
-        Assert.assertThrows(ServerException.class, () -> {
-            koutAPI.get(markoId, Direction.BOTH, null,
-                        2, false, -1L, -1L, 1L);
-        }, e -> {
-            String expect = "Capacity can't be less than limit, " +
-                            "but got capacity '1' and limit '-1'";
-            Assert.assertContains(expect, e.getMessage());
-        });
-    }
-
-    @Test
-    public void testKneighbor() {
-        Object markoId = getVertexId("person", "name", "marko");
-
-        long personId = vertexLabelAPI.get("person").id();
-        long softwareId = vertexLabelAPI.get("software").id();
-
-        List<Object> vertices = kneighborAPI.get(markoId, Direction.OUT,
-                                                 null, 2, -1L, -1L);
-        Assert.assertEquals(5, vertices.size());
-        Assert.assertTrue(vertices.contains(softwareId + ":lop"));
-        Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
-        Assert.assertTrue(vertices.contains(personId + ":vadas"));
-        Assert.assertTrue(vertices.contains(personId + ":josh"));
-        Assert.assertTrue(vertices.contains(personId + ":marko"));
-    }
-
-    @Test
     public void testCustomizedCrosspoints() {
         Object lopId = getVertexId("software", "name", "lop");
         Object joshId = getVertexId("person", "name", "josh");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        CrosspointsRequest.Builder builder = new CrosspointsRequest.Builder();
+        CrosspointsRequest.Builder builder = CrosspointsRequest.builder();
         builder.sources().ids(lopId, rippleId);
         builder.pathPatterns().steps().direction(Direction.IN)
                                       .labels("created").degree(-1);

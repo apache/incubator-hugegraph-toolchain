@@ -22,20 +22,21 @@ package com.baidu.hugegraph.api.traverser;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.traverser.PathsWithVertices;
-import com.baidu.hugegraph.structure.traverser.CustomizedPathsRequest;
+import com.baidu.hugegraph.structure.traverser.TemplatePathsRequest;
 
-public class CustomizedPathsAPI extends TraversersAPI {
+public class TemplatePathsAPI extends TraversersAPI {
 
-    public CustomizedPathsAPI(RestClient client, String graph) {
+    public TemplatePathsAPI(RestClient client, String graph) {
         super(client, graph);
     }
 
     @Override
     protected String type() {
-        return "customizedpaths";
+        return "templatepaths";
     }
 
-    public PathsWithVertices post(CustomizedPathsRequest request) {
+    public PathsWithVertices post(TemplatePathsRequest request) {
+        this.client.checkApiVersion("0.58", "template paths");
         RestResult result = this.client.post(this.path(), request);
         return result.readObject(PathsWithVertices.class);
     }

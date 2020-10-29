@@ -170,7 +170,7 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
     }
 
     @Test
-    public void testShortestPathWithCapacity() {
+    public void testAllShortestPathWithCapacity() {
         List<Path> paths = allShortestPathsAPI.get(1, 6, Direction.BOTH,
                                                    null, 6, -1L, 0L, -1L);
         Assert.assertEquals(4, paths.size());
@@ -193,7 +193,7 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
     }
 
     @Test
-    public void testShortestPathWithMaxDepth() {
+    public void testAllShortestPathWithMaxDepth() {
         List<Path> paths = allShortestPathsAPI.get(14, 6, Direction.BOTH,
                                                    null, 4, 5L, 0L, 19L);
         Assert.assertEquals(1, paths.size());
@@ -206,7 +206,7 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
     }
 
     @Test
-    public void testShortestPathWithIllegalArgs() {
+    public void testAllShortestPathWithIllegalArgs() {
         // The max depth shouldn't be 0 or negative
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             allShortestPathsAPI.get("a", "b", Direction.BOTH,

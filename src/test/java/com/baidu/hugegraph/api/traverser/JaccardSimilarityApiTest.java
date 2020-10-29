@@ -19,13 +19,20 @@
 
 package com.baidu.hugegraph.api.traverser;
 
+import java.util.Map;
+import java.util.Set;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
+
+
 import com.baidu.hugegraph.testutil.Assert;
+import com.google.common.collect.ImmutableSet;
 
 public class JaccardSimilarityApiTest extends TraverserApiTest {
 
@@ -126,5 +133,96 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         jaccard = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
                                          null, 1);
         Assert.assertEquals(1D, jaccard, Double.MIN_VALUE);
+    }
+
+    @Test
+    public void testJaccardSimilar() {
+        SingleSourceJaccardSimilarityRequest.Builder builder =
+                SingleSourceJaccardSimilarityRequest.builder();
+        builder.vertex(4);
+        builder.step().direction(Direction.BOTH);
+        SingleSourceJaccardSimilarityRequest request = builder.build();
+        Map<Object, Double> results = jaccardSimilarityAPI.post(request);
+
+        Assert.assertEquals(9, results.size());
+        Set<Object> expected = ImmutableSet.of("1", "2", "3", "5", "6",
+                                               "7", "8", "9", "10");
+        Assert.assertEquals(expected, results.keySet());
+
+        Assert.assertEquals(1.0, results.get("3"));
+        Assert.assertEquals(1.0, results.get("5"));
+        Assert.assertEquals(1.0, results.get("6"));
+        Assert.assertEquals(0.5, results.get("7"));
+        Assert.assertEquals(0.5, results.get("8"));
+        Assert.assertEquals(0.5, results.get("9"));
+        Assert.assertEquals(0.5, results.get("10"));
+        Assert.assertEquals(0.0, results.get("1"));
+        Assert.assertEquals(0.0, results.get("2"));
+    }
+
+    @Test
+    public void testJaccardSimilarWithTop() {
+        SingleSourceJaccardSimilarityRequest.Builder builder =
+                SingleSourceJaccardSimilarityRequest.builder();
+        builder.vertex(4);
+        builder.step().direction(Direction.BOTH);
+        builder.top(5);
+        SingleSourceJaccardSimilarityRequest request = builder.build();
+        Map<Object, Double> results = jaccardSimilarityAPI.post(request);
+
+        Assert.assertEquals(5, results.size());
+        Set<Object> expected = ImmutableSet.of("3", "5", "6", "7", "8");
+        Assert.assertEquals(expected, results.keySet());
+
+        Assert.assertEquals(1.0, results.get("3"));
+        Assert.assertEquals(1.0, results.get("5"));
+        Assert.assertEquals(1.0, results.get("6"));
+        Assert.assertEquals(0.5, results.get("7"));
+        Assert.assertEquals(0.5, results.get("8"));
+    }
+
+    @Test
+    public void testJaccardSimilarWithLabel() {
+        SingleSourceJaccardSimilarityRequest.Builder builder =
+                SingleSourceJaccardSimilarityRequest.builder();
+        builder.vertex(4);
+        builder.step().direction(Direction.BOTH).labels("link");
+        SingleSourceJaccardSimilarityRequest request = builder.build();
+        Map<Object, Double> results = jaccardSimilarityAPI.post(request);
+
+        Assert.assertEquals(7, results.size());
+        Set<Object> expected = ImmutableSet.of("3", "7", "8", "9",
+                                               "10", "1", "2");
+        Assert.assertEquals(expected, results.keySet());
+
+        Assert.assertEquals(1.0, results.get("3"));
+        Assert.assertEquals(0.5, results.get("7"));
+        Assert.assertEquals(0.5, results.get("8"));
+        Assert.assertEquals(0.5, results.get("9"));
+        Assert.assertEquals(0.5, results.get("10"));
+        Assert.assertEquals(0.0, results.get("1"));
+        Assert.assertEquals(0.0, results.get("2"));
+    }
+
+    @Test
+    public void testJaccardSimilarWithDirection() {
+        SingleSourceJaccardSimilarityRequest.Builder builder =
+                SingleSourceJaccardSimilarityRequest.builder();
+        builder.vertex(4);
+        builder.step().direction(Direction.OUT);
+        SingleSourceJaccardSimilarityRequest request = builder.build();
+        Map<Object, Double> results = jaccardSimilarityAPI.post(request);
+
+        Assert.assertEquals(6, results.size());
+        Set<Object> expected = ImmutableSet.of("1", "2", "3",
+                                               "5", "7", "9");
+        Assert.assertEquals(expected, results.keySet());
+
+        Assert.assertEquals(0.0, results.get("3"));
+        Assert.assertEquals(0.0, results.get("5"));
+        Assert.assertEquals(0.0, results.get("7"));
+        Assert.assertEquals(0.0, results.get("9"));
+        Assert.assertEquals(0.0, results.get("1"));
+        Assert.assertEquals(0.0, results.get("2"));
     }
 }

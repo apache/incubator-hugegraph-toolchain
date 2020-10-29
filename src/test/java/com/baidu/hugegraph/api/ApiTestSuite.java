@@ -33,12 +33,16 @@ import com.baidu.hugegraph.api.traverser.CountApiTest;
 import com.baidu.hugegraph.api.traverser.CustomizedPathsApiTest;
 import com.baidu.hugegraph.api.traverser.FusiformSimilarityApiTest;
 import com.baidu.hugegraph.api.traverser.JaccardSimilarityApiTest;
+import com.baidu.hugegraph.api.traverser.KneighborApiTest;
+import com.baidu.hugegraph.api.traverser.KoutApiTest;
 import com.baidu.hugegraph.api.traverser.NeighborRankApiTest;
+import com.baidu.hugegraph.api.traverser.PathsApiTest;
 import com.baidu.hugegraph.api.traverser.PersonalRankApiTest;
 import com.baidu.hugegraph.api.traverser.RingsRaysApiTest;
 import com.baidu.hugegraph.api.traverser.SameNeighborsApiTest;
 import com.baidu.hugegraph.api.traverser.ShortestPathApiTest;
 import com.baidu.hugegraph.api.traverser.SingleSourceShortestPathApiTest;
+import com.baidu.hugegraph.api.traverser.TemplatePathsApiTest;
 import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
 
 @RunWith(Suite.class)
@@ -59,6 +63,9 @@ import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
     RestoreApiTest.class,
 
     CommonTraverserApiTest.class,
+    KoutApiTest.class,
+    KneighborApiTest.class,
+    PathsApiTest.class,
     CountApiTest.class,
     RingsRaysApiTest.class,
     SameNeighborsApiTest.class,
@@ -68,6 +75,7 @@ import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
     SingleSourceShortestPathApiTest.class,
     WeightedShortestPathApiTest.class,
     CustomizedPathsApiTest.class,
+    TemplatePathsApiTest.class,
     FusiformSimilarityApiTest.class,
     NeighborRankApiTest.class,
     PersonalRankApiTest.class,

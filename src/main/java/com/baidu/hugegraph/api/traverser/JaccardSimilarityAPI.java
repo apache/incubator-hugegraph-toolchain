@@ -26,6 +26,9 @@ import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
+
+
 import com.baidu.hugegraph.util.E;
 
 public class JaccardSimilarityAPI extends TraversersAPI {
@@ -59,5 +62,13 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         E.checkState(jaccard.containsKey(JACCARD_SIMILARITY),
                      "The result doesn't have key '%s'", JACCARD_SIMILARITY);
         return jaccard.get(JACCARD_SIMILARITY);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<Object, Double> post(
+                               SingleSourceJaccardSimilarityRequest request) {
+        this.client.checkApiVersion("0.58", "jaccard similar");
+        RestResult result = this.client.post(this.path(), request);
+        return result.readObject(Map.class);
     }
 }

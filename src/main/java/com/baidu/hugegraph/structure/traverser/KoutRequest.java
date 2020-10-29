@@ -24,24 +24,38 @@ import com.baidu.hugegraph.structure.constant.Traverser;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PathsRequest {
+public class KoutRequest {
 
-    @JsonProperty("sources")
-    private VerticesArgs sources;
-    @JsonProperty("targets")
-    private VerticesArgs targets;
+    @JsonProperty("source")
+    private Object source;
     @JsonProperty("step")
     public EdgeStep step;
     @JsonProperty("max_depth")
-    public int depth;
+    public int maxDepth;
     @JsonProperty("nearest")
-    public boolean nearest = false;
+    public boolean nearest = true;
+    @JsonProperty("count_only")
+    public boolean countOnly = false;
     @JsonProperty("capacity")
     public long capacity = Traverser.DEFAULT_CAPACITY;
     @JsonProperty("limit")
     public long limit = Traverser.DEFAULT_LIMIT;
     @JsonProperty("with_vertex")
     public boolean withVertex = false;
+    @JsonProperty("with_path")
+    public boolean withPath = false;
+
+    private KoutRequest() {
+        this.source = null;
+        this.step = null;
+        this.maxDepth = Traverser.DEFAULT_MAX_DEPTH;
+        this.nearest = true;
+        this.countOnly = false;
+        this.capacity = Traverser.DEFAULT_CAPACITY;
+        this.limit = Traverser.DEFAULT_PATHS_LIMIT;
+        this.withVertex = false;
+        this.withPath = false;
+    }
 
     public static Builder builder() {
         return new Builder();
@@ -49,34 +63,28 @@ public class PathsRequest {
 
     @Override
     public String toString() {
-        return String.format("PathRequest{sources=%s,targets=%s,step=%s," +
-                             "maxDepth=%s,nearest=%s,capacity=%s," +
-                             "limit=%s,withVertex=%s}",
-                             this.sources, this.targets, this.step, this.depth,
-                             this.nearest, this.capacity,
-                             this.limit, this.withVertex);
+        return String.format("KoutRequest{source=%s,step=%s,maxDepth=%s" +
+                             "nearest=%s,countOnly=%s,capacity=%s," +
+                             "limit=%s,withVertex=%s,withPath=%s}",
+                             this.source, this.step, this.maxDepth,
+                             this.nearest, this.countOnly, this.capacity,
+                             this.limit, this.withVertex, this.withPath);
     }
 
     public static class Builder {
 
-        private PathsRequest request;
+        private KoutRequest request;
         private EdgeStep.Builder stepBuilder;
-        private VerticesArgs.Builder sourcesBuilder;
-        private VerticesArgs.Builder targetsBuilder;
 
         private Builder() {
-            this.request = new PathsRequest();
-            this.stepBuilder = EdgeStep.builder();
-            this.sourcesBuilder = VerticesArgs.builder();
-            this.targetsBuilder = VerticesArgs.builder();
+                this.request = new KoutRequest();
+                this.stepBuilder = EdgeStep.builder();
         }
 
-        public VerticesArgs.Builder sources() {
-            return this.sourcesBuilder;
-        }
-
-        public VerticesArgs.Builder targets() {
-            return this.targetsBuilder;
+        public Builder source(Object source) {
+            E.checkNotNull(source, "source");
+            this.request.source = source;
+            return this;
         }
 
         public EdgeStep.Builder step() {
@@ -85,46 +93,57 @@ public class PathsRequest {
             return builder;
         }
 
-        public PathsRequest.Builder maxDepth(int maxDepth) {
+        public Builder maxDepth(int maxDepth) {
             TraversersAPI.checkPositive(maxDepth, "max depth");
-            this.request.depth = maxDepth;
+            this.request.maxDepth = maxDepth;
             return this;
         }
 
-        public PathsRequest.Builder nearest(boolean nearest) {
+        public Builder nearest(boolean nearest) {
             this.request.nearest = nearest;
             return this;
         }
 
-        public PathsRequest.Builder capacity(long capacity) {
+        public Builder countOnly(boolean countOnly) {
+            this.request.countOnly = countOnly;
+            return this;
+        }
+
+        public Builder capacity(long capacity) {
             TraversersAPI.checkCapacity(capacity);
             this.request.capacity = capacity;
             return this;
         }
 
-        public PathsRequest.Builder limit(long limit) {
+        public Builder limit(long limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
         }
 
-        public PathsRequest.Builder withVertex(boolean withVertex) {
+        public Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
             return this;
         }
 
-        public PathsRequest build() {
-            this.request.sources = this.sourcesBuilder.build();
-            E.checkArgument(this.request.sources != null,
-                            "Source vertices can't be null");
-            this.request.targets = this.targetsBuilder.build();
-            E.checkArgument(this.request.targets != null,
-                            "Target vertices can't be null");
+        public Builder withPath(boolean withPath) {
+            this.request.withPath = withPath;
+            return this;
+        }
+
+        public KoutRequest build() {
+            E.checkNotNull(this.request.source, "The source can't be null");
             this.request.step = this.stepBuilder.build();
-            E.checkNotNull(this.request.step, "The steps can't be null");
-            TraversersAPI.checkPositive(this.request.depth, "max depth");
+            E.checkNotNull(this.request.step, "step");
+            TraversersAPI.checkPositive(this.request.maxDepth, "max depth");
             TraversersAPI.checkCapacity(this.request.capacity);
             TraversersAPI.checkLimit(this.request.limit);
+            if (this.request.countOnly) {
+                E.checkArgument(!this.request.withVertex &&
+                                !this.request.withPath,
+                                "Can't return vertex or path " +
+                                "when count only is true");
+            }
             return this.request;
         }
     }

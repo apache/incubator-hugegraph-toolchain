@@ -27,6 +27,8 @@ import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.traverser.Kneighbor;
+import com.baidu.hugegraph.structure.traverser.KneighborRequest;
 
 public class KneighborAPI extends TraversersAPI {
 
@@ -56,6 +58,12 @@ public class KneighborAPI extends TraversersAPI {
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readList("vertices", Object.class);
+    }
+
+    public Kneighbor post(KneighborRequest request) {
+        this.client.checkApiVersion("0.58", "customized kneighbor");
+        RestResult result = this.client.post(this.path(), request);
+        return result.readObject(Kneighbor.class);
     }
 }
 

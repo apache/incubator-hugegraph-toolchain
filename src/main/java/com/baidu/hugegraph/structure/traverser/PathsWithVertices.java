@@ -17,26 +17,42 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.api.traverser;
+package com.baidu.hugegraph.structure.traverser;
 
-import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.RestResult;
-import com.baidu.hugegraph.structure.traverser.PathsWithVertices;
-import com.baidu.hugegraph.structure.traverser.CustomizedPathsRequest;
+import java.util.List;
+import java.util.Set;
 
-public class CustomizedPathsAPI extends TraversersAPI {
+import com.baidu.hugegraph.structure.graph.Vertex;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    public CustomizedPathsAPI(RestClient client, String graph) {
-        super(client, graph);
+public class PathsWithVertices {
+
+    @JsonProperty
+    private List<Paths> paths;
+    @JsonProperty
+    private Set<Vertex> vertices;
+
+    public List<Paths> paths() {
+        return this.paths;
     }
 
-    @Override
-    protected String type() {
-        return "customizedpaths";
+    public Set<Vertex> vertices() {
+        return this.vertices;
     }
 
-    public PathsWithVertices post(CustomizedPathsRequest request) {
-        RestResult result = this.client.post(this.path(), request);
-        return result.readObject(PathsWithVertices.class);
+    public static class Paths {
+
+        @JsonProperty
+        private List<Object> objects;
+        @JsonProperty
+        private List<Double> weights;
+
+        public List<Object> objects() {
+            return this.objects;
+        }
+
+        public List<Double> weights() {
+            return this.weights;
+        }
     }
 }

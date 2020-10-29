@@ -20,13 +20,9 @@
 package com.baidu.hugegraph.structure.traverser;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.baidu.hugegraph.api.API;
-import com.baidu.hugegraph.api.traverser.TraversersAPI;
-import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.Traverser;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,7 +32,7 @@ public class CountRequest {
     @JsonProperty("source")
     private Object source;
     @JsonProperty("steps")
-    private List<Step> steps;
+    private List<EdgeStep> steps;
     @JsonProperty("contains_traversed")
     public boolean containsTraversed;
     @JsonProperty("dedup_size")
@@ -47,6 +43,10 @@ public class CountRequest {
         this.steps = new ArrayList<>();
         this.containsTraversed = false;
         this.dedupSize = Traverser.DEFAULT_DEDUP_SIZE;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -60,9 +60,9 @@ public class CountRequest {
     public static class Builder {
 
         private CountRequest request;
-        private List<Step.Builder> stepBuilders;
+        private List<EdgeStep.Builder> stepBuilders;
 
-        public Builder() {
+        private Builder() {
             this.request = new CountRequest();
             this.stepBuilders = new ArrayList<>();
         }
@@ -73,8 +73,8 @@ public class CountRequest {
             return this;
         }
 
-        public Step.Builder steps() {
-            Step.Builder builder = new Step.Builder();
+        public EdgeStep.Builder steps() {
+            EdgeStep.Builder builder = EdgeStep.builder();
             this.stepBuilders.add(builder);
             return builder;
         }
@@ -93,7 +93,7 @@ public class CountRequest {
         public CountRequest build() {
             E.checkArgumentNotNull(this.request.source,
                                    "The source can't be null");
-            for (Step.Builder builder : this.stepBuilders) {
+            for (EdgeStep.Builder builder : this.stepBuilders) {
                 this.request.steps.add(builder.build());
             }
             E.checkArgument(this.request.steps != null &&
@@ -108,89 +108,5 @@ public class CountRequest {
         E.checkArgument(dedupSize >= 0L || dedupSize == API.NO_LIMIT,
                         "The dedup size must be >= 0 or == %s, but got: %s",
                         API.NO_LIMIT, dedupSize);
-    }
-
-    public static class Step {
-
-        @JsonProperty("direction")
-        private String direction;
-        @JsonProperty("labels")
-        private List<String> labels;
-        @JsonProperty("properties")
-        private Map<String, Object> properties;
-        @JsonProperty("degree")
-        private long degree;
-        @JsonProperty("skip_degree")
-        private long skipDegree;
-
-        private Step() {
-            this.direction = "BOTH";
-            this.labels = new ArrayList<>();
-            this.properties = new HashMap<>();
-            this.degree = Traverser.DEFAULT_DEGREE;
-            this.skipDegree = Traverser.DEFAULT_SKIP_DEGREE;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Step{direction=%s,labels=%s,properties=%s," +
-                                 "degree=%s,skipDegree=%s}",
-                                 this.direction, this.labels, this.properties,
-                                 this.degree, this.skipDegree);
-        }
-
-        public static class Builder {
-
-            private Step step;
-
-            private Builder() {
-                this.step = new Step();
-            }
-
-            public Builder direction(Direction direction) {
-                this.step.direction = direction.toString();
-                return this;
-            }
-
-            public Builder labels(List<String> labels) {
-                this.step.labels = labels;
-                return this;
-            }
-
-            public Builder labels(String label) {
-                this.step.labels.add(label);
-                return this;
-            }
-
-            public Builder properties(Map<String, Object> properties) {
-                this.step.properties = properties;
-                return this;
-            }
-
-            public Builder properties(String key, Object value) {
-                this.step.properties.put(key, value);
-                return this;
-            }
-
-            public Builder degree(long degree) {
-                TraversersAPI.checkDegree(degree);
-                this.step.degree = degree;
-                return this;
-            }
-
-            public Builder skipDegree(long skipDegree) {
-                TraversersAPI.checkSkipDegree(skipDegree, this.step.degree,
-                                              API.NO_LIMIT);
-                this.step.skipDegree = skipDegree;
-                return this;
-            }
-
-            private Step build() {
-                TraversersAPI.checkDegree(this.step.degree);
-                TraversersAPI.checkSkipDegree(this.step.skipDegree,
-                                              this.step.degree, API.NO_LIMIT);
-                return this.step;
-            }
-        }
     }
 }

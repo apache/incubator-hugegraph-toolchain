@@ -27,65 +27,70 @@ import java.util.Set;
 
 import com.baidu.hugegraph.util.E;
 
-public class SourceVertices {
+public class VerticesArgs {
 
     public Set<Object> ids;
     public String label;
     public Map<String, Object> properties;
 
-    private SourceVertices() {
+    private VerticesArgs() {
         this.ids = new HashSet<>();
         this.label = null;
         this.properties = new HashMap<>();
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     @Override
     public String toString() {
-        return String.format("SourceVertices{ids=%s,label=%s,properties=%s}",
+        return String.format("VerticesArgs{ids=%s,label=%s,properties=%s}",
                              this.ids, this.label, this.properties);
     }
 
     public static class Builder {
 
-        private SourceVertices sources;
+        private VerticesArgs vertices;
 
-        protected Builder() {
-            this.sources = new SourceVertices();
+        private Builder() {
+            this.vertices = new VerticesArgs();
         }
 
         public Builder ids(Set<Object> ids) {
-            this.sources.ids.addAll(ids);
+            this.vertices.ids.addAll(ids);
             return this;
         }
 
         public Builder ids(Object... ids) {
-            this.sources.ids.addAll(Arrays.asList(ids));
+            this.vertices.ids.addAll(Arrays.asList(ids));
             return this;
         }
 
         public Builder label(String label) {
-            this.sources.label = label;
+            this.vertices.label = label;
             return this;
         }
 
         public Builder properties(Map<String, Object> properties) {
-            this.sources.properties = properties;
+            this.vertices.properties = properties;
             return this;
         }
 
         public Builder property(String key, Object value) {
-            this.sources.properties.put(key, value);
+            this.vertices.properties.put(key, value);
             return this;
         }
 
-        protected SourceVertices build() {
-            E.checkArgument(!((this.sources.ids == null ||
-                               this.sources.ids.isEmpty()) &&
-                              (this.sources.properties == null ||
-                               this.sources.properties.isEmpty()) &&
-                              this.sources.label == null),
-                            "No source vertices provided");
-            return this.sources;
+        protected VerticesArgs build() {
+            E.checkArgument(!((this.vertices.ids == null ||
+                               this.vertices.ids.isEmpty()) &&
+                              (this.vertices.properties == null ||
+                               this.vertices.properties.isEmpty()) &&
+                              (this.vertices.label == null ||
+                               this.vertices.label.isEmpty())),
+                            "No vertices provided");
+            return this.vertices;
         }
     }
 }

@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.structure.traverser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,27 +31,29 @@ import com.baidu.hugegraph.structure.constant.Traverser;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CrosspointsRequest {
+import static com.baidu.hugegraph.api.API.NO_LIMIT;
+
+public class CustomizedPathsRequest {
 
     @JsonProperty("sources")
     private VerticesArgs sources;
-    @JsonProperty("path_patterns")
-    private List<PathPattern> pathPatterns;
+    @JsonProperty("steps")
+    private List<Step> steps;
+    @JsonProperty("sort_by")
+    private SortBy sortBy;
     @JsonProperty("capacity")
     private long capacity;
     @JsonProperty("limit")
     private long limit;
-    @JsonProperty("with_path")
-    private boolean withPath;
     @JsonProperty("with_vertex")
     private boolean withVertex;
 
-    private CrosspointsRequest() {
+    private CustomizedPathsRequest() {
         this.sources = null;
-        this.pathPatterns = new ArrayList<>();
+        this.steps = new ArrayList<>();
+        this.sortBy = SortBy.NONE;
         this.capacity = Traverser.DEFAULT_CAPACITY;
-        this.limit = Traverser.DEFAULT_CROSSPOINT_LIMIT;
-        this.withPath = false;
+        this.limit = Traverser.DEFAULT_PATHS_LIMIT;
         this.withVertex = false;
     }
 
@@ -60,33 +63,38 @@ public class CrosspointsRequest {
 
     @Override
     public String toString() {
-        return String.format("CrosspointsRequest{sourceVertex=%s," +
-                             "pathPatterns=%s,capacity=%s,limit=%s," +
-                             "withPath=%s,withVertex=%s}",
-                             this.sources, this.pathPatterns, this.capacity,
-                             this.limit, this.withPath, this.withVertex);
+        return String.format("CustomizedPathsRequest{sourceVertex=%s,steps=%s," +
+                             "sortBy=%s,capacity=%s,limit=%s," +
+                             "withVertex=%s}", this.sources, this.steps,
+                             this.sortBy, this.capacity, this.limit,
+                             this.withVertex);
     }
 
     public static class Builder {
 
-        private CrosspointsRequest request;
+        private CustomizedPathsRequest request;
         private VerticesArgs.Builder sourcesBuilder;
-        private List<PathPattern.Builder> pathPatternBuilders;
+        private List<Step.Builder> stepBuilders;
 
         private Builder() {
-            this.request = new CrosspointsRequest();
+            this.request = new CustomizedPathsRequest();
             this.sourcesBuilder = VerticesArgs.builder();
-            this.pathPatternBuilders = new ArrayList<>();
+            this.stepBuilders = new ArrayList<>();
         }
 
         public VerticesArgs.Builder sources() {
             return this.sourcesBuilder;
         }
 
-        public PathPattern.Builder pathPatterns() {
-            PathPattern.Builder builder = new PathPattern.Builder();
-            this.pathPatternBuilders.add(builder);
+        public Step.Builder steps() {
+            Step.Builder builder = new Step.Builder();
+            this.stepBuilders.add(builder);
             return builder;
+        }
+
+        public Builder sortBy(SortBy sortBy) {
+            this.request.sortBy = sortBy;
+            return this;
         }
 
         public Builder capacity(long capacity) {
@@ -101,66 +109,24 @@ public class CrosspointsRequest {
             return this;
         }
 
-        public Builder withPath(boolean withPath) {
-            this.request.withPath = withPath;
-            return this;
-        }
-
         public Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
             return this;
         }
 
-        public CrosspointsRequest build() {
+        public CustomizedPathsRequest build() {
             this.request.sources = this.sourcesBuilder.build();
-            for (PathPattern.Builder builder : this.pathPatternBuilders) {
-                this.request.pathPatterns.add(builder.build());
+            for (Step.Builder builder : this.stepBuilders) {
+                this.request.steps.add(builder.build());
             }
             E.checkArgument(this.request.sources != null,
                             "Source vertices can't be null");
-            E.checkArgument(this.request.pathPatterns != null &&
-                            !this.request.pathPatterns.isEmpty(),
+            E.checkArgument(this.request.steps != null &&
+                            !this.request.steps.isEmpty(),
                             "Steps can't be null or empty");
             TraversersAPI.checkCapacity(this.request.capacity);
             TraversersAPI.checkLimit(this.request.limit);
             return this.request;
-        }
-    }
-
-    public static class PathPattern {
-
-        @JsonProperty("steps")
-        private List<Step> steps;
-
-        private PathPattern() {
-            this.steps = new ArrayList<>();
-        }
-
-        public static class Builder {
-
-            private PathPattern pathPattern;
-            private List<Step.Builder> stepBuilders;
-
-            private Builder() {
-                this.pathPattern = new PathPattern();
-                this.stepBuilders = new ArrayList<>();
-            }
-
-            public Step.Builder steps() {
-                Step.Builder builder = new Step.Builder();
-                this.stepBuilders.add(builder);
-                return builder;
-            }
-
-            private PathPattern build() {
-                for (Step.Builder builder : this.stepBuilders) {
-                    this.pathPattern.steps.add(builder.build());
-                }
-                E.checkArgument(this.pathPattern.steps != null &&
-                                !this.pathPattern.steps.isEmpty(),
-                                "Steps of path pattern can't be empty");
-                return this.pathPattern;
-            }
         }
     }
 
@@ -172,21 +138,32 @@ public class CrosspointsRequest {
         private List<String> labels;
         @JsonProperty("properties")
         private Map<String, Object> properties;
+        @JsonProperty("weight_by")
+        private String weightBy;
+        @JsonProperty("default_weight")
+        private double defaultWeight;
         @JsonProperty("degree")
         private long degree;
+        @JsonProperty("sample")
+        private long sample;
 
         private Step() {
             this.direction = null;
             this.labels = new ArrayList<>();
             this.properties = new HashMap<>();
+            this.weightBy = null;
+            this.defaultWeight = Traverser.DEFAULT_WEIGHT;
             this.degree = Traverser.DEFAULT_DEGREE;
+            this.sample = Traverser.DEFAULT_SAMPLE;
         }
 
         @Override
         public String toString() {
             return String.format("Step{direction=%s,labels=%s,properties=%s," +
-                                 "degree=%s}", this.direction, this.labels,
-                                 this.properties, this.degree);
+                                 "weightBy=%s,defaultWeight=%s,degree=%s," +
+                                 "sample=%s}", this.direction, this.labels,
+                                 this.properties, this.weightBy,
+                                 this.defaultWeight, this.degree, this.sample);
         }
 
         public static class Builder {
@@ -203,12 +180,12 @@ public class CrosspointsRequest {
             }
 
             public Builder labels(List<String> labels) {
-                this.step.labels = labels;
+                this.step.labels.addAll(labels);
                 return this;
             }
 
-            public Builder labels(String label) {
-                this.step.labels.add(label);
+            public Builder labels(String... labels) {
+                this.step.labels.addAll(Arrays.asList(labels));
                 return this;
             }
 
@@ -222,16 +199,49 @@ public class CrosspointsRequest {
                 return this;
             }
 
+            public Builder weightBy(String property) {
+                this.step.weightBy = property;
+                return this;
+            }
+
+            public Builder defaultWeight(double weight) {
+                this.step.defaultWeight = weight;
+                return this;
+            }
+
             public Builder degree(long degree) {
                 TraversersAPI.checkDegree(degree);
                 this.step.degree = degree;
                 return this;
             }
 
+            public Builder sample(int sample) {
+                E.checkArgument(sample == NO_LIMIT || sample > 0,
+                                "The sample must be > 0, but got: %s",
+                                sample);
+                this.step.sample = sample;
+                return this;
+            }
+
             private Step build() {
                 TraversersAPI.checkDegree(this.step.degree);
+                E.checkArgument(this.step.sample > 0 ||
+                                this.step.sample == NO_LIMIT,
+                                "The sample must be > 0, but got: %s",
+                                this.step.sample);
+                E.checkArgument(this.step.degree == NO_LIMIT ||
+                                this.step.degree >= this.step.sample,
+                                "Degree must be greater than or equal to " +
+                                "sample, but got degree %s and sample %s",
+                                this.step.degree, this.step.sample);
                 return this.step;
             }
         }
+    }
+
+    public enum SortBy {
+        INCR,
+        DECR,
+        NONE
     }
 }

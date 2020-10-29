@@ -144,7 +144,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object p3 = getVertexId("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).groupProperty("city").minGroups(2);
@@ -165,7 +165,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
     @Test
     public void testFusiformSimilarityLessThanMinEdgeCount() {
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(10)
                .alpha(0.8D).groupProperty("city").minGroups(2);
@@ -174,7 +174,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(0, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(9)
                .alpha(0.8D).groupProperty("city").minGroups(2);
@@ -183,7 +183,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p2");
         builder.label("read").direction(Direction.OUT).minNeighbors(10)
                .alpha(0.8D).groupProperty("city").minGroups(2);
@@ -192,7 +192,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(0, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p2");
         builder.label("read").direction(Direction.OUT).minNeighbors(9)
                .alpha(0.8D).groupProperty("city").minGroups(2);
@@ -201,7 +201,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p3");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.8D).groupProperty("city").minGroups(2);
@@ -210,7 +210,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(0, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p2");
         builder.label("read").direction(Direction.OUT).minNeighbors(7)
                .alpha(0.8D).groupProperty("city").minGroups(2);
@@ -227,7 +227,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object p3 = getVertexId("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).groupProperty("city").minGroups(2);
@@ -244,7 +244,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(6)
                .alpha(0.83D).groupProperty("city").minGroups(2);
@@ -269,7 +269,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object p3 = getVertexId("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).minSimilars(3).groupProperty("city")
@@ -280,7 +280,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(0, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).minSimilars(2).groupProperty("city")
@@ -298,7 +298,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).minSimilars(1).groupProperty("city")
@@ -314,7 +314,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Assert.assertEquals(expected, actual);
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new FusiformSimilarityRequest.Builder().minSimilars(0);
+            FusiformSimilarityRequest.builder().minSimilars(0);
         });
     }
 
@@ -325,7 +325,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object p3 = getVertexId("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).top(2);
@@ -342,7 +342,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(6)
                .alpha(0.8D).top(1);
@@ -367,7 +367,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object p3 = getVertexId("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.7D).groupProperty("city").minGroups(2);
@@ -384,7 +384,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(6)
                .alpha(0.8D).groupProperty("city").minGroups(3);
@@ -397,7 +397,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
     @Test
     public void testFusiformSimilarityCapacity() {
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.8D).groupProperty("city").minGroups(2);
@@ -420,7 +420,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object p3 = getVertexId("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().ids(p1, p2, p3);
         builder.label("read").direction(Direction.OUT).minNeighbors(5)
                .alpha(0.8D).top(2);
@@ -429,7 +429,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(3, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().ids(p1, p2, p3);
         builder.label("read").direction(Direction.OUT).minNeighbors(5)
                .alpha(0.8D).top(2);
@@ -438,7 +438,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(2, results.size());
 
-        builder = new FusiformSimilarityRequest.Builder();
+        builder = FusiformSimilarityRequest.builder();
         builder.sources().ids(p1, p2, p3);
         builder.label("read").direction(Direction.OUT).minNeighbors(5)
                .alpha(0.8D).top(2);
@@ -459,7 +459,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object id3 = p3.id();
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().ids(id1, id2, id3);
         builder.label("write").direction(Direction.OUT).minNeighbors(3)
                .alpha(0.666D);
@@ -482,7 +482,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object p3 = getVertexId("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().ids(p1, p2, p3);
         builder.direction(Direction.OUT).minNeighbors(8)
                .alpha(0.875D);
@@ -535,7 +535,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object b9Id = b9.id();
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).groupProperty("city").minGroups(2)
@@ -596,7 +596,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Object b9Id = b9.id();
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).groupProperty("city").minGroups(2)
@@ -634,7 +634,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Vertex p3 = getVertex("person", "name", "p3");
 
         FusiformSimilarityRequest.Builder builder =
-                new FusiformSimilarityRequest.Builder();
+                FusiformSimilarityRequest.builder();
         builder.sources().label("person").property("name", "p1");
         builder.label("read").direction(Direction.OUT).minNeighbors(8)
                .alpha(0.75D).groupProperty("city").minGroups(2)

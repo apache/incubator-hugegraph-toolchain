@@ -22,37 +22,34 @@ package com.baidu.hugegraph.structure.traverser;
 import java.util.List;
 import java.util.Set;
 
+import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CustomizedPaths {
+public class Kneighbor {
 
     @JsonProperty
-    private List<Paths> paths;
+    private int size;
+    @JsonProperty("kneighbor")
+    private Set<Object> ids;
+    @JsonProperty
+    private List<Path> paths;
     @JsonProperty
     private Set<Vertex> vertices;
 
-    public List<Paths> paths() {
+    public int size() {
+        return this.size;
+    }
+
+    public Set<Object> ids() {
+        return this.ids;
+    }
+
+    public List<Path> paths() {
         return this.paths;
     }
 
     public Set<Vertex> vertices() {
         return this.vertices;
-    }
-
-    public static class Paths {
-
-        @JsonProperty
-        private List<Object> objects;
-        @JsonProperty
-        private List<Double> weights;
-
-        public List<Object> objects() {
-            return this.objects;
-        }
-
-        public List<Double> weights() {
-            return this.weights;
-        }
     }
 }

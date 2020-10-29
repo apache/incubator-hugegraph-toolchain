@@ -158,7 +158,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCount() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT);
@@ -171,7 +171,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCountWithContainsTraversed() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(true);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT);
@@ -184,7 +184,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCountWithDirection() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(true);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT);
@@ -194,7 +194,7 @@ public class CountApiTest extends TraverserApiTest {
         long count = countAPI.post(request);
         Assert.assertEquals(19L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT);
@@ -204,7 +204,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(8L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.IN);
         builder.steps().direction(Direction.IN);
@@ -214,7 +214,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(3L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(true);
         builder.steps().direction(Direction.IN);
         builder.steps().direction(Direction.IN);
@@ -227,7 +227,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCountWithLabel() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT)
                .labels(ImmutableList.of("link"));
@@ -240,7 +240,7 @@ public class CountApiTest extends TraverserApiTest {
         long count = countAPI.post(request);
         Assert.assertEquals(3L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(true);
         builder.steps().direction(Direction.OUT)
                .labels(ImmutableList.of("link"));
@@ -256,7 +256,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCountWithProperties() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT)
                .labels(ImmutableList.of("link"))
@@ -272,7 +272,7 @@ public class CountApiTest extends TraverserApiTest {
         long count = countAPI.post(request);
         Assert.assertEquals(1L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(true);
         builder.steps().direction(Direction.OUT)
                .labels(ImmutableList.of("link"))
@@ -288,7 +288,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(6L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT)
                .labels(ImmutableList.of("link"));
@@ -302,7 +302,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(1L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(true);
         builder.steps().direction(Direction.OUT)
                .labels(ImmutableList.of("link"));
@@ -316,7 +316,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(4L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT)
                .labels(ImmutableList.of("link"));
@@ -333,7 +333,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCountWithDegree() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT);
@@ -343,7 +343,7 @@ public class CountApiTest extends TraverserApiTest {
         long count = countAPI.post(request);
         Assert.assertEquals(8L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT).degree(1);
         builder.steps().direction(Direction.OUT);
@@ -353,7 +353,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(3L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT).degree(2);
@@ -363,7 +363,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(4L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT).degree(4);
@@ -376,7 +376,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCountWithSkipDegree() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT);
@@ -386,7 +386,7 @@ public class CountApiTest extends TraverserApiTest {
         long count = countAPI.post(request);
         Assert.assertEquals(8L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT).degree(3).skipDegree(5);
@@ -396,7 +396,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(3L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT).degree(2).skipDegree(3);
@@ -406,7 +406,7 @@ public class CountApiTest extends TraverserApiTest {
         count = countAPI.post(request);
         Assert.assertEquals(0L, count);
 
-        builder = new CountRequest.Builder();
+        builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
         builder.steps().direction(Direction.OUT);
         builder.steps().direction(Direction.OUT).degree(3).skipDegree(4);
@@ -418,7 +418,7 @@ public class CountApiTest extends TraverserApiTest {
 
     @Test
     public void testCountWithIllegalArgument() {
-        CountRequest.Builder builder = new CountRequest.Builder();
+        CountRequest.Builder builder = CountRequest.builder();
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             builder.source(null);
@@ -454,7 +454,7 @@ public class CountApiTest extends TraverserApiTest {
                                   e.getMessage());
         });
 
-        CountRequest.Builder builder1 = new CountRequest.Builder();
+        CountRequest.Builder builder1 = CountRequest.builder();
         Assert.assertThrows(ServerException.class, () -> {
             builder1.source("A").containsTraversed(false);
             builder1.steps().properties(ImmutableMap.of("weight", 3.3D));
@@ -465,7 +465,7 @@ public class CountApiTest extends TraverserApiTest {
                                   e.getMessage());
         });
 
-        CountRequest.Builder builder2 = new CountRequest.Builder();
+        CountRequest.Builder builder2 = CountRequest.builder();
         Assert.assertThrows(ServerException.class, () -> {
             builder2.source("A").containsTraversed(false);
             builder2.steps().labels(ImmutableList.of("link", "relateTo"))
@@ -477,13 +477,13 @@ public class CountApiTest extends TraverserApiTest {
                                   e.getMessage());
         });
 
-        CountRequest.Builder builder3 = new CountRequest.Builder();
+        CountRequest.Builder builder3 = CountRequest.builder();
         builder3.source("A").containsTraversed(false);
         builder3.steps().labels(ImmutableList.of("link"))
                 .properties(ImmutableMap.of("time", "2020-01-01"));
         countAPI.post(builder3.build());
 
-        CountRequest.Builder builder4 = new CountRequest.Builder();
+        CountRequest.Builder builder4 = CountRequest.builder();
         Assert.assertThrows(ServerException.class, () -> {
             builder4.source("A").containsTraversed(false);
             builder4.steps().labels(ImmutableList.of("link"))

@@ -19,29 +19,40 @@
 
 package com.baidu.hugegraph.structure.traverser;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.baidu.hugegraph.api.traverser.TraversersAPI;
 import com.baidu.hugegraph.structure.constant.Traverser;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PathsRequest {
+public class TemplatePathsRequest {
 
     @JsonProperty("sources")
     private VerticesArgs sources;
     @JsonProperty("targets")
     private VerticesArgs targets;
-    @JsonProperty("step")
-    public EdgeStep step;
-    @JsonProperty("max_depth")
-    public int depth;
-    @JsonProperty("nearest")
-    public boolean nearest = false;
+    @JsonProperty("steps")
+    public List<RepeatEdgeStep> steps;
+    @JsonProperty("with_ring")
+    public boolean withRing = false;
     @JsonProperty("capacity")
     public long capacity = Traverser.DEFAULT_CAPACITY;
     @JsonProperty("limit")
-    public long limit = Traverser.DEFAULT_LIMIT;
+    public long limit = Traverser.DEFAULT_PATHS_LIMIT;
     @JsonProperty("with_vertex")
     public boolean withVertex = false;
+
+    private TemplatePathsRequest() {
+        this.sources = null;
+        this.targets = null;
+        this.steps = new ArrayList<>();
+        this.withRing = false;
+        this.capacity = Traverser.DEFAULT_CAPACITY;
+        this.limit = Traverser.DEFAULT_PATHS_LIMIT;
+        this.withVertex = false;
+    }
 
     public static Builder builder() {
         return new Builder();
@@ -49,26 +60,25 @@ public class PathsRequest {
 
     @Override
     public String toString() {
-        return String.format("PathRequest{sources=%s,targets=%s,step=%s," +
-                             "maxDepth=%s,nearest=%s,capacity=%s," +
-                             "limit=%s,withVertex=%s}",
-                             this.sources, this.targets, this.step, this.depth,
-                             this.nearest, this.capacity,
+        return String.format("TemplatePathsRequest{sources=%s,targets=%s," +
+                             "steps=%s,withRing=%s,capacity=%s,limit=%s," +
+                             "withVertex=%s}", this.sources, this.targets,
+                             this.steps, this.withRing, this.capacity,
                              this.limit, this.withVertex);
     }
 
     public static class Builder {
 
-        private PathsRequest request;
-        private EdgeStep.Builder stepBuilder;
+        private TemplatePathsRequest request;
         private VerticesArgs.Builder sourcesBuilder;
         private VerticesArgs.Builder targetsBuilder;
+        private List<RepeatEdgeStep.Builder> stepBuilders;
 
         private Builder() {
-            this.request = new PathsRequest();
-            this.stepBuilder = EdgeStep.builder();
+            this.request = new TemplatePathsRequest();
             this.sourcesBuilder = VerticesArgs.builder();
             this.targetsBuilder = VerticesArgs.builder();
+            this.stepBuilders = new ArrayList<>();
         }
 
         public VerticesArgs.Builder sources() {
@@ -79,50 +89,47 @@ public class PathsRequest {
             return this.targetsBuilder;
         }
 
-        public EdgeStep.Builder step() {
-            EdgeStep.Builder builder = EdgeStep.builder();
-            this.stepBuilder = builder;
+        public RepeatEdgeStep.Builder steps() {
+            RepeatEdgeStep.Builder builder = RepeatEdgeStep.repeatStepBuilder();
+            this.stepBuilders.add(builder);
             return builder;
         }
 
-        public PathsRequest.Builder maxDepth(int maxDepth) {
-            TraversersAPI.checkPositive(maxDepth, "max depth");
-            this.request.depth = maxDepth;
+        public Builder withRing(boolean withRing) {
+            this.request.withRing = withRing;
             return this;
         }
 
-        public PathsRequest.Builder nearest(boolean nearest) {
-            this.request.nearest = nearest;
-            return this;
-        }
-
-        public PathsRequest.Builder capacity(long capacity) {
+        public Builder capacity(long capacity) {
             TraversersAPI.checkCapacity(capacity);
             this.request.capacity = capacity;
             return this;
         }
 
-        public PathsRequest.Builder limit(long limit) {
+        public Builder limit(long limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
         }
 
-        public PathsRequest.Builder withVertex(boolean withVertex) {
+        public Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
             return this;
         }
 
-        public PathsRequest build() {
+        public TemplatePathsRequest build() {
             this.request.sources = this.sourcesBuilder.build();
             E.checkArgument(this.request.sources != null,
                             "Source vertices can't be null");
             this.request.targets = this.targetsBuilder.build();
             E.checkArgument(this.request.targets != null,
                             "Target vertices can't be null");
-            this.request.step = this.stepBuilder.build();
-            E.checkNotNull(this.request.step, "The steps can't be null");
-            TraversersAPI.checkPositive(this.request.depth, "max depth");
+            for (RepeatEdgeStep.Builder builder : this.stepBuilders) {
+                this.request.steps.add(builder.build());
+            }
+            E.checkArgument(this.request.steps != null &&
+                            !this.request.steps.isEmpty(),
+                            "The steps can't be null or empty");
             TraversersAPI.checkCapacity(this.request.capacity);
             TraversersAPI.checkLimit(this.request.limit);
             return this.request;

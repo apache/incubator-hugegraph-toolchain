@@ -35,8 +35,8 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
-import com.baidu.hugegraph.structure.traverser.CustomizedPaths;
-import com.baidu.hugegraph.structure.traverser.PathsRequest;
+import com.baidu.hugegraph.structure.traverser.PathsWithVertices;
+import com.baidu.hugegraph.structure.traverser.CustomizedPathsRequest;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -69,18 +69,18 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
         Object lopId = getVertexId("software", "name", "lop");
 
-        PathsRequest.Builder builder = new PathsRequest.Builder();
+        CustomizedPathsRequest.Builder builder = CustomizedPathsRequest.builder();
         builder.sources().label("person").property("name", "marko");
         builder.steps().direction(Direction.OUT).labels("knows1")
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(PathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
                .capacity(-1).limit(-1);
-        PathsRequest request = builder.build();
+        CustomizedPathsRequest request = builder.build();
 
-        CustomizedPaths customizedPaths = customizedPathsAPI.post(request);
-        List<CustomizedPaths.Paths> paths = customizedPaths.paths();
+        PathsWithVertices customizedPaths = customizedPathsAPI.post(request);
+        List<PathsWithVertices.Paths> paths = customizedPaths.paths();
 
         Assert.assertEquals(2, paths.size());
 
@@ -109,16 +109,16 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object peterId = getVertexId("person", "name", "peter");
 
-        PathsRequest.Builder builder = new PathsRequest.Builder();
+        CustomizedPathsRequest.Builder builder = CustomizedPathsRequest.builder();
         builder.sources().ids(markoId, peterId);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(PathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
                .capacity(-1).limit(-1);
-        PathsRequest request = builder.build();
+        CustomizedPathsRequest request = builder.build();
 
-        CustomizedPaths customizedPaths = customizedPathsAPI.post(request);
-        List<CustomizedPaths.Paths> paths = customizedPaths.paths();
+        PathsWithVertices customizedPaths = customizedPathsAPI.post(request);
+        List<PathsWithVertices.Paths> paths = customizedPaths.paths();
 
         Assert.assertEquals(2, paths.size());
 
@@ -149,17 +149,17 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object peterId = getVertexId("person", "name", "peter");
 
-        PathsRequest.Builder builder = new PathsRequest.Builder();
+        CustomizedPathsRequest.Builder builder = CustomizedPathsRequest.builder();
         List<String> names = ImmutableList.of("marko", "peter");
         builder.sources().label("person").property("name", names);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(PathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
                .capacity(-1).limit(-1);
-        PathsRequest request = builder.build();
+        CustomizedPathsRequest request = builder.build();
 
-        CustomizedPaths customizedPaths = customizedPathsAPI.post(request);
-        List<CustomizedPaths.Paths> paths = customizedPaths.paths();
+        PathsWithVertices customizedPaths = customizedPathsAPI.post(request);
+        List<PathsWithVertices.Paths> paths = customizedPaths.paths();
 
         Assert.assertEquals(2, paths.size());
 
@@ -191,18 +191,18 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
         Object lopId = getVertexId("software", "name", "lop");
 
-        PathsRequest.Builder builder = new PathsRequest.Builder();
+        CustomizedPathsRequest.Builder builder = CustomizedPathsRequest.builder();
         builder.sources().label("person").property("name", "marko");
         builder.steps().direction(Direction.OUT).labels("knows1")
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1).sample(1);
-        builder.sortBy(PathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
                .capacity(-1).limit(-1);
-        PathsRequest request = builder.build();
+        CustomizedPathsRequest request = builder.build();
 
-        CustomizedPaths customizedPaths = customizedPathsAPI.post(request);
-        List<CustomizedPaths.Paths> paths = customizedPaths.paths();
+        PathsWithVertices customizedPaths = customizedPathsAPI.post(request);
+        List<PathsWithVertices.Paths> paths = customizedPaths.paths();
 
         Assert.assertEquals(1, paths.size());
 
@@ -232,18 +232,18 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
         Object lopId = getVertexId("software", "name", "lop");
 
-        PathsRequest.Builder builder = new PathsRequest.Builder();
+        CustomizedPathsRequest.Builder builder = CustomizedPathsRequest.builder();
         builder.sources().label("person").property("name", "marko");
         builder.steps().direction(Direction.OUT).labels("knows1")
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(PathsRequest.SortBy.DECR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.DECR).withVertex(true)
                .capacity(-1).limit(-1);
-        PathsRequest request = builder.build();
+        CustomizedPathsRequest request = builder.build();
 
-        CustomizedPaths customizedPaths = customizedPathsAPI.post(request);
-        List<CustomizedPaths.Paths> paths = customizedPaths.paths();
+        PathsWithVertices customizedPaths = customizedPathsAPI.post(request);
+        List<PathsWithVertices.Paths> paths = customizedPaths.paths();
 
         Assert.assertEquals(2, paths.size());
 
@@ -273,18 +273,18 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
         Object lopId = getVertexId("software", "name", "lop");
 
-        PathsRequest.Builder builder = new PathsRequest.Builder();
+        CustomizedPathsRequest.Builder builder = CustomizedPathsRequest.builder();
         builder.sources().label("person").property("name", "marko");
         builder.steps().direction(Direction.OUT).labels("knows1")
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(PathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
                .capacity(-1).limit(1);
-        PathsRequest request = builder.build();
+        CustomizedPathsRequest request = builder.build();
 
-        CustomizedPaths customizedPaths = customizedPathsAPI.post(request);
-        List<CustomizedPaths.Paths> paths = customizedPaths.paths();
+        PathsWithVertices customizedPaths = customizedPathsAPI.post(request);
+        List<PathsWithVertices.Paths> paths = customizedPaths.paths();
 
         Assert.assertEquals(1, paths.size());
 
@@ -311,15 +311,15 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
 
     @Test
     public void testCustomizedPathsWithCapacity() {
-        PathsRequest.Builder builder = new PathsRequest.Builder();
+        CustomizedPathsRequest.Builder builder = CustomizedPathsRequest.builder();
         builder.sources().label("person").property("name", "marko");
         builder.steps().direction(Direction.OUT).labels("knows1")
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(PathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
                .capacity(1).limit(-1);
-        PathsRequest request = builder.build();
+        CustomizedPathsRequest request = builder.build();
 
         Assert.assertThrows(ServerException.class, () -> {
             customizedPathsAPI.post(request);

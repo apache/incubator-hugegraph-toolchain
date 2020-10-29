@@ -44,6 +44,7 @@ public class TraverserApiTest extends BaseApiTest {
     protected static CustomizedPathsAPI customizedPathsAPI;
     protected static CustomizedCrosspointsAPI customizedCrosspointsAPI;
     protected static FusiformSimilarityAPI fusiformSimilarityAPI;
+    protected static TemplatePathsAPI templatePathsAPI;
 
     protected static NeighborRankAPI neighborRankAPI;
     protected static PersonalRankAPI personalRankAPI;
@@ -75,6 +76,7 @@ public class TraverserApiTest extends BaseApiTest {
         customizedPathsAPI = new CustomizedPathsAPI(client, GRAPH);
         customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client, GRAPH);
         fusiformSimilarityAPI = new FusiformSimilarityAPI(client, GRAPH);
+        templatePathsAPI = new TemplatePathsAPI(client, GRAPH);
 
         neighborRankAPI = new NeighborRankAPI(client, GRAPH);
         personalRankAPI = new PersonalRankAPI(client, GRAPH);

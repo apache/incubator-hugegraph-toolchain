@@ -27,6 +27,8 @@ import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.traverser.Kout;
+import com.baidu.hugegraph.structure.traverser.KoutRequest;
 
 public class KoutAPI extends TraversersAPI {
 
@@ -60,6 +62,12 @@ public class KoutAPI extends TraversersAPI {
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readList("vertices", Object.class);
+    }
+
+    public Kout post(KoutRequest request) {
+        this.client.checkApiVersion("0.58", "customized kout");
+        RestResult result = this.client.post(this.path(), request);
+        return result.readObject(Kout.class);
     }
 }
 
