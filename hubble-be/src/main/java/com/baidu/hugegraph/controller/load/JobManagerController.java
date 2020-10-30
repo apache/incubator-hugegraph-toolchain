@@ -145,7 +145,8 @@ public class JobManagerController {
     }
 
     @PutMapping("{id}")
-    public JobManager update(@PathVariable("id") int id,
+    public JobManager update(@PathVariable("connId") int connId,
+                             @PathVariable("id") int id,
                              @RequestBody JobManager newEntity) {
         Ex.check(newEntity.getJobName().length() <= 48,
                  "job.manager.job-name.reached-limit");
@@ -159,6 +160,10 @@ public class JobManagerController {
         JobManager entity = this.service.get(id);
         if (entity == null) {
             throw new ExternalException("job-manager.not-exist.id", id);
+        }
+        if (!newEntity.getJobName().equals(entity.getJobName()) &&
+            this.service.getTask(newEntity.getJobName(), connId) != null) {
+            throw new InternalException("job.manager.job-name.repeated");
         }
         entity.setJobName(newEntity.getJobName());
         entity.setJobRemarks(newEntity.getJobRemarks());
