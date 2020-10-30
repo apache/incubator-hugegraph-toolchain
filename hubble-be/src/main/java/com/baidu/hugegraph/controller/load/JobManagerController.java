@@ -22,7 +22,7 @@ package com.baidu.hugegraph.controller.load;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.datanucleus.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.common.Response;
-import com.baidu.hugegraph.entity.enums.JobManagerStatus;
+import com.baidu.hugegraph.entity.enums.JobStatus;
 import com.baidu.hugegraph.entity.enums.LoadStatus;
 import com.baidu.hugegraph.entity.load.FileMapping;
 import com.baidu.hugegraph.entity.load.JobManager;
@@ -78,28 +78,27 @@ public class JobManagerController {
             Ex.check(entity.getJobName().length() <= 48,
                      "job.manager.job-name.reached-limit");
             Ex.check(entity.getJobName() != null, () ->
-                     Constant.COMMON_NAME_PATTERN.matcher(entity.getJobName()).matches(),
-                                                          "job.manager.job-name.unmatch-regex");
+                     Constant.COMMON_NAME_PATTERN.matcher(
+                     entity.getJobName()).matches(),
+                     "job.manager.job-name.unmatch-regex");
             Ex.check(entity.getJobRemarks().length() <= 200,
                      "job.manager.job-remarks.reached-limit");
             Ex.check(!StringUtils.isEmpty(entity.getJobRemarks()), () ->
-                     Constant.COMMON_REMARK_PATTERN.matcher(entity.getJobRemarks()).matches(),
-                                                            "job.manager.job-remarks.unmatch-regex");
+                     Constant.COMMON_REMARK_PATTERN.matcher(
+                     entity.getJobRemarks()).matches(),
+                     "job.manager.job-remarks.unmatch-regex");
             Ex.check(this.service.count() < LIMIT,
                      "job.manager.reached-limit", LIMIT);
             if (this.service.getTask(entity.getJobName(), connId) != null) {
                 throw new InternalException("job.manager.job-name.repeated");
             }
             entity.setConnId(connId);
-            entity.setJobStatus(JobManagerStatus.DEFAULT);
+            entity.setJobStatus(JobStatus.DEFAULT);
             entity.setJobDuration(0L);
             entity.setJobSize(0L);
             entity.setUpdateTime(HubbleUtil.nowDate());
             entity.setCreateTime(HubbleUtil.nowDate());
-            int rows = this.service.save(entity);
-            if (rows != 1) {
-                throw new InternalException("entity.insert.failed", entity);
-            }
+            this.service.save(entity);
         }
         return entity;
     }
@@ -110,9 +109,7 @@ public class JobManagerController {
         if (task == null) {
             throw new ExternalException("job.manager.not-exist.id", id);
         }
-        if (this.service.remove(id) != 1) {
-            throw new InternalException("entity.delete.failed", task);
-        }
+        this.service.remove(id);
     }
 
     @GetMapping("{id}")
@@ -153,8 +150,8 @@ public class JobManagerController {
         Ex.check(newEntity.getJobName().length() <= 48,
                  "job.manager.job-name.reached-limit");
         Ex.check(newEntity.getJobName() != null, () ->
-                 Constant.COMMON_NAME_PATTERN
-                         .matcher(newEntity.getJobName()).matches(),
+                 Constant.COMMON_NAME_PATTERN.matcher(
+                 newEntity.getJobName()).matches(),
                  "job.manager.job-name.unmatch-regex");
         Ex.check(newEntity.getJobRemarks().length() <= 200,
                  "job.manager.job-remarks.reached-limit");
@@ -165,9 +162,7 @@ public class JobManagerController {
         }
         entity.setJobName(newEntity.getJobName());
         entity.setJobRemarks(newEntity.getJobRemarks());
-        if (this.service.update(entity) != 1) {
-            throw new InternalException("entity.update.failed", entity);
-        }
+        this.service.update(entity);
         return entity;
     }
 
@@ -178,7 +173,7 @@ public class JobManagerController {
         if (job == null) {
             throw new ExternalException("job.manager.not-exist.id", id);
         }
-        List<LoadTask> tasks = taskService.batchTasks(job.getId());
+        List<LoadTask> tasks = this.taskService.batchTasks(job.getId());
         List<JobManagerReasonResult> reasonResults = new ArrayList<>();
         tasks.forEach(task -> {
             JobManagerReasonResult reasonResult = new JobManagerReasonResult();

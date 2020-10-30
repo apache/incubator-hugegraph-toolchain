@@ -22,8 +22,7 @@ package com.baidu.hugegraph.entity.load;
 import java.util.Date;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
-import com.baidu.hugegraph.entity.enums.JobManagerStatus;
-import com.baidu.hugegraph.entity.enums.LoadStatus;
+import com.baidu.hugegraph.entity.enums.JobStatus;
 import com.baidu.hugegraph.util.SerializeUtil;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -75,7 +74,7 @@ public class JobManager {
     @TableField("job_status")
     @MergeProperty
     @JsonProperty("job_status")
-    private JobManagerStatus jobStatus;
+    private JobStatus jobStatus;
 
     @TableField("job_duration")
     @MergeProperty

@@ -165,7 +165,7 @@ public class HubbleOptions extends OptionHolder {
                     "upload_file.location",
                     "The location of uploaded files.",
                     disallowEmpty(),
-                    "./upload-files"
+                    "upload-files"
             );
 
     public static final ConfigListOption<String> UPLOAD_FILE_FORMAT_LIST =
@@ -190,6 +190,16 @@ public class HubbleOptions extends OptionHolder {
                     "The total file size(MB) limit.",
                     positiveInt(),
                     10 * Bytes.GB
+            );
+
+    public static final ConfigOption<Long> UPLOAD_FILE_MAX_TIME_CONSUMING =
+            new ConfigOption<>(
+                    "upload_file.max_uploading_time",
+                    "The maximum allowable uploading time(second) for file " +
+                    "uploads, the uploaded file parts will be cleared if " +
+                    "exceed this time",
+                    positiveInt(),
+                    12L * 60 * 60
             );
 
     public static final ConfigOption<String> SERVER_PROTOCOL =

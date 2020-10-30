@@ -37,17 +37,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.controller.BaseController;
+import com.baidu.hugegraph.entity.enums.JobStatus;
 import com.baidu.hugegraph.entity.load.EdgeMapping;
 import com.baidu.hugegraph.entity.load.ElementMapping;
 import com.baidu.hugegraph.entity.load.FileMapping;
 import com.baidu.hugegraph.entity.load.FileSetting;
+import com.baidu.hugegraph.entity.load.JobManager;
 import com.baidu.hugegraph.entity.load.LoadParameter;
 import com.baidu.hugegraph.entity.load.VertexMapping;
 import com.baidu.hugegraph.entity.schema.EdgeLabelEntity;
 import com.baidu.hugegraph.entity.schema.VertexLabelEntity;
 import com.baidu.hugegraph.exception.ExternalException;
-import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.load.FileMappingService;
+import com.baidu.hugegraph.service.load.JobManagerService;
 import com.baidu.hugegraph.service.schema.EdgeLabelService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.util.Ex;
@@ -67,6 +69,8 @@ public class FileMappingController extends BaseController {
     private EdgeLabelService elService;
     @Autowired
     private FileMappingService service;
+    @Autowired
+    private JobManagerService jobService;
 
     @GetMapping
     public IPage<FileMapping> list(@PathVariable("connId") int connId,
@@ -99,9 +103,7 @@ public class FileMappingController extends BaseController {
         }
 
         this.service.deleteDiskFile(mapping);
-        if (this.service.remove(id) != 1) {
-            throw new InternalException("entity.delete.failed", mapping);
-        }
+        this.service.remove(id);
     }
 
     @DeleteMapping
@@ -130,18 +132,14 @@ public class FileMappingController extends BaseController {
         if (mapping == null) {
             throw new ExternalException("load.file-mapping.not-exist.id", id);
         }
-        // unescape \\t to \t
-        newEntity.unescapeDelimiterIfNeeded();
+        // Change format to TEXT if needed
+        newEntity.changeFormatIfNeeded();
         FileSetting oldEntity = mapping.getFileSetting();
         FileSetting entity = this.mergeEntity(oldEntity, newEntity);
         mapping.setFileSetting(entity);
         // Read column names and values then fill it
         this.service.extractColumns(mapping);
-        if (this.service.update(mapping) != 1) {
-            throw new InternalException("entity.update.failed", mapping);
-        }
-        // escape \t to \\t
-        mapping.getFileSetting().escapeDelimiterIfNeeded();
+        this.service.update(mapping);
         return mapping;
     }
 
@@ -157,9 +155,7 @@ public class FileMappingController extends BaseController {
 
         newEntity.setId(HubbleUtil.generateSimpleId());
         mapping.getVertexMappings().add(newEntity);
-        if (this.service.update(mapping) != 1) {
-            throw new InternalException("entity.update.failed", mapping);
-        }
+        this.service.update(mapping);
         return mapping;
     }
 
@@ -182,9 +178,7 @@ public class FileMappingController extends BaseController {
         Set<VertexMapping> vertexMappings = mapping.getVertexMappings();
         vertexMappings.remove(vertexMapping);
         vertexMappings.add(newEntity);
-        if (this.service.update(mapping) != 1) {
-            throw new InternalException("entity.update.failed", mapping);
-        }
+        this.service.update(mapping);
         return mapping;
     }
 
@@ -202,9 +196,7 @@ public class FileMappingController extends BaseController {
             throw new ExternalException(
                       "load.file-mapping.vertex-mapping.not-exist.id", vmid);
         }
-        if (this.service.update(mapping) != 1) {
-            throw new InternalException("entity.update.failed", mapping);
-        }
+        this.service.update(mapping);
         return mapping;
     }
 
@@ -220,9 +212,7 @@ public class FileMappingController extends BaseController {
 
         newEntity.setId(HubbleUtil.generateSimpleId());
         mapping.getEdgeMappings().add(newEntity);
-        if (this.service.update(mapping) != 1) {
-            throw new InternalException("entity.update.failed", mapping);
-        }
+        this.service.update(mapping);
         return mapping;
     }
 
@@ -245,9 +235,7 @@ public class FileMappingController extends BaseController {
         Set<EdgeMapping> edgeMappings = mapping.getEdgeMappings();
         edgeMappings.remove(edgeMapping);
         edgeMappings.add(newEntity);
-        if (this.service.update(mapping) != 1) {
-            throw new InternalException("entity.update.failed", mapping);
-        }
+        this.service.update(mapping);
         return mapping;
     }
 
@@ -265,9 +253,7 @@ public class FileMappingController extends BaseController {
             throw new ExternalException(
                       "load.file-mapping.edge-mapping.not-exist.id", emid);
         }
-        if (this.service.update(mapping) != 1) {
-            throw new InternalException("entity.update.failed", mapping);
-        }
+        this.service.update(mapping);
         return mapping;
     }
 
@@ -282,10 +268,20 @@ public class FileMappingController extends BaseController {
             LoadParameter oldEntity = mapping.getLoadParameter();
             LoadParameter entity = this.mergeEntity(oldEntity, newEntity);
             mapping.setLoadParameter(entity);
-            if (this.service.update(mapping) != 1) {
-                throw new InternalException("entity.update.failed", mapping);
-            }
+            this.service.update(mapping);
         }
+    }
+
+    @PutMapping("next-step")
+    public JobManager nextStep(@PathVariable("jobId") int jobId) {
+        JobManager jobEntity = this.jobService.get(jobId);
+        Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
+        Ex.check(jobEntity.getJobStatus() == JobStatus.MAPPING,
+                 "job.manager.status.unexpected",
+                 JobStatus.MAPPING, jobEntity.getJobStatus());
+        jobEntity.setJobStatus(JobStatus.SETTING);
+        this.jobService.update(jobEntity);
+        return jobEntity;
     }
 
     private void checkVertexMappingValid(int connId, VertexMapping vertexMapping,

@@ -19,12 +19,21 @@
 
 package com.baidu.hugegraph.entity.load;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.common.Mergeable;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,6 +62,8 @@ public class FileSetting implements Mergeable {
 
     @MergeProperty
     @JsonProperty("delimiter")
+    @JsonSerialize(using = DelimiterSerializer.class)
+    @JsonDeserialize(using = DelimiterDeserializer.class)
     private String delimiter = ",";
 
     @MergeProperty
@@ -75,18 +86,45 @@ public class FileSetting implements Mergeable {
     @JsonProperty("list_format")
     private ListFormat listFormat = new ListFormat();
 
-    public void unescapeDelimiterIfNeeded() {
-        if ("\\t".equals(this.delimiter)) {
-            this.delimiter = "\t";
-        }
+    public void changeFormatIfNeeded() {
         if (!",".equals(this.delimiter)) {
             this.format = "TEXT";
         }
     }
 
-    public void escapeDelimiterIfNeeded() {
-        if ("\t".equals(this.delimiter)) {
-            this.delimiter = "\\t";
+    public static class DelimiterSerializer extends StdSerializer<String> {
+
+        protected DelimiterSerializer() {
+            super(String.class);
+        }
+
+        @Override
+        public void serialize(String delimiter, JsonGenerator jsonGenerator,
+                              SerializerProvider provider) throws IOException {
+            if ("\t".equals(delimiter)) {
+                jsonGenerator.writeString("\\t");
+            } else {
+                jsonGenerator.writeString(delimiter);
+            }
+        }
+    }
+
+    public static class DelimiterDeserializer extends StdDeserializer<String> {
+
+        protected DelimiterDeserializer() {
+            super(String.class);
+        }
+
+        @Override
+        public String deserialize(JsonParser jsonParser,
+                                  DeserializationContext context)
+                                  throws IOException {
+            String delimiter = jsonParser.getText();
+            if ("\\t".equals(delimiter)) {
+                return "\t";
+            } else {
+                return delimiter;
+            }
         }
     }
 }

@@ -20,9 +20,9 @@
 package com.baidu.hugegraph.entity.load;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
 import com.baidu.hugegraph.entity.GraphConnection;
@@ -40,7 +40,6 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.AllArgsConstructor;
@@ -55,14 +54,19 @@ import lombok.extern.log4j.Log4j2;
 @AllArgsConstructor
 @Builder
 @TableName(value = "load_task", autoResultMap = true)
-@JsonPropertyOrder({"id", "conn_id", "task_id" , "file_id", "file_name", "vertices",
-                    "edges", "load_rate", "load_progress", "file_total_lines",
-                    "file_read_lines", "status", "duration", "create_time"})
 public class LoadTask implements Runnable {
 
     @TableField(exist = false)
     @JsonIgnore
-    private transient HugeGraphLoader loader;
+    private transient final Lock lock = new ReentrantLock();
+
+    @TableField(exist = false)
+    @JsonIgnore
+    private transient volatile HugeGraphLoader loader;
+
+    @TableField(exist = false)
+    @JsonIgnore
+    private transient volatile boolean finished;
 
     @TableId(type = IdType.AUTO)
     @MergeProperty(useNew = false)
@@ -109,21 +113,27 @@ public class LoadTask implements Runnable {
     @JsonProperty("file_total_lines")
     private Long fileTotalLines;
 
+    @TableField("load_status")
+    @MergeProperty
+    @JsonProperty("status")
+    private volatile LoadStatus status;
+
     @TableField("file_read_lines")
     @MergeProperty
     @JsonProperty("file_read_lines")
     private Long fileReadLines;
 
-    @TableField("load_status")
+    @TableField("last_duration")
     @MergeProperty
-    @JsonProperty("status")
-    private LoadStatus status;
-
-    @TableField("duration")
-    @MergeProperty
-    @JsonProperty("duration")
+    @JsonProperty("last_duration")
     @JsonSerialize(using = SerializeUtil.DurationSerializer.class)
-    private Long duration;
+    private Long lastDuration;
+
+    @TableField("curr_duration")
+    @MergeProperty
+    @JsonProperty("curr_duration")
+    @JsonSerialize(using = SerializeUtil.DurationSerializer.class)
+    private Long currDuration;
 
     @MergeProperty(useNew = false)
     @JsonProperty("create_time")
@@ -132,70 +142,87 @@ public class LoadTask implements Runnable {
     public LoadTask(LoadOptions options, GraphConnection connection,
                     FileMapping mapping) {
         this.loader = new HugeGraphLoader(options);
+        this.finished = false;
         this.id = null;
         this.connId = connection.getId();
         this.jobId = mapping.getJobId();
         this.fileId = mapping.getId();
         this.fileName = mapping.getName();
         this.options = options;
-        if (mapping.getVertexMappings() != null) {
-            this.vertices = mapping.getVertexMappings().stream()
-                                   .map(ElementMapping::getLabel)
-                                   .collect(Collectors.toSet());
-        } else {
-            this.vertices = new HashSet<>();
-        }
-        if (mapping.getEdgeMappings() != null) {
-            this.edges = mapping.getEdgeMappings().stream()
-                                .map(ElementMapping::getLabel)
-                                .collect(Collectors.toSet());
-        } else {
-            this.edges = new HashSet<>();
-        }
+        this.vertices = mapping.getVertexMappingLabels();
+        this.edges = mapping.getEdgeMappingLabels();
         this.fileTotalLines = mapping.getTotalLines();
-        this.fileReadLines = 0L;
         this.status = LoadStatus.RUNNING;
-        this.duration = 0L;
+        this.fileReadLines = 0L;
+        this.lastDuration = 0L;
+        this.currDuration = 0L;
         this.createTime = HubbleUtil.nowDate();
     }
 
     @Override
     public void run() {
-        log.info("LoadTaskMonitor is monitoring task : {}", this.id);
-        boolean succeed;
+        log.info("LoadTask is start running : {}", this.id);
+        boolean noError;
         try {
-            succeed = this.loader.load();
+            noError = this.loader.load();
         } catch (Throwable e) {
-            succeed = false;
+            noError = false;
             log.error("Run task {} failed. cause: {}", this.id, e.getMessage());
         }
-        // Pay attention to whether the user stops actively or
-        // the program stops by itself
-        if (this.status.inRunning()) {
-            if (succeed) {
-                this.status = LoadStatus.SUCCEED;
-            } else {
-                this.status = LoadStatus.FAILED;
+        this.lock.lock();
+        try {
+            // Pay attention to whether the user stops actively or
+            // the program stops by itself
+            if (this.status.inRunning()) {
+                if (noError) {
+                    this.status = LoadStatus.SUCCEED;
+                } else {
+                    this.status = LoadStatus.FAILED;
+                }
+            }
+            this.fileReadLines = this.context().newProgress().totalInputReaded();
+            this.lastDuration += this.context().summary().totalTime();
+            this.currDuration = 0L;
+        } finally {
+            this.finished = true;
+            this.lock.unlock();
+        }
+    }
+
+    public void lock() {
+        this.lock.lock();
+    }
+
+    public void unlock() {
+        this.lock.unlock();
+    }
+
+    public void stop() {
+        this.context().stopLoading();
+        while (!this.finished) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+                // pass
             }
         }
-        this.fileReadLines = this.context().newProgress().totalInputReaded();
-        this.duration += this.context().summary().totalTime();
+        this.loader = null;
+        log.info("LoadTask {} stopped", this.id);
     }
 
     public void restoreContext() {
-        Ex.check(this.options != null,
-                 "The load options shouldn't be null");
+        Ex.check(this.options != null, "The load options shouldn't be null");
         this.loader = new HugeGraphLoader(this.options);
     }
 
     public LoadContext context() {
+        Ex.check(this.loader != null, "loader shouldn't be null");
         return this.loader.context();
     }
 
     @JsonProperty("load_progress")
     public int getLoadProgress() {
-        if (this.fileTotalLines == null || this.fileReadLines == null ||
-            this.fileTotalLines == 0) {
+        if (this.fileTotalLines == null || this.fileTotalLines == 0) {
             return 0;
         }
         Ex.check(this.fileTotalLines >= this.fileReadLines,
@@ -205,14 +232,26 @@ public class LoadTask implements Runnable {
         return (int) (0.5 + (double) this.fileReadLines / this.fileTotalLines * 100);
     }
 
+    @JsonProperty("duration")
+    @JsonSerialize(using = SerializeUtil.DurationSerializer.class)
+    public Long getDuration() {
+        this.lock.lock();
+        try {
+            return this.lastDuration + this.currDuration;
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
     @JsonProperty("load_rate")
     public String getLoadRate() {
+        long readLines = this.fileReadLines;
+        long duration = this.getDuration();
         float rate;
-        if (this.fileReadLines == null || this.duration == null ||
-            this.duration == 0L) {
-            rate = 0;
+        if (readLines == 0L || duration == 0L) {
+            rate = 0.0F;
         } else {
-            rate = this.fileReadLines * 1000.0F / this.duration;
+            rate = readLines * 1000.0F / duration;
             rate = Math.round(rate * 1000) / 1000.0F;
         }
         return String.format("%s/s", rate);

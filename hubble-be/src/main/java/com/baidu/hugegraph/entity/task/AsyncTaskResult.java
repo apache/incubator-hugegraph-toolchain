@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.algorithm;
+package com.baidu.hugegraph.entity.task;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
 import com.fasterxml.jackson.annotation.JsonProperty;

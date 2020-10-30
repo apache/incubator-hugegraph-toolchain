@@ -57,14 +57,12 @@ CREATE TABLE IF NOT EXISTS `file_mapping` (
     `total_lines` LONG NOT NULL,
     `total_size` LONG NOT NULL,
     `file_status` TINYINT NOT NULL DEFAULT 0,
-    `file_total`  LONG NOT NULL DEFAULT 0,
-    `file_index`  VARCHAR(5000) NOT NULL DEFAULT '',
     `file_setting` VARCHAR(65535) NOT NULL,
     `vertex_mappings` VARCHAR(65535) NOT NULL,
     `edge_mappings` VARCHAR(65535) NOT NULL,
     `load_parameter` VARCHAR(65535) NOT NULL,
-    `last_access_time` DATETIME(6) NOT NULL,
     `create_time` DATETIME(6) NOT NULL,
+    `update_time` DATETIME(6) NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE (`conn_id`, `job_id`, `name`)
 );
@@ -80,9 +78,10 @@ CREATE TABLE IF NOT EXISTS `load_task` (
     `vertices` VARCHAR(512) NOT NULL,
     `edges` VARCHAR(512) NOT NULL,
     `file_total_lines` LONG NOT NULL,
-    `file_read_lines` LONG NOT NULL,
     `load_status` TINYINT NOT NULL,
-    `duration` LONG NOT NULL,
+    `file_read_lines` LONG NOT NULL,
+    `last_duration` LONG NOT NULL,
+    `curr_duration` LONG NOT NULL,
     `create_time` DATETIME(6) NOT NULL,
     PRIMARY KEY (`id`)
 );

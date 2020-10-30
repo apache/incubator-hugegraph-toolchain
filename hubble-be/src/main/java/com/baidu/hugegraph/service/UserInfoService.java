@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.baidu.hugegraph.entity.UserInfo;
+import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.mapper.UserInfoMapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -39,11 +40,15 @@ public class UserInfoService {
         return this.mapper.selectOne(query);
     }
 
-    public int save(UserInfo userInfo) {
-        return this.mapper.insert(userInfo);
+    public void save(UserInfo userInfo) {
+        if (this.mapper.insert(userInfo) != 1) {
+            throw new InternalException("entity.insert.failed", userInfo);
+        }
     }
 
-    public int update(UserInfo userInfo) {
-        return this.mapper.updateById(userInfo);
+    public void update(UserInfo userInfo) {
+        if (this.mapper.updateById(userInfo) != 1) {
+            throw new InternalException("entity.update.failed", userInfo);
+        }
     }
 }

@@ -203,18 +203,19 @@ public class PropertyIndexService extends SchemaService {
         }
     }
 
-    public void addBatch(List<IndexLabel> indexLabels, HugeClient client) {
+    public List<Long> addBatch(List<IndexLabel> indexLabels, HugeClient client) {
         BiFunction<HugeClient, IndexLabel, Long> func = (hugeClient, il) -> {
             return hugeClient.schema().addIndexLabelAsync(il);
         };
-        addBatch(indexLabels, client, func, SchemaType.PROPERTY_INDEX);
+        return addBatch(indexLabels, client, func,
+                        SchemaType.PROPERTY_INDEX);
     }
 
-    public void removeBatch(List<String> indexLabels, HugeClient client) {
+    public List<Long> removeBatch(List<String> indexLabels, HugeClient client) {
         BiFunction<HugeClient, String, Long> func = (hugeClient, name) -> {
             return hugeClient.schema().removeIndexLabelAsync(name);
         };
-        removeBatch(indexLabels, client, func, SchemaType.PROPERTY_INDEX);
+        return removeBatch(indexLabels, client, func, SchemaType.PROPERTY_INDEX);
     }
 
     public void checkConflict(List<PropertyIndex> entities,

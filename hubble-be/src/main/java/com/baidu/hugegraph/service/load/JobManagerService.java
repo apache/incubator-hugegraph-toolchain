@@ -20,7 +20,6 @@
 package com.baidu.hugegraph.service.load;
 
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.baidu.hugegraph.entity.enums.JobManagerStatus;
+import com.baidu.hugegraph.entity.enums.JobStatus;
 import com.baidu.hugegraph.entity.enums.LoadStatus;
 import com.baidu.hugegraph.entity.load.JobManager;
 import com.baidu.hugegraph.entity.load.LoadTask;
@@ -59,9 +58,9 @@ public class JobManagerService {
         return this.mapper.selectById(id);
     }
 
-    public JobManager getTask(String job_name, int connId) {
+    public JobManager getTask(String jobName, int connId) {
         QueryWrapper<JobManager> query = Wrappers.query();
-        query.eq("job_name", job_name);
+        query.eq("job_name", jobName);
         query.eq("conn_id", connId);
         return this.mapper.selectOne(query);
     }
@@ -79,38 +78,33 @@ public class JobManagerService {
         query.orderByDesc("create_time");
         Page<JobManager> page = new Page<>(pageNo, pageSize);
         IPage<JobManager> list = this.mapper.selectPage(page, query);
-        list.getRecords().forEach((p) -> {
-            if (p.getJobStatus() == JobManagerStatus.IMPORTING) {
-                List<LoadTask> tasks = this.taskService.taskListByJob(p.getId());
-                JobManagerStatus status = JobManagerStatus.SUCCESS;
-                Iterator<LoadTask> loadTasks = tasks.iterator();
-                while (loadTasks.hasNext()) {
-                    LoadTask loadTask = loadTasks.next();
+        list.getRecords().forEach(task -> {
+            if (task.getJobStatus() == JobStatus.LOADING) {
+                List<LoadTask> tasks = this.taskService.taskListByJob(task.getId());
+                JobStatus status = JobStatus.SUCCESS;
+                for (LoadTask loadTask : tasks) {
                     if (loadTask.getStatus().inRunning() ||
                         loadTask.getStatus() == LoadStatus.PAUSED ||
                         loadTask.getStatus() == LoadStatus.STOPPED) {
-                        status = JobManagerStatus.IMPORTING;
+                        status = JobStatus.LOADING;
                         break;
                     }
                     if (loadTask.getStatus() == LoadStatus.FAILED) {
-                        status = JobManagerStatus.FAILED;
+                        status = JobStatus.FAILED;
                         break;
                     }
                 }
 
-                if (status == JobManagerStatus.SUCCESS ||
-                    status == JobManagerStatus.FAILED) {
-                    p.setJobStatus(status);
-                    if (this.update(p) != 1) {
-                        throw new InternalException("job-manager.entity.update.failed",
-                                                    p);
-                    }
+                if (status == JobStatus.SUCCESS ||
+                    status == JobStatus.FAILED) {
+                    task.setJobStatus(status);
+                    this.update(task);
                 }
             }
-            Date endDate = (p.getJobStatus() == JobManagerStatus.FAILED ||
-                           p.getJobStatus() == JobManagerStatus.SUCCESS) ?
-                           p.getUpdateTime() : HubbleUtil.nowDate();
-            p.setJobDuration(endDate.getTime() - p.getCreateTime().getTime());
+            Date endDate = task.getJobStatus() == JobStatus.FAILED ||
+                           task.getJobStatus() == JobStatus.SUCCESS ?
+                           task.getUpdateTime() : HubbleUtil.nowDate();
+            task.setJobDuration(endDate.getTime() - task.getCreateTime().getTime());
         });
         return list;
     }
@@ -120,17 +114,23 @@ public class JobManagerService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int remove(int id) {
-        return this.mapper.deleteById(id);
+    public void save(JobManager entity) {
+        if (this.mapper.insert(entity) != 1) {
+            throw new InternalException("entity.insert.failed", entity);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int save(JobManager entity) {
-        return this.mapper.insert(entity);
+    public void update(JobManager entity) {
+        if (this.mapper.updateById(entity) != 1) {
+            throw new InternalException("entity.update.failed", entity);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int update(JobManager entity) {
-        return this.mapper.updateById(entity);
+    public void remove(int id) {
+        if (this.mapper.deleteById(id) != 1) {
+            throw new InternalException("entity.delete.failed", id);
+        }
     }
 }

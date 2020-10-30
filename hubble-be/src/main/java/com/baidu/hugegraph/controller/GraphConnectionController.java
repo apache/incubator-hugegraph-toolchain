@@ -42,7 +42,6 @@ import com.baidu.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.exception.ExternalException;
-import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
@@ -149,9 +148,7 @@ public class GraphConnectionController extends BaseController {
         Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
                  verifyResult.getMessage());
 
-        if (this.connService.save(newEntity) != 1) {
-            throw new InternalException("entity.insert.failed", newEntity);
-        }
+        this.connService.save(newEntity);
         this.poolService.put(newEntity, client);
         return newEntity;
     }
@@ -180,9 +177,7 @@ public class GraphConnectionController extends BaseController {
         Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
                  verifyResult.getMessage());
 
-        if (this.connService.update(entity) != 1) {
-            throw new InternalException("entity.update.failed", entity);
-        }
+        this.connService.update(entity);
         this.poolService.put(entity, client);
         return entity;
     }
@@ -193,10 +188,7 @@ public class GraphConnectionController extends BaseController {
         if (oldEntity == null) {
             throw new ExternalException("graph-connection.not-exist.id", id);
         }
-        int rows = this.connService.remove(id);
-        if (rows != 1) {
-            throw new InternalException("entity.delete.failed", oldEntity);
-        }
+        this.connService.remove(id);
         this.poolService.remove(oldEntity);
         this.licenseService.updateAllGraphStatus();
         return oldEntity;

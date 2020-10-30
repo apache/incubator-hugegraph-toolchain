@@ -34,6 +34,7 @@ import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.enums.AsyncTaskStatus;
 import com.baidu.hugegraph.entity.enums.ExecuteType;
 import com.baidu.hugegraph.entity.query.ExecuteHistory;
+import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.mapper.query.ExecuteHistoryMapper;
 import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.service.HugeClientPoolService;
@@ -79,9 +80,10 @@ public class ExecuteHistoryService {
             if (p.getType().equals(ExecuteType.GREMLIN_ASYNC)) {
                 try {
                     Task task = client.task().get(p.getAsyncId());
-                    long endDate = task.updateTime() > 0 ? task.updateTime() : now.getLong(ChronoField.INSTANT_SECONDS);
+                    long endDate = task.updateTime() > 0 ? task.updateTime() :
+                                   now.getLong(ChronoField.INSTANT_SECONDS);
                     p.setDuration(endDate - task.createTime());
-                    p.setAsyncStatus(AsyncTaskStatus.valueOf(task.status().toUpperCase()));
+                    p.setAsyncStatus(task.status().toUpperCase());
                 } catch (Exception e) {
                     p.setDuration(0L);
                     p.setAsyncStatus(AsyncTaskStatus.UNKNOWN);
@@ -99,7 +101,7 @@ public class ExecuteHistoryService {
             try {
                 Task task = client.task().get(history.getAsyncId());
                 history.setDuration(task.updateTime() - task.createTime());
-                history.setAsyncStatus(AsyncTaskStatus.valueOf(task.status().toUpperCase()));
+                history.setAsyncStatus(task.status().toUpperCase());
             } catch (Exception e) {
                 history.setDuration(0L);
                 history.setAsyncStatus(AsyncTaskStatus.UNKNOWN);
@@ -109,23 +111,29 @@ public class ExecuteHistoryService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int save(ExecuteHistory history) {
-        return this.mapper.insert(history);
+    public void save(ExecuteHistory history) {
+         if (this.mapper.insert(history) != 1) {
+             throw new InternalException("entity.insert.failed", history);
+         }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int update(ExecuteHistory history) {
-        return this.mapper.updateById(history);
+    public void update(ExecuteHistory history) {
+        if (this.mapper.updateById(history) != 1) {
+            throw new InternalException("entity.update.failed", history);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int remove(int connId, int id) {
+    public void remove(int connId, int id) {
         ExecuteHistory history = this.mapper.selectById(id);
         HugeClient client = this.getClient(connId);
         if (history.getType().equals(ExecuteType.GREMLIN_ASYNC)) {
             client.task().delete(history.getAsyncId());
         }
-        return this.mapper.deleteById(id);
+        if (this.mapper.deleteById(id) != 1) {
+            throw new InternalException("entity.delete.failed", history);
+        }
     }
 
     @Async

@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.mapper.load;
 
-import java.util.List;
-
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -34,8 +32,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 @Component
 public interface JobManagerMapper extends BaseMapper<JobManager> {
 
-    @Select("SELECT ISNULL(SUM(f.total_size),0) as total_size, ISNULL(SUM(l.duration),0) " +
-            "as duration FROM `load_task` as l LEFT JOIN `file_mapping` as f " +
+    @Select("SELECT ISNULL(SUM(f.total_size),0) as total_size, " +
+            "ISNULL(SUM(l.duration),0) as duration " +
+            "FROM `load_task` as l LEFT JOIN `file_mapping` as f " +
             "ON l.file_id=f.id WHERE l.job_id = #{job_id}")
     JobManagerItem computeSizeDuration(@Param("job_id") int job_id);
 }

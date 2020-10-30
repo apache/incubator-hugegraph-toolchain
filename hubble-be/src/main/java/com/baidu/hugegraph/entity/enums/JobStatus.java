@@ -21,21 +21,25 @@ package com.baidu.hugegraph.entity.enums;
 
 import com.baomidou.mybatisplus.core.enums.IEnum;
 
-public enum JobManagerStatus implements IEnum<Byte> {
+public enum JobStatus implements IEnum<Byte> {
 
     DEFAULT(0),
 
-    SUCCESS(1),
+    UPLOADING(1),
 
-    FAILED(2),
+    MAPPING(2),
 
     SETTING(3),
 
-    IMPORTING(4);
+    LOADING(4),
+
+    SUCCESS(5),
+
+    FAILED(6);
 
     private byte code;
 
-    JobManagerStatus(int code) {
+    JobStatus(int code) {
         assert code < 256;
         this.code = (byte) code;
     }
@@ -45,11 +49,11 @@ public enum JobManagerStatus implements IEnum<Byte> {
         return this.code;
     }
 
-    public boolean isImporting() {
-        return this == IMPORTING;
-    }
-
     public boolean isSetting() {
         return this == SETTING;
+    }
+
+    public boolean isLoading() {
+        return this == LOADING;
     }
 }

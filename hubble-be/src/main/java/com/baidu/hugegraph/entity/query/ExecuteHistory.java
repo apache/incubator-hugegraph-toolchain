@@ -89,4 +89,12 @@ public class ExecuteHistory implements Identifiable, Mergeable {
     @MergeProperty(useNew = false)
     @JsonProperty("create_time")
     private Date createTime;
+
+    public void setAsyncStatus(AsyncTaskStatus status) {
+        this.asyncStatus = status;
+    }
+
+    public void setAsyncStatus(String status) {
+        this.asyncStatus = AsyncTaskStatus.valueOf(status);
+    }
 }

@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.baidu.hugegraph.entity.GraphConnection;
+import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.mapper.GraphConnectionMapper;
 import com.baidu.hugegraph.util.SQLUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -67,17 +68,23 @@ public class GraphConnectionService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int save(GraphConnection connection) {
-        return this.mapper.insert(connection);
+    public void save(GraphConnection connection) {
+        if (this.mapper.insert(connection) != 1) {
+            throw new InternalException("entity.insert.failed", connection);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int update(GraphConnection connection) {
-        return this.mapper.updateById(connection);
+    public void update(GraphConnection connection) {
+        if (this.mapper.updateById(connection) != 1) {
+            throw new InternalException("entity.update.failed", connection);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int remove(int id) {
-        return this.mapper.deleteById(id);
+    public void remove(int id) {
+        if (this.mapper.deleteById(id) != 1) {
+            throw new InternalException("entity.delete.failed", id);
+        }
     }
 }

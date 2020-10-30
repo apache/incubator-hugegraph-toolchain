@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.entity.algorithm;
+package com.baidu.hugegraph.entity.task;
 
 import java.util.Date;
 

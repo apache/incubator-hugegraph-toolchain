@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.controller;
+package com.baidu.hugegraph.controller.task;
 
 import java.util.List;
 

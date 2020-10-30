@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 
 public final class HubbleUtil {
@@ -51,5 +52,9 @@ public final class HubbleUtil {
 
     public static String generateSimpleId() {
         return UUID.randomUUID().toString();
+    }
+
+    public static String md5(String rawText) {
+        return DigestUtils.md5Hex(rawText);
     }
 }

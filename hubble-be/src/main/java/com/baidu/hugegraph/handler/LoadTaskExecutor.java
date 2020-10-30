@@ -31,8 +31,10 @@ import lombok.extern.log4j.Log4j2;
 public class LoadTaskExecutor {
 
     @Async
-    public void execute(LoadTask task) {
-        log.info("LoadTask is executing run task:{}", task.getId());
+    public void execute(LoadTask task, Runnable callback) {
+        log.info("Executing task: {}", task.getId());
         task.run();
+        log.info("Executed task: {}, update status to db", task.getId());
+        callback.run();
     }
 }

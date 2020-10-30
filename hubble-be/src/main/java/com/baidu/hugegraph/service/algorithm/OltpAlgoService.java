@@ -1,3 +1,22 @@
+/*
+ * Copyright 2017 HugeGraph Authors
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.baidu.hugegraph.service.algorithm;
 
 import java.util.ArrayList;
@@ -20,7 +39,6 @@ import com.baidu.hugegraph.entity.query.GraphView;
 import com.baidu.hugegraph.entity.query.GremlinResult;
 import com.baidu.hugegraph.entity.query.JsonView;
 import com.baidu.hugegraph.entity.query.TableView;
-import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.service.query.ExecuteHistoryService;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -60,12 +78,9 @@ public class OltpAlgoService {
         ExecuteStatus status = ExecuteStatus.SUCCESS;
         ExecuteHistory history;
         history = new ExecuteHistory(null, connId, 0L, ExecuteType.ALGORITHM,
-                                     body.toString(), status, AsyncTaskStatus.UNKNOWN,
-                                     -1L, createTime);
-        int rows = this.historyService.save(history);
-        if (rows != 1) {
-            throw new InternalException("entity.insert.failed", history);
-        }
+                                     body.toString(), status,
+                                     AsyncTaskStatus.UNKNOWN, -1L, createTime);
+        this.historyService.save(history);
         return GremlinResult.builder()
                             .type(GremlinResult.Type.PATH)
                             .jsonView(jsonView)
@@ -95,8 +110,7 @@ public class OltpAlgoService {
         Map<Object, Vertex> vertices = new HashMap<>();
         Map<String, Edge> edges = new HashMap<>();
 
-        List<Object> ids = new ArrayList<>();
-        List<Object> elements = ((Path) result).objects();
+        List<Object> elements = result.objects();
         for (Object element : elements) {
             if (element instanceof Vertex) {
                 Vertex vertex = (Vertex) element;

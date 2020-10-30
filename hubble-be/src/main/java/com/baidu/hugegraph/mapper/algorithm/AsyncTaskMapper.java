@@ -22,7 +22,7 @@ package com.baidu.hugegraph.mapper.algorithm;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Component;
 
-import com.baidu.hugegraph.entity.algorithm.AsyncTask;
+import com.baidu.hugegraph.entity.task.AsyncTask;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 @Mapper

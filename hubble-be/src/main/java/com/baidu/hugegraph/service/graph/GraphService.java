@@ -193,7 +193,7 @@ public class GraphService {
         }
     }
 
-    private class EdgeHolder {
+    private static class EdgeHolder {
 
         private Edge edge;
         private Vertex source;

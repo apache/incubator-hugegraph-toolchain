@@ -25,7 +25,9 @@ public enum FileMappingStatus implements IEnum<Byte> {
 
     UPLOADING(0),
 
-    COMPLETED(1);
+    COMPLETED(1),
+
+    FAILURE(2);
 
     private byte code;
 

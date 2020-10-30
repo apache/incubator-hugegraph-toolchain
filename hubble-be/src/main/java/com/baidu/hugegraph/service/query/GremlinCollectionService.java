@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.baidu.hugegraph.entity.query.GremlinCollection;
+import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.mapper.query.GremlinCollectionMapper;
 import com.baidu.hugegraph.util.SQLUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -101,17 +102,23 @@ public class GremlinCollectionService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int save(GremlinCollection collection) {
-        return this.mapper.insert(collection);
+    public void save(GremlinCollection collection) {
+        if (this.mapper.insert(collection) != 1) {
+            throw new InternalException("entity.insert.failed", collection);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int update(GremlinCollection collection) {
-        return this.mapper.updateById(collection);
+    public void update(GremlinCollection collection) {
+        if (this.mapper.updateById(collection) != 1) {
+            throw new InternalException("entity.update.failed", collection);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public int remove(int id) {
-        return this.mapper.deleteById(id);
+    public void remove(int id) {
+        if (this.mapper.deleteById(id) != 1) {
+            throw new InternalException("entity.delete.failed", id);
+        }
     }
 }

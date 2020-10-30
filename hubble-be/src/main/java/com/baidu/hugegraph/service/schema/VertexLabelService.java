@@ -149,15 +149,14 @@ public class VertexLabelService extends SchemaService {
     public void add(VertexLabelEntity entity, int connId) {
         HugeClient client = this.client(connId);
         VertexLabel vertexLabel = convert(entity, client);
-        client.schema().addVertexLabel(vertexLabel);
-
-        List<IndexLabel> indexLabels = collectIndexLabels(entity, client);
         try {
-            this.piService.addBatch(indexLabels, client);
+            client.schema().addVertexLabel(vertexLabel);
         } catch (Exception e) {
-            throw new ExternalException("schema.vertexlabel.create.failed", e,
-                                        entity.getName());
+            throw new ExternalException("schema.vertexlabel.create.failed",
+                                        e, entity.getName());
         }
+        List<IndexLabel> indexLabels = collectIndexLabels(entity, client);
+        this.piService.addBatch(indexLabels, client);
     }
 
     public void update(VertexLabelUpdateEntity entity, int connId) {
@@ -194,28 +193,20 @@ public class VertexLabelService extends SchemaService {
             }
         }
 
-        // NOTE: property can append but doesn't support eliminate now
-        client.schema().appendVertexLabel(vertexLabel);
-
         try {
-            this.piService.addBatch(addedIndexLabels, client);
-        } catch (Exception e) {
-            // client.schema().eliminateVertexLabel(vertexLabel);
-            throw new ExternalException("schema.vertexlabel.update.failed", e,
-                                        entity.getName());
-        }
-
-        try {
-            this.piService.removeBatch(removedIndexLabelNames, client);
+            // NOTE: property can append but doesn't support eliminate now
+            client.schema().appendVertexLabel(vertexLabel);
         } catch (Exception e) {
             throw new ExternalException("schema.vertexlabel.update.failed", e,
                                         entity.getName());
         }
+        this.piService.addBatch(addedIndexLabels, client);
+        this.piService.removeBatch(removedIndexLabelNames, client);
     }
 
     public void remove(String name, int connId) {
         HugeClient client = this.client(connId);
-        client.schema().removeVertexLabel(name);
+        client.schema().removeVertexLabelAsync(name);
     }
 
     public boolean checkUsing(String name, int connId) {
@@ -355,7 +346,7 @@ public class VertexLabelService extends SchemaService {
                                 .build();
     }
 
-    public static VertexLabelStyle getStyle(SchemaElement element) {
+    private static VertexLabelStyle getStyle(SchemaElement element) {
         String styleValue = (String) element.userdata().get(USER_KEY_STYLE);
         if (styleValue != null) {
             return JsonUtil.fromJson(styleValue, VertexLabelStyle.class);

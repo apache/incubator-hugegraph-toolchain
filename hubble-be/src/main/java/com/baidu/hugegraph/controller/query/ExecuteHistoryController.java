@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.query.ExecuteHistory;
 import com.baidu.hugegraph.exception.ExternalException;
-import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.query.ExecuteHistoryService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
@@ -67,9 +66,7 @@ public class ExecuteHistoryController extends GremlinController {
         if (oldEntity == null) {
             throw new ExternalException("execute-history.not-exist.id", id);
         }
-        if (this.service.remove(connId, id) != 1) {
-            throw new InternalException("entity.delete.failed", oldEntity);
-        }
+        this.service.remove(connId, id);
         return oldEntity;
     }
 }

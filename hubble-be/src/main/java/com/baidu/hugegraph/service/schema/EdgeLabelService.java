@@ -139,16 +139,14 @@ public class EdgeLabelService extends SchemaService {
     public void add(EdgeLabelEntity entity, int connId) {
         HugeClient client = this.client(connId);
         EdgeLabel edgeLabel = convert(entity, client);
-        client.schema().addEdgeLabel(edgeLabel);
-
-        List<IndexLabel> indexLabels = collectIndexLabels(entity, client);
         try {
-            this.piService.addBatch(indexLabels, client);
+            client.schema().addEdgeLabel(edgeLabel);
         } catch (Exception e) {
-            client.schema().removeEdgeLabel(edgeLabel.name());
             throw new ExternalException("schema.edgelabel.create.failed", e,
                                         entity.getName());
         }
+        List<IndexLabel> indexLabels = collectIndexLabels(entity, client);
+        this.piService.addBatch(indexLabels, client);
     }
 
     public void update(EdgeLabelUpdateEntity entity, int connId) {
@@ -185,27 +183,20 @@ public class EdgeLabelService extends SchemaService {
             }
         }
 
-        // NOTE: property can append but doesn't support eliminate now
-        client.schema().appendEdgeLabel(edgeLabel);
-
         try {
-            this.piService.addBatch(addedIndexLabels, client);
+            // NOTE: property can append but doesn't support eliminate now
+            client.schema().appendEdgeLabel(edgeLabel);
         } catch (Exception e) {
             throw new ExternalException("schema.edgelabel.update.failed", e,
                                         entity.getName());
         }
-
-        try {
-            this.piService.removeBatch(removedIndexLabelNames, client);
-        } catch (Exception e) {
-            throw new ExternalException("schema.edgelabel.update.failed", e,
-                                        entity.getName());
-        }
+        this.piService.addBatch(addedIndexLabels, client);
+        this.piService.removeBatch(removedIndexLabelNames, client);
     }
 
     public void remove(String name, int connId) {
         HugeClient client = this.client(connId);
-        client.schema().removeEdgeLabel(name);
+        client.schema().removeEdgeLabelAsync(name);
     }
 
     public ConflictDetail checkConflict(ConflictCheckEntity entity,
@@ -349,7 +340,7 @@ public class EdgeLabelService extends SchemaService {
                               .build();
     }
 
-    public static EdgeLabelStyle getStyle(SchemaElement element) {
+    private static EdgeLabelStyle getStyle(SchemaElement element) {
         String styleValue = (String) element.userdata().get(USER_KEY_STYLE);
         if (styleValue != null) {
             return JsonUtil.fromJson(styleValue, EdgeLabelStyle.class);

@@ -41,7 +41,6 @@ import com.baidu.hugegraph.entity.query.AdjacentQuery;
 import com.baidu.hugegraph.entity.query.ExecuteHistory;
 import com.baidu.hugegraph.entity.query.GremlinQuery;
 import com.baidu.hugegraph.entity.query.GremlinResult;
-import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.query.ExecuteHistoryService;
 import com.baidu.hugegraph.service.query.GremlinQueryService;
 import com.baidu.hugegraph.util.Ex;
@@ -76,10 +75,7 @@ public class GremlinQueryController extends GremlinController {
         history = new ExecuteHistory(null, connId, 0L, ExecuteType.GREMLIN,
                                      query.getContent(), status, AsyncTaskStatus.UNKNOWN,
                                      -1L, createTime);
-        int rows = this.historyService.save(history);
-        if (rows != 1) {
-            throw new InternalException("entity.insert.failed", history);
-        }
+        this.historyService.save(history);
 
         StopWatch timer = StopWatch.createStarted();
         try {
@@ -94,10 +90,7 @@ public class GremlinQueryController extends GremlinController {
             long duration = timer.getTime(TimeUnit.MILLISECONDS);
             history.setStatus(status);
             history.setDuration(duration);
-            rows = this.historyService.update(history);
-            if (rows != 1) {
-                log.error("Failed to save execute history entity {}", history);
-            }
+            this.historyService.update(history);
         }
     }
 
@@ -113,10 +106,7 @@ public class GremlinQueryController extends GremlinController {
         history = new ExecuteHistory(null, connId, 0L, ExecuteType.GREMLIN_ASYNC,
                                      query.getContent(), status, AsyncTaskStatus.UNKNOWN,
                                      -1L, createTime);
-        int rows = this.historyService.save(history);
-        if (rows != 1) {
-            throw new InternalException("entity.insert.failed", history);
-        }
+        this.historyService.save(history);
 
         StopWatch timer = StopWatch.createStarted();
         long asyncId = 0L;
@@ -133,10 +123,7 @@ public class GremlinQueryController extends GremlinController {
             history.setStatus(status);
             history.setDuration(duration);
             history.setAsyncId(asyncId);
-            rows = this.historyService.update(history);
-            if (rows != 1) {
-                log.error("Failed to save execute history entity {}", history);
-            }
+            this.historyService.update(history);
         }
     }
 

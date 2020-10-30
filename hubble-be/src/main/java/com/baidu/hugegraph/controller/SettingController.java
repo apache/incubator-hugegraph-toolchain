@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.UserInfo;
-import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.UserInfoService;
 import com.baidu.hugegraph.util.E;
 
@@ -62,16 +61,10 @@ public class SettingController {
                                .username(username)
                                .locale(locale)
                                .build();
-            int rows = this.service.save(userInfo);
-            if (rows == 0) {
-                throw new InternalException("entity.insert.failed");
-            }
+            this.service.save(userInfo);
         } else {
             userInfo.setLocale(locale);
-            int rows = this.service.update(userInfo);
-            if (rows == 0) {
-                throw new InternalException("entity.update.failed");
-            }
+            this.service.update(userInfo);
         }
 
         Cookie cookie = new Cookie(Constant.COOKIE_USER, userInfo.getUsername());

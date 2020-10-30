@@ -34,10 +34,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.query.GremlinCollection;
 import com.baidu.hugegraph.exception.ExternalException;
-import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.service.query.GremlinCollectionService;
-import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.Ex;
+import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 @RestController
@@ -107,10 +106,7 @@ public class GremlinCollectionController extends GremlinController {
         synchronized(this.service) {
             Ex.check(this.service.count() < LIMIT,
                      "gremlin-collection.reached-limit", LIMIT);
-            int rows = this.service.save(newEntity);
-            if (rows != 1) {
-                throw new InternalException("entity.insert.failed", newEntity);
-            }
+            this.service.save(newEntity);
         }
         return newEntity;
     }
@@ -128,10 +124,7 @@ public class GremlinCollectionController extends GremlinController {
 
         GremlinCollection entity = this.mergeEntity(oldEntity, newEntity);
         this.checkEntityUnique(entity, false);
-        int rows = this.service.update(entity);
-        if (rows != 1) {
-            throw new InternalException("entity.update.failed", entity);
-        }
+        this.service.update(entity);
         return entity;
     }
 
@@ -141,10 +134,7 @@ public class GremlinCollectionController extends GremlinController {
         if (oldEntity == null) {
             throw new ExternalException("gremlin-collection.not-exist.id", id);
         }
-        int rows = this.service.remove(id);
-        if (rows != 1) {
-            throw new InternalException("entity.delete.failed", oldEntity);
-        }
+        this.service.remove(id);
         return oldEntity;
     }
 

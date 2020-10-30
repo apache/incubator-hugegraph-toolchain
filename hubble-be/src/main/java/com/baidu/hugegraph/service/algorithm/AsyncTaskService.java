@@ -20,9 +20,7 @@
 package com.baidu.hugegraph.service.algorithm;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,11 +61,9 @@ public class AsyncTaskService {
         if (status.isEmpty()) {
             status = null;
         }
-        List<Task> list = client.task().list(status);
+        List<Task> tasks = client.task().list(status);
         List<Task> result = new ArrayList<>();
-        Iterator<Task> tasks = list.iterator();
-        while (tasks.hasNext()) {
-            Task task = tasks.next();
+        for (Task task : tasks) {
             if (!type.isEmpty() && !type.equals(task.type())) {
                 continue;
             }
@@ -79,7 +75,7 @@ public class AsyncTaskService {
             }
             result.add(task);
         }
-        Collections.sort(result, Comparator.comparing(Task::createTime).reversed());
+        result.sort(Comparator.comparing(Task::createTime).reversed());
         return PageUtil.page(result, pageNo, pageSize);
     }
 

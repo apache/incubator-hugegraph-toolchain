@@ -34,10 +34,6 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
@@ -100,36 +96,9 @@
         </dependency>
         <dependency>
             <groupId>com.baidu.hugegraph</groupId>
-            <artifactId>hugegraph-client</artifactId>
-            <version>1.8.10</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.baidu.hugegraph</groupId>
-                    <artifactId>hugegraph-common</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-loader</artifactId>
-            <version>0.10.4</version>
+            <version>0.10.5</version>
             <exclusions>
-                <exclusion>
-                    <groupId>com.baidu.hugegraph</groupId>
-                    <artifactId>hugegraph-client</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>log4j-api</artifactId>

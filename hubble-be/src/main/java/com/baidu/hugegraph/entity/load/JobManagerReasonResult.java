@@ -20,7 +20,6 @@
 package com.baidu.hugegraph.entity.load;
 
 import com.baidu.hugegraph.annotation.MergeProperty;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
