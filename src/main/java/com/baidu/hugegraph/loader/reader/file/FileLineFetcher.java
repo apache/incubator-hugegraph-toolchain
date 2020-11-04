@@ -33,6 +33,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionInputStream;
+import org.apache.hadoop.io.compress.SnappyCodec;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
@@ -252,11 +257,17 @@ public class FileLineFetcher extends LineFetcher {
         switch (compression) {
             case NONE:
                 return new InputStreamReader(stream, charset);
+            case SNAPPY_RAW:
+                Configuration config = new Configuration();
+                CompressionCodec codec = ReflectionUtils.newInstance(
+                                         SnappyCodec.class, config);
+                CompressionInputStream sis = codec.createInputStream(
+                                             stream, codec.createDecompressor());
+                return new InputStreamReader(sis, charset);
             case GZIP:
             case BZ2:
             case XZ:
             case LZMA:
-            case SNAPPY_RAW:
             case SNAPPY_FRAMED:
             case Z:
             case DEFLATE:

@@ -14,6 +14,7 @@ BIN=`abs_path`
 TOP="$(cd ${BIN}/../ && pwd)"
 CONF="$TOP/conf"
 LIB="$TOP/lib"
+NATIVE="$TOP/native"
 LOG="$TOP/logs"
 
 # Use the unofficial bash strict mode to avoid subtle bugs impossible.
@@ -61,4 +62,5 @@ export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
 #JVM_OPTS="$JVM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1414"
 
 exec "$JAVA" -Dname="HugeGraphLoader" -Dlog4j.configurationFile="$CONF/log4j2.xml" \
+-Djava.library.path=${NATIVE} \
 ${JVM_OPTS} com.baidu.hugegraph.loader.HugeGraphLoader ${VARS}
