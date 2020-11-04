@@ -31,6 +31,7 @@ public class TraverserApiTest extends BaseApiTest {
     protected static AllShortestPathsAPI allShortestPathsAPI;
     protected static SingleSourceShortestPathAPI singleSourceShortestPathAPI;
     protected static WeightedShortestPathAPI weightedShortestPathAPI;
+    protected static MultiNodeShortestPathAPI multiNodeShortestPathAPI;
     protected static PathsAPI pathsAPI;
     protected static CrosspointsAPI crosspointsAPI;
     protected static KoutAPI koutAPI;
@@ -63,6 +64,7 @@ public class TraverserApiTest extends BaseApiTest {
         singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(client,
                                                                       GRAPH);
         weightedShortestPathAPI = new WeightedShortestPathAPI(client, GRAPH);
+        multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(client, GRAPH);
         pathsAPI = new PathsAPI(client, GRAPH);
         crosspointsAPI = new CrosspointsAPI(client, GRAPH);
         koutAPI = new KoutAPI(client, GRAPH);

@@ -35,6 +35,7 @@ import com.baidu.hugegraph.api.traverser.FusiformSimilarityApiTest;
 import com.baidu.hugegraph.api.traverser.JaccardSimilarityApiTest;
 import com.baidu.hugegraph.api.traverser.KneighborApiTest;
 import com.baidu.hugegraph.api.traverser.KoutApiTest;
+import com.baidu.hugegraph.api.traverser.MultiNodeShortestPathApiTest;
 import com.baidu.hugegraph.api.traverser.NeighborRankApiTest;
 import com.baidu.hugegraph.api.traverser.PathsApiTest;
 import com.baidu.hugegraph.api.traverser.PersonalRankApiTest;
@@ -74,6 +75,7 @@ import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
     AllShortestPathsApiTest.class,
     SingleSourceShortestPathApiTest.class,
     WeightedShortestPathApiTest.class,
+    MultiNodeShortestPathApiTest.class,
     CustomizedPathsApiTest.class,
     TemplatePathsApiTest.class,
     FusiformSimilarityApiTest.class,

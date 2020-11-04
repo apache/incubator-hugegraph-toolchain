@@ -33,6 +33,7 @@ import com.baidu.hugegraph.api.traverser.FusiformSimilarityAPI;
 import com.baidu.hugegraph.api.traverser.JaccardSimilarityAPI;
 import com.baidu.hugegraph.api.traverser.KneighborAPI;
 import com.baidu.hugegraph.api.traverser.KoutAPI;
+import com.baidu.hugegraph.api.traverser.MultiNodeShortestPathAPI;
 import com.baidu.hugegraph.api.traverser.NeighborRankAPI;
 import com.baidu.hugegraph.api.traverser.PathsAPI;
 import com.baidu.hugegraph.api.traverser.PersonalRankAPI;
@@ -56,6 +57,7 @@ import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.structure.traverser.CountRequest;
 import com.baidu.hugegraph.structure.traverser.CrosspointsRequest;
 import com.baidu.hugegraph.structure.traverser.CustomizedCrosspoints;
+import com.baidu.hugegraph.structure.traverser.MultiNodeShortestPathRequest;
 import com.baidu.hugegraph.structure.traverser.PathsWithVertices;
 import com.baidu.hugegraph.structure.traverser.FusiformSimilarity;
 import com.baidu.hugegraph.structure.traverser.FusiformSimilarityRequest;
@@ -87,6 +89,7 @@ public class TraverserManager {
     private AllShortestPathsAPI allShortestPathsAPI;
     private SingleSourceShortestPathAPI singleSourceShortestPathAPI;
     private WeightedShortestPathAPI weightedShortestPathAPI;
+    private MultiNodeShortestPathAPI multiNodeShortestPathAPI;
     private PathsAPI pathsAPI;
     private CrosspointsAPI crosspointsAPI;
     private KoutAPI koutAPI;
@@ -114,6 +117,8 @@ public class TraverserManager {
                                                client, graph);
         this.weightedShortestPathAPI = new WeightedShortestPathAPI(
                                            client, graph);
+        this.multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(
+                                            client, graph);
         this.pathsAPI = new PathsAPI(client, graph);
         this.crosspointsAPI = new CrosspointsAPI(client, graph);
         this.koutAPI = new KoutAPI(client, graph);
@@ -299,6 +304,11 @@ public class TraverserManager {
                                                 label, weight, degree,
                                                 skipDegree, capacity,
                                                 withVertex);
+    }
+
+    public PathsWithVertices multiNodeShortestPath(
+                             MultiNodeShortestPathRequest request) {
+        return this.multiNodeShortestPathAPI.post(request);
     }
 
     public List<Path> paths(Object sourceId, Object targetId, int maxDepth) {
