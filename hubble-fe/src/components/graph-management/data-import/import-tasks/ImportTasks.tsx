@@ -1,28 +1,32 @@
-import React, { useState, useContext, useMemo, useEffect } from 'react';
+import React, { useContext, useMemo, useEffect, useLayoutEffect } from 'react';
 import { observer } from 'mobx-react';
 import { useRoute, useLocation } from 'wouter';
-import { size } from 'lodash-es';
+import { isNull } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Breadcrumb, Steps, Button } from '@baidu/one-ui';
+import { Steps, Button } from '@baidu/one-ui';
 
 import UploadEntry from './UploadEntry';
 import { DataMapConfigs } from './datamap-configs';
 import { ServerDataImport } from './server-data-import';
+import ImportFinish from './ImportFinish';
 import {
+  ImportManagerStoreContext,
   GraphManagementStoreContext,
   DataImportRootStoreContext
 } from '../../../../stores';
+
 import PassIcon from '../../../../assets/imgs/ic_pass.svg';
 
 import './ImportTasks.less';
 
 const ImportTasks: React.FC = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
+  const importManagerStore = useContext(ImportManagerStoreContext);
   const dataImportRootStore = useContext(DataImportRootStoreContext);
   const { dataMapStore, serverDataImportStore } = dataImportRootStore;
   const [, params] = useRoute(
-    '/graph-management/:id/data-import/:jobId/import-tasks'
+    '/graph-management/:id/data-import/import-manager/:jobId/import-tasks/:status*'
   );
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
@@ -43,6 +47,25 @@ const ImportTasks: React.FC = observer(() => {
   });
 
   useEffect(() => {
+    if (!isNull(params)) {
+      switch (params.status) {
+        case 'upload':
+          dataImportRootStore.setCurrentStep(1);
+          break;
+        case 'mapping':
+          dataImportRootStore.setCurrentStep(2);
+          break;
+        case 'loading':
+          dataImportRootStore.setCurrentStep(3);
+          break;
+        case 'finish':
+          dataImportRootStore.setCurrentStep(4);
+          break;
+      }
+    }
+  }, [params?.status]);
+
+  useEffect(() => {
     window.scrollTo(0, 0);
     dataImportRootStore.setCurrentJobId(Number(params!.jobId));
 
@@ -53,6 +76,9 @@ const ImportTasks: React.FC = observer(() => {
     dataMapStore.fetchDataMaps();
 
     return () => {
+      // no specific job here, solve the problem that click back button in browser
+      // since <ImportManager /> relies on @selectedJob in useEffect()
+      importManagerStore.setSelectedJob(null);
       dataImportRootStore.dispose();
       dataMapStore.dispose();
       serverDataImportStore.dispose();
@@ -61,22 +87,6 @@ const ImportTasks: React.FC = observer(() => {
 
   return (
     <section className={wrapperClassName}>
-      <div className="import-tasks-breadcrumb-wrapper">
-        <Breadcrumb size="small">
-          <Breadcrumb.Item
-            onClick={() => {
-              setLocation(
-                `/graph-management/${params!.id}/data-import/import-manager`
-              );
-            }}
-          >
-            {t('breadcrumb.first')}
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            {dataImportRootStore.currentJobName}
-          </Breadcrumb.Item>
-        </Breadcrumb>
-      </div>
       <div className="import-tasks-content-wrapper">
         <div style={{ padding: '16px 64px' }}>
           <Steps current={dataImportRootStore.currentStep}>
@@ -98,47 +108,7 @@ const ImportTasks: React.FC = observer(() => {
         {dataImportRootStore.currentStep === 1 && <UploadEntry />}
         {dataImportRootStore.currentStep === 2 && <DataMapConfigs />}
         {dataImportRootStore.currentStep === 3 && <ServerDataImport />}
-        {dataImportRootStore.currentStep === 4 && (
-          <div className="import-tasks-complete-hint">
-            <div className="import-tasks-complete-hint-description">
-              <img src={PassIcon} alt="complete" />
-              <div>
-                <div>{t('data-import-status.finished')}</div>
-                <div>
-                  {t('data-import-status.success', {
-                    number: serverDataImportStore.successImportFileStatusNumber
-                  })}
-                  {serverDataImportStore.pausedImportFileNumber !== 0 &&
-                    `，${t('data-import-status.pause', {
-                      number: serverDataImportStore.pausedImportFileNumber
-                    })}`}
-                  {serverDataImportStore.abortImportFileNumber !== 0 &&
-                    `，${t('data-import-status.abort', {
-                      number: serverDataImportStore.abortImportFileNumber
-                    })}`}
-                </div>
-              </div>
-            </div>
-            <div className="import-tasks-complete-hint-manipulations">
-              <Button
-                type="primary"
-                size="large"
-                onClick={() => {
-                  dataImportRootStore.resetAllFileInfos();
-                  dataMapStore.dispose();
-                  serverDataImportStore.dispose();
-                  dataImportRootStore.dispose();
-
-                  setLocation(
-                    `/graph-management/${params!.id}/data-import/import-manager`
-                  );
-                }}
-              >
-                {t('data-import-status.move-to-import-manager')}
-              </Button>
-            </div>
-          </div>
-        )}
+        {dataImportRootStore.currentStep === 4 && <ImportFinish />}
       </div>
     </section>
   );

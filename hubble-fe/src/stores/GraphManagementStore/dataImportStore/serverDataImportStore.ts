@@ -30,6 +30,7 @@ export class ServerDataImportStore {
 
   // v1.3.1
   @observable readOnly = false;
+  @observable importConfigReadOnly = false;
   @observable isIrregularProcess = false;
 
   @observable isExpandImportConfig = true;
@@ -62,6 +63,11 @@ export class ServerDataImportStore {
   @action
   switchReadOnly(isReadOnly: boolean) {
     this.readOnly = isReadOnly;
+  }
+
+  @action
+  switchImportConfigReadOnly(isReadOnly: boolean) {
+    this.importConfigReadOnly = isReadOnly;
   }
 
   @action
@@ -131,6 +137,7 @@ export class ServerDataImportStore {
   @action
   dispose() {
     this.readOnly = false;
+    this.importConfigReadOnly = false;
     this.isIrregularProcess = false;
     this.requestStatus = initRequestStatus();
     this.errorInfo = initErrorInfo();
@@ -203,16 +210,7 @@ export class ServerDataImportStore {
 
       this.importTasks = result.data.data.records;
 
-      // for (const task of this.importTasks) {
-      //   if (task.status === 'RUNNING') {
-      //     this.fetchImportTasks();
-      //     break;
-      //   }
-      // }
-
       if (!this.importTasks.some(({ status }) => status === 'RUNNING')) {
-        // this.requestStatus.fetchImportTasks = 'success';
-        // this.switchFetchImportStatus('standby');
         this.switchFetchImportStatus('pending');
         this.switchImporting(false);
         this.switchImportFinished(true);
@@ -222,6 +220,32 @@ export class ServerDataImportStore {
     } catch (error) {
       this.requestStatus.fetchImportTasks = 'failed';
       this.errorInfo.fetchImportTasks.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  setConfigParams = flow(function* setConfigParams(
+    this: ServerDataImportStore
+  ) {
+    this.requestStatus.setConfigParams = 'pending';
+
+    try {
+      const result: AxiosResponse<responseData<null>> = yield axios
+        .post(
+          `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${this.dataImportRootStore.currentJobId}/file-mappings/load-parameter`,
+          this.importConfigs
+        )
+        .catch(checkIfLocalNetworkOffline);
+
+      if (result.data.status !== 200) {
+        this.errorInfo.setConfigParams.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      this.requestStatus.setConfigParams = 'success';
+    } catch (error) {
+      this.requestStatus.setConfigParams = 'failed';
+      this.errorInfo.setConfigParams.message = error.message;
       console.error(error.message);
     }
   });

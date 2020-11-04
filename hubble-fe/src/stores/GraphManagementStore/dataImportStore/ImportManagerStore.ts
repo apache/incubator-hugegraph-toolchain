@@ -196,7 +196,6 @@ export class ImportManagerStore {
     this.selectedJobIndex = NaN;
     this.selectedJob = null;
     this.isCreateNewProperty = false;
-    // this.isCreatedReady = true;
 
     this.importJobListPageConfig = {
       pageNumber: 1,

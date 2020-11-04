@@ -385,6 +385,7 @@ const NewVertexType: React.FC = observer(() => {
               width={420}
               mode="multiple"
               placeholder="请选择主键属性"
+              selectorName="请先选择关联属性"
               size="medium"
               showSearch={false}
               onChange={(e: string[]) => {
@@ -398,7 +399,31 @@ const NewVertexType: React.FC = observer(() => {
               }}
               value={vertexTypeStore.newVertexType.primary_keys}
             >
-              {vertexTypeStore.newVertexType.properties
+              {vertexTypeStore.newVertexType.properties.map((item) => {
+                const order = vertexTypeStore.newVertexType.primary_keys.findIndex(
+                  (name) => name === item.name
+                );
+
+                const multiSelectOptionClassName = classnames({
+                  'metadata-configs-sorted-multiSelect-option': true,
+                  'metadata-configs-sorted-multiSelect-option-selected':
+                    order !== -1
+                });
+
+                return (
+                  <Select.Option
+                    value={item.name}
+                    key={item.name}
+                    disabled={item.nullable}
+                  >
+                    <div className={multiSelectOptionClassName}>
+                      <div>{order !== -1 ? order + 1 : ''}</div>
+                      <div>{item.name}</div>
+                    </div>
+                  </Select.Option>
+                );
+              })}
+              {/* {vertexTypeStore.newVertexType.properties
                 .filter(({ nullable }) => !nullable)
                 .map((item) => {
                   const order = vertexTypeStore.newVertexType.primary_keys.findIndex(
@@ -419,7 +444,7 @@ const NewVertexType: React.FC = observer(() => {
                       </div>
                     </Select.Option>
                   );
-                })}
+                })} */}
             </Select>
           </div>
         )}

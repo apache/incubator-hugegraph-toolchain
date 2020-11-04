@@ -149,10 +149,16 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
 
             handleDrawerClose();
           }}
+          key="save"
         >
           {isEdit ? '保存' : '编辑'}
         </Button>,
-        <Button size="medium" style={{ width: 60 }} onClick={handleDrawerClose}>
+        <Button
+          size="medium"
+          style={{ width: 60 }}
+          onClick={handleDrawerClose}
+          key="close"
+        >
           关闭
         </Button>
       ]}

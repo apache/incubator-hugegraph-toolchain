@@ -35,7 +35,7 @@ export const edgeWidthMapping: Record<string, number> = {
 /* functions */
 
 export function checkIfLocalNetworkOffline(error: any) {
-  if (!error.response) {
+  if (error.request) {
     throw new Error('网络异常，请稍后重试');
   }
 }

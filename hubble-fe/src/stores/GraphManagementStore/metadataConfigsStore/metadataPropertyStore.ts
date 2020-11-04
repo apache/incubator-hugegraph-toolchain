@@ -1,6 +1,7 @@
 import { observable, action, flow, computed } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
 import { cloneDeep } from 'lodash-es';
+import { v4 } from 'uuid';
 
 import { MetadataConfigsRootStore } from './metadataConfigsStore';
 import { checkIfLocalNetworkOffline } from '../../utils';
@@ -10,7 +11,8 @@ import {
   MetadataProperty,
   MetadataPropertyListResponse,
   PageConfig,
-  CheckedReusableData
+  CheckedReusableData,
+  NewMetadataProperty
 } from '../../types/GraphManagementStore/metadataConfigsStore';
 
 export class MetadataPropertyStore {
@@ -52,8 +54,10 @@ export class MetadataPropertyStore {
   // should user able to create new vertex type
   @observable isCreatedReady = true;
 
-  @observable newMetadataProperty: MetadataProperty = {
-    name: '',
+  @observable newMetadataProperty: NewMetadataProperty = {
+    name: v4(),
+    // real input name, to handle <Table /> key problems
+    _name: '',
     data_type: 'string',
     cardinality: 'single'
   };
@@ -67,7 +71,7 @@ export class MetadataPropertyStore {
 
   @observable selectedMetadataProperty: MetadataProperty | null = null;
   // table selection from user
-  @observable.ref selectedMetadataPropertyIndex: number[] = [];
+  @observable.ref selectedMetadataPropertyNames: string[] = [];
 
   // reuse
   @observable reuseableProperties: MetadataProperty[] = [];
@@ -171,7 +175,7 @@ export class MetadataPropertyStore {
   }
 
   @action
-  mutateNewProperty(newMetadataProperty: MetadataProperty) {
+  mutateNewProperty(newMetadataProperty: NewMetadataProperty) {
     this.newMetadataProperty = newMetadataProperty;
   }
 
@@ -181,8 +185,8 @@ export class MetadataPropertyStore {
   }
 
   @action
-  mutateSelectedMetadataProperyIndex(indexes: number[]) {
-    this.selectedMetadataPropertyIndex = indexes;
+  mutateSelectedMetadataProperyNames(names: string[]) {
+    this.selectedMetadataPropertyNames = names;
   }
 
   @action
@@ -211,8 +215,8 @@ export class MetadataPropertyStore {
   validateNewProperty() {
     let isReady = true;
 
-    if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(this.newMetadataProperty.name)) {
-      if (this.newMetadataProperty.name.length === 0) {
+    if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(this.newMetadataProperty._name!)) {
+      if (this.newMetadataProperty._name!.length === 0) {
         this.validateNewPropertyErrorMessage.name = '此项为必填项';
         isReady = false;
       } else {
@@ -298,7 +302,7 @@ export class MetadataPropertyStore {
     this.metadataProperties = [];
     this.metadataPropertyUsingStatus = null;
     this.selectedMetadataProperty = null;
-    this.selectedMetadataPropertyIndex = [];
+    this.selectedMetadataPropertyNames = [];
 
     this.resetValidateNewProperty();
     this.resetValidateRenameReuseProperty();
@@ -350,7 +354,6 @@ export class MetadataPropertyStore {
       if (options && typeof options.reuseId === 'number') {
         this.reuseableProperties = result.data.data.records;
       } else {
-        // this.metadataProperties = [];
         this.metadataProperties = result.data.data.records;
         this.metadataPropertyPageConfig.pageTotal = result.data.data.total;
       }
@@ -375,7 +378,7 @@ export class MetadataPropertyStore {
 
   checkIfUsing = flow(function* checkIfUsing(
     this: MetadataPropertyStore,
-    selectedPropertyIndexes: number[]
+    selectedPropertyNames: string[]
   ) {
     this.requestStatus.checkIfUsing = 'pending';
 
@@ -386,9 +389,7 @@ export class MetadataPropertyStore {
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/check_using`,
           {
-            names: selectedPropertyIndexes.map(
-              (propertyIndex) => this.metadataProperties[propertyIndex].name
-            )
+            names: selectedPropertyNames
           }
         )
         .catch(checkIfLocalNetworkOffline);
@@ -415,7 +416,7 @@ export class MetadataPropertyStore {
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys`,
           {
-            name: this.newMetadataProperty.name,
+            name: this.newMetadataProperty._name,
             data_type:
               this.newMetadataProperty.data_type === 'string'
                 ? 'TEXT'
@@ -438,7 +439,7 @@ export class MetadataPropertyStore {
 
   deleteMetadataProperty = flow(function* deleteMetadataProperty(
     this: MetadataPropertyStore,
-    selectedPropertyIndexes: number[]
+    selectedPropertyNames: string[]
   ) {
     this.requestStatus.deleteMetadataProperty = 'pending';
 
@@ -446,13 +447,8 @@ export class MetadataPropertyStore {
       const result: AxiosResponse<responseData<null>> = yield axios
         .delete(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys?` +
-            selectedPropertyIndexes
-              .map(
-                (propertyIndex) =>
-                  'names=' + this.metadataProperties[propertyIndex].name
-              )
-              .join('&') +
-            `&skip_using=${String(selectedPropertyIndexes.length !== 1)}`
+            selectedPropertyNames.map((name) => 'names=' + name).join('&') +
+            `&skip_using=${String(selectedPropertyNames.length !== 1)}`
         )
         .catch(checkIfLocalNetworkOffline);
 
@@ -461,7 +457,7 @@ export class MetadataPropertyStore {
       }
 
       if (
-        selectedPropertyIndexes.length === this.metadataProperties.length &&
+        selectedPropertyNames.length === this.metadataProperties.length &&
         this.metadataPropertyPageConfig.pageNumber ===
           Math.ceil(this.metadataPropertyPageConfig.pageTotal / 10) &&
         this.metadataPropertyPageConfig.pageNumber > 1

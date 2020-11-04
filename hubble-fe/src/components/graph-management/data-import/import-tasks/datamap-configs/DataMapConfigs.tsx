@@ -1,10 +1,15 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { observer } from 'mobx-react';
+import { isEmpty } from 'lodash-es';
 import { Menu } from '@baidu/one-ui';
 
-import { DataImportRootStoreContext } from '../../../../../stores';
+import {
+  ImportManagerStoreContext,
+  DataImportRootStoreContext
+} from '../../../../../stores';
 import FileConfigs from './FileConfigs';
 import TypeConfigs from './TypeConfigs';
+import { useInitDataImport } from '../../../../../hooks';
 
 import './DataMapConfigs.less';
 
@@ -15,10 +20,10 @@ export interface DataMapConfigsProps {
 const DataMapConfigs: React.FC<DataMapConfigsProps> = observer(({ height }) => {
   const dataImportRootStore = useContext(DataImportRootStoreContext);
   const { dataMapStore, serverDataImportStore } = dataImportRootStore;
-
+  const isInitReady = useInitDataImport();
   const realHeight = height ? height : 'calc(100vh - 194px)';
 
-  return (
+  return isInitReady ? (
     <div className="import-tasks-step-wrapper" style={{ height: realHeight }}>
       <Menu
         mode="inline"
@@ -39,28 +44,20 @@ const DataMapConfigs: React.FC<DataMapConfigsProps> = observer(({ height }) => {
           serverDataImportStore.switchImporting(false);
         }}
       >
-        {dataMapStore.isIrregularProcess
-          ? dataMapStore.fileMapInfos.map(({ id, name }) => (
-              <Menu.Item key={id}>
-                <span>{name}</span>
-              </Menu.Item>
-            ))
-          : dataMapStore.fileMapInfos
-              .filter(({ name }) =>
-                dataImportRootStore.successFileUploadTaskNames.includes(name)
-              )
-              .map(({ id, name }) => (
-                <Menu.Item key={id}>
-                  <span>{name}</span>
-                </Menu.Item>
-              ))}
+        {dataMapStore.fileMapInfos
+          .filter(({ file_status }) => file_status === 'COMPLETED')
+          .map(({ id, name }) => (
+            <Menu.Item key={id}>
+              <span>{name}</span>
+            </Menu.Item>
+          ))}
       </Menu>
       <div className="import-tasks-data-map-configs">
         <FileConfigs />
         <TypeConfigs />
       </div>
     </div>
-  );
+  ) : null;
 });
 
 export default DataMapConfigs;

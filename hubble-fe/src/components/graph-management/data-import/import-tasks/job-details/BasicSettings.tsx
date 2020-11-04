@@ -1,15 +1,83 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { observer } from 'mobx-react';
+import { isEmpty, isNull, isUndefined } from 'lodash-es';
+import { useRoute } from 'wouter';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Button, Modal, Input, Message } from '@baidu/one-ui';
 
 import { ImportManagerStoreContext } from '../../../../../stores';
+import {
+  GraphManagementStoreContext,
+  DataImportRootStoreContext
+} from '../../../../../stores';
 
 const BasicSettings: React.FC = observer(() => {
+  const graphManagementStore = useContext(GraphManagementStoreContext);
   const importManagerStore = useContext(ImportManagerStoreContext);
+  const dataImportRootStore = useContext(DataImportRootStoreContext);
+  const { dataMapStore, serverDataImportStore } = dataImportRootStore;
   const [isPopEditModal, switchPopEditModal] = useState(false);
+  const [, params] = useRoute(
+    '/graph-management/:id/data-import/import-manager/:jobId/details'
+  );
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const init = async () => {
+      if (isEmpty(importManagerStore.importJobList)) {
+        graphManagementStore.fetchIdList();
+        importManagerStore.setCurrentId(Number(params!.id));
+        await importManagerStore.fetchImportJobList();
+      }
+
+      if (isNull(importManagerStore.selectedJob)) {
+        if (
+          !isUndefined(
+            importManagerStore.importJobList.find(
+              ({ id }) => String(id) === (params && params.jobId)
+            )
+          ) &&
+          params !== null
+        ) {
+          importManagerStore.setSelectedJob(Number(params.jobId));
+
+          // duplicate logic in <Importmanager />
+          // fill in essential data in import-task stores
+          dataImportRootStore.setCurrentId(Number(params!.id));
+          dataImportRootStore.setCurrentJobId(Number(params.jobId));
+
+          dataImportRootStore.fetchVertexTypeList();
+          dataImportRootStore.fetchEdgeTypeList();
+
+          // fetch related data
+          await Promise.all([
+            dataMapStore.fetchDataMaps(),
+            serverDataImportStore.fetchAllImportTasks()
+          ]);
+
+          dataMapStore.setSelectedFileId(
+            Number(dataMapStore.fileMapInfos[0].id)
+          );
+          dataMapStore.setSelectedFileInfo();
+
+          // set flags about readonly and irregular process in <DataMap />
+          dataMapStore.switchReadOnly(true);
+          dataMapStore.switchIrregularProcess(true);
+
+          // set flags about readonly and irregular process in <ServerDataImport />
+          serverDataImportStore.switchExpandImportConfig(true);
+          serverDataImportStore.switchReadOnly(true);
+          serverDataImportStore.switchIrregularProcess(true);
+          serverDataImportStore.syncImportConfigs(
+            dataMapStore.selectedFileInfo!.load_parameter
+          );
+        }
+      }
+    };
+
+    init();
+  }, []);
 
   return (
     <div
@@ -54,13 +122,20 @@ const BasicSettings: React.FC = observer(() => {
             size="medium"
             type="primary"
             style={{ width: 60 }}
+            disabled={
+              isEmpty(importManagerStore.editJob?.name) ||
+              !isEmpty(importManagerStore.validateEditJobErrorMessage.name) ||
+              !isEmpty(
+                importManagerStore.validateEditJobErrorMessage.description
+              )
+            }
             onClick={async () => {
               switchPopEditModal(false);
               await importManagerStore.updateJobInfo();
 
               if (importManagerStore.requestStatus.updateJobInfo === 'failed') {
                 Message.error({
-                  content: importManagerStore.errorInfo.updateJobInfo,
+                  content: importManagerStore.errorInfo.updateJobInfo.message,
                   size: 'medium',
                   showCloseIcon: false
                 });
@@ -110,6 +185,8 @@ const BasicSettings: React.FC = observer(() => {
             <Input
               size="medium"
               width={349}
+              maxLen={48}
+              countMode="en"
               placeholder={t('import-manager.placeholder.input-valid-job-name')}
               errorLocation="layer"
               errorMessage={importManagerStore.validateEditJobErrorMessage.name}
@@ -133,6 +210,8 @@ const BasicSettings: React.FC = observer(() => {
               <Input
                 size="medium"
                 width={349}
+                maxLen={200}
+                countMode="en"
                 placeholder={t(
                   'import-manager.placeholder.input-job-description'
                 )}

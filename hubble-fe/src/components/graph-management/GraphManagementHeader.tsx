@@ -80,7 +80,6 @@ const GraphManagementHeader: React.FC = observer(() => {
         style={styles}
         onClick={handleLayoutSwitch(true)}
         disabled={
-          // graphManagementStore.errorInfo.fetchGraphData.code === 401 ||
           (graphManagementStore.licenseInfo &&
             graphManagementStore.graphData.length >=
               graphManagementStore.licenseInfo.allowed_graphs) ||

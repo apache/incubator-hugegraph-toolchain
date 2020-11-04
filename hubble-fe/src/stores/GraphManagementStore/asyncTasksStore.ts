@@ -107,7 +107,7 @@ export class AsyncTasksStore {
         AsyncTaskListResponse
       >> = yield axios
         .get<responseData<AsyncTaskListResponse>>(
-          `${baseUrl}/${this.currentId}/algorithm/async-task?page_no=${
+          `${baseUrl}/${this.currentId}/async-tasks?page_no=${
             this.asyncTasksPageConfig.pageNumber
           }&page_size=10&type=${
             this.filterOptions.type
@@ -141,7 +141,7 @@ export class AsyncTasksStore {
     try {
       const result: AxiosResponse<responseData<AsyncTask>> = yield axios
         .get<responseData<AsyncTaskListResponse>>(
-          `${baseUrl}/${this.currentId}/algorithm/async-task/${id}`
+          `${baseUrl}/${this.currentId}/async-tasks/${id}`
         )
         .catch(checkIfLocalNetworkOffline);
 
@@ -167,7 +167,7 @@ export class AsyncTasksStore {
     try {
       const result: AxiosResponse<responseData<null>> = yield axios
         .delete<responseData<null>>(
-          `${baseUrl}/${this.currentId}/algorithm/async-task?` +
+          `${baseUrl}/${this.currentId}/async-tasks?` +
             selectedTaskIds.map((id) => 'ids=' + id).join('&')
         )
         .catch(checkIfLocalNetworkOffline);
@@ -193,7 +193,7 @@ export class AsyncTasksStore {
     try {
       const result: AxiosResponse<responseData<AsyncTask>> = yield axios
         .post<responseData<AsyncTask>>(
-          `${baseUrl}/${this.currentId}/algorithm/async-task/cancel/${id}`
+          `${baseUrl}/${this.currentId}/async-tasks/cancel/${id}`
         )
         .catch(checkIfLocalNetworkOffline);
 

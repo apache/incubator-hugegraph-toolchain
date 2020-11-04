@@ -204,6 +204,12 @@ const GraphManagementListItem: React.FC<
             if (
               graphManagementStore.requestStatus.deleteGraphData === 'success'
             ) {
+              Message.success({
+                content: '删除成功',
+                size: 'medium',
+                showCloseIcon: false
+              });
+
               graphManagementStore.fetchGraphDataList();
             }
 

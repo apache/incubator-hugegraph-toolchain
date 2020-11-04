@@ -1,6 +1,6 @@
 import { observable, action, flow, computed } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
-import { cloneDeep, isUndefined, remove } from 'lodash-es';
+import { cloneDeep, isUndefined, remove, size } from 'lodash-es';
 
 import { MetadataConfigsRootStore } from './metadataConfigsStore';
 import { checkIfLocalNetworkOffline } from '../../utils';
@@ -100,7 +100,7 @@ export class VertexTypeStore {
   @observable isEditReady = true;
 
   @observable.ref selectedVertexType: VertexType | null = null;
-  @observable.ref selectedVertexTypeIndex: number[] = [];
+  @observable.ref selectedVertexTypeNames: string[] = [];
   @observable.ref editedSelectedVertexType: EditVertexTypeParams = {
     append_properties: [],
     append_property_indexes: [],
@@ -220,8 +220,8 @@ export class VertexTypeStore {
   }
 
   @action
-  mutateSelectedVertexTypeIndex(indexes: number[]) {
-    this.selectedVertexTypeIndex = indexes;
+  mutateSelectedVertexTypeNames(names: string[]) {
+    this.selectedVertexTypeNames = names;
   }
 
   @action
@@ -910,7 +910,7 @@ export class VertexTypeStore {
 
     this.resetNewVertextType();
     this.selectedVertexType = null;
-    this.selectedVertexTypeIndex = [];
+    this.selectedVertexTypeNames = [];
     this.resetEditedSelectedVertexType();
     this.vertexTypes = [];
     this.vertexTypeUsingStatus = null;
@@ -979,7 +979,7 @@ export class VertexTypeStore {
 
   checkIfUsing = flow(function* checkIfUsing(
     this: VertexTypeStore,
-    selectedPropertyIndexes: number[]
+    selectedPropertyNames: string[]
   ) {
     this.requestStatus.checkIfUsing = 'pending';
 
@@ -990,9 +990,7 @@ export class VertexTypeStore {
         .post(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/check_using`,
           {
-            names: selectedPropertyIndexes.map(
-              (propertyIndex) => this.vertexTypes[propertyIndex].name
-            )
+            names: selectedPropertyNames
           }
         )
         .catch(checkIfLocalNetworkOffline);
@@ -1072,27 +1070,20 @@ export class VertexTypeStore {
 
   deleteVertexType = flow(function* deleteVertexType(
     this: VertexTypeStore,
-    selectedVertexTypeIndexes: number[] | string
+    selectedVertexTypeNames: string[]
   ) {
     this.requestStatus.deleteVertexType = 'pending';
 
-    const combinedParams = Array.isArray(selectedVertexTypeIndexes)
-      ? selectedVertexTypeIndexes
-          .map(
-            (propertyIndex) => 'names=' + this.vertexTypes[propertyIndex].name
-          )
-          .join('&')
-      : `names=${selectedVertexTypeIndexes}`;
+    const combinedParams = selectedVertexTypeNames
+      .map((name) => 'names=' + name)
+      .join('&');
 
     try {
       const result: AxiosResponse<responseData<null>> = yield axios
         .delete(
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels?` +
             combinedParams +
-            `&skip_using=${String(
-              Array.isArray(selectedVertexTypeIndexes) &&
-                selectedVertexTypeIndexes.length !== 1
-            )}`
+            `&skip_using=${String(size(selectedVertexTypeNames) !== 1)}`
         )
         .catch(checkIfLocalNetworkOffline);
 
@@ -1101,7 +1092,7 @@ export class VertexTypeStore {
       }
 
       if (
-        selectedVertexTypeIndexes.length === this.vertexTypes.length &&
+        selectedVertexTypeNames.length === this.vertexTypes.length &&
         this.vertexListPageConfig.pageNumber ===
           Math.ceil(this.vertexListPageConfig.pageTotal / 10) &&
         this.vertexListPageConfig.pageNumber > 1

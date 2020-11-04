@@ -122,7 +122,7 @@ export class EdgeTypeStore {
   @observable.ref edgeTypes: EdgeType[] = [];
 
   @observable.ref selectedEdgeType: EdgeType | null = null;
-  @observable.ref selectedEdgeTypeIndex: number[] = [];
+  @observable.ref selectedEdgeTypeNames: string[] = [];
 
   @observable.ref editedSelectedEdgeType: EditEdgeTypeParams = {
     append_properties: [],
@@ -235,8 +235,8 @@ export class EdgeTypeStore {
   }
 
   @action
-  mutateSelectedEdgeTypeIndex(indexes: number[]) {
-    this.selectedEdgeTypeIndex = indexes;
+  mutateSelectedEdgeTypeNames(names: string[]) {
+    this.selectedEdgeTypeNames = names;
   }
 
   @action
@@ -1179,7 +1179,7 @@ export class EdgeTypeStore {
     this.resetNewEdgeType();
     this.edgeTypes = [];
     this.selectedEdgeType = null;
-    this.selectedEdgeTypeIndex = [];
+    this.selectedEdgeTypeNames = [];
     this.editedSelectedEdgeType = {
       append_properties: [],
       append_property_indexes: [],
@@ -1322,15 +1322,13 @@ export class EdgeTypeStore {
 
   deleteEdgeType = flow(function* deleteEdgeType(
     this: EdgeTypeStore,
-    selectedEdgeTypeIndexes: number[] | string
+    selectedEdgeTypeNames: string[]
   ) {
     this.requestStatus.deleteEdgeType = 'pending';
 
-    const combinedParams = Array.isArray(selectedEdgeTypeIndexes)
-      ? selectedEdgeTypeIndexes
-          .map((propertyIndex) => 'names=' + this.edgeTypes[propertyIndex].name)
-          .join('&')
-      : `names=${selectedEdgeTypeIndexes}`;
+    const combinedParams = selectedEdgeTypeNames
+      .map((name) => 'names=' + name)
+      .join('&');
 
     try {
       const result: AxiosResponse<responseData<null>> = yield axios
@@ -1338,8 +1336,8 @@ export class EdgeTypeStore {
           `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels?` +
             combinedParams +
             `&skip_using=${String(
-              Array.isArray(selectedEdgeTypeIndexes) &&
-                selectedEdgeTypeIndexes.length !== 1
+              Array.isArray(selectedEdgeTypeNames) &&
+                selectedEdgeTypeNames.length !== 1
             )}`
         )
         .catch(checkIfLocalNetworkOffline);
@@ -1349,7 +1347,7 @@ export class EdgeTypeStore {
       }
 
       if (
-        selectedEdgeTypeIndexes.length === this.edgeTypes.length &&
+        selectedEdgeTypeNames.length === this.edgeTypes.length &&
         this.edgeTypeListPageConfig.pageNumber ===
           Math.ceil(this.edgeTypeListPageConfig.pageTotal / 10) &&
         this.edgeTypeListPageConfig.pageNumber > 1

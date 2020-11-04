@@ -19,6 +19,7 @@ import type {
   ExecutionLogs,
   FavoriteQuery
 } from '../../../stores/types/GraphManagementStore/dataAnalyzeStore';
+import {Algorithm} from '../../../stores/factory/dataAnalyzeStore/algorithmStore';
 
 import ArrowIcon from '../../../assets/imgs/ic_arrow_16.svg';
 import EmptyIcon from '../../../assets/imgs/ic_sousuo_empty.svg';
@@ -558,7 +559,7 @@ const ExecutionContent: React.FC<{
   const [isExpand, switchExpand] = useState(dataAnalyzeStore.isSearched.status);
   const statements =
     type === 'ALGORITHM'
-      ? formatAlgorithmStatement(content, 'shortest-path', t)
+      ? formatAlgorithmStatement(content, Algorithm.shortestPath, t)
       : content.split('\n').filter((statement) => statement !== '');
 
   const arrowIconClassName = classnames({

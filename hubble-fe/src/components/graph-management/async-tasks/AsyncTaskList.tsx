@@ -9,7 +9,7 @@ import { observer } from 'mobx-react';
 import classnames from 'classnames';
 import { useRoute } from 'wouter';
 import { useTranslation } from 'react-i18next';
-import { isEmpty } from 'lodash-es';
+import { isEmpty, size, intersection, without } from 'lodash-es';
 import {
   Breadcrumb,
   Input,
@@ -47,6 +47,11 @@ const AsyncTaskList: React.FC = observer(() => {
 
   const { t } = useTranslation();
 
+  const currentSelectedRowKeys = intersection(
+    selectedRowKeys,
+    asyncTasksStore.asyncTaskList.map(({ id }) => id)
+  );
+
   const handleSelectedTableRow = (newSelectedRowKeys: number[]) => {
     mutateSelectedRowKeys(newSelectedRowKeys);
   };
@@ -62,7 +67,6 @@ const AsyncTaskList: React.FC = observer(() => {
   };
 
   const handlePageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    mutateSelectedRowKeys([]);
     switchPreLoading(true);
 
     asyncTasksStore.mutateAsyncTasksPageNumber(Number(e.target.value));
@@ -81,6 +85,8 @@ const AsyncTaskList: React.FC = observer(() => {
     option: string
   ) => () => {
     asyncTasksStore.mutateFilterOptions(categroy, option);
+    // reset page number to beginning
+    asyncTasksStore.mutateAsyncTasksPageNumber(1);
     asyncTasksStore.fetchAsyncTaskList();
 
     categroy === 'type'
@@ -301,53 +307,68 @@ const AsyncTaskList: React.FC = observer(() => {
   });
 
   useEffect(() => {
-    asyncTasksStore.setCurrentId(Number(params!.id));
-    let startTime = new Date().getTime();
-    let timerId: number;
+    if (params !== null) {
+      graphManagementStore.fetchIdList();
+      asyncTasksStore.setCurrentId(Number(params!.id));
+      let startTime = new Date().getTime();
+      let timerId: number;
 
-    const loopFetchAsyncTaskList = async () => {
-      const currentTime = new Date().getTime();
+      const loopFetchAsyncTaskList = async () => {
+        const currentTime = new Date().getTime();
 
-      if (currentTime - startTime > 1000 * 60 * 10) {
-        switchInLoop(false);
-        return;
-      }
+        if (currentTime - startTime > 1000 * 60 * 10) {
+          switchInLoop(false);
+          return;
+        }
 
-      await asyncTasksStore.fetchAsyncTaskList();
+        await asyncTasksStore.fetchAsyncTaskList();
 
-      if (
-        !isUndefined(
-          asyncTasksStore.asyncTaskList.find(
-            ({ task_status }) =>
-              task_status === 'new' || 'queued' || 'running' || 'restoring'
+        if (asyncTasksStore.requestStatus.fetchAsyncTaskList === 'failed') {
+          Message.error({
+            content: asyncTasksStore.errorInfo.fetchAsyncTaskList.message,
+            size: 'medium',
+            showCloseIcon: false
+          });
+
+          return;
+        }
+
+        if (
+          !isUndefined(
+            asyncTasksStore.asyncTaskList.find(
+              ({ task_status }) =>
+                task_status === 'new' ||
+                task_status === 'queued' ||
+                task_status === 'running' ||
+                task_status === 'restoring'
+            )
           )
-        )
-      ) {
-        timerId = window.setTimeout(() => {
-          switchInLoop(true);
-          loopFetchAsyncTaskList();
-        }, 5000);
-      } else {
+        ) {
+          timerId = window.setTimeout(() => {
+            switchInLoop(true);
+            loopFetchAsyncTaskList();
+          }, 5000);
+        } else {
+          switchInLoop(false);
+          return;
+        }
+      };
+
+      loopFetchAsyncTaskList();
+
+      return () => {
         switchInLoop(false);
-        return;
-      }
-    };
-
-    loopFetchAsyncTaskList();
-
-    return () => {
-      switchInLoop(false);
-      window.clearTimeout(timerId);
-    };
+        window.clearTimeout(timerId);
+      };
+    }
     // when page number changed, dispatch current useEffect to loop again
-  }, [params!.id, asyncTasksStore.asyncTasksPageConfig.pageNumber]);
+  }, [params?.id, asyncTasksStore.asyncTasksPageConfig.pageNumber]);
 
   useEffect(() => {
     document.addEventListener('click', handleOutSideClick, false);
 
     return () => {
       document.removeEventListener('click', handleOutSideClick, false);
-      asyncTasksStore.dispose();
     };
   }, [handleOutSideClick]);
 
@@ -356,6 +377,28 @@ const AsyncTaskList: React.FC = observer(() => {
       switchPreLoading(false);
     }, 800);
   }, [asyncTasksStore.asyncTasksPageConfig.pageNumber]);
+
+  // dynamic edit table border-radius when selected row changes
+  useEffect(() => {
+    const tableWrapperRef = document.querySelector('.new-fc-one-table');
+    const tableRef = document.querySelector('.new-fc-one-table table');
+
+    if (tableRef !== null) {
+      if (size(selectedRowKeys) !== 0) {
+        (tableWrapperRef as HTMLDivElement).style.borderRadius = '0';
+        (tableRef as HTMLTableElement).style.borderRadius = '0';
+      } else {
+        (tableWrapperRef as HTMLDivElement).style.borderRadius = '2px 2px 0 0';
+        (tableRef as HTMLTableElement).style.borderRadius = '2px 2px 0 0';
+      }
+    }
+  }, [selectedRowKeys]);
+
+  useEffect(() => {
+    return () => {
+      asyncTasksStore.dispose();
+    };
+  }, []);
 
   return (
     <section className={wrapperClassName}>
@@ -375,14 +418,14 @@ const AsyncTaskList: React.FC = observer(() => {
             onSearch={handleSearch}
             onClearClick={handleClearSearch}
             isShowDropDown={false}
-            disabled={selectedRowKeys.length !== 0}
+            disabled={isLoading || size(currentSelectedRowKeys) !== 0}
           />
         </div>
-        {selectedRowKeys.length !== 0 && (
+        {size(currentSelectedRowKeys) !== 0 && (
           <div className="async-task-list-table-selected-reveals">
             <div>
               {t('async-tasks.table-selection.selected', {
-                number: selectedRowKeys.length
+                number: size(currentSelectedRowKeys)
               })}
             </div>
             <Tooltip
@@ -420,7 +463,7 @@ const AsyncTaskList: React.FC = observer(() => {
                         onClick={async () => {
                           switchShowBatchDeleteModal(false);
                           await asyncTasksStore.deleteAsyncTask(
-                            selectedRowKeys
+                            currentSelectedRowKeys
                           );
 
                           if (
@@ -433,8 +476,30 @@ const AsyncTaskList: React.FC = observer(() => {
                               showCloseIcon: false
                             });
 
-                            mutateSelectedRowKeys([]);
-                            asyncTasksStore.fetchAsyncTaskList();
+                            mutateSelectedRowKeys(
+                              without(
+                                selectedRowKeys,
+                                ...currentSelectedRowKeys
+                              )
+                            );
+
+                            await asyncTasksStore.fetchAsyncTaskList();
+
+                            // fetch previous page data if it's empty
+                            if (
+                              asyncTasksStore.requestStatus
+                                .fetchAsyncTaskList === 'success' &&
+                              size(asyncTasksStore.asyncTaskList) === 0 &&
+                              asyncTasksStore.asyncTasksPageConfig.pageNumber >
+                                1
+                            ) {
+                              asyncTasksStore.mutateAsyncTasksPageNumber(
+                                asyncTasksStore.asyncTasksPageConfig
+                                  .pageNumber - 1
+                              );
+
+                              asyncTasksStore.fetchAsyncTaskList();
+                            }
                           }
 
                           if (
@@ -565,6 +630,17 @@ export const AsyncTaskListManipulation: React.FC<AsyncTaskListManipulationProps>
       [deleteWrapperRef, isPopDeleteModal]
     );
 
+    // some status only has one manipulation, if all of them in such status
+    // no margin left needed (also flex-end)
+    const shouldLeftMargin = !isEmpty(
+      asyncTasksStore.asyncTaskList.filter(
+        ({ task_status, task_type }) =>
+          task_status === 'failed' ||
+          (task_status === 'success' &&
+            (task_type === 'gremlin' || task_type === 'algorithm'))
+      )
+    );
+
     useEffect(() => {
       document.addEventListener('click', handleOutSideClick, false);
 
@@ -574,7 +650,10 @@ export const AsyncTaskListManipulation: React.FC<AsyncTaskListManipulationProps>
     }, [handleOutSideClick]);
 
     return (
-      <div className="async-task-list-table-manipulations">
+      <div
+        className="async-task-list-table-manipulations"
+        style={{ justifyContent: shouldLeftMargin ? 'flex-end' : 'flex-start' }}
+      >
         {status === 'success' && (type === 'gremlin' || type === 'algorithm') && (
           <a
             target="_blank"
@@ -676,6 +755,9 @@ export const AsyncTaskListManipulation: React.FC<AsyncTaskListManipulationProps>
                 </div>
               }
               childrenProps={{
+                style: {
+                  marginLeft: shouldLeftMargin ? '16px' : 0
+                },
                 onClick() {
                   switchPopDeleteModal(true);
                 }
@@ -688,24 +770,23 @@ export const AsyncTaskListManipulation: React.FC<AsyncTaskListManipulationProps>
           status === 'queued' ||
           status === 'running' ||
           status === 'restoring') && (
-          <>
-            {id === asyncTasksStore.abortingId && (
-              <Loading type="strong" style={{ padding: 0 }} />
-            )}
-            <span
-              onClick={async () => {
-                asyncTasksStore.setAbortingId(id);
-                await asyncTasksStore.abortAsyncTask(id);
-                asyncTasksStore.setAbortingId(NaN);
-                asyncTasksStore.fetchAsyncTaskList();
-              }}
-              style={{ marginLeft: 4 }}
-            >
-              {id === asyncTasksStore.abortingId
-                ? t('async-tasks.manipulations.aborting')
-                : t('async-tasks.manipulations.abort')}
+          <span
+            onClick={async () => {
+              await asyncTasksStore.abortAsyncTask(id);
+              asyncTasksStore.fetchAsyncTaskList();
+            }}
+            style={{ marginLeft: shouldLeftMargin ? '16px' : 0 }}
+          >
+            {t('async-tasks.manipulations.abort')}
+          </span>
+        )}
+        {status === 'cancelling' && (
+          <div style={{ marginLeft: shouldLeftMargin ? '16px' : 0 }}>
+            <Loading type="strong" style={{ padding: 0 }} />
+            <span style={{ marginLeft: 4 }}>
+              {t('async-tasks.manipulations.aborting')}
             </span>
-          </>
+          </div>
         )}
       </div>
     );

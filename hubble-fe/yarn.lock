@@ -1971,10 +1971,10 @@
   resolved "http://registry.npm.baidu-int.com/@types%2fnode/-/node-14.0.11.tgz#61d4886e2424da73b7b25547f59fdcb534c165a3"
   integrity sha1-YdSIbiQk2nO3slVH9Z/ctTTBZaM=
 
-"@types/node@14.0.14":
-  version "14.0.14"
-  resolved "http://registry.npm.baidu-int.com/@types%2fnode/-/node-14.0.14.tgz#24a0b5959f16ac141aeb0c5b3cd7a15b7c64cbce"
-  integrity sha1-JKC1lZ8WrBQa6wxbPNehW3xky84=
+"@types/node@14.11.8":
+  version "14.11.8"
+  resolved "http://registry.npm.baidu-int.com/@types%2fnode/-/node-14.11.8.tgz#fe2012f2355e4ce08bca44aeb3abbb21cf88d33f"
+  integrity sha1-/iAS8jVeTOCLykSus6u7Ic+I0z8=
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
@@ -2018,13 +2018,13 @@
     "@types/prop-types" "*"
     csstype "^2.2.0"
 
-"@types/react@16.9.41":
-  version "16.9.41"
-  resolved "http://registry.npm.baidu-int.com/@types%2freact/-/react-16.9.41.tgz#925137ee4d2ff406a0ecf29e8e9237390844002e"
-  integrity sha1-klE37k0v9Aag7PKejpI3OQhEAC4=
+"@types/react@16.9.52":
+  version "16.9.52"
+  resolved "http://registry.npm.baidu-int.com/@types%2freact/-/react-16.9.52.tgz#c46c72d1a1d8d9d666f4dd2066c0e22600ccfde1"
+  integrity sha1-xGxy0aHY2dZm9N0gZsDiJgDM/eE=
   dependencies:
     "@types/prop-types" "*"
-    csstype "^2.2.0"
+    csstype "^3.0.2"
 
 "@types/stack-utils@^1.0.1":
   version "1.0.1"
@@ -2042,6 +2042,11 @@
   version "2.0.3"
   resolved "http://registry.npm.baidu-int.com/@types%2funist/-/unist-2.0.3.tgz#9c088679876f374eb5983f150d4787aa6fb32d7e"
   integrity sha1-nAiGeYdvN061mD8VDUeHqm+zLX4=
+
+"@types/uuid@^8.3.0":
+  version "8.3.0"
+  resolved "http://registry.npm.baidu-int.com/@types%2fuuid/-/uuid-8.3.0.tgz#215c231dff736d5ba92410e6d602050cce7e273f"
+  integrity sha1-IVwjHf9zbVupJBDm1gIFDM5+Jz8=
 
 "@types/validator@^13.1.0":
   version "13.1.0"
@@ -4155,6 +4160,11 @@ csstype@^2.2.0:
   version "2.6.10"
   resolved "http://registry.npm.baidu-int.com/csstype/-/csstype-2.6.10.tgz#e63af50e66d7c266edb6b32909cfd0aabe03928b"
   integrity sha1-5jr1DmbXwmbttrMpCc/Qqr4Dkos=
+
+csstype@^3.0.2:
+  version "3.0.3"
+  resolved "http://registry.npm.baidu-int.com/csstype/-/csstype-3.0.3.tgz#2b410bbeba38ba9633353aff34b05d9755d065f8"
+  integrity sha1-K0ELvro4upYzNTr/NLBdl1XQZfg=
 
 customize-cra@^0.9.1:
   version "0.9.1"
@@ -10171,10 +10181,10 @@ react-highlight-words@^0.16.0:
     memoize-one "^4.0.0"
     prop-types "^15.5.8"
 
-react-i18next@^11.7.0:
-  version "11.7.0"
-  resolved "http://registry.npm.baidu-int.com/react-i18next/-/react-i18next-11.7.0.tgz#f27c4c237a274e007a48ac1210db83e33719908b"
-  integrity sha1-8nxMI3onTgB6SKwSENuD4zcZkIs=
+react-i18next@^11.7.3:
+  version "11.7.3"
+  resolved "http://registry.npm.baidu-int.com/react-i18next/-/react-i18next-11.7.3.tgz#256461c46baf5b3208c3c6860ca4e569fc7ed053"
+  integrity sha1-JWRhxGuvWzIIw8aGDKTlafx+0FM=
   dependencies:
     "@babel/runtime" "^7.3.1"
     html-parse-stringify2 "2.0.1"
@@ -12330,6 +12340,11 @@ uuid@^3.0.1, uuid@^3.3.2:
   resolved "http://registry.npm.baidu-int.com/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha1-sj5DWK+oogL+ehAK8fX4g/AgB+4=
 
+uuid@^8.3.1:
+  version "8.3.1"
+  resolved "http://registry.npm.baidu-int.com/uuid/-/uuid-8.3.1.tgz#2ba2e6ca000da60fce5a196954ab241131e05a31"
+  integrity sha1-K6LmygANpg/OWhlpVKskETHgWjE=
+
 v8-compile-cache@^2.0.3, v8-compile-cache@^2.1.1:
   version "2.1.1"
   resolved "http://registry.npm.baidu-int.com/v8-compile-cache/-/v8-compile-cache-2.1.1.tgz#54bc3cdd43317bca91e35dcaf305b1a7237de745"
@@ -12800,10 +12815,10 @@ worker-rpc@^0.1.0:
   dependencies:
     microevent.ts "~0.1.1"
 
-wouter@^2.1.1:
-  version "2.4.0"
-  resolved "http://registry.npm.baidu-int.com/wouter/-/wouter-2.4.0.tgz#bdaf9c44dac336541517a66601305e3cf61c51b1"
-  integrity sha1-va+cRNrDNlQVF6ZmATBePPYcUbE=
+wouter@^2.5.1:
+  version "2.5.1"
+  resolved "http://registry.npm.baidu-int.com/wouter/-/wouter-2.5.1.tgz#f94c4fbc30cd35d3fec7c014115458e90e335c5e"
+  integrity sha1-+UxPvDDNNdP+x8AUEVRY6Q4zXF4=
 
 wrap-ansi@^2.0.0:
   version "2.1.0"

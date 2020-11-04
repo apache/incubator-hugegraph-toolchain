@@ -11,6 +11,7 @@ import {
   DataAnalyzeStoreContext,
   AsyncTasksStoreContext
 } from '../../../../stores';
+import {Algorithm} from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
 import EmptyIcon from '../../../../assets/imgs/ic_sousuo_empty.svg';
 import LoadingBackIcon from '../../../../assets/imgs/ic_loading_back.svg';
 import LoadingFrontIcon from '../../../../assets/imgs/ic_loading_front.svg';
@@ -55,7 +56,7 @@ const QueryResult: React.FC<QueryResultProps> = observer(
         dynHeightStyle.height = 'calc(100vh - 441px)';
       }
 
-      if (algorithmAnalyzerStore.currentAlgorithm === 'shortest-path') {
+      if (algorithmAnalyzerStore.currentAlgorithm === Algorithm.shortestPath) {
         dynHeightStyle.height = 'calc(100vh - 555px)';
       }
     }

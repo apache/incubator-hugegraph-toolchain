@@ -1,3 +1,5 @@
 import useMultiKeyPress from './useMultiKeyPress';
+import useInitDataImport from './useInitDataImport';
+import useLocationWithConfirmation from './useLocationWithConfirmation';
 
-export { useMultiKeyPress };
+export { useMultiKeyPress, useInitDataImport, useLocationWithConfirmation };

@@ -11,6 +11,8 @@ import { Drawer, Table, Message } from '@baidu/one-ui';
 import { Tooltip } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 
+import type { MetadataProperty } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
+
 const CheckProperty: React.FC = observer(() => {
   const { metadataPropertyStore, graphViewStore } = useContext(
     MetadataConfigsRootStore
@@ -95,7 +97,7 @@ const CheckProperty: React.FC = observer(() => {
     },
     {
       title: '操作',
-      render(_: any, records: any, index: number) {
+      render(_: any, records: MetadataProperty, index: number) {
         return (
           <Tooltip
             placement="bottom-end"
@@ -135,7 +137,7 @@ const CheckProperty: React.FC = observer(() => {
                         onClick={async () => {
                           setPopIndex(null);
                           await metadataPropertyStore.deleteMetadataProperty([
-                            index
+                            records.name
                           ]);
                           if (
                             metadataPropertyStore.requestStatus
@@ -177,7 +179,7 @@ const CheckProperty: React.FC = observer(() => {
             childrenProps={{
               className: 'metadata-graph-property-manipulation',
               async onClick() {
-                await metadataPropertyStore.checkIfUsing([index]);
+                await metadataPropertyStore.checkIfUsing([records.name]);
                 if (
                   metadataPropertyStore.requestStatus.checkIfUsing === 'success'
                 ) {

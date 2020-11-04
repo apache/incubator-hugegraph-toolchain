@@ -28,8 +28,10 @@
     },
     "list-column-status": {
       "DEFAULT": "未开始",
-      "SETTING": "设置中",
-      "IMPORTING": "导入中",
+      "UPLOADING": "未开始",
+      "MAPPING": "设置中",
+      "SETTING": "导入中",
+      "LOADING": "导入中",
       "FAILED": "失败",
       "SUCCESS": "成功"
     },
@@ -97,13 +99,18 @@
     "fourth": "完成"
   },
   "upload-files": {
-    "description": "点击或将文件拖拽到这里上传，可同时上传多个支持csv文件，单个1G以内，单次累计10G以内",
+    "click": "点击",
+    "description": "点击或将文件拖拽到此处上传，可同时上传多个支持csv文件，单个1G以内，单次累计10G以内",
+    "drag": "拖拽",
+    "description-1": "或将文件",
+    "description-2": "到此处上传，可同时上传多个支持csv文件，单个1G以内，单次累计10G以内",
     "cancel": "取消上传",
     "next": "下一步",
     "wrong-format": "仅支持 csv 格式文件",
     "over-single-size-limit": "容量已超过 1 GB",
     "over-all-size-limit": "总容量已超过 10 GB",
-    "empty-file": "文件为空，请重新上传"
+    "empty-file": "文件为空，请重新上传",
+    "no-duplicate": "下列上传的文件已存在："
   },
   "data-configs": {
     "file": {
@@ -136,6 +143,9 @@
         "input-delimiter": "请输入分隔符",
         "input-charset": "请输入编码格式",
         "input-date-format": "请输入日期格式"
+      },
+      "hint": {
+        "save-succeed": "已保存文件设置"
       }
     },
     "type": {
@@ -224,7 +234,7 @@
           },
           "map-property-value": {
             "title": "属性值映射",
-            "add-value": "添加属性值映射",
+            "add-value": "添加  属性值映射",
             "fields": {
               "property": "属性",
               "value-map": "值映射",
@@ -307,7 +317,8 @@
     },
     "hint": {
       "check-vertex": "开启检查会影响导入性能，请按需开启",
-      "no-data": "正在请求导入"
+      "no-data": "正在请求导入",
+      "confirm-navigation": "确认跳转到任务列表？正在上传的文件可能会丢失"
     },
     "validator": {
       "no-empty": "该项不能为空",
@@ -324,7 +335,7 @@
     "finished": "导入完成",
     "success": "已成功导入 {{number}} 个文件",
     "pause": "{{number}} 个文件暂停",
-    "abort": "{{number}} 个文件中止",
+    "abort": "{{number}} 个文件终止",
     "move-to-import-manager": "返回导入任务列表"
   }
 }

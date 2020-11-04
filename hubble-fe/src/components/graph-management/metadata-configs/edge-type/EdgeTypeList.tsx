@@ -6,6 +6,14 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
+import {
+  isEmpty,
+  isUndefined,
+  cloneDeep,
+  intersection,
+  size,
+  without
+} from 'lodash-es';
 import { useLocation } from 'wouter';
 import classnames from 'classnames';
 import { motion } from 'framer-motion';
@@ -21,7 +29,6 @@ import {
   Message,
   Loading
 } from '@baidu/one-ui';
-import { isEmpty, isUndefined, cloneDeep } from 'lodash-es';
 
 import { Tooltip, LoadingDataView } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
@@ -29,7 +36,12 @@ import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/me
 import NewEdgeType from './NewEdgeType';
 import ReuseEdgeTypes from './ReuseEdgeTypes';
 import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
-import type { EdgeTypeValidatePropertyIndexes } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
+import { formatVertexIdText } from '../../../../stores/utils';
+
+import type {
+  EdgeTypeValidatePropertyIndexes,
+  EdgeType
+} from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
 
 import AddIcon from '../../../../assets/imgs/ic_add.svg';
 import BlueArrowIcon from '../../../../assets/imgs/ic_arrow_blue.svg';
@@ -43,7 +55,6 @@ import SelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight_sele
 import NoSelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight.svg';
 
 import './EdgeTypeList.less';
-import { formatVertexIdText } from '../../../../stores/utils';
 
 const styles = {
   button: {
@@ -95,7 +106,7 @@ const EdgeTypeList: React.FC = observer(() => {
   const { metadataPropertyStore, edgeTypeStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('');
-  const [selectedRowKeys, mutateSelectedRowKeys] = useState<any[]>([]);
+  const [selectedRowKeys, mutateSelectedRowKeys] = useState<string[]>([]);
   const [isShowModal, switchShowModal] = useState(false);
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isEditEdge, switchIsEditEdge] = useState(false);
@@ -115,8 +126,13 @@ const EdgeTypeList: React.FC = observer(() => {
   const isLoading =
     preLoading || edgeTypeStore.requestStatus.fetchEdgeTypeList === 'pending';
 
-  const handleSelectedTableRow = (selectedRowKeys: any[]) => {
-    mutateSelectedRowKeys(selectedRowKeys);
+  const currentSelectedRowKeys = intersection(
+    selectedRowKeys,
+    edgeTypeStore.edgeTypes.map(({ name }) => name)
+  );
+
+  const handleSelectedTableRow = (newSelectedRowKeys: string[]) => {
+    mutateSelectedRowKeys(newSelectedRowKeys);
   };
 
   const handleCloseDrawer = () => {
@@ -143,10 +159,10 @@ const EdgeTypeList: React.FC = observer(() => {
   const batchDeleteProperties = async () => {
     switchShowModal(false);
     // need to set a copy in store since local row key state would be cleared
-    edgeTypeStore.mutateSelectedEdgeTypeIndex(selectedRowKeys);
-    mutateSelectedRowKeys([]);
-    await edgeTypeStore.deleteEdgeType(selectedRowKeys);
-    edgeTypeStore.mutateSelectedEdgeTypeIndex([]);
+    edgeTypeStore.mutateSelectedEdgeTypeNames(currentSelectedRowKeys);
+    // mutateSelectedRowKeys([]);
+    await edgeTypeStore.deleteEdgeType(currentSelectedRowKeys);
+    // edgeTypeStore.mutateSelectedEdgeTypeNames([]);
 
     if (edgeTypeStore.requestStatus.deleteEdgeType === 'success') {
       Message.success({
@@ -155,7 +171,25 @@ const EdgeTypeList: React.FC = observer(() => {
         showCloseIcon: false
       });
 
-      edgeTypeStore.fetchEdgeTypeList();
+      mutateSelectedRowKeys(
+        without(selectedRowKeys, ...currentSelectedRowKeys)
+      );
+
+      await edgeTypeStore.fetchEdgeTypeList();
+
+      // fetch previous page data if it's empty
+      if (
+        edgeTypeStore.requestStatus.fetchEdgeTypeList === 'success' &&
+        size(edgeTypeStore.edgeTypes) === 0 &&
+        edgeTypeStore.edgeTypeListPageConfig.pageNumber > 1
+      ) {
+        edgeTypeStore.mutatePageNumber(
+          edgeTypeStore.edgeTypeListPageConfig.pageNumber - 1
+        );
+
+        edgeTypeStore.fetchEdgeTypeList();
+      }
+
       return;
     }
 
@@ -294,9 +328,10 @@ const EdgeTypeList: React.FC = observer(() => {
       title: '操作',
       dataIndex: 'manipulation',
       width: '12%',
-      render(_: any, records: any, index: number) {
+      render(_: any, records: EdgeType, index: number) {
         return (
           <EdgeTypeListManipulation
+            edgeName={records.name}
             edgeIndex={index}
             switchIsEditEdge={switchIsEditEdge}
           />
@@ -364,7 +399,7 @@ const EdgeTypeList: React.FC = observer(() => {
             type="primary"
             size="medium"
             style={styles.button}
-            disabled={isLoading}
+            disabled={isLoading || size(currentSelectedRowKeys) !== 0}
             onClick={() => {
               edgeTypeStore.changeCurrentTabStatus('new');
             }}
@@ -382,9 +417,9 @@ const EdgeTypeList: React.FC = observer(() => {
             复用
           </Button>
         </div>
-        {selectedRowKeys.length !== 0 && (
+        {size(currentSelectedRowKeys) !== 0 && (
           <div className="metadata-properties-selected-reveals">
-            <div>已选{selectedRowKeys.length}项</div>
+            <div>已选{size(currentSelectedRowKeys)}项</div>
             <Button
               onClick={() => {
                 switchShowModal(true);
@@ -403,6 +438,7 @@ const EdgeTypeList: React.FC = observer(() => {
         )}
         <Table
           columns={columnConfigs}
+          rowKey={(rowData: EdgeType) => rowData.name}
           locale={{
             emptyText: (
               <LoadingDataView
@@ -428,7 +464,7 @@ const EdgeTypeList: React.FC = observer(() => {
                   showPageJumper: false,
                   total: edgeTypeStore.edgeTypeListPageConfig.pageTotal,
                   onPageNoChange: (e: React.ChangeEvent<HTMLSelectElement>) => {
-                    mutateSelectedRowKeys([]);
+                    // mutateSelectedRowKeys([]);
                     edgeTypeStore.mutatePageNumber(Number(e.target.value));
                     edgeTypeStore.fetchEdgeTypeList();
                   }
@@ -474,23 +510,9 @@ const EdgeTypeList: React.FC = observer(() => {
                   }
                 }
               ]}
-              dataSource={selectedRowKeys
-                .map((rowNumber: number) => {
-                  // data in selectedRowKeys[index] could be non-exist in circustance that response data length don't match
-                  // so pointer(index) could out of bounds
-                  if (!isUndefined(edgeTypeStore.edgeTypes[rowNumber])) {
-                    const name = edgeTypeStore.edgeTypes[rowNumber].name;
-
-                    return {
-                      name
-                    };
-                  }
-
-                  return {
-                    name: ''
-                  };
-                })
-                .filter(({ name }) => name !== '')}
+              dataSource={currentSelectedRowKeys.map((name) => ({
+                name
+              }))}
               pagination={false}
             />
           </div>
@@ -1352,6 +1374,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                   );
 
                                   propertyIndexEntities[index].type = value;
+                                  propertyIndexEntities[index].fields = [];
 
                                   edgeTypeStore.mutateEditedSelectedEdgeType({
                                     ...edgeTypeStore.editedSelectedEdgeType,
@@ -1640,12 +1663,13 @@ const EdgeTypeList: React.FC = observer(() => {
 });
 
 export interface EdgeTypeListManipulation {
+  edgeName: string;
   edgeIndex: number;
   switchIsEditEdge: (flag: boolean) => void;
 }
 
 const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
-  ({ edgeIndex, switchIsEditEdge }) => {
+  ({ edgeName, edgeIndex, switchIsEditEdge }) => {
     const { edgeTypeStore } = useContext(MetadataConfigsRootStore);
     const [isPopDeleteModal, switchPopDeleteModal] = useState(false);
     const [isDeleting, switchDeleting] = useState(false);
@@ -1653,7 +1677,7 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
     const isDeleteOrBatchDeleting =
       isDeleting ||
       (edgeTypeStore.requestStatus.deleteEdgeType === 'pending' &&
-        edgeTypeStore.selectedEdgeTypeIndex.includes(edgeIndex));
+        edgeTypeStore.selectedEdgeTypeNames.includes(edgeName));
 
     const handleOutSideClick = useCallback(
       (e: MouseEvent) => {
@@ -1732,7 +1756,7 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
                     onClick={async () => {
                       switchPopDeleteModal(false);
                       switchDeleting(true);
-                      await edgeTypeStore.deleteEdgeType([edgeIndex]);
+                      await edgeTypeStore.deleteEdgeType([edgeName]);
                       switchDeleting(false);
 
                       if (

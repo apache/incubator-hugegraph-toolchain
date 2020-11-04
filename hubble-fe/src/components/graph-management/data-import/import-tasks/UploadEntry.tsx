@@ -1,19 +1,30 @@
-import React, { useContext, useCallback, useRef } from 'react';
+import React, { useContext, useCallback, useRef, useEffect } from 'react';
 import { observer } from 'mobx-react';
+import { useLocation } from 'wouter';
 import classnames from 'classnames';
-import { isEmpty, size, isUndefined, range } from 'lodash-es';
+import {
+  isEmpty,
+  size,
+  isUndefined,
+  range,
+  xor,
+  intersection
+} from 'lodash-es';
 import { DndProvider, useDrop, DropTargetMonitor } from 'react-dnd';
 import { useTranslation } from 'react-i18next';
 import { HTML5Backend, NativeTypes } from 'react-dnd-html5-backend';
 import { Button, Progress, Message } from '@baidu/one-ui';
+import { CancellablePromise } from 'mobx/lib/api/flow';
 
 import { DataImportRootStoreContext } from '../../../../stores';
+import { useInitDataImport } from '../../../../hooks';
+
+import type { FileUploadResult } from '../../../../stores/types/GraphManagementStore/dataImportStore';
+
 import CloseIcon from '../../../../assets/imgs/ic_close_16.svg';
 import RefreshIcon from '../../../../assets/imgs/ic_refresh.svg';
 
 import './UploadEntry.less';
-import { CancellablePromise } from 'mobx/lib/api/flow';
-import { FileUploadResult } from '../../../../stores/types/GraphManagementStore/dataImportStore';
 
 const KB = 1024;
 const MB = 1024 * 1024;
@@ -23,9 +34,29 @@ const MAX_CONCURRENT_UPLOAD = 5;
 const UploadEntry: React.FC = observer(() => {
   const dataImportRootStore = useContext(DataImportRootStoreContext);
   const { dataMapStore, serverDataImportStore } = dataImportRootStore;
+  const isInitReady = useInitDataImport();
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
 
-  return (
+  useEffect(() => {
+    const unload = (e: any) => {
+      e = e || window.event;
+
+      if (e) {
+        e.returnValue = 'hint';
+      }
+
+      return 'hint';
+    };
+
+    window.addEventListener('beforeunload', unload);
+
+    return () => {
+      window.removeEventListener('beforeunload', unload);
+    };
+  }, [dataImportRootStore]);
+
+  return isInitReady ? (
     <>
       <DndProvider backend={HTML5Backend}>
         <FileDropZone />
@@ -34,6 +65,11 @@ const UploadEntry: React.FC = observer(() => {
         <Button
           size="medium"
           style={{ width: 88, marginRight: 16 }}
+          disabled={
+            !dataImportRootStore.fileUploadTasks.some(
+              ({ status }) => status === 'uploading'
+            )
+          }
           onClick={() => {
             dataImportRootStore.fileUploadQueue.forEach(
               ({ fileName, status }) => {
@@ -55,16 +91,26 @@ const UploadEntry: React.FC = observer(() => {
           size="medium"
           style={{ width: 74 }}
           disabled={
-            size(dataImportRootStore.fileUploadTasks) === 0 ||
+            (isEmpty(dataImportRootStore.fileUploadTasks) &&
+              isEmpty(dataMapStore.fileMapInfos)) ||
+            isEmpty(
+              dataMapStore.fileMapInfos.filter(
+                ({ file_status }) => file_status === 'COMPLETED'
+              )
+            ) ||
             dataImportRootStore.fileUploadTasks.some(
               ({ status }) => status === 'uploading'
             )
           }
-          onClick={() => {
+          onClick={async () => {
+            // require fetching fileMapInfo here, since files that saved on
+            // server need to be revealed either, users may delete some files
+            await dataMapStore.fetchDataMaps();
+
             dataMapStore.setSelectedFileId(
               Number(
-                dataMapStore.fileMapInfos.filter(({ name }) =>
-                  dataImportRootStore.successFileUploadTaskNames.includes(name)
+                dataMapStore.fileMapInfos.filter(
+                  ({ file_status }) => file_status === 'COMPLETED'
                 )[0].id
               )
             );
@@ -72,14 +118,27 @@ const UploadEntry: React.FC = observer(() => {
             serverDataImportStore.syncImportConfigs(
               dataMapStore.selectedFileInfo!.load_parameter
             );
+
+            setLocation(
+              `/graph-management/${dataImportRootStore.currentId}/data-import/import-manager/${dataImportRootStore.currentJobId}/import-tasks/mapping`
+            );
+
             dataImportRootStore.setCurrentStep(2);
+            // avoid resets when user moves back to previous step
+            if (
+              dataImportRootStore.currentStatus === 'DEFAULT' ||
+              dataImportRootStore.currentStatus === 'UPLOADING'
+            ) {
+              dataImportRootStore.setCurrentStatus('MAPPING');
+              dataImportRootStore.sendUploadCompleteSignal();
+            }
           }}
         >
           {t('upload-files.next')}
         </Button>
       </div>
     </>
-  );
+  ) : null;
 });
 
 export const FileDropZone: React.FC = observer(() => {
@@ -101,13 +160,32 @@ export const FileDropZone: React.FC = observer(() => {
 
   const validateFileCondition = (files: File[]) => {
     const validatedFiles = [];
-    const currentUploadFileNames = dataImportRootStore.fileUploadTasks.map(
-      ({ name }) => name
+    const currentUploadFileNames = dataImportRootStore.fileUploadTasks
+      .map(({ name }) => name)
+      .concat(dataMapStore.fileMapInfos.map(({ name }) => name));
+
+    const filteredFiles = files.filter(
+      ({ name }) => !currentUploadFileNames.includes(name)
     );
 
-    files = files.filter(({ name }) => !currentUploadFileNames.includes(name));
+    if (size(filteredFiles) !== size(files)) {
+      const duplicatedFiles = xor(files, filteredFiles);
 
-    const totalSize = files
+      Message.error({
+        content: (
+          <div style={{ maxHeight: 500, overflow: 'auto' }}>
+            <p>{t('upload-files.no-duplicate')}</p>
+            {duplicatedFiles.map((file) => (
+              <p key={file.name}>{file.name}</p>
+            ))}
+          </div>
+        ),
+        size: 'medium',
+        showCloseIcon: false
+      });
+    }
+
+    const totalSize = filteredFiles
       .map(({ size }) => size)
       .reduce((prev, curr) => prev + curr, 0);
 
@@ -121,7 +199,7 @@ export const FileDropZone: React.FC = observer(() => {
       return [];
     }
 
-    for (const file of files) {
+    for (const file of filteredFiles) {
       const { name, size } = file;
       const sizeGB = size / GB;
 
@@ -215,7 +293,7 @@ export const FileDropZone: React.FC = observer(() => {
     );
 
     firstRequestTasks.forEach(({ name, chunkList, chunkTotal }) => {
-      const task = dataImportRootStore.uploadFiles2({
+      const task = dataImportRootStore.uploadFiles({
         fileName: name,
         fileChunkList: chunkList[0],
         fileChunkTotal: chunkTotal
@@ -242,7 +320,7 @@ export const FileDropZone: React.FC = observer(() => {
             chunkTotal > loopCount &&
             size(dataImportRootStore.fileUploadQueue) < MAX_CONCURRENT_UPLOAD
           ) {
-            const task = dataImportRootStore.uploadFiles2({
+            const task = dataImportRootStore.uploadFiles({
               fileName: name,
               fileChunkList: chunkList[loopCount],
               fileChunkTotal: chunkTotal
@@ -392,7 +470,7 @@ export const FileDropZone: React.FC = observer(() => {
               ({ name }) => name === fileName
             )!;
 
-            const task = dataImportRootStore.uploadFiles2({
+            const task = dataImportRootStore.uploadFiles({
               fileName,
               fileChunkList:
                 retryFileUploadTask.chunkList[
@@ -420,7 +498,7 @@ export const FileDropZone: React.FC = observer(() => {
               fileUploadTask.uploadedChunkTotal === 0 &&
               size(fileUploadTask.pendingChunkIndexes) === 0
             ) {
-              const task = dataImportRootStore.uploadFiles2({
+              const task = dataImportRootStore.uploadFiles({
                 fileName: fileUploadTask.name,
                 fileChunkList:
                   dataImportRootStore.fileUploadTasks[fileIndex].chunkList[0],
@@ -452,7 +530,35 @@ export const FileDropZone: React.FC = observer(() => {
         let nextUploadChunkIndex;
 
         if (retryMode) {
-          nextUploadChunkIndex = fileUploadTask.failedChunkIndexes[0];
+          const duplicateIndexes = intersection(
+            fileUploadTask.uploadedChunksIndexes,
+            fileUploadTask.failedChunkIndexes
+          );
+
+          if (!isEmpty(duplicateIndexes)) {
+            dataImportRootStore.mutateFileUploadTasks(
+              'failedChunkIndexes',
+              fileUploadTask.failedChunkIndexes.filter(
+                (failedIndex) => !duplicateIndexes.includes(failedIndex)
+              ),
+              fileName
+            );
+          }
+
+          if (isEmpty(fileUploadTask.failedChunkIndexes)) {
+            retryMode = false;
+          }
+
+          nextUploadChunkIndex =
+            fileUploadTask.failedChunkIndexes[0] ||
+            Math.max(
+              ...fileUploadTask.pendingChunkIndexes,
+              // maybe it just turns retry mode to false
+              // and the failed chunk index could be less than
+              // the one which uploads success
+              // we have to compare uploaded chunk index either
+              ...fileUploadTask.uploadedChunksIndexes
+            ) + 1;
         } else {
           nextUploadChunkIndex =
             Math.max(
@@ -485,7 +591,7 @@ export const FileDropZone: React.FC = observer(() => {
         scheduler(
           fileName,
           nextUploadChunkIndex,
-          dataImportRootStore.uploadFiles2({
+          dataImportRootStore.uploadFiles({
             fileName,
             fileChunkList: fileUploadTask.chunkList[nextUploadChunkIndex],
             fileChunkTotal: fileUploadTask.chunkTotal
@@ -499,7 +605,7 @@ export const FileDropZone: React.FC = observer(() => {
     []
   );
 
-  const handleFileDrop = (monitor: DropTargetMonitor) => {
+  const handleFileDrop = async (monitor: DropTargetMonitor) => {
     if (monitor) {
       const fileList = monitor.getItem().files;
       const currentValidateFileList = validateFileCondition(fileList);
@@ -510,6 +616,10 @@ export const FileDropZone: React.FC = observer(() => {
         return;
       }
 
+      await dataImportRootStore.fetchFilehashes(
+        currentValidateFileList.map(({ name }) => name)
+      );
+
       handleFileChange(currentValidateFileList);
 
       if (isFirstBatchUpload) {
@@ -529,12 +639,17 @@ export const FileDropZone: React.FC = observer(() => {
               ({ name: fileName }) => fileName === name
             )!;
 
-            const task = dataImportRootStore.uploadFiles2({
+            const task = dataImportRootStore.uploadFiles({
               fileName: name,
               fileChunkList: fileUploadTask.chunkList[0],
               fileChunkTotal: fileUploadTask.chunkTotal
             });
 
+            dataImportRootStore.addFileUploadQueue({
+              fileName: fileUploadTask.name,
+              status: 'uploading',
+              task
+            });
             scheduler(name, 0, task);
           });
         } else {
@@ -544,12 +659,17 @@ export const FileDropZone: React.FC = observer(() => {
                 fileName === currentValidateFileList[fileUploadTaskIndex].name
             )!;
 
-            const task = dataImportRootStore.uploadFiles2({
+            const task = dataImportRootStore.uploadFiles({
               fileName: fileUploadTask.name,
               fileChunkList: fileUploadTask.chunkList[0],
               fileChunkTotal: fileUploadTask.chunkTotal
             });
 
+            dataImportRootStore.addFileUploadQueue({
+              fileName: fileUploadTask.name,
+              status: 'uploading',
+              task
+            });
             scheduler(fileUploadTask.name, 0, task);
           });
         }
@@ -558,6 +678,9 @@ export const FileDropZone: React.FC = observer(() => {
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // event in async callback should call this
+    e.persist();
+
     if (e.target.files) {
       const fileList = Array.from(e.target.files);
       const currentValidateFileList = validateFileCondition(fileList);
@@ -568,6 +691,10 @@ export const FileDropZone: React.FC = observer(() => {
         return;
       }
 
+      await dataImportRootStore.fetchFilehashes(
+        currentValidateFileList.map(({ name }) => name)
+      );
+
       handleFileChange(currentValidateFileList);
 
       if (isFirstBatchUpload) {
@@ -587,12 +714,17 @@ export const FileDropZone: React.FC = observer(() => {
               ({ name: fileName }) => fileName === name
             )!;
 
-            const task = dataImportRootStore.uploadFiles2({
+            const task = dataImportRootStore.uploadFiles({
               fileName: name,
               fileChunkList: fileUploadTask.chunkList[0],
               fileChunkTotal: fileUploadTask.chunkTotal
             });
 
+            dataImportRootStore.addFileUploadQueue({
+              fileName: fileUploadTask.name,
+              status: 'uploading',
+              task
+            });
             scheduler(name, 0, task);
           });
         } else {
@@ -602,12 +734,17 @@ export const FileDropZone: React.FC = observer(() => {
                 fileName === currentValidateFileList[fileUploadTaskIndex].name
             )!;
 
-            const task = dataImportRootStore.uploadFiles2({
+            const task = dataImportRootStore.uploadFiles({
               fileName: fileUploadTask.name,
               fileChunkList: fileUploadTask.chunkList[0],
               fileChunkTotal: fileUploadTask.chunkTotal
             });
 
+            dataImportRootStore.addFileUploadQueue({
+              fileName: fileUploadTask.name,
+              status: 'uploading',
+              task
+            });
             scheduler(fileUploadTask.name, 0, task);
           });
         }
@@ -624,11 +761,30 @@ export const FileDropZone: React.FC = observer(() => {
     'file-above': canDrop && isOver
   });
 
+  // if upload file api throw errors
+  useEffect(() => {
+    if (dataImportRootStore.errorInfo.uploadFiles.message !== '') {
+      Message.error({
+        content: dataImportRootStore.errorInfo.uploadFiles.message,
+        size: 'medium',
+        showCloseIcon: false
+      });
+    }
+  }, [dataImportRootStore.errorInfo.uploadFiles.message]);
+
   return (
     <div className="import-tasks-upload-wrapper">
       <label htmlFor="import-tasks-file-upload">
         <div className={dragAreaClassName} ref={drop}>
-          <span>{t('upload-files.description')}</span>
+          {/* <span>{t('upload-files.description')}</span>   */}
+          <span style={{ fontWeight: 900, color: '#000' }}>
+            {t('upload-files.click')}
+          </span>
+          <span>{t('upload-files.description-1')}</span>
+          <span style={{ fontWeight: 900, color: '#000' }}>
+            {t('upload-files.drag')}
+          </span>
+          <span>{t('upload-files.description-2')}</span>
           <input
             ref={uploadRef}
             type="file"
@@ -660,17 +816,33 @@ export const FileList: React.FC<FileListProps> = observer(({ scheduler }) => {
   const { dataMapStore } = dataImportRootStore;
 
   const handleRetry = (fileName: string) => () => {
-    // when fileUploadQueue is empty, directly add a task to the Queue
-    if (size(dataImportRootStore.fileUploadQueue) === 0) {
-      const fileUploadTasks = dataImportRootStore.fileUploadTasks.find(
+    // if (size(dataImportRootStore.fileUploadQueue) === 0) {
+    if (size(dataImportRootStore.fileUploadQueue) < MAX_CONCURRENT_UPLOAD) {
+      const fileUploadTask = dataImportRootStore.fileUploadTasks.find(
         ({ name }) => name === fileName
       )!;
 
-      const task = dataImportRootStore.uploadFiles2({
+      const task = dataImportRootStore.uploadFiles({
         fileName,
         fileChunkList:
-          fileUploadTasks.chunkList[fileUploadTasks.failedChunkIndexes[0]],
-        fileChunkTotal: fileUploadTasks.chunkTotal
+          fileUploadTask.chunkList[fileUploadTask.failedChunkIndexes[0]] ||
+          fileUploadTask.chunkList[
+            Math.max(
+              ...fileUploadTask.pendingChunkIndexes,
+              // maybe it just turns retry mode to false
+              // and the failed chunk index could be less than
+              // the one which uploads success
+              // we have to compare uploaded chunk index either
+              ...fileUploadTask.uploadedChunksIndexes
+            ) + 1
+          ],
+        fileChunkTotal: fileUploadTask.chunkTotal
+      });
+
+      dataImportRootStore.addFileUploadQueue({
+        fileName,
+        status: 'uploading',
+        task
       });
 
       dataImportRootStore.mutateFileUploadTasks(
@@ -679,7 +851,28 @@ export const FileList: React.FC<FileListProps> = observer(({ scheduler }) => {
         fileName
       );
 
-      scheduler(fileName, fileUploadTasks.failedChunkIndexes[0], task, true);
+      if (!isEmpty(fileUploadTask.failedChunkIndexes)) {
+        dataImportRootStore.mutateFileUploadTasks(
+          'failedChunkIndexes',
+          [...fileUploadTask.failedChunkIndexes.slice(1)],
+          fileName
+        );
+      }
+
+      scheduler(
+        fileName,
+        fileUploadTask.failedChunkIndexes[0] ||
+          Math.max(
+            ...fileUploadTask.pendingChunkIndexes,
+            // maybe it just turns retry mode to false
+            // and the failed chunk index could be less than
+            // the one which uploads success
+            // we have to compare uploaded chunk index either
+            ...fileUploadTask.uploadedChunksIndexes
+          ) + 1,
+        task,
+        true
+      );
     } else {
       // or just add filename to retry queue,
       // let other scheduler decide when to call it
@@ -687,8 +880,24 @@ export const FileList: React.FC<FileListProps> = observer(({ scheduler }) => {
     }
   };
 
-  const handleDelete = (name: string) => async () => {
-    await dataImportRootStore.deleteFiles([name]);
+  const handleDelete = (name: string, existed = false) => async () => {
+    await dataImportRootStore.deleteFiles(name);
+
+    if (dataImportRootStore.requestStatus.deleteFiles === 'failed') {
+      Message.error({
+        content: dataImportRootStore.errorInfo.deleteFiles.message,
+        size: 'medium',
+        showCloseIcon: false
+      });
+
+      return;
+    }
+
+    if (existed === true) {
+      dataMapStore.fetchDataMaps();
+      return;
+    }
+
     dataImportRootStore.removeFileUploadTasks(name);
 
     // if no uploading files, fetch data maps again
@@ -762,29 +971,35 @@ export const FileList: React.FC<FileListProps> = observer(({ scheduler }) => {
           );
         }
       )}
-      {/* {dataMapStore.fileMapInfos.map(({ name, total_size }) => {
-        return (
-          <div className="import-tasks-upload-file-info">
-            <div className="import-tasks-upload-file-info-titles">
-              <span>{name}</span>
-              <span>{total_size}</span>
+      {dataMapStore.fileMapInfos
+        .filter(
+          ({ name }) =>
+            !dataImportRootStore.successFileUploadTaskNames.includes(name)
+        )
+        .map(({ name, total_size }) => {
+          return (
+            <div className="import-tasks-upload-file-info" key={name}>
+              <div className="import-tasks-upload-file-info-titles">
+                <span>{name}</span>
+                <span>{total_size}</span>
+              </div>
+              <div className="import-tasks-upload-file-info-progress-status">
+                <Progress
+                  width={390}
+                  percent={100}
+                  status="success"
+                  onCancel={handleDelete}
+                />
+                <img
+                  src={CloseIcon}
+                  alt="delete-file"
+                  className="import-tasks-upload-file-info-progress-status-close-icon"
+                  onClick={handleDelete(name, true)}
+                />
+              </div>
             </div>
-            <div className="import-tasks-upload-file-info-progress-status">
-              <Progress
-                width={410}
-                percent={100}
-                status="success"
-                onCancel={handleDelete}
-              />
-              <img
-                src={CloseIcon}
-                alt="delete-file"
-                onClick={handleDelete(name)}
-              />
-            </div>
-          </div>
-        );
-      })} */}
+          );
+        })}
     </div>
   );
 });

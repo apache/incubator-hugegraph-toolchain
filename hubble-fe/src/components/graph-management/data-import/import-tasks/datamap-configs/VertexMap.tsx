@@ -1,4 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, {
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useEffect
+} from 'react';
 import { observer } from 'mobx-react';
 import { isUndefined, isEmpty, size, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +15,7 @@ import { Tooltip } from '../../../../common';
 import TypeConfigManipulations from './TypeConfigManipulations';
 import { DataImportRootStoreContext } from '../../../../../stores';
 import { VertexType } from '../../../../../stores/types/GraphManagementStore/metadataConfigsStore';
+import { getUnicodeLength } from '../../../../../utils';
 
 import ArrowIcon from '../../../../../assets/imgs/ic_arrow_16.svg';
 import BlueArrowIcon from '../../../../../assets/imgs/ic_arrow_blue.svg';
@@ -27,7 +34,7 @@ const VertexMap: React.FC<VertexMapProps> = observer(
     const { dataMapStore } = dataImportRootStore;
     const [isAddMapping, switchAddMapping] = useState(false);
     const [isExpandAdvance, switchExpandAdvance] = useState(false);
-    // const [extraNullValues, setExtraNullValues] = useState<string[]>([]);
+    const addMappingWrapperRef = useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
 
     const isCheck = checkOrEdit === 'check';
@@ -51,13 +58,24 @@ const VertexMap: React.FC<VertexMapProps> = observer(
 
     const isStrategyAutomatic = selectedVertex?.id_strategy === 'AUTOMATIC';
 
-    const handleExpand = () => {
-      dataMapStore.switchExpand('type', !dataMapStore.isExpandTypeConfig);
-    };
-
     const handleAdvanceExpand = () => {
       switchExpandAdvance(!isExpandAdvance);
     };
+
+    // need useCallback to stop infinite callings of useEffect
+    const handleOutSideClick = useCallback(
+      (e: MouseEvent) => {
+        // if clicked element is not on dropdown, collpase it
+        if (
+          isAddMapping &&
+          addMappingWrapperRef.current &&
+          !addMappingWrapperRef.current.contains(e.target as Element)
+        ) {
+          switchAddMapping(false);
+        }
+      },
+      [isAddMapping]
+    );
 
     const wrapperName = classnames({
       'import-tasks-data-map-config-card': !Boolean(checkOrEdit),
@@ -92,6 +110,14 @@ const VertexMap: React.FC<VertexMapProps> = observer(
       'import-tasks-manipulation-disabled':
         !dataMapStore.allowAddPropertyMapping('vertex') || isStrategyAutomatic
     });
+
+    useEffect(() => {
+      document.addEventListener('click', handleOutSideClick, false);
+
+      return () => {
+        document.removeEventListener('click', handleOutSideClick, false);
+      };
+    }, [handleOutSideClick]);
 
     return (
       <div className={wrapperName}>
@@ -306,9 +332,17 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                     .selectedFileInfo!.file_setting.column_names.filter(
                       (columnName) => !vertexMap.id_fields.includes(columnName)
                     )
-                    .map((name) => (
+                    .map((name, index) => (
                       <Select.Option value={name} key={name}>
-                        {name}
+                        <div className="no-line-break">
+                          {name}
+                          {!dataMapStore.selectedFileInfo!.file_setting
+                            .has_header &&
+                            `（${
+                              dataMapStore.selectedFileInfo!.file_setting
+                                .column_values[index]
+                            }）`}
+                        </div>
                       </Select.Option>
                     ))}
                 </Select>
@@ -355,11 +389,13 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                         isEdit
                           ? dataMapStore.toggleVertexSelectAllFieldMapping(
                               'edit',
-                              false
+                              false,
+                              selectedVertex
                             )
                           : dataMapStore.toggleVertexSelectAllFieldMapping(
                               'new',
-                              false
+                              false,
+                              selectedVertex
                             );
                       }}
                     >
@@ -473,7 +509,10 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                   />
                 </div>
                 {isAddMapping && (
-                  <div className="import-tasks-data-options-expand-dropdown">
+                  <div
+                    className="import-tasks-data-options-expand-dropdown"
+                    ref={addMappingWrapperRef}
+                  >
                     <div>
                       <span>
                         <Checkbox
@@ -523,7 +562,8 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                               dataMapStore.toggleVertexSelectAllFieldMapping(
                                 'edit',
                                 // if isIndeterminate is true, e.target.checked is false
-                                isIndeterminate || e.target.checked
+                                isIndeterminate || e.target.checked,
+                                selectedVertex
                               );
                             } else {
                               const isIndeterminate =
@@ -539,7 +579,8 @@ const VertexMap: React.FC<VertexMapProps> = observer(
 
                               dataMapStore.toggleVertexSelectAllFieldMapping(
                                 'new',
-                                isIndeterminate || e.target.checked
+                                isIndeterminate || e.target.checked,
+                                selectedVertex
                               );
                             }
                           }}
@@ -551,6 +592,23 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                     {dataMapStore.selectedFileInfo?.file_setting.column_names
                       .filter((name) => !vertexMap.id_fields.includes(name))
                       .map((name) => {
+                        let combinedText = name;
+                        let currentColumnValue = dataMapStore.selectedFileInfo
+                          ?.file_setting.column_values[
+                          dataMapStore.selectedFileInfo?.file_setting.column_names.findIndex(
+                            (columnName) => name === columnName
+                          )
+                        ] as string;
+                        combinedText += `（${currentColumnValue}）`;
+
+                        if (getUnicodeLength(combinedText) > 35) {
+                          combinedText = combinedText.slice(0, 35) + '...';
+                        }
+
+                        const mappingValue = selectedVertex?.properties.find(
+                          ({ name: propertyName }) => propertyName === name
+                        )?.name;
+
                         return (
                           <div>
                             <span>
@@ -567,11 +625,13 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                                     isEdit
                                       ? dataMapStore.setVertexFieldMappingKey(
                                           'edit',
-                                          name
+                                          name,
+                                          mappingValue
                                         )
                                       : dataMapStore.setVertexFieldMappingKey(
                                           'new',
-                                          name
+                                          name,
+                                          mappingValue
                                         );
                                   } else {
                                     isEdit
@@ -586,15 +646,7 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                                   }
                                 }}
                               >
-                                {name}
-                                {`（${
-                                  dataMapStore.selectedFileInfo?.file_setting
-                                    .column_values[
-                                    dataMapStore.selectedFileInfo?.file_setting.column_names.findIndex(
-                                      (columnName) => name === columnName
-                                    )
-                                  ]
-                                }）`}
+                                {combinedText}
                               </Checkbox>
                             </span>
                           </div>

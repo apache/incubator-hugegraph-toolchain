@@ -4,6 +4,7 @@ export function initRequestStatus() {
   return {
     fetchImportTasks: 'standby',
     fetchAllImportTasks: 'standby',
+    setConfigParams: 'standby',
     startImport: 'standby',
     pauseImport: 'standby',
     resumeImport: 'standby',
@@ -21,6 +22,10 @@ export function initErrorInfo() {
       message: ''
     },
     fetchAllImportTasks: {
+      code: NaN,
+      message: ''
+    },
+    setConfigParams: {
       code: NaN,
       message: ''
     },

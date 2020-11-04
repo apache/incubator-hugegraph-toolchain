@@ -6,7 +6,8 @@ import { Select, Tooltip, PopLayer, Menu } from '@baidu/one-ui';
 
 import {
   GraphManagementStoreContext,
-  DataAnalyzeStoreContext
+  DataAnalyzeStoreContext,
+  ImportManagerStoreContext
 } from '../../stores';
 
 import BackIcon from '../../assets/imgs/ic_topback.svg';
@@ -17,18 +18,19 @@ import MetaDataManagementIconNormal from '../../assets/imgs/ic_yuanshuju_normal.
 import MetaDataManagementIconPressed from '../../assets/imgs/ic_yuanshuju_pressed.svg';
 import SidebarExpandIcon from '../../assets/imgs/ic_cebianzhankai.svg';
 import SidebarCollapseIcon from '../../assets/imgs/ic_cebianshouqi.svg';
-import DataImportIconNormal from '../../assets/imgs/ic_guanli_normal.svg';
-import DataImportIconPressed from '../../assets/imgs/ic_guanli_pressed.svg';
+import DataImportIconNormal from '../../assets/imgs/ic_daorushuju_normal.svg';
+import DataImportIconPressed from '../../assets/imgs/ic_daorushuju_pressed.svg';
 import AsyncTaskManagerIconNormal from '../../assets/imgs/ic_renwuguanli_normal.svg';
 import AsyncTaskManagerIconPressed from '../../assets/imgs/ic_renwuguanli_pressed.svg';
 
 const GraphManagementSidebar: React.FC = observer(() => {
   const [match, params] = useRoute(
-    '/graph-management/:id/:category/:subCategory?/:jobId?/:specifc?'
+    '/graph-management/:id/:category/:subCategory?/:jobId?/:specific?/:importTasksSpecific?'
   );
 
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
+  const importManagerStore = useContext(ImportManagerStoreContext);
   const [_, setLocation] = useLocation();
   // caution
   const [sidebarKey, setSidebarKey] = useState('');
@@ -74,6 +76,8 @@ const GraphManagementSidebar: React.FC = observer(() => {
           setLocation(
             `/graph-management/${params!.id}/data-import/import-manager`
           );
+          // need to reset selectedJob here, it would change in the future
+          importManagerStore.setSelectedJob(null);
           return;
         case 'async-tasks':
           setLocation(`/graph-management/${params!.id}/async-tasks`);
@@ -127,7 +131,11 @@ const GraphManagementSidebar: React.FC = observer(() => {
 
   // prevent ERROR: Rendered more hooks than during the previous render
   // if this block stays before any usexxx hooks, p/n render hooks is not equal
-  if (!match || params?.specifc === 'error-log') {
+  if (
+    !match ||
+    params?.subCategory === 'job-error-log' ||
+    params?.jobId === 'task-error-log'
+  ) {
     return null;
   }
 

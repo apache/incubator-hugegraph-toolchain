@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react';
 import { isEmpty, size } from 'lodash-es';
+import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import { Button } from '@baidu/one-ui';
@@ -16,10 +17,11 @@ import ArrowIcon from '../../../../../assets/imgs/ic_arrow_16.svg';
 
 const TypeConfigs: React.FC = observer(() => {
   const dataImportRootStore = useContext(DataImportRootStoreContext);
-  const { dataMapStore, serverDataImportStore } = dataImportRootStore;
   const [isExpand, switchExpand] = useState(true);
+  const { dataMapStore, serverDataImportStore } = dataImportRootStore;
   const [isCreateVertexMap, switchCreateVertexMap] = useState(false);
   const [isCreateEdgeMap, switchCreateEdgeMap] = useState(false);
+  const [, setLocation] = useLocation();
   const { t } = useTranslation();
 
   const shouldRevealInitalButtons =
@@ -86,25 +88,29 @@ const TypeConfigs: React.FC = observer(() => {
           className={expandClassName}
           onClick={handleExpand}
         />
-        {!dataMapStore.readOnly && !shouldRevealInitalButtons && (
+        {!dataMapStore.readOnly &&
+          !dataMapStore.lock &&
+          !shouldRevealInitalButtons && (
+            <TypeConfigMapCreations
+              onCreateVertex={handleCreate('vertex', true)}
+              onCreateEdge={handleCreate('edge', true)}
+              disabled={
+                isCreateVertexMap ||
+                isCreateEdgeMap ||
+                dataMapStore.isExpandTypeConfig ||
+                serverDataImportStore.isServerStartImport
+              }
+            />
+          )}
+      </div>
+      {!dataMapStore.readOnly &&
+        !dataMapStore.lock &&
+        shouldRevealInitalButtons && (
           <TypeConfigMapCreations
             onCreateVertex={handleCreate('vertex', true)}
             onCreateEdge={handleCreate('edge', true)}
-            disabled={
-              isCreateVertexMap ||
-              isCreateEdgeMap ||
-              dataMapStore.isExpandTypeConfig ||
-              serverDataImportStore.isServerStartImport
-            }
           />
         )}
-      </div>
-      {!dataMapStore.readOnly && shouldRevealInitalButtons && (
-        <TypeConfigMapCreations
-          onCreateVertex={handleCreate('vertex', true)}
-          onCreateEdge={handleCreate('edge', true)}
-        />
-      )}
       {isExpand && (
         <>
           {isCreateVertexMap && (
@@ -138,12 +144,16 @@ const TypeConfigs: React.FC = observer(() => {
               size="medium"
               style={{ marginRight: 16 }}
               onClick={() => {
+                setLocation(
+                  `/graph-management/${dataImportRootStore.currentId}/data-import/import-manager/${dataImportRootStore.currentJobId}/import-tasks/upload`
+                );
                 dataImportRootStore.setCurrentStep(1);
               }}
               disabled={
                 // disable previous when it's irregular process
-                dataMapStore.isIrregularProcess ||
-                serverDataImportStore.isIrregularProcess
+                // dataMapStore.isIrregularProcess ||
+                // serverDataImportStore.isIrregularProcess
+                dataMapStore.lock
               }
             >
               {t('data-configs.manipulations.previous')}
@@ -166,7 +176,10 @@ const TypeConfigs: React.FC = observer(() => {
                   {t('data-configs.type.hint.no-vertex-or-edge-mapping')}
                 </div>
                 {invalidFileMaps.map(({ name }) => (
-                  <div className="import-tasks-data-map-tooltip-text">
+                  <div
+                    className="import-tasks-data-map-tooltip-text"
+                    key={name}
+                  >
                     {name}
                   </div>
                 ))}
@@ -178,7 +191,16 @@ const TypeConfigs: React.FC = observer(() => {
               size="medium"
               disabled={size(invalidFileMaps) !== 0}
               onClick={() => {
+                setLocation(
+                  `/graph-management/${dataImportRootStore.currentId}/data-import/import-manager/${dataImportRootStore.currentJobId}/import-tasks/loading`
+                );
+
                 dataImportRootStore.setCurrentStep(3);
+                // avoid rests when user moves back to previous step
+                if (dataImportRootStore.currentStatus === 'MAPPING') {
+                  dataImportRootStore.setCurrentStatus('SETTING');
+                  dataImportRootStore.sendMappingCompleteSignal();
+                }
               }}
             >
               {t('data-configs.manipulations.next')}

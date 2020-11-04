@@ -144,7 +144,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
       graphViewStore.visDataSet!.nodes.remove(vertexName);
     }
 
-    await vertexTypeStore.deleteVertexType(vertexName);
+    await vertexTypeStore.deleteVertexType([vertexName]);
 
     if (vertexTypeStore.requestStatus.deleteVertexType === 'success') {
       Message.success({

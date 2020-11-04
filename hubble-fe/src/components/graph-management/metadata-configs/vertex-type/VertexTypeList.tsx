@@ -6,6 +6,14 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
+import {
+  cloneDeep,
+  intersection,
+  size,
+  without,
+  isEmpty,
+  isUndefined
+} from 'lodash-es';
 import { useLocation } from 'wouter';
 import classnames from 'classnames';
 import { motion } from 'framer-motion';
@@ -21,8 +29,6 @@ import {
   Message,
   Loading
 } from '@baidu/one-ui';
-import { cloneDeep } from 'lodash-es';
-import { isEmpty, isUndefined } from 'lodash-es';
 
 import { Tooltip, LoadingDataView } from '../../../common';
 import NewVertexType from './NewVertexType';
@@ -31,7 +37,10 @@ import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/me
 import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import { formatVertexIdText } from '../../../../stores/utils';
 
-import type { VertexTypeValidatePropertyIndexes } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
+import type {
+  VertexTypeValidatePropertyIndexes,
+  VertexType
+} from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
 
 import AddIcon from '../../../../assets/imgs/ic_add.svg';
 import BlueArrowIcon from '../../../../assets/imgs/ic_arrow_blue.svg';
@@ -98,7 +107,7 @@ const VertexTypeList: React.FC = observer(() => {
   const { metadataPropertyStore, vertexTypeStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('');
-  const [selectedRowKeys, mutateSelectedRowKeys] = useState<any[]>([]);
+  const [selectedRowKeys, mutateSelectedRowKeys] = useState<string[]>([]);
   const [isShowModal, switchShowModal] = useState(false);
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isEditVertex, switchIsEditVertex] = useState(false);
@@ -119,8 +128,13 @@ const VertexTypeList: React.FC = observer(() => {
     preLoading ||
     vertexTypeStore.requestStatus.fetchVertexTypeList === 'pending';
 
-  const handleSelectedTableRow = (selectedRowKeys: any[]) => {
-    mutateSelectedRowKeys(selectedRowKeys);
+  const currentSelectedRowKeys = intersection(
+    selectedRowKeys,
+    vertexTypeStore.vertexTypes.map(({ name }) => name)
+  );
+
+  const handleSelectedTableRow = (newSelectedRowKeys: string[]) => {
+    mutateSelectedRowKeys(newSelectedRowKeys);
   };
 
   const handleCloseDrawer = () => {
@@ -148,10 +162,10 @@ const VertexTypeList: React.FC = observer(() => {
   const batchDeleteProperties = async () => {
     switchShowModal(false);
     // need to set a copy in store since local row key state would be cleared
-    vertexTypeStore.mutateSelectedVertexTypeIndex(selectedRowKeys);
-    mutateSelectedRowKeys([]);
-    await vertexTypeStore.deleteVertexType(selectedRowKeys);
-    vertexTypeStore.mutateSelectedVertexTypeIndex([]);
+    vertexTypeStore.mutateSelectedVertexTypeNames(currentSelectedRowKeys);
+    // mutateSelectedRowKeys([]);
+    await vertexTypeStore.deleteVertexType(currentSelectedRowKeys);
+    // vertexTypeStore.mutateSelectedVertexTypeNames([]);
 
     if (vertexTypeStore.requestStatus.deleteVertexType === 'success') {
       Message.success({
@@ -160,7 +174,25 @@ const VertexTypeList: React.FC = observer(() => {
         showCloseIcon: false
       });
 
-      vertexTypeStore.fetchVertexTypeList();
+      mutateSelectedRowKeys(
+        without(selectedRowKeys, ...currentSelectedRowKeys)
+      );
+
+      await vertexTypeStore.fetchVertexTypeList();
+
+      // fetch previous page data if it's empty
+      if (
+        vertexTypeStore.requestStatus.fetchVertexTypeList === 'success' &&
+        size(vertexTypeStore.vertexTypes) === 0 &&
+        vertexTypeStore.vertexListPageConfig.pageNumber > 1
+      ) {
+        vertexTypeStore.mutatePageNumber(
+          vertexTypeStore.vertexListPageConfig.pageNumber - 1
+        );
+
+        vertexTypeStore.fetchVertexTypeList();
+      }
+
       return;
     }
 
@@ -287,7 +319,7 @@ const VertexTypeList: React.FC = observer(() => {
       title: '操作',
       dataIndex: 'manipulation',
       width: '13%',
-      render(_: any, records: any, index: number) {
+      render(_: any, records: VertexType, index: number) {
         return (
           <VertexTypeListManipulation
             vertexName={records.name}
@@ -357,7 +389,7 @@ const VertexTypeList: React.FC = observer(() => {
           <Button
             type="primary"
             size="medium"
-            disabled={isLoading}
+            disabled={isLoading || size(currentSelectedRowKeys) !== 0}
             style={styles.button}
             onClick={() => {
               vertexTypeStore.changeCurrentTabStatus('new');
@@ -376,13 +408,13 @@ const VertexTypeList: React.FC = observer(() => {
             复用
           </Button>
         </div>
-        {selectedRowKeys.length !== 0 && (
+        {size(currentSelectedRowKeys) !== 0 && (
           <div className="metadata-properties-selected-reveals">
-            <div>已选{selectedRowKeys.length}项</div>
+            <div>已选{size(currentSelectedRowKeys)}项</div>
             <Button
               onClick={() => {
                 switchShowModal(true);
-                vertexTypeStore.checkIfUsing(selectedRowKeys);
+                vertexTypeStore.checkIfUsing(currentSelectedRowKeys);
               }}
             >
               批量删除
@@ -398,6 +430,7 @@ const VertexTypeList: React.FC = observer(() => {
         )}
         <Table
           columns={columnConfigs}
+          rowKey={(rowData: VertexType) => rowData.name}
           locale={{
             emptyText: (
               <LoadingDataView
@@ -423,7 +456,7 @@ const VertexTypeList: React.FC = observer(() => {
                   showPageJumper: false,
                   total: vertexTypeStore.vertexListPageConfig.pageTotal,
                   onPageNoChange: (e: React.ChangeEvent<HTMLSelectElement>) => {
-                    mutateSelectedRowKeys([]);
+                    // mutateSelectedRowKeys([]);
                     vertexTypeStore.mutatePageNumber(Number(e.target.value));
                     vertexTypeStore.fetchVertexTypeList();
                   }
@@ -487,28 +520,15 @@ const VertexTypeList: React.FC = observer(() => {
                   }
                 }
               ]}
-              dataSource={selectedRowKeys
-                .map((rowNumber: number) => {
-                  // data in selectedRowKeys[index] could be non-exist in circustance that response data length don't match
-                  // so pointer(index) could out of bounds
-                  if (!isUndefined(vertexTypeStore.vertexTypes[rowNumber])) {
-                    const name = vertexTypeStore.vertexTypes[rowNumber].name;
-
-                    return {
-                      name,
-                      status:
-                        vertexTypeStore.vertexTypeUsingStatus !== null
-                          ? vertexTypeStore.vertexTypeUsingStatus[name]
-                          : true
-                    };
-                  }
-
-                  return {
-                    name: '',
-                    status: false
-                  };
-                })
-                .filter(({ name }) => name !== '')}
+              dataSource={currentSelectedRowKeys.map((name) => {
+                return {
+                  name,
+                  status:
+                    vertexTypeStore.vertexTypeUsingStatus !== null &&
+                    // data may have some delay which leads to no matching propety value
+                    !!vertexTypeStore.vertexTypeUsingStatus[name]
+                };
+              })}
               pagination={false}
             />
           </div>
@@ -1255,6 +1275,7 @@ const VertexTypeList: React.FC = observer(() => {
                                 );
 
                                 propertyIndexEntities[index].type = value;
+                                propertyIndexEntities[index].fields = [];
 
                                 vertexTypeStore.mutateEditedSelectedVertexType({
                                   ...vertexTypeStore.editedSelectedVertexType,
@@ -1284,6 +1305,7 @@ const VertexTypeList: React.FC = observer(() => {
                               placeholder="请选择属性"
                               size="medium"
                               showSearch={false}
+                              onSearch={null}
                               value={fields}
                               onChange={(value: string | string[]) => {
                                 const propertyIndexEntities = cloneDeep(
@@ -1552,7 +1574,7 @@ const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> = observe
     const isDeleteOrBatchDeleting =
       isDeleting ||
       (vertexTypeStore.requestStatus.deleteVertexType === 'pending' &&
-        vertexTypeStore.selectedVertexTypeIndex.includes(vertexIndex));
+        vertexTypeStore.selectedVertexTypeNames.includes(vertexName));
 
     const handleOutSideClick = useCallback(
       (e: MouseEvent) => {
@@ -1637,7 +1659,7 @@ const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> = observe
                         onClick={async () => {
                           switchPopDeleteModal(false);
                           switchDeleting(true);
-                          await vertexTypeStore.deleteVertexType([vertexIndex]);
+                          await vertexTypeStore.deleteVertexType([vertexName]);
                           switchDeleting(false);
 
                           if (
@@ -1689,7 +1711,7 @@ const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> = observe
                   return;
                 }
 
-                await vertexTypeStore.checkIfUsing([vertexIndex]);
+                await vertexTypeStore.checkIfUsing([vertexName]);
 
                 if (vertexTypeStore.requestStatus.checkIfUsing === 'success') {
                   switchPopDeleteModal(true);

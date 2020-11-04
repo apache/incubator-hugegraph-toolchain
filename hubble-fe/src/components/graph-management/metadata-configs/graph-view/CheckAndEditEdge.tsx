@@ -136,7 +136,7 @@ const CheckAndEditEdge: React.FC = observer(() => {
 
     graphViewStore.visDataSet!.edges.remove(edgeId);
 
-    await edgeTypeStore.deleteEdgeType(edgeName);
+    await edgeTypeStore.deleteEdgeType([edgeName]);
 
     if (edgeTypeStore.requestStatus.deleteEdgeType === 'success') {
       Message.success({

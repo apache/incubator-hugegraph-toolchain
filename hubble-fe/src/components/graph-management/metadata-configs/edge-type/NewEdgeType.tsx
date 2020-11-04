@@ -498,6 +498,7 @@ const NewVertexType: React.FC = observer(() => {
               width={420}
               mode="multiple"
               placeholder="请选择区分键属性"
+              selectorName="请先选择关联属性"
               size="medium"
               showSearch={false}
               onChange={(e: string[]) => {
@@ -511,7 +512,31 @@ const NewVertexType: React.FC = observer(() => {
               }}
               value={edgeTypeStore.newEdgeType.sort_keys}
             >
-              {edgeTypeStore.newEdgeType.properties
+              {edgeTypeStore.newEdgeType.properties.map((item) => {
+                const order = edgeTypeStore.newEdgeType.sort_keys.findIndex(
+                  (name) => name === item.name
+                );
+
+                const multiSelectOptionClassName = classnames({
+                  'metadata-configs-sorted-multiSelect-option': true,
+                  'metadata-configs-sorted-multiSelect-option-selected':
+                    order !== -1
+                });
+
+                return (
+                  <Select.Option
+                    value={item.name}
+                    key={item.name}
+                    disabled={item.nullable}
+                  >
+                    <div className={multiSelectOptionClassName}>
+                      <div>{order !== -1 ? order + 1 : ''}</div>
+                      <div>{item.name}</div>
+                    </div>
+                  </Select.Option>
+                );
+              })}
+              {/* {edgeTypeStore.newEdgeType.properties
                 .filter(({ nullable }) => !nullable)
                 .map((item) => {
                   const order = edgeTypeStore.newEdgeType.sort_keys.findIndex(
@@ -532,7 +557,7 @@ const NewVertexType: React.FC = observer(() => {
                       </div>
                     </Select.Option>
                   );
-                })}
+                })} */}
             </Select>
           </div>
         )}

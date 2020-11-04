@@ -12,6 +12,7 @@ import {
   EdgeType
 } from '../../../../../stores/types/GraphManagementStore/metadataConfigsStore';
 import TypeConfigManipulations from './TypeConfigManipulations';
+import { getUnicodeLength } from '../../../../../utils';
 
 import ArrowIcon from '../../../../../assets/imgs/ic_arrow_16.svg';
 import BlueArrowIcon from '../../../../../assets/imgs/ic_arrow_blue.svg';
@@ -516,11 +517,13 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                         isEdit
                           ? dataMapStore.toggleEdgeSelectAllFieldMapping(
                               'edit',
-                              false
+                              false,
+                              selectedEdge
                             )
                           : dataMapStore.toggleEdgeSelectAllFieldMapping(
                               'new',
-                              false
+                              false,
+                              selectedEdge
                             );
                       }}
                     >
@@ -679,7 +682,8 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                               dataMapStore.toggleEdgeSelectAllFieldMapping(
                                 'edit',
                                 // if isIndeterminate is true, e.target.checked is false
-                                isIndeterminate || e.target.checked
+                                isIndeterminate || e.target.checked,
+                                selectedEdge
                               );
                             } else {
                               const isIndeterminate =
@@ -693,7 +697,8 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
 
                               dataMapStore.toggleEdgeSelectAllFieldMapping(
                                 'new',
-                                isIndeterminate || e.target.checked
+                                isIndeterminate || e.target.checked,
+                                selectedEdge
                               );
                             }
                           }}
@@ -704,6 +709,23 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                     </div>
                     {filteredColumnNamesInSelection.map((name) => {
                       const param = isEdit ? 'edit' : 'new';
+
+                      let combinedText = name;
+                      let currentColumnValue = dataMapStore.selectedFileInfo
+                        ?.file_setting.column_values[
+                        dataMapStore.selectedFileInfo?.file_setting.column_names.findIndex(
+                          (columnName) => name === columnName
+                        )
+                      ] as string;
+                      combinedText += `（${currentColumnValue}）`;
+
+                      if (getUnicodeLength(combinedText) > 35) {
+                        combinedText = combinedText.slice(0, 35) + '...';
+                      }
+
+                      const mappingValue = selectedEdge?.properties.find(
+                        ({ name: propertyName }) => propertyName === name
+                      )?.name;
 
                       return (
                         <div>
@@ -720,7 +742,8 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                                 if (e.target.checked) {
                                   dataMapStore.setEdgeFieldMappingKey(
                                     param,
-                                    name
+                                    name,
+                                    mappingValue
                                   );
                                 } else {
                                   dataMapStore.removeEdgeFieldMapping(
@@ -730,15 +753,7 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                                 }
                               }}
                             >
-                              {name}
-                              {`（${
-                                dataMapStore.selectedFileInfo?.file_setting
-                                  .column_values[
-                                  dataMapStore.selectedFileInfo?.file_setting.column_names.findIndex(
-                                    (columnName) => name === columnName
-                                  )
-                                ]
-                              }）`}
+                              {combinedText}
                             </Checkbox>
                           </span>
                         </div>

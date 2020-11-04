@@ -24,6 +24,11 @@ import {
 } from '../../types/GraphManagementStore/dataImportStore';
 import { checkIfLocalNetworkOffline, validateGraphProperty } from '../../utils';
 
+import type {
+  VertexType,
+  EdgeType
+} from '../../types/GraphManagementStore/metadataConfigsStore';
+
 export class DataMapStore {
   dataImportRootStore: DataImportRootStore;
 
@@ -35,6 +40,8 @@ export class DataMapStore {
   @observable readOnly = false;
   // v1.3.1: task process comes from import-manager entrance
   @observable isIrregularProcess = false;
+  // v1.5.0 no check details but in progress when LOADING
+  @observable lock = false;
 
   @observable isExpandFileConfig = true;
   // If one of the type info card is being edited
@@ -134,6 +141,11 @@ export class DataMapStore {
   }
 
   @action
+  switchLock(lock: boolean) {
+    this.lock = lock;
+  }
+
+  @action
   switchIrregularProcess(flag: boolean) {
     this.isIrregularProcess = flag;
   }
@@ -222,31 +234,31 @@ export class DataMapStore {
   }
 
   @action
-  setVertexFieldMappingKey(type: 'new' | 'edit', key: string) {
+  setVertexFieldMappingKey(type: 'new' | 'edit', key: string, value?: string) {
     if (type === 'new') {
       this.newVertexType.field_mapping.unshift({
         column_name: key,
-        mapped_name: ''
+        mapped_name: isUndefined(value) ? '' : value
       });
     } else {
       this.editedVertexMap!.field_mapping.unshift({
         column_name: key,
-        mapped_name: ''
+        mapped_name: isUndefined(value) ? '' : value
       });
     }
   }
 
   @action
-  setEdgeFieldMappingKey(type: 'new' | 'edit', key: string) {
+  setEdgeFieldMappingKey(type: 'new' | 'edit', key: string, value?: string) {
     if (type === 'new') {
       this.newEdgeType.field_mapping.unshift({
         column_name: key,
-        mapped_name: ''
+        mapped_name: isUndefined(value) ? '' : value
       });
     } else {
       this.editedEdgeMap!.field_mapping.unshift({
         column_name: key,
-        mapped_name: ''
+        mapped_name: isUndefined(value) ? '' : value
       });
     }
   }
@@ -310,7 +322,11 @@ export class DataMapStore {
   }
 
   @action
-  toggleVertexSelectAllFieldMapping(type: 'new' | 'edit', selectAll: boolean) {
+  toggleVertexSelectAllFieldMapping(
+    type: 'new' | 'edit',
+    selectAll: boolean,
+    selectedVertex?: VertexType
+  ) {
     if (selectAll) {
       if (type === 'new') {
         const existedFieldColumnNames = this.newVertexType.field_mapping.map(
@@ -322,7 +338,12 @@ export class DataMapStore {
             !existedFieldColumnNames.includes(column_name) &&
             !this.newVertexType.id_fields.includes(column_name)
         ).map((columnName) => {
-          this.setVertexFieldMappingKey(type, columnName);
+          this.setVertexFieldMappingKey(
+            type,
+            columnName,
+            selectedVertex?.properties.find(({ name }) => name === columnName)
+              ?.name
+          );
         });
       } else {
         const existedFieldColumnNames = this.editedVertexMap!.field_mapping.map(
@@ -333,8 +354,13 @@ export class DataMapStore {
           (column_name) =>
             !existedFieldColumnNames.includes(column_name) &&
             !this.editedVertexMap!.id_fields.includes(column_name)
-        ).map((columnName) => {
-          this.setVertexFieldMappingKey(type, columnName);
+        ).forEach((columnName) => {
+          this.setVertexFieldMappingKey(
+            type,
+            columnName,
+            selectedVertex?.properties.find(({ name }) => name === columnName)
+              ?.name
+          );
         });
       }
     } else {
@@ -347,7 +373,11 @@ export class DataMapStore {
   }
 
   @action
-  toggleEdgeSelectAllFieldMapping(type: 'new' | 'edit', selectAll: boolean) {
+  toggleEdgeSelectAllFieldMapping(
+    type: 'new' | 'edit',
+    selectAll: boolean,
+    selectedEdge?: EdgeType
+  ) {
     if (selectAll) {
       if (type === 'new') {
         const existedFieldColumnNames = this.newEdgeType.field_mapping.map(
@@ -359,8 +389,13 @@ export class DataMapStore {
             !existedFieldColumnNames.includes(column_name) &&
             !this.newEdgeType.source_fields.includes(column_name) &&
             !this.newEdgeType.target_fields.includes(column_name)
-        ).map((columnName) => {
-          this.setEdgeFieldMappingKey(type, columnName);
+        ).forEach((columnName) => {
+          this.setEdgeFieldMappingKey(
+            type,
+            columnName,
+            selectedEdge?.properties.find(({ name }) => name === columnName)
+              ?.name
+          );
         });
       } else {
         const existedFieldColumnNames = this.editedEdgeMap!.field_mapping.map(
@@ -373,7 +408,12 @@ export class DataMapStore {
             !this.editedEdgeMap!.source_fields.includes(column_name) &&
             !this.editedEdgeMap!.target_fields.includes(column_name)
         ).map((columnName) => {
-          this.setEdgeFieldMappingKey(type, columnName);
+          this.setEdgeFieldMappingKey(
+            type,
+            columnName,
+            selectedEdge?.properties.find(({ name }) => name === columnName)
+              ?.name
+          );
         });
       }
     } else {
@@ -986,6 +1026,7 @@ export class DataMapStore {
     this.resetDataMaps();
 
     this.readOnly = false;
+    this.lock = false;
     this.isIrregularProcess = false;
     this.isExpandFileConfig = true;
     this.fileMapInfos = [];

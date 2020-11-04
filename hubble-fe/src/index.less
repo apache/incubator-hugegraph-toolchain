@@ -44,6 +44,36 @@ body {
   &.dark {
     background: #000;
   }
+
+  &::after {
+    position: absolute;
+    overflow: hidden;
+    left: -20000px;
+    // preload images which in hover state to solve blink issue
+    content:
+      url(./assets/imgs/ic_topback.svg)
+      url(./assets/imgs/ic_arrow_white.svg)
+      url(./assets/imgs/ic_shuju_normal.svg)
+      url(./assets/imgs/ic_shuju_pressed.svg)
+      url(./assets/imgs/ic_yuanshuju_normal.svg)
+      url(./assets/imgs/ic_yuanshuju_pressed.svg)
+      url(./assets/imgs/ic_cebianzhankai.svg)
+      url(./assets/imgs/ic_cebianshouqi.svg)
+      url(./assets/imgs/ic_daorushuju_normal.svg)
+      url(./assets/imgs/ic_daorushuju_pressed.svg)
+      url(./assets/imgs/ic_renwuguanli_normal.svg)
+      url(./assets/imgs/ic_renwuguanli_pressed.svg)
+      url(./assets/imgs/ic_tuzhanshi_normal.svg)
+      url(./assets/imgs/ic_tuzhanshi_hover.svg)
+      url(./assets/imgs/ic_tuzhanshi_pressed.svg)
+      url(./assets/imgs/ic_biaoge_normal.svg)
+      url(./assets/imgs/ic_biaoge_hover.svg)
+      url(./assets/imgs/ic_biaoge_pressed.svg)
+      url(./assets/imgs/ic_json_normal.svg) url(./assets/imgs/ic_json_hover.svg)
+      url(./assets/imgs/ic_json_pressed.svg)
+      url(./assets/imgs/ic_close_16.svg)
+      url(./assets/imgs/ic_refresh.svg);
+  }
 }
 
 code {
@@ -231,4 +261,37 @@ code {
 // Radio group style
 .new-fc-one-radio-checked .new-fc-one-radio-inner::after {
   background-color: #2b65ff;
+}
+
+.new-fc-one-dropdown.improve-zindex {
+  z-index: 9999;
+}
+
+// <Table /> th checkbox color
+.new-fc-one-checkbox-wrapper .new-fc-one-checkbox-indeterminate .new-fc-one-checkbox-inner {
+  background-color: #2b65ff;
+}
+
+.new-fc-one-table-thead > tr > th:first-of-type {
+  padding: 12px 16px 12px 20px;
+}
+
+// <Message /> could be a bug where container style is display: none
+.new-fc-one-message {
+  display: block !important;
+}
+
+// <Message /> proper line break
+.new-fc-one-message-container-content {
+  word-break: break-word;
+}
+
+// <Breadcrumb />
+.new-fc-one-breadcrumb-link {
+  color: #2b65ff;
+}
+
+// <Modal />
+.new-fc-one-modal-body {
+  overflow-y: auto !important;
 }

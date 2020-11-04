@@ -103,6 +103,27 @@ export type FavoriteQueryResponse = responseData<{
 }>;
 
 /* algorithm store  */
+export interface LoopDetectionParams {
+  source: string;
+  direction: string;
+  max_depth: string;
+  label: string;
+  source_in_ring: boolean;
+  max_degree: string;
+  limit: string;
+  capacity: string;
+}
+
+export interface FocusDetectionParams {
+  source: string;
+  target: string;
+  direction: string;
+  max_depth: string;
+  label: string;
+  max_degree: string;
+  limit: string;
+  capacity: string;
+}
 
 export interface ShortestPathAlgorithmParams {
   source: string;
@@ -114,4 +135,55 @@ export interface ShortestPathAlgorithmParams {
   skip_degree: string;
   capacity: string;
   limit: string;
+}
+
+// export type ShortestPathAllAlgorithmParams = ShortestPathAlgorithmParams;
+export interface ShortestPathAllAlgorithmParams {
+  source: string;
+  target: string;
+  direction: string;
+  max_depth: string;
+  label: string;
+  max_degree: string;
+  skip_degree: string;
+  capacity: string;
+}
+
+export type AllPathAlgorithmParams = ShortestPathAlgorithmParams;
+
+export interface ModelSimilarityParams {
+  method: string;
+  source: string;
+  vertexType: string;
+  vertexProperty: string[];
+  direction: string;
+  least_neighbor: string;
+  similarity: string;
+  label: string;
+  max_similar: string;
+  least_similar: string;
+  property_filter: string;
+  least_property_number: string;
+  max_degree: string;
+  skip_degree: string;
+  capacity: string;
+  limit: string;
+  return_common_connection: boolean;
+  return_complete_info: boolean;
+}
+
+export interface NeighborRankRule {
+  uuid: string;
+  direction: string;
+  label: string;
+  degree: string;
+  top: string;
+}
+
+export interface NeighborRankParams {
+  source: string;
+  alpha: string;
+  direction: string;
+  capacity: string;
+  steps: NeighborRankRule[];
 }

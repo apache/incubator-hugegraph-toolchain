@@ -221,6 +221,21 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
               if (
                 dataAnalyzeStore.requestStatus.expandGraphNode === 'success'
               ) {
+                // prompt if there's no extra node
+                if (
+                  size(
+                    dataAnalyzeStore.expandedGraphData.data.graph_view.vertices
+                  ) === 0
+                ) {
+                  Message.info({
+                    content: '不存在邻接点',
+                    size: 'medium',
+                    showCloseIcon: false
+                  });
+
+                  return;
+                }
+
                 addGraphNodes(
                   dataAnalyzeStore.expandedGraphData.data.graph_view.vertices,
                   dataAnalyzeStore.visDataSet?.nodes,

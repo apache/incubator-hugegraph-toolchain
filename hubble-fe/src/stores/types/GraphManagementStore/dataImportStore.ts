@@ -132,6 +132,7 @@ export interface FileMapInfo {
   total_lines: number;
   total_size: string;
   file_setting: FileConfig;
+  file_status: string;
   vertex_mappings: VertexMap[];
   edge_mappings: EdgeMap[];
   load_parameter: LoadParameter;

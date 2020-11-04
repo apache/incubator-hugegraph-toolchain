@@ -26,7 +26,7 @@ const failedReasonVariants = {
 const JobErrorLogs: React.FC = observer(() => {
   const importManagerStore = useContext(ImportManagerStoreContext);
   const [, params] = useRoute(
-    '/graph-management/:id/data-import/import-manager/:jobId/error-log'
+    '/graph-management/:id/data-import/job-error-log/:jobId'
   );
   const [selectedFileName, setSelectedFileName] = useState('');
 

@@ -16,6 +16,10 @@ export interface MetadataProperty {
   create_time?: string;
 }
 
+export interface NewMetadataProperty extends MetadataProperty {
+  _name?: string;
+}
+
 export interface MetadataPropertyListResponse {
   records: MetadataProperty[];
   total: number;

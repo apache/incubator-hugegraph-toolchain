@@ -6,7 +6,7 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
-import { isUndefined } from 'lodash-es';
+import { intersection, size, without } from 'lodash-es';
 import { motion } from 'framer-motion';
 import {
   Input,
@@ -22,6 +22,9 @@ import Highlighter from 'react-highlight-words';
 import { Tooltip, LoadingDataView } from '../../../common';
 import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
+
+import type { MetadataProperty } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
+
 import AddIcon from '../../../../assets/imgs/ic_add.svg';
 import CloseIcon from '../../../../assets/imgs/ic_close_16.svg';
 import WhiteCloseIcon from '../../../../assets/imgs/ic_close_white.svg';
@@ -85,12 +88,17 @@ const MetadataProperties: React.FC = observer(() => {
   const { metadataPropertyStore, graphViewStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('');
-  const [selectedRowKeys, mutateSelectedRowKeys] = useState<number[]>([]);
+  const [selectedRowKeys, mutateSelectedRowKeys] = useState<string[]>([]);
   const [isShowModal, switchShowModal] = useState(false);
 
   const isLoading =
     preLoading ||
     metadataPropertyStore.requestStatus.fetchMetadataPropertyList === 'pending';
+
+  const currentSelectedRowKeys = intersection(
+    selectedRowKeys,
+    metadataPropertyStore.metadataProperties.map(({ name }) => name)
+  );
 
   const printError = () => {
     Message.error({
@@ -123,8 +131,12 @@ const MetadataProperties: React.FC = observer(() => {
     metadataPropertyStore.fetchMetadataPropertyList();
   };
 
-  const handleSelectedTableRow = (selectedRowKeys: number[]) => {
-    mutateSelectedRowKeys(selectedRowKeys);
+  const handleSelectedTableRow = (
+    newSelectedRowKeys: string[],
+    selectedRows: MetadataProperty[]
+  ) => {
+    mutateSelectedRowKeys(newSelectedRowKeys);
+    // mutateSelectedRowKeys(selectedRows.map(({ name }) => name));
   };
 
   const handleSortClick = () => {
@@ -142,7 +154,7 @@ const MetadataProperties: React.FC = observer(() => {
   };
 
   const handlePageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    mutateSelectedRowKeys([]);
+    // mutateSelectedRowKeys([]);
     metadataPropertyStore.mutatePageNumber(Number(e.target.value));
     await metadataPropertyStore.fetchMetadataPropertyList();
 
@@ -156,10 +168,12 @@ const MetadataProperties: React.FC = observer(() => {
   const batchDeleteProperties = async () => {
     switchShowModal(false);
     // need to set a copy in store since local row key state would be cleared
-    metadataPropertyStore.mutateSelectedMetadataProperyIndex(selectedRowKeys);
-    mutateSelectedRowKeys([]);
-    await metadataPropertyStore.deleteMetadataProperty(selectedRowKeys);
-    metadataPropertyStore.mutateSelectedMetadataProperyIndex([]);
+    metadataPropertyStore.mutateSelectedMetadataProperyNames(
+      currentSelectedRowKeys
+    );
+    // mutateSelectedRowKeys([]);
+    await metadataPropertyStore.deleteMetadataProperty(currentSelectedRowKeys);
+    // metadataPropertyStore.mutateSelectedMetadataProperyNames([]);
 
     if (
       metadataPropertyStore.requestStatus.deleteMetadataProperty === 'success'
@@ -170,7 +184,26 @@ const MetadataProperties: React.FC = observer(() => {
         showCloseIcon: false
       });
 
-      metadataPropertyStore.fetchMetadataPropertyList();
+      mutateSelectedRowKeys(
+        without(selectedRowKeys, ...currentSelectedRowKeys)
+      );
+
+      await metadataPropertyStore.fetchMetadataPropertyList();
+
+      // fetch previous page data if it's empty
+      if (
+        metadataPropertyStore.requestStatus.fetchMetadataPropertyList ===
+          'success' &&
+        size(metadataPropertyStore.metadataProperties) === 0 &&
+        metadataPropertyStore.metadataPropertyPageConfig.pageNumber > 1
+      ) {
+        metadataPropertyStore.mutatePageNumber(
+          metadataPropertyStore.metadataPropertyPageConfig.pageNumber - 1
+        );
+
+        metadataPropertyStore.fetchMetadataPropertyList();
+      }
+
       return;
     }
 
@@ -204,11 +237,11 @@ const MetadataProperties: React.FC = observer(() => {
               errorMessage={
                 metadataPropertyStore.validateNewPropertyErrorMessage.name
               }
-              value={metadataPropertyStore.newMetadataProperty.name}
+              value={metadataPropertyStore.newMetadataProperty._name}
               onChange={(e: any) => {
                 metadataPropertyStore.mutateNewProperty({
                   ...metadataPropertyStore.newMetadataProperty,
-                  name: e.value
+                  _name: e.value
                 });
               }}
               originInputProps={{
@@ -362,10 +395,10 @@ const MetadataProperties: React.FC = observer(() => {
   ]);
 
   // these would be called before <MetadataConfigs /> rendered, pre-load some data here
-  useEffect(() => {
-    dataAnalyzeStore.fetchAllNodeStyle();
-    dataAnalyzeStore.fetchAllEdgeStyle();
-  }, [dataAnalyzeStore]);
+  // useEffect(() => {
+  //   dataAnalyzeStore.fetchAllNodeStyle();
+  //   dataAnalyzeStore.fetchAllEdgeStyle();
+  // }, [dataAnalyzeStore]);
 
   if (metadataPropertyStore.currentTabStatus === 'reuse') {
     return <ReuseProperties />;
@@ -389,7 +422,7 @@ const MetadataProperties: React.FC = observer(() => {
             onSearch={handleSearch}
             onClearClick={handleClearSearch}
             isShowDropDown={false}
-            disabled={isLoading || selectedRowKeys.length !== 0}
+            disabled={isLoading || size(currentSelectedRowKeys) !== 0}
           />
           <Button
             type="primary"
@@ -398,7 +431,7 @@ const MetadataProperties: React.FC = observer(() => {
             disabled={
               isLoading ||
               metadataPropertyStore.isCreateNewProperty ||
-              selectedRowKeys.length !== 0
+              size(currentSelectedRowKeys) !== 0
             }
             onClick={() => {
               metadataPropertyStore.switchIsCreateNewProperty(true);
@@ -418,13 +451,13 @@ const MetadataProperties: React.FC = observer(() => {
             复用
           </Button>
         </div>
-        {selectedRowKeys.length !== 0 && (
+        {size(currentSelectedRowKeys) !== 0 && (
           <div className="metadata-properties-selected-reveals">
-            <div>已选{selectedRowKeys.length}项</div>
+            <div>已选{size(currentSelectedRowKeys)}项</div>
             <Button
               onClick={() => {
                 switchShowModal(true);
-                metadataPropertyStore.checkIfUsing(selectedRowKeys);
+                metadataPropertyStore.checkIfUsing(currentSelectedRowKeys);
               }}
             >
               批量删除
@@ -440,6 +473,7 @@ const MetadataProperties: React.FC = observer(() => {
         )}
         <Table
           columns={columnConfigs}
+          rowKey={(rowData: MetadataProperty) => rowData.name}
           locale={{
             emptyText: (
               <LoadingDataView
@@ -538,33 +572,16 @@ const MetadataProperties: React.FC = observer(() => {
                   }
                 }
               ]}
-              dataSource={selectedRowKeys
-                .map((rowNumber: number) => {
-                  // data in selectedRowKeys[index] could be non-exist in circustance that response data length don't match
-                  // so pointer(index) could out of bounds
-                  if (
-                    !isUndefined(
-                      metadataPropertyStore.metadataProperties[rowNumber]
-                    )
-                  ) {
-                    const name =
-                      metadataPropertyStore.metadataProperties[rowNumber].name;
-
-                    return {
-                      name,
-                      status:
-                        metadataPropertyStore.metadataPropertyUsingStatus !==
-                          null &&
-                        metadataPropertyStore.metadataPropertyUsingStatus[name]
-                    };
-                  }
-
-                  return {
-                    name: '',
-                    status: false
-                  };
-                })
-                .filter(({ name }) => name !== '')}
+              dataSource={currentSelectedRowKeys.map((name) => {
+                return {
+                  name,
+                  status:
+                    metadataPropertyStore.metadataPropertyUsingStatus !==
+                      null &&
+                    // data may have some delay which leads to no matching propety value
+                    !!metadataPropertyStore.metadataPropertyUsingStatus[name]
+                };
+              })}
               pagination={false}
             />
           </div>
@@ -590,8 +607,8 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
       isDeleting ||
       (metadataPropertyStore.requestStatus.deleteMetadataProperty ===
         'pending' &&
-        metadataPropertyStore.selectedMetadataPropertyIndex.includes(
-          propertyIndex
+        metadataPropertyStore.selectedMetadataPropertyNames.includes(
+          propertyName
         ));
 
     const handleOutSideClick = useCallback(
@@ -726,7 +743,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
                         switchDeleting(true);
 
                         await metadataPropertyStore.deleteMetadataProperty([
-                          propertyIndex
+                          propertyName
                         ]);
 
                         switchDeleting(false);
@@ -781,7 +798,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
                 return;
               }
 
-              await metadataPropertyStore.checkIfUsing([propertyIndex]);
+              await metadataPropertyStore.checkIfUsing([propertyName]);
 
               if (
                 metadataPropertyStore.requestStatus.checkIfUsing === 'success'

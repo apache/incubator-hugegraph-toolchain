@@ -196,7 +196,7 @@ const TypeInfo: React.FC<TypeInfoProps> = observer(({ type, mapIndex }) => {
           </span>
         </div>
         <div className="import-tasks-data-type-info" ref={manipulationAreaRef}>
-          {!dataMapStore.readOnly && (
+          {!dataMapStore.readOnly && !dataMapStore.lock && (
             <>
               <Button
                 ref={editButtonRef}
@@ -266,9 +266,6 @@ const TypeInfo: React.FC<TypeInfoProps> = observer(({ type, mapIndex }) => {
                               ? dataMapStore.deleteVertexMap(mapIndex)
                               : dataMapStore.deleteEdgeMap(mapIndex);
                           }
-                          // type === 'vertex'
-                          //   ? dataMapStore.deleteVertexMap(mapIndex)
-                          //   : dataMapStore.deleteEdgeMap(mapIndex);
 
                           switchDeletePop(false);
                         }}

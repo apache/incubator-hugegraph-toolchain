@@ -36,13 +36,14 @@ export class DataImportRootStore {
 
   @observable currentId: number | null = null;
   @observable currentJobId: number | null = null;
-  @observable currentJobName: string = '';
-  @observable currentStep = 1;
+  @observable currentStatus = '';
+  @observable currentStep = NaN;
 
   @observable requestStatus = initRequestStatus();
   @observable errorInfo = initErrorInfo();
 
   @observable fileList: File[] = [];
+  @observable.ref fileHashes: Record<string, string> = {};
   @observable fileUploadTasks: FileUploadTask[] = [];
   @observable fileUploadQueue: FileUploadQueue[] = [];
   @observable fileRetryUploadList: string[] = [];
@@ -72,8 +73,8 @@ export class DataImportRootStore {
   }
 
   @action
-  setCurrentJobName(name: string) {
-    this.currentJobName = name;
+  setCurrentStatus(status: string) {
+    this.currentStatus = status;
   }
 
   @action
@@ -150,8 +151,8 @@ export class DataImportRootStore {
   dispose() {
     this.currentId = null;
     this.currentJobId = null;
-    this.currentJobName = '';
-    this.currentStep = 1;
+    this.currentStatus = '';
+    this.currentStep = NaN;
     this.vertexTypes = [];
     this.edgeTypes = [];
 
@@ -160,40 +161,38 @@ export class DataImportRootStore {
     this.errorInfo = initErrorInfo();
   }
 
-  uploadFiles = flow(function* uploadFiles(
+  fetchFilehashes = flow(function* fetchFilehashes(
     this: DataImportRootStore,
-    file: File
+    fileNames: string[]
   ) {
-    this.requestStatus.uploadFiles = 'pending';
-    const formData = new FormData();
-    formData.append('file', file);
+    this.requestStatus.fetchFilehashes = 'pending';
 
     try {
-      const result = yield axios.post<responseData<FileUploadResult>>(
-        `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/upload-file?total=1&index=1`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
+      const result = yield axios
+        .get<responseData<Record<string, string>>>(
+          `${baseUrl}/${this.currentId}/job-manager/${
+            this.currentJobId
+          }/upload-file/token?${fileNames
+            .map((name) => `names=${name}`)
+            .join('&')}`
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
-        this.errorInfo.uploadFiles.code = result.data.status;
+        this.errorInfo.fetchFilehashes.code = result.data.status;
         throw new Error(result.data.message);
       }
 
-      this.fileInfos.push(result.data.data);
-      this.requestStatus.uploadFiles = 'success';
+      this.fileHashes = { ...this.fileHashes, ...result.data.data };
+      this.requestStatus.fetchFilehashes = 'success';
     } catch (error) {
-      this.requestStatus.uploadFiles = 'failed';
-      this.errorInfo.uploadFiles.message = error.message;
+      this.requestStatus.fetchFilehashes = 'failed';
+      this.errorInfo.fetchFilehashes.message = error.message;
       console.error(error.message);
     }
   });
 
-  uploadFiles2 = flow(function* uploadFiles2(
+  uploadFiles = flow(function* uploadFiles(
     this: DataImportRootStore,
     {
       fileName,
@@ -213,17 +212,17 @@ export class DataImportRootStore {
     formData.append('file', fileChunkList.chunk);
 
     try {
-      const result: AxiosResponse<responseData<
-        FileUploadResult
-      >> = yield axios.post<responseData<FileUploadResult>>(
-        `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/upload-file?total=${fileChunkTotal}&index=${fileChunkList.chunkIndex}&name=${fileName}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
+      const result: AxiosResponse<responseData<FileUploadResult>> = yield axios
+        .post<responseData<FileUploadResult>>(
+          `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/upload-file?total=${fileChunkTotal}&index=${fileChunkList.chunkIndex}&name=${fileName}&token=${this.fileHashes[fileName]}`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
           }
-        }
-      );
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         this.errorInfo.uploadFiles.code = result.data.status;
@@ -242,18 +241,16 @@ export class DataImportRootStore {
 
   deleteFiles = flow(function* deleteFiles(
     this: DataImportRootStore,
-    fileNames: string[]
+    fileName: string
   ) {
     this.requestStatus.deleteFiles = 'pending';
 
     try {
-      const result = yield axios.delete(
-        `${baseUrl}/${this.currentId}/job-manager/${
-          this.currentJobId
-        }/upload-file?${fileNames
-          .map((fileName) => `names=${fileName}`)
-          .join('&')}`
-      );
+      const result = yield axios
+        .delete(
+          `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/upload-file?name=${fileName}&token=${this.fileHashes[fileName]}`
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         this.errorInfo.deleteFiles.code = result.data.status;
@@ -264,6 +261,56 @@ export class DataImportRootStore {
     } catch (error) {
       this.requestStatus.deleteFiles = 'failed';
       this.errorInfo.deleteFiles.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  sendUploadCompleteSignal = flow(function* sendUploadCompleteSignal(
+    this: DataImportRootStore
+  ) {
+    this.requestStatus.sendUploadCompleteSignal = 'pending';
+
+    try {
+      const result = yield axios
+        .put(
+          `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/upload-file/next-step`
+        )
+        .catch(checkIfLocalNetworkOffline);
+
+      if (result.data.status !== 200) {
+        this.errorInfo.sendUploadCompleteSignal.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      this.requestStatus.sendUploadCompleteSignal = 'success';
+    } catch (error) {
+      this.requestStatus.sendUploadCompleteSignal = 'failed';
+      this.errorInfo.sendUploadCompleteSignal.message = error.message;
+      console.error(error.message);
+    }
+  });
+
+  sendMappingCompleteSignal = flow(function* sendMappingCompleteSignal(
+    this: DataImportRootStore
+  ) {
+    this.requestStatus.sendMappingCompleteSignal = 'pending';
+
+    try {
+      const result = yield axios
+        .put(
+          `${baseUrl}/${this.currentId}/job-manager/${this.currentJobId}/file-mappings/next-step`
+        )
+        .catch(checkIfLocalNetworkOffline);
+
+      if (result.data.status !== 200) {
+        this.errorInfo.sendMappingCompleteSignal.code = result.data.status;
+        throw new Error(result.data.message);
+      }
+
+      this.requestStatus.sendMappingCompleteSignal = 'success';
+    } catch (error) {
+      this.requestStatus.sendMappingCompleteSignal = 'failed';
+      this.errorInfo.sendMappingCompleteSignal.message = error.message;
       console.error(error.message);
     }
   });

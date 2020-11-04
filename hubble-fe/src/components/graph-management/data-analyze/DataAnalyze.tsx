@@ -46,7 +46,7 @@ const DataAnalyze: React.FC = observer(() => {
       dataAnalyzeStore.fetchAllNodeStyle();
       dataAnalyzeStore.fetchAllEdgeStyle();
     }
-  }, [dataAnalyzeStore, match, (params as Params).id]);
+  }, [dataAnalyzeStore, match, params?.id]);
 
   return (
     <section className="data-analyze">
