@@ -260,7 +260,14 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Migrate graph")
-    public static class Migrate extends Backup {
+    public static class Migrate extends BackupRestore {
+
+        @Parameter(names = {"--split-size", "-s"}, arity = 1,
+                   description = "Split size of shard")
+        public long splitSize = 1024 * 1024L;
+
+        @ParametersDelegate
+        private HugeTypes types = new HugeTypes();
 
         @Parameter(names = {"--target-url"}, arity = 1,
                    description = "The target graph url to migrate")
@@ -292,6 +299,22 @@ public class SubCommands {
                    description = "Whether to remove the directory of " +
                                  "graph data after restored")
         public boolean clean = true;
+
+        public long splitSize() {
+            return this.splitSize;
+        }
+
+        public void splitSize(long splitSize) {
+            this.splitSize = splitSize;
+        }
+
+        public List<HugeType> types() {
+            return this.types.types;
+        }
+
+        public void types(List<HugeType> types) {
+            this.types.types = types;
+        }
 
         public String targetUrl() {
             return this.targetUrl;
