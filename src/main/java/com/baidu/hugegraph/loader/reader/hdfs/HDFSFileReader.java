@@ -139,7 +139,7 @@ public class HDFSFileReader extends FileReader {
         }
     }
 
-    protected static class HDFSFile implements Readable {
+    public static class HDFSFile implements Readable {
 
         private final FileSystem hdfs;
         private final Path path;
