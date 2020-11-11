@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.util;
 
+import java.util.Set;
+
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.baidu.hugegraph.common.Constant;
@@ -29,10 +31,15 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
+import com.google.common.collect.ImmutableSet;
 
 public final class HugeClientUtil {
 
     private static final String DEFAULT_PROTOCOL = "http";
+
+    private static final Set<String> ACCEPTABLE_EXCEPTIONS = ImmutableSet.of(
+            "Permission denied: execute Resource"
+    );
 
     public static HugeClient tryConnect(GraphConnection connection) {
         String graph = connection.getGraph();
@@ -105,11 +112,25 @@ public final class HugeClientUtil {
                 throw new ExternalException("graph-connection.graph.unexist", e,
                                             graph, host, port);
             }
-            throw e;
+            if (!isAcceptable(message)) {
+                throw e;
+            }
         } catch (Exception e) {
             client.close();
             throw e;
         }
         return client;
+    }
+
+    private static boolean isAcceptable(String message) {
+        if (message == null) {
+            return false;
+        }
+        for (String acceptableMessage : ACCEPTABLE_EXCEPTIONS) {
+            if (message.contains(acceptableMessage)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
