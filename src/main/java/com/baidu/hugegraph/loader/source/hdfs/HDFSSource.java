@@ -34,6 +34,10 @@ public class HDFSSource extends FileSource {
 
     @JsonProperty("core_site_path")
     private String coreSitePath;
+    @JsonProperty("hdfs_site_path")
+    private String hdfsSitePath;
+    @JsonProperty("kerberos_config")
+    private KerberosConfig kerberosConfig;
 
     @Override
     public SourceType type() {
@@ -44,15 +48,36 @@ public class HDFSSource extends FileSource {
     public void check() throws IllegalArgumentException {
         super.check();
         E.checkArgument(!StringUtils.isEmpty(this.coreSitePath),
-                        "The core_site_path can't be empty");
-        File file = FileUtils.getFile(Paths.get(this.coreSitePath).toString());
-        E.checkArgument(file.exists() && file.isFile(),
+                       "The core_site_path can't be empty");
+        File coreSiteFile = FileUtils.getFile(Paths.get(this.coreSitePath)
+                                                   .toString());
+        E.checkArgument(coreSiteFile.exists() && coreSiteFile.isFile(),
                         "The core site file '%s' is not an existing file",
-                        file);
+                        coreSiteFile);
+
+        E.checkArgument(!StringUtils.isEmpty(this.hdfsSitePath),
+                        "The hdfs_site_path can't be empty");
+        File hdfsSiteFile = FileUtils.getFile(Paths.get(this.hdfsSitePath)
+                                                   .toString());
+        E.checkArgument(hdfsSiteFile.exists() && hdfsSiteFile.isFile(),
+                        "The hdfs site file '%s' is not an existing file",
+                         hdfsSiteFile);
+
+        if(this.kerberosConfig != null) {
+            this.kerberosConfig.check();
+        }
     }
 
     public String coreSitePath() {
         return this.coreSitePath;
+    }
+
+    public String hdfsSitePath() {
+        return this.hdfsSitePath;
+    }
+
+    public KerberosConfig kerberosConfig() {
+        return this.kerberosConfig;
     }
 
     @Override

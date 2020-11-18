@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -44,6 +45,7 @@ import com.baidu.hugegraph.loader.reader.file.ParquetFileLineFetcher;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.hdfs.KerberosConfig;
 import com.baidu.hugegraph.util.Log;
 
 public class HDFSFileReader extends FileReader {
@@ -57,12 +59,24 @@ public class HDFSFileReader extends FileReader {
         super(source);
         this.conf = this.loadConfiguration();
         try {
+            enableKerberos(source);
             this.hdfs = FileSystem.get(this.conf);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
         Path path = new Path(source.path());
         checkExist(this.hdfs, path);
+    }
+
+    private void enableKerberos(HDFSSource source) throws IOException {
+        KerberosConfig kerberosConfig = this.source().kerberosConfig();
+        if (kerberosConfig != null && kerberosConfig.enable() ) {
+            System.setProperty("java.security.krb5.conf",
+                               kerberosConfig.krb5Conf());
+            UserGroupInformation.setConfiguration(this.conf);
+            UserGroupInformation.loginUserFromKeytab(
+                    kerberosConfig.principal(), kerberosConfig.keyTab());
+        }
     }
 
     public FileSystem fileSystem() {
@@ -124,6 +138,7 @@ public class HDFSFileReader extends FileReader {
     private Configuration loadConfiguration() {
         Configuration conf = new Configuration();
         conf.addResource(new Path(this.source().coreSitePath()));
+        conf.addResource(new Path(this.source().hdfsSitePath()));
         return conf;
     }
 
