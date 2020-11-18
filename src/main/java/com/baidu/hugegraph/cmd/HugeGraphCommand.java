@@ -65,9 +65,6 @@ public class HugeGraphCommand {
     private SubCommands.Timeout timeout = new SubCommands.Timeout();
 
     @ParametersDelegate
-    private SubCommands.Protocol protocol = new SubCommands.Protocol();
-
-    @ParametersDelegate
     private SubCommands.TrustStoreFile trustStoreFile =
                                        new SubCommands.TrustStoreFile();
 
@@ -126,14 +123,6 @@ public class HugeGraphCommand {
 
     public void timeout(int timeout) {
         this.timeout.timeout = timeout;
-    }
-
-    public String protocol() {
-        return this.protocol.protocol;
-    }
-
-    public void protocol(String protocol) {
-        this.protocol.protocol = protocol;
     }
 
     public String trustStoreFile () {
@@ -356,7 +345,6 @@ public class HugeGraphCommand {
                                                      this.username(),
                                                      this.password(),
                                                      this.timeout(),
-                                                     this.protocol(),
                                                      this.trustStoreFile(),
                                                      this.trustStorePassword());
             return clz.getConstructor(ToolClient.ConnectionInfo.class)
@@ -366,9 +354,11 @@ public class HugeGraphCommand {
                       "Construct manager failed for class '%s', please make " +
                       "sure global arguments set correctly: " +
                       "--url=%s,--graph=%s,--username=%s,--password=%s," +
-                      "--timeout=%s", clz.getSimpleName(), this.url(),
-                      this.graph(), this.username(), this.password(),
-                      this.timeout()), e);
+                      "--timeout=%s,--trust-store-file=%s," +
+                      "--trust-store-password=%s", clz.getSimpleName(),
+                      this.url(), this.graph(), this.username(),
+                      this.password(), this.timeout(),
+                      this.trustStoreFile(), this.trustStorePassword()), e);
         }
     }
 

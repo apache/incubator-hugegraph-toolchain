@@ -289,6 +289,15 @@ public class SubCommands {
                    description = "The timeout to connect target graph")
         public int targetTimeout;
 
+        @Parameter(names = {"--target-trust-store-file"}, arity = 1,
+                   description = "The target graph trust store file to migrate")
+        public String targetTrustStoreFile = "";
+
+        @Parameter(names = {"--target-trust-store-password"}, arity = 1,
+                   description = "The target graph trust store password " +
+                                 "to migrate")
+        public String targetTrustStorePassword = "";
+
         @Parameter(names = {"--graph-mode", "-m"}, arity = 1,
                    converter = GraphModeConverter.class,
                    description = "Mode used when migrating to target graph, " +

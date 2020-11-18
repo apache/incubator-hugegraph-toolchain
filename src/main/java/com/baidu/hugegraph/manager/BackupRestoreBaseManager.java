@@ -125,7 +125,8 @@ public class BackupRestoreBaseManager extends RetryManager {
                          boolean compress, String format,
                          String label, boolean allProperties,
                          List<String> properties) {
-        if (format.equals("json")) {
+        // format == null when called by dump
+        if (format == null || format.equals("json")) {
             return this.write(path, type, list, compress);
         }
 
