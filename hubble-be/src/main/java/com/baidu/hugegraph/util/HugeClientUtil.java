@@ -55,7 +55,7 @@ public final class HugeClientUtil {
         String trustStorePassword = connection.getTrustStorePassword();
 
         String url = UriComponentsBuilder.newInstance()
-                                         .scheme(DEFAULT_PROTOCOL)
+                                         .scheme(protocol)
                                          .host(host).port(port)
                                          .toUriString();
         if (username == null) {
