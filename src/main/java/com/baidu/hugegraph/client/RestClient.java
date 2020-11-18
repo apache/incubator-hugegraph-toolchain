@@ -50,10 +50,10 @@ public class RestClient extends AbstractRestClient {
     }
 
     public RestClient(String url, String username, String password, int timeout,
-                      int maxConns, int maxConnsPerRoute, String protocol,
+                      int maxConns, int maxConnsPerRoute,
                       String trustStoreFile, String trustStorePassword) {
         super(url, username, password, timeout * SECOND, maxConns,
-              maxConnsPerRoute, protocol, trustStoreFile, trustStorePassword);
+              maxConnsPerRoute, trustStoreFile, trustStorePassword);
     }
 
     public void apiVersion(Version version) {

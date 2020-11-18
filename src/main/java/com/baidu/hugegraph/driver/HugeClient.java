@@ -54,7 +54,6 @@ public class HugeClient implements Closeable {
                                          builder.timeout(),
                                          builder.maxConns(),
                                          builder.maxConnsPerRoute(),
-                                         builder.protocol(),
                                          builder.trustStoreFile(),
                                          builder.trustStorePassword());
         } catch (ProcessingException e) {

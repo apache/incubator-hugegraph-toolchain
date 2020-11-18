@@ -42,7 +42,6 @@ public class HugeClientHttpsTest extends BaseFuncTest {
     private static final int MAX_CONNS_PER_ROUTE = 10;
     private static final int MAX_CONNS = 10;
     private static final int IDLE_TIME = 30;
-    private static final String PROTOCOL = "https";
     private static final String TRUST_STORE_FILE = "src/test/resources/cacerts.jks";
     private static final String TRUST_STORE_PASSWORD = "changeit";
 
@@ -57,8 +56,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
     @Test
     public void testHttpsClientBuilderWithConnection() {
         client = HugeClient.builder(BASE_URL, GRAPH)
-                           .configSSL(PROTOCOL, TRUST_STORE_FILE,
-                                      TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -69,8 +67,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
         client = HugeClient.builder(BASE_URL, GRAPH)
                            .configTimeout(TIMEOUT)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
-                           .configSSL(PROTOCOL, TRUST_STORE_FILE,
-                                      TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -81,8 +78,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
         client = HugeClient.builder(BASE_URL, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
-                           .configSSL(PROTOCOL, TRUST_STORE_FILE,
-                                      TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -93,8 +89,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
         client = HugeClient.builder(BASE_URL, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
-                           .configSSL(PROTOCOL, TRUST_STORE_FILE,
-                                      TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -106,8 +101,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
-                           .configSSL(PROTOCOL, TRUST_STORE_FILE,
-                                      TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
                            .configIdleTime(IDLE_TIME)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
@@ -120,8 +114,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(0, 0)
-                           .configSSL(PROTOCOL, TRUST_STORE_FILE,
-                                      TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -133,7 +126,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
             HugeClient.builder(BASE_URL, GRAPH)
                       .configUrl(null)
                       .configGraph(null)
-                      .configSSL(null,"","")
+                      .configSSL("", "")
                       .build();
         }, e -> {
             Assert.assertContains("The url parameter can't be null",
@@ -146,7 +139,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             HugeClient.builder(BASE_URL, GRAPH)
                       .configGraph(null)
-                      .configSSL(null, "", "")
+                      .configSSL("", "")
                       .build();
         }, e -> {
             Assert.assertContains("The graph parameter can't be null",

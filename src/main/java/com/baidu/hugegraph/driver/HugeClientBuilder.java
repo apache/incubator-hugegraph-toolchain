@@ -27,7 +27,6 @@ public class HugeClientBuilder {
     private static final int DEFAULT_TIMEOUT = 20;
     private static final int DEFAULT_MAX_CONNS = 4 * CPUS;
     private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 2 * CPUS;
-    private static final String DEFAULT_PROTOCOL = "http";
     private static final int DEFAULT_IDLE_TIME = 30;
 
     private String url;
@@ -38,7 +37,6 @@ public class HugeClientBuilder {
     private int maxConns;
     private int maxConnsPerRoute;
     private int idleTime;
-    private String protocol;
     private String trustStoreFile;
     private String trustStorePassword;
 
@@ -56,7 +54,6 @@ public class HugeClientBuilder {
         this.timeout = DEFAULT_TIMEOUT;
         this.maxConns = DEFAULT_MAX_CONNS;
         this.maxConnsPerRoute = DEFAULT_MAX_CONNS_PER_ROUTE;
-        this.protocol = DEFAULT_PROTOCOL;
         this.trustStoreFile = "";
         this.trustStorePassword = "";
         this.idleTime = DEFAULT_IDLE_TIME;
@@ -95,12 +92,8 @@ public class HugeClientBuilder {
         return this;
     }
 
-    public HugeClientBuilder configSSL(String protocol, String trustStoreFile,
+    public HugeClientBuilder configSSL(String trustStoreFile,
                                        String trustStorePassword) {
-        if (protocol == null) {
-            protocol = DEFAULT_PROTOCOL;
-        }
-        this.protocol = protocol;
         this.trustStoreFile = trustStoreFile;
         this.trustStorePassword = trustStorePassword;
         return this;
@@ -162,10 +155,6 @@ public class HugeClientBuilder {
 
     public int idleTime() {
         return this.idleTime;
-    }
-
-    public String protocol() {
-        return this.protocol;
     }
 
     public String trustStoreFile() {
