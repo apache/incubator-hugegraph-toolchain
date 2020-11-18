@@ -19,6 +19,10 @@
 
 package com.baidu.hugegraph.loader.util;
 
+import java.nio.file.Paths;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.driver.HugeClientBuilder;
 import com.baidu.hugegraph.exception.ServerException;
@@ -26,6 +30,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.rest.ClientException;
+import com.baidu.hugegraph.util.E;
 
 public final class HugeClientHolder {
 
@@ -51,8 +56,13 @@ public final class HugeClientHolder {
                                 .configPool(options.maxConnections,
                                             options.maxConnectionsPerRoute);
             if (useHttps) {
-                builder.configSSL(options.protocol, options.trustStoreFile,
-                                  options.trustStorePassword);
+                String homePath = System.getProperty("loader.home.path");
+                E.checkArgument(StringUtils.isNotEmpty(homePath),
+                                "The system property 'loader.home.path' " +
+                                "can't be empty when enable https protocol");
+                String trustFile = Paths.get(homePath, options.trustStoreFile)
+                                        .toString();
+                builder.configSSL(trustFile, options.trustStorePassword);
             }
             return builder.build();
         } catch (IllegalStateException e) {

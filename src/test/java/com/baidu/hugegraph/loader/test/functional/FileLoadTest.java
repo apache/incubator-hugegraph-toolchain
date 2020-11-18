@@ -3015,8 +3015,7 @@ public class FileLoadTest extends LoadTest {
 
         try {
             HugeClient httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
-                                               .configSSL(PROTOCOL,
-                                                          TRUST_STORE_FILE,
+                                               .configSSL(TRUST_STORE_FILE,
                                                           TRUST_STORE_PASSWORD)
                                                .build();
             List<Vertex> vertices = httpsClient.graph().listVertices();
