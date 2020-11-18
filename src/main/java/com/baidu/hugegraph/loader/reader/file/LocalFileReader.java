@@ -94,7 +94,7 @@ public class LocalFileReader extends FileReader {
         }
     }
 
-    protected static class LocalFile implements Readable {
+    public static class LocalFile implements Readable {
 
         private final File file;
 
