@@ -67,8 +67,7 @@ public final class HugeClientUtil {
             client = HugeClient.builder(url, graph)
                                .configUser(username, password)
                                .configTimeout(timeout)
-                               .configSSL(protocol, trustStoreFile,
-                                          trustStorePassword)
+                               .configSSL(trustStoreFile, trustStorePassword)
                                .build();
         } catch (IllegalStateException e) {
             String message = e.getMessage();

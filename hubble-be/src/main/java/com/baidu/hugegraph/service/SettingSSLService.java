@@ -34,11 +34,13 @@ public class SettingSSLService {
     public void configSSL(HugeConfig config, GraphConnection connection) {
         String protocol = config.get(HubbleOptions.SERVER_PROTOCOL);
         if (protocol != null && protocol.equals("https")) {
-            String trustStoreFile = config.get(HubbleOptions.CLIENT_TRUSTSTORE_FILE);
-            String trustStorePassword = config.get(HubbleOptions.CLIENT_TRUSTSTORE_PASSWORD);
+            connection.setProtocol(protocol);
+            String trustStoreFile = config.get(
+                                    HubbleOptions.CLIENT_TRUSTSTORE_FILE);
+            String trustStorePass = config.get(
+                                    HubbleOptions.CLIENT_TRUSTSTORE_PASSWORD);
             connection.setTrustStoreFile(trustStoreFile);
-            connection.setTrustStorePassword(trustStorePassword);
-            connection.setProtocol("https");
+            connection.setTrustStorePassword(trustStorePass);
         }
     }
 }
