@@ -3045,6 +3045,9 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
+
+        String homePath = System.getProperty("loader.home.path");
+        System.setProperty("loader.home.path", "./");
         HugeGraphLoader.main(args);
 
         LoadOptions options = new LoadOptions();
@@ -3061,6 +3064,12 @@ public class FileLoadTest extends LoadTest {
         } catch (LoadException e) {
             Assert.assertTrue(e.getMessage().startsWith("The service"));
             Assert.assertTrue(e.getMessage().endsWith("is unavailable"));
+        } finally {
+            if (homePath != null) {
+                System.setProperty("loader.home.path", homePath);
+            } else {
+                System.clearProperty("loader.home.path");
+            }
         }
     }
 }

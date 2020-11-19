@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.fs.Path;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.FileItemProgress;
@@ -94,7 +95,7 @@ public class LocalFileReader extends FileReader {
         }
     }
 
-    public static class LocalFile implements Readable {
+    private static class LocalFile implements Readable {
 
         private final File file;
 
@@ -109,6 +110,11 @@ public class LocalFileReader extends FileReader {
         @Override
         public String name() {
             return this.file.getName();
+        }
+
+        @Override
+        public Path path() {
+            return new Path(this.file().getPath());
         }
 
         @Override

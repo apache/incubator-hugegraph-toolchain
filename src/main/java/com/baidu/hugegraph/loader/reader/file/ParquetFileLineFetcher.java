@@ -26,7 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.column.page.PageReadStore;
-import org.apache.parquet.example.data.Group;
 import org.apache.parquet.example.data.simple.SimpleGroup;
 import org.apache.parquet.example.data.simple.convert.GroupRecordConverter;
 import org.apache.parquet.hadoop.ParquetFileReader;
@@ -41,10 +40,8 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.Readable;
-import com.baidu.hugegraph.loader.reader.hdfs.HDFSFileReader.HDFSFile;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.loader.util.DataTypeUtil;
 import com.baidu.hugegraph.loader.util.ParquetUtil;
 import com.baidu.hugegraph.util.Log;
 
@@ -109,7 +106,7 @@ public class ParquetFileLineFetcher extends FileLineFetcher {
 
     @Override
     public void openReader(Readable readable) {
-        Path path = ((HDFSFile) readable).path();
+        Path path = readable.path();
         try {
             HadoopInputFile file = HadoopInputFile.fromPath(path, this.conf);
             this.reader = ParquetFileReader.open(file);

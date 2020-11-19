@@ -22,11 +22,15 @@ package com.baidu.hugegraph.loader.reader;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.hadoop.fs.Path;
+
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 
 public interface Readable {
 
     String name();
+
+    Path path();
 
     InputStream open() throws IOException;
 
