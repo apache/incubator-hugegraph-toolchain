@@ -161,11 +161,11 @@ public abstract class FileReader extends AbstractReader {
                 continue;
             }
 
-            LOG.debug("Ready to open '{}'", readable);
-            this.fetcher.openReader(readable);
+            LOG.debug("Ready to open '{}'", this.readable);
+            this.fetcher.openReader(this.readable);
             if (status == LoadStatus.LOADED_HALF) {
                 long offset = this.oldProgress.loadingOffset();
-                this.fetcher.skipOffset(readable, offset);
+                this.fetcher.skipOffset(this.readable, offset);
             }
             return true;
         }

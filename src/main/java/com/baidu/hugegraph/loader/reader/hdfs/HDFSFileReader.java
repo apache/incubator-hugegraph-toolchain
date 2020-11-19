@@ -154,7 +154,7 @@ public class HDFSFileReader extends FileReader {
         }
     }
 
-    public static class HDFSFile implements Readable {
+    private static class HDFSFile implements Readable {
 
         private final FileSystem hdfs;
         private final Path path;
@@ -168,13 +168,14 @@ public class HDFSFileReader extends FileReader {
             return this.hdfs;
         }
 
-        public Path path() {
-            return this.path;
-        }
-
         @Override
         public String name() {
             return this.path.getName();
+        }
+
+        @Override
+        public Path path() {
+            return this.path;
         }
 
         @Override

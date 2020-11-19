@@ -61,6 +61,6 @@ export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
 # Uncomment to enable debugging
 #JVM_OPTS="$JVM_OPTS -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=1414"
 
-exec "$JAVA" -Dname="HugeGraphLoader" -Dlog4j.configurationFile="$CONF/log4j2.xml" \
+exec ${JAVA} -Dname="HugeGraphLoader" -Dloader.home.path=${TOP} -Dlog4j.configurationFile=${CONF}/log4j2.xml \
 -Djava.library.path=${NATIVE} \
 ${JVM_OPTS} com.baidu.hugegraph.loader.HugeGraphLoader ${VARS}

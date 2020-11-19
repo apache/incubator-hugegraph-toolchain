@@ -36,34 +36,34 @@ public class ParquetUtil {
 
     public static Object convertObject(Group group, int fieldIndex) {
         Type fieldType = group.getType().getType(fieldIndex);
-        Object object;
         if (!fieldType.isPrimitive()) {
             throw new LoadException("Unsupported rich object type %s",
                                     fieldType);
         }
+        String fieldName = fieldType.getName();
         // Field is no value
-        if (group.getFieldRepetitionCount(fieldType.getName()) == 0) {
+        if (group.getFieldRepetitionCount(fieldName) == 0) {
             return null;
         }
+        Object object;
         switch (fieldType.asPrimitiveType().getPrimitiveTypeName()) {
             case INT32:
-                object = group.getInteger(fieldType.getName(), 0);
+                object = group.getInteger(fieldName, 0);
                 break;
             case INT64:
-                object = group.getLong(fieldType.getName(), 0);
+                object = group.getLong(fieldName, 0);
                 break;
             case INT96:
-                object = dateFromInt96(
-                         group.getInt96(fieldType.getName(), 0));
+                object = dateFromInt96(group.getInt96(fieldName, 0));
                 break;
             case FLOAT:
-                object = group.getFloat(fieldType.getName(), 0);
+                object = group.getFloat(fieldName, 0);
                 break;
             case DOUBLE:
-                object = group.getDouble(fieldType.getName(), 0);
+                object = group.getDouble(fieldName, 0);
                 break;
             case BOOLEAN:
-                object = group.getBoolean(fieldType.getName(), 0);
+                object = group.getBoolean(fieldName, 0);
                 break;
             default:
                 object = group.getValueToString(fieldIndex, 0);
@@ -99,7 +99,6 @@ public class ParquetUtil {
                                                      julianDay)
                                                .atTime(LocalTime.NOON)
                                                .plusNanos(nanos);
-
         return Date.from(timestamp.atZone(ZoneId.systemDefault()).toInstant());
     }
 }

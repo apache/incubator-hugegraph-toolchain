@@ -101,10 +101,10 @@ public class OrcFileLineFetcher extends FileLineFetcher {
 
     @Override
     public void openReader(Readable readable) {
-        Path path = new Path(this.source().path());
+        Path path = readable.path();
         try {
-            this.reader = OrcFile.createReader(path, OrcFile.readerOptions(
-                                                             this.conf));
+            OrcFile.ReaderOptions options = OrcFile.readerOptions(this.conf);
+            this.reader = OrcFile.createReader(path, options);
             this.recordReader = this.reader.rows();
             this.inspector = (StructObjectInspector) this.reader
                                                          .getObjectInspector();
