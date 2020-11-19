@@ -65,7 +65,7 @@ public class GraphConnection implements Identifiable, Mergeable {
     @JsonProperty("port")
     private Integer port;
 
-    @MergeProperty
+    @MergeProperty(useNew = false)
     @JsonProperty("timeout")
     private Integer timeout;
 
@@ -74,14 +74,14 @@ public class GraphConnection implements Identifiable, Mergeable {
     private String username;
 
     @MergeProperty
-    @JsonProperty(value = "password", access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty("password")
     private String password;
 
-    @MergeProperty
+    @MergeProperty(useNew = false)
     @JsonProperty("enabled")
     private Boolean enabled;
 
-    @MergeProperty
+    @MergeProperty(useNew = false)
     @JsonProperty(value = "disable_reason")
     private String disableReason;
 

@@ -83,7 +83,6 @@ public class LoadTaskService {
     private VertexLabelService vlService;
     @Autowired
     private EdgeLabelService elService;
-
     @Autowired
     private LoadTaskExecutor taskExecutor;
     @Autowired
@@ -163,7 +162,7 @@ public class LoadTaskService {
     }
 
     public LoadTask start(GraphConnection connection, FileMapping fileMapping) {
-        connection = this.sslService.configSSL(this.config, connection);
+        this.sslService.configSSL(this.config, connection);
         LoadTask task = this.buildLoadTask(connection, fileMapping);
         this.save(task);
         // executed in other threads

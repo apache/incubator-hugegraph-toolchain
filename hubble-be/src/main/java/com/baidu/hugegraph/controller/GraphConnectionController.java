@@ -115,7 +115,7 @@ public class GraphConnectionController extends BaseController {
             throw new ExternalException("graph-connection.not-exist.id", id);
         }
         if (!this.poolService.containsKey(id)) {
-            entity = sslService.configSSL(this.config, entity);
+            this.sslService.configSSL(this.config, entity);
             HugeClient client = HugeClientUtil.tryConnect(entity);
             this.poolService.put(entity, client);
         }
@@ -136,9 +136,9 @@ public class GraphConnectionController extends BaseController {
         // Make sure the new entity doesn't conflict with exists
         this.checkEntityUnique(newEntity, true);
 
-        newEntity.setTimeout(config.get(HubbleOptions.CLIENT_REQUEST_TIMEOUT));
+        newEntity.setTimeout(this.config.get(HubbleOptions.CLIENT_REQUEST_TIMEOUT));
         // Do connect test, failure will throw an exception
-        newEntity = sslService.configSSL(this.config, newEntity);
+        this.sslService.configSSL(this.config, newEntity);
         HugeClient client = HugeClientUtil.tryConnect(newEntity);
         newEntity.setCreateTime(HubbleUtil.nowDate());
 
@@ -168,7 +168,7 @@ public class GraphConnectionController extends BaseController {
         GraphConnection entity = this.mergeEntity(oldEntity, newEntity);
         // Make sure the updated connection doesn't conflict with exists
         this.checkEntityUnique(entity, false);
-        entity = sslService.configSSL(this.config, entity);
+        this.sslService.configSSL(this.config, entity);
         HugeClient client = HugeClientUtil.tryConnect(entity);
         // Check current graph's data size
         LicenseService.VerifyResult verifyResult;

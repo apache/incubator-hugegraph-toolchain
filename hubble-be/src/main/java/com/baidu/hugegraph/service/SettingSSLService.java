@@ -31,7 +31,7 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class SettingSSLService {
 
-    public GraphConnection configSSL(HugeConfig config, GraphConnection connection) {
+    public void configSSL(HugeConfig config, GraphConnection connection) {
         String protocol = config.get(HubbleOptions.SERVER_PROTOCOL);
         if (protocol != null && protocol.equals("https")) {
             String trustStoreFile = config.get(HubbleOptions.CLIENT_TRUSTSTORE_FILE);
@@ -40,6 +40,5 @@ public class SettingSSLService {
             connection.setTrustStorePassword(trustStorePassword);
             connection.setProtocol("https");
         }
-        return connection;
     }
 }

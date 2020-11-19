@@ -83,6 +83,11 @@ public final class HugeClientUtil {
                 throw new ExternalException(
                           "graph-connection.username-or-password.incorrect", e);
             }
+            if (message != null && message.contains("Invalid syntax for " +
+                                                    "username and password")) {
+                throw new ExternalException(
+                          "graph-connection.missing-username-password", e);
+            }
             throw e;
         } catch (ClientException e) {
             Throwable cause = e.getCause();
@@ -95,6 +100,9 @@ public final class HugeClientUtil {
             } else if (message.contains("java.net.UnknownHostException") ||
                        message.contains("Host name may not be null")) {
                 throw new ExternalException("service.unknown-host", e, host);
+            } else if (message.contains("<!doctype html>")) {
+                throw new ExternalException("service.suspected-web",
+                                            e, host, port);
             }
             throw e;
         }
