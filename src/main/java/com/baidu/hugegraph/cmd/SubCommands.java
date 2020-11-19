@@ -113,8 +113,8 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Backup graph schema/data. If directory " +
-                                     "is on HDFS, use -D to set HDFS params " +
-                                     "if needed. For exmaple: " +
+                                     "is on HDFS, use -D to set HDFS params. " +
+                                     "For exmaple: " +
                                      "-Dfs.default.name=hdfs://localhost:9000")
     public static class Backup extends BackupRestore {
 
@@ -270,31 +270,33 @@ public class SubCommands {
         private HugeTypes types = new HugeTypes();
 
         @Parameter(names = {"--target-url"}, arity = 1,
-                   description = "The target graph url to migrate")
+                   description = "The url of target graph to migrate")
         public String targetUrl = "http://127.0.0.1:8081";
 
         @Parameter(names = {"--target-graph"}, arity = 1,
-                   description = "The target graph to migrate")
+                   description = "The name of target graph to migrate")
         public String targetGraph = "hugegraph";
 
         @Parameter(names = {"--target-username"}, arity = 1,
-                   description = "The username of target graph")
+                   description = "The username of target graph to migrate")
         public String targetUsername;
 
         @Parameter(names = {"--target-password"}, arity = 1,
-                   description = "The password of target graph")
+                   description = "The password of target graph to migrate")
         public String targetPassword;
 
         @Parameter(names = {"--target-timeout"}, arity = 1,
-                   description = "The timeout to connect target graph")
+                   description = "The timeout to connect target graph to " +
+                                 "migrate")
         public int targetTimeout;
 
         @Parameter(names = {"--target-trust-store-file"}, arity = 1,
-                   description = "The target graph trust store file to migrate")
+                   description = "The trust store file of target graph to " +
+                                 "migrate")
         public String targetTrustStoreFile = "";
 
         @Parameter(names = {"--target-trust-store-password"}, arity = 1,
-                   description = "The target graph trust store password " +
+                   description = "The trust store password of target graph " +
                                  "to migrate")
         public String targetTrustStorePassword = "";
 
@@ -343,6 +345,14 @@ public class SubCommands {
 
         public int targetTimeout() {
             return this.targetTimeout;
+        }
+
+        public String targetTrustStoreFile() {
+            return this.targetTrustStoreFile;
+        }
+
+        public String targetTrustStorePassword() {
+            return this.targetTrustStorePassword;
         }
 
         public GraphMode mode() {
@@ -628,7 +638,7 @@ public class SubCommands {
     public static class Username {
 
         @Parameter(names = {"--user"}, arity = 1,
-                   description = "User Name")
+                   description = "Name of user")
         public String username;
     }
 

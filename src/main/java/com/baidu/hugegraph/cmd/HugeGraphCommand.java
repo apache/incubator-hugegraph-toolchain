@@ -209,6 +209,8 @@ public class HugeGraphCommand {
                 this.username(migrate.targetUsername());
                 this.password(migrate.targetPassword());
                 this.timeout(migrate.targetTimeout());
+                this.trustStoreFile(migrate.targetTrustStoreFile());
+                this.trustStorePassword(migrate.targetTrustStorePassword());
                 graphsManager = manager(GraphsManager.class);
                 GraphMode origin = graphsManager.mode(migrate.targetGraph());
                 // Set target graph mode
@@ -237,7 +239,6 @@ public class HugeGraphCommand {
 
                 dumpManager.init(dump);
                 dumpManager.dumpFormatter(dump.formatter());
-                dumpManager.retry(dump.retry());
                 dumpManager.dump();
                 break;
             case "graph-list":

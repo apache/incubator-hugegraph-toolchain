@@ -191,7 +191,7 @@ public class BackupRestoreBaseManager extends RetryManager {
         }
     }
 
-    private OutputStream outputStream(String file, boolean compress) {
+    protected OutputStream outputStream(String file, boolean compress) {
         OutputStream os = this.outputStreams.get(file);
         if (os != null) {
             return os;

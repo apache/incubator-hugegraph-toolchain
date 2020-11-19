@@ -22,6 +22,7 @@ package com.baidu.hugegraph.manager;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
@@ -72,8 +73,6 @@ public class DumpGraphManager extends BackupManager {
     }
 
     public void dump() {
-        String outputDir = this.directory.directory();
-        LocalDirectory.ensureDirectoryExist(outputDir);
         this.startTimer();
 
         // Fetch data to JsonGraph
@@ -82,17 +81,16 @@ public class DumpGraphManager extends BackupManager {
 
         // Dump to file
         for (String table : this.graph.tables()) {
-            File file = Paths.get(outputDir, table).toFile();
-            this.submit(() -> dump(file, this.graph.table(table).values()));
+            this.submit(() -> dump(table, this.graph.table(table).values()));
         }
 
         this.shutdown(this.type());
         this.printSummary("dump graph");
     }
 
-    private void dump(File file, Collection<JsonVertex> vertices) {
-        try (FileOutputStream fos = new FileOutputStream(file);
-             BufferedOutputStream bos = new BufferedOutputStream(fos);) {
+    private void dump(String file, Collection<JsonVertex> vertices) {
+        try (OutputStream os = this.outputStream(file, false);
+             BufferedOutputStream bos = new BufferedOutputStream(os)) {
             for (JsonVertex vertex : vertices) {
                 String content = this.dumpFormatter.dump(vertex);
                 bos.write(content.getBytes(API.CHARSET));
