@@ -56,13 +56,21 @@ public final class HugeClientHolder {
                                 .configPool(options.maxConnections,
                                             options.maxConnectionsPerRoute);
             if (useHttps) {
-                String homePath = System.getProperty("loader.home.path");
-                E.checkArgument(StringUtils.isNotEmpty(homePath),
-                                "The system property 'loader.home.path' " +
-                                "can't be empty when enable https protocol");
-                String trustFile = Paths.get(homePath, options.trustStoreFile)
-                                        .toString();
-                builder.configSSL(trustFile, options.trustStorePassword);
+                String trustFile;
+                if (options.trustStoreFile == null) {
+                    String homePath = System.getProperty("loader.home.path");
+                    E.checkArgument(StringUtils.isNotEmpty(homePath),
+                                    "The system property 'loader.home.path' " +
+                                    "can't be empty when enable https protocol");
+                    trustFile = Paths.get(homePath, Constants.TRUST_STORE_FILE)
+                                     .toString();
+                } else {
+                    trustFile = options.trustStoreFile;
+                }
+                String password = options.trustStorePassword == null ?
+                                  Constants.TRUST_STORE_PASSWORD :
+                                  options.trustStorePassword;
+                builder.configSSL(trustFile, password);
             }
             return builder.build();
         } catch (IllegalStateException e) {

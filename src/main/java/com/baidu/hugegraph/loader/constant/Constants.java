@@ -33,6 +33,8 @@ public final class Constants {
     public static final String HTTPS_PREFIX = "https://";
     public static final String JSON_SUFFIX = ".json";
     public static final String GROOVY_SCHEMA = "schema";
+    public static final String TRUST_STORE_FILE = "conf/hugegraph.truststore";
+    public static final String TRUST_STORE_PASSWORD = "hugegraph";
 
     public static final String FIELD_VERSION = "version";
     public static final String V1_STRUCT_VERSION = "1.0";
