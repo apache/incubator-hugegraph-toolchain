@@ -80,12 +80,12 @@ public final class LoadOptions {
     @Parameter(names = {"--trust-store-file"}, arity = 1,
                description = "The path of client truststore file used when https " +
                              "protocol is enabled")
-    public String trustStoreFile = "conf/hugegraph.truststore";
+    public String trustStoreFile = null;
 
     @Parameter(names = {"--trust-store-password"}, arity = 1,
                description = "The password of the client truststore file used " +
                              "when https protocol is enabled")
-    public String trustStorePassword = "hugegraph";
+    public String trustStorePassword = null;
 
     @Parameter(names = {"--token"}, arity = 1,
                description = "The token of graph for authentication")
