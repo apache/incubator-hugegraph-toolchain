@@ -35,8 +35,6 @@ else
     echo "Warning: please set JAVA_HOME variable, otherwise some libraries related to https may be missing"
 fi
 
-cd $TOP
-
 if [ "$1" == "deploy" ]; then
     shift
     bash $BIN/deploy.sh $@
@@ -129,5 +127,5 @@ if [ "$JAVA_OPTIONS" = "" ] ; then
     JAVA_OPTIONS="-Xms${MIN_MEM}m -Xmx${XMX}m"
 fi
 
-exec $JAVA $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
+exec $JAVA -Dtools.home.path=${TOP} $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
 com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG "$@"

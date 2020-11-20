@@ -694,20 +694,12 @@ public class SubCommands {
         public List<HugeType> types = HugeTypeListConverter.ALL_TYPES;
     }
 
-    public static class ExistDirectory {
-
-        @Parameter(names = {"--directory", "-d"}, arity = 1,
-                   validateWith = {DirectoryValidator.class},
-                   description = "Directory of graph schema/data")
-        public String directory = "./";
-    }
-
     public static class InstallPath {
 
         @Parameter(names = {"-p"}, arity = 1, required = true,
                    description = "Install path of HugeGraph-Server and " +
                                  "HugeGraph-Studio")
-        public String directory = null;
+        public String directory;
     }
 
     public static class DownloadURL {

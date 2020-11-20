@@ -19,6 +19,10 @@
 
 package com.baidu.hugegraph.base;
 
+import java.nio.file.Paths;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
@@ -45,7 +49,8 @@ public class ToolClient {
         String trustStoreFile, trustStorePassword;
         if (info.url.startsWith("https")) {
             if (info.trustStoreFile == null || info.trustStoreFile.isEmpty()) {
-                trustStoreFile = DEFAULT_TRUST_STORE_FILE;
+                trustStoreFile = Paths.get(homePath(), DEFAULT_TRUST_STORE_FILE)
+                                      .toString();
                 trustStorePassword = DEFAULT_TRUST_STORE_PASSWORD;
             } else {
                 E.checkArgumentNotNull(info.trustStorePassword,
@@ -98,6 +103,14 @@ public class ToolClient {
 
     public ObjectMapper mapper() {
         return this.mapper;
+    }
+
+    public static String homePath() {
+        String homePath = System.getProperty("tools.home.path");
+        E.checkArgument(StringUtils.isNotEmpty(homePath),
+                        "The system property 'tools.home.path' " +
+                        "can't be empty when enable https protocol");
+        return homePath;
     }
 
     public static class ConnectionInfo {
