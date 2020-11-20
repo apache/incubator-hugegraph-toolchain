@@ -277,7 +277,7 @@ public class SubCommands {
                    description = "The name of target graph to migrate")
         public String targetGraph = "hugegraph";
 
-        @Parameter(names = {"--target-username"}, arity = 1,
+        @Parameter(names = {"--target-user"}, arity = 1,
                    description = "The username of target graph to migrate")
         public String targetUsername;
 
@@ -293,12 +293,12 @@ public class SubCommands {
         @Parameter(names = {"--target-trust-store-file"}, arity = 1,
                    description = "The trust store file of target graph to " +
                                  "migrate")
-        public String targetTrustStoreFile = "";
+        public String targetTrustStoreFile;
 
         @Parameter(names = {"--target-trust-store-password"}, arity = 1,
                    description = "The trust store password of target graph " +
                                  "to migrate")
-        public String targetTrustStorePassword = "";
+        public String targetTrustStorePassword;
 
         @Parameter(names = {"--graph-mode", "-m"}, arity = 1,
                    converter = GraphModeConverter.class,
@@ -306,10 +306,10 @@ public class SubCommands {
                                  "include: [RESTORING, MERGING]")
         public GraphMode mode = GraphMode.RESTORING;
 
-        @Parameter(names = {"--clean"},
-                   description = "Whether to remove the directory of " +
+        @Parameter(names = {"--keep-local-data"},
+                   description = "Whether to keep the local directory of " +
                                  "graph data after restored")
-        public boolean clean = true;
+        public boolean keepData = false;
 
         public long splitSize() {
             return this.splitSize;
@@ -359,8 +359,8 @@ public class SubCommands {
             return this.mode;
         }
 
-        public boolean clean() {
-            return this.clean;
+        public boolean keepData() {
+            return this.keepData;
         }
     }
 
@@ -670,7 +670,7 @@ public class SubCommands {
         @Parameter(names = {"--trust-store-file"}, arity = 1,
                    description = "The path of client truststore file used when https " +
                                  "protocol is enabled")
-        public String trustStoreFile = "";
+        public String trustStoreFile;
     }
 
     public static class TrustStorePassword {
@@ -678,7 +678,7 @@ public class SubCommands {
         @Parameter(names = {"--trust-store-password"}, arity = 1,
                    description = "The password of the client truststore file " +
                                  "used when the https protocol is enabled")
-        public String trustStorePassword = "";
+        public String trustStorePassword;
     }
 
     public static class HugeTypes {

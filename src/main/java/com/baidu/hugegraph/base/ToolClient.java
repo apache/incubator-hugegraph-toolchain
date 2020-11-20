@@ -56,8 +56,7 @@ public class ToolClient {
             }
         } else {
             assert info.url.startsWith("http");
-            E.checkArgument(info.trustStoreFile == null ||
-                            info.trustStoreFile.isEmpty(),
+            E.checkArgument(info.trustStoreFile == null,
                             "Can't set --trust-store-file when use http");
             E.checkArgument(info.trustStorePassword == null,
                             "Can't set --trust-store-password when use http");
