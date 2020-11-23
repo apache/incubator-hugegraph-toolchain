@@ -42,8 +42,8 @@ public class HugeClientHttpsTest extends BaseFuncTest {
     private static final int MAX_CONNS_PER_ROUTE = 10;
     private static final int MAX_CONNS = 10;
     private static final int IDLE_TIME = 30;
-    private static final String TRUST_STORE_FILE = "src/test/resources/cacerts.jks";
-    private static final String TRUST_STORE_PASSWORD = "changeit";
+    private static final String TRUST_STORE_FILE = "src/test/resources/hugegraph.truststore";
+    private static final String TRUST_STORE_PASSWORD = "hugegraph";
 
     private static HugeClient client;
 
