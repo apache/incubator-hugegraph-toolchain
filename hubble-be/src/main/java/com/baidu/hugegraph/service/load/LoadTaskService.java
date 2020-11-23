@@ -353,6 +353,7 @@ public class LoadTaskService {
         options.host = connection.getHost();
         options.port = connection.getPort();
         options.graph = connection.getGraph();
+        options.username = connection.getUsername();
         options.token = connection.getPassword();
         options.protocol = connection.getProtocol();
         options.trustStoreFile = connection.getTrustStoreFile();
@@ -429,7 +430,7 @@ public class LoadTaskService {
                          "When the ID strategy is CUSTOMIZED, you must " +
                          "select a column in the file as the id");
                 vMapping = new com.baidu.hugegraph.loader.mapping
-                                  .VertexMapping(idFields.get(0), true);
+                                  .VertexMapping(idFields.get(0), false);
             } else {
                 assert vl.getIdStrategy().isPrimaryKey();
                 List<String> primaryKeys = vl.getPrimaryKeys();
@@ -439,7 +440,7 @@ public class LoadTaskService {
                          "select at least one column in the file as the " +
                          "primary keys");
                 vMapping = new com.baidu.hugegraph.loader.mapping
-                                  .VertexMapping(null, true);
+                                  .VertexMapping(null, false);
                 for (int i = 0; i < primaryKeys.size(); i++) {
                     fieldMappings.put(idFields.get(i), primaryKeys.get(i));
                 }
@@ -504,7 +505,7 @@ public class LoadTaskService {
 
             com.baidu.hugegraph.loader.mapping.EdgeMapping eMapping;
             eMapping = new com.baidu.hugegraph.loader.mapping.EdgeMapping(
-                       sourceFields, true, targetFields, true);
+                       sourceFields, false, targetFields, false);
             // set label
             eMapping.label(mapping.getLabel());
             // set field_mapping

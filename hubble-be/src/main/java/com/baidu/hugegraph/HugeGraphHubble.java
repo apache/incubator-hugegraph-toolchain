@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph;
 
+import org.apache.commons.lang3.StringUtils;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,13 +27,26 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import com.baidu.hugegraph.util.Ex;
+
 @SpringBootApplication
 @EnableScheduling
 @MapperScan("com.baidu.hugegraph.mapper")
 public class HugeGraphHubble extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
+        initEnv();
         SpringApplication.run(HugeGraphHubble.class, args);
+    }
+
+    public static void initEnv() {
+        String hubbleHomePath = System.getProperty("hubble.home.path");
+        Ex.check(StringUtils.isNotEmpty(hubbleHomePath),
+                 "The system property 'hubble.home.path' must be set");
+        String loaderHomePath = System.getProperty("loader.home.path");
+        if (StringUtils.isEmpty(loaderHomePath)) {
+            System.setProperty("loader.home.path", hubbleHomePath);
+        }
     }
 
     @Override
