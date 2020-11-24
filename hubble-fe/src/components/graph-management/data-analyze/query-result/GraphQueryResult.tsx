@@ -253,6 +253,14 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                   dataAnalyzeStore.edgeWritingMappings
                 );
               }
+
+              if (dataAnalyzeStore.requestStatus.expandGraphNode === 'failed') {
+                Message.error({
+                  content: dataAnalyzeStore.errorInfo.expandGraphNode.message,
+                  size: 'medium',
+                  showCloseIcon: false
+                });
+              }
             } else {
               Message.error({
                 content: dataAnalyzeStore.errorInfo.expandGraphNode.message,
