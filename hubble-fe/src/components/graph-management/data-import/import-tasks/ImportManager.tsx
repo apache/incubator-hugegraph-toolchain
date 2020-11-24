@@ -38,7 +38,6 @@ const ImportManager: React.FC = observer(() => {
 
     graphManagementStore.fetchIdList();
     importManagerStore.setCurrentId(Number(params!.id));
-    importManagerStore.fetchImportJobList();
 
     return () => {
       importManagerStore.dispose();

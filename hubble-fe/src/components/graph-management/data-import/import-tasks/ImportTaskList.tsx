@@ -226,13 +226,14 @@ const ImportTaskList: React.FC = observer(() => {
   ];
 
   useEffect(() => {
-    // if (importManagerStore.selectedJob === null) {
-    setTimeout(() => {
-      switchPreLoading(false);
-    }, 800);
-    // }
-    // }, [importManagerStore.selectedJob]);
-  }, []);
+    if (importManagerStore.currentId !== null) {
+      setTimeout(() => {
+        switchPreLoading(false);
+      }, 800);
+
+      importManagerStore.fetchImportJobList();
+    }
+  }, [importManagerStore.currentId]);
 
   return (
     <div className="import-manager-content-wrapper">
