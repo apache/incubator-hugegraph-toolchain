@@ -430,7 +430,7 @@ public class LoadTaskService {
                          "When the ID strategy is CUSTOMIZED, you must " +
                          "select a column in the file as the id");
                 vMapping = new com.baidu.hugegraph.loader.mapping
-                                  .VertexMapping(idFields.get(0), false);
+                                  .VertexMapping(idFields.get(0), true);
             } else {
                 assert vl.getIdStrategy().isPrimaryKey();
                 List<String> primaryKeys = vl.getPrimaryKeys();
@@ -439,8 +439,13 @@ public class LoadTaskService {
                          "When the ID strategy is PRIMARY_KEY, you must " +
                          "select at least one column in the file as the " +
                          "primary keys");
+                /*
+                 * The id column can be unfold into multi sub-ids only
+                 * when primarykeys contains just one field
+                 */
+                boolean unfold = idFields.size() == 1;
                 vMapping = new com.baidu.hugegraph.loader.mapping
-                                  .VertexMapping(null, false);
+                                  .VertexMapping(null, unfold);
                 for (int i = 0; i < primaryKeys.size(); i++) {
                     fieldMappings.put(idFields.get(i), primaryKeys.get(i));
                 }
@@ -480,6 +485,11 @@ public class LoadTaskService {
             VertexLabelEntity tvl = this.vlService.get(el.getTargetLabel(),
                                                        connId);
             Map<String, String> fieldMappings = mapping.fieldMappingToMap();
+            /*
+             * When id strategy is customize or primaryKeys contains
+             * just one field, the param 'unfold' can be true
+             */
+            boolean unfoldSource = true;
             if (svl.getIdStrategy().isPrimaryKey()) {
                 List<String> primaryKeys = svl.getPrimaryKeys();
                 Ex.check(sourceFields.size() >= 1 &&
@@ -490,7 +500,11 @@ public class LoadTaskService {
                 for (int i = 0; i < primaryKeys.size(); i++) {
                     fieldMappings.put(sourceFields.get(i), primaryKeys.get(i));
                 }
+                if (sourceFields.size() > 1) {
+                    unfoldSource = false;
+                }
             }
+            boolean unfoldTarget = true;
             if (tvl.getIdStrategy().isPrimaryKey()) {
                 List<String> primaryKeys = tvl.getPrimaryKeys();
                 Ex.check(targetFields.size() >= 1 &&
@@ -501,11 +515,14 @@ public class LoadTaskService {
                 for (int i = 0; i < primaryKeys.size(); i++) {
                     fieldMappings.put(targetFields.get(i), primaryKeys.get(i));
                 }
+                if (targetFields.size() > 1) {
+                    unfoldTarget = false;
+                }
             }
 
             com.baidu.hugegraph.loader.mapping.EdgeMapping eMapping;
             eMapping = new com.baidu.hugegraph.loader.mapping.EdgeMapping(
-                       sourceFields, false, targetFields, false);
+                       sourceFields, unfoldSource, targetFields, unfoldTarget);
             // set label
             eMapping.label(mapping.getLabel());
             // set field_mapping
