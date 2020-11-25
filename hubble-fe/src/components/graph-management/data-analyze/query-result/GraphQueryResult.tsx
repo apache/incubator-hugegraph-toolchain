@@ -206,6 +206,16 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             );
 
             if (!isUndefined(node)) {
+              // specific symbol (~undefined) in schema
+              if (node.label === '~undefined') {
+                Message.info({
+                  content: '该顶点是非法顶点，可能是由悬空边导致',
+                  size: 'medium',
+                  showCloseIcon: false,
+                  duration: 1
+                });
+              }
+
               if (
                 isUndefined(
                   dataAnalyzeStore.vertexTypes.find(

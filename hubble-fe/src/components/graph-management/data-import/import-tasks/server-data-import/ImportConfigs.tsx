@@ -218,6 +218,13 @@ const ImportConfigs: React.FC<ImportConfigsProps> = observer(({ height }) => {
       if (serverDataImportStore.isIrregularProcess) {
         serverDataImportStore.fetchAllImportTasks();
       } else {
+        // stop loops when users click sidebar icon
+        // (dispose called in <ImportTasks />, [ids] resets to empty array)
+        if (isEmpty(serverDataImportStore.fileImportTaskIds)) {
+          window.clearInterval(loopId);
+          return;
+        }
+
         serverDataImportStore.fetchImportTasks(
           serverDataImportStore.fileImportTaskIds
         );
@@ -573,6 +580,7 @@ const ImportConfigs: React.FC<ImportConfigsProps> = observer(({ height }) => {
                 serverDataImportStore.switchImportConfigReadOnly(true);
                 dataImportRootStore.setCurrentStatus('LOADING');
 
+                await serverDataImportStore.setConfigParams();
                 await serverDataImportStore.startImport(
                   dataMapStore.fileMapInfos
                     .filter(({ name }) =>
@@ -582,16 +590,15 @@ const ImportConfigs: React.FC<ImportConfigsProps> = observer(({ height }) => {
                     )
                     .map(({ id }) => id)
                 );
-                await serverDataImportStore.setConfigParams();
               } else {
                 dataMapStore.switchLock(true);
                 serverDataImportStore.switchImportConfigReadOnly(true);
                 dataImportRootStore.setCurrentStatus('LOADING');
 
+                await serverDataImportStore.setConfigParams();
                 await serverDataImportStore.startImport(
                   dataMapStore.fileMapInfos.map(({ id }) => id)
                 );
-                await serverDataImportStore.setConfigParams();
               }
 
               if (
@@ -642,20 +649,47 @@ const ImportManipulations: React.FC<ImportManipulationsProps> = observer(
     const handleClickManipulation = async (manipulation: string) => {
       switch (manipulation) {
         case t('server-data-import.import-details.manipulations.pause'):
-          serverDataImportStore.pauseImport(
+          await serverDataImportStore.pauseImport(
             serverDataImportStore.importTasks[taskIndex].id
           );
+
+          if (serverDataImportStore.requestStatus.pauseImport === 'failed') {
+            Message.error({
+              content: serverDataImportStore.errorInfo.pauseImport.message,
+              size: 'medium',
+              showCloseIcon: false
+            });
+          }
+
           break;
         case t('server-data-import.import-details.manipulations.abort'):
-          serverDataImportStore.abortImport(
+          await serverDataImportStore.abortImport(
             serverDataImportStore.importTasks[taskIndex].id
           );
+
+          if (serverDataImportStore.requestStatus.abortImport === 'failed') {
+            Message.error({
+              content: serverDataImportStore.errorInfo.abortImport.message,
+              size: 'medium',
+              showCloseIcon: false
+            });
+          }
+
+          serverDataImportStore.fetchAllImportTasks();
 
           break;
         case t('server-data-import.import-details.manipulations.resume'):
           await serverDataImportStore.resumeImport(
             serverDataImportStore.importTasks[taskIndex].id
           );
+
+          if (serverDataImportStore.requestStatus.resumeImport === 'failed') {
+            Message.error({
+              content: serverDataImportStore.errorInfo.resumeImport.message,
+              size: 'medium',
+              showCloseIcon: false
+            });
+          }
 
           serverDataImportStore.switchImporting(true);
           serverDataImportStore.switchImportFinished(false);
@@ -672,6 +706,14 @@ const ImportManipulations: React.FC<ImportManipulationsProps> = observer(
           await serverDataImportStore.retryImport(
             serverDataImportStore.importTasks[taskIndex].id
           );
+
+          if (serverDataImportStore.requestStatus.retryImport === 'failed') {
+            Message.error({
+              content: serverDataImportStore.errorInfo.retryImport.message,
+              size: 'medium',
+              showCloseIcon: false
+            });
+          }
 
           serverDataImportStore.switchImporting(true);
           serverDataImportStore.switchImportFinished(false);
