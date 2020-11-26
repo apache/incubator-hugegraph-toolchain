@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.builder.SchemaCache;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.failure.FailLogger;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
@@ -146,10 +147,15 @@ public final class LoadContext {
     }
 
     public void unsetLoadingMode() {
-        String graph = this.client.graph().graph();
-        GraphMode mode = this.client.graphs().mode(graph);
-        if (mode.loading()) {
-            this.client.graphs().mode(graph, GraphMode.NONE);
+        try {
+            String graph = this.client.graph().graph();
+            GraphMode mode = this.client.graphs().mode(graph);
+            if (mode.loading()) {
+                this.client.graphs().mode(graph, GraphMode.NONE);
+            }
+        } catch (Exception e) {
+            throw new LoadException("Failed to unset mode %s for server",
+                                    e, GraphMode.LOADING);
         }
     }
 
