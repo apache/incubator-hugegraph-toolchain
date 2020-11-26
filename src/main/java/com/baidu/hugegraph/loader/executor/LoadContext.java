@@ -154,7 +154,7 @@ public final class LoadContext {
                 this.client.graphs().mode(graph, GraphMode.NONE);
             }
         } catch (Exception e) {
-            throw new LoadException("Failed to unset mode %s for sevrer",
+            throw new LoadException("Failed to unset mode %s for server",
                                     e, GraphMode.LOADING);
         }
     }
