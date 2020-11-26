@@ -1000,7 +1000,6 @@ export class DataAnalyzeStore {
     this.isShowGraphInfo = false;
     this.isClickOnNodeOrEdge = false;
     this.queryMode = 'query';
-    this.codeEditorText = '';
     this.dynamicAddGraphDataStatus = '';
     this.graphData = {} as FetchGraphResponse;
 
