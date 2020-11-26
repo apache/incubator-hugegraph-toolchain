@@ -78,4 +78,12 @@ public final class Ex {
         }
         throw new ExternalException(message, cause, args);
     }
+
+    public static Throwable rootCause(Throwable e) {
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause;
+    }
 }

@@ -19,12 +19,10 @@
 
 package com.baidu.hugegraph.util;
 
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.LineNumberReader;
-
-import org.apache.commons.io.IOUtils;
 
 import com.baidu.hugegraph.exception.InternalException;
 
@@ -44,26 +42,27 @@ public final class FileUtil {
                       "The file %s doesn't exist", file));
         }
         long fileLength = file.length();
-        assert fileLength > 0;
-        LineNumberReader lineReader = null;
-        try {
-            FileReader fileReader = new FileReader(file);
-            lineReader = new LineNumberReader(fileReader);
+        try (FileInputStream fis = new FileInputStream(file);
+             BufferedInputStream bis = new BufferedInputStream(fis)) {
             /*
              * The last character may be an EOL or a non-EOL character.
              * If it is the EOL, need to add 1 line; if it is the non-EOL,
              * also need to add 1 line, because the next character means the EOF
              * and should also be counted as a line.
              */
-            lineReader.skip(fileLength - 1);
-            return lineReader.getLineNumber() + 1;
+            int number = 0;
+            for (int i = 0; i < fileLength - 1; i++) {
+                if (bis.read() == '\n') {
+                    number++;
+                }
+            }
+            if (fileLength > 0) {
+                number++;
+            }
+            return number;
         } catch (IOException e) {
             throw new InternalException("Failed to count lines of file %s",
                                         file);
-        } finally {
-            if (lineReader != null) {
-                IOUtils.closeQuietly(lineReader);
-            }
         }
     }
 }

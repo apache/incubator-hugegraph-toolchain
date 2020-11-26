@@ -140,19 +140,30 @@ public class LoadTaskController extends BaseController {
         Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
         Ex.check(jobEntity.getJobStatus() == JobStatus.SETTING,
                  "load.task.start.no-permission");
-
-        List<LoadTask> tasks = new ArrayList<>();
-        for (Integer fileId: fileIds) {
-            FileMapping fileMapping = this.fmService.get(fileId);
-            if (fileMapping == null) {
-                throw new ExternalException("file-mapping.not-exist.id", fileId);
+        boolean existError = false;
+        try {
+            List<LoadTask> tasks = new ArrayList<>();
+            for (Integer fileId : fileIds) {
+                FileMapping fileMapping = this.fmService.get(fileId);
+                if (fileMapping == null) {
+                    throw new ExternalException("file-mapping.not-exist.id",
+                                                fileId);
+                }
+                tasks.add(this.service.start(connection, fileMapping));
             }
-            tasks.add(this.service.start(connection, fileMapping));
+            return tasks;
+        } catch (Exception e) {
+            existError = true;
+            throw e;
+        } finally {
+            if (existError) {
+                jobEntity.setJobStatus(JobStatus.FAILED);
+            } else {
+                jobEntity.setJobStatus(JobStatus.LOADING);
+            }
+            jobEntity.setUpdateTime(HubbleUtil.nowDate());
+            this.jobService.update(jobEntity);
         }
-        jobEntity.setJobStatus(JobStatus.LOADING);
-        jobEntity.setUpdateTime(HubbleUtil.nowDate());
-        this.jobService.update(jobEntity);
-        return tasks;
     }
 
     @PostMapping("pause")
@@ -167,11 +178,13 @@ public class LoadTaskController extends BaseController {
         Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
         Ex.check(jobEntity.getJobStatus() == JobStatus.LOADING,
                  "load.task.pause.no-permission");
-        LoadTask task = this.service.pause(taskId);
-        jobEntity.setJobStatus(JobStatus.LOADING);
-        jobEntity.setUpdateTime(HubbleUtil.nowDate());
-        this.jobService.update(jobEntity);
-        return task;
+        try {
+            return this.service.pause(taskId);
+        } finally {
+            jobEntity.setJobStatus(JobStatus.LOADING);
+            jobEntity.setUpdateTime(HubbleUtil.nowDate());
+            this.jobService.update(jobEntity);
+        }
     }
 
     @PostMapping("resume")
@@ -186,11 +199,13 @@ public class LoadTaskController extends BaseController {
         Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
         Ex.check(jobEntity.getJobStatus() == JobStatus.LOADING,
                  "load.task.pause.no-permission");
-        LoadTask task = this.service.resume(taskId);
-        jobEntity.setJobStatus(JobStatus.LOADING);
-        jobEntity.setUpdateTime(HubbleUtil.nowDate());
-        this.jobService.update(jobEntity);
-        return task;
+        try {
+            return this.service.resume(taskId);
+        } finally {
+            jobEntity.setJobStatus(JobStatus.LOADING);
+            jobEntity.setUpdateTime(HubbleUtil.nowDate());
+            this.jobService.update(jobEntity);
+        }
     }
 
     @PostMapping("stop")
@@ -205,11 +220,13 @@ public class LoadTaskController extends BaseController {
         Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
         Ex.check(jobEntity.getJobStatus() == JobStatus.LOADING,
                  "load.task.pause.no-permission");
-        LoadTask task = this.service.stop(taskId);
-        jobEntity.setJobStatus(JobStatus.LOADING);
-        jobEntity.setUpdateTime(HubbleUtil.nowDate());
-        this.jobService.update(jobEntity);
-        return task;
+        try {
+            return this.service.stop(taskId);
+        } finally {
+            jobEntity.setJobStatus(JobStatus.LOADING);
+            jobEntity.setUpdateTime(HubbleUtil.nowDate());
+            this.jobService.update(jobEntity);
+        }
     }
 
     @PostMapping("retry")
@@ -224,11 +241,13 @@ public class LoadTaskController extends BaseController {
         Ex.check(jobEntity != null, "job-manager.not-exist.id", jobId);
         Ex.check(jobEntity.getJobStatus() == JobStatus.LOADING,
                  "load.task.pause.no-permission");
-        LoadTask task = this.service.retry(taskId);
-        jobEntity.setJobStatus(JobStatus.LOADING);
-        jobEntity.setUpdateTime( HubbleUtil.nowDate());
-        this.jobService.update(jobEntity);
-        return task;
+        try {
+            return this.service.retry(taskId);
+        } finally {
+            jobEntity.setJobStatus(JobStatus.LOADING);
+            jobEntity.setUpdateTime( HubbleUtil.nowDate());
+            this.jobService.update(jobEntity);
+        }
     }
 
     @GetMapping("{id}/reason")

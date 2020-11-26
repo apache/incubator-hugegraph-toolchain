@@ -41,6 +41,7 @@ import com.baidu.hugegraph.entity.query.AdjacentQuery;
 import com.baidu.hugegraph.entity.query.ExecuteHistory;
 import com.baidu.hugegraph.entity.query.GremlinQuery;
 import com.baidu.hugegraph.entity.query.GremlinResult;
+import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.service.query.ExecuteHistoryService;
 import com.baidu.hugegraph.service.query.GremlinQueryService;
 import com.baidu.hugegraph.util.Ex;
@@ -131,7 +132,13 @@ public class GremlinQueryController extends GremlinController {
     public GremlinResult expand(@PathVariable("connId") int connId,
                                 @RequestBody AdjacentQuery query) {
         this.checkParamsValid(query);
-        return this.queryService.expandVertex(connId, query);
+        try {
+            return this.queryService.expandVertex(connId, query);
+        } catch (Exception e) {
+            Throwable rootCause = Ex.rootCause(e);
+            throw new ExternalException("gremlin.expand.failed", rootCause,
+                                        rootCause.getMessage());
+        }
     }
 
     private void checkParamsValid(GremlinQuery query) {

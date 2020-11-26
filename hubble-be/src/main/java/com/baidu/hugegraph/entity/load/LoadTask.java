@@ -141,7 +141,6 @@ public class LoadTask implements Runnable {
 
     public LoadTask(LoadOptions options, GraphConnection connection,
                     FileMapping mapping) {
-        this.loader = new HugeGraphLoader(options);
         this.finished = false;
         this.id = null;
         this.connId = connection.getId();
@@ -161,13 +160,16 @@ public class LoadTask implements Runnable {
 
     @Override
     public void run() {
+        Ex.check(this.options != null, "The load options shouldn't be null");
         log.info("LoadTask is start running : {}", this.id);
+        this.loader = new HugeGraphLoader(this.options);
+
         boolean noError;
         try {
             noError = this.loader.load();
         } catch (Throwable e) {
             noError = false;
-            log.error("Run task {} failed. cause: {}", this.id, e.getMessage());
+            log.error("Run task {} failed", this.id, e);
         }
         this.lock.lock();
         try {
@@ -210,18 +212,13 @@ public class LoadTask implements Runnable {
         log.info("LoadTask {} stopped", this.id);
     }
 
-    public void restoreContext() {
-        Ex.check(this.options != null, "The load options shouldn't be null");
-        this.loader = new HugeGraphLoader(this.options);
-    }
-
     public LoadContext context() {
         Ex.check(this.loader != null, "loader shouldn't be null");
         return this.loader.context();
     }
 
     @JsonProperty("load_progress")
-    public int getLoadProgress() {
+    public float getLoadProgress() {
         if (this.fileTotalLines == null || this.fileTotalLines == 0) {
             return 0;
         }
@@ -229,7 +226,8 @@ public class LoadTask implements Runnable {
                  "The file total lines must be >= read lines, " +
                  "but got total lines %s, read lines %s",
                  this.fileTotalLines, this.fileReadLines);
-        return (int) (0.5 + (double) this.fileReadLines / this.fileTotalLines * 100);
+        float actualProgress = (float) this.fileReadLines / this.fileTotalLines;
+        return ((int) (actualProgress * 10000)) / 100.0F;
     }
 
     @JsonProperty("duration")

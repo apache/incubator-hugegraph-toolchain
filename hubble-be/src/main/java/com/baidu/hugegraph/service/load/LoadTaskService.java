@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +50,7 @@ import com.baidu.hugegraph.entity.load.LoadTask;
 import com.baidu.hugegraph.entity.load.VertexMapping;
 import com.baidu.hugegraph.entity.schema.EdgeLabelEntity;
 import com.baidu.hugegraph.entity.schema.VertexLabelEntity;
+import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.handler.LoadTaskExecutor;
 import com.baidu.hugegraph.loader.executor.LoadContext;
@@ -165,7 +165,7 @@ public class LoadTaskService {
         this.sslService.configSSL(this.config, connection);
         LoadTask task = this.buildLoadTask(connection, fileMapping);
         this.save(task);
-        // executed in other threads
+        // Executed in other threads
         this.taskExecutor.execute(task, () -> this.update(task));
         // Save current load task
         this.runningTaskContainer.put(task.getId(), task);
@@ -200,7 +200,6 @@ public class LoadTaskService {
         try {
             // Set work mode in incrental mode, load from last breakpoint
             task.getOptions().incrementalMode = true;
-            task.restoreContext();
             task.setStatus(LoadStatus.RUNNING);
             this.update(task);
             this.taskExecutor.execute(task, () -> this.update(task));
@@ -215,14 +214,15 @@ public class LoadTaskService {
         LoadTask task = this.runningTaskContainer.get(taskId);
         if (task == null) {
             task = this.get(taskId);
-            task.restoreContext();
         }
-        Ex.check(task.getStatus() == LoadStatus.RUNNING ||
-                 task.getStatus() == LoadStatus.PAUSED,
+        LoadStatus status = task.getStatus();
+        Ex.check(status == LoadStatus.RUNNING || status == LoadStatus.PAUSED,
                  "Can only stop the RUNNING or PAUSED task");
         // Mark status as stopped
         task.setStatus(LoadStatus.STOPPED);
-        task.stop();
+        if (status == LoadStatus.RUNNING) {
+            task.stop();
+        }
 
         task.lock();
         try {
@@ -243,7 +243,6 @@ public class LoadTaskService {
         try {
             // Set work mode in normal mode, load from begin
             task.getOptions().incrementalMode = false;
-            task.restoreContext();
             task.setStatus(LoadStatus.RUNNING);
             task.setLastDuration(0L);
             task.setCurrDuration(0L);
@@ -258,7 +257,6 @@ public class LoadTaskService {
 
     public String readLoadFailedReason(FileMapping mapping) {
         String path = mapping.getPath();
-
         File parentDir = FileUtils.getFile(path).getParentFile();
         File failureDataDir = FileUtils.getFile(parentDir, "mapping",
                                                 "failure-data");
@@ -266,9 +264,13 @@ public class LoadTaskService {
         File[] errorFiles = failureDataDir.listFiles((dir, name) -> {
             return name.endsWith("error");
         });
-        Ex.check(errorFiles != null && errorFiles.length == 1,
-                 "There should exist one error file, actual is %s",
-                 Arrays.toString(errorFiles));
+        if (errorFiles == null) {
+            return "For some reason, the error file was not generated. " +
+                   "Please check the log for details";
+        }
+        Ex.check(errorFiles.length == 1,
+                 "There should exist only one error file, actual is %s",
+                 errorFiles.length);
         File errorFile = errorFiles[0];
         try {
             return FileUtils.readFileToString(errorFile);
@@ -325,11 +327,16 @@ public class LoadTaskService {
 
     private LoadTask buildLoadTask(GraphConnection connection,
                                    FileMapping fileMapping) {
-        LoadOptions options = this.buildLoadOptions(connection, fileMapping);
-        // NOTE: For simplicity, one file corresponds to one import task
-        LoadMapping mapping = this.buildLoadMapping(connection, fileMapping);
-        this.bindMappingToOptions(options, mapping, fileMapping.getPath());
-        return new LoadTask(options, connection, fileMapping);
+        try {
+            LoadOptions options = this.buildLoadOptions(connection, fileMapping);
+            // NOTE: For simplicity, one file corresponds to one import task
+            LoadMapping mapping = this.buildLoadMapping(connection, fileMapping);
+            this.bindMappingToOptions(options, mapping, fileMapping.getPath());
+            return new LoadTask(options, connection, fileMapping);
+        } catch (Exception e) {
+            Throwable rootCause = Ex.rootCause(e);
+            throw new ExternalException("load.build-task.failed", rootCause);
+        }
     }
 
     private void bindMappingToOptions(LoadOptions options, LoadMapping mapping,
