@@ -83,7 +83,7 @@ public final class FailLogger {
             append = false;
         }
         String savePath = Paths.get(parentDir, fileName).toString();
-        LOG.info("The failure data save path of input struct {} is at {}: ",
+        LOG.info("The failure data path of input struct {} is at {}: ",
                  struct.id(), savePath);
         this.file = new File(savePath);
         String charset = this.struct.input().charset();
