@@ -59,6 +59,7 @@ import com.baidu.hugegraph.mapper.load.FileMappingMapper;
 import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HubbleUtil;
+import com.baidu.hugegraph.util.StringUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -267,7 +268,7 @@ public class FileMappingService {
                 columnNames = firstLine;
                 // The second line as column values
                 line = reader.readLine();
-                columnValues = StringUtils.split(line, delimiter);
+                columnValues = StringUtil.split(line, delimiter);
             } else {
                 // Let columns names as: column-1, column-2 ...
                 columnNames = new String[firstLine.length];
