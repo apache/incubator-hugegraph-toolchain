@@ -110,23 +110,48 @@ export class ServerDataImportStore {
 
   @action
   validateImportConfigs(key: keyof LoadParameter) {
-    if (key !== 'check_vertex') {
-      if (this.importConfigs![key] === '') {
-        this.validateImportConfigErrorMessage[key] = i18next.t(
-          'server-data-import.validator.no-empty'
-        );
+    switch (key) {
+      case 'max_parse_errors':
+      case 'max_insert_errors':
+        if (this.importConfigs![key] === '') {
+          this.validateImportConfigErrorMessage[key] = i18next.t(
+            'server-data-import.validator.no-empty'
+          );
 
-        return;
-      } else if (!isInt(String(this.importConfigs![key]), { min: 0 })) {
-        this.validateImportConfigErrorMessage[key] = i18next.t(
-          'server-data-import.validator.need-positive-integer'
-        );
+          return;
+        } else if (
+          !isInt(String(this.importConfigs![key]), { min: -1 }) ||
+          String(this.importConfigs![key]) === '0'
+        ) {
+          this.validateImportConfigErrorMessage[key] = i18next.t(
+            'server-data-import.validator.need-integer-with-negative'
+          );
 
-        return;
-      }
+          return;
+        }
 
-      this.validateImportConfigErrorMessage[key] = '';
+        break;
+      case 'insert_timeout':
+      case 'retry_interval':
+      case 'retry_times':
+        if (this.importConfigs![key] === '') {
+          this.validateImportConfigErrorMessage[key] = i18next.t(
+            'server-data-import.validator.no-empty'
+          );
+
+          return;
+        } else if (!isInt(String(this.importConfigs![key]), { min: 1 })) {
+          this.validateImportConfigErrorMessage[key] = i18next.t(
+            'server-data-import.validator.need-integer'
+          );
+
+          return;
+        }
+
+        break;
     }
+
+    this.validateImportConfigErrorMessage[key] = '';
   }
 
   @action

@@ -322,7 +322,8 @@
     },
     "validator": {
       "no-empty": "该项不能为空",
-      "need-positive-integer": "请输入非负整数"
+      "need-integer-with-negative": "请输入-1或大于0的整数",
+      "need-integer": "请输入大于0的整数"
     },
     "manipulations": {
       "previous": "上一步",
