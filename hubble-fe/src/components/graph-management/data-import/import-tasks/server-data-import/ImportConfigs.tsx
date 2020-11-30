@@ -581,6 +581,19 @@ const ImportConfigs: React.FC<ImportConfigsProps> = observer(({ height }) => {
                 dataImportRootStore.setCurrentStatus('LOADING');
 
                 await serverDataImportStore.setConfigParams();
+
+                if (
+                  serverDataImportStore.requestStatus.setConfigParams ===
+                  'failed'
+                ) {
+                  Message.error({
+                    content:
+                      serverDataImportStore.errorInfo.setConfigParams.message,
+                    size: 'medium',
+                    showCloseIcon: false
+                  });
+                }
+
                 await serverDataImportStore.startImport(
                   dataMapStore.fileMapInfos
                     .filter(({ name }) =>
@@ -590,15 +603,50 @@ const ImportConfigs: React.FC<ImportConfigsProps> = observer(({ height }) => {
                     )
                     .map(({ id }) => id)
                 );
+
+                if (
+                  serverDataImportStore.requestStatus.startImport === 'failed'
+                ) {
+                  Message.error({
+                    content:
+                      serverDataImportStore.errorInfo.startImport.message,
+                    size: 'medium',
+                    showCloseIcon: false
+                  });
+                }
               } else {
                 dataMapStore.switchLock(true);
                 serverDataImportStore.switchImportConfigReadOnly(true);
                 dataImportRootStore.setCurrentStatus('LOADING');
 
                 await serverDataImportStore.setConfigParams();
+
+                if (
+                  serverDataImportStore.requestStatus.setConfigParams ===
+                  'failed'
+                ) {
+                  Message.error({
+                    content:
+                      serverDataImportStore.errorInfo.setConfigParams.message,
+                    size: 'medium',
+                    showCloseIcon: false
+                  });
+                }
+
                 await serverDataImportStore.startImport(
                   dataMapStore.fileMapInfos.map(({ id }) => id)
                 );
+
+                if (
+                  serverDataImportStore.requestStatus.startImport === 'failed'
+                ) {
+                  Message.error({
+                    content:
+                      serverDataImportStore.errorInfo.startImport.message,
+                    size: 'medium',
+                    showCloseIcon: false
+                  });
+                }
               }
 
               if (

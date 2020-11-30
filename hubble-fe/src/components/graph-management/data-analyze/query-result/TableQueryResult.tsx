@@ -56,10 +56,13 @@ const TableQueryResult: React.FC = observer(() => {
   );
 });
 
+// item could be obejct array which needs serialization as well
 const PathItem: React.FC<{ items: string[] }> = observer(({ items }) => (
   <>
     {items.map((item: string) => (
-      <span className="query-result-content-table-path-item">{item}</span>
+      <span className="query-result-content-table-path-item">
+        {JSON.stringify(item)}
+      </span>
     ))}
   </>
 ));
