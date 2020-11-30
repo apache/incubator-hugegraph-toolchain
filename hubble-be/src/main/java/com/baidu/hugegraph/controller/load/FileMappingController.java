@@ -263,6 +263,7 @@ public class FileMappingController extends BaseController {
      */
     @PostMapping("load-parameter")
     public void loadParameter(@RequestBody LoadParameter newEntity) {
+        this.checkLoadParameter(newEntity);
         List<FileMapping> mappings = this.service.listAll();
         for (FileMapping mapping : mappings) {
             LoadParameter oldEntity = mapping.getLoadParameter();
@@ -340,5 +341,20 @@ public class FileMappingController extends BaseController {
             Ex.check(columnNames.containsAll(keys),
                      "load.file-mapping.value.keys-should-in-column-names");
         }
+    }
+
+    private void checkLoadParameter(LoadParameter newEntity) {
+        Ex.check(newEntity.getMaxParseErrors() == Constant.NO_LIMIT ||
+                 newEntity.getMaxParseErrors() > 0,
+                 "load.file-mapping.load-parameter.max-parse-error.illegal");
+        Ex.check(newEntity.getMaxInsertErrors() == Constant.NO_LIMIT ||
+                 newEntity.getMaxInsertErrors() > 0,
+                 "load.file-mapping.load-parameter.max-insert-error.illegal");
+        Ex.check(newEntity.getInsertTimeout() > 0,
+                 "load.file-mapping.load-parameter.insert-timeout.illegal");
+        Ex.check(newEntity.getRetryTimes() > 0,
+                 "load.file-mapping.load-parameter.retry-times.illegal");
+        Ex.check(newEntity.getRetryInterval() > 0,
+                 "load.file-mapping.load-parameter.retry-interval.illegal");
     }
 }
