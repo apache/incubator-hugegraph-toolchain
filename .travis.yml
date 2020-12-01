@@ -24,7 +24,8 @@ before_install: mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.
 install: mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
 before_script:
-  - $TRAVIS_DIR/install-hugegraph.sh $SERVER_VERSION | grep -v "Downloading\|Downloaded"
+  - $TRAVIS_DIR/set-env.sh
+  - $TRAVIS_DIR/install-hugegraph.sh $TRAVIS_BRANCH | grep -v "Downloading\|Downloaded"
   - |
     if [ "$SOURCE_TYPE" == "hdfs" ]; then
       $TRAVIS_DIR/install-hadoop.sh

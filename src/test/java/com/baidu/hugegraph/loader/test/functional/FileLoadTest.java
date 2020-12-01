@@ -54,7 +54,6 @@ import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
-import com.baidu.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
@@ -594,8 +593,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testValueListPropertyInTextFile()
-                throws java.text.ParseException {
+    public void testValueListPropertyInTextFile() {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -627,8 +625,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testValueSetPropertyInTextFile()
-                throws java.text.ParseException {
+    public void testValueSetPropertyInTextFile() {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -1386,7 +1383,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testDefaultTimeZoneGMT8() throws java.text.ParseException {
+    public void testDefaultTimeZoneGMT8() {
         ioUtil.write("vertex_person_birth_date.csv",
                      "marko,1992-10-01 12:00:00,Beijing",
                      "vadas,2000-01-01 13:00:00,Hongkong");
@@ -1413,7 +1410,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testCustomizedTimeZoneGMT0() throws java.text.ParseException {
+    public void testCustomizedTimeZoneGMT0() {
         ioUtil.write("vertex_person_birth_date.csv",
                      "marko,1992-10-01 12:00:00,Beijing",
                      "vadas,2000-01-01 13:00:00,Hongkong");
@@ -1440,7 +1437,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testValueMapping() throws java.text.ParseException {
+    public void testValueMapping() {
         /*
          * "age": {"1": 25, "2": 30}
          * "birth": {"1": "1994-01-01", "2": "1989-01-01"}
@@ -3013,35 +3010,24 @@ public class FileLoadTest extends LoadTest {
         };
         HugeGraphLoader.main(args);
 
-        try {
-            HugeClient httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
-                                               .configSSL(TRUST_STORE_FILE,
-                                                          TRUST_STORE_PASSWORD)
-                                               .build();
-            List<Vertex> vertices = httpsClient.graph().listVertices();
-            Assert.assertEquals(2, vertices.size());
-        } catch (ClientException e) {
-            Throwable cause = e.getCause();
-            Assert.assertNotNull(cause);
-            Assert.assertTrue(cause.getMessage().contains(
-                              "Connection refused (Connection refused)"));
-        }
+        HugeClient httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
+                                           .configSSL(TRUST_STORE_FILE,
+                                                      TRUST_STORE_PASSWORD)
+                                           .build();
+        List<Vertex> vertices = httpsClient.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
     }
 
     @Test
     public void testHttpsHolderClientValueMapping() {
         ioUtil.write("vertex_person.csv",
-                     "marko,3,3,3",
-                     "vadas,4,4,4");
+                     "marko,1,1,1",
+                     "vadas,2,2,2");
         String[] args = new String[]{
                 "-f", structPath("value_mapping/struct.json"),
                 "-s", configPath("value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
-                "-p", String.valueOf(HTTPS_PORT),
-                "--protocol", PROTOCOL,
-                "--trust-store-file", TRUST_STORE_FILE,
-                "--trust-store-password", TRUST_STORE_PASSWORD,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -3060,10 +3046,7 @@ public class FileLoadTest extends LoadTest {
         try {
             HugeClient client = HugeClientHolder.create(options);
             List<Vertex> vertices = client.graph().listVertices();
-            Assert.assertEquals(4, vertices.size());
-        } catch (LoadException e) {
-            Assert.assertTrue(e.getMessage().startsWith("The service"));
-            Assert.assertTrue(e.getMessage().endsWith("is unavailable"));
+            Assert.assertEquals(2, vertices.size());
         } finally {
             if (homePath != null) {
                 System.setProperty("loader.home.path", homePath);
