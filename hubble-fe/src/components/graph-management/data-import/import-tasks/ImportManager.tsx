@@ -59,8 +59,8 @@ const ImportManager: React.FC = observer(() => {
               }
 
               // reset stores
-              dataMapStore.dispose();
-              serverDataImportStore.dispose();
+              // dataMapStore.dispose();
+              // serverDataImportStore.dispose();
             }}
           >
             {t('breadcrumb.first')}

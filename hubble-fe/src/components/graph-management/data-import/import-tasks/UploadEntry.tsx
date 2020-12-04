@@ -129,6 +129,11 @@ const UploadEntry: React.FC = observer(() => {
               dataImportRootStore.currentStatus === 'DEFAULT' ||
               dataImportRootStore.currentStatus === 'UPLOADING'
             ) {
+              // users may browse from <JobDetails />
+              // which make @readonly and @irregularProcess true
+              dataMapStore.switchReadOnly(false);
+              dataMapStore.switchIrregularProcess(false);
+
               dataImportRootStore.setCurrentStatus('MAPPING');
               dataImportRootStore.sendUploadCompleteSignal();
             }
@@ -359,6 +364,11 @@ export const FileDropZone: React.FC = observer(() => {
       const fileUploadTask = dataImportRootStore.fileUploadTasks.find(
         ({ name }) => name === fileName
       )!;
+
+      // users may click back button in browser
+      if (isUndefined(fileUploadTask)) {
+        return;
+      }
 
       // the index of fileChunk is pending
       dataImportRootStore.mutateFileUploadTasks(

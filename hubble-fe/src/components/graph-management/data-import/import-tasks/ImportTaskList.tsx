@@ -450,6 +450,9 @@ export const ImportManagerManipulation: React.FC<ImportManagerManipulationProps>
       }
 
       if (step === 2) {
+        // users may browse from <JobDetails />
+        dataMapStore.switchReadOnly(false);
+
         await dataMapStore.fetchDataMaps();
         dataMapStore.setSelectedFileId(dataMapStore.fileMapInfos[0].id);
         dataMapStore.setSelectedFileInfo();
@@ -462,6 +465,9 @@ export const ImportManagerManipulation: React.FC<ImportManagerManipulationProps>
       }
 
       if (step === 3) {
+        // users may browse from <JobDetails />
+        serverDataImportStore.switchReadOnly(false);
+
         await dataMapStore.fetchDataMaps();
 
         // need to set default selected file
@@ -474,9 +480,25 @@ export const ImportManagerManipulation: React.FC<ImportManagerManipulationProps>
         );
         serverDataImportStore.switchIrregularProcess(true);
 
+        if (status === 'SETTING') {
+          // user may browse from <JobDeatils /> to <ImportTask />
+          dataMapStore.switchReadOnly(false);
+
+          serverDataImportStore.resetImportTasks();
+          serverDataImportStore.switchFetchImportStatus('standby');
+          serverDataImportStore.switchImportFinished(false);
+        }
+
         if (status === 'LOADING') {
+          // reveal previous & next button in <DataMap />
+          // users may browse from <JobDetails /> which set @readonly true
+          dataMapStore.switchReadOnly(false);
           dataMapStore.switchLock(true);
           serverDataImportStore.switchImportConfigReadOnly(true);
+          // users may browse from <JobDetails />, let store fetches
+          // for one time and decide whether import is finished
+          serverDataImportStore.resetImportTasks();
+          serverDataImportStore.switchImportFinished(false);
         }
 
         route = 'loading';

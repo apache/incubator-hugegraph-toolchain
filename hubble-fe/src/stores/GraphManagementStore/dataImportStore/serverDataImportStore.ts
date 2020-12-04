@@ -121,7 +121,7 @@ export class ServerDataImportStore {
           return;
         } else if (
           !isInt(String(this.importConfigs![key]), { min: -1 }) ||
-          String(this.importConfigs![key]) === '0'
+          String(Number(this.importConfigs![key])) === '0'
         ) {
           this.validateImportConfigErrorMessage[key] = i18next.t(
             'server-data-import.validator.need-integer-with-negative'
@@ -157,6 +157,11 @@ export class ServerDataImportStore {
   @action
   resetValidateImportConfigs() {
     this.validateImportConfigErrorMessage = createValidateFileInfoErrorMessage();
+  }
+
+  @action
+  resetImportTasks() {
+    this.importTasks = [];
   }
 
   @action

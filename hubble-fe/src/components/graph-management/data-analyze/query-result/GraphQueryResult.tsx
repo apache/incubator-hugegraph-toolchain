@@ -237,11 +237,21 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                     dataAnalyzeStore.expandedGraphData.data.graph_view.vertices
                   ) === 0
                 ) {
-                  Message.info({
-                    content: '不存在邻接点',
-                    size: 'medium',
-                    showCloseIcon: false
-                  });
+                  if (isEmpty(network.getConnectedNodes(nodeId))) {
+                    Message.info({
+                      content: '不存在邻接点',
+                      size: 'medium',
+                      showCloseIcon: false,
+                      duration: 1
+                    });
+                  } else {
+                    Message.info({
+                      content: '不存在更多邻接点',
+                      size: 'medium',
+                      showCloseIcon: false,
+                      duration: 1
+                    });
+                  }
 
                   return;
                 }

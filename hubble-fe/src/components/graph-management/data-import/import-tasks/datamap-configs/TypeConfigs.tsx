@@ -198,6 +198,19 @@ const TypeConfigs: React.FC = observer(() => {
                 dataImportRootStore.setCurrentStep(3);
                 // avoid rests when user moves back to previous step
                 if (dataImportRootStore.currentStatus === 'MAPPING') {
+                  // users may browse from <JobDetails />
+                  // need to reset readonly relative states
+                  serverDataImportStore.switchExpandImportConfig(true);
+                  serverDataImportStore.switchReadOnly(false);
+                  serverDataImportStore.switchIrregularProcess(false);
+                  serverDataImportStore.syncImportConfigs(
+                    dataMapStore.selectedFileInfo!.load_parameter
+                  );
+                  // same with click jumps in <ImportTaskList />
+                  serverDataImportStore.switchFetchImportStatus('standby');
+                  serverDataImportStore.switchImportFinished(false);
+                  serverDataImportStore.resetImportTasks();
+
                   dataImportRootStore.setCurrentStatus('SETTING');
                   dataImportRootStore.sendMappingCompleteSignal();
                 }

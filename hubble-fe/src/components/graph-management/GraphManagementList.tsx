@@ -1,4 +1,10 @@
-import React, { useContext, useCallback, useEffect, useState } from 'react';
+import React, {
+  useContext,
+  useCallback,
+  useEffect,
+  useState,
+  useLayoutEffect
+} from 'react';
 import { observer } from 'mobx-react';
 import {
   Embedded,
@@ -11,6 +17,7 @@ import {
   Tooltip
 } from '@baidu/one-ui';
 import { useLocation } from 'wouter';
+import { isNull } from 'lodash-es';
 import { motion } from 'framer-motion';
 import Highlighter from 'react-highlight-words';
 
@@ -78,6 +85,14 @@ const GraphManagementList: React.FC = observer(() => {
     },
     [graphManagementStore]
   );
+
+  useLayoutEffect(() => {
+    const inputElement = document.querySelector('.input-password input');
+
+    if (!isNull(inputElement)) {
+      inputElement.setAttribute('type', 'password');
+    }
+  }, [graphManagementStore.showCreateNewGraph]);
 
   useEffect(() => {
     const pg = document.querySelector(
@@ -349,7 +364,7 @@ const GraphManagementListItem: React.FC<
               )}
             />
           </div>
-          <div>
+          <div id="graph-password">
             <span>密码:</span>
             <Input
               {...commonInputProps}

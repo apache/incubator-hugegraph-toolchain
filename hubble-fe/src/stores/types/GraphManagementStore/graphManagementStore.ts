@@ -17,6 +17,7 @@ export interface GraphData {
   create_time: string;
   username: string;
   enabled: boolean;
+  password: string;
 }
 
 export interface GraphDataConfig {

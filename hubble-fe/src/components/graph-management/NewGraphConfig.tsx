@@ -1,9 +1,10 @@
-import React, { useContext, useCallback } from 'react';
+import React, { useContext, useCallback, useLayoutEffect } from 'react';
 import { observer } from 'mobx-react';
 import { Embedded, Input, Button, Message, Tooltip } from '@baidu/one-ui';
 
 import { GraphManagementStoreContext } from '../../stores';
 import HintIcon from '../../assets/imgs/ic_question_mark.svg';
+import { isNull } from 'lodash-es';
 
 const commonInputProps = {
   size: 'medium',
@@ -54,6 +55,14 @@ const NewGraphConfig: React.FC = observer(() => {
       });
     }
   }, [graphManagementStore, handleCancel]);
+
+  useLayoutEffect(() => {
+    const inputElement = document.querySelector('.input-password input');
+
+    if (!isNull(inputElement)) {
+      inputElement.setAttribute('type', 'password');
+    }
+  }, [graphManagementStore.showCreateNewGraph]);
 
   return (
     <Embedded
@@ -172,7 +181,7 @@ const NewGraphConfig: React.FC = observer(() => {
               )}
             />
           </div>
-          <div>
+          <div className="input-password">
             <span>密码:</span>
             <Input
               {...commonInputProps}

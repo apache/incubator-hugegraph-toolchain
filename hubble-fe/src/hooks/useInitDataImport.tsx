@@ -183,6 +183,10 @@ export default function useInitDataImport() {
           serverDataImportStore.switchIrregularProcess(true);
         }
 
+        if (job.job_status === 'SETTING') {
+          dataMapStore.switchReadOnly(false);
+        }
+
         if (job.job_status === 'LOADING') {
           dataMapStore.switchLock(true);
           serverDataImportStore.switchImportConfigReadOnly(true);
@@ -192,11 +196,6 @@ export default function useInitDataImport() {
           setLocation(`/graph-management/${id}/data-import/import-manager`);
           importManagerStore.setSelectedJob(null);
         }
-      }
-
-      if (status === 'success') {
-        setLocation(`/graph-management/${id}/data-import/import-manager`);
-        importManagerStore.setSelectedJob(null);
       }
 
       setInitReady(true);

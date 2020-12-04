@@ -134,28 +134,14 @@ const GraphManagementSidebar: React.FC = observer(() => {
   if (
     !match ||
     params?.subCategory === 'job-error-log' ||
-    params?.jobId === 'task-error-log'
+    params?.jobId === 'task-error-log' ||
+    (params?.category === 'async-tasks' && params?.jobId === 'result')
   ) {
     return null;
   }
 
   return (
     <ul className={sidebarWrapperClassName}>
-      <li
-        className={sidebarGoBackClassName}
-        onClick={() => {
-          setLocation('/');
-        }}
-      >
-        <Tooltip
-          placement="right"
-          title={graphManagementStore.isExpanded ? '' : '返回图管理'}
-          type="dark"
-        >
-          <img src={BackIcon} alt="返回" />
-        </Tooltip>
-        {graphManagementStore.isExpanded && <span>返回图管理</span>}
-      </li>
       <li className={sidebarGraphSelectionClassName}>
         {!graphManagementStore.isExpanded ? (
           <PopLayer

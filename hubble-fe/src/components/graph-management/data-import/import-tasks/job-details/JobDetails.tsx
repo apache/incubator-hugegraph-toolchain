@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
 import { AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -40,13 +40,6 @@ const JobDetails: React.FC = observer(() => {
         return <DataImportDetails />;
     }
   };
-
-  useEffect(() => {
-    return () => {
-      dataMapStore.dispose();
-      serverDataImportStore.dispose();
-    };
-  }, []);
 
   return (
     <>

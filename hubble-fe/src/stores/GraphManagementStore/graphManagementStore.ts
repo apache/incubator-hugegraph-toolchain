@@ -199,18 +199,19 @@ export class GraphManagementStore {
     this.editGraphData.host = this.graphData[index].host;
     this.editGraphData.port = String(this.graphData[index].port);
     this.editGraphData.username = this.graphData[index].username;
+    this.editGraphData.password = this.graphData[index].password;
   }
 
   @action
   resetGraphDataConfig(type: 'new' | 'edit') {
     if (type === 'new') {
-      Object.keys(this.newGraphData).forEach(key => {
+      Object.keys(this.newGraphData).forEach((key) => {
         this.newGraphData[key] = '';
       });
     }
 
     if (type === 'edit') {
-      Object.keys(this.newGraphData).forEach(key => {
+      Object.keys(this.newGraphData).forEach((key) => {
         this.editGraphData[key] = '';
       });
     }
@@ -311,7 +312,7 @@ export class GraphManagementStore {
 
   @action
   resetValidateErrorMessage() {
-    Object.keys(this.validateErrorMessage).forEach(key => {
+    Object.keys(this.validateErrorMessage).forEach((key) => {
       this.validateErrorMessage[key] = '';
     });
   }
@@ -511,10 +512,10 @@ export class GraphManagementStore {
 function filterParams(originParams: GraphDataConfig): GraphDataConfig {
   const newParams = {} as GraphDataConfig;
 
-  Object.keys(originParams).forEach(key => {
+  Object.keys(originParams).forEach((key) => {
     const value = originParams[key];
 
-    if (value !== null && value !== '' && typeof value !== 'undefined') {
+    if (typeof value !== 'undefined') {
       newParams[key] = originParams[key];
     }
   });

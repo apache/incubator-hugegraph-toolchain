@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 import { observable, action, flow, computed } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
-import { remove } from 'lodash-es';
+import { remove, isUndefined } from 'lodash-es';
 
 import { DataMapStore } from './dataMapStore';
 import { ServerDataImportStore } from './serverDataImportStore';
@@ -121,7 +121,10 @@ export class DataImportRootStore {
       ({ name }) => name === fileName
     )!;
 
-    fileUploadTask[key] = value;
+    // users may click back button in browser
+    if (!isUndefined(fileUploadTask)) {
+      fileUploadTask[key] = value;
+    }
   }
 
   @action
@@ -210,6 +213,10 @@ export class DataImportRootStore {
     this.requestStatus.uploadFiles = 'pending';
     const formData = new FormData();
     formData.append('file', fileChunkList.chunk);
+
+    if (this.currentId === null || this.currentJobId === null) {
+      return;
+    }
 
     try {
       const result: AxiosResponse<responseData<FileUploadResult>> = yield axios
