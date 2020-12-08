@@ -531,17 +531,26 @@ export const ImportManagerManipulation: React.FC<ImportManagerManipulationProps>
           </span>
         )}
         {status === 'FAILED' && (
-          <span
-            onClick={() => {
-              setLocation(
-                `/graph-management/${
-                  params!.id
-                }/data-import/job-error-log/${jobId}`
-              );
-            }}
+          // <span
+          //   onClick={() => {
+          //     setLocation(
+          //       `/graph-management/${
+          //         params!.id
+          //       }/data-import/job-error-log/${jobId}`
+          //     );
+          //   }}
+          // >
+          //   {t('import-manager.list-column-manipulations.check-error-log')}
+          // </span>
+          <a
+            target="_blank"
+            className="import-manager-table-manipulations-outlink"
+            href={`/graph-management/${
+              params!.id
+            }/data-import/job-error-log/${jobId}`}
           >
             {t('import-manager.list-column-manipulations.check-error-log')}
-          </span>
+          </a>
         )}
         <span
           onClick={() => {

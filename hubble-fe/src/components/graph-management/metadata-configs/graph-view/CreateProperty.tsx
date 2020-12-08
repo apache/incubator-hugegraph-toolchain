@@ -43,7 +43,7 @@ const CreateProperty: React.FC = observer(() => {
           type="primary"
           size="medium"
           style={{ width: 60 }}
-          disabled={false}
+          disabled={!metadataPropertyStore.isCreatedReady}
           onClick={async () => {
             metadataPropertyStore.validateNewProperty();
 
@@ -108,12 +108,14 @@ const CreateProperty: React.FC = observer(() => {
                 errorMessage={
                   metadataPropertyStore.validateNewPropertyErrorMessage.name
                 }
-                value={metadataPropertyStore.newMetadataProperty.name}
+                value={metadataPropertyStore.newMetadataProperty._name}
                 onChange={(e: any) => {
                   metadataPropertyStore.mutateNewProperty({
                     ...metadataPropertyStore.newMetadataProperty,
-                    name: e.value
+                    _name: e.value
                   });
+
+                  metadataPropertyStore.validateNewProperty();
                 }}
                 originInputProps={{
                   // no autofocus here, it will automatically dispatch blur action
@@ -145,7 +147,7 @@ const CreateProperty: React.FC = observer(() => {
                 }}
                 dropdownClassName="data-analyze-sidebar-select"
               >
-                {dataTypeOptions.map(option => {
+                {dataTypeOptions.map((option) => {
                   return (
                     <Select.Option value={option} key={option}>
                       {option}
@@ -176,7 +178,7 @@ const CreateProperty: React.FC = observer(() => {
                 }}
                 dropdownClassName="data-analyze-sidebar-select"
               >
-                {cardinalityOptions.map(option => {
+                {cardinalityOptions.map((option) => {
                   return (
                     <Select.Option value={option} key={option}>
                       {option}

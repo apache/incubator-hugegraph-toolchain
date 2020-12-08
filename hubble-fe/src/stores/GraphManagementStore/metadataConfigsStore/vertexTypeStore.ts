@@ -272,6 +272,8 @@ export class VertexTypeStore {
         display_fields: ['~id']
       }
     };
+
+    this.isCreatedReady = false;
   }
 
   @action

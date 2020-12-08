@@ -243,6 +243,8 @@ const MetadataProperties: React.FC = observer(() => {
                   ...metadataPropertyStore.newMetadataProperty,
                   _name: e.value
                 });
+
+                metadataPropertyStore.validateNewProperty();
               }}
               originInputProps={{
                 autoFocus: 'autoFocus',

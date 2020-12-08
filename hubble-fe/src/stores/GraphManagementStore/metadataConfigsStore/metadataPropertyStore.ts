@@ -52,7 +52,7 @@ export class MetadataPropertyStore {
 
   @observable isCreateNewProperty = false;
   // should user able to create new vertex type
-  @observable isCreatedReady = true;
+  @observable isCreatedReady = false;
 
   @observable newMetadataProperty: NewMetadataProperty = {
     name: v4(),
@@ -158,10 +158,13 @@ export class MetadataPropertyStore {
   @action
   resetNewProperties() {
     this.mutateNewProperty({
-      name: '',
+      name: v4(),
+      _name: '',
       data_type: 'string',
       cardinality: 'single'
     });
+
+    this.isCreatedReady = false;
   }
 
   @action
@@ -298,6 +301,7 @@ export class MetadataPropertyStore {
       sort: ''
     };
     this.isCreateNewProperty = false;
+    this.isCreatedReady = false;
     this.resetNewProperties();
     this.metadataProperties = [];
     this.metadataPropertyUsingStatus = null;

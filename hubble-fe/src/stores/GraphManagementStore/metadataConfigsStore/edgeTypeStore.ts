@@ -288,6 +288,8 @@ export class EdgeTypeStore {
         display_fields: ['~id']
       }
     };
+
+    this.isCreatedReady = false;
   }
 
   @action
