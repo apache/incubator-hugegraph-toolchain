@@ -99,6 +99,7 @@ public final class HugeGraphLoader {
 
     public boolean load() {
         try {
+            // Switch to loading mode
             this.context.setLoadingMode();
             // Clear schema if needed
             this.clearAllDataIfNeeded();

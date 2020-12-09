@@ -25,6 +25,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -75,7 +77,15 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
     protected abstract SchemaLabel schemaLabel();
 
+    protected abstract Collection<String> nonNullableKeys();
+
     protected abstract boolean isIdField(String fieldName);
+
+    @SuppressWarnings("unchecked")
+    protected Collection<String> nonNullableKeys(SchemaLabel schemaLabel) {
+        return CollectionUtils.subtract(schemaLabel.properties(),
+                                        schemaLabel.nullableKeys());
+    }
 
     protected VertexKVPairs newKVPairs(VertexLabel vertexLabel, boolean unfold) {
         IdStrategy idStrategy = vertexLabel.idStrategy();
@@ -140,6 +150,20 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             value = this.convertPropertyValue(key, value);
 
             element.property(key, value);
+        }
+    }
+
+    protected void checkNonNullableKeys(GraphElement element) {
+        Set<String> keys = element.properties().keySet();
+        // Check whether passed all non-null property
+        Collection<String> requiredKeys = this.nonNullableKeys();
+        if (!keys.containsAll(requiredKeys)) {
+            @SuppressWarnings("unchecked")
+            Collection<String> missed = CollectionUtils.subtract(requiredKeys,
+                                                                 keys);
+            E.checkArgument(false, "All non-null property keys %s of '%s' " +
+                            "must be setted, but missed keys %s",
+                            requiredKeys, this.schemaLabel().name(), missed);
         }
     }
 
@@ -351,6 +375,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                     addProperty(vertex, key, this.idValue);
                 }
                 addProperties(vertex, this.properties);
+                checkNonNullableKeys(vertex);
             }
             return ImmutableList.of(vertex);
         }
@@ -423,6 +448,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                         addProperty(vertex, key, idValue);
                     }
                     addProperties(vertex, this.properties);
+                    checkNonNullableKeys(vertex);
                 }
                 vertices.add(vertex);
             }
@@ -515,6 +541,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                                 this.pkValues[i], false);
                 }
                 addProperties(vertex, this.properties);
+                checkNonNullableKeys(vertex);
             } else {
                 vertex.id(id);
             }
@@ -610,6 +637,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 if (withProperty) {
                     addProperty(vertex, this.pkName, pkValue, false);
                     addProperties(vertex, this.properties);
+                    checkNonNullableKeys(vertex);
                 } else {
                     vertex.id(id);
                 }
