@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.builder;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -34,12 +35,14 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
     private final VertexMapping mapping;
     private final VertexLabel vertexLabel;
+    private final Collection<String> nonNullKeys;
 
     public VertexBuilder(LoadContext context, InputStruct struct,
                          VertexMapping mapping) {
         super(context, struct);
         this.mapping = mapping;
         this.vertexLabel = this.getVertexLabel(this.mapping.label());
+        this.nonNullKeys = this.nonNullableKeys(this.vertexLabel);
         // Ensure the id field is matched with id strategy
         this.checkIdField();
     }
@@ -60,6 +63,11 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     @Override
     protected SchemaLabel schemaLabel() {
         return this.vertexLabel;
+    }
+
+    @Override
+    protected Collection<String> nonNullableKeys() {
+        return this.nonNullKeys;
     }
 
     @Override

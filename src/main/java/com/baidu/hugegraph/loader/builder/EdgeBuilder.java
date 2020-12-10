@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.builder;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final EdgeLabel edgeLabel;
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
+    private final Collection<String> nonNullKeys;
 
     public EdgeBuilder(LoadContext context, InputStruct struct,
                        EdgeMapping mapping) {
@@ -50,6 +52,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         this.edgeLabel = this.getEdgeLabel(this.mapping.label());
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
         this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
+        this.nonNullKeys = this.nonNullableKeys(this.edgeLabel);
         // Ensure that the source/target id fileds are matched with id strategy
         this.checkIdFields(this.sourceLabel, this.mapping.sourceFields());
         this.checkIdFields(this.targetLabel, this.mapping.targetFields());
@@ -86,6 +89,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
             edge.target(target);
             // Add properties
             this.addProperties(edge, kvPairs.properties);
+            this.checkNonNullableKeys(edge);
             edges.add(edge);
         }
         return edges;
@@ -103,6 +107,11 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     @Override
     protected SchemaLabel schemaLabel() {
         return this.edgeLabel;
+    }
+
+    @Override
+    protected Collection<String> nonNullableKeys() {
+        return this.nonNullKeys;
     }
 
     @Override
