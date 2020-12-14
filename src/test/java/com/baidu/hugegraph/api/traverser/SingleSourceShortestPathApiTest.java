@@ -442,8 +442,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
     public void testSingleSourceShortestPathWithLimit() {
         WeightedPaths weightedPaths = singleSourceShortestPathAPI.get(
                                       "A", Direction.BOTH, null, "weight",
-                                      -1, 0, -1, 10, false);
-        Assert.assertEquals(10, weightedPaths.paths().size());
+                                      -1, 0, -1, 11, false);
+        Assert.assertEquals(11, weightedPaths.paths().size());
 
         WeightedPath.Path path = weightedPaths.paths().get("B");
         Assert.assertEquals(0.2D, path.weight(), Double.MIN_VALUE);
@@ -461,6 +461,11 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
         path = weightedPaths.paths().get("F");
         Assert.assertEquals(0.8D, path.weight(), Double.MIN_VALUE);
         Assert.assertEquals(ImmutableList.of("A", "E", "F"), path.vertices());
+
+        path = weightedPaths.paths().get("L");
+        Assert.assertEquals(0.8D, path.weight(), Double.MIN_VALUE);
+        Assert.assertEquals(ImmutableList.of("A", "H", "I", "J", "Z", "L"),
+                            path.vertices());
 
         path = weightedPaths.paths().get("G");
         Assert.assertEquals(0.6D, path.weight(), Double.MIN_VALUE);
