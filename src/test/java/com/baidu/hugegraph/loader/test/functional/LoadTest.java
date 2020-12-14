@@ -20,9 +20,12 @@
 package com.baidu.hugegraph.loader.test.functional;
 
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.structure.constant.T;
@@ -56,6 +59,13 @@ public class LoadTest {
 
     public static void clearServerData() {
         CLIENT.graphs().clear(GRAPH, CONFIRM_CLEAR);
+    }
+
+    public static void clearAndClose(HugeClient httpsClient, String graph) {
+        if (httpsClient == null) {
+            return;
+        }
+        httpsClient.graphs().clear(graph, CONFIRM_CLEAR);
     }
 
     protected static void assertContains(List<Vertex> vertices, String label,
@@ -100,5 +110,42 @@ public class LoadTest {
             }
         }
         return map;
+    }
+
+    public static void assertDateEquals(String expectDate, Object actualDate)
+                                        throws java.text.ParseException {
+        E.checkArgument(actualDate instanceof String,
+                        "Date value must be String class");
+        assertDateEquals(expectDate, TimeZone.getTimeZone("GMT+8"),
+                         (String) actualDate, TimeZone.getDefault());
+    }
+
+    public static void assertDateEquals(List<String> expectDates,
+                                        Object actualDates)
+                                        throws java.text.ParseException {
+        E.checkArgument(actualDates instanceof List,
+                        "Date value must be List<String> class");
+        List<String> actualDateList = (List<String>) actualDates;
+        E.checkArgument(expectDates.size() == actualDateList.size(),
+                        "The size of expect and actual dates must be equal");
+        int n = expectDates.size();
+        for (int i = 0; i < n; i++) {
+            assertDateEquals(expectDates.get(i), TimeZone.getTimeZone("GMT+8"),
+                             actualDateList.get(i), TimeZone.getDefault());
+        }
+    }
+
+    public static void assertDateEquals(String expectDate, TimeZone expectZone,
+                                        String actualDate, TimeZone actualZone)
+                                        throws java.text.ParseException {
+        DateFormat expectDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        expectDF.setTimeZone(expectZone);
+        long expectTimeStamp = expectDF.parse(expectDate).getTime();
+
+        DateFormat actualDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        actualDF.setTimeZone(actualZone);
+        long actualTimeStamp = actualDF.parse(actualDate).getTime();
+
+        Assert.assertEquals(expectTimeStamp, actualTimeStamp);
     }
 }

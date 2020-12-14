@@ -55,13 +55,13 @@ public class HDFSSource extends FileSource {
                         "The core site file '%s' is not an existing file",
                         coreSiteFile);
 
-        E.checkArgument(!StringUtils.isEmpty(this.hdfsSitePath),
-                        "The hdfs_site_path can't be empty");
-        File hdfsSiteFile = FileUtils.getFile(Paths.get(this.hdfsSitePath)
-                                                   .toString());
-        E.checkArgument(hdfsSiteFile.exists() && hdfsSiteFile.isFile(),
-                        "The hdfs site file '%s' is not an existing file",
-                        hdfsSiteFile);
+        if (this.hdfsSitePath != null) {
+            File hdfsSiteFile = FileUtils.getFile(Paths.get(this.hdfsSitePath)
+                                                       .toString());
+            E.checkArgument(hdfsSiteFile.exists() && hdfsSiteFile.isFile(),
+                            "The hdfs site file '%s' is not an existing file",
+                            hdfsSiteFile);
+        }
 
         if (this.kerberosConfig != null) {
             this.kerberosConfig.check();
