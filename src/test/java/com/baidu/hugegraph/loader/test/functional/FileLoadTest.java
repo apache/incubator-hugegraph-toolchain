@@ -3002,7 +3002,7 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "-p", String.valueOf(HTTPS_PORT),
-                "--protocol", PROTOCOL,
+                "--protocol", HTTPS_PROTOCOL,
                 "--trust-store-file", TRUST_STORE_FILE,
                 "--trust-store-password", TRUST_STORE_PASSWORD,
                 "--batch-insert-threads", "2",
@@ -3028,6 +3028,10 @@ public class FileLoadTest extends LoadTest {
                 "-s", configPath("value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
+                "-p", String.valueOf(HTTPS_PORT),
+                "--protocol", HTTPS_PROTOCOL,
+                "--trust-store-file", TRUST_STORE_FILE,
+                "--trust-store-password", TRUST_STORE_PASSWORD,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -3040,7 +3044,7 @@ public class FileLoadTest extends LoadTest {
         options.host = SERVER;
         options.port = HTTPS_PORT;
         options.graph = GRAPH;
-        options.protocol = PROTOCOL;
+        options.protocol = HTTPS_PROTOCOL;
         options.trustStoreFile = TRUST_STORE_FILE;
         options.trustStorePassword = TRUST_STORE_PASSWORD;
         try {
