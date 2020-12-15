@@ -170,7 +170,7 @@ public final class FailLogger {
                 }
             }
         } catch (IOException e) {
-            throw new LoadException("Failed to scan and remove duplicate lines");
+            throw new LoadException("Failed to remove duplicate lines");
         }
         if (!dedupFile.renameTo(this.file)) {
             throw new LoadException("Failed to rename dedup file to origin");

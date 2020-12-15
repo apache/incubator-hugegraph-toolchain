@@ -101,7 +101,8 @@ public abstract class InsertTask implements Runnable {
         if (this.type().isVertex()) {
             client.graph().addVertices((List<Vertex>) (Object) elements);
         } else {
-            client.graph().addEdges((List<Edge>) (Object) elements, checkVertex);
+            client.graph().addEdges((List<Edge>) (Object) elements,
+                                    checkVertex);
         }
     }
 

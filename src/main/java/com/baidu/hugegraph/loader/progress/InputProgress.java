@@ -21,8 +21,8 @@ package com.baidu.hugegraph.loader.progress;
 
 import java.util.Set;
 
-import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,7 +36,7 @@ public final class InputProgress {
     @JsonProperty("loading_item")
     private InputItemProgress loadingItem;
 
-    private transient final Set<InputItemProgress> loadingItems;
+    private final transient Set<InputItemProgress> loadingItems;
 
     @JsonCreator
     public InputProgress(@JsonProperty("type") SourceType type,

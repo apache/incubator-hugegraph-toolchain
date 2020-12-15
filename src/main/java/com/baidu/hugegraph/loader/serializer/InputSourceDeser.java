@@ -64,7 +64,8 @@ public class InputSourceDeser extends JsonDeserializer<InputSource> {
             case JDBC:
                 JsonNode vendorNode = getNode(node, FIELD_VENDOR,
                                               JsonNodeType.STRING);
-                vendorNode = TextNode.valueOf(vendorNode.asText().toUpperCase());
+                vendorNode = TextNode.valueOf(vendorNode.asText()
+                                                        .toUpperCase());
                 objectNode.replace(FIELD_VENDOR, vendorNode);
                 return JsonUtil.convert(node, JDBCSource.class);
             default:

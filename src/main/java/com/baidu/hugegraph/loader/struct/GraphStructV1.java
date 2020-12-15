@@ -108,6 +108,7 @@ public class GraphStructV1 implements Checkable {
                                         .map(ElementStructV1::uniqueKey)
                                         .collect(Collectors.toSet());
         E.checkArgument(structs.size() == uniqueKeys.size(),
-                        "Please ensure there is no same mapping in %s", structs);
+                        "Please ensure there is no same mapping in %s",
+                        structs);
     }
 }

@@ -73,17 +73,17 @@ public final class LoadOptions {
 
     @Parameter(names = {"--protocol"}, arity = 1,
                validateWith = {ProtocolValidator.class},
-               description = "The protocol of HugeGraphServer, allowed values " +
-                             "are: http or https")
+               description = "The protocol of HugeGraphServer, " +
+                             "allowed values are: http or https")
     public String protocol = "http";
 
     @Parameter(names = {"--trust-store-file"}, arity = 1,
-               description = "The path of client truststore file used when https " +
-                             "protocol is enabled")
+               description = "The path of client truststore file used " +
+                             "when https protocol is enabled")
     public String trustStoreFile = null;
 
     @Parameter(names = {"--trust-store-password"}, arity = 1,
-               description = "The password of the client truststore file used " +
+               description = "The password of client truststore file used " +
                              "when https protocol is enabled")
     public String trustStorePassword = null;
 
@@ -258,10 +258,10 @@ public final class LoadOptions {
 
         @Override
         public void validate(String name, String value) {
-            String regex = "^((http)(s?)://)?"
-                    + "(([0-9]{1,3}\\.){3}[0-9]{1,3}" // IP URL, like: 10.0.0.1
-                    + "|" // Or domain name
-                    + "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
+            String regex = "^((http)(s?)://)?" +
+                           "(([0-9]{1,3}\\.){3}[0-9]{1,3}" + // IP URL
+                           "|" +                             // Or domain name
+                           "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
                           "Invalid url value of args '%s': '%s'", name, value));

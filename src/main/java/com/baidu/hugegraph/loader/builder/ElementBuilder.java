@@ -87,7 +87,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                                         schemaLabel.nullableKeys());
     }
 
-    protected VertexKVPairs newKVPairs(VertexLabel vertexLabel, boolean unfold) {
+    protected VertexKVPairs newKVPairs(VertexLabel vertexLabel,
+                                       boolean unfold) {
         IdStrategy idStrategy = vertexLabel.idStrategy();
         if (idStrategy.isCustomize()) {
             if (unfold) {
@@ -407,7 +408,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 }
                 if (isIdField(fieldName)) {
                     this.idField = fieldName;
-                    List<Object> rawIdValues = splitField(fieldName, fieldValue);
+                    List<Object> rawIdValues = splitField(fieldName,
+                                                          fieldValue);
                     this.idValues = rawIdValues.stream().map(rawIdValue -> {
                         return mappingValue(fieldName, rawIdValue);
                     }).collect(Collectors.toList());
@@ -585,7 +587,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 String key = mapping().mappingField(fieldName);
                 if (!handledPk && primaryKeys.contains(key)) {
                     // Don't put priamry key/values into general properties
-                    List<Object> rawPkValues = splitField(fieldName, fieldValue);
+                    List<Object> rawPkValues = splitField(fieldName,
+                                                          fieldValue);
                     this.pkValues = rawPkValues.stream().map(rawPkValue -> {
                         return mappingValue(fieldName, rawPkValue);
                     }).collect(Collectors.toList());

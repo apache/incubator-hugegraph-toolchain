@@ -69,10 +69,13 @@ public class FileSource extends AbstractSource {
         this.path = path;
         this.filter = filter != null ? filter : new FileFilter();
         this.format = format != null ? format : FileFormat.CSV;
-        this.delimiter = delimiter != null ? delimiter : this.format.delimiter();
-        this.dateFormat = dateFormat != null ? dateFormat : Constants.DATE_FORMAT;
+        this.delimiter = delimiter != null ?
+                         delimiter : this.format.delimiter();
+        this.dateFormat = dateFormat != null ?
+                          dateFormat : Constants.DATE_FORMAT;
         this.timeZone = timeZone != null ? timeZone : Constants.TIME_ZONE;
-        this.skippedLine = skippedLine != null ? skippedLine : new SkippedLine();
+        this.skippedLine = skippedLine != null ?
+                           skippedLine : new SkippedLine();
         this.compression = compression != null ? compression : Compression.NONE;
         this.batchSize = batchSize != null ? batchSize : 500;
     }

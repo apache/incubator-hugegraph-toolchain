@@ -164,6 +164,8 @@ public final class TaskManager {
         InsertTask task = new SingleInsertTask(this.context, struct,
                                                mapping, batch);
         CompletableFuture.runAsync(task, this.singleService)
-                         .whenComplete((r, e) -> this.singleSemaphore.release());
+                         .whenComplete((r, e) -> {
+                             this.singleSemaphore.release();
+                         });
     }
 }

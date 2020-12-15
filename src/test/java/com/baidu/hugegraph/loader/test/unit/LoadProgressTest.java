@@ -21,7 +21,6 @@ package com.baidu.hugegraph.loader.test.unit;
 
 import org.junit.Test;
 
-import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.test.functional.LoadTest;
 import com.baidu.hugegraph.loader.util.JsonUtil;
@@ -31,59 +30,59 @@ public class LoadProgressTest extends LoadTest {
 
     @Test
     public void testTotalLoaded() {
-        String json = "{"
-                + "\"vertex_propgress\": 16,"
-                + "\"edge_propgress\": 12,"
-                + "\"input_propgress\": {"
-                + "    \"1\":{"
-                + "        \"type\":\"FILE\","
-                + "        \"loaded_items\":["
-                + "            {"
-                + "                \"name\":\"vertex_person.csv\","
-                + "                \"last_modified\":1574346235000,"
-                + "                \"checksum\":\"4250397517\","
-                + "                \"offset\":6"
-                + "            }"
-                + "        ],"
-                + "        \"loading_item\":null"
-                + "    },"
-                + "    \"2\":{"
-                + "        \"type\":\"FILE\","
-                + "        \"loaded_items\":["
-                + "            {"
-                + "                \"name\":\"vertex_software.txt\","
-                + "                \"last_modified\":1575427304000,"
-                + "                \"checksum\":\"2992253526\","
-                + "                \"offset\":2"
-                + "            }"
-                + "        ],"
-                + "        \"loading_item\":null"
-                + "    },"
-                + "    \"3\":{"
-                + "        \"type\":\"FILE\","
-                + "        \"loaded_items\":["
-                + "            {"
-                + "                \"name\":\"edge_knows.json\","
-                + "                \"last_modified\":1576658150000,"
-                + "                \"checksum\":\"3108779382\","
-                + "                \"offset\":2"
-                + "            }"
-                + "        ],"
-                + "        \"loading_item\":null"
-                + "    },"
-                + "    \"4\":{"
-                + "        \"type\":\"FILE\","
-                + "        \"loaded_items\":["
-                + "            {"
-                + "                \"name\":\"edge_created.json\","
-                + "                \"last_modified\":1576659393000,"
-                + "                \"checksum\":\"1026646359\","
-                + "                \"offset\":4"
-                + "            }"
-                + "        ],"
-                + "        \"loading_item\":null"
-                + "    }"
-                + "}}";
+        String json = "{" +
+                "\"vertex_propgress\": 16," +
+                "\"edge_propgress\": 12," +
+                "\"input_propgress\": {" +
+                "    \"1\":{" +
+                "        \"type\":\"FILE\"," +
+                "        \"loaded_items\":[" +
+                "            {" +
+                "                \"name\":\"vertex_person.csv\"," +
+                "                \"last_modified\":1574346235000," +
+                "                \"checksum\":\"4250397517\"," +
+                "                \"offset\":6" +
+                "            }" +
+                "        ]," +
+                "        \"loading_item\":null" +
+                "    }," +
+                "    \"2\":{" +
+                "        \"type\":\"FILE\"," +
+                "        \"loaded_items\":[" +
+                "            {" +
+                "                \"name\":\"vertex_software.txt\"," +
+                "                \"last_modified\":1575427304000," +
+                "                \"checksum\":\"2992253526\"," +
+                "                \"offset\":2" +
+                "            }" +
+                "        ]," +
+                "        \"loading_item\":null" +
+                "    }," +
+                "    \"3\":{" +
+                "        \"type\":\"FILE\"," +
+                "        \"loaded_items\":[" +
+                "            {" +
+                "                \"name\":\"edge_knows.json\"," +
+                "                \"last_modified\":1576658150000," +
+                "                \"checksum\":\"3108779382\"," +
+                "                \"offset\":2" +
+                "            }" +
+                "        ]," +
+                "        \"loading_item\":null" +
+                "    }," +
+                "    \"4\":{" +
+                "        \"type\":\"FILE\"," +
+                "        \"loaded_items\":[" +
+                "            {" +
+                "                \"name\":\"edge_created.json\"," +
+                "                \"last_modified\":1576659393000," +
+                "                \"checksum\":\"1026646359\"," +
+                "                \"offset\":4" +
+                "            }" +
+                "        ]," +
+                "        \"loading_item\":null" +
+                "    }" +
+                "}}";
         LoadProgress progress = JsonUtil.fromJson(json, LoadProgress.class);
         Assert.assertEquals(16, progress.vertexLoaded());
         Assert.assertEquals(12, progress.edgeLoaded());
