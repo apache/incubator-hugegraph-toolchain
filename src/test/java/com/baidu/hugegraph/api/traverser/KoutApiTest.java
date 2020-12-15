@@ -110,14 +110,27 @@ public class KoutApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             koutAPI.get(markoId, Direction.BOTH, null,
-                        2, false, -1L, -1L, 1L);
+                        2, false, -1L, 1L, 2L);
         }, e -> {
             String expect = "Capacity can't be less than limit, " +
-                    "but got capacity '1' and limit '-1'";
+                            "but got capacity '1' and limit '2'";
             Assert.assertContains(expect, e.getMessage());
         });
     }
 
+    @Test
+    public void testKoutGetBothAllWithCapacityNoLimit() {
+        Object markoId = getVertexId("person", "name", "marko");
+
+        Assert.assertThrows(ServerException.class, () -> {
+            koutAPI.get(markoId, Direction.BOTH, null,
+                    2, false, -1L, 1L, -1L);
+        }, e -> {
+            String expect = "Capacity can't be less than limit, " +
+                            "but got capacity '1' and limit '-1'";
+            Assert.assertContains(expect, e.getMessage());
+        });
+    }
 
     @Test
     public void testKoutPost() {
