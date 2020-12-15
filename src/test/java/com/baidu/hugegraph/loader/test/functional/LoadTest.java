@@ -32,7 +32,6 @@ import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.util.E;
 
 public class LoadTest {
 
@@ -101,8 +100,8 @@ public class LoadTest {
     }
 
     private static Map<String, Object> toMap(Object... properties) {
-        E.checkArgument((properties.length & 0x01) == 0,
-                        "The number of properties must be even");
+        Assert.assertTrue("The number of properties must be even",
+                          (properties.length & 0x01) == 0);
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < properties.length; i = i + 2) {
             if (!properties[i].equals(T.id) && !properties[i].equals(T.label)) {
@@ -114,8 +113,8 @@ public class LoadTest {
 
     public static void assertDateEquals(String expectDate, Object actualDate)
                                         throws java.text.ParseException {
-        E.checkArgument(actualDate instanceof String,
-                        "Date value must be String class");
+        Assert.assertEquals("Date value must be String class",
+                            String.class, actualDate.getClass());
         assertDateEquals(expectDate, TimeZone.getTimeZone("GMT+8"),
                          (String) actualDate, TimeZone.getDefault());
     }
@@ -123,11 +122,11 @@ public class LoadTest {
     public static void assertDateEquals(List<String> expectDates,
                                         Object actualDates)
                                         throws java.text.ParseException {
-        E.checkArgument(actualDates instanceof List,
-                        "Date value must be List<String> class");
+        Assert.assertTrue("Date value must be List<String> class",
+                          List.class.isAssignableFrom(actualDates.getClass()));
         List<String> actualDateList = (List<String>) actualDates;
-        E.checkArgument(expectDates.size() == actualDateList.size(),
-                        "The size of expect and actual dates must be equal");
+        Assert.assertEquals("The size of expect and actual dates must be equal",
+                            expectDates.size(), actualDateList.size());
         int n = expectDates.size();
         for (int i = 0; i < n; i++) {
             assertDateEquals(expectDates.get(i), TimeZone.getTimeZone("GMT+8"),
