@@ -593,7 +593,8 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testValueListPropertyInTextFile() {
+    public void testValueListPropertyInTextFile()
+           throws java.text.ParseException {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -621,11 +622,12 @@ public class FileLoadTest extends LoadTest {
                 "2019-05-02 00:00:00.000",
                 "2008-05-02 00:00:00.000"
         );
-        Assert.assertEquals(expectedTimes, edge.property("time"));
+        assertDateEquals(expectedTimes, edge.property("time"));
     }
 
     @Test
-    public void testValueSetPropertyInTextFile() {
+    public void testValueSetPropertyInTextFile()
+           throws java.text.ParseException {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -650,9 +652,11 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(ImmutableList.of(4, 1, 5, 6),
                             edge.property("feel"));
         Assert.assertEquals(ArrayList.class, edge.property("time").getClass());
-        List<?> list = (List<?>) edge.property("time");
-        Assert.assertTrue(list.contains("2019-05-02 00:00:00.000"));
-        Assert.assertTrue(list.contains("2008-05-02 00:00:00.000"));
+        List<String> expectedTimes = ImmutableList.of(
+                "2019-05-02 00:00:00.000",
+                "2008-05-02 00:00:00.000"
+        );
+        assertDateEquals(expectedTimes, edge.property("time"));
     }
 
     @Test
@@ -1376,14 +1380,14 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, vertices.size());
 
         Vertex marko = vertices.get(0);
-        Assert.assertEquals("1992-10-01 00:00:00.000", marko.property("birth"));
+        assertDateEquals("1992-10-01 00:00:00.000", marko.property("birth"));
 
         Vertex vadas = vertices.get(1);
-        Assert.assertEquals("2000-01-01 00:00:00.000", vadas.property("birth"));
+        assertDateEquals("2000-01-01 00:00:00.000", vadas.property("birth"));
     }
 
     @Test
-    public void testDefaultTimeZoneGMT8() {
+    public void testDefaultTimeZoneGMT8() throws java.text.ParseException {
         ioUtil.write("vertex_person_birth_date.csv",
                      "marko,1992-10-01 12:00:00,Beijing",
                      "vadas,2000-01-01 13:00:00,Hongkong");
@@ -1401,16 +1405,14 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, vertices.size());
 
         Vertex marko = CLIENT.graph().getVertex("1:marko");
-        Assert.assertEquals("1992-10-01 12:00:00.000",
-                            marko.property("birth"));
+        assertDateEquals("1992-10-01 12:00:00.000", marko.property("birth"));
 
         Vertex vadas = CLIENT.graph().getVertex("1:vadas");
-        Assert.assertEquals("2000-01-01 13:00:00.000",
-                            vadas.property("birth"));
+        assertDateEquals("2000-01-01 13:00:00.000", vadas.property("birth"));
     }
 
     @Test
-    public void testCustomizedTimeZoneGMT0() {
+    public void testCustomizedTimeZoneGMT0() throws java.text.ParseException {
         ioUtil.write("vertex_person_birth_date.csv",
                      "marko,1992-10-01 12:00:00,Beijing",
                      "vadas,2000-01-01 13:00:00,Hongkong");
@@ -1428,16 +1430,16 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, vertices.size());
 
         Vertex marko = CLIENT.graph().getVertex("1:marko");
-        Assert.assertEquals("1992-10-01 20:00:00.000",
-                            marko.property("birth"));
+        assertDateEquals("1992-10-01 20:00:00.000",
+                         marko.property("birth"));
 
         Vertex vadas = CLIENT.graph().getVertex("1:vadas");
-        Assert.assertEquals("2000-01-01 21:00:00.000",
-                            vadas.property("birth"));
+        assertDateEquals("2000-01-01 21:00:00.000",
+                         vadas.property("birth"));
     }
 
     @Test
-    public void testValueMapping() {
+    public void testValueMapping() throws java.text.ParseException {
         /*
          * "age": {"1": 25, "2": 30}
          * "birth": {"1": "1994-01-01", "2": "1989-01-01"}
@@ -1459,11 +1461,21 @@ public class FileLoadTest extends LoadTest {
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
 
-        // TODO: Fix date property be saved as long in client
-        assertContains(vertices, "person", "name", "marko", "age", 25,
-                       "birth", "1994-01-01 00:00:00.000", "city", "Beijing");
-        assertContains(vertices, "person", "name", "vadas", "age", 30,
-                       "birth", "1989-01-01 00:00:00.000", "city", "Shanghai");
+        Vertex marko, vadas;
+        if (vertices.get(0).property("name").equals("marko")) {
+            marko = vertices.get(0);
+            vadas = vertices.get(1);
+        } else {
+            vadas = vertices.get(0);
+            marko = vertices.get(1);
+        }
+        Assert.assertEquals(25, marko.property("age"));
+        Assert.assertEquals("Beijing", marko.property("city"));
+        assertDateEquals("1994-01-01 00:00:00.000", marko.property("birth"));
+
+        Assert.assertEquals(30, vadas.property("age"));
+        Assert.assertEquals("Shanghai", vadas.property("city"));
+        assertDateEquals("1989-01-01 00:00:00.000", vadas.property("birth"));
     }
 
     @Test
@@ -2315,7 +2327,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testOrcCompressFile() {
+    public void testOrcCompressFile() throws java.text.ParseException {
         // TODO: add test for blob and uuid
         TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(
                 "struct<" +
@@ -2355,8 +2367,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(4.0D, vertex.property("p_float"));
         Assert.assertEquals(5.0D, vertex.property("p_double"));
         Assert.assertEquals("marko", vertex.property("p_string"));
-        Assert.assertEquals("2019-12-09 00:00:00.000",
-                            vertex.property("p_date"));
+        assertDateEquals("2019-12-09 00:00:00.000", vertex.property("p_date"));
     }
 
     @Test
@@ -3010,12 +3021,17 @@ public class FileLoadTest extends LoadTest {
         };
         HugeGraphLoader.main(args);
 
-        HugeClient httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
-                                           .configSSL(TRUST_STORE_FILE,
-                                                      TRUST_STORE_PASSWORD)
-                                           .build();
-        List<Vertex> vertices = httpsClient.graph().listVertices();
-        Assert.assertEquals(2, vertices.size());
+        HugeClient httpsClient = null;
+        try {
+            httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
+                                    .configSSL(TRUST_STORE_FILE,
+                                               TRUST_STORE_PASSWORD)
+                                    .build();
+            List<Vertex> vertices = httpsClient.graph().listVertices();
+            Assert.assertEquals(2, vertices.size());
+        } finally {
+            clearAndClose(httpsClient, GRAPH);
+        }
     }
 
     @Test
@@ -3035,9 +3051,6 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-
-        String homePath = System.getProperty("loader.home.path");
-        System.setProperty("loader.home.path", "./");
         HugeGraphLoader.main(args);
 
         LoadOptions options = new LoadOptions();
@@ -3047,16 +3060,14 @@ public class FileLoadTest extends LoadTest {
         options.protocol = HTTPS_PROTOCOL;
         options.trustStoreFile = TRUST_STORE_FILE;
         options.trustStorePassword = TRUST_STORE_PASSWORD;
+
+        HugeClient httpsClient = null;
         try {
-            HugeClient client = HugeClientHolder.create(options);
-            List<Vertex> vertices = client.graph().listVertices();
+            httpsClient = HugeClientHolder.create(options);
+            List<Vertex> vertices = httpsClient.graph().listVertices();
             Assert.assertEquals(2, vertices.size());
         } finally {
-            if (homePath != null) {
-                System.setProperty("loader.home.path", homePath);
-            } else {
-                System.clearProperty("loader.home.path");
-            }
+            clearAndClose(httpsClient, GRAPH);
         }
     }
 }

@@ -138,7 +138,9 @@ public class HDFSFileReader extends FileReader {
     private Configuration loadConfiguration() {
         Configuration conf = new Configuration();
         conf.addResource(new Path(this.source().coreSitePath()));
-        conf.addResource(new Path(this.source().hdfsSitePath()));
+        if (this.source().hdfsSitePath() != null) {
+            conf.addResource(new Path(this.source().hdfsSitePath()));
+        }
         return conf;
     }
 

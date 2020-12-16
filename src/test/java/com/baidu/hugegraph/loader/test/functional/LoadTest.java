@@ -20,16 +20,18 @@
 package com.baidu.hugegraph.loader.test.functional;
 
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.util.E;
 
 public class LoadTest {
 
@@ -56,6 +58,13 @@ public class LoadTest {
 
     public static void clearServerData() {
         CLIENT.graphs().clear(GRAPH, CONFIRM_CLEAR);
+    }
+
+    public static void clearAndClose(HugeClient httpsClient, String graph) {
+        if (httpsClient == null) {
+            return;
+        }
+        httpsClient.graphs().clear(graph, CONFIRM_CLEAR);
     }
 
     protected static void assertContains(List<Vertex> vertices, String label,
@@ -91,8 +100,8 @@ public class LoadTest {
     }
 
     private static Map<String, Object> toMap(Object... properties) {
-        E.checkArgument((properties.length & 0x01) == 0,
-                        "The number of properties must be even");
+        Assert.assertTrue("The number of properties must be even",
+                          (properties.length & 0x01) == 0);
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < properties.length; i = i + 2) {
             if (!properties[i].equals(T.id) && !properties[i].equals(T.label)) {
@@ -100,5 +109,42 @@ public class LoadTest {
             }
         }
         return map;
+    }
+
+    public static void assertDateEquals(String expectDate, Object actualDate)
+                                        throws java.text.ParseException {
+        Assert.assertEquals("Date value must be String class",
+                            String.class, actualDate.getClass());
+        assertDateEquals(expectDate, TimeZone.getTimeZone("GMT+8"),
+                         (String) actualDate, TimeZone.getDefault());
+    }
+
+    public static void assertDateEquals(List<String> expectDates,
+                                        Object actualDates)
+                                        throws java.text.ParseException {
+        Assert.assertTrue("Date value must be List<String> class",
+                          List.class.isAssignableFrom(actualDates.getClass()));
+        List<String> actualDateList = (List<String>) actualDates;
+        Assert.assertEquals("The size of expect and actual dates must be equal",
+                            expectDates.size(), actualDateList.size());
+        int n = expectDates.size();
+        for (int i = 0; i < n; i++) {
+            assertDateEquals(expectDates.get(i), TimeZone.getTimeZone("GMT+8"),
+                             actualDateList.get(i), TimeZone.getDefault());
+        }
+    }
+
+    public static void assertDateEquals(String expectDate, TimeZone expectZone,
+                                        String actualDate, TimeZone actualZone)
+                                        throws java.text.ParseException {
+        DateFormat expectDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        expectDF.setTimeZone(expectZone);
+        long expectTimeStamp = expectDF.parse(expectDate).getTime();
+
+        DateFormat actualDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        actualDF.setTimeZone(actualZone);
+        long actualTimeStamp = actualDF.parse(actualDate).getTime();
+
+        Assert.assertEquals(expectTimeStamp, actualTimeStamp);
     }
 }
