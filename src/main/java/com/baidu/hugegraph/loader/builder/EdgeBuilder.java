@@ -82,8 +82,10 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         int size = Math.max(sources.size(), targets.size());
         List<Edge> edges = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            Vertex source = i < sources.size() ? sources.get(i) : sources.get(0);
-            Vertex target = i < targets.size() ? targets.get(i) : targets.get(0);
+            Vertex source = i < sources.size() ?
+                            sources.get(i) : sources.get(0);
+            Vertex target = i < targets.size() ?
+                            targets.get(i) : targets.get(0);
             Edge edge = new Edge(this.mapping.label());
             edge.source(source);
             edge.target(target);

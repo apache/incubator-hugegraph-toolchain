@@ -59,8 +59,8 @@ public class InputStruct implements Checkable {
         E.checkArgument(this.input != null, "The mapping.input can't be null");
         this.input.check();
         E.checkArgument(!this.vertices.isEmpty() || !this.edges.isEmpty(),
-                        "The mapping.vertices and mapping.edges can't be empty" +
-                        "at same time, need specify at least one");
+                        "The mapping.vertices and mapping.edges can't be " +
+                        "empty at same time, need specify at least one");
         this.vertices.forEach(VertexMapping::check);
         this.edges.forEach(EdgeMapping::check);
 

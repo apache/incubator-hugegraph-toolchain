@@ -88,7 +88,8 @@ public class OrcFileLineFetcher extends FileLineFetcher {
         this.openReader(readable);
         StructObjectInspector inspector;
         try {
-            inspector = (StructObjectInspector) this.reader.getObjectInspector();
+            inspector = (StructObjectInspector)
+                        this.reader.getObjectInspector();
             return this.parseHeader(inspector);
         } finally {
             try {

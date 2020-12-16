@@ -162,7 +162,8 @@ public class ParquetFileLineFetcher extends FileLineFetcher {
             throw new LoadException("Failed to read next page for '%s'", e);
         }
         GroupRecordConverter converter = new GroupRecordConverter(this.schema);
-        this.recordReader = this.columnIO.getRecordReader(this.pages, converter);
+        this.recordReader = this.columnIO.getRecordReader(this.pages,
+                                                          converter);
         this.pagesRowCount = this.pages.getRowCount();
         this.currRowOffset = 0L;
         return this.currRowOffset < this.pagesRowCount;

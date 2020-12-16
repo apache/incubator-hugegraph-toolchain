@@ -101,7 +101,7 @@ public abstract class ElementMapping implements Checkable {
         }
         if (!this.ignoredFields.isEmpty()) {
             E.checkArgument(header.containsAll(this.ignoredFields),
-                            "The all keys %s of ignored must be existed "+
+                            "The all keys %s of ignored must be existed " +
                             "in header %s", this.ignoredFields, header);
         }
         if (!this.mappingFields.isEmpty()) {

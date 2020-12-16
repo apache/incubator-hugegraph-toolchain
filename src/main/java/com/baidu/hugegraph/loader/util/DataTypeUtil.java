@@ -59,7 +59,8 @@ public final class DataTypeUtil {
 
     public static Object convert(Object value, PropertyKey propertyKey,
                                  InputSource source) {
-        E.checkArgumentNotNull(value, "The value to be converted can't be null");
+        E.checkArgumentNotNull(value,
+                               "The value to be converted can't be null");
 
         String key = propertyKey.name();
         DataType dataType = propertyKey.dataType();
@@ -169,8 +170,8 @@ public final class DataTypeUtil {
         }
 
         E.checkState(values instanceof String,
-                     "The value(key='%s') must be String type, but got '%s'(%s)",
-                     key, values);
+                     "The value(key='%s') must be String type, " +
+                     "but got '%s'(%s)", key, values);
         String rawValue = (String) values;
         List<Object> valueColl = split(key, rawValue, source);
         Collection<Object> results = cardinality == Cardinality.LIST ?
@@ -197,7 +198,7 @@ public final class DataTypeUtil {
                 return false;
             } else {
                 throw new IllegalArgumentException(String.format(
-                          "Failed to convert value(key='%s') '%s' to Boolean, " +
+                          "Failed to convert '%s'(key='%s') to Boolean, " +
                           "the acceptable boolean strings are %s or %s",
                           key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
             }
@@ -209,7 +210,8 @@ public final class DataTypeUtil {
 
     private static Number parseNumber(String key, Object value,
                                       DataType dataType) {
-        E.checkState(dataType.isNumber(), "The target data type must be number");
+        E.checkState(dataType.isNumber(),
+                     "The target data type must be number");
 
         if (dataType.clazz().isInstance(value)) {
             return (Number) value;

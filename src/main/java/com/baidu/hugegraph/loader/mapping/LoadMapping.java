@@ -158,7 +158,8 @@ public class LoadMapping implements Checkable {
             } else {
                 E.checkArgument(Constants.HEADER_SUFFIX.equals(suffix),
                                 "The failure data file must end with %s or %s",
-                                Constants.FAILURE_SUFFIX, Constants.HEADER_SUFFIX);
+                                Constants.FAILURE_SUFFIX,
+                                Constants.HEADER_SUFFIX);
                 failureFile.headerFile = subFile;
             }
             failureFiles.put(inputId, failureFile);

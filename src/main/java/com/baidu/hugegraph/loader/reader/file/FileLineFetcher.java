@@ -261,8 +261,8 @@ public class FileLineFetcher extends LineFetcher {
                 Configuration config = new Configuration();
                 CompressionCodec codec = ReflectionUtils.newInstance(
                                          SnappyCodec.class, config);
-                CompressionInputStream sis = codec.createInputStream(
-                                             stream, codec.createDecompressor());
+                CompressionInputStream sis = codec.createInputStream(stream,
+                                             codec.createDecompressor());
                 return new InputStreamReader(sis, charset);
             case GZIP:
             case BZ2:

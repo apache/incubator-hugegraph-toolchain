@@ -88,7 +88,8 @@ public final class MappingUtil {
     }
 
     private static LoadMapping parseV1(String json) {
-        GraphStructV1 graphStruct = JsonUtil.fromJson(json, GraphStructV1.class);
+        GraphStructV1 graphStruct = JsonUtil.fromJson(json,
+                                                      GraphStructV1.class);
         Map<FileSourceKey, InputStruct> fileSourceInputStructs =
                                         InsertionOrderUtil.newMap();
         List<InputStruct> jdbcSourceInputStructs = new ArrayList<>();

@@ -61,7 +61,8 @@ public final class HugeClientHolder {
                     String homePath = System.getProperty("loader.home.path");
                     E.checkArgument(StringUtils.isNotEmpty(homePath),
                                     "The system property 'loader.home.path' " +
-                                    "can't be empty when enable https protocol");
+                                    "can't be null or empty when enable " +
+                                    "https protocol");
                     trustFile = Paths.get(homePath, Constants.TRUST_STORE_FILE)
                                      .toString();
                 } else {

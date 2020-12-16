@@ -208,7 +208,8 @@ public final class HugeGraphLoader {
     private void load(InputStruct struct, InputReader reader) {
         LOG.info("Start parsing and loading '{}'", struct);
         LoadMetrics metrics = this.context.summary().metrics(struct);
-        ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context, struct);
+        ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context,
+                                                            struct);
 
         final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
