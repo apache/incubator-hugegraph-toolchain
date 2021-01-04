@@ -129,11 +129,9 @@ public class GremlinQueryService {
     public Long executeAsyncTask(int connId, GremlinQuery query) {
         HugeClient client = this.getClient(connId);
 
-        log.debug("The original gremlin ==> {}", query.getContent());
-        String gremlin = this.optimize(query.getContent());
-        log.debug("The optimized gremlin ==> {}", gremlin);
+        log.debug("The async gremlin ==> {}", query.getContent());
         // Execute optimized gremlin query
-        GremlinRequest request = new GremlinRequest(gremlin);
+        GremlinRequest request = new GremlinRequest(query.getContent());
         return client.gremlin().executeAsTask(request);
     }
 

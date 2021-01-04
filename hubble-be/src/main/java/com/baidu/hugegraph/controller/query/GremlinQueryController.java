@@ -105,8 +105,8 @@ public class GremlinQueryController extends GremlinController {
         ExecuteStatus status = ExecuteStatus.ASYNC_TASK_RUNNING;
         ExecuteHistory history;
         history = new ExecuteHistory(null, connId, 0L, ExecuteType.GREMLIN_ASYNC,
-                                     query.getContent(), status, AsyncTaskStatus.UNKNOWN,
-                                     -1L, createTime);
+                                     query.getContent(), status,
+                                     AsyncTaskStatus.UNKNOWN, -1L, createTime);
         this.historyService.save(history);
 
         StopWatch timer = StopWatch.createStarted();
