@@ -60,6 +60,16 @@ public class RestoreManager extends BackupRestoreBaseManager {
     }
 
     public void restore(List<HugeType> types) {
+        try {
+            this.doRestore(types);
+        } catch (Throwable e) {
+            throw e;
+        } finally {
+            this.shutdown(this.type());
+        }
+    }
+
+    public void doRestore(List<HugeType> types) {
         E.checkNotNull(this.mode, "mode");
         this.startTimer();
         for (HugeType type : types) {
@@ -87,7 +97,6 @@ public class RestoreManager extends BackupRestoreBaseManager {
                               "Bad restore type: %s", type));
             }
         }
-        this.shutdown(this.type());
         this.printSummary();
         if (this.clean) {
             this.removeDirectory();

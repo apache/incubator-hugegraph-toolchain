@@ -120,6 +120,16 @@ public class BackupManager extends BackupRestoreBaseManager {
     }
 
     public void backup(List<HugeType> types) {
+        try {
+            this.doBackup(types);
+        } catch (Throwable e) {
+            throw e;
+        } finally {
+            this.shutdown(this.type());
+        }
+    }
+
+    public void doBackup(List<HugeType> types) {
         this.startTimer();
         for (HugeType type : types) {
             switch (type) {
@@ -146,7 +156,6 @@ public class BackupManager extends BackupRestoreBaseManager {
                               "Bad backup type: %s", type));
             }
         }
-        this.shutdown(this.type());
         this.printSummary();
     }
 

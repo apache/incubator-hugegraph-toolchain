@@ -22,14 +22,17 @@ package com.baidu.hugegraph.cmd;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.constant.AuthRestoreConflictStrategy;
 import com.baidu.hugegraph.manager.TasksManager;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.HugeType;
@@ -81,6 +84,9 @@ public class SubCommands {
         this.commands.put("start-all", new StartAll());
         this.commands.put("clear", new Clear());
         this.commands.put("stop-all", new StopAll());
+
+        this.commands.put("auth-backup", new AuthBackup());
+        this.commands.put("auth-restore", new AuthRestore());
 
         this.commands.put("help", new Help());
     }
@@ -135,7 +141,7 @@ public class SubCommands {
         public boolean compress = true;
 
         @Parameter(names = {"--label"}, arity = 1,
-                   description = "Vertex or edge label, only valid when type " +
+                   description = "Vertex label or edge label, only valid when type " +
                                  "is vertex or edge")
         public String label;
 
@@ -668,8 +674,8 @@ public class SubCommands {
     public static class TrustStoreFile {
 
         @Parameter(names = {"--trust-store-file"}, arity = 1,
-                   description = "The path of client truststore file used when https " +
-                                 "protocol is enabled")
+                   description = "The path of client truststore file used when " +
+                                 "https protocol is enabled")
         public String trustStoreFile;
     }
 
@@ -681,16 +687,26 @@ public class SubCommands {
         public String trustStorePassword;
     }
 
+    public static class ThrowMode {
+
+        @Parameter(names = {"--throw-mode"}, arity = 1,
+                   description = "Whether the hugegraph-tools work " +
+                                 "to throw an exception")
+        public boolean throwMode = false;
+    }
+
     public static class HugeTypes {
 
         @Parameter(names = {"--huge-types", "-t"},
                    listConverter = HugeTypeListConverter.class,
-                   description = "Type of schema/data. " +
-                                 "Concat with ',' if more than one. " +
-                                 "'all' means all vertices, edges and schema," +
-                                 " in other words, 'all' equals with " +
-                                 "'vertex,edge,vertex_label," +
-                                 "edge_label,property_key,index_label'")
+                   description = "Type of schema/data. Concat with ',' if more " +
+                                 "than one. Other types include 'all' and " +
+                                 "'schema'. 'all' means all vertices, edges and " +
+                                 "schema. In other words, 'all' equals with " +
+                                 "'vertex, edge, vertex_label, edge_label, " +
+                                 "property_key, index_label'. 'schema' equals " +
+                                 "with 'vertex_label, edge_label, property_key, " +
+                                 "index_label'.")
         public List<HugeType> types = HugeTypeListConverter.ALL_TYPES;
     }
 
@@ -812,6 +828,113 @@ public class SubCommands {
         private long taskId;
     }
 
+    public static class AuthBackupRestore {
+
+        @ParametersDelegate
+        private AuthTypes types = new AuthTypes();
+
+        @Parameter(names = {"--directory"}, arity = 1,
+                   description = "Directory of auth information, default " +
+                                 "is './{auth-backup-restore}' in local " +
+                                 "file system or '{fs.default.name}/" +
+                                 "{auth-backup-restore}' in HDFS")
+        public String directory;
+
+        @DynamicParameter(names = "-D",
+                          description = "HDFS config parameters")
+        private Map<String, String> hdfsConf = new HashMap<>();
+
+        @ParametersDelegate
+        private Retry retry = new Retry();
+
+        public List<HugeType> types() {
+            return this.types.types;
+        }
+
+        public void types(List<HugeType> types) {
+            this.types.types = types;
+        }
+
+        public int retry() {
+            return this.retry.retry;
+        }
+
+        public void retry(int retry) {
+            this.retry.retry = retry;
+        }
+
+        public String directory() {
+            return this.directory;
+        }
+
+        public void directory(String directory) {
+            this.directory = directory;
+        }
+
+        public Map<String, String> hdfsConf() {
+            return this.hdfsConf;
+        }
+
+        public void hdfsConf(Map<String, String> hdfsConf) {
+            this.hdfsConf = hdfsConf;
+        }
+    }
+
+    public static class AuthBackup extends AuthBackupRestore {
+    }
+
+    public static class AuthRestore extends AuthBackupRestore {
+
+        @Parameter(names = {"--strategy"},
+                   converter = AuthStrategyConverter.class,
+                   description = "The strategy needs to be chosen in the event " +
+                                 "of a conflict when restoring. Valid " +
+                                 "strategies include 'stop' and 'ignore', " +
+                                 "default is 'stop'. 'stop' means if there " +
+                                 "a conflict, stop restore. 'ignore' means if " +
+                                 "there a conflict, ignore and continue to " +
+                                 "restore.")
+        public AuthRestoreConflictStrategy strategy = AuthStrategyConverter.strategy;
+
+        @Parameter(names = {"--init-password"}, arity = 1,
+                   description = "Init user password, if restore type include " +
+                                 "'user', please specify the init-password of " +
+                                 "users.")
+        public String initPassword = StringUtils.EMPTY;
+
+        public AuthRestoreConflictStrategy strategy() {
+            return this.strategy;
+        }
+
+        public void strategy(AuthRestoreConflictStrategy strategy) {
+            this.strategy = strategy;
+        }
+
+        public String initPassword() {
+            return this.initPassword;
+        }
+
+        public void initPassword(String initPassword) {
+            this.initPassword = initPassword;
+        }
+    }
+
+    public static class AuthTypes {
+
+        @Parameter(names = {"--types", "-t"},
+                   listConverter = AuthHugeTypeConverter.class,
+                   description = "Type of auth data to restore and backup, " +
+                                 "concat with ',' if more than one. 'all' " +
+                                 "means all auth information. In other words, " +
+                                 "'all' equals with 'user, group, target, " +
+                                 "belong, access'. In addition, 'belong' or " +
+                                 "'access' can not backup or restore alone, if " +
+                                 "type contains 'belong' then should contains " +
+                                 "'user' and 'group'. If type contains 'access' " +
+                                 "then should contains 'group' and 'target'.")
+        public List<HugeType> types = AuthHugeTypeConverter.AUTH_ALL_TYPES;
+    }
+
     public static class GraphModeConverter
                   implements IStringConverter<GraphMode> {
 
@@ -832,6 +955,11 @@ public class SubCommands {
                 HugeType.VERTEX, HugeType.EDGE
         );
 
+        public static final List<HugeType> SCHEMA_TYPES = ImmutableList.of(
+                HugeType.PROPERTY_KEY, HugeType.VERTEX_LABEL,
+                HugeType.EDGE_LABEL, HugeType.INDEX_LABEL
+        );
+
         @Override
         public List<HugeType> convert(String value) {
             E.checkArgument(value != null && !value.isEmpty(),
@@ -839,6 +967,9 @@ public class SubCommands {
             String[] types = value.split(",");
             if (types.length == 1 && types[0].equalsIgnoreCase("all")) {
                 return ALL_TYPES;
+            }
+            if (types.length == 1 && types[0].equalsIgnoreCase("schema")) {
+                return SCHEMA_TYPES;
             }
             List<HugeType> hugeTypes = new ArrayList<>();
             for (String type : types) {
@@ -852,6 +983,66 @@ public class SubCommands {
                 }
             }
             return hugeTypes;
+        }
+    }
+
+    public static class AuthHugeTypeConverter
+                  implements IStringConverter<List<HugeType>> {
+
+        public static final List<HugeType> AUTH_ALL_TYPES = ImmutableList.of(
+                HugeType.TARGET, HugeType.GROUP,
+                HugeType.USER, HugeType.ACCESS,
+                HugeType.BELONG
+        );
+
+        @Override
+        public List<HugeType> convert(String value) {
+            E.checkArgument(value != null && !value.isEmpty(),
+                            "HugeType can't be null or empty");
+            String[] types = value.split(",");
+            if (types.length == 1 && types[0].equalsIgnoreCase("all")) {
+                return AUTH_ALL_TYPES;
+            }
+            List<String> typeList = Arrays.asList(types);
+            E.checkArgument(!typeList.contains(HugeType.BELONG.toString().toLowerCase()) ||
+                            (typeList.contains(HugeType.USER.toString().toLowerCase()) &&
+                            typeList.contains(HugeType.GROUP.toString().toLowerCase())),
+                            "Invalid --type '%s', if type contains 'belong'" +
+                            " then 'user' and 'group' are required.", value);
+            E.checkArgument(!typeList.contains(HugeType.ACCESS.toString().toLowerCase()) ||
+                            (typeList.contains(HugeType.GROUP.toString().toLowerCase()) &&
+                            typeList.contains(HugeType.TARGET.toString().toLowerCase())),
+                            "Invalid --type '%s', if type contains 'access'" +
+                            " then 'group' and 'target' are required.", value);
+            List<HugeType> hugeTypes = new ArrayList<>();
+            for (String type : types) {
+                try {
+                    hugeTypes.add(HugeType.valueOf(type.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(String.format(
+                              "Invalid --type '%s', valid value is 'all' or " +
+                              "combination of [user,group,target," +
+                              "belong,access]", type));
+                }
+            }
+            return hugeTypes;
+        }
+    }
+
+    public static class AuthStrategyConverter
+                  implements IStringConverter<AuthRestoreConflictStrategy> {
+
+        public static final AuthRestoreConflictStrategy strategy =
+                            AuthRestoreConflictStrategy.STOP;
+
+        @Override
+        public AuthRestoreConflictStrategy convert(String value) {
+            E.checkArgument(value != null && !value.isEmpty(),
+                            "Strategy can't be null or empty");
+            E.checkArgument(AuthRestoreConflictStrategy.matchStrategy(value),
+                            "Invalid --strategy '%s', valid value is " +
+                            "'stop' or 'ignore", value);
+            return AuthRestoreConflictStrategy.fromName(value);
         }
     }
 
@@ -876,7 +1067,7 @@ public class SubCommands {
     }
 
     public static class FileNameToContentConverter
-           implements IStringConverter<String> {
+                  implements IStringConverter<String> {
 
         @Override
         public String convert(String value) {

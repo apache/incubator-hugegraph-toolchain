@@ -19,15 +19,23 @@
 
 package com.baidu.hugegraph.cmd;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
+
 import com.baidu.hugegraph.base.Printer;
 import com.baidu.hugegraph.base.ToolClient;
 import com.baidu.hugegraph.base.ToolClient.ConnectionInfo;
 import com.baidu.hugegraph.base.ToolManager;
+import com.baidu.hugegraph.constant.Constants;
+import com.baidu.hugegraph.exception.ExitException;
+import com.baidu.hugegraph.manager.AuthBackupRestoreManager;
 import com.baidu.hugegraph.manager.BackupManager;
 import com.baidu.hugegraph.manager.DumpGraphManager;
 import com.baidu.hugegraph.manager.GraphsManager;
@@ -39,9 +47,11 @@ import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.ToolUtil;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.ParametersDelegate;
+import com.google.common.collect.Lists;
 
 import static com.baidu.hugegraph.manager.BackupManager.BACKUP_DEFAULT_TIMEOUT;
 
@@ -50,6 +60,8 @@ public class HugeGraphCommand {
     private static final int DEFAULT_CLEAR_TIMEOUT = 300;
 
     private SubCommands subCommands;
+
+    private List<ToolManager> taskManagers;
 
     @ParametersDelegate
     private SubCommands.Url url = new SubCommands.Url();
@@ -74,8 +86,12 @@ public class HugeGraphCommand {
     private SubCommands.TrustStorePassword trustStorePassword =
                                            new SubCommands.TrustStorePassword();
 
+    @ParametersDelegate
+    private SubCommands.ThrowMode throwMode = new SubCommands.ThrowMode();
+
     public HugeGraphCommand() {
         this.subCommands = new SubCommands();
+        this.taskManagers = Lists.newArrayList();
     }
 
     public Map<String, Object> subCommands() {
@@ -141,6 +157,14 @@ public class HugeGraphCommand {
 
     public void trustStorePassword(String trustStorePassword) {
         this.trustStorePassword.trustStorePassword = trustStorePassword;
+    }
+
+    public boolean throwMode() {
+        return this.throwMode.throwMode;
+    }
+
+    private void throwMode(boolean throwMode) {
+        this.throwMode.throwMode = throwMode;
     }
 
     public JCommander jCommander() {
@@ -328,13 +352,31 @@ public class HugeGraphCommand {
                 Printer.print("Tasks are cleared[force=%s]",
                               taskClear.force());
                 break;
-            case "help":
-                jCommander.usage();
+            case "auth-backup":
+                Printer.print("Auth backup start...");
+                SubCommands.AuthBackup authBackup = this.subCommand(subCmd);
+                AuthBackupRestoreManager authBackupManager = manager(AuthBackupRestoreManager.class);
+
+                authBackupManager.init(authBackup);
+                authBackupManager.backup(authBackup.types());
+                break;
+            case "auth-restore":
+                Printer.print("Auth restore start...");
+                SubCommands.AuthRestore authRestore = this.subCommand(subCmd);
+                AuthBackupRestoreManager authRestoreManager = manager(AuthBackupRestoreManager.class);
+
+                authRestoreManager.init(authRestore);
+                authRestoreManager.restore(authRestore.types());
                 break;
             default:
                 throw new ParameterException(String.format(
                           "Invalid sub-command: %s", subCmd));
         }
+    }
+
+    private void execute(String[] args) {
+        JCommander jCommander = this.parseCommand(args);
+        this.execute(jCommander.getParsedCommand(), jCommander);
     }
 
     private void checkMainParams() {
@@ -353,8 +395,10 @@ public class HugeGraphCommand {
                                                      this.timeout(),
                                                      this.trustStoreFile(),
                                                      this.trustStorePassword());
-            return clz.getConstructor(ToolClient.ConnectionInfo.class)
-                      .newInstance(info);
+            T toolManager = clz.getConstructor(ToolClient.ConnectionInfo.class)
+                               .newInstance(info);
+            this.taskManagers.add(toolManager);
+            return toolManager;
         } catch (Exception e) {
             throw new RuntimeException(String.format(
                       "Construct manager failed for class '%s', please make " +
@@ -402,29 +446,87 @@ public class HugeGraphCommand {
         return mode;
     }
 
-    public static void main(String[] args) {
-        HugeGraphCommand cmd = new HugeGraphCommand();
-        JCommander jCommander = cmd.jCommander();
-
+    public JCommander parseCommand(String[] args) {
+        JCommander jCommander = this.jCommander();
         if (args.length == 0) {
-            jCommander.usage();
-            System.exit(-1);
+            throw ExitException.exception(ToolUtil.commandUsage(jCommander),
+                                          "No command found, please input" +
+                                          " command");
         }
-        try {
+        if (this.parseHelp(args, jCommander)) {
+            assert false;
+        } else {
             jCommander.parse(args);
-        } catch (ParameterException e) {
-            Printer.print(e.getMessage());
-            System.exit(-1);
         }
-
         String subCommand = jCommander.getParsedCommand();
         if (subCommand == null) {
-            Printer.print("Must provide one sub-command");
-            jCommander.usage();
-            System.exit(-1);
+            throw ExitException.normal(ToolUtil.commandsCategory(
+                                       jCommander),
+                                       "No sub-command found");
+        }
+        return jCommander;
+    }
+
+    public boolean parseHelp(String[] args, JCommander jCommander) {
+        String subCommand = Strings.EMPTY;
+        List<String> list = Arrays.asList(args);
+        if (!list.contains(Constants.COMMAND_HELP)) {
+            return false;
+        }
+        // Parse the '--throw-mode' command
+        if (list.contains(Constants.COMMAND_THROW_MODE)) {
+            int index = list.indexOf(Constants.COMMAND_THROW_MODE) + 1;
+            jCommander.parse(Constants.COMMAND_THROW_MODE,
+                             list.get(index));
+        }
+        int index = list.indexOf(Constants.COMMAND_HELP);
+        if (list.size() > index + 1) {
+            subCommand = list.get(index + 1);
+        }
+        if (StringUtils.isEmpty(subCommand)) {
+            throw ExitException.normal(ToolUtil.commandUsage(jCommander),
+                                       "Command : hugegragh help");
         }
 
-        cmd.execute(subCommand, jCommander);
-        System.exit(0);
+        Map<String, JCommander> commands = jCommander.getCommands();
+        if (commands.containsKey(subCommand)) {
+            throw ExitException.normal(ToolUtil.commandUsage(
+                                       commands.get(subCommand)),
+                                       "Command : hugegragh help %s",
+                                       subCommand);
+        } else {
+            throw ExitException.exception(ToolUtil.commandsCategory(jCommander),
+                                          "Unexpected help sub-command " +
+                                          "%s", subCommand);
+        }
+    }
+
+    public void shutdown() {
+        if (CollectionUtils.isEmpty(this.taskManagers)) {
+            return;
+        }
+        for (ToolManager toolManager : this.taskManagers) {
+            toolManager.close();
+        }
+    }
+
+    public static void main(String[] args) {
+        HugeGraphCommand cmd = new HugeGraphCommand();
+        int exitCode = Constants.EXIT_CODE_NORMAL;
+        try {
+            cmd.execute(args);
+        } catch (ExitException e) {
+            exitCode = e.exitCode();
+            ToolUtil.exitOrThrow(e, cmd.throwMode());
+        } catch (Throwable e) {
+            exitCode = Constants.EXIT_CODE_ERROR;
+            ToolUtil.printOrThrow(e, cmd.throwMode());
+        } finally {
+            cmd.shutdown();
+        }
+
+        if (exitCode != Constants.EXIT_CODE_NORMAL) {
+            System.exit(exitCode);
+        }
     }
 }

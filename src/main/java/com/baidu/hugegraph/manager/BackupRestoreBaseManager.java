@@ -48,8 +48,6 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
-import static com.baidu.hugegraph.base.Directory.closeAndIgnoreException;
-
 public class BackupRestoreBaseManager extends RetryManager {
 
     public static final int BATCH = 500;
@@ -199,13 +197,13 @@ public class BackupRestoreBaseManager extends RetryManager {
         os = this.directory.outputStream(file, compress, true);
         OutputStream prev = this.outputStreams.putIfAbsent(file, os);
         if (prev != null) {
-            closeAndIgnoreException(os);
+            Directory.closeAndIgnoreException(os);
             os = prev;
         }
         return os;
     }
 
-    private InputStream inputStream(String file) {
+    protected InputStream inputStream(String file) {
         InputStream is = this.inputStreams.get(file);
         if (is != null) {
             return is;
@@ -213,7 +211,7 @@ public class BackupRestoreBaseManager extends RetryManager {
         is = this.directory.inputStream(file);
         InputStream prev = this.inputStreams.putIfAbsent(file, is);
         if (prev != null) {
-            closeAndIgnoreException(is);
+            Directory.closeAndIgnoreException(is);
             is = prev;
         }
         return is;

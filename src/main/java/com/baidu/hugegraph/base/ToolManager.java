@@ -65,4 +65,8 @@ public class ToolManager {
                       "Failed to deserialize %s", e, content);
         }
     }
+
+    public void close () {
+        this.client.close();
+    }
 }

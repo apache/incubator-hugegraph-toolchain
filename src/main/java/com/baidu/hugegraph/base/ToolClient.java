@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.baidu.hugegraph.driver.AuthManager;
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GremlinManager;
 import com.baidu.hugegraph.driver.HugeClient;
@@ -111,6 +112,16 @@ public class ToolClient {
                         "The system property 'tools.home.path' " +
                         "can't be empty when enable https protocol");
         return homePath;
+    }
+
+    public AuthManager authManager() {
+        return this.client.auth();
+    }
+
+    public void close() {
+        if (this.client != null) {
+            this.client.close();
+        }
     }
 
     public static class ConnectionInfo {

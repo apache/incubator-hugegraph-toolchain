@@ -1,0 +1,1 @@
+{"id":"-63:admin","user_name":"admin","user_phone":"13255447788","user_password":"$2a$04$1tl1IKTncjcmMojLdt2qO.EAJ1w0TGunAZ5IJXWwBgPLvTPk366Ly","user_create":"2020-11-11 11:41:12.254","user_update":"2020-11-11 11:41:12.254","user_creator":"system"}
