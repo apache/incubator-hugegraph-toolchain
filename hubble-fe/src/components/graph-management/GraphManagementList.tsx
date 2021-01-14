@@ -53,12 +53,6 @@ const commonInputProps = {
   width: 420
 };
 
-const isRequiredInputProps = {
-  ...commonInputProps,
-  isRequired: true,
-  requiredErrorMessage: '必填项'
-};
-
 const listVariants = {
   initial: {
     opacity: 0,
@@ -267,20 +261,9 @@ const GraphManagementListItem: React.FC<
               <img src={HintIcon} alt="hint" />
             </Tooltip>
             <Input
-              {...isRequiredInputProps}
-              maxLen={48}
-              placeholder="必须以字母开头，允许出现英文、数字、下划线"
-              errorMessage={
-                graphManagementStore.isValidated &&
-                graphManagementStore.validateErrorMessage.name !== ''
-                  ? graphManagementStore.validateErrorMessage.name
-                  : null
-              }
+              {...commonInputProps}
+              disabled
               value={graphManagementStore.editGraphData.name}
-              onChange={graphManagementStore.mutateGraphDataConfig(
-                'name',
-                'edit'
-              )}
             />
           </div>
           <div>
@@ -293,56 +276,26 @@ const GraphManagementListItem: React.FC<
               <img src={HintIcon} alt="hint" />
             </Tooltip>
             <Input
-              {...isRequiredInputProps}
-              maxLen={48}
-              placeholder="必须以字母开头，允许出现英文、数字、下划线"
-              errorMessage={
-                graphManagementStore.isValidated &&
-                graphManagementStore.validateErrorMessage.graph !== ''
-                  ? graphManagementStore.validateErrorMessage.graph
-                  : null
-              }
+              {...commonInputProps}
+              disabled
               value={graphManagementStore.editGraphData.graph}
-              onChange={graphManagementStore.mutateGraphDataConfig(
-                'graph',
-                'edit'
-              )}
             />
           </div>
           <div>
             <span>主机名:</span>
             <Input
-              {...isRequiredInputProps}
-              placeholder="请输入主机名"
-              errorMessage={
-                graphManagementStore.isValidated &&
-                graphManagementStore.validateErrorMessage.host !== ''
-                  ? graphManagementStore.validateErrorMessage.host
-                  : null
-              }
+              {...commonInputProps}
+              disabled
               value={graphManagementStore.editGraphData.host}
-              onChange={graphManagementStore.mutateGraphDataConfig(
-                'host',
-                'edit'
-              )}
             />
           </div>
           <div>
             <span>端口号:</span>
             <Input
-              {...isRequiredInputProps}
+              {...commonInputProps}
               placeholder="请输入端口号"
-              errorMessage={
-                graphManagementStore.isValidated &&
-                graphManagementStore.validateErrorMessage.port !== ''
-                  ? graphManagementStore.validateErrorMessage.port
-                  : null
-              }
+              disabled
               value={graphManagementStore.editGraphData.port}
-              onChange={graphManagementStore.mutateGraphDataConfig(
-                'port',
-                'edit'
-              )}
             />
           </div>
           <div>

@@ -12,7 +12,8 @@ import {
   size,
   without,
   isEmpty,
-  isUndefined
+  isUndefined,
+  values
 } from 'lodash-es';
 import { useLocation } from 'wouter';
 import classnames from 'classnames';
@@ -160,12 +161,25 @@ const VertexTypeList: React.FC = observer(() => {
   };
 
   const batchDeleteProperties = async () => {
+    if (
+      values(currentSelectedRowKeys).every(
+        (key) => vertexTypeStore.vertexTypeUsingStatus?.[key]
+      )
+    ) {
+      Message.error({
+        content: '无可删除顶点类型',
+        size: 'medium',
+        showCloseIcon: false
+      });
+
+      return;
+    }
+
     switchShowModal(false);
     // need to set a copy in store since local row key state would be cleared
     vertexTypeStore.mutateSelectedVertexTypeNames(currentSelectedRowKeys);
     // mutateSelectedRowKeys([]);
     await vertexTypeStore.deleteVertexType(currentSelectedRowKeys);
-    // vertexTypeStore.mutateSelectedVertexTypeNames([]);
 
     if (vertexTypeStore.requestStatus.deleteVertexType === 'success') {
       Message.success({
@@ -486,8 +500,14 @@ const VertexTypeList: React.FC = observer(() => {
                 }}
               />
             </div>
+            <div
+              className="metadata-properties-modal-description"
+              style={{ marginBottom: 0 }}
+            >
+              使用中顶点类型不可删除，确认删除以下未使用顶点类型？
+            </div>
             <div className="metadata-properties-modal-description">
-              使用中顶点不可删除，确认删除以下未使用顶点？
+              删除元数据耗时较久，详情可在任务管理中查看。
             </div>
             <Table
               columns={[
@@ -1647,9 +1667,9 @@ const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> = observe
                 ) : (
                   <>
                     <p className="metadata-properties-tooltips-title">
-                      确认删除此顶点？
+                      确认删除此顶点类型？
                     </p>
-                    <p>确认删除此属性？删除后无法恢复，请谨慎操作</p>
+                    <p>确认删除此顶点类型？删除后无法恢复，请谨慎操作</p>
                     <p>删除元数据耗时较久，详情可在任务管理中查看</p>
                     <div className="metadata-properties-tooltips-footer">
                       <Button

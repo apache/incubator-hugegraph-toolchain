@@ -267,6 +267,7 @@ const NewVertexType: React.FC = observer(() => {
                     const currentProperties = cloneDeep(
                       vertexTypeStore.newVertexType.properties
                     );
+
                     return (
                       <div
                         className="metadata-selected-properties"
@@ -276,15 +277,23 @@ const NewVertexType: React.FC = observer(() => {
                         <div style={{ width: 56 }}>
                           <Switch
                             checked={property.nullable}
-                            onChange={() => {
-                              currentProperties[
-                                index
-                              ].nullable = !currentProperties[index].nullable;
+                            onChange={(checked: boolean) => {
+                              currentProperties[index].nullable = checked;
 
                               vertexTypeStore.mutateNewProperty({
                                 ...vertexTypeStore.newVertexType,
                                 properties: currentProperties
                               });
+
+                              // remove primary keys since it could be empty value
+                              if (checked) {
+                                vertexTypeStore.mutateNewProperty({
+                                  ...vertexTypeStore.newVertexType,
+                                  primary_keys: vertexTypeStore.newVertexType.primary_keys.filter(
+                                    (key) => key !== property.name
+                                  )
+                                });
+                              }
                             }}
                             size="large"
                           />

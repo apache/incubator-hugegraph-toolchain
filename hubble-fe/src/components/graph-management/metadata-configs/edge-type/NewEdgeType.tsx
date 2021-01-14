@@ -382,7 +382,7 @@ const NewVertexType: React.FC = observer(() => {
                       <div style={{ width: 56 }}>
                         <Switch
                           checked={property.nullable}
-                          onChange={() => {
+                          onChange={(checked: boolean) => {
                             currentProperties[
                               index
                             ].nullable = !currentProperties[index].nullable;
@@ -391,6 +391,16 @@ const NewVertexType: React.FC = observer(() => {
                               ...edgeTypeStore.newEdgeType,
                               properties: currentProperties
                             });
+
+                            // remove primary keys since it could be empty value
+                            if (checked) {
+                              edgeTypeStore.mutateNewEdgeType({
+                                ...edgeTypeStore.newEdgeType,
+                                sort_keys: edgeTypeStore.newEdgeType.sort_keys.filter(
+                                  (key) => key !== property.name
+                                )
+                              });
+                            }
                           }}
                           size="large"
                         />

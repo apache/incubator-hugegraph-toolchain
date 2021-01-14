@@ -284,6 +284,11 @@ const GraphDataView: React.FC = observer(() => {
 
               graphViewStore.setCurrentDrawer('check-vertex');
               graphViewStore.switchNodeOrEdgeClicked(true);
+
+              // check if vertex type being used
+              vertexTypeStore.checkIfUsing([
+                vertexTypeStore.selectedVertexType!.name
+              ]);
             }
 
             return;

@@ -493,8 +493,14 @@ const EdgeTypeList: React.FC = observer(() => {
                 }}
               />
             </div>
+            <div
+              className="metadata-properties-modal-description"
+              style={{ marginBottom: 0 }}
+            >
+              确认删除以下边？
+            </div>
             <div className="metadata-properties-modal-description">
-              使用中边不可删除，确认删除以下未使用边？
+              删除元数据耗时较久，详情可在任务管理中查看。
             </div>
             <Table
               columns={[

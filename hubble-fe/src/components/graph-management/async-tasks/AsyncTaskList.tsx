@@ -248,8 +248,8 @@ const AsyncTaskList: React.FC = observer(() => {
           <div onClick={handleFilterOptions('status', '')}>
             {t('async-tasks.table-filters.status.all')}
           </div>
-          <div onClick={handleFilterOptions('status', 'new')}>
-            {t('async-tasks.table-filters.status.new')}
+          <div onClick={handleFilterOptions('status', 'scheduling')}>
+            {t('async-tasks.table-filters.status.scheduling')}
           </div>
           <div onClick={handleFilterOptions('status', 'queued')}>
             {t('async-tasks.table-filters.status.queued')}
@@ -337,7 +337,8 @@ const AsyncTaskList: React.FC = observer(() => {
           !isUndefined(
             asyncTasksStore.asyncTaskList.find(
               ({ task_status }) =>
-                task_status === 'new' ||
+                task_status === 'scheduling' ||
+                task_status === 'scheduled' ||
                 task_status === 'queued' ||
                 task_status === 'running' ||
                 task_status === 'restoring'
@@ -561,7 +562,8 @@ const AsyncTaskList: React.FC = observer(() => {
               const { task_status } = records;
               return {
                 disabled:
-                  task_status === 'new' ||
+                  task_status === 'scheduling' ||
+                  task_status === 'scheduled' ||
                   task_status === 'queued' ||
                   task_status === 'running' ||
                   task_status === 'restoring' ||
@@ -672,7 +674,8 @@ export const AsyncTaskListManipulation: React.FC<AsyncTaskListManipulationProps>
             {t('async-tasks.manipulations.check-reason')}
           </a>
         )}
-        {status !== 'new' &&
+        {status !== 'scheduling' &&
+          status !== 'scheduled' &&
           status !== 'queued' &&
           status !== 'running' &&
           status !== 'restoring' && (
@@ -766,7 +769,8 @@ export const AsyncTaskListManipulation: React.FC<AsyncTaskListManipulationProps>
               {t('async-tasks.manipulations.delete')}
             </Tooltip>
           )}
-        {(status === 'new' ||
+        {(status === 'scheduling' ||
+          status === 'scheduled' ||
           status === 'queued' ||
           status === 'running' ||
           status === 'restoring') && (

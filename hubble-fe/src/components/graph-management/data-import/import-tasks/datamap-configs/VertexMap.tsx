@@ -688,7 +688,13 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                     .editedVertexMap!.null_values.checked.filter(
                       (value) => value !== 'null'
                     )
-                    .map((value) => (value === '' ? '空值' : value))
+                    .map((value) =>
+                      value === ''
+                        ? '空值'
+                        : value === 'NULL'
+                        ? 'NULL/null'
+                        : value
+                    )
                     .concat(
                       dataMapStore.editedVertexMap!.null_values.customized
                     )

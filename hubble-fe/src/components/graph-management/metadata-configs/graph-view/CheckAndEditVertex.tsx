@@ -339,8 +339,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 <p style={{ width: 200 }}>当前顶点类型正在使用中，不可删除。</p>
               ) : (
                 <>
-                  <p>确认删除此顶点？</p>
-                  <p>删除后无法恢复，请谨慎操作。</p>
+                  <p style={{ marginBottom: 8 }}>确认删除此顶点类型？</p>
+                  <p>删除后无法恢复，请谨慎操作</p>
+                  <p>删除元数据耗时较久，详情可在任务管理中查看</p>
                   <div
                     style={{
                       display: 'flex',

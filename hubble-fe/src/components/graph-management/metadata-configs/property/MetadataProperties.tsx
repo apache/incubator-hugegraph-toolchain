@@ -6,7 +6,7 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
-import { intersection, size, without } from 'lodash-es';
+import { intersection, size, without, values } from 'lodash-es';
 import { motion } from 'framer-motion';
 import {
   Input,
@@ -166,6 +166,20 @@ const MetadataProperties: React.FC = observer(() => {
   };
 
   const batchDeleteProperties = async () => {
+    if (
+      values(currentSelectedRowKeys).every(
+        (key) => metadataPropertyStore.metadataPropertyUsingStatus?.[key]
+      )
+    ) {
+      Message.error({
+        content: '无可删除属性',
+        size: 'medium',
+        showCloseIcon: false
+      });
+
+      return;
+    }
+
     switchShowModal(false);
     // need to set a copy in store since local row key state would be cleared
     metadataPropertyStore.mutateSelectedMetadataProperyNames(

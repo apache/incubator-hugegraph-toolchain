@@ -26,8 +26,7 @@ const AppBar: React.FC = observer(() => {
         </div>
       </div>
       <div className="navigator-additions">
-        {/* <span>fe-community-beta.28</span>  */}
-        {/* <span>fe-v1.6.0-alpha.2</span> */}
+        <span></span>
       </div>
     </nav>
   );

@@ -24,12 +24,14 @@
       },
       "status": {
         "all": "全部",
-        "new": "调度中",
+        "scheduling": "调度中",
+        "scheduled": "排队中",
         "queued": "排队中",
         "running": "运行中",
         "restoring": "恢复中",
         "success": "成功",
         "failed": "失败",
+        "cancelling": "已取消",
         "cancelled": "已取消"
       }
     },

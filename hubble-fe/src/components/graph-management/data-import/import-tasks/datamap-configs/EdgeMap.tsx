@@ -795,7 +795,13 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                     .editedEdgeMap!.null_values.checked.filter(
                       (value) => value !== 'null'
                     )
-                    .map((value) => (value === '' ? '空值' : value))
+                    .map((value) =>
+                      value === ''
+                        ? '空值'
+                        : value === 'NULL'
+                        ? 'NULL/null'
+                        : value
+                    )
                     .concat(dataMapStore.editedEdgeMap!.null_values.customized)
                     .join('，')}
                 </span>

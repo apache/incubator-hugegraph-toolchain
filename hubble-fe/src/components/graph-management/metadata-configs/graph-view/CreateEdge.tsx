@@ -1026,7 +1026,8 @@ const CreateEdge: React.FC = observer(() => {
                         placement="bottom-end"
                         tooltipShown={index === deletePopIndex}
                         tooltipWrapperProps={{
-                          className: 'metadata-properties-tooltips'
+                          className: 'metadata-properties-tooltips',
+                          style: { zIndex: 1041 }
                         }}
                         tooltipWrapper={
                           <div ref={deleteWrapperRef}>
@@ -1062,6 +1063,8 @@ const CreateEdge: React.FC = observer(() => {
                                   edgeTypeStore.validateNewEdgeType(
                                     'propertyIndexes'
                                   );
+
+                                  setDeletePopIndex(null);
                                 }}
                               >
                                 确认
