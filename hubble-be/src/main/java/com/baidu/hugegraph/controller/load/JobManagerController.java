@@ -154,8 +154,10 @@ public class JobManagerController {
                  Constant.COMMON_NAME_PATTERN.matcher(
                  newEntity.getJobName()).matches(),
                  "job.manager.job-name.unmatch-regex");
-        Ex.check(newEntity.getJobRemarks().length() <= 200,
-                 "job.manager.job-remarks.reached-limit");
+        Ex.check(!StringUtils.isEmpty(newEntity.getJobRemarks()), () ->
+                 Constant.COMMON_REMARK_PATTERN.matcher(
+                 newEntity.getJobRemarks()).matches(),
+                 "job.manager.job-remarks.unmatch-regex");
         // Check exist Job Manager with this id
         JobManager entity = this.service.get(id);
         if (entity == null) {
