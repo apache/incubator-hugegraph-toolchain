@@ -45,6 +45,7 @@ import com.baidu.hugegraph.entity.schema.UsingCheckEntity;
 import com.baidu.hugegraph.entity.schema.VertexLabelEntity;
 import com.baidu.hugegraph.entity.schema.VertexLabelStyle;
 import com.baidu.hugegraph.entity.schema.VertexLabelUpdateEntity;
+import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.service.schema.PropertyIndexService;
 import com.baidu.hugegraph.service.schema.PropertyKeyService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
@@ -195,11 +196,20 @@ public class VertexLabelController extends SchemaController {
 
     @DeleteMapping
     public void delete(@PathVariable("connId") int connId,
-                       @RequestParam("names") List<String> names) {
+                       @RequestParam("names") List<String> names,
+                       @RequestParam(name = "skip_using",
+                                     defaultValue = "false")
+                       boolean skipUsing) {
         for (String name : names) {
             this.vlService.checkExist(name, connId);
-            Ex.check(!this.vlService.checkUsing(name, connId),
-                     "schema.vertexlabel.in-using", name);
+            if (this.vlService.checkUsing(name, connId)) {
+                if (skipUsing) {
+                    continue;
+                } else {
+                    throw new ExternalException("schema.vertexlabel.in-using",
+                                                name);
+                }
+            }
             this.vlService.remove(name, connId);
         }
     }

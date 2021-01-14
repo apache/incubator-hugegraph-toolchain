@@ -182,7 +182,7 @@ public class GraphService {
             try {
                 // DataTypeUtil.convert in loader need param InputSource
                 FileSource source = new FileSource();
-                ListFormat listFormat = new ListFormat("[", "]", ",");
+                ListFormat listFormat = new ListFormat("", "", ",");
                 source.listFormat(listFormat);
                 value = DataTypeUtil.convert(rawValue, propertyKey, source);
             } catch (IllegalArgumentException e) {

@@ -52,6 +52,7 @@ import com.baidu.hugegraph.service.load.FileMappingService;
 import com.baidu.hugegraph.service.load.JobManagerService;
 import com.baidu.hugegraph.service.schema.EdgeLabelService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
+import com.baidu.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -299,6 +300,21 @@ public class FileMappingController extends BaseController {
         Ex.check(columnNames.containsAll(vertexMapping.getIdFields()),
                  "load.file-mapping.vertex.id-fields-should-in-column-names",
                  vertexMapping.getIdFields(), columnNames);
+        if (vl.getIdStrategy().isPrimaryKey()) {
+            Ex.check(vertexMapping.getIdFields().size() ==
+                     vl.getPrimaryKeys().size(),
+                     "load.file-mapping.vertex.id-fields-should-same-size-pks");
+            Ex.check(!CollectionUtils.containsAny(
+                     vertexMapping.fieldMappingToMap().values(),
+                     vl.getPrimaryKeys()),
+                     "load.file-mapping.vertex.mapping-fields-cannot-contains-pk");
+        } else {
+            Ex.check(vertexMapping.getIdFields().size() == 1,
+                     "load.file-mapping.vertex.id-fields-should-only-one");
+        }
+        Ex.check(CollectionUtil.allUnique(
+                 vertexMapping.fieldMappingToMap().values()),
+                 "load.file-mapping.mapping-fields-should-no-duplicate");
         this.checkMappingValid(vertexMapping, fileMapping);
     }
 
@@ -324,6 +340,9 @@ public class FileMappingController extends BaseController {
         Ex.check(columnNames.containsAll(edgeMapping.getTargetFields()),
                  "load.file-mapping.edge.target-fields-should-in-column-names",
                  edgeMapping.getTargetFields(), columnNames);
+        Ex.check(CollectionUtil.allUnique(
+                 edgeMapping.fieldMappingToMap().values()),
+                 "load.file-mapping.mapping-fields-should-no-duplicate");
         this.checkMappingValid(edgeMapping, fileMapping);
     }
 
