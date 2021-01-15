@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import { isUndefined, isEmpty, size, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Input, Select, Checkbox } from '@baidu/one-ui';
+import { Input, Select, Checkbox, Message } from '@baidu/one-ui';
 
 import { Tooltip } from '../../../../common';
 import { DataImportRootStoreContext } from '../../../../../stores';
@@ -1639,19 +1639,27 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
               !dataMapStore.allowAddPropertyMapping('edge') ||
               !dataMapStore.isValidateSave
             }
-            onCreate={() => {
+            onCreate={async () => {
               dataMapStore.switchAddNewTypeConfig(false);
               dataMapStore.switchEditTypeConfig(false);
 
               isEdit
-                ? dataMapStore.updateEdgeMap(
+                ? await dataMapStore.updateEdgeMap(
                     'upgrade',
                     dataMapStore.selectedFileId
                   )
-                : dataMapStore.updateEdgeMap(
+                : await dataMapStore.updateEdgeMap(
                     'add',
                     dataMapStore.selectedFileId
                   );
+
+              if (dataMapStore.requestStatus.updateEdgeMap === 'failed') {
+                Message.error({
+                  content: dataMapStore.errorInfo.updateEdgeMap.message,
+                  size: 'medium',
+                  showCloseIcon: false
+                });
+              }
 
               onCancelCreateEdge();
               dataMapStore.resetNewMap('edge');

@@ -9,7 +9,7 @@ import { observer } from 'mobx-react';
 import { isUndefined, isEmpty, size, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Input, Select, Checkbox } from '@baidu/one-ui';
+import { Input, Select, Checkbox, Message } from '@baidu/one-ui';
 
 import { Tooltip } from '../../../../common';
 import TypeConfigManipulations from './TypeConfigManipulations';
@@ -1555,14 +1555,22 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                 dataMapStore.fetchDataMaps();
               } else {
                 isEdit
-                  ? dataMapStore.updateVertexMap(
+                  ? await dataMapStore.updateVertexMap(
                       'upgrade',
                       dataMapStore.selectedFileId
                     )
-                  : dataMapStore.updateVertexMap(
+                  : await dataMapStore.updateVertexMap(
                       'add',
                       dataMapStore.selectedFileId
                     );
+              }
+
+              if (dataMapStore.requestStatus.updateVertexMap === 'failed') {
+                Message.error({
+                  content: dataMapStore.errorInfo.updateVertexMap.message,
+                  size: 'medium',
+                  showCloseIcon: false
+                });
               }
 
               onCancelCreateVertex();
