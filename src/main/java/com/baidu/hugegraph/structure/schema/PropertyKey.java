@@ -25,6 +25,7 @@ import com.baidu.hugegraph.structure.constant.AggregateType;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.structure.constant.ReadFrequency;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,6 +38,8 @@ public class PropertyKey extends SchemaElement {
     private Cardinality cardinality;
     @JsonProperty("aggregate_type")
     private AggregateType aggregateType;
+    @JsonProperty("read_frequency")
+    private ReadFrequency readFrequency;
 
     @JsonCreator
     public PropertyKey(@JsonProperty("name") String name) {
@@ -44,6 +47,7 @@ public class PropertyKey extends SchemaElement {
         this.dataType = DataType.TEXT;
         this.cardinality = Cardinality.SINGLE;
         this.aggregateType = AggregateType.NONE;
+        this.readFrequency = ReadFrequency.OLTP;
     }
 
     @Override
@@ -63,16 +67,26 @@ public class PropertyKey extends SchemaElement {
         return this.aggregateType;
     }
 
+    public ReadFrequency readFrequency() {
+        return this.readFrequency;
+    }
+
     @Override
     public String toString() {
         return String.format("{name=%s, cardinality=%s, dataType=%s, " +
-                             "aggregateType=%s, properties=%s}",
+                             "aggregateType=%s, properties=%s, " +
+                             "readFrequency=%s}",
                              this.name, this.cardinality, this.dataType,
-                             this.aggregateType, this.properties);
+                             this.aggregateType, this.properties,
+                             this.readFrequency);
     }
 
     public PropertyKeyV46 switchV46() {
         return new PropertyKeyV46(this);
+    }
+
+    public PropertyKeyV58 switchV58() {
+        return new PropertyKeyV58(this);
     }
 
     public interface Builder extends SchemaBuilder<PropertyKey> {
@@ -108,6 +122,8 @@ public class PropertyKey extends SchemaElement {
         Builder valueSet();
 
         Builder aggregateType(AggregateType aggregateType);
+
+        Builder readFrequency(ReadFrequency readFrequency);
 
         Builder calcSum();
 
@@ -254,6 +270,12 @@ public class PropertyKey extends SchemaElement {
         }
 
         @Override
+        public Builder readFrequency(ReadFrequency readFrequency) {
+            this.propertyKey.readFrequency = readFrequency;
+            return this;
+        }
+
+        @Override
         public Builder calcSum() {
             this.propertyKey.aggregateType = AggregateType.SUM;
             return this;
@@ -334,6 +356,35 @@ public class PropertyKey extends SchemaElement {
         @Override
         public String type() {
             return HugeType.PROPERTY_KEY.string();
+        }
+    }
+
+    public static class PropertyKeyV58 extends PropertyKeyV46 {
+
+        @JsonProperty("aggregate_type")
+        private AggregateType aggregateType;
+
+        @JsonCreator
+        public PropertyKeyV58(@JsonProperty("name") String name) {
+            super(name);
+            this.aggregateType = AggregateType.NONE;
+        }
+
+        private PropertyKeyV58(PropertyKey propertyKey) {
+            super(propertyKey);
+            this.aggregateType = propertyKey.aggregateType;
+        }
+
+        public AggregateType aggregateType() {
+            return this.aggregateType;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("{name=%s, cardinality=%s, dataType=%s, " +
+                                 "aggregateType=%s, properties=%s}", this.name,
+                                 this.cardinality(), this.dataType(),
+                                 this.aggregateType, this.properties);
         }
     }
 }

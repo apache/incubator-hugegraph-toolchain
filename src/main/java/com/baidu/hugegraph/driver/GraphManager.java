@@ -32,6 +32,7 @@ import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
+import com.baidu.hugegraph.structure.graph.BatchOlapPropertyRequest;
 import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.GraphIterator;
@@ -190,6 +191,10 @@ public class GraphManager {
         List<Vertex> newVertices = this.vertexAPI.update(request);
         newVertices.forEach(vertex -> this.attachManager(vertex));
         return newVertices;
+    }
+
+    public int updateVertices(BatchOlapPropertyRequest request) {
+        return this.vertexAPI.update(request);
     }
 
     public Vertex appendVertexProperty(Vertex vertex) {

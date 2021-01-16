@@ -40,7 +40,8 @@ public class PropertyKeyTest {
                                          .build();
 
         String pkString = "{name=name, cardinality=SINGLE, dataType=INT, " +
-                          "aggregateType=NONE, properties=[]}";
+                          "aggregateType=NONE, properties=[], " +
+                          "readFrequency=OLTP}";
         Assert.assertEquals(pkString, propertyKey.toString());
         Assert.assertEquals(HugeType.PROPERTY_KEY.string(), propertyKey.type());
         Assert.assertEquals(0, propertyKey.aggregateType().code());
@@ -63,5 +64,23 @@ public class PropertyKeyTest {
         Assert.assertEquals(pkV46String, propertyKeyV46.toString());
         Assert.assertEquals(HugeType.PROPERTY_KEY.string(),
                             propertyKeyV46.type());
+    }
+
+    @Test
+    public void testPropertyKeyV58() {
+        PropertyKey.Builder builder = new PropertyKey.BuilderImpl("name",
+                                                                  null);
+        PropertyKey propertyKey = builder.dataType(DataType.INT)
+                                         .cardinality(Cardinality.SINGLE)
+                                         .userdata("min", 1)
+                                         .userdata("max", 100)
+                                         .build();
+
+        PropertyKey.PropertyKeyV58 propertyKeyV58 = propertyKey.switchV58();
+        String pkV58String = "{name=name, cardinality=SINGLE, " +
+                             "dataType=INT, aggregateType=NONE, properties=[]}";
+        Assert.assertEquals(pkV58String, propertyKeyV58.toString());
+        Assert.assertEquals(HugeType.PROPERTY_KEY.string(),
+                            propertyKeyV58.type());
     }
 }

@@ -26,6 +26,7 @@ import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
+import com.baidu.hugegraph.structure.constant.ReadFrequency;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
@@ -95,6 +96,11 @@ public class PropertyKeyAPI extends SchemaAPI {
                             "Not support aggregate property until " +
                             "api version 0.47");
             pkey = propertyKey.switchV46();
+        } else if (this.client.apiVersionLt("0.59")) {
+            E.checkArgument(propertyKey.readFrequency() == ReadFrequency.OLTP,
+                            "Not support olap property key until " +
+                            "api version 0.59");
+            pkey = propertyKey.switchV58();
         }
         return pkey;
     }

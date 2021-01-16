@@ -25,6 +25,7 @@ import java.util.Map;
 import com.baidu.hugegraph.api.graphs.GraphsAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.structure.constant.GraphMode;
+import com.baidu.hugegraph.structure.constant.GraphReadMode;
 
 public class GraphsManager {
 
@@ -48,6 +49,14 @@ public class GraphsManager {
 
     public GraphMode mode(String graph) {
         return this.graphsAPI.mode(graph);
+    }
+
+    public void readMode(String graph, GraphReadMode readMode) {
+        this.graphsAPI.readMode(graph, readMode);
+    }
+
+    public GraphReadMode readMode(String graph) {
+        return this.graphsAPI.readMode(graph);
     }
 
     public void clear(String graph, String message) {

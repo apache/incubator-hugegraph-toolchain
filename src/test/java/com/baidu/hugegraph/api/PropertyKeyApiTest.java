@@ -181,6 +181,16 @@ public class PropertyKeyApiTest extends BaseApiTest {
         Assert.assertEquals("nameV46", pk.name());
         Assert.assertEquals(DataType.TEXT, pk.dataType());
         Assert.assertEquals(Cardinality.SINGLE, pk.cardinality());
+
+        propertyKey = schema().propertyKey("nameV58")
+                              .asText().valueSingle()
+                              .calcOld()
+                              .build();
+        PropertyKey.PropertyKeyV58 pk1 = propertyKey.switchV58();
+        Assert.assertEquals("nameV58", pk1.name());
+        Assert.assertEquals(DataType.TEXT, pk1.dataType());
+        Assert.assertEquals(Cardinality.SINGLE, pk1.cardinality());
+        Assert.assertEquals(AggregateType.OLD, pk1.aggregateType());
     }
 
     @Test
