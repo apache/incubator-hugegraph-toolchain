@@ -25,6 +25,10 @@ import java.util.Set;
 
 public class Printer {
 
+    public static void print(String content) {
+        System.out.println(content);
+    }
+
     public static void print(String content, Object ... objects) {
         System.out.println(String.format(content, objects));
     }
