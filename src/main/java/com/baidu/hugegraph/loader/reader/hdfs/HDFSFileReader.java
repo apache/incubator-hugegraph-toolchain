@@ -59,7 +59,7 @@ public class HDFSFileReader extends FileReader {
         super(source);
         this.conf = this.loadConfiguration();
         try {
-            enableKerberos(source);
+            this.enableKerberos(source);
             this.hdfs = FileSystem.get(this.conf);
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
@@ -69,13 +69,13 @@ public class HDFSFileReader extends FileReader {
     }
 
     private void enableKerberos(HDFSSource source) throws IOException {
-        KerberosConfig kerberosConfig = this.source().kerberosConfig();
+        KerberosConfig kerberosConfig = source.kerberosConfig();
         if (kerberosConfig != null && kerberosConfig.enable() ) {
             System.setProperty("java.security.krb5.conf",
                                kerberosConfig.krb5Conf());
             UserGroupInformation.setConfiguration(this.conf);
-            UserGroupInformation.loginUserFromKeytab(
-                    kerberosConfig.principal(), kerberosConfig.keyTab());
+            UserGroupInformation.loginUserFromKeytab(kerberosConfig.principal(),
+                                                     kerberosConfig.keyTab());
         }
     }
 

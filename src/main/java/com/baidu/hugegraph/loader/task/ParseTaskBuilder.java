@@ -89,8 +89,8 @@ public final class ParseTaskBuilder {
             for (Line line : lines) {
                 try {
                     // NOTE: don't remove entry in keyValues
-                    List<GraphElement> elements = builder.build(
-                                                  line.keyValues());
+                    List<GraphElement> elements = builder.build(line.names(),
+                                                                line.values());
                     E.checkState(elements.size() <= batchSize,
                                  "The number of columns in a line cannot " +
                                  "exceed the size of a batch, but got %s > %s",

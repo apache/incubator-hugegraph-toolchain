@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public abstract class AbstractSource implements InputSource {
 
     @JsonProperty("header")
-    private List<String> header;
+    private String[] header;
     @JsonProperty("charset")
     private String charset;
     @JsonProperty("list_format")
@@ -47,27 +47,24 @@ public abstract class AbstractSource implements InputSource {
     @Override
     public void check() throws IllegalArgumentException {
         if (this.header != null) {
-            E.checkArgument(CollectionUtil.allUnique(this.header),
+            E.checkArgument(CollectionUtil.allUnique(
+                            Arrays.asList(this.header)),
                             "The header can't contain duplicate columns, " +
-                            "but got %s", this.header);
+                            "but got %s", Arrays.toString(this.header));
         }
     }
 
     @Override
     public String[] header() {
-        return this.header != null ? this.header.toArray(new String[]{}) : null;
+        return this.header;
     }
 
     public void header(String[] header) {
-        if (header == null) {
-            this.header = null;
-        } else {
-            this.header = Arrays.asList(header);
-        }
+        this.header = header;
     }
 
     public void header(List<String> header) {
-        this.header = header;
+        this.header = header.toArray(new String[]{});
     }
 
     @Override

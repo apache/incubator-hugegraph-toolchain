@@ -73,7 +73,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
     public abstract ElementMapping mapping();
 
-    public abstract List<GE> build(Map<String, Object> keyValues);
+    public abstract List<GE> build(String[] names, Object[] values);
 
     protected abstract SchemaLabel schemaLabel();
 
@@ -308,10 +308,11 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             this.properties = null;
         }
 
-        public abstract void extractFromVertex(Map<String, Object> keyValues);
+        public abstract void extractFromVertex(String[] names,
+                                               Object[] values);
 
-        public abstract void extractFromEdge(Map<String, Object> keyValues,
-                                             List<String> fieldNames);
+        public abstract void extractFromEdge(String[] names, Object[] values,
+                                             int[] fieldIndexes);
 
         public abstract List<Vertex> buildVertices(boolean withProperty);
 
@@ -332,12 +333,12 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromVertex(Map<String, Object> keyValues) {
+        public void extractFromVertex(String[] names, Object[] values) {
             // General properties
             this.properties = new HashMap<>();
-            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-                String fieldName = entry.getKey();
-                Object fieldValue = entry.getValue();
+            for (int i = 0; i < names.length; i++) {
+                String fieldName = names[i];
+                Object fieldValue = values[i];
                 if (!retainField(fieldName, fieldValue)) {
                     continue;
                 }
@@ -353,11 +354,11 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromEdge(Map<String, Object> keyValues,
-                                    List<String> fieldNames) {
-            assert fieldNames.size() == 1;
-            String fieldName = fieldNames.get(0);
-            Object fieldValue = keyValues.get(fieldName);
+        public void extractFromEdge(String[] names, Object[] values,
+                                    int[] fieldIndexes) {
+            assert fieldIndexes.length == 1;
+            String fieldName = names[fieldIndexes[0]];
+            Object fieldValue = values[fieldIndexes[0]];
             this.idField = fieldName;
             this.idValue = mappingValue(fieldName, fieldValue);
         }
@@ -397,12 +398,12 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromVertex(Map<String, Object> keyValues) {
+        public void extractFromVertex(String[] names, Object[] values) {
             // General properties
             this.properties = new HashMap<>();
-            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-                String fieldName = entry.getKey();
-                Object fieldValue = entry.getValue();
+            for (int i = 0; i < names.length; i++) {
+                String fieldName = names[i];
+                Object fieldValue = values[i];
                 if (!retainField(fieldName, fieldValue)) {
                     continue;
                 }
@@ -422,11 +423,11 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromEdge(Map<String, Object> keyValues,
-                                    List<String> fieldNames) {
-            assert fieldNames.size() == 1;
-            String fieldName = fieldNames.get(0);
-            Object fieldValue = keyValues.get(fieldName);
+        public void extractFromEdge(String[] names, Object[] values,
+                                    int[] fieldIndexes) {
+            assert fieldIndexes.length == 1;
+            String fieldName = names[fieldIndexes[0]];
+            Object fieldValue = values[fieldIndexes[0]];
             this.idField = fieldName;
             List<Object> rawIdValues = splitField(fieldName, fieldValue);
             this.idValues = rawIdValues.stream().map(rawIdValue -> {
@@ -476,15 +477,15 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromVertex(Map<String, Object> keyValues) {
+        public void extractFromVertex(String[] names, Object[] values) {
             List<String> primaryKeys = this.vertexLabel.primaryKeys();
             this.pkNames = primaryKeys;
             this.pkValues = new Object[primaryKeys.size()];
             // General properties
             this.properties = new HashMap<>();
-            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-                String fieldName = entry.getKey();
-                Object fieldValue = entry.getValue();
+            for (int i = 0; i < names.length; i++) {
+                String fieldName = names[i];
+                Object fieldValue = values[i];
                 if (!retainField(fieldName, fieldValue)) {
                     continue;
                 }
@@ -502,10 +503,14 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromEdge(Map<String, Object> keyValues,
-                                    List<String> fieldNames) {
-            this.pkNames = fieldNames.stream().map(mapping()::mappingField)
-                                     .collect(Collectors.toList());
+        public void extractFromEdge(String[] names, Object[] values,
+                                    int[] fieldIndexes) {
+            this.pkNames = new ArrayList<>(fieldIndexes.length);
+            for (int fieldIndex : fieldIndexes) {
+                String fieldName = names[fieldIndex];
+                String mappingField = mapping().mappingField(fieldName);
+                this.pkNames.add(mappingField);
+            }
             List<String> primaryKeys = this.vertexLabel.primaryKeys();
             E.checkArgument(ListUtils.isEqualList(this.pkNames, primaryKeys),
                             "Make sure the the primary key fields %s are " +
@@ -513,9 +518,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                             "field_mapping are configured correctly",
                             primaryKeys);
             this.pkValues = new Object[this.pkNames.size()];
-            for (int i = 0; i < fieldNames.size(); i++) {
-                String fieldName = fieldNames.get(i);
-                Object fieldValue = keyValues.get(fieldName);
+            for (int i = 0; i < fieldIndexes.length; i++) {
+                String fieldName = names[fieldIndexes[i]];
+                Object fieldValue = values[fieldIndexes[i]];
                 Object pkValue = mappingValue(fieldName, fieldValue);
                 this.pkValues[i] = pkValue;
             }
@@ -569,7 +574,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromVertex(Map<String, Object> keyValues) {
+        public void extractFromVertex(String[] names, Object[] values) {
             List<String> primaryKeys = vertexLabel.primaryKeys();
             E.checkArgument(primaryKeys.size() == 1,
                             "In case unfold is true, just supported " +
@@ -578,9 +583,9 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             // General properties
             this.properties = new HashMap<>();
             boolean handledPk = false;
-            for (Map.Entry<String, Object> entry : keyValues.entrySet()) {
-                String fieldName = entry.getKey();
-                Object fieldValue = entry.getValue();
+            for (int i = 0; i < names.length; i++) {
+                String fieldName = names[i];
+                Object fieldValue = values[i];
                 if (!retainField(fieldName, fieldValue)) {
                     continue;
                 }
@@ -601,13 +606,13 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
 
         @Override
-        public void extractFromEdge(Map<String, Object> keyValues,
-                                    List<String> fieldNames) {
+        public void extractFromEdge(String[] names, Object[] values,
+                                    int[] fieldIndexes) {
             List<String> primaryKeys = vertexLabel.primaryKeys();
-            E.checkArgument(fieldNames.size() == 1 && primaryKeys.size() == 1,
+            E.checkArgument(fieldIndexes.length == 1 && primaryKeys.size() == 1,
                             "In case unfold is true, just supported " +
                             "a single primary key");
-            String fieldName = fieldNames.get(0);
+            String fieldName = names[fieldIndexes[0]];
             this.pkName = mapping().mappingField(fieldName);
             String primaryKey = primaryKeys.get(0);
             E.checkArgument(this.pkName.equals(primaryKey),
@@ -615,7 +620,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                             "not empty, or check whether the headers or " +
                             "field_mapping are configured correctly",
                             primaryKey);
-            Object fieldValue = keyValues.get(fieldName);
+            Object fieldValue = values[fieldIndexes[0]];
             List<Object> rawPkValues = splitField(fieldName, fieldValue);
             this.pkValues = rawPkValues.stream().map(rawPkValue -> {
                 return mappingValue(fieldName, rawPkValue);

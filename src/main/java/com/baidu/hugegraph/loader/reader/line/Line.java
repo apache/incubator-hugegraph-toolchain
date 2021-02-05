@@ -19,27 +19,18 @@
 
 package com.baidu.hugegraph.loader.reader.line;
 
-import java.util.Arrays;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.InsertionOrderUtil;
+import com.google.common.collect.Sets;
 
-public class Line {
+public final class Line {
 
-    private final String rawLine;
+    private String rawLine;
     private String[] names;
     private Object[] values;
-    private final Map<String, Object> keyValues;
-
-    public Line(String rawLine, Map<String, Object> keyValues) {
-        E.checkArgumentNotNull(rawLine, "The rawLine can't be null");
-        E.checkArgumentNotNull(keyValues, "The keyValues can't be null");
-        this.rawLine = rawLine;
-        this.keyValues = keyValues;
-        this.names = getNames(keyValues);
-        this.values = getValues(keyValues, this.names);
-    }
 
     public Line(String rawLine, String[] names, Object[] values) {
         E.checkArgumentNotNull(rawLine, "The rawLine can't be null");
@@ -50,45 +41,44 @@ public class Line {
         this.rawLine = rawLine;
         this.names = names;
         this.values = values;
-        this.keyValues = InsertionOrderUtil.newMap();
-        for (int i = 0; i < this.names.length; i++) {
-            this.keyValues.put(this.names[i], this.values[i]);
-        }
     }
 
     public String rawLine() {
         return this.rawLine;
     }
 
+    public void rawLine(String rawLine) {
+        this.rawLine = rawLine;
+    }
+
     public final String[] names() {
         return this.names;
+    }
+
+    public void names(String[] names) {
+        this.names = names;
     }
 
     public final Object[] values() {
         return this.values;
     }
 
-    public Map<String, Object> keyValues() {
-        return this.keyValues;
+    public void values(Object[] values) {
+        this.values = values;
     }
 
     public void retainAll(String[] names) {
-        this.keyValues.keySet().retainAll(Arrays.asList(names));
-        this.names = getNames(keyValues);
-        this.values = getValues(keyValues, this.names);
-    }
-
-    private static String[] getNames(Map<String, Object> keyValues) {
-        return keyValues.keySet().toArray(new String[]{});
-    }
-
-    private static Object[] getValues(Map<String, Object> keyValues,
-                                      String[] names) {
-        Object[] values = new Object[names.length];
-        for (int i = 0; i < names.length; i++) {
-            values[i] = keyValues.get(names[i]);
+        Set<String> set = Sets.newHashSet(names);
+        List<String> retainedNames = new ArrayList<>();
+        List<Object> retainedValues = new ArrayList<>();
+        for (int i = 0; i < this.names.length; i++) {
+            if (set.contains(this.names[i])) {
+                retainedNames.add(this.names[i]);
+                retainedValues.add(this.values[i]);
+            }
         }
-        return values;
+        this.names = retainedNames.toArray(new String[]{});
+        this.values = retainedValues.toArray(new Object[]{});
     }
 
     @Override
