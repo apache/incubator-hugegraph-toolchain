@@ -274,7 +274,6 @@ public class KneighborApiTest extends TraverserApiTest {
     @Test
     public void testKneighborPostWithLabel() {
         Object markoId = getVertexId("person", "name", "marko");
-        Object rippleId = getVertexId("software", "name", "ripple");
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
         Object vadasId = getVertexId("person", "name", "vadas");
@@ -336,7 +335,6 @@ public class KneighborApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
         Object vadasId = getVertexId("person", "name", "vadas");
-        Object peterId = getVertexId("person", "name", "peter");
 
         KneighborRequest.Builder builder = KneighborRequest.builder();
         builder.source(markoId);
@@ -369,7 +367,6 @@ public class KneighborApiTest extends TraverserApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
-        Object vadasId = getVertexId("person", "name", "vadas");
         Object peterId = getVertexId("person", "name", "peter");
 
         KneighborRequest.Builder builder = KneighborRequest.builder();

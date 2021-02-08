@@ -57,6 +57,8 @@ public enum HugeResourceType {
 
     TARGET,
 
+    METRICS,
+
     ROOT;
 
     public boolean match(HugeResourceType type) {

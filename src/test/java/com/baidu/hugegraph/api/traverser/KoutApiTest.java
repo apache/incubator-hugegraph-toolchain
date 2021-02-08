@@ -362,7 +362,6 @@ public class KoutApiTest extends TraverserApiTest {
     @Test
     public void testKoutPostWithLabel() {
         Object markoId = getVertexId("person", "name", "marko");
-        Object rippleId = getVertexId("software", "name", "ripple");
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
         Object vadasId = getVertexId("person", "name", "vadas");
@@ -422,7 +421,6 @@ public class KoutApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
         Object vadasId = getVertexId("person", "name", "vadas");
-        Object peterId = getVertexId("person", "name", "peter");
 
         KoutRequest.Builder builder = KoutRequest.builder();
         builder.source(markoId);
@@ -455,7 +453,6 @@ public class KoutApiTest extends TraverserApiTest {
         Object rippleId = getVertexId("software", "name", "ripple");
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
-        Object vadasId = getVertexId("person", "name", "vadas");
         Object peterId = getVertexId("person", "name", "peter");
 
         KoutRequest.Builder builder = KoutRequest.builder();
