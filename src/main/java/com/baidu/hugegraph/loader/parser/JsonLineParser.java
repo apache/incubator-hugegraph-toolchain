@@ -29,19 +29,35 @@ import com.baidu.hugegraph.rest.SerializeException;
 public class JsonLineParser implements LineParser {
 
     @Override
-    public Line parse(String[] header, String line) {
+    public Line parse(String[] header, String rawLine) {
         Map<String, Object> keyValues;
         try {
-            keyValues = JsonUtil.convertMap(line, String.class, Object.class);
-            return new Line(line, keyValues);
+            keyValues = JsonUtil.convertMap(rawLine, String.class,
+                                            Object.class);
+            String[] names = names(keyValues);
+            Object[] values = values(keyValues, names);
+            return new Line(rawLine, names, values);
         } catch (SerializeException e) {
-            throw new ReadException(line, "Deserialize line '%s' error",
-                                    e, line);
+            throw new ReadException(rawLine, "Deserialize line '%s' error",
+                                    e, rawLine);
         }
     }
 
     @Override
     public String[] split(String rawLine) {
         throw new UnsupportedOperationException("JsonLineParser.split()");
+    }
+
+    private static String[] names(Map<String, Object> keyValues) {
+        return keyValues.keySet().toArray(new String[]{});
+    }
+
+    private static Object[] values(Map<String, Object> keyValues,
+                                   String[] names) {
+        Object[] values = new Object[names.length];
+        for (int i = 0; i < names.length; i++) {
+            values[i] = keyValues.get(names[i]);
+        }
+        return values;
     }
 }

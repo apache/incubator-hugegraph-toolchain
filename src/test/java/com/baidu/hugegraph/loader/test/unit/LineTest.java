@@ -23,19 +23,11 @@ import org.junit.Test;
 
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.testutil.Assert;
-import com.google.common.collect.ImmutableMap;
 
 public class LineTest {
 
     @Test
     public void testInvalidParam() {
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new Line(null, ImmutableMap.of("id", 1, "name", "marko"));
-        });
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
-            new Line("1,marko", null);
-        });
-
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             new Line(null, new String[]{"id", "name"},
                      new Object[]{1, "marko"});
@@ -49,12 +41,13 @@ public class LineTest {
     }
 
     @Test
-    public void testKeyValues() {
+    public void testNameValues() {
         Line line = new Line("1,marko,27",
                              new String[]{"id", "name", "age"},
                              new Object[]{1, "marko", 27});
-        Assert.assertEquals(ImmutableMap.of("id", 1, "name", "marko", "age", 27),
-                            line.keyValues());
+        Assert.assertArrayEquals(new String[]{"id", "name", "age"},
+                                 line.names());
+        Assert.assertArrayEquals(new Object[]{1, "marko", 27}, line.values());
     }
 
     @Test

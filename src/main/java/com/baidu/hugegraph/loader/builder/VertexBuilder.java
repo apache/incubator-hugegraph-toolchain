@@ -21,7 +21,6 @@ package com.baidu.hugegraph.loader.builder;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -53,10 +52,10 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     }
 
     @Override
-    public List<Vertex> build(Map<String, Object> keyValues) {
+    public List<Vertex> build(String[] names, Object[] values) {
         VertexKVPairs kvPairs = this.newKVPairs(this.vertexLabel,
                                                 this.mapping.unfold());
-        kvPairs.extractFromVertex(keyValues);
+        kvPairs.extractFromVertex(names, values);
         return kvPairs.buildVertices(true);
     }
 

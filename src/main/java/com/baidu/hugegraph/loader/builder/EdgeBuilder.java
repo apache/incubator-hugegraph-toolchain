@@ -44,6 +44,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
     private final Collection<String> nonNullKeys;
+    // Used to optimize access performace
+    private VertexIdsIndex vertexIdsIndex;
 
     public EdgeBuilder(LoadContext context, InputStruct struct,
                        EdgeMapping mapping) {
@@ -56,6 +58,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         // Ensure that the source/target id fileds are matched with id strategy
         this.checkIdFields(this.sourceLabel, this.mapping.sourceFields());
         this.checkIdFields(this.targetLabel, this.mapping.targetFields());
+
+        this.vertexIdsIndex = null;
     }
 
     @Override
@@ -64,11 +68,16 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     }
 
     @Override
-    public List<Edge> build(Map<String, Object> keyValues) {
+    public List<Edge> build(String[] names, Object[] values) {
+        if (this.vertexIdsIndex == null) {
+            this.vertexIdsIndex = this.extractVertexIdsIndex(names);
+        }
         EdgeKVPairs kvPairs = this.newEdgeKVPairs();
-        kvPairs.source.extractFromEdge(keyValues, this.mapping.sourceFields());
-        kvPairs.target.extractFromEdge(keyValues, this.mapping.targetFields());
-        kvPairs.extractProperties(keyValues);
+        kvPairs.source.extractFromEdge(names, values,
+                                       this.vertexIdsIndex.sourceIndexes);
+        kvPairs.target.extractFromEdge(names, values,
+                                       this.vertexIdsIndex.targetIndexes);
+        kvPairs.extractProperties(names, values);
 
         List<Vertex> sources = kvPairs.source.buildVertices(false);
         List<Vertex> targets = kvPairs.target.buildVertices(false);
@@ -145,13 +154,13 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         // General properties
         private Map<String, Object> properties;
 
-        public void extractProperties(Map<String, Object> rawKeyValues) {
+        public void extractProperties(String[] names, Object[] values) {
             // General properties
             this.properties = new HashMap<>();
             Set<String> props = schemaLabel().properties();
-            for (Map.Entry<String, Object> entry : rawKeyValues.entrySet()) {
-                String fieldName = entry.getKey();
-                Object fieldValue = entry.getValue();
+            for (int i = 0; i < names.length; i++) {
+                String fieldName = names[i];
+                Object fieldValue = values[i];
                 if (!retainField(fieldName, fieldValue)) {
                     continue;
                 }
@@ -166,5 +175,37 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                 this.properties.put(key, value);
             }
         }
+    }
+
+    private VertexIdsIndex extractVertexIdsIndex(String[] names) {
+        VertexIdsIndex index = new VertexIdsIndex();
+        index.sourceIndexes = new int[this.mapping.sourceFields().size()];
+        int idx = 0;
+        for (String field : this.mapping.sourceFields()) {
+            for (int pos = 0; pos < names.length; pos++) {
+                String name = names[pos];
+                if (field.equals(name)) {
+                    index.sourceIndexes[idx++] = pos;
+                }
+            }
+        }
+
+        index.targetIndexes = new int[this.mapping.targetFields().size()];
+        idx = 0;
+        for (String field : this.mapping.targetFields()) {
+            for (int pos = 0; pos < names.length; pos++) {
+                String name = names[pos];
+                if (field.equals(name)) {
+                    index.targetIndexes[idx++] = pos;
+                }
+            }
+        }
+        return index;
+    }
+
+    private static class VertexIdsIndex {
+
+        private int[] sourceIndexes;
+        private int[] targetIndexes;
     }
 }

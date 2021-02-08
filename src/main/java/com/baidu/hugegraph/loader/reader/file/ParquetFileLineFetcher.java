@@ -54,7 +54,7 @@ public class ParquetFileLineFetcher extends FileLineFetcher {
     private ParquetFileReader reader;
     private MessageType schema;
     private MessageColumnIO columnIO;
-    private RecordReader recordReader;
+    private RecordReader<?> recordReader;
     private PageReadStore pages;
     private long pagesRowCount;
     private long currRowOffset;

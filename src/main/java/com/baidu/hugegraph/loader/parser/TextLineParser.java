@@ -40,29 +40,29 @@ public class TextLineParser implements LineParser {
     }
 
     @Override
-    public Line parse(String[] header, String line) throws ReadException {
-        String[] columns = this.split(line);
+    public Line parse(String[] header, String rawLine) throws ReadException {
+        String[] columns = this.split(rawLine);
         if (columns.length > header.length) {
             // Ignore extra empty string at the tail of line
             int extra = columns.length - header.length;
             if (!this.tailColumnEmpty(columns, extra)) {
-                throw new ReadException(line,
+                throw new ReadException(rawLine,
                           "The column length '%s' doesn't match with " +
                           "header length '%s' on: %s",
-                          columns.length, header.length, line);
+                          columns.length, header.length, rawLine);
             }
             String[] subColumns = new String[header.length];
             System.arraycopy(columns, 0, subColumns, 0, header.length);
-            return new Line(line, header, subColumns);
+            return new Line(rawLine, header, subColumns);
         } else if (columns.length < header.length) {
             // Fill with an empty string
             String[] supColumns = new String[header.length];
             System.arraycopy(columns, 0, supColumns, 0, columns.length);
             Arrays.fill(supColumns, columns.length, supColumns.length,
                         Constants.EMPTY_STR);
-            return new Line(line, header, supColumns);
+            return new Line(rawLine, header, supColumns);
         }
-        return new Line(line, header, columns);
+        return new Line(rawLine, header, columns);
     }
 
     @Override
