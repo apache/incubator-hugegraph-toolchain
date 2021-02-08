@@ -70,7 +70,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     @Override
     public List<Edge> build(String[] names, Object[] values) {
         if (this.vertexIdsIndex == null) {
-            this.extractVertexIdsIndex(names);
+            this.vertexIdsIndex = this.extractVertexIdsIndex(names);
         }
         EdgeKVPairs kvPairs = this.newEdgeKVPairs();
         kvPairs.source.extractFromEdge(names, values,
@@ -177,13 +177,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         }
     }
 
-    private static class VertexIdsIndex {
-
-        private int[] sourceIndexes;
-        private int[] targetIndexes;
-    }
-
-    private void extractVertexIdsIndex(String[] names) {
+    private VertexIdsIndex extractVertexIdsIndex(String[] names) {
         VertexIdsIndex index = new VertexIdsIndex();
         index.sourceIndexes = new int[this.mapping.sourceFields().size()];
         int idx = 0;
@@ -206,6 +200,12 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                 }
             }
         }
-        this.vertexIdsIndex = index;
+        return index;
+    }
+
+    private static class VertexIdsIndex {
+
+        private int[] sourceIndexes;
+        private int[] targetIndexes;
     }
 }
