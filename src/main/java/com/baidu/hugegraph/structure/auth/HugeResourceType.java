@@ -45,7 +45,9 @@ public enum HugeResourceType {
 
     EDGE_LABEL,
 
-    INDEX_LABEL,
+    INDEX_LABEL, // include create/rebuild/delete index
+
+    SCHEMA,
 
     META,
 
@@ -61,14 +63,6 @@ public enum HugeResourceType {
 
     ROOT;
 
-    public boolean match(HugeResourceType type) {
-        if (this == type || this == ROOT ||
-            (this == ALL && type.ordinal() <= ALL.ordinal())) {
-            return true;
-        }
-        return this == type;
-    }
-
     public boolean isGraph() {
         int ord = this.ordinal();
         return VERTEX.ordinal() <= ord && ord <= EDGE.ordinal();
@@ -76,19 +70,19 @@ public enum HugeResourceType {
 
     public boolean isSchema() {
         int ord = this.ordinal();
-        return PROPERTY_KEY.ordinal() <= ord && ord <= INDEX_LABEL.ordinal();
+        return PROPERTY_KEY.ordinal() <= ord && ord <= SCHEMA.ordinal();
     }
 
-    public boolean isUsers() {
+    public boolean isAuth() {
         int ord = this.ordinal();
         return GRANT.ordinal() <= ord && ord <= TARGET.ordinal();
     }
 
     public boolean isGrantOrUser() {
-        return this == GRANT && this == USER_GROUP;
+        return this == GRANT || this == USER_GROUP;
     }
 
-    public boolean isAny() {
-        return this == ALL || this == ROOT;
+    public boolean isRepresentative() {
+        return this == ROOT || this == ALL || this == SCHEMA;
     }
 }
