@@ -120,7 +120,7 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Backup graph schema/data. If directory " +
                                      "is on HDFS, use -D to set HDFS params. " +
-                                     "For exmaple: " +
+                                     "For example: " +
                                      "-Dfs.default.name=hdfs://localhost:9000")
     public static class Backup extends BackupRestore {
 
@@ -213,7 +213,7 @@ public class SubCommands {
 
     @Parameters(commandDescription = "Restore graph schema/data. If directory" +
                                      " is on HDFS, use -D to set HDFS params " +
-                                     "if needed. For exmaple:" +
+                                     "if needed. For example:" +
                                      "-Dfs.default.name=hdfs://localhost:9000")
     public static class Restore extends BackupRestore {
         @Parameter(names = {"--clean"},

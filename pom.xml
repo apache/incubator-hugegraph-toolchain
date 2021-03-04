@@ -20,7 +20,7 @@
         <java.version>1.8</java.version>
         <source.encoding>UTF-8</source.encoding>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ssZ</maven.build.timestamp.format>
-        <hugegraph-client-version>1.9.1</hugegraph-client-version>
+        <hugegraph-client-version>1.9.3</hugegraph-client-version>
         <jcommand-version>1.72</jcommand-version>
         <hadoop-version>3.1.1</hadoop-version>
         <guava.version>25.1-jre</guava.version>
