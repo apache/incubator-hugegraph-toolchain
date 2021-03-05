@@ -47,6 +47,9 @@ public abstract class AbstractSource implements InputSource {
     @Override
     public void check() throws IllegalArgumentException {
         if (this.header != null) {
+            E.checkArgument(this.header.length > 0,
+                            "The header can't be empty if " +
+                            "it has been customized");
             E.checkArgument(CollectionUtil.allUnique(
                             Arrays.asList(this.header)),
                             "The header can't contain duplicate columns, " +

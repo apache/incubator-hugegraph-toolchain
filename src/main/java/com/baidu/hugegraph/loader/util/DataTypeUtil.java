@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.loader.util;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -266,13 +265,7 @@ public final class DataTypeUtil {
                               "Invalid timestamp value '%s'", value));
                 }
             } else {
-                try {
-                    return DateUtil.parse((String) value, dateFormat, timeZone);
-                } catch (ParseException e) {
-                    throw new IllegalArgumentException(String.format(
-                              "%s, expect format: %s", e.getMessage(),
-                              DateUtil.toPattern(dateFormat)));
-                }
+                return DateUtil.parse((String) value, dateFormat, timeZone);
             }
         }
         throw new IllegalArgumentException(String.format(

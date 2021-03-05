@@ -1,0 +1,14 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "${source_type}",
+        "path": "src/test/resources/vertex_person.csv",
+        "header": [],
+        "format": "CSV",
+        "charset": "UTF-8"
+      }
+    }
+  ]
+}
