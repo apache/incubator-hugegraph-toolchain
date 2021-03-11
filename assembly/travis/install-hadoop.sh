@@ -2,16 +2,22 @@
 
 set -ev
 
-UBUNTU_VERSION=$(lsb_release -r | awk '{print substr($2,0,2)}')
+sudo wget http://archive.apache.org/dist/hadoop/common/hadoop-2.8.5/hadoop-2.8.5.tar.gz
 
-sudo tee /etc/apt/sources.list.d/hdp.list <<EOF
-deb http://public-repo-1.hortonworks.com/HDP/ubuntu${UBUNTU_VERSION}/2.x/updates/2.6.5.0 HDP main
-EOF
+sudo tar -zxf hadoop-2.8.5.tar.gz -C /usr/local
+cd /usr/local
+sudo mv hadoop-2.8.5 hadoop
+sudo chown -R travis ./hadoop
+cd hadoop
+pwd
 
-sudo apt-get update
+echo "export HADOOP_HOME=/usr/local/hadoop" >> ~/.bashrc
+echo "export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native" >> ~/.bashrc
+echo "export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin" >> ~/.bashrc
 
-sudo mkdir -p /etc/hadoop/conf
-sudo tee /etc/hadoop/conf/core-site.xml <<EOF
+source ~/.bashrc
+
+tee etc/hadoop/core-site.xml <<EOF
 <configuration>
     <property>
         <name>fs.defaultFS</name>
@@ -20,7 +26,7 @@ sudo tee /etc/hadoop/conf/core-site.xml <<EOF
 </configuration>
 EOF
 
-sudo tee /etc/hadoop/conf/hdfs-site.xml <<EOF
+tee etc/hadoop/hdfs-site.xml <<EOF
 <configuration>
     <property>
         <name>dfs.namenode.name.dir</name>
@@ -41,15 +47,7 @@ sudo tee /etc/hadoop/conf/hdfs-site.xml <<EOF
 </configuration>
 EOF
 
-sudo apt-get install -y --allow-unauthenticated hadoop hadoop-hdfs
-
-sudo mkdir -p /opt/hdfs/data /opt/hdfs/name
-sudo chown -R hdfs:hdfs /opt/hdfs
-sudo -u hdfs hdfs namenode -format -nonInteractive
-
-sudo adduser travis hadoop
-
-sudo /usr/hdp/current/hadoop-hdfs-datanode/../hadoop/sbin/hadoop-daemon.sh start datanode
-sudo /usr/hdp/current/hadoop-hdfs-namenode/../hadoop/sbin/hadoop-daemon.sh start namenode
-
-hdfs dfsadmin -safemode wait
+bin/hdfs namenode -format
+sbin/hadoop-daemon.sh start namenode
+sbin/hadoop-daemon.sh start datanode
+jps

@@ -1293,6 +1293,23 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testSpecifiedHeaderButIsEmpty() {
+        ioUtil.write("vertex_person.csv",
+                     "marko,29,Beijing");
+
+        String[] args = new String[]{
+                "-f", structPath("header_is_empty/struct.json"),
+                "-s", configPath("header_is_empty/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--test-mode", "true"
+        };
+        Assert.assertThrows(LoadException.class, () -> {
+            new HugeGraphLoader(args);
+        });
+    }
+
+    @Test
     public void testDirHasMultiFiles() {
         ioUtil.write("vertex_dir/vertex_person1.csv",
                      "marko,29,Beijing",

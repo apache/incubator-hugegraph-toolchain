@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.loader.util;
 
-import java.text.ParseException;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
@@ -33,15 +32,14 @@ public final class DateUtil {
     private static final Map<String, SafeDateFormat> DATE_FORMATS =
                                                      new ConcurrentHashMap<>();
 
-    public static Date parse(String source, String df) throws ParseException {
+    public static Date parse(String source, String df) {
         return parse(source, df, Constants.TIME_ZONE);
     }
 
-    public static Date parse(String source, String df, String timeZone)
-                             throws ParseException {
+    public static Date parse(String source, String df, String timeZone) {
         SafeDateFormat dateFormat = getDateFormat(df);
         // parse date with specified timezone
-        dateFormat.setTimeZone(TimeZone.getTimeZone(timeZone));
+        dateFormat.setTimeZone(timeZone);
         return dateFormat.parse(source);
     }
 
@@ -49,13 +47,6 @@ public final class DateUtil {
         SafeDateFormat dateFormat = DATE_FORMATS.get(df);
         if (dateFormat == null) {
             dateFormat = new SafeDateFormat(df);
-            /*
-             * Specify whether or not date/time parsing is to be lenient.
-             * With lenient parsing, the parser may use heuristics to interpret
-             * inputs that do not precisely match this object's format.
-             * With strict parsing, inputs must match this object's format.
-             */
-            dateFormat.setLenient(false);
             SafeDateFormat previous = DATE_FORMATS.putIfAbsent(df, dateFormat);
             if (previous != null) {
                 dateFormat = previous;
