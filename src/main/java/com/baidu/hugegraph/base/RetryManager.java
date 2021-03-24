@@ -32,15 +32,19 @@ import com.baidu.hugegraph.exception.ToolsException;
 
 public class RetryManager extends ToolManager {
 
-    private static int threadsNum = Math.min(10,
-            Math.max(4, Runtime.getRuntime().availableProcessors() / 2));
-    private final ExecutorService pool =
-            Executors.newFixedThreadPool(threadsNum);
+    private int CPUS = Runtime.getRuntime().availableProcessors();
+    private int threadsNum = Math.min(10, Math.max(4, CPUS / 2));
+    private ExecutorService pool;
     private final Queue<Future<?>> futures = new ConcurrentLinkedQueue<>();
     private int retry = 0;
 
     public RetryManager(ToolClient.ConnectionInfo info, String type) {
         super(info, type);
+    }
+
+    public void initExecutors() {
+        Printer.print("Init %s executors", this.threadsNum);
+        this.pool = Executors.newFixedThreadPool(this.threadsNum);
     }
 
     public <R> R retry(Supplier<R> supplier, String description) {
@@ -79,6 +83,9 @@ public class RetryManager extends ToolManager {
     }
 
     public void shutdown(String taskType) {
+        if (this.pool == null) {
+            return;
+        }
         this.pool.shutdown();
         try {
             this.pool.awaitTermination(24, TimeUnit.HOURS);
@@ -96,7 +103,13 @@ public class RetryManager extends ToolManager {
         this.retry = retry;
     }
 
-    public static int threadsNum() {
-        return threadsNum;
+    public int threadsNum() {
+        return this.threadsNum;
+    }
+
+    public void threadsNum(int threadsNum) {
+        if (threadsNum > 0) {
+            this.threadsNum = threadsNum;
+        }
     }
 }

@@ -586,6 +586,12 @@ public class SubCommands {
                    description = "Directory of log")
         public String logDir = "./logs";
 
+        @Parameter(names = {"--thread-num", "-T"}, arity = 1,
+                   validateWith = {PositiveValidator.class},
+                   description = "Threads number to use, default is " +
+                                 "Math.min(10, Math.max(4, CPUs / 2))")
+        public int threadsNum;
+
         @ParametersDelegate
         private Retry retry = new Retry();
 
@@ -599,6 +605,10 @@ public class SubCommands {
 
         public String logDir() {
             return this.logDir;
+        }
+
+        public int threadsNum() {
+            return this.threadsNum;
         }
 
         public int retry() {

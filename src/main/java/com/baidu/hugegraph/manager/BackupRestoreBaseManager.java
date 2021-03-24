@@ -75,11 +75,13 @@ public class BackupRestoreBaseManager extends RetryManager {
     }
 
     public void init(SubCommands.BackupRestore cmd) {
+        this.threadsNum(cmd.threadsNum());
         assert cmd.retry() > 0;
         this.retry(cmd.retry());
         LocalDirectory.ensureDirectoryExist(cmd.logDir());
         this.logDir(cmd.logDir());
         this.directory(cmd.directory(), cmd.hdfsConf());
+        this.initExecutors();
     }
 
     public void logDir(String logDir) {
