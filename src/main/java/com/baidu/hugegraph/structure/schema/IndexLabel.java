@@ -273,6 +273,7 @@ public class IndexLabel extends SchemaElement {
             super(indexLabel.name);
             E.checkArgument(indexLabel.rebuild,
                             "The rebuild of indexlabel must be true");
+            this.id = indexLabel.id();
             this.baseType = indexLabel.baseType;
             this.baseValue = indexLabel.baseValue;
             this.indexType = indexLabel.indexType;
@@ -294,6 +295,7 @@ public class IndexLabel extends SchemaElement {
                             "The userdata of indexlabel must be empty");
             E.checkArgument(indexLabel.rebuild,
                             "The rebuild of indexlabel must be true");
+            this.id = indexLabel.id();
             this.baseType = indexLabel.baseType;
             this.baseValue = indexLabel.baseValue;
             this.indexType = indexLabel.indexType;
