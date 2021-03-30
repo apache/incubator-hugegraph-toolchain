@@ -4,6 +4,7 @@
       "label": "person",
       "input": {
         "type": "jdbc",
+        "vendor": "mysql",
         "driver": "com.mysql.cj.jdbc.Driver",
         "url": "jdbc:mysql://127.0.0.1:3306",
         "database": "example",
@@ -19,6 +20,7 @@
       "label": "software",
       "input": {
         "type": "jdbc",
+        "vendor": "mysql",
         "driver": "com.mysql.cj.jdbc.Driver",
         "url": "jdbc:mysql://127.0.0.1:3306",
         "database": "example",
@@ -37,6 +39,7 @@
       "target": ["target_id"],
       "input": {
         "type": "jdbc",
+        "vendor": "mysql",
         "driver": "com.mysql.cj.jdbc.Driver",
         "url": "jdbc:mysql://127.0.0.1:3306",
         "database": "example",
@@ -53,6 +56,7 @@
       "target": ["target_id"],
       "input": {
         "type": "jdbc",
+        "vendor": "mysql",
         "driver": "com.mysql.cj.jdbc.Driver",
         "url": "jdbc:mysql://127.0.0.1:3306",
         "database": "example",
