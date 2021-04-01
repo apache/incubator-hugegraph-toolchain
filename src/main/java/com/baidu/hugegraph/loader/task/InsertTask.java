@@ -83,6 +83,19 @@ public abstract class InsertTask implements Runnable {
         return this.summary().metrics(this.struct);
     }
 
+    @Override
+    public void run() {
+        long start = System.currentTimeMillis();
+        try {
+            this.execute();
+        } finally {
+            long end = System.currentTimeMillis();
+            this.context.summary().addTimeRange(this.type(), start, end);
+        }
+    }
+
+    public abstract void execute();
+
     protected void plusLoadSuccess(int count) {
         LoadMetrics metrics = this.summary().metrics(this.struct);
         metrics.plusInsertSuccess(this.mapping, count);

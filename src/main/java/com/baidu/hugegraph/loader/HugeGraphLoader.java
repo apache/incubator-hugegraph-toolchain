@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ReadException;
@@ -42,6 +43,7 @@ import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.loader.metrics.LoadMetrics;
+import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.task.ParseTaskBuilder;
@@ -162,8 +164,9 @@ public final class HugeGraphLoader {
         LOG.info("Start loading");
         Printer.printRealtimeProgress(this.context);
         LoadOptions options = this.context.options();
+        LoadSummary summary = this.context.summary();
 
-        this.context.summary().startTimer();
+        summary.startTotalTimer();
         try {
             if (!options.failureMode) {
                 // Load normal data from user supplied input structs
@@ -175,7 +178,9 @@ public final class HugeGraphLoader {
             // Waiting for async worker threads finish
             this.manager.waitFinished();
         } finally {
-            this.context.summary().stopTimer();
+            summary.stopFlowRangeTimer(ElemType.VERTEX);
+            summary.stopFlowRangeTimer(ElemType.EDGE);
+            summary.stopTotalTimer();
         }
         Printer.printFinalProgress(this.context);
     }
@@ -258,7 +263,11 @@ public final class HugeGraphLoader {
      */
     private void executeParseTask(InputStruct struct, ElementMapping mapping,
                                   ParseTaskBuilder.ParseTask task) {
+        long start = System.currentTimeMillis();
         List<List<Record>> batches = task.get();
+        long end = System.currentTimeMillis();
+        this.context.summary().addTimeRange(mapping.type(), start, end);
+
         if (this.context.options().dryRun || CollectionUtils.isEmpty(batches)) {
             return;
         }
