@@ -28,7 +28,7 @@ import org.junit.runners.Suite;
     DateUtilTest.class,
     MappingConverterTest.class,
     LoadProgressTest.class,
-    FlowRangeTimerTest.class
+    RangesTimerTest.class
 })
 public class UnitTestSuite {
 }

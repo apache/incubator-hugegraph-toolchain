@@ -36,8 +36,8 @@ public final class LoadSummary {
     private final StopWatch totalTimer;
     private final LongAdder vertexTime;
     private final LongAdder edgeTime;
-    private final FlowRangeTimer vertexFlowRangeTimer;
-    private final FlowRangeTimer edgeFlowRangeTimer;
+    private final RangesTimer vertexRangesTimer;
+    private final RangesTimer edgeRangesTimer;
     // Every input struct has a metric
     private final Map<String, LoadMetrics> inputMetricsMap;
 
@@ -47,8 +47,8 @@ public final class LoadSummary {
         this.totalTimer = new StopWatch();
         this.vertexTime = new LongAdder();
         this.edgeTime = new LongAdder();
-        this.vertexFlowRangeTimer = new FlowRangeTimer(10000);
-        this.edgeFlowRangeTimer = new FlowRangeTimer(10000);
+        this.vertexRangesTimer = new RangesTimer(10000);
+        this.edgeRangesTimer = new RangesTimer(10000);
         this.inputMetricsMap = InsertionOrderUtil.newMap();
     }
 
@@ -112,14 +112,14 @@ public final class LoadSummary {
     }
 
     public void addTimeRange(ElemType type, long start, long end) {
-        FlowRangeTimer timer = type.isVertex() ? this.vertexFlowRangeTimer :
-                                                 this.edgeFlowRangeTimer;
+        RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
+                                              this.edgeRangesTimer;
         timer.addTimeRange(start, end);
     }
 
     public void stopFlowRangeTimer(ElemType type) {
-        FlowRangeTimer timer = type.isVertex() ? this.vertexFlowRangeTimer :
-                                                 this.edgeFlowRangeTimer;
+        RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
+                                              this.edgeRangesTimer;
         LongAdder elemTime = type.isVertex() ? this.vertexTime : this.edgeTime;
         elemTime.add(timer.totalTime());
     }

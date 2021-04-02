@@ -21,14 +21,14 @@ package com.baidu.hugegraph.loader.test.unit;
 
 import org.junit.Test;
 
-import com.baidu.hugegraph.loader.metrics.FlowRangeTimer;
+import com.baidu.hugegraph.loader.metrics.RangesTimer;
 import com.baidu.hugegraph.testutil.Assert;
 
-public class FlowRangeTimerTest {
+public class RangesTimerTest {
 
     @Test
     public void testTimeRangeWithOverlap() {
-        FlowRangeTimer timer = new FlowRangeTimer(3);
+        RangesTimer timer = new RangesTimer(3);
         timer.addTimeRange(1, 2);
         timer.addTimeRange(2, 4);
         timer.addTimeRange(5, 8);
@@ -37,7 +37,7 @@ public class FlowRangeTimerTest {
 
     @Test
     public void testTimeRangeWithoutOverlap() {
-        FlowRangeTimer timer = new FlowRangeTimer(2);
+        RangesTimer timer = new RangesTimer(2);
         timer.addTimeRange(1, 2);
         timer.addTimeRange(3, 4);
 
@@ -48,7 +48,7 @@ public class FlowRangeTimerTest {
 
     @Test
     public void testTimeRangeWithMixedMode() {
-        FlowRangeTimer timer = new FlowRangeTimer(2);
+        RangesTimer timer = new RangesTimer(2);
         timer.addTimeRange(1, 3);
         timer.addTimeRange(2, 4);
 

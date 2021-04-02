@@ -23,50 +23,82 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * RangesTimer is a customized timer used to count the total time consumption
+ * of multiple time ranges of multiple threads, each TimeRange represents a
+ * time section, it means that a thread performs certain tasks during this time
+ * section, such as parsing or loading.
+ *
+ * <pre>
+ * TimeLine    1__2__3__4__5__6__7__8
+ *
+ * Thread-1    1_____3
+ * Thread-2       2_____4
+ * Thread-3                5_____7
+ * Thread-4                5__6
+ *
+ * occupancy   |========|  |=====|
+ *                 3     +    2
+ * </pre>
+ *
  * It's thread safe
  */
-public class FlowRangeTimer {
+public class RangesTimer {
 
     private final int capacity;
-    private final List<TimeRange> queue;
+    private final List<TimeRange> ranges;
     private long lastEnd;
     private long totalTime;
 
-    public FlowRangeTimer(int capacity) {
+    public RangesTimer(int capacity) {
         this.capacity = capacity;
-        this.queue = new ArrayList<>(capacity);
+        this.ranges = new ArrayList<>(capacity);
         this.lastEnd = 0L;
         this.totalTime = 0L;
     }
 
     public synchronized long totalTime() {
-        if (!this.queue.isEmpty()) {
+        if (!this.ranges.isEmpty()) {
             long time = this.caculate();
             this.totalTime += time;
-            this.queue.clear();
+            this.ranges.clear();
         }
         return this.totalTime;
     }
 
     public synchronized void addTimeRange(long start, long end) {
-        if (this.queue.size() >= this.capacity) {
+        if (this.ranges.size() >= this.capacity) {
             long time = this.caculate();
             this.totalTime += time;
-            this.queue.clear();
+            this.ranges.clear();
         }
-        this.queue.add(new TimeRange(start, end));
+        this.ranges.add(new TimeRange(start, end));
     }
 
     private long caculate() {
-        assert !this.queue.isEmpty();
-        this.queue.sort((o1, o2) -> (int) (o1.start() - o2.start()));
+        assert !this.ranges.isEmpty();
+        this.ranges.sort((o1, o2) -> (int) (o1.start() - o2.start()));
         long time = 0L;
-        long start = this.lastEnd, end = this.lastEnd;
-        for (TimeRange range : this.queue) {
+        long start = this.lastEnd;
+        long end = this.lastEnd;
+        for (TimeRange range : this.ranges) {
             if (range.start() <= end) {
-                // There is overlap
+                /*
+                 * There is overlap, merging range
+                 *
+                 * Thread-1    1_____3
+                 * Thread-2       2_____4
+                 * Thread-3          3_____5
+                 *
+                 * The 'end' is updated to 3->4->5, the range expand to [1, 5]
+                 */
                 end = Math.max(end, range.end());
             } else {
+                /*
+                 * There is no overlap, calculate the length of the old range
+                 * then open up a new range
+                 *
+                 * Thread-4                   6_____8
+                 */
                 time += (end - start);
                 start = range.start();
                 end = range.end();
