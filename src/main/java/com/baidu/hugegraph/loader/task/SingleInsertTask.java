@@ -46,7 +46,7 @@ public class SingleInsertTask extends InsertTask {
     }
 
     @Override
-    public void run() {
+    public void execute() {
         for (Record record : this.batch) {
             try {
                 if (this.mapping.updateStrategies().isEmpty()) {

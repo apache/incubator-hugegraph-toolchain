@@ -135,6 +135,7 @@ public final class TaskManager {
 
     public void submitBatch(InputStruct struct, ElementMapping mapping,
                             List<Record> batch) {
+        long start = System.currentTimeMillis();
         try {
             this.batchSemaphore.acquire();
         } catch (InterruptedException e) {
@@ -147,13 +148,19 @@ public final class TaskManager {
         CompletableFuture.runAsync(task, this.batchService).exceptionally(e -> {
             LOG.warn("Batch insert {} error, try single insert",
                      mapping.type(), e);
+            // The time of single insert is counted separately in this method
             this.submitInSingle(struct, mapping, batch);
             return null;
-        }).whenComplete((r, e) -> this.batchSemaphore.release());
+        }).whenComplete((r, e) -> {
+            this.batchSemaphore.release();
+            long end = System.currentTimeMillis();
+            this.context.summary().addTimeRange(mapping.type(), start, end);
+        });
     }
 
     private void submitInSingle(InputStruct struct, ElementMapping mapping,
                                 List<Record> batch) {
+        long start = System.currentTimeMillis();
         try {
             this.singleSemaphore.acquire();
         } catch (InterruptedException e) {
@@ -163,9 +170,11 @@ public final class TaskManager {
 
         InsertTask task = new SingleInsertTask(this.context, struct,
                                                mapping, batch);
-        CompletableFuture.runAsync(task, this.singleService)
-                         .whenComplete((r, e) -> {
-                             this.singleSemaphore.release();
-                         });
+        CompletableFuture.runAsync(task, this.singleService).whenComplete(
+            (r, e) -> {
+                this.singleSemaphore.release();
+                long end = System.currentTimeMillis();
+                this.context.summary().addTimeRange(mapping.type(), start, end);
+            });
     }
 }

@@ -46,7 +46,7 @@ public class BatchInsertTask extends InsertTask {
     }
 
     @Override
-    public void run() {
+    public void execute() {
         int retryCount = 0;
         do {
             try {

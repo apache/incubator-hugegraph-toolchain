@@ -50,3 +50,4 @@ env:
     - TRAVIS_DIR=assembly/travis
     - STATIC_DIR=assembly/static
     - SERVER_VERSION=0.11.2
+    - COMMIT_ID=c0dff5b233e853716ca6f3f28a5cda05e6f3d639

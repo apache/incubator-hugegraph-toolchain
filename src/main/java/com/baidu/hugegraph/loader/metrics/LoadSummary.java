@@ -34,6 +34,10 @@ public final class LoadSummary {
     private final LongAdder vertexLoaded;
     private final LongAdder edgeLoaded;
     private final StopWatch totalTimer;
+    private final LongAdder vertexTime;
+    private final LongAdder edgeTime;
+    private final RangesTimer vertexRangesTimer;
+    private final RangesTimer edgeRangesTimer;
     // Every input struct has a metric
     private final Map<String, LoadMetrics> inputMetricsMap;
 
@@ -41,6 +45,10 @@ public final class LoadSummary {
         this.vertexLoaded = new LongAdder();
         this.edgeLoaded = new LongAdder();
         this.totalTimer = new StopWatch();
+        this.vertexTime = new LongAdder();
+        this.edgeTime = new LongAdder();
+        this.vertexRangesTimer = new RangesTimer(10000);
+        this.edgeRangesTimer = new RangesTimer(10000);
         this.inputMetricsMap = InsertionOrderUtil.newMap();
     }
 
@@ -103,29 +111,50 @@ public final class LoadSummary {
                                    .reduce(0L, Long::sum);
     }
 
+    public void addTimeRange(ElemType type, long start, long end) {
+        RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
+                                              this.edgeRangesTimer;
+        timer.addTimeRange(start, end);
+    }
+
+    public void stopFlowRangeTimer(ElemType type) {
+        RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
+                                              this.edgeRangesTimer;
+        LongAdder elemTime = type.isVertex() ? this.vertexTime : this.edgeTime;
+        elemTime.add(timer.totalTime());
+    }
+
     public long totalTime() {
         return this.totalTimer.getTime();
     }
 
-    public void startTimer() {
+    public long vertexTime() {
+        return this.vertexTime.longValue();
+    }
+
+    public long edgeTime() {
+        return this.edgeTime.longValue();
+    }
+
+    public void startTotalTimer() {
         if (!this.totalTimer.isStarted()) {
             this.totalTimer.start();
         }
     }
 
-    public void stopTimer() {
+    public void stopTotalTimer() {
         if (!this.totalTimer.isStopped()) {
             this.totalTimer.stop();
         }
     }
 
     public long loadRate(ElemType type) {
-        long totalTime = this.totalTime();
+        boolean isVertex = type.isVertex();
+        long totalTime = isVertex ? this.vertexTime() : this.edgeTime();
         if (totalTime == 0) {
             return -1;
         }
-        long success = type.isVertex() ? this.vertexLoaded.longValue() :
-                       this.edgeLoaded.longValue();
+        long success = isVertex ? this.vertexLoaded() : this.edgeLoaded();
         return success * 1000 / totalTime;
     }
 }

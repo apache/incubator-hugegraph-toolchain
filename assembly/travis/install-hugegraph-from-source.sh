@@ -11,9 +11,9 @@ CLIENT_BRANCH=$1
 HUGEGRAPH_BRANCH=${CLIENT_BRANCH}
 HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
 
-git clone --depth 1 ${HUGEGRAPH_GIT_URL}
+git clone --depth 100 ${HUGEGRAPH_GIT_URL}
 cd hugegraph
-git checkout ${HUGEGRAPH_BRANCH}
+git checkout ${COMMIT_ID}
 mvn package -DskipTests
 mv hugegraph-*.tar.gz ../
 cd ../
