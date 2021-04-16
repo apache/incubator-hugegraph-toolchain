@@ -63,14 +63,14 @@ public class UserApiTest extends AuthApiTest {
         User user1 = new User();
         user1.name("user1");
         user1.password("p1");
-        user1.email("user1@baidu.com");
+        user1.email("user1@hugegraph.com");
         user1.phone("123456789");
         user1.avatar("image1.jpg");
 
         User user2 = new User();
         user2.name("user2");
         user2.password("p2");
-        user2.email("user2@baidu.com");
+        user2.email("user2@hugegraph.com");
         user2.phone("1357924680");
         user2.avatar("image2.jpg");
 
@@ -79,13 +79,13 @@ public class UserApiTest extends AuthApiTest {
 
         Assert.assertEquals("user1", result1.name());
         Assert.assertNotEquals("p1", result1.password());
-        Assert.assertEquals("user1@baidu.com", result1.email());
+        Assert.assertEquals("user1@hugegraph.com", result1.email());
         Assert.assertEquals("123456789", result1.phone());
         Assert.assertEquals("image1.jpg", result1.avatar());
 
         Assert.assertEquals("user2", result2.name());
         Assert.assertNotEquals("p2", result2.password());
-        Assert.assertEquals("user2@baidu.com", result2.email());
+        Assert.assertEquals("user2@hugegraph.com", result2.email());
         Assert.assertEquals("1357924680", result2.phone());
         Assert.assertEquals("image2.jpg", result2.avatar());
 
@@ -183,7 +183,7 @@ public class UserApiTest extends AuthApiTest {
         User user1 = createUser("test1", "psw1");
         User user2 = createUser("test2", "psw2");
 
-        Assert.assertEquals("test@baidu.com", user1.email());
+        Assert.assertEquals("test@hugegraph.com", user1.email());
         Assert.assertEquals("16812345678", user1.phone());
         Assert.assertEquals("image.jpg", user1.avatar());
 
@@ -191,13 +191,13 @@ public class UserApiTest extends AuthApiTest {
         Assert.assertNotEquals("psw1", oldPassw);
 
         user1.password("psw-udated");
-        user1.email("test_updated@baidu.com");
+        user1.email("test_updated@hugegraph.com");
         user1.phone("1357924680");
         user1.avatar("image-updated.jpg");
 
         User updated = api.update(user1);
         Assert.assertNotEquals(oldPassw, updated.password());
-        Assert.assertEquals("test_updated@baidu.com", updated.email());
+        Assert.assertEquals("test_updated@hugegraph.com", updated.email());
         Assert.assertEquals("1357924680", updated.phone());
         Assert.assertEquals("image-updated.jpg", updated.avatar());
         Assert.assertNotEquals(user1.updateTime(), updated.updateTime());
@@ -264,7 +264,7 @@ public class UserApiTest extends AuthApiTest {
         User user = new User();
         user.name(name);
         user.password(password);
-        user.email("test@baidu.com");
+        user.email("test@hugegraph.com");
         user.phone("16812345678");
         user.avatar("image.jpg");
         return api.create(user);
