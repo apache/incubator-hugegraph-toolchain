@@ -68,9 +68,9 @@ public final class HugeClientHolder {
                 } else {
                     trustFile = options.trustStoreFile;
                 }
+                // Hard code: "hugegraph"
                 String password = options.trustStorePassword == null ?
-                                  Constants.TRUST_STORE_PASSWORD :
-                                  options.trustStorePassword;
+                                  "hugegraph" : options.trustStorePassword;
                 builder.configSSL(trustFile, password);
             }
             return builder.build();

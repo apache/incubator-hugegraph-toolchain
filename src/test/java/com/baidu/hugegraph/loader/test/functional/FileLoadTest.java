@@ -3032,7 +3032,7 @@ public class FileLoadTest extends LoadTest {
                 "-p", String.valueOf(HTTPS_PORT),
                 "--protocol", HTTPS_PROTOCOL,
                 "--trust-store-file", TRUST_STORE_FILE,
-                "--trust-store-password", TRUST_STORE_PASSWORD,
+                "--trust-store-password", "hugegraph",
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -3041,8 +3041,7 @@ public class FileLoadTest extends LoadTest {
         HugeClient httpsClient = null;
         try {
             httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
-                                    .configSSL(TRUST_STORE_FILE,
-                                               TRUST_STORE_PASSWORD)
+                                    .configSSL(TRUST_STORE_FILE, "hugegraph")
                                     .build();
             List<Vertex> vertices = httpsClient.graph().listVertices();
             Assert.assertEquals(2, vertices.size());
@@ -3064,7 +3063,7 @@ public class FileLoadTest extends LoadTest {
                 "-p", String.valueOf(HTTPS_PORT),
                 "--protocol", HTTPS_PROTOCOL,
                 "--trust-store-file", TRUST_STORE_FILE,
-                "--trust-store-password", TRUST_STORE_PASSWORD,
+                "--trust-store-password", "hugegraph",
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -3076,7 +3075,7 @@ public class FileLoadTest extends LoadTest {
         options.graph = GRAPH;
         options.protocol = HTTPS_PROTOCOL;
         options.trustStoreFile = TRUST_STORE_FILE;
-        options.trustStorePassword = TRUST_STORE_PASSWORD;
+        options.trustStorePassword = "hugegraph";
 
         HugeClient httpsClient = null;
         try {
