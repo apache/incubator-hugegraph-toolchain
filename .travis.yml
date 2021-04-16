@@ -14,7 +14,7 @@ branches:
 install: mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
 before_script:
-  - $TRAVIS_DIR/install-hugegraph.sh $TRAVIS_BRANCH | grep -v "Downloading\|Downloaded"
+  - $TRAVIS_DIR/install-hugegraph-from-source.sh $TRAVIS_BRANCH | grep -v "Downloading\|Downloaded"
 
 script:
   - mvn test -Dtest=UnitTestSuite
@@ -27,3 +27,4 @@ after_success:
 env:
   global:
   - TRAVIS_DIR=assembly/travis
+  - COMMIT_ID=c0dff5b233e853716ca6f3f28a5cda05e6f3d639
