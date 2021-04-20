@@ -114,12 +114,18 @@ public final class Printer {
     }
 
     private static void printMeterReport(LoadSummary summary) {
+        long totalTime = summary.totalTime();
+        long vertexTime = summary.vertexTime();
+        long edgeTime = summary.edgeTime();
+
         printAndLog("meter metrics");
-        printAndLog("total time", TimeUtil.readableTime(summary.totalTime()));
-        printAndLog("vertex time", TimeUtil.readableTime(summary.vertexTime()));
+        printAndLog("total time", TimeUtil.readableTime(totalTime));
+        printAndLog("read time",
+                    TimeUtil.readableTime(totalTime - vertexTime - edgeTime));
+        printAndLog("vertex load time", TimeUtil.readableTime(vertexTime));
         printAndLog("vertex load rate(vertices/s)",
                     summary.loadRate(ElemType.VERTEX));
-        printAndLog("edge time", TimeUtil.readableTime(summary.edgeTime()));
+        printAndLog("edge load time", TimeUtil.readableTime(edgeTime));
         printAndLog("edge load rate(edges/s)", summary.loadRate(ElemType.EDGE));
     }
 
