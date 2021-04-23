@@ -187,6 +187,7 @@ public final class HugeGraphLoader {
 
     private void load(List<InputStruct> structs) {
         // Load input structs one by one
+        structs = this.splitStructsIfNeeded(structs);
         for (InputStruct struct : structs) {
             if (this.context.stopped()) {
                 break;
@@ -313,6 +314,28 @@ public final class HugeGraphLoader {
                 }
             }
         }
+    }
+
+    private List<InputStruct> splitStructsIfNeeded(List<InputStruct> structs) {
+        if (!this.context.options().checkVertex) {
+            return structs;
+        }
+        LOG.info("Load option check-vertex is true, force to load vertices " +
+                 "before edges");
+        List<InputStruct> splittedStructs = new ArrayList<>();
+        for (InputStruct struct : structs) {
+            InputStruct result = struct.extractVertexStruct();
+            if (result != InputStruct.EMPTY) {
+                splittedStructs.add(result);
+            }
+        }
+        for (InputStruct struct : structs) {
+            InputStruct result = struct.extractEdgeStruct();
+            if (result != InputStruct.EMPTY) {
+                splittedStructs.add(result);
+            }
+        }
+        return splittedStructs;
     }
 
     private boolean reachedMaxReadLines() {

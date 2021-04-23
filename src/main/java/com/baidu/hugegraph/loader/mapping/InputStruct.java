@@ -30,9 +30,13 @@ import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.google.common.collect.ImmutableList;
 
 @JsonPropertyOrder({"id", "skip", "input", "vertices", "edges"})
 public class InputStruct implements Checkable {
+
+    public static final InputStruct EMPTY = new InputStruct(ImmutableList.of(),
+                                                            ImmutableList.of());
 
     @JsonProperty("id")
     private String id;
@@ -102,6 +106,28 @@ public class InputStruct implements Checkable {
         } else {
             this.edges.add((EdgeMapping) mapping);
         }
+    }
+
+    public InputStruct extractVertexStruct() {
+        if (this.vertices.isEmpty()) {
+            return EMPTY;
+        }
+        InputStruct struct = new InputStruct(this.vertices, ImmutableList.of());
+        struct.id = this.id + "-vertex";
+        struct.skip = this.skip;
+        struct.input = this.input;
+        return struct;
+    }
+
+    public InputStruct extractEdgeStruct() {
+        if (this.edges.isEmpty()) {
+            return EMPTY;
+        }
+        InputStruct struct = new InputStruct(ImmutableList.of(), this.edges);
+        struct.id = this.id + "-edge";
+        struct.skip = this.skip;
+        struct.input = this.input;
+        return struct;
     }
 
     @Override
