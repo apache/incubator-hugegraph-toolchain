@@ -58,8 +58,8 @@ public class RangesTimer {
 
     public synchronized long totalTime() {
         if (!this.ranges.isEmpty()) {
-            long time = this.caculate();
-            this.totalTime += time;
+            long incrTime = this.caculate();
+            this.totalTime += incrTime;
             this.ranges.clear();
         }
         return this.totalTime;
@@ -67,8 +67,8 @@ public class RangesTimer {
 
     public synchronized void addTimeRange(long start, long end) {
         if (this.ranges.size() >= this.capacity) {
-            long time = this.caculate();
-            this.totalTime += time;
+            long incrTime = this.caculate();
+            this.totalTime += incrTime;
             this.ranges.clear();
         }
         this.ranges.add(new TimeRange(start, end));
