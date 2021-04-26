@@ -82,11 +82,14 @@ public final class TaskManager {
     }
 
     public void waitFinished() {
-        LOG.info("Waiting for the insert tasks finished");
+        this.waitFinished("insert tasks");
+    }
+
+    public void waitFinished(String tasksName) {
+        LOG.info("Waiting for the {} to finish", tasksName);
         try {
             // Wait batch mode task stopped
             this.batchSemaphore.acquire(this.batchSemaphoreNum());
-            LOG.info("The batch-mode tasks stopped");
         } catch (InterruptedException e) {
             LOG.error("Interrupted while waiting batch-mode tasks");
         } finally {
@@ -96,12 +99,12 @@ public final class TaskManager {
         try {
             // Wait single mode task stopped
             this.singleSemaphore.acquire(this.singleSemaphoreNum());
-            LOG.info("The single-mode tasks stopped");
         } catch (InterruptedException e) {
             LOG.error("Interrupted while waiting single-mode tasks");
         } finally {
             this.singleSemaphore.release(this.singleSemaphoreNum());
         }
+        LOG.info("All the {} finished", tasksName);
     }
 
     public void shutdown() {

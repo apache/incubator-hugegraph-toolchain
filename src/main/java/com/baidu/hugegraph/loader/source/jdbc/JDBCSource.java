@@ -113,4 +113,9 @@ public class JDBCSource extends AbstractSource {
         source.listFormat(this.listFormat());
         return source;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s with url %s", this.type(), this.url());
+    }
 }
