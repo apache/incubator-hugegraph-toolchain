@@ -118,7 +118,7 @@ public final class LoadSummary {
         timer.addTimeRange(start, end);
     }
 
-    public void stopFlowRangeTimer(ElemType type) {
+    public void calculateTotalTime(ElemType type) {
         RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
                                               this.edgeRangesTimer;
         AtomicLong elemTime = type.isVertex() ? this.vertexTime : this.edgeTime;
@@ -151,7 +151,7 @@ public final class LoadSummary {
 
     public long loadRate(ElemType type) {
         // Ensure vetex time and edge time has been set
-        this.stopFlowRangeTimer(type);
+        this.calculateTotalTime(type);
 
         boolean isVertex = type.isVertex();
         long totalTime = isVertex ? this.vertexTime() : this.edgeTime();

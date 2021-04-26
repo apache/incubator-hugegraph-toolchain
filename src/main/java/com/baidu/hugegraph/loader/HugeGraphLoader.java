@@ -178,8 +178,8 @@ public final class HugeGraphLoader {
             // Waiting for async worker threads finish
             this.manager.waitFinished();
         } finally {
-            summary.stopFlowRangeTimer(ElemType.VERTEX);
-            summary.stopFlowRangeTimer(ElemType.EDGE);
+            summary.calculateTotalTime(ElemType.VERTEX);
+            summary.calculateTotalTime(ElemType.EDGE);
             summary.stopTotalTimer();
         }
         Printer.printFinalProgress(this.context);

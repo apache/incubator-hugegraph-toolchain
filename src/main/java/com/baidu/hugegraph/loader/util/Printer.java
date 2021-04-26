@@ -117,11 +117,11 @@ public final class Printer {
         long totalTime = summary.totalTime();
         long vertexTime = summary.vertexTime();
         long edgeTime = summary.edgeTime();
+        long readTime = totalTime - vertexTime - edgeTime;
 
         printAndLog("meter metrics");
         printAndLog("total time", TimeUtil.readableTime(totalTime));
-        printAndLog("read time",
-                    TimeUtil.readableTime(totalTime - vertexTime - edgeTime));
+        printAndLog("read time", TimeUtil.readableTime(readTime));
         printAndLog("vertex load time", TimeUtil.readableTime(vertexTime));
         printAndLog("vertex load rate(vertices/s)",
                     summary.loadRate(ElemType.VERTEX));
