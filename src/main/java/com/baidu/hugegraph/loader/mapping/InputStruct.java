@@ -113,7 +113,7 @@ public class InputStruct implements Checkable {
             return EMPTY;
         }
         InputStruct struct = new InputStruct(this.vertices, ImmutableList.of());
-        struct.id = this.id + "-vertex";
+        struct.id = this.id;
         struct.skip = this.skip;
         struct.input = this.input;
         return struct;
@@ -124,7 +124,7 @@ public class InputStruct implements Checkable {
             return EMPTY;
         }
         InputStruct struct = new InputStruct(ImmutableList.of(), this.edges);
-        struct.id = this.id + "-edge";
+        struct.id = this.id;
         struct.skip = this.skip;
         struct.input = this.input;
         return struct;
@@ -132,6 +132,7 @@ public class InputStruct implements Checkable {
 
     @Override
     public String toString() {
-        return String.format("input-mapping(id=%s)", this.id);
+        return String.format("InputStruct{id=%s, input=%s}",
+                             this.id, this.input);
     }
 }

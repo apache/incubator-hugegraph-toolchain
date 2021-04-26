@@ -196,6 +196,6 @@ public class FileSource extends AbstractSource {
 
     @Override
     public String toString() {
-        return String.format("%s with path %s", this.type(), this.path());
+        return String.format("%s(%s)", this.type(), this.path());
     }
 }

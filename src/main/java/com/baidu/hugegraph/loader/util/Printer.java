@@ -76,19 +76,19 @@ public final class Printer {
             log(String.format("input-struct '%s'", id));
             log("read success", metrics.readSuccess());
             log("read failure", metrics.readFailure());
-            metrics.vertexCounters().forEach((label, counter) -> {
+            metrics.vertexMetrics().forEach((label, labelMetrics) -> {
                 log(String.format("vertex '%s'", label));
-                log("parse success", counter.parseSuccess());
-                log("parse failure", counter.parseFailure());
-                log("insert success", counter.insertSuccess());
-                log("insert failure", counter.insertFailure());
+                log("parse success", labelMetrics.parseSuccess());
+                log("parse failure", labelMetrics.parseFailure());
+                log("insert success", labelMetrics.insertSuccess());
+                log("insert failure", labelMetrics.insertFailure());
             });
-            metrics.edgeCounters().forEach((label, counter) -> {
+            metrics.edgeMetrics().forEach((label, labelMetrics) -> {
                 log(String.format("edge '%s'", label));
-                log("parse success", counter.parseSuccess());
-                log("parse failure", counter.parseFailure());
-                log("insert success", counter.insertSuccess());
-                log("insert failure", counter.insertFailure());
+                log("parse success", labelMetrics.parseSuccess());
+                log("parse failure", labelMetrics.parseFailure());
+                log("insert success", labelMetrics.insertSuccess());
+                log("insert failure", labelMetrics.insertFailure());
             });
         });
 
@@ -117,11 +117,13 @@ public final class Printer {
         long totalTime = summary.totalTime();
         long vertexTime = summary.vertexTime();
         long edgeTime = summary.edgeTime();
-        long readTime = totalTime - vertexTime - edgeTime;
+        long loadTime = vertexTime + edgeTime;
+        long readTime = totalTime - loadTime;
 
         printAndLog("meter metrics");
         printAndLog("total time", TimeUtil.readableTime(totalTime));
         printAndLog("read time", TimeUtil.readableTime(readTime));
+        printAndLog("load time", TimeUtil.readableTime(vertexTime + edgeTime));
         printAndLog("vertex load time", TimeUtil.readableTime(vertexTime));
         printAndLog("vertex load rate(vertices/s)",
                     summary.loadRate(ElemType.VERTEX));

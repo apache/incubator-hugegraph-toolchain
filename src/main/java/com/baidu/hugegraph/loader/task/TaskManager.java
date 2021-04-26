@@ -36,6 +36,7 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.util.ExecutorUtil;
 import com.baidu.hugegraph.util.Log;
 
@@ -145,20 +146,26 @@ public final class TaskManager {
             throw new LoadException("Interrupted while waiting to submit %s " +
                                     "batch in batch mode", e, mapping.type());
         }
+        LoadSummary summary = this.context.summary();
+        summary.metrics(struct).plusFlighting(batch.size());
 
         InsertTask task = new BatchInsertTask(this.context, struct,
                                               mapping, batch);
-        CompletableFuture.runAsync(task, this.batchService).exceptionally(e -> {
-            LOG.warn("Batch insert {} error, try single insert",
-                     mapping.type(), e);
-            // The time of single insert is counted separately in this method
-            this.submitInSingle(struct, mapping, batch);
-            return null;
-        }).whenComplete((r, e) -> {
-            this.batchSemaphore.release();
-            long end = System.currentTimeMillis();
-            this.context.summary().addTimeRange(mapping.type(), start, end);
-        });
+        CompletableFuture.runAsync(task, this.batchService).whenComplete(
+            (r, e) -> {
+                if (e != null) {
+                    LOG.warn("Batch insert {} error, try single insert",
+                             mapping.type(), e);
+                    // The time of single insert is counted separately
+                    this.submitInSingle(struct, mapping, batch);
+                } else {
+                    summary.metrics(struct).minusFlighting(batch.size());
+                }
+
+                this.batchSemaphore.release();
+                long end = System.currentTimeMillis();
+                this.context.summary().addTimeRange(mapping.type(), start, end);
+            });
     }
 
     private void submitInSingle(InputStruct struct, ElementMapping mapping,
@@ -170,12 +177,15 @@ public final class TaskManager {
             throw new LoadException("Interrupted while waiting to submit %s " +
                                     "batch in single mode", e, mapping.type());
         }
+        LoadSummary summary = this.context.summary();
 
         InsertTask task = new SingleInsertTask(this.context, struct,
                                                mapping, batch);
         CompletableFuture.runAsync(task, this.singleService).whenComplete(
             (r, e) -> {
+                summary.metrics(struct).minusFlighting(batch.size());
                 this.singleSemaphore.release();
+
                 long end = System.currentTimeMillis();
                 this.context.summary().addTimeRange(mapping.type(), start, end);
             });

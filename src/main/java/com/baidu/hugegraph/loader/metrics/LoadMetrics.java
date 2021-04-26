@@ -19,31 +19,43 @@
 
 package com.baidu.hugegraph.loader.metrics;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
 
+import com.baidu.hugegraph.loader.HugeGraphLoader;
+import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
+import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.mapping.VertexMapping;
 
 public final class LoadMetrics {
 
+    private final InputStruct struct;
     private long readSuccess;
     private long readFailure;
+    private boolean inFlight;
+    // It has been parsed and is in the loading state
+    private final LongAdder flightingNums;
     // The key is vertexlabel or edgelabel
-    private final Map<String, MetricsCounter> vertexCounters;
-    private final Map<String, MetricsCounter> edgeCounters;
+    private final Map<String, Metrics> vertexMetrics;
+    private final Map<String, Metrics> edgeMetrics;
 
-    public LoadMetrics() {
-        this(0L, 0L, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
-    }
+    public LoadMetrics(InputStruct struct) {
+        this.struct = struct;
+        this.readSuccess = 0L;
+        this.readFailure = 0L;
+        this.inFlight = false;
+        this.flightingNums = new LongAdder();
 
-    public LoadMetrics(long readSuccess, long readFailure,
-                       Map<String, MetricsCounter> vertexCounters,
-                       Map<String, MetricsCounter> edgeCounters) {
-        this.readSuccess = readSuccess;
-        this.readFailure = readFailure;
-        this.vertexCounters = vertexCounters;
-        this.edgeCounters = edgeCounters;
+        this.vertexMetrics = new HashMap<>();
+        this.edgeMetrics = new HashMap<>();
+        for (VertexMapping mapping : struct.vertices()) {
+            vertexMetrics.put(mapping.label(), new Metrics());
+        }
+        for (EdgeMapping mapping : struct.edges()) {
+            edgeMetrics.put(mapping.label(), new Metrics());
+        }
     }
 
     public long readSuccess() {
@@ -74,52 +86,74 @@ public final class LoadMetrics {
         this.readFailure++;
     }
 
+    public void startInFlight() {
+        this.inFlight = true;
+    }
+
+    public void stopInFlight() {
+        this.inFlight = false;
+    }
+
+    public void plusFlighting(int num) {
+        if (this.inFlight && this.flightingNums.longValue() == 0L) {
+            HugeGraphLoader.LOG.info("Start loading '{}'", struct);
+        }
+        this.flightingNums.add(num);
+    }
+
+    public void minusFlighting(int num) {
+        this.flightingNums.add(-num);
+        if (!this.inFlight && this.flightingNums.longValue() == 0L) {
+            HugeGraphLoader.LOG.info("Finish loading '{}'", this.struct);
+        }
+    }
+
     public long parseSuccess(ElementMapping mapping) {
-        return this.getCounter(mapping).parseSuccess.longValue();
+        return this.metrics(mapping).parseSuccess.longValue();
     }
 
     public void plusParseSuccess(ElementMapping mapping, long count) {
-        this.getCounter(mapping).parseSuccess.add(count);
+        this.metrics(mapping).parseSuccess.add(count);
     }
 
     public long parseFailure(ElementMapping mapping) {
-        return this.getCounter(mapping).parseFailure.longValue();
+        return this.metrics(mapping).parseFailure.longValue();
     }
 
     public void increaseParseFailure(ElementMapping mapping) {
-        this.getCounter(mapping).parseFailure.increment();
+        this.metrics(mapping).parseFailure.increment();
     }
 
     public long insertSuccess(ElementMapping mapping) {
-        return this.getCounter(mapping).insertSuccess.longValue();
+        return this.metrics(mapping).insertSuccess.longValue();
     }
 
     public void plusInsertSuccess(ElementMapping mapping, long count) {
-        this.getCounter(mapping).insertSuccess.add(count);
+        this.metrics(mapping).insertSuccess.add(count);
     }
 
     public long insertFailure(ElementMapping mapping) {
-        return this.getCounter(mapping).insertFailure.longValue();
+        return this.metrics(mapping).insertFailure.longValue();
     }
 
     public void increaseInsertFailure(ElementMapping mapping) {
-        this.getCounter(mapping).insertFailure.increment();
+        this.metrics(mapping).insertFailure.increment();
     }
 
-    public Map<String, MetricsCounter> vertexCounters() {
-        return this.vertexCounters;
+    public Map<String, Metrics> vertexMetrics() {
+        return this.vertexMetrics;
     }
 
-    public Map<String, MetricsCounter> edgeCounters() {
-        return this.edgeCounters;
+    public Map<String, Metrics> edgeMetrics() {
+        return this.edgeMetrics;
     }
 
     public long totalParseFailures() {
         long total = 0L;
-        for (MetricsCounter counter : this.vertexCounters.values()) {
+        for (Metrics counter : this.vertexMetrics.values()) {
             total += counter.parseFailure.longValue();
         }
-        for (MetricsCounter counter : this.edgeCounters.values()) {
+        for (Metrics counter : this.edgeMetrics.values()) {
             total += counter.parseFailure.longValue();
         }
         return total;
@@ -127,35 +161,31 @@ public final class LoadMetrics {
 
     public long totalInsertFailures() {
         long total = 0L;
-        for (MetricsCounter counter : this.vertexCounters.values()) {
+        for (Metrics counter : this.vertexMetrics.values()) {
             total += counter.insertFailure.longValue();
         }
-        for (MetricsCounter counter : this.edgeCounters.values()) {
+        for (Metrics counter : this.edgeMetrics.values()) {
             total += counter.insertFailure.longValue();
         }
         return total;
     }
 
-    private MetricsCounter getCounter(ElementMapping mapping) {
-        Map<String, MetricsCounter> counters;
+    private Metrics metrics(ElementMapping mapping) {
         if (mapping.type().isVertex()) {
-            counters = this.vertexCounters;
+            return this.vertexMetrics.get(mapping.label());
         } else {
-            counters = this.edgeCounters;
+            return this.edgeMetrics.get(mapping.label());
         }
-        // TODO: does it thread safe
-        return counters.computeIfAbsent(mapping.label(),
-                                        k -> new MetricsCounter());
     }
 
-    public static class MetricsCounter {
+    public static class Metrics {
 
         private final LongAdder parseSuccess;
         private final LongAdder parseFailure;
         private final LongAdder insertSuccess;
         private final LongAdder insertFailure;
 
-        public MetricsCounter() {
+        public Metrics() {
             this.parseSuccess = new LongAdder();
             this.parseFailure = new LongAdder();
             this.insertSuccess = new LongAdder();
@@ -176,13 +206,6 @@ public final class LoadMetrics {
 
         public long insertFailure() {
             return this.insertFailure.longValue();
-        }
-
-        public void accumulate(MetricsCounter counter) {
-            this.parseSuccess.add(counter.parseSuccess.longValue());
-            this.parseFailure.add(counter.parseFailure.longValue());
-            this.insertSuccess.add(counter.insertSuccess.longValue());
-            this.insertFailure.add(counter.insertFailure.longValue());
         }
     }
 }

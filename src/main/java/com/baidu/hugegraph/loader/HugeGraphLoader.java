@@ -56,7 +56,7 @@ import com.baidu.hugegraph.util.Log;
 
 public final class HugeGraphLoader {
 
-    private static final Logger LOG = Log.logger(HugeGraphLoader.class);
+    public static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
     private final LoadContext context;
     private final LoadMapping mapping;
@@ -133,9 +133,9 @@ public final class HugeGraphLoader {
         HugeClient client = HugeClientHolder.create(options);
         String message = "I'm sure to delete all data";
 
-        LOG.info("Prepare to clear the data of graph {}", options.graph);
+        LOG.info("Prepare to clear the data of graph '{}'", options.graph);
         client.graphs().clear(options.graph, message);
-        LOG.info("The graph {} has been cleared successfully", options.graph);
+        LOG.info("The graph '{}' has been cleared successfully", options.graph);
 
         options.timeout = requestTimeout;
         client.close();
@@ -204,7 +204,6 @@ public final class HugeGraphLoader {
     private void loadStructs(List<InputStruct> structs) {
         // Load input structs one by one
         for (InputStruct struct : structs) {
-            LOG.info("Start loading input {}", struct.input());
             if (this.context.stopped()) {
                 break;
             }
@@ -228,11 +227,12 @@ public final class HugeGraphLoader {
      * Let load task worked in pipeline mode
      */
     private void loadStruct(InputStruct struct, InputReader reader) {
-        LOG.info("Start parsing and loading '{}'", struct);
+        LOG.info("Start parsing '{}'", struct);
         LoadMetrics metrics = this.context.summary().metrics(struct);
+        metrics.startInFlight();
+
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context,
                                                             struct);
-
         final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
         for (boolean finished = false; !finished;) {
@@ -273,6 +273,9 @@ public final class HugeGraphLoader {
                 lines = new ArrayList<>(batchSize);
             }
         }
+
+        metrics.stopInFlight();
+        LOG.info("Finish parsing '{}'", struct);
     }
 
     /**
@@ -281,6 +284,7 @@ public final class HugeGraphLoader {
     private void executeParseTask(InputStruct struct, ElementMapping mapping,
                                   ParseTaskBuilder.ParseTask task) {
         long start = System.currentTimeMillis();
+        // Sync parse
         List<List<Record>> batches = task.get();
         long end = System.currentTimeMillis();
         this.context.summary().addTimeRange(mapping.type(), start, end);
@@ -288,6 +292,7 @@ public final class HugeGraphLoader {
         if (this.context.options().dryRun || CollectionUtils.isEmpty(batches)) {
             return;
         }
+        // Async load
         for (List<Record> batch : batches) {
             this.manager.submitBatch(struct, mapping, batch);
         }
