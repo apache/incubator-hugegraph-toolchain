@@ -69,9 +69,9 @@ public final class HugeClientHolder {
                     trustFile = options.trustStoreFile;
                 }
                 // Hard code: "hugegraph"
-                String password = options.trustStorePassword == null ?
-                                  "hugegraph" : options.trustStorePassword;
-                builder.configSSL(trustFile, password);
+                String token = options.trustStoreToken == null ?
+                               "hugegraph" : options.trustStoreToken;
+                builder.configSSL(trustFile, token);
             }
             return builder.build();
         } catch (IllegalStateException e) {
