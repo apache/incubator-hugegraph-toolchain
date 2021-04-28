@@ -56,7 +56,7 @@ import com.baidu.hugegraph.util.Log;
 
 public final class HugeGraphLoader {
 
-    private static final Logger LOG = Log.logger(HugeGraphLoader.class);
+    public static final Logger LOG = Log.logger(HugeGraphLoader.class);
 
     private final LoadContext context;
     private final LoadMapping mapping;
@@ -133,9 +133,9 @@ public final class HugeGraphLoader {
         HugeClient client = HugeClientHolder.create(options);
         String message = "I'm sure to delete all data";
 
-        LOG.info("Prepare to clear the data of graph {}", options.graph);
+        LOG.info("Prepare to clear the data of graph '{}'", options.graph);
         client.graphs().clear(options.graph, message);
-        LOG.info("The graph {} has been cleared successfully", options.graph);
+        LOG.info("The graph '{}' has been cleared successfully", options.graph);
 
         options.timeout = requestTimeout;
         client.close();
@@ -161,7 +161,6 @@ public final class HugeGraphLoader {
     }
 
     private void loadInputs() {
-        LOG.info("Start loading");
         Printer.printRealtimeProgress(this.context);
         LoadOptions options = this.context.options();
         LoadSummary summary = this.context.summary();
@@ -170,10 +169,10 @@ public final class HugeGraphLoader {
         try {
             if (!options.failureMode) {
                 // Load normal data from user supplied input structs
-                this.load(this.mapping.structs());
+                this.loadInputs(this.mapping.structs());
             } else {
                 // Load failure data from generated input structs
-                this.load(this.mapping.structsForFailure(options));
+                this.loadInputs(this.mapping.structsForFailure(options));
             }
             // Waiting for async worker threads finish
             this.manager.waitFinished();
@@ -185,7 +184,24 @@ public final class HugeGraphLoader {
         Printer.printFinalProgress(this.context);
     }
 
-    private void load(List<InputStruct> structs) {
+    private void loadInputs(List<InputStruct> structs) {
+        if (this.context.options().checkVertex) {
+            LOG.info("Forced to load vertices before edges since set " +
+                     "option check-vertex=true");
+            SplittedInputStructs splitted = this.splitStructs(structs);
+            // Load all vertex structs
+            this.loadStructs(splitted.vertexInputStructs);
+            // Wait all vertex load tasks finished
+            this.manager.waitFinished("vertex insert tasks");
+            // Load all edge structs
+            this.loadStructs(splitted.edgeInputStructs);
+        } else {
+            // Load vertex and edge structs concurrent in the same input
+            this.loadStructs(structs);
+        }
+    }
+
+    private void loadStructs(List<InputStruct> structs) {
         // Load input structs one by one
         for (InputStruct struct : structs) {
             if (this.context.stopped()) {
@@ -199,7 +215,7 @@ public final class HugeGraphLoader {
                 // Init reader
                 reader.init(this.context, struct);
                 // Load data from current input mapping
-                this.load(struct, reader);
+                this.loadStruct(struct, reader);
             } catch (InitException e) {
                 throw new LoadException("Failed to init input reader", e);
             }
@@ -210,12 +226,13 @@ public final class HugeGraphLoader {
      * TODO: Seperate classes: ReadHandler -> ParseHandler -> InsertHandler
      * Let load task worked in pipeline mode
      */
-    private void load(InputStruct struct, InputReader reader) {
-        LOG.info("Start parsing and loading '{}'", struct);
+    private void loadStruct(InputStruct struct, InputReader reader) {
+        LOG.info("Start parsing '{}'", struct);
         LoadMetrics metrics = this.context.summary().metrics(struct);
+        metrics.startInFlight();
+
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context,
                                                             struct);
-
         final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
         for (boolean finished = false; !finished;) {
@@ -256,6 +273,9 @@ public final class HugeGraphLoader {
                 lines = new ArrayList<>(batchSize);
             }
         }
+
+        metrics.stopInFlight();
+        LOG.info("Finish parsing '{}'", struct);
     }
 
     /**
@@ -264,6 +284,7 @@ public final class HugeGraphLoader {
     private void executeParseTask(InputStruct struct, ElementMapping mapping,
                                   ParseTaskBuilder.ParseTask task) {
         long start = System.currentTimeMillis();
+        // Sync parse
         List<List<Record>> batches = task.get();
         long end = System.currentTimeMillis();
         this.context.summary().addTimeRange(mapping.type(), start, end);
@@ -271,6 +292,7 @@ public final class HugeGraphLoader {
         if (this.context.options().dryRun || CollectionUtils.isEmpty(batches)) {
             return;
         }
+        // Async load
         for (List<Record> batch : batches) {
             this.manager.submitBatch(struct, mapping, batch);
         }
@@ -315,6 +337,23 @@ public final class HugeGraphLoader {
         }
     }
 
+    private SplittedInputStructs splitStructs(List<InputStruct> structs) {
+        SplittedInputStructs splitted = new SplittedInputStructs();
+        for (InputStruct struct : structs) {
+            InputStruct result = struct.extractVertexStruct();
+            if (result != InputStruct.EMPTY) {
+                splitted.vertexInputStructs.add(result);
+            }
+        }
+        for (InputStruct struct : structs) {
+            InputStruct result = struct.extractEdgeStruct();
+            if (result != InputStruct.EMPTY) {
+                splitted.edgeInputStructs.add(result);
+            }
+        }
+        return splitted;
+    }
+
     private boolean reachedMaxReadLines() {
         final long maxReadLines = this.context.options().maxReadLines;
         if (maxReadLines == -1L) {
@@ -344,6 +383,17 @@ public final class HugeGraphLoader {
             } finally {
                 this.context.close();
             }
+        }
+    }
+
+    private static class SplittedInputStructs {
+
+        private final List<InputStruct> vertexInputStructs;
+        private final List<InputStruct> edgeInputStructs;
+
+        public SplittedInputStructs() {
+            this.vertexInputStructs = new ArrayList<>();
+            this.edgeInputStructs = new ArrayList<>();
         }
     }
 }

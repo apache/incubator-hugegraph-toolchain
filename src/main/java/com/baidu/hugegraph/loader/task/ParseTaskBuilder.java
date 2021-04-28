@@ -89,6 +89,7 @@ public final class ParseTaskBuilder {
             for (Line line : lines) {
                 try {
                     // NOTE: don't remove entry in keyValues
+                    @SuppressWarnings("unchecked")
                     List<GraphElement> elements = builder.build(line.names(),
                                                                 line.values());
                     E.checkState(elements.size() <= batchSize,

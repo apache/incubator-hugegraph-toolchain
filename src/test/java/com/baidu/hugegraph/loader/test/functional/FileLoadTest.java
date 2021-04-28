@@ -3075,7 +3075,7 @@ public class FileLoadTest extends LoadTest {
         options.graph = GRAPH;
         options.protocol = HTTPS_PROTOCOL;
         options.trustStoreFile = TRUST_STORE_FILE;
-        options.trustStorePassword = "hugegraph";
+        options.trustStoreToken = "hugegraph";
 
         HugeClient httpsClient = null;
         try {

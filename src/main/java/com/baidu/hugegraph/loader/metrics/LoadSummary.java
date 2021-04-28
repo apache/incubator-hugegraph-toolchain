@@ -58,8 +58,9 @@ public final class LoadSummary {
     }
 
     public LoadMetrics metrics(InputStruct struct) {
-        String id = struct.id();
-        return this.inputMetricsMap.computeIfAbsent(id, k -> new LoadMetrics());
+        return this.inputMetricsMap.computeIfAbsent(struct.id(), k -> {
+            return new LoadMetrics(struct);
+        });
     }
 
     public long vertexLoaded() {

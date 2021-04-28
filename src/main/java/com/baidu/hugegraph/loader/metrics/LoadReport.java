@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.loader.metrics;
 
-import static com.baidu.hugegraph.loader.metrics.LoadMetrics.MetricsCounter;
+import static com.baidu.hugegraph.loader.metrics.LoadMetrics.Metrics;
 
 public final class LoadReport {
 
@@ -88,17 +88,17 @@ public final class LoadReport {
         for (LoadMetrics metrics : summary.inputMetricsMap().values()) {
             report.readSuccess += metrics.readSuccess();
             report.readFailure += metrics.readFailure();
-            for (MetricsCounter counter : metrics.vertexCounters().values()) {
-                report.vertexParseSuccess += counter.parseSuccess();
-                report.vertexParseFailure += counter.parseFailure();
-                report.vertexInsertSuccess += counter.insertSuccess();
-                report.vertexInsertFailure += counter.insertFailure();
+            for (Metrics labelMetrics : metrics.vertexMetrics().values()) {
+                report.vertexParseSuccess += labelMetrics.parseSuccess();
+                report.vertexParseFailure += labelMetrics.parseFailure();
+                report.vertexInsertSuccess += labelMetrics.insertSuccess();
+                report.vertexInsertFailure += labelMetrics.insertFailure();
             }
-            for (MetricsCounter counter : metrics.edgeCounters().values()) {
-                report.edgeParseSuccess += counter.parseSuccess();
-                report.edgeParseFailure += counter.parseFailure();
-                report.edgeInsertSuccess += counter.insertSuccess();
-                report.edgeInsertFailure += counter.insertFailure();
+            for (Metrics labelMetrics : metrics.edgeMetrics().values()) {
+                report.edgeParseSuccess += labelMetrics.parseSuccess();
+                report.edgeParseFailure += labelMetrics.parseFailure();
+                report.edgeInsertSuccess += labelMetrics.insertSuccess();
+                report.edgeInsertFailure += labelMetrics.insertFailure();
             }
         }
         return report;

@@ -46,6 +46,7 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.google.common.collect.ImmutableSet;
 
+@SuppressWarnings("deprecation")
 public final class MappingUtil {
 
     private static final Set<String> ACCEPTABLE_VERSIONS = ImmutableSet.of(
