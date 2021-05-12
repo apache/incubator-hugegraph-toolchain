@@ -69,9 +69,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
 
     @Override
     public List<Edge> build(String[] names, Object[] values) {
-        if (this.vertexIdsIndex == null) {
-            this.vertexIdsIndex = this.extractVertexIdsIndex(names);
-        }
+        this.vertexIdsIndex = this.extractVertexIdsIndex(names);
         EdgeKVPairs kvPairs = this.newEdgeKVPairs();
         kvPairs.source.extractFromEdge(names, values,
                                        this.vertexIdsIndex.sourceIndexes);
