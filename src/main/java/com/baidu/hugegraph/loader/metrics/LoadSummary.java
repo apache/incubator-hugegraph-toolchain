@@ -28,6 +28,7 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 
 public final class LoadSummary {
@@ -53,14 +54,18 @@ public final class LoadSummary {
         this.inputMetricsMap = InsertionOrderUtil.newMap();
     }
 
+    public void initMetrics(LoadMapping mapping) {
+        for (InputStruct struct : mapping.structs()) {
+            this.inputMetricsMap.put(struct.id(), new LoadMetrics(struct));
+        }
+    }
+
     public Map<String, LoadMetrics> inputMetricsMap() {
         return this.inputMetricsMap;
     }
 
     public LoadMetrics metrics(InputStruct struct) {
-        return this.inputMetricsMap.computeIfAbsent(struct.id(), k -> {
-            return new LoadMetrics(struct);
-        });
+        return this.inputMetricsMap.get(struct.id());
     }
 
     public long vertexLoaded() {

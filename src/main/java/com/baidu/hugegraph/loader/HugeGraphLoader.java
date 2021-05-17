@@ -164,6 +164,7 @@ public final class HugeGraphLoader {
         Printer.printRealtimeProgress(this.context);
         LoadOptions options = this.context.options();
         LoadSummary summary = this.context.summary();
+        summary.initMetrics(this.mapping);
 
         summary.startTotalTimer();
         try {
