@@ -72,8 +72,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     @Override
     public List<Edge> build(String[] names, Object[] values) {
         if (this.vertexIdsIndex == null ||
-            (this.lastNames != names &&
-             !Arrays.equals(this.lastNames, names))) {
+            !Arrays.equals(this.lastNames, names)) {
             this.vertexIdsIndex = this.extractVertexIdsIndex(names);
         }
         this.lastNames = names;
