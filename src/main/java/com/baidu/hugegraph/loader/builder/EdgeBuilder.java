@@ -146,7 +146,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                             "columns when id strategy is CUSTOMIZE");
         } else {
             throw new IllegalArgumentException(
-                    "Unsupported AUTOMATIC id strategy for hugegraph-loader");
+                      "Unsupported AUTOMATIC id strategy for hugegraph-loader");
         }
     }
 
