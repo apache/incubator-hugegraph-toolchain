@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.builder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final Collection<String> nonNullKeys;
     // Used to optimize access performace
     private VertexIdsIndex vertexIdsIndex;
+    private String[] lastNames;
 
     public EdgeBuilder(LoadContext context, InputStruct struct,
                        EdgeMapping mapping) {
@@ -69,9 +71,11 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
 
     @Override
     public List<Edge> build(String[] names, Object[] values) {
-        if (this.vertexIdsIndex == null) {
+        if (this.vertexIdsIndex == null ||
+            !Arrays.equals(this.lastNames, names)) {
             this.vertexIdsIndex = this.extractVertexIdsIndex(names);
         }
+        this.lastNames = names;
         EdgeKVPairs kvPairs = this.newEdgeKVPairs();
         kvPairs.source.extractFromEdge(names, values,
                                        this.vertexIdsIndex.sourceIndexes);
