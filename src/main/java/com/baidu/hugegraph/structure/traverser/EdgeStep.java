@@ -47,7 +47,7 @@ public class EdgeStep {
         this.direction = Direction.BOTH;
         this.labels = new ArrayList<>();
         this.properties = new HashMap<>();
-        this.degree = Traverser.DEFAULT_DEGREE;
+        this.degree = Traverser.DEFAULT_MAX_DEGREE;
         this.skipDegree = Traverser.DEFAULT_SKIP_DEGREE;
     }
 

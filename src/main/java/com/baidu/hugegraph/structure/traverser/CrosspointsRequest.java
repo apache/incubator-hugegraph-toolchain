@@ -179,7 +179,7 @@ public class CrosspointsRequest {
             this.direction = null;
             this.labels = new ArrayList<>();
             this.properties = new HashMap<>();
-            this.degree = Traverser.DEFAULT_DEGREE;
+            this.degree = Traverser.DEFAULT_MAX_DEGREE;
         }
 
         @Override

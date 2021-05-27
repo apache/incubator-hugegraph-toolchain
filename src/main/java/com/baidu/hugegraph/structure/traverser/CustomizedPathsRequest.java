@@ -153,7 +153,7 @@ public class CustomizedPathsRequest {
             this.properties = new HashMap<>();
             this.weightBy = null;
             this.defaultWeight = Traverser.DEFAULT_WEIGHT;
-            this.degree = Traverser.DEFAULT_DEGREE;
+            this.degree = Traverser.DEFAULT_MAX_DEGREE;
             this.sample = Traverser.DEFAULT_SAMPLE;
         }
 

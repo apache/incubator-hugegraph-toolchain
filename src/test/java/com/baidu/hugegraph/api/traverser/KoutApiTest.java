@@ -197,8 +197,8 @@ public class KoutApiTest extends TraverserApiTest {
 
         koutResult = koutAPI.post(request);
 
-        Assert.assertEquals(5, koutResult.size());
-        expected = ImmutableSet.of(peterId, rippleId, lopId, joshId, markoId);
+        Assert.assertEquals(4, koutResult.size());
+        expected = ImmutableSet.of(peterId, rippleId, lopId, joshId);
         Assert.assertEquals(expected, koutResult.ids());
     }
 
@@ -360,7 +360,7 @@ public class KoutApiTest extends TraverserApiTest {
     }
 
     @Test
-    public void testKoutPostWithLabel() {
+    public void testKoutPostWithSingleLabel() {
         Object markoId = getVertexId("person", "name", "marko");
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
@@ -412,6 +412,42 @@ public class KoutApiTest extends TraverserApiTest {
         koutResult = koutAPI.post(request);
 
         Assert.assertEquals(0, koutResult.size());
+    }
+
+    @Test
+    public void testKoutPostWithMultiLabels() {
+        Object markoId = getVertexId("person", "name", "marko");
+        Object joshId = getVertexId("person", "name", "josh");
+        Object lopId = getVertexId("software", "name", "lop");
+        Object vadasId = getVertexId("person", "name", "vadas");
+        Object peterId = getVertexId("person", "name", "peter");
+        Object rippleId = getVertexId("software", "name", "ripple");
+
+        KoutRequest.Builder builder = KoutRequest.builder();
+        builder.source(markoId);
+        builder.step().direction(Direction.BOTH)
+               .labels("knows").labels("created");
+        builder.maxDepth(1);
+        KoutRequest request = builder.build();
+
+        Kout koutResult = koutAPI.post(request);
+
+        Assert.assertEquals(3, koutResult.size());
+        Set<Object> expected = ImmutableSet.of(vadasId, joshId, lopId);
+        Assert.assertEquals(expected, koutResult.ids());
+        
+        builder = KoutRequest.builder();
+        builder.source(markoId);
+        builder.step().direction(Direction.BOTH)
+               .labels("knows").labels("created");
+        builder.maxDepth(2);
+        request = builder.build();
+
+        koutResult = koutAPI.post(request);
+
+        Assert.assertEquals(2, koutResult.size());
+        expected = ImmutableSet.of(peterId, rippleId);
+        Assert.assertEquals(expected, koutResult.ids());
     }
 
     @Test

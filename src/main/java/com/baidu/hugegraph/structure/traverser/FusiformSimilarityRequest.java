@@ -61,7 +61,7 @@ public class FusiformSimilarityRequest {
         this.label = null;
         this.direction = null;
         this.minNeighbors = 0;
-        this.degree = Traverser.DEFAULT_DEGREE;
+        this.degree = Traverser.DEFAULT_MAX_DEGREE;
         this.alpha = 1.0f;
         this.minSimilars = 1;
         this.top = 0;

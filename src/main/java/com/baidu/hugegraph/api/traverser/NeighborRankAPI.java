@@ -140,7 +140,7 @@ public class NeighborRankAPI extends TraversersAPI {
             private Step() {
                 this.direction = null;
                 this.labels = new ArrayList<>();
-                this.degree = Traverser.DEFAULT_DEGREE;
+                this.degree = Traverser.DEFAULT_MAX_DEGREE;
                 this.top = (int) Traverser.DEFAULT_PATHS_LIMIT;
             }
 

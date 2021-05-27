@@ -24,7 +24,7 @@ public class Traverser {
     public static final long DEFAULT_CAPACITY = 10_000_000L;
     public static final long DEFAULT_LIMIT = 100L;
     public static final long DEFAULT_ELEMENTS_LIMIT = 10_000_000L;
-    public static final long DEFAULT_DEGREE = 10_000L;
+    public static final long DEFAULT_MAX_DEGREE = 10_000L;
     public static final long DEFAULT_CROSSPOINT_LIMIT = 10_000L;
     public static final long DEFAULT_PATHS_LIMIT = 10L;
     public static final long DEFAULT_DEDUP_SIZE = 1_000_000L;

@@ -75,7 +75,7 @@ import com.baidu.hugegraph.structure.traverser.WeightedPaths;
 import com.baidu.hugegraph.util.E;
 
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
-import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_DEGREE;
+import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_MAX_DEGREE;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_ELEMENTS_LIMIT;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_PATHS_LIMIT;
@@ -138,7 +138,7 @@ public class TraverserManager {
     }
 
     public double jaccardSimilarity(Object vertexId, Object otherId) {
-        return this.jaccardSimilarity(vertexId, otherId, DEFAULT_DEGREE);
+        return this.jaccardSimilarity(vertexId, otherId, DEFAULT_MAX_DEGREE);
     }
 
     public double jaccardSimilarity(Object vertexId, Object otherId,
@@ -160,7 +160,7 @@ public class TraverserManager {
     }
 
     public List<Object> sameNeighbors(Object vertexId, Object otherId) {
-        return this.sameNeighbors(vertexId, otherId, DEFAULT_DEGREE);
+        return this.sameNeighbors(vertexId, otherId, DEFAULT_MAX_DEGREE);
     }
 
     public List<Object> sameNeighbors(Object vertexId, Object otherId,
@@ -197,7 +197,7 @@ public class TraverserManager {
     public Path shortestPath(Object sourceId, Object targetId,
                              Direction direction, String label, int maxDepth) {
         return this.shortestPath(sourceId, targetId, direction, label, maxDepth,
-                                 DEFAULT_DEGREE, DEFAULT_CAPACITY);
+                                 DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY);
     }
 
     public Path shortestPath(Object sourceId, Object targetId,
@@ -230,7 +230,7 @@ public class TraverserManager {
                                        Direction direction, String label,
                                        int maxDepth) {
         return this.allShortestPaths(sourceId, targetId, direction,
-                                     label, maxDepth, DEFAULT_DEGREE,
+                                     label, maxDepth, DEFAULT_MAX_DEGREE,
                                      DEFAULT_CAPACITY);
     }
 
@@ -263,7 +263,7 @@ public class TraverserManager {
                                                   String label, String weight,
                                                   boolean withVertex) {
         return this.singleSourceShortestPath(sourceId, direction, label, weight,
-                                             DEFAULT_DEGREE, 0L,
+                                             DEFAULT_MAX_DEGREE, 0L,
                                              DEFAULT_CAPACITY,
                                              DEFAULT_PATHS_LIMIT, withVertex);
     }
@@ -291,7 +291,7 @@ public class TraverserManager {
                                              String weight,
                                              boolean withVertex) {
         return this.weightedShortestPath(sourceId, targetId, direction, label,
-                                         weight, DEFAULT_DEGREE, 0L,
+                                         weight, DEFAULT_MAX_DEGREE, 0L,
                                          DEFAULT_CAPACITY, withVertex);
     }
 
@@ -326,7 +326,7 @@ public class TraverserManager {
                             Direction direction, String label,
                             int maxDepth, long limit) {
         return this.paths(sourceId, targetId, direction, label, maxDepth,
-                          DEFAULT_DEGREE, DEFAULT_CAPACITY, limit);
+                          DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY, limit);
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
@@ -357,7 +357,7 @@ public class TraverserManager {
                                  Direction direction, String label,
                                  int maxDepth, long limit) {
         return this.crosspoint(sourceId, targetId, direction, label, maxDepth,
-                               DEFAULT_DEGREE, DEFAULT_CAPACITY, limit);
+                               DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY, limit);
     }
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
@@ -379,7 +379,7 @@ public class TraverserManager {
     public List<Object> kout(Object sourceId, Direction direction,
                              String label, int depth, boolean nearest) {
         return this.kout(sourceId, direction, label, depth, nearest,
-                         DEFAULT_DEGREE, DEFAULT_CAPACITY,
+                         DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY,
                          DEFAULT_ELEMENTS_LIMIT);
     }
 
@@ -406,7 +406,7 @@ public class TraverserManager {
     public List<Object> kneighbor(Object sourceId, Direction direction,
                                   String label, int depth) {
         return this.kneighbor(sourceId, direction, label, depth,
-                              DEFAULT_DEGREE, DEFAULT_ELEMENTS_LIMIT);
+                              DEFAULT_MAX_DEGREE, DEFAULT_ELEMENTS_LIMIT);
     }
 
     public List<Object> kneighbor(Object sourceId, Direction direction,
@@ -426,7 +426,7 @@ public class TraverserManager {
 
     public List<Path> rings(Object sourceId, int depth) {
         return this.rings(sourceId, Direction.BOTH, null, depth, true,
-                          DEFAULT_DEGREE, DEFAULT_CAPACITY,
+                          DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY,
                           DEFAULT_ELEMENTS_LIMIT);
     }
 
@@ -438,8 +438,9 @@ public class TraverserManager {
     }
 
     public List<Path> rays(Object sourceId, int depth) {
-        return this.rays(sourceId, Direction.BOTH, null, depth, DEFAULT_DEGREE,
-                         DEFAULT_CAPACITY, DEFAULT_ELEMENTS_LIMIT);
+        return this.rays(sourceId, Direction.BOTH, null, depth,
+                         DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY,
+                         DEFAULT_ELEMENTS_LIMIT);
     }
 
     public List<Path> rays(Object sourceId, Direction direction, String label,
