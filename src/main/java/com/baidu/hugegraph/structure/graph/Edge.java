@@ -22,6 +22,7 @@ package com.baidu.hugegraph.structure.graph;
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.util.E;
+import com.baidu.hugegraph.util.SplicingIdGenerator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -40,6 +41,7 @@ public class Edge extends GraphElement {
 
     private Vertex source;
     private Vertex target;
+    private String name;
 
     @JsonCreator
     public Edge(@JsonProperty("label") String label) {
@@ -51,6 +53,7 @@ public class Edge extends GraphElement {
         this.targetLabel = null;
         this.source = null;
         this.target = null;
+        this.name = null;
     }
 
     public String id() {
@@ -136,6 +139,17 @@ public class Edge extends GraphElement {
 
     public void targetLabel(String targetLabel) {
         this.targetLabel = targetLabel;
+    }
+
+    public String name() {
+        if (this.name == null) {
+            String[] idParts = SplicingIdGenerator.split(this.id);
+            E.checkState(idParts.length == 4,
+                         "The edge id must be formatted by 4 parts, " +
+                         "actual is %s", idParts.length);
+            this.name = idParts[2];
+        }
+        return this.name;
     }
 
     @Override

@@ -30,11 +30,15 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.baidu.hugegraph.BaseClientTest;
+import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.Direction;
+import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.gremlin.Result;
+import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.baidu.hugegraph.util.DateUtil;
@@ -292,6 +296,26 @@ public class EdgeTest extends BaseFuncTest {
         Assert.assertThrows(InvalidOperationException.class, () -> {
             created.removeProperty("not-exist");
         });
+    }
+
+    @Test
+    public void testName() {
+        BaseClientTest.initEdge();
+
+        Object markoId = getVertexId("person", "name", "marko");
+        List<Edge> edges = graph().getEdges(markoId, Direction.OUT, "knows");
+        Assert.assertEquals(2, edges.size());
+        Edge edge1 = edges.get(0);
+        Edge edge2 = edges.get(1);
+        Date date1 = DateUtil.parse((String) edge1.property("date"));
+        Date date2 = DateUtil.parse((String) edge2.property("date"));
+        String name1 = edge1.name();
+        String name2 = edge2.name();
+        if (date1.before(date2)) {
+            Assert.assertTrue(name1.compareTo(name2) < 0);
+        } else {
+            Assert.assertTrue(name1.compareTo(name2) >= 0);
+        }
     }
 
     @Test
@@ -685,14 +709,76 @@ public class EdgeTest extends BaseFuncTest {
 
         Map<String, Object> properties = ImmutableMap.of("date",
                                                          "P.gt(\"2012-1-1\")");
+        Iterator<Edge> iter = graph().iterateEdges(markoId, Direction.OUT,
+                                                   "knows", properties, 1);
+        Assert.assertEquals(2, Iterators.size(iter));
+    }
+
+    @Test
+    public void testQueryByPagingAndFiltering() {
+        SchemaManager schema = schema();
+        schema.propertyKey("no").asText().create();
+        schema.propertyKey("location").asText().create();
+        schema.propertyKey("callType").asText().create();
+        schema.propertyKey("calltime").asDate().create();
+        schema.propertyKey("duration").asInt().create();
+        schema.vertexLabel("phone")
+              .properties("no")
+              .primaryKeys("no")
+              .enableLabelIndex(false)
+              .create();
+        schema.edgeLabel("call").multiTimes()
+              .properties("location", "callType", "duration", "calltime")
+              .sourceLabel("phone").targetLabel("phone")
+              .sortKeys("location", "callType", "duration", "calltime")
+              .create();
+
+        Vertex v1 = graph().addVertex(T.label, "phone", "no", "13812345678");
+        Vertex v2 = graph().addVertex(T.label, "phone", "no", "13866668888");
+        Vertex v10086 = graph().addVertex(T.label, "phone", "no", "10086");
+
+        v1.addEdge("call", v2, "location", "Beijing", "callType", "work",
+                   "duration", 3, "calltime", "2017-5-1 23:00:00");
+        v1.addEdge("call", v2, "location", "Beijing", "callType", "work",
+                   "duration", 3, "calltime", "2017-5-2 12:00:01");
+        v1.addEdge("call", v2, "location", "Beijing", "callType", "work",
+                   "duration", 3, "calltime", "2017-5-3 12:08:02");
+        v1.addEdge("call", v2, "location", "Beijing", "callType", "work",
+                   "duration", 8, "calltime", "2017-5-3 22:22:03");
+        v1.addEdge("call", v2, "location", "Beijing", "callType", "fun",
+                   "duration", 10, "calltime", "2017-5-4 20:33:04");
+
+        v1.addEdge("call", v10086, "location", "Nanjing", "callType", "work",
+                   "duration", 12, "calltime", "2017-5-2 15:30:05");
+        v1.addEdge("call", v10086, "location", "Nanjing", "callType", "work",
+                   "duration", 14, "calltime", "2017-5-3 14:56:06");
+        v2.addEdge("call", v10086, "location", "Nanjing", "callType", "fun",
+                   "duration", 15, "calltime", "2017-5-3 17:28:07");
+
+        ResultSet resultSet = gremlin().gremlin("g.V(vid).outE('call')" +
+                                                ".has('location', 'Beijing')" +
+                                                ".has('callType', 'work')" +
+                                                ".has('duration', 3)" +
+                                                ".has('calltime', " +
+                                                "P.between('2017-5-2', " +
+                                                "'2017-5-4'))" +
+                                                ".toList()")
+                                       .binding("vid", v1.id())
+                                       .execute();
+        Iterator<Result> results = resultSet.iterator();
+        Assert.assertEquals(2, Iterators.size(results));
+
         Assert.assertThrows(ServerException.class, () -> {
-            Iterator<Edge> iter = graph().iterateEdges(markoId, Direction.OUT,
-                                                       "knows", properties,
-                                                       1);
-            Iterators.size(iter);
+            // no location
+            gremlin().gremlin("g.V(vid).outE('call').has('callType', 'work')" +
+                              ".has('duration', 3).has('calltime', " +
+                              "P.between('2017-5-2', '2017-5-4'))" +
+                              ".has('~page', '')")
+                     .binding("vid", v1.id())
+                     .execute();
         }, e -> {
-            Assert.assertEquals("Can't query by paging and filtering",
-                                e.getMessage());
+            Assert.assertContains("Can't query by paging and filtering",
+                                  e.getMessage());
         });
     }
 

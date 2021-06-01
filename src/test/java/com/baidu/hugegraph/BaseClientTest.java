@@ -193,7 +193,9 @@ public class BaseClientTest {
         schema.edgeLabel("knows")
               .sourceLabel("person")
               .targetLabel("person")
+              .multiTimes()
               .properties("date", "city")
+              .sortKeys("date")
               .nullableKeys("city")
               .ifNotExist()
               .create();

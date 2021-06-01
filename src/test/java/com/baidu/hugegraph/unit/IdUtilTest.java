@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HugeGraph Authors
+ * Copyright 2019 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -19,20 +19,26 @@
 
 package com.baidu.hugegraph.unit;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.Assert;
+import org.junit.Test;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    VertexSerializerTest.class,
-    PathSerializerTest.class,
-    RestResultTest.class,
-    BatchElementRequestTest.class,
-    PropertyKeyTest.class,
-    IndexLabelTest.class,
-    CommonUtilTest.class,
-    IdUtilTest.class,
-    SplicingIdGeneratorTest.class
-})
-public class UnitTestSuite {
+import com.baidu.hugegraph.util.IdUtil;
+
+public class IdUtilTest {
+
+    @Test
+    public void testEscape() {
+        Assert.assertEquals("a2b2c",
+                            IdUtil.escape('2', '\u0000', "a", "b", "c"));
+        Assert.assertEquals("12\u0000223",
+                            IdUtil.escape('2', '\u0000', "1", "2", "3"));
+    }
+
+    @Test
+    public void testUnescape() {
+        Assert.assertArrayEquals(new String[]{"a", "b>c", "d"},
+                                 IdUtil.unescape("a>b/>c>d", ">", "/"));
+        Assert.assertEquals(1, IdUtil.unescape("", "", "").length);
+        Assert.assertEquals(1, IdUtil.unescape("foo", "bar", "baz").length);
+    }
 }
