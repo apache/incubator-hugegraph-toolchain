@@ -96,8 +96,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         List<Object> vertices = koutAPI.get(markoId, Direction.BOTH, null,
                                             2, false, -1L, -1L, -1L);
-        Assert.assertEquals(5, vertices.size());
-        Assert.assertTrue(vertices.contains(personId + ":marko"));
+        Assert.assertEquals(4, vertices.size());
         Assert.assertTrue(vertices.contains(personId + ":josh"));
         Assert.assertTrue(vertices.contains(personId + ":peter"));
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));

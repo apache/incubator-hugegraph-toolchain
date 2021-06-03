@@ -450,7 +450,7 @@ public class CountApiTest extends TraverserApiTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             builder.steps().degree(5).skipDegree(3);
         }, e -> {
-            Assert.assertContains("The skipped degree must be >= degree, ",
+            Assert.assertContains("The skipped degree must be >= max degree",
                                   e.getMessage());
         });
 

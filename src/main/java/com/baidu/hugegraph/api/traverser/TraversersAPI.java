@@ -67,14 +67,14 @@ public class TraversersAPI extends API {
                         skipDegree);
         if (capacity != NO_LIMIT) {
             E.checkArgument(degree != NO_LIMIT && degree < capacity,
-                            "The degree must be < capacity");
+                            "The max degree must be < capacity");
             E.checkArgument(skipDegree < capacity,
                             "The skipped degree must be < capacity");
         }
         if (skipDegree > 0L) {
             E.checkArgument(degree != NO_LIMIT && skipDegree >= degree,
-                            "The skipped degree must be >= degree, " +
-                            "but got skipped degree '%s' and degree '%s'",
+                            "The skipped degree must be >= max degree, " +
+                            "but got skipped degree '%s' and max degree '%s'",
                             skipDegree, degree);
         }
     }

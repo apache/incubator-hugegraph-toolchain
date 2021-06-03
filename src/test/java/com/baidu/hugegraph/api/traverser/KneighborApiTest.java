@@ -56,12 +56,11 @@ public class KneighborApiTest extends TraverserApiTest {
 
         List<Object> vertices = kneighborAPI.get(markoId, Direction.OUT,
                                                  null, 2, -1L, -1L);
-        Assert.assertEquals(5, vertices.size());
+        Assert.assertEquals(4, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
         Assert.assertTrue(vertices.contains(personId + ":vadas"));
         Assert.assertTrue(vertices.contains(personId + ":josh"));
-        Assert.assertTrue(vertices.contains(personId + ":marko"));
     }
 
     @Test

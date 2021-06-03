@@ -217,7 +217,7 @@ public class CustomizedPathsRequest {
 
             public Builder sample(int sample) {
                 E.checkArgument(sample == NO_LIMIT || sample > 0,
-                                "The sample must be > 0, but got: %s",
+                                "The sample must be > 0 or == -1, but got: %s",
                                 sample);
                 this.step.sample = sample;
                 return this;
@@ -227,7 +227,7 @@ public class CustomizedPathsRequest {
                 TraversersAPI.checkDegree(this.step.degree);
                 E.checkArgument(this.step.sample > 0 ||
                                 this.step.sample == NO_LIMIT,
-                                "The sample must be > 0, but got: %s",
+                                "The sample must be > 0 or == -1, but got: %s",
                                 this.step.sample);
                 E.checkArgument(this.step.degree == NO_LIMIT ||
                                 this.step.degree >= this.step.sample,
