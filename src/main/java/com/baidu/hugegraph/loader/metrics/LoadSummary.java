@@ -38,8 +38,10 @@ public final class LoadSummary {
     private final StopWatch totalTimer;
     private final AtomicLong vertexTime;
     private final AtomicLong edgeTime;
+    private final AtomicLong loadTime;
     private final RangesTimer vertexRangesTimer;
     private final RangesTimer edgeRangesTimer;
+    private final RangesTimer loadRangesTimer;
     // Every input struct has a metric
     private final Map<String, LoadMetrics> inputMetricsMap;
 
@@ -49,8 +51,10 @@ public final class LoadSummary {
         this.totalTimer = new StopWatch();
         this.vertexTime = new AtomicLong();
         this.edgeTime = new AtomicLong();
+        this.loadTime = new AtomicLong();
         this.vertexRangesTimer = new RangesTimer(10000);
         this.edgeRangesTimer = new RangesTimer(10000);
+        this.loadRangesTimer = new RangesTimer(10000);
         this.inputMetricsMap = InsertionOrderUtil.newMap();
     }
 
@@ -122,6 +126,7 @@ public final class LoadSummary {
         RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
                                               this.edgeRangesTimer;
         timer.addTimeRange(start, end);
+        this.loadRangesTimer.addTimeRange(start, end);
     }
 
     public void calculateTotalTime(ElemType type) {
@@ -129,6 +134,7 @@ public final class LoadSummary {
                                               this.edgeRangesTimer;
         AtomicLong elemTime = type.isVertex() ? this.vertexTime : this.edgeTime;
         elemTime.set(timer.totalTime());
+        loadTime.set(this.loadRangesTimer.totalTime());
     }
 
     public long totalTime() {
@@ -141,6 +147,10 @@ public final class LoadSummary {
 
     public long edgeTime() {
         return this.edgeTime.longValue();
+    }
+
+    public long loadTime() {
+        return this.loadTime.longValue();
     }
 
     public void startTotalTimer() {

@@ -44,13 +44,12 @@ public final class Printer {
         if (!options.printProgress) {
             return;
         }
-        System.out.println(String.format(">> HugeGraphLoader worked in %s",
-                           options.workModeString()));
+        System.out.printf(">> HugeGraphLoader worked in %s%n",
+                          options.workModeString());
         if (options.incrementalMode) {
             LoadProgress progress = context.oldProgress();
-            System.out.println(String.format(
-                               "vertices/edges loaded last time: %s/%s",
-                               progress.vertexLoaded(), progress.edgeLoaded()));
+            System.out.printf("vertices/edges loaded last time: %s/%s%n",
+                              progress.vertexLoaded(), progress.edgeLoaded());
         }
         System.out.print("vertices/edges loaded this time : ");
     }
@@ -117,13 +116,13 @@ public final class Printer {
         long totalTime = summary.totalTime();
         long vertexTime = summary.vertexTime();
         long edgeTime = summary.edgeTime();
-        long loadTime = vertexTime + edgeTime;
+        long loadTime = summary.loadTime();
         long readTime = totalTime - loadTime;
 
         printAndLog("meter metrics");
         printAndLog("total time", TimeUtil.readableTime(totalTime));
         printAndLog("read time", TimeUtil.readableTime(readTime));
-        printAndLog("load time", TimeUtil.readableTime(vertexTime + edgeTime));
+        printAndLog("load time", TimeUtil.readableTime(loadTime));
         printAndLog("vertex load time", TimeUtil.readableTime(vertexTime));
         printAndLog("vertex load rate(vertices/s)",
                     summary.loadRate(ElemType.VERTEX));
