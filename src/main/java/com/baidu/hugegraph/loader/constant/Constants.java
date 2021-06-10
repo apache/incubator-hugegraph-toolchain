@@ -65,6 +65,8 @@ public final class Constants {
     public static final long BATCH_PRINT_FREQ = 10_000_000L;
     public static final long SINGLE_PRINT_FREQ = 10_000L;
 
+    public static final int TIME_RANGE_CAPACITY = 1000;
+
     public static final int STATUS_OK = 200;
     public static final int STATUS_BAD_REQUEST = 400;
     public static final int STATUS_UNAUTHORIZED = 401;
