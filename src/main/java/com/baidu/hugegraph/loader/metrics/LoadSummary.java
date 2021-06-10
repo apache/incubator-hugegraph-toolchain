@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.time.StopWatch;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
@@ -52,9 +53,9 @@ public final class LoadSummary {
         this.vertexTime = new AtomicLong();
         this.edgeTime = new AtomicLong();
         this.loadTime = new AtomicLong();
-        this.vertexRangesTimer = new RangesTimer(10000);
-        this.edgeRangesTimer = new RangesTimer(10000);
-        this.loadRangesTimer = new RangesTimer(10000);
+        this.vertexRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
+        this.edgeRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
+        this.loadRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
         this.inputMetricsMap = InsertionOrderUtil.newMap();
     }
 
