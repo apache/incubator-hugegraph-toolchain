@@ -10,7 +10,7 @@
         "database": "load_test",
         "table": "person",
         "username": "root",
-        "password": "",
+        "password": "root",
         "batch_size": 2
       },
       "id": "id",

@@ -7,7 +7,7 @@ sudo wget http://archive.apache.org/dist/hadoop/common/hadoop-2.8.5/hadoop-2.8.5
 sudo tar -zxf hadoop-2.8.5.tar.gz -C /usr/local
 cd /usr/local
 sudo mv hadoop-2.8.5 hadoop
-sudo chown -R travis ./hadoop
+#sudo chown -R travis ./hadoop
 cd hadoop
 pwd
 
