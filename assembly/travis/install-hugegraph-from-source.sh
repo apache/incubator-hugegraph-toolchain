@@ -3,12 +3,11 @@
 set -ev
 
 if [[ $# -ne 1 ]]; then
-    echo "Must pass base branch name of pull request"
+    echo "Must pass commit id of hugegraph repo"
     exit 1
 fi
 
-CLIENT_BRANCH=$1
-HUGEGRAPH_BRANCH=${CLIENT_BRANCH}
+COMMIT_ID=$1
 HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
 
 git clone --depth 100 ${HUGEGRAPH_GIT_URL}

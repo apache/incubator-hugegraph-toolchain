@@ -10,7 +10,7 @@
         "database": "load_test",
         "table": "person",
         "username": "root",
-        "password": "",
+        "password": "root",
         "batch_size": 2
       },
       "id": "id",
@@ -26,7 +26,7 @@
         "database": "load_test",
         "table": "software",
         "username": "root",
-        "password": "",
+        "password": "root",
         "batch_size": 2
       },
       "id": "id"
@@ -45,7 +45,7 @@
         "database": "load_test",
         "table": "knows",
         "username": "root",
-        "password": "",
+        "password": "root",
         "batch_size": 2
       },
       "ignored": ["id"]
@@ -62,7 +62,7 @@
         "database": "load_test",
         "table": "created",
         "username": "root",
-        "password": "",
+        "password": "root",
         "batch_size": 2
       },
       "ignored": ["id"]

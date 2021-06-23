@@ -40,10 +40,10 @@ public class JDBCLoadTest extends LoadTest {
     // JDBC driver name and database URL
     private static final String DRIVER = "com.mysql.cj.jdbc.Driver";
     private static final String DATABASE = "load_test";
-    private static final String DB_URL = "jdbc:mysql://localhost";
+    private static final String DB_URL = "jdbc:mysql://127.0.0.1:3306";
     // Database credentials
     private static final String USER = "root";
-    private static final String PASS = "";
+    private static final String PASS = "root";
 
     private static DBUtil dbUtil = new DBUtil(DRIVER, DB_URL, USER, PASS);
 
@@ -193,8 +193,8 @@ public class JDBCLoadTest extends LoadTest {
                       "(2,'vadas',27,'2');");
 
         String[] args = new String[]{
-                "-f", configPath("value_mapping_in_jdbc_source/struct.json"),
-                "-s", configPath("value_mapping_in_jdbc_source/schema.groovy"),
+                "-f", configPath("jdbc_value_mapping/struct.json"),
+                "-s", configPath("jdbc_value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
