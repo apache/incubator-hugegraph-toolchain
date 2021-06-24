@@ -108,7 +108,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
                 "d", 0.08959757100230095D,
                 "b", 0.04589958822642998D
         );
-        Assert.assertEquals(expectedRanks, ranks);
+        assertDoublesEquals(expectedRanks, ranks);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
                 "B", 0.2065750574989044D,
                 "C", 0.09839507219265439D
         );
-        Assert.assertEquals(expectedRanks, ranks);
+        assertDoublesEquals(expectedRanks, ranks);
 
         builder = PersonalRankAPI.Request.builder();
         builder.source("A").label("like").alpha(0.9).maxDepth(50)
@@ -136,7 +136,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
                 "d", 0.08959757100230095D,
                 "b", 0.04589958822642998D
         );
-        Assert.assertEquals(expectedRanks, ranks);
+        assertDoublesEquals(expectedRanks, ranks);
     }
 
     @Test
@@ -153,7 +153,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
                 "b", 0.0D,
                 "d", 0.0D
         );
-        Assert.assertEquals(expectedRanks, ranks);
+        assertDoublesEquals(expectedRanks, ranks);
     }
 
     @Test
@@ -166,25 +166,25 @@ public class PersonalRankApiTest extends TraverserApiTest {
 
         // Removed root and direct neighbors of root
         Map<Object, Double> ranks = personalRankAPI.post(request);
-        Assert.assertEquals(ImmutableMap.of(), ranks);
+        assertDoublesEquals(ImmutableMap.of(), ranks);
 
         builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(2);
         request = builder.build();
 
         ranks = personalRankAPI.post(request);
-        Assert.assertEquals(ImmutableMap.of(), ranks);
+        assertDoublesEquals(ImmutableMap.of(), ranks);
 
         builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(1);
         request = builder.build();
 
         ranks = personalRankAPI.post(request);
-        Assert.assertEquals(ImmutableMap.of(), ranks);
+        assertDoublesEquals(ImmutableMap.of(), ranks);
 
         builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(2);
         request = builder.build();
 
         ranks = personalRankAPI.post(request);
-        Assert.assertEquals(ImmutableMap.of("B", 0.405D), ranks);
+        assertDoublesEquals(ImmutableMap.of("B", 0.405D), ranks);
     }
 
     @Test
@@ -200,7 +200,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
                 "C", 0.09839507219265439D,
                 "d", 0.08959757100230095D
         );
-        Assert.assertEquals(expectedRanks, ranks);
+        assertDoublesEquals(expectedRanks, ranks);
     }
 
     @Test
@@ -217,7 +217,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
                 "d", 0.07581065434649958D,
                 "b", 0.03900612828909826D
         );
-        Assert.assertEquals(expectedRanks, ranks);
+        assertDoublesEquals(expectedRanks, ranks);
     }
 
     @Test
@@ -234,7 +234,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
                 "C", 0.09839507219265439D,
                 "d", 0.08959757100230095D
         );
-        Assert.assertEquals(expectedRanks, ranks);
+        assertDoublesEquals(expectedRanks, ranks);
     }
 
     @Test
@@ -248,7 +248,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
         PersonalRankAPI.Request request = builder.build();
 
         Map<Object, Double> ranks = personalRankAPI.post(request);
-        Assert.assertEquals(ImmutableMap.of(), ranks);
+        assertDoublesEquals(ImmutableMap.of(), ranks);
 
         graph().removeVertex(isolate.id());
     }
@@ -306,5 +306,19 @@ public class PersonalRankApiTest extends TraverserApiTest {
             builder = PersonalRankAPI.Request.builder();
             builder.maxDepth(51);
         });
+    }
+
+    private static void assertDoublesEquals(Map<Object, Double> expects,
+                                            Map<Object, Double> actuals) {
+        Assert.assertEquals(expects.size(), actuals.size());
+        Assert.assertTrue(expects.keySet().containsAll(actuals.keySet()));
+        for (Object expectKey : expects.keySet()) {
+            Double expectValue = expects.get(expectKey);
+            Double actualValue = actuals.get(expectKey);
+            Assert.assertTrue(String.format("expected %s, actual %s",
+                                            expectValue, actualValue),
+                              Math.abs(expectValue - actualValue) <
+                              Math.pow(1, -10));
+        }
     }
 }
