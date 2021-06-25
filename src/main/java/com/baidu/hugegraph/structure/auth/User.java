@@ -41,6 +41,8 @@ public class User extends AuthElement {
     private String email;
     @JsonProperty("user_avatar")
     private String avatar;
+    @JsonProperty("user_description")
+    private String description;
 
     @JsonProperty("user_create")
     @JsonFormat(pattern = DATE_FORMAT)
@@ -109,6 +111,14 @@ public class User extends AuthElement {
 
     public void avatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public String description() {
+        return this.description;
+    }
+
+    public void description(String description) {
+        this.description = description;
     }
 
     public static class UserRole {

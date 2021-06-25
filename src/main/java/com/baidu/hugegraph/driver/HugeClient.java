@@ -97,7 +97,7 @@ public class HugeClient implements Closeable {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.38", "0.63",
+        VersionUtil.check(apiVersion, "0.38", "0.64",
                           "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
     }
@@ -140,5 +140,17 @@ public class HugeClient implements Closeable {
 
     public MetricsManager metrics() {
         return this.metrics;
+    }
+
+    public void setAuthContext(String auth) {
+        this.client.setAuthContext(auth);
+    }
+
+    public String getAuthContext() {
+        return this.client.getAuthContext();
+    }
+
+    public void resetAuthContext() {
+        this.client.resetAuthContext();
     }
 }

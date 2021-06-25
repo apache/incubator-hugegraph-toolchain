@@ -17,26 +17,27 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.functional;
+package com.baidu.hugegraph.api.auth;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.rest.RestResult;
+import com.baidu.hugegraph.structure.auth.Login;
+import com.baidu.hugegraph.structure.auth.LoginResult;
+import com.baidu.hugegraph.structure.constant.HugeType;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PropertyKeyTest.class,
-    VertexLabelTest.class,
-    EdgeLabelTest.class,
-    IndexLabelTest.class,
-    VertexTest.class,
-    EdgeTest.class,
-    BatchInsertTest.class,
-    GraphManagerTest.class,
-    AuthManagerTest.class,
-    TraverserManagerTest.class,
-    MetricsManagerTest.class,
-    HugeClientHttpsTest.class,
-    HugeClientTest.class
-})
-public class FuncTestSuite {
+public class LoginAPI extends AuthAPI {
+
+    public LoginAPI(RestClient client, String graph) {
+        super(client, graph);
+    }
+
+    @Override
+    protected String type() {
+        return HugeType.LOGIN.string();
+    }
+
+    public LoginResult login(Login login) {
+        RestResult result = this.client.post(this.path(), login);
+        return result.readObject(LoginResult.class);
+    }
 }

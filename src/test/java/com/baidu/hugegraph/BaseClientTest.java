@@ -58,6 +58,10 @@ public class BaseClientTest {
         // client.close();
     }
 
+    public static HugeClient baseClient() {
+        return client;
+    }
+
     public static SchemaManager schema() {
         Assert.assertNotNull("Not opened client", client);
         return client.schema();

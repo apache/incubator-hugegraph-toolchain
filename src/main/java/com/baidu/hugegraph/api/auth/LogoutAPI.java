@@ -17,26 +17,24 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.functional;
+package com.baidu.hugegraph.api.auth;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.constant.HugeType;
+import com.google.common.collect.ImmutableMap;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PropertyKeyTest.class,
-    VertexLabelTest.class,
-    EdgeLabelTest.class,
-    IndexLabelTest.class,
-    VertexTest.class,
-    EdgeTest.class,
-    BatchInsertTest.class,
-    GraphManagerTest.class,
-    AuthManagerTest.class,
-    TraverserManagerTest.class,
-    MetricsManagerTest.class,
-    HugeClientHttpsTest.class,
-    HugeClientTest.class
-})
-public class FuncTestSuite {
+public class LogoutAPI extends AuthAPI {
+
+    public LogoutAPI(RestClient client, String graph) {
+        super(client, graph);
+    }
+
+    @Override
+    protected String type() {
+        return HugeType.LOGOUT.string();
+    }
+
+    public void logout() {
+        this.client.delete(this.path(), ImmutableMap.of());
+    }
 }

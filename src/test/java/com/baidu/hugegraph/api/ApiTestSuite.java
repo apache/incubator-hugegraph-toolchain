@@ -25,7 +25,10 @@ import org.junit.runners.Suite;
 import com.baidu.hugegraph.api.auth.AccessApiTest;
 import com.baidu.hugegraph.api.auth.BelongApiTest;
 import com.baidu.hugegraph.api.auth.GroupApiTest;
+import com.baidu.hugegraph.api.auth.LoginApiTest;
+import com.baidu.hugegraph.api.auth.LogoutApiTest;
 import com.baidu.hugegraph.api.auth.TargetApiTest;
+import com.baidu.hugegraph.api.auth.TokenApiTest;
 import com.baidu.hugegraph.api.auth.UserApiTest;
 import com.baidu.hugegraph.api.traverser.AllShortestPathsApiTest;
 import com.baidu.hugegraph.api.traverser.CommonTraverserApiTest;
@@ -86,7 +89,10 @@ import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
     GroupApiTest.class,
     UserApiTest.class,
     AccessApiTest.class,
-    BelongApiTest.class
+    BelongApiTest.class,
+    LoginApiTest.class,
+    LogoutApiTest.class,
+    TokenApiTest.class
 })
 public class ApiTestSuite {
 }

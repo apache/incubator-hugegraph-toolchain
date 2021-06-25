@@ -17,26 +17,20 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.functional;
+package com.baidu.hugegraph.structure.auth;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PropertyKeyTest.class,
-    VertexLabelTest.class,
-    EdgeLabelTest.class,
-    IndexLabelTest.class,
-    VertexTest.class,
-    EdgeTest.class,
-    BatchInsertTest.class,
-    GraphManagerTest.class,
-    AuthManagerTest.class,
-    TraverserManagerTest.class,
-    MetricsManagerTest.class,
-    HugeClientHttpsTest.class,
-    HugeClientTest.class
-})
-public class FuncTestSuite {
+public class LoginResult {
+
+    @JsonProperty("token")
+    private String token;
+
+    public void token(String token) {
+        this.token = token;
+    }
+
+    public String token() {
+        return this.token;
+    }
 }

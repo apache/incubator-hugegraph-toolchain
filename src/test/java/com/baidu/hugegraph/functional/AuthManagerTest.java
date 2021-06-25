@@ -23,13 +23,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.structure.auth.Access;
 import com.baidu.hugegraph.structure.auth.Belong;
 import com.baidu.hugegraph.structure.auth.Group;
 import com.baidu.hugegraph.structure.auth.HugePermission;
 import com.baidu.hugegraph.structure.auth.HugeResource;
 import com.baidu.hugegraph.structure.auth.HugeResourceType;
+import com.baidu.hugegraph.structure.auth.Login;
+import com.baidu.hugegraph.structure.auth.LoginResult;
 import com.baidu.hugegraph.structure.auth.Target;
+import com.baidu.hugegraph.structure.auth.TokenPayload;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.auth.User.UserRole;
 import com.baidu.hugegraph.testutil.Assert;
@@ -94,5 +98,22 @@ public class AuthManagerTest extends BaseFuncTest {
                    "{\"READ\":[{\"type\":\"TASK\",\"label\":\"*\",\"properties\":null}]," +
                    "\"EXECUTE\":[{\"type\":\"GREMLIN\",\"label\":\"*\",\"properties\":null}]}}}";
         Assert.assertEquals(r, role.toString());
+
+        Login login = new Login();
+        login.name("bob");
+        login.password("123456");
+        LoginResult result = auth().login(login);
+
+        String token = result.token();
+
+        HugeClient client = baseClient();
+        client.setAuthContext("Bearer " + token);
+
+        TokenPayload payload = auth().verifyToken();
+        Assert.assertEquals("bob", payload.username());
+        Assert.assertEquals(user.id(), payload.userId());
+
+        auth().logout();
+        client.resetAuthContext();
     }
 }

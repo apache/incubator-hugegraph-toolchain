@@ -19,24 +19,29 @@
 
 package com.baidu.hugegraph.functional;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.Test;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PropertyKeyTest.class,
-    VertexLabelTest.class,
-    EdgeLabelTest.class,
-    IndexLabelTest.class,
-    VertexTest.class,
-    EdgeTest.class,
-    BatchInsertTest.class,
-    GraphManagerTest.class,
-    AuthManagerTest.class,
-    TraverserManagerTest.class,
-    MetricsManagerTest.class,
-    HugeClientHttpsTest.class,
-    HugeClientTest.class
-})
-public class FuncTestSuite {
+import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.testutil.Assert;
+
+public class HugeClientTest {
+
+    protected static final String BASE_URL = "http://127.0.0.1:8080";
+    protected static final String GRAPH = "hugegraph";
+    protected static final String USERNAME = "admin";
+    protected static final String PASSWORD = "pa";
+
+    @Test
+    public void testContext() {
+        HugeClient client = HugeClient.builder(BASE_URL, GRAPH)
+                                      .configUser(USERNAME, PASSWORD)
+                                      .build();
+
+        String token = "Bearer token";
+        client.setAuthContext(token);
+        Assert.assertEquals(token, client.getAuthContext());
+
+        client.resetAuthContext();
+        Assert.assertNull(client.getAuthContext());
+    }
 }

@@ -309,12 +309,7 @@ public final class Utils {
     }
 
     public static long date(String date, String pattern) {
-        try {
-            return DateUtil.parse(date, pattern).getTime();
-        } catch (ParseException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to parse date '%s'", date));
-        }
+        return DateUtil.parse(date, pattern).getTime();
     }
 
     public static String formatDate(String date) {
