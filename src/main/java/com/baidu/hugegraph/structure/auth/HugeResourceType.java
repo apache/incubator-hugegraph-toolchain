@@ -57,6 +57,8 @@ public enum HugeResourceType {
 
     USER_GROUP,
 
+    PROJECT,
+
     TARGET,
 
     METRICS,

@@ -27,6 +27,7 @@ import com.baidu.hugegraph.api.auth.BelongApiTest;
 import com.baidu.hugegraph.api.auth.GroupApiTest;
 import com.baidu.hugegraph.api.auth.LoginApiTest;
 import com.baidu.hugegraph.api.auth.LogoutApiTest;
+import com.baidu.hugegraph.api.auth.ProjectApiTest;
 import com.baidu.hugegraph.api.auth.TargetApiTest;
 import com.baidu.hugegraph.api.auth.TokenApiTest;
 import com.baidu.hugegraph.api.auth.UserApiTest;
@@ -90,6 +91,7 @@ import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
     UserApiTest.class,
     AccessApiTest.class,
     BelongApiTest.class,
+    ProjectApiTest.class,
     LoginApiTest.class,
     LogoutApiTest.class,
     TokenApiTest.class

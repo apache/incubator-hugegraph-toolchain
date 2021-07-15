@@ -19,6 +19,10 @@
 
 package com.baidu.hugegraph.functional;
 
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,11 +36,13 @@ import com.baidu.hugegraph.structure.auth.HugeResource;
 import com.baidu.hugegraph.structure.auth.HugeResourceType;
 import com.baidu.hugegraph.structure.auth.Login;
 import com.baidu.hugegraph.structure.auth.LoginResult;
+import com.baidu.hugegraph.structure.auth.Project;
 import com.baidu.hugegraph.structure.auth.Target;
 import com.baidu.hugegraph.structure.auth.TokenPayload;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.auth.User.UserRole;
 import com.baidu.hugegraph.testutil.Assert;
+import com.google.common.collect.ImmutableSet;
 
 public class AuthManagerTest extends BaseFuncTest {
 
@@ -92,6 +98,44 @@ public class AuthManagerTest extends BaseFuncTest {
         access2.target(task);
         access2.permission(HugePermission.READ);
         access2 = auth().createAccess(access2);
+
+        Project project1 = new Project("test");
+        project1 = auth().createProject(project1);
+        Assert.assertEquals("test", project1.name());
+
+        Project project2 = new Project("test2");
+        project2 = auth().createProject(project2);
+        Assert.assertEquals("test2", project2.name());
+
+        Project newProject1 = auth().getProject(project1);
+        Assert.assertEquals(newProject1.id(), project1.id());
+        Assert.assertTrue(CollectionUtils.isEmpty(newProject1.graphs()));
+
+        List<Project> projects = auth().listProjects();
+        Assert.assertNotNull(projects);
+        Assert.assertEquals(2, projects.size());
+
+        Set<String> graphs = ImmutableSet.of("graph1", "graph2");
+        newProject1 = auth().projectAddGraphs(project1, graphs);
+        Assert.assertNotNull(newProject1);
+        Assert.assertEquals(graphs, newProject1.graphs());
+
+        graphs = ImmutableSet.of("graph2");
+        newProject1 = auth().projectRemoveGraphs(project1,
+                                                 ImmutableSet.of("graph1"));
+        Assert.assertNotNull(newProject1);
+        Assert.assertEquals(graphs, newProject1.graphs());
+
+        Object project1Id = project1.id();
+        project1 = new Project(project1Id);
+        project1.description("test description");
+        newProject1 = auth().updateProject(project1);
+        Assert.assertEquals(newProject1.description(), project1.description());
+
+        auth().deleteProject(project2);
+        projects.remove(project2);
+        List<Project> newProjects = auth().listProjects();
+        Assert.assertEquals(newProjects, projects);
 
         UserRole role = auth().getUserRole(user);
         String r = "{\"roles\":{\"hugegraph\":" +

@@ -34,7 +34,10 @@ public abstract class Element {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof Element)) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null || this.getClass() != other.getClass()) {
             return false;
         }
         return Objects.equals(this.id(), ((Element) other).id());

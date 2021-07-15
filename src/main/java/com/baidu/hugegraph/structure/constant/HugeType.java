@@ -33,9 +33,10 @@ public enum HugeType {
     USER(52, "users"),
     ACCESS(53, "accesses"),
     BELONG(54, "belongs"),
-    LOGIN(55, "login"),
-    LOGOUT(56, "logout"),
-    TOKEN_VERIFY(57, "verify"),
+    PROJECT(55, "projects"),
+    LOGIN(56, "login"),
+    LOGOUT(57, "logout"),
+    TOKEN_VERIFY(58, "verify"),
 
     // Data
     VERTEX(101, "vertices"),

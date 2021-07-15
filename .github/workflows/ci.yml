@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-16.04
     env:
       TRAVIS_DIR: assembly/travis
-      COMMIT_ID: 9ee9fe12f3349a54bbceb161d002200d3689863c
+      COMMIT_ID: 379859a44102a76cf5f815
     steps:
       - name: Install JDK 8
         uses: actions/setup-java@v2
