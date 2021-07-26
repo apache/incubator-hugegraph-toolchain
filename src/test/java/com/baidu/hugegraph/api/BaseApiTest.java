@@ -134,9 +134,11 @@ public class BaseApiTest extends BaseClientTest {
         });
         vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
 
+        List<Long> pkTaskIds = new ArrayList<>();
         propertyKeyAPI.list().forEach(propertyKey -> {
-            propertyKeyAPI.delete(propertyKey.name());
+            pkTaskIds.add(propertyKeyAPI.delete(propertyKey.name()));
         });
+        pkTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
 
         // Clear system
         taskAPI.list(null, -1).forEach(task -> {
@@ -145,10 +147,16 @@ public class BaseApiTest extends BaseClientTest {
     }
 
     protected static void waitUntilTaskCompleted(long taskId) {
+        if (taskId == 0L) {
+            return;
+        }
         taskAPI.waitUntilTaskSuccess(taskId, TIMEOUT);
     }
 
     protected static void waitUntilTaskCompleted(long taskId, long timeout) {
+        if (taskId == 0L) {
+            return;
+        }
         taskAPI.waitUntilTaskSuccess(taskId, timeout);
     }
 }

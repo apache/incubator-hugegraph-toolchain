@@ -177,6 +177,25 @@ public class IndexLabelTest extends BaseFuncTest {
     }
 
     @Test
+    public void testAddIndexLabelAsync() {
+        SchemaManager schema = schema();
+
+        schema.vertexLabel("player")
+              .properties("name", "age")
+              .create();
+        IndexLabel playerByName = schema.indexLabel("playerByName")
+                                        .onV("player")
+                                        .by("name")
+                                        .secondary()
+                                        .build();
+        long task = schema.addIndexLabelAsync(playerByName);
+        waitUntilTaskCompleted(task);
+
+        playerByName = schema.getIndexLabel(playerByName.name());
+        Assert.assertNotNull(playerByName);
+    }
+
+    @Test
     public void testListByNames() {
         SchemaManager schema = schema();
 

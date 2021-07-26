@@ -27,8 +27,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.baidu.hugegraph.driver.SchemaManager;
+import com.baidu.hugegraph.structure.constant.WriteType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Utils;
 import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
@@ -173,5 +175,36 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertTrue(age.checkExist());
         age.checkExist(false);
         Assert.assertFalse(age.checkExist());
+    }
+
+    @Test
+    public void testOlapPropertyKey() {
+        SchemaManager schema = schema();
+        PropertyKey pagerank = schema.propertyKey("pagerank")
+                                     .asDouble()
+                                     .writeType(WriteType.OLAP_RANGE)
+                                     .build();
+        schema.addPropertyKey(pagerank);
+        schema.getPropertyKey(pagerank.name());
+        schema.clearPropertyKey(pagerank);
+        schema.removePropertyKey(pagerank.name());
+        Utils.assertResponseError(404, () -> {
+            schema.getPropertyKey(pagerank.name());
+        });
+
+        long task = schema.addPropertyKeyAsync(pagerank);
+        waitUntilTaskCompleted(task);
+
+        schema.getPropertyKey(pagerank.name());
+
+        task = schema.clearPropertyKeyAsync(pagerank);
+        waitUntilTaskCompleted(task);
+
+        task = schema.removePropertyKeyAsync(pagerank.name());
+        waitUntilTaskCompleted(task);
+
+        Utils.assertResponseError(404, () -> {
+            schema.getPropertyKey(pagerank.name());
+        });
     }
 }

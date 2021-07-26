@@ -29,10 +29,15 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.baidu.hugegraph.api.gremlin.GremlinRequest;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
+import com.baidu.hugegraph.structure.constant.GraphReadMode;
+import com.baidu.hugegraph.structure.constant.WriteType;
 import com.baidu.hugegraph.structure.constant.T;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.gremlin.ResultSet;
+import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.baidu.hugegraph.util.DateUtil;
@@ -327,6 +332,176 @@ public class VertexApiTest extends BaseApiTest {
         }, e -> {
             Assert.assertContains("does not exist", e.getMessage());
         });
+    }
+
+    @Test
+    public void testOlapPropertyWrite() {
+        List<Vertex> vertices = super.create100PersonBatch();
+        List<Object> ids = vertexAPI.create(vertices);
+
+        // Create olap property key
+        PropertyKey pagerank = schema().propertyKey("pagerank")
+                                       .asDouble()
+                                       .writeType(WriteType.OLAP_RANGE)
+                                       .build();
+
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(pagerank);
+        long taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        PropertyKey wcc = schema().propertyKey("wcc")
+                                  .asText()
+                                  .writeType(WriteType.OLAP_SECONDARY)
+                                  .build();
+
+        propertyKeyWithTask = propertyKeyAPI.create(wcc);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        PropertyKey none = schema().propertyKey("none")
+                                   .asText()
+                                   .writeType(WriteType.OLAP_COMMON)
+                                   .build();
+
+        propertyKeyWithTask = propertyKeyAPI.create(none);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        // Add olap properties
+        vertices = new ArrayList<>(100);
+        for (int i = 0; i < 100; i++) {
+            Vertex vertex = new Vertex(null);
+            vertex.id(ids.get(i));
+            vertex.property("pagerank", 0.1D * i);
+            vertices.add(vertex);
+        }
+
+        ids = vertexAPI.create(vertices);
+        Assert.assertEquals(100, ids.size());
+
+        vertices = new ArrayList<>(100);
+        for (int i = 0; i < 100; i++) {
+            Vertex vertex = new Vertex(null);
+            vertex.id(ids.get(i));
+            vertex.property("wcc", "wcc" + i);
+            vertices.add(vertex);
+        }
+
+        ids = vertexAPI.create(vertices);
+        Assert.assertEquals(100, ids.size());
+
+        vertices = new ArrayList<>(100);
+        for (int i = 0; i < 100; i++) {
+            Vertex vertex = new Vertex(null);
+            vertex.id(ids.get(i));
+            vertex.property("none", "none" + i);
+            vertices.add(vertex);
+        }
+
+        ids = vertexAPI.create(vertices);
+        Assert.assertEquals(100, ids.size());
+
+        // Query vertices by id before set graph read mode to 'ALL'
+        for (int i = 0; i < 100; i++) {
+            Vertex person = vertexAPI.get(ids.get(i));
+            Assert.assertEquals("person", person.label());
+            Map<String, Object> props = ImmutableMap.of("name", "Person-" + i,
+                                                        "city", "Beijing",
+                                                        "age", 30);
+            Assert.assertEquals(props, person.properties());
+        }
+
+        // Set graph read mode to 'ALL'
+        graphsAPI.readMode("hugegraph", GraphReadMode.ALL);
+
+        // Query vertices by id after set graph read mode to 'ALL'
+        for (int i = 0; i < 100; i++) {
+            Vertex person = vertexAPI.get(ids.get(i));
+            Assert.assertEquals("person", person.label());
+            Map<String, Object> props = ImmutableMap.<String, Object>builder()
+                                                    .put("name", "Person-" + i)
+                                                    .put("city", "Beijing")
+                                                    .put("age", 30)
+                                                    .put("pagerank", 0.1D * i)
+                                                    .put("wcc", "wcc" + i)
+                                                    .put("none", "none" + i)
+                                                    .build();
+            Assert.assertEquals(props, person.properties());
+        }
+
+        // Query vertices by olap properties
+        GremlinRequest request = new GremlinRequest(
+                                 "g.V().has(\"pagerank\", P.gte(5))");
+        ResultSet resultSet = gremlin().execute(request);
+        Assert.assertEquals(50, resultSet.size());
+
+        request = new GremlinRequest(
+                  "g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))");
+        resultSet = gremlin().execute(request);
+        Assert.assertEquals(2, resultSet.size());
+
+        // Clear olap property key
+        propertyKeyWithTask = propertyKeyAPI.clear(pagerank);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        propertyKeyWithTask = propertyKeyAPI.clear(wcc);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        propertyKeyWithTask = propertyKeyAPI.clear(none);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        // Query after clear olap property key
+        request = new GremlinRequest("g.V().has(\"pagerank\", P.gte(5))");
+        resultSet = gremlin().execute(request);
+        Assert.assertEquals(0, resultSet.size());
+
+        request = new GremlinRequest(
+                  "g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))");
+        resultSet = gremlin().execute(request);
+        Assert.assertEquals(0, resultSet.size());
+
+        // Delete olap property key
+        taskId = propertyKeyAPI.delete(pagerank.name());
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        taskId = propertyKeyAPI.delete(wcc.name());
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        taskId = propertyKeyAPI.delete(none.name());
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+
+        // Query after delete olap property key
+        Assert.assertThrows(ServerException.class, () -> {
+            gremlin().execute(new GremlinRequest(
+                              "g.V().has(\"pagerank\", P.gte(5))"));
+        }, e -> {
+            Assert.assertContains("Undefined property key: 'pagerank'",
+                                  e.getMessage());
+        });
+
+        Assert.assertThrows(ServerException.class, () -> {
+            gremlin().execute(new GremlinRequest(
+                      "g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))"));
+        }, e -> {
+            Assert.assertContains("Undefined property key: 'wcc'",
+                                  e.getMessage());
+        });
+
+        // Resume graph read mode to 'OLTP_ONLY'
+        graphsAPI.readMode("hugegraph", GraphReadMode.OLTP_ONLY);
     }
 
     @Test

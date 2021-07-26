@@ -249,7 +249,7 @@ public class IndexLabel extends SchemaElement {
         }
     }
 
-    public static class CreatedIndexLabel {
+    public static class IndexLabelWithTask {
 
         @JsonProperty("index_label")
         private IndexLabel indexLabel;

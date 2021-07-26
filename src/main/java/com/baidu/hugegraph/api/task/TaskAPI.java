@@ -104,6 +104,9 @@ public class TaskAPI extends API {
     }
 
     public Task waitUntilTaskSuccess(long taskId, long seconds) {
+        if (taskId == 0) {
+            return null;
+        }
         long passes = seconds * 1000 / QUERY_INTERVAL;
         try {
             for (long pass = 0; ; pass++) {

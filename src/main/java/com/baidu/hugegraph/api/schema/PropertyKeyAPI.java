@@ -22,11 +22,13 @@ package com.baidu.hugegraph.api.schema;
 import java.util.List;
 import java.util.Map;
 
+import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
-import com.baidu.hugegraph.structure.constant.ReadFrequency;
+import com.baidu.hugegraph.structure.constant.WriteType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
@@ -42,26 +44,41 @@ public class PropertyKeyAPI extends SchemaAPI {
         return HugeType.PROPERTY_KEY.string();
     }
 
-    public PropertyKey create(PropertyKey propertyKey) {
+    public PropertyKey.PropertyKeyWithTask create(PropertyKey propertyKey) {
         Object pkey = this.checkCreateOrUpdate(propertyKey);
         RestResult result = this.client.post(this.path(), pkey);
-        return result.readObject(PropertyKey.class);
+        if (this.client.apiVersionLt("0.65")) {
+            return new PropertyKey.PropertyKeyWithTask(
+                       result.readObject(PropertyKey.class), 0L);
+        }
+        return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }
 
-    public PropertyKey append(PropertyKey propertyKey) {
+    public PropertyKey.PropertyKeyWithTask append(PropertyKey propertyKey) {
         String id = propertyKey.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
         Object pkey = this.checkCreateOrUpdate(propertyKey);
         RestResult result = this.client.put(this.path(), id, pkey, params);
-        return result.readObject(PropertyKey.class);
+        return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }
 
-    public PropertyKey eliminate(PropertyKey propertyKey) {
+    public PropertyKey.PropertyKeyWithTask eliminate(PropertyKey propertyKey) {
         String id = propertyKey.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         Object pkey = this.checkCreateOrUpdate(propertyKey);
         RestResult result = this.client.put(this.path(), id, pkey, params);
-        return result.readObject(PropertyKey.class);
+        return result.readObject(PropertyKey.PropertyKeyWithTask.class);
+    }
+
+    public PropertyKey.PropertyKeyWithTask clear(PropertyKey propertyKey) {
+        if (this.client.apiVersionLt("0.65")) {
+            throw new NotSupportException("action clear on property key");
+        }
+        String id = propertyKey.name();
+        Map<String, Object> params = ImmutableMap.of("action", "clear");
+        Object pkey = this.checkCreateOrUpdate(propertyKey);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
+        return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }
 
     public PropertyKey get(String name) {
@@ -83,8 +100,15 @@ public class PropertyKeyAPI extends SchemaAPI {
         return result.readList(this.type(), PropertyKey.class);
     }
 
-    public void delete(String name) {
-        this.client.delete(this.path(), name);
+    public long delete(String name) {
+        if (this.client.apiVersionLt("0.65")) {
+            this.client.delete(this.path(), name);
+            return 0L;
+        }
+        RestResult result = this.client.delete(this.path(), name);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> task = result.readObject(Map.class);
+        return TaskAPI.parseTaskId(task);
     }
 
     @Override
@@ -97,7 +121,7 @@ public class PropertyKeyAPI extends SchemaAPI {
                             "api version 0.47");
             pkey = propertyKey.switchV46();
         } else if (this.client.apiVersionLt("0.59")) {
-            E.checkArgument(propertyKey.readFrequency() == ReadFrequency.OLTP,
+            E.checkArgument(propertyKey.writeType() == WriteType.OLTP,
                             "Not support olap property key until " +
                             "api version 0.59");
             pkey = propertyKey.switchV58();

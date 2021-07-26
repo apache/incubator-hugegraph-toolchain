@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.api;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,6 +29,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.structure.constant.AggregateType;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
+import com.baidu.hugegraph.structure.constant.WriteType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
@@ -38,7 +40,11 @@ public class PropertyKeyApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        propertyKeyAPI.list().forEach(pk -> propertyKeyAPI.delete(pk.name()));
+        List<Long> pkTaskIds = new ArrayList<>();
+        propertyKeyAPI.list().forEach(propertyKey -> {
+            pkTaskIds.add(propertyKeyAPI.delete(propertyKey.name()));
+        });
+        pkTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
     }
 
     @Test
@@ -48,7 +54,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                           .valueSingle()
                                           .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("name", propertyKey.name());
         Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
@@ -62,7 +71,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                           .valueSingle()
                                           .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("name", propertyKey.name());
         Assert.assertEquals(DataType.LONG, propertyKey.dataType());
@@ -76,7 +88,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                           .cardinality(Cardinality.SET)
                                           .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("name", propertyKey.name());
         Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
@@ -89,7 +104,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                           .asText().valueSingle()
                                           .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("name", propertyKey.name());
         Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
@@ -104,7 +122,9 @@ public class PropertyKeyApiTest extends BaseApiTest {
                               .calcOld()
                               .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("no", propertyKey.name());
         Assert.assertEquals(DataType.TEXT, propertyKey.dataType());
@@ -119,7 +139,9 @@ public class PropertyKeyApiTest extends BaseApiTest {
                               .calcMax()
                               .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("max", propertyKey.name());
         Assert.assertEquals(DataType.INT, propertyKey.dataType());
@@ -134,7 +156,9 @@ public class PropertyKeyApiTest extends BaseApiTest {
                               .calcMin()
                               .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("min", propertyKey.name());
         Assert.assertEquals(DataType.INT, propertyKey.dataType());
@@ -149,7 +173,9 @@ public class PropertyKeyApiTest extends BaseApiTest {
                               .calcSum()
                               .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("sum", propertyKey.name());
         Assert.assertEquals(DataType.INT, propertyKey.dataType());
@@ -164,7 +190,9 @@ public class PropertyKeyApiTest extends BaseApiTest {
                               .aggregateType(AggregateType.SUM)
                               .build();
 
-        propertyKey = propertyKeyAPI.create(propertyKey);
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey = propertyKeyWithTask.propertyKey();
 
         Assert.assertEquals("total", propertyKey.name());
         Assert.assertEquals(DataType.INT, propertyKey.dataType());
@@ -223,7 +251,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                            .valueSingle()
                                            .build();
 
-        propertyKey1 = propertyKeyAPI.create(propertyKey1);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey1);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey1 = propertyKeyWithTask.propertyKey();
 
         PropertyKey propertyKey2 = propertyKeyAPI.get("name");
 
@@ -246,13 +277,18 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                            .asText()
                                            .valueSingle()
                                            .build();
-        propertyKey1 = propertyKeyAPI.create(propertyKey1);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey1);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey1 = propertyKeyWithTask.propertyKey();
 
         PropertyKey propertyKey2 = schema().propertyKey("age")
                                            .asInt()
                                            .valueSingle()
                                            .build();
-        propertyKey2 = propertyKeyAPI.create(propertyKey2);
+        propertyKeyWithTask = propertyKeyAPI.create(propertyKey2);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        propertyKey2 = propertyKeyWithTask.propertyKey();
 
         List<PropertyKey> propertyKeys = propertyKeyAPI.list();
         Assert.assertEquals(2, propertyKeys.size());
@@ -263,10 +299,15 @@ public class PropertyKeyApiTest extends BaseApiTest {
     @Test
     public void testListByNames() {
         PropertyKey name = schema().propertyKey("name").asText().build();
-        name = propertyKeyAPI.create(name);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(name);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        name = propertyKeyWithTask.propertyKey();
 
         PropertyKey age = schema().propertyKey("age").asInt().build();
-        age = propertyKeyAPI.create(age);
+        propertyKeyWithTask = propertyKeyAPI.create(age);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        age = propertyKeyWithTask.propertyKey();
 
         List<PropertyKey> propertyKeys;
 
@@ -311,7 +352,10 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                   .userdata("min", 0)
                                   .userdata("max", 100)
                                   .build();
-        age = propertyKeyAPI.create(age);
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(age);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        age = propertyKeyWithTask.propertyKey();
         Assert.assertEquals(3, age.userdata().size());
         Assert.assertEquals(0, age.userdata().get("min"));
         Assert.assertEquals(100, age.userdata().get("max"));
@@ -323,7 +367,9 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                  .userdata("length", 15)
                                  .userdata("length", 18)
                                  .build();
-        id = propertyKeyAPI.create(id);
+        propertyKeyWithTask = propertyKeyAPI.create(id);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        id = propertyKeyWithTask.propertyKey();
         // The same key user data will be overwritten
         Assert.assertEquals(2, id.userdata().size());
         Assert.assertEquals(18, id.userdata().get("length"));
@@ -335,12 +381,130 @@ public class PropertyKeyApiTest extends BaseApiTest {
                                   .userdata("range",
                                             ImmutableList.of("male", "female"))
                                   .build();
-        sex = propertyKeyAPI.create(sex);
+        propertyKeyWithTask = propertyKeyAPI.create(sex);
+        Assert.assertEquals(0L, propertyKeyWithTask.taskId());
+        sex = propertyKeyWithTask.propertyKey();
         Assert.assertEquals(2, sex.userdata().size());
         Assert.assertEquals(ImmutableList.of("male", "female"),
                             sex.userdata().get("range"));
         time = (String) sex.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
         Assert.assertTrue(createTime.before(DateUtil.now()));
+    }
+
+    @Test
+    public void testAddOlapPropertyKey() {
+        PropertyKey pagerank = schema().propertyKey("pagerank")
+                                       .asDouble()
+                                       .writeType(WriteType.OLAP_RANGE)
+                                       .build();
+
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(pagerank);
+        long taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+        pagerank = propertyKeyWithTask.propertyKey();
+
+        Assert.assertEquals("pagerank", pagerank.name());
+        Assert.assertEquals(WriteType.OLAP_RANGE, pagerank.writeType());
+        Assert.assertEquals(DataType.DOUBLE, pagerank.dataType());
+
+        PropertyKey wcc = schema().propertyKey("wcc")
+                                  .asText()
+                                  .writeType(WriteType.OLAP_SECONDARY)
+                                  .build();
+
+        propertyKeyWithTask = propertyKeyAPI.create(wcc);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+        wcc = propertyKeyWithTask.propertyKey();
+
+        Assert.assertEquals("wcc", wcc.name());
+        Assert.assertEquals(WriteType.OLAP_SECONDARY, wcc.writeType());
+        Assert.assertEquals(DataType.TEXT, wcc.dataType());
+
+        PropertyKey none = schema().propertyKey("none")
+                                   .asText()
+                                   .writeType(WriteType.OLAP_COMMON)
+                                   .build();
+
+        propertyKeyWithTask = propertyKeyAPI.create(none);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+        none = propertyKeyWithTask.propertyKey();
+
+        Assert.assertEquals("none", none.name());
+        Assert.assertEquals(WriteType.OLAP_COMMON, none.writeType());
+        Assert.assertEquals(DataType.TEXT, none.dataType());
+    }
+
+    @Test
+    public void testClearOlapPropertyKey() {
+        PropertyKey pagerank = schema().propertyKey("pagerank")
+                                       .asDouble()
+                                       .writeType(WriteType.OLAP_RANGE)
+                                       .build();
+
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(pagerank);
+        long taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+        pagerank = propertyKeyWithTask.propertyKey();
+
+        Assert.assertEquals("pagerank", pagerank.name());
+        Assert.assertEquals(WriteType.OLAP_RANGE, pagerank.writeType());
+        Assert.assertEquals(DataType.DOUBLE, pagerank.dataType());
+
+        propertyKeyWithTask = propertyKeyAPI.clear(pagerank);
+        taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+        pagerank = propertyKeyWithTask.propertyKey();
+
+        Assert.assertEquals("pagerank", pagerank.name());
+        Assert.assertEquals(WriteType.OLAP_RANGE, pagerank.writeType());
+        Assert.assertEquals(DataType.DOUBLE, pagerank.dataType());
+
+        pagerank = propertyKeyAPI.get("pagerank");
+
+        Assert.assertEquals("pagerank", pagerank.name());
+        Assert.assertEquals(WriteType.OLAP_RANGE, pagerank.writeType());
+        Assert.assertEquals(DataType.DOUBLE, pagerank.dataType());
+    }
+
+    @Test
+    public void testDeleteOlapPropertyKey() {
+        PropertyKey pagerank = schema().propertyKey("pagerank")
+                                       .asDouble()
+                                       .writeType(WriteType.OLAP_RANGE)
+                                       .build();
+
+        PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
+        propertyKeyWithTask = propertyKeyAPI.create(pagerank);
+        long taskId = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+        pagerank = propertyKeyWithTask.propertyKey();
+
+        Assert.assertEquals("pagerank", pagerank.name());
+        Assert.assertEquals(WriteType.OLAP_RANGE, pagerank.writeType());
+        Assert.assertEquals(DataType.DOUBLE, pagerank.dataType());
+
+        taskId = propertyKeyAPI.delete(pagerank.name());
+        Assert.assertNotEquals(0L, taskId);
+        waitUntilTaskCompleted(taskId);
+        pagerank = propertyKeyWithTask.propertyKey();
+
+        Assert.assertEquals("pagerank", pagerank.name());
+        Assert.assertEquals(WriteType.OLAP_RANGE, pagerank.writeType());
+        Assert.assertEquals(DataType.DOUBLE, pagerank.dataType());
+
+        Utils.assertResponseError(404, () -> {
+            propertyKeyAPI.get("pagerank");
+        });
     }
 }

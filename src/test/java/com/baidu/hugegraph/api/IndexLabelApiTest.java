@@ -466,7 +466,7 @@ public class IndexLabelApiTest extends BaseApiTest {
                                          .secondary()
                                          .rebuild(false)
                                          .build();
-        IndexLabel.CreatedIndexLabel il = indexLabelAPI.create(personByAge);
+        IndexLabel.IndexLabelWithTask il = indexLabelAPI.create(personByAge);
         IndexLabel created = il.indexLabel();
         Assert.assertEquals(personByAge.name(), created.name());
         Assert.assertEquals(personByAge.baseType(), created.baseType());

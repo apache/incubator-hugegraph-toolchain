@@ -76,19 +76,62 @@ public class SchemaManager {
     }
 
     public PropertyKey addPropertyKey(PropertyKey propertyKey) {
-        return this.propertyKeyAPI.create(propertyKey);
+        return this.addPropertyKey(propertyKey, TASK_TIMEOUT);
+    }
+
+    public PropertyKey addPropertyKey(PropertyKey propertyKey, long seconds) {
+        PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
+                                                   .create(propertyKey);
+        if (task.taskId() != 0L) {
+            this.taskAPI.waitUntilTaskSuccess(task.taskId(), seconds);
+        }
+        return task.propertyKey();
+    }
+
+    public long addPropertyKeyAsync(PropertyKey propertyKey) {
+        PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
+                                                   .create(propertyKey);
+        return task.taskId();
     }
 
     public PropertyKey appendPropertyKey(PropertyKey propertyKey) {
-        return this.propertyKeyAPI.append(propertyKey);
+        return this.propertyKeyAPI.append(propertyKey).propertyKey();
     }
 
     public PropertyKey eliminatePropertyKey(PropertyKey propertyKey) {
-        return this.propertyKeyAPI.eliminate(propertyKey);
+        return this.propertyKeyAPI.eliminate(propertyKey).propertyKey();
+    }
+
+    public PropertyKey clearPropertyKey(PropertyKey propertyKey) {
+        return this.clearPropertyKey(propertyKey, TASK_TIMEOUT);
+    }
+
+    public PropertyKey clearPropertyKey(PropertyKey propertyKey, long seconds) {
+        PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
+                                                   .clear(propertyKey);
+        if (task.taskId() != 0L) {
+            this.taskAPI.waitUntilTaskSuccess(task.taskId(), seconds);
+        }
+        return task.propertyKey();
+    }
+
+    public long clearPropertyKeyAsync(PropertyKey propertyKey) {
+        PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
+                                                   .clear(propertyKey);
+        return task.taskId();
     }
 
     public void removePropertyKey(String name) {
-        this.propertyKeyAPI.delete(name);
+        this.removePropertyKey(name, TASK_TIMEOUT);
+    }
+
+    public void removePropertyKey(String name, long seconds) {
+        long task = this.propertyKeyAPI.delete(name);
+        this.taskAPI.waitUntilTaskSuccess(task, seconds);
+    }
+
+    public long removePropertyKeyAsync(String name) {
+        return this.propertyKeyAPI.delete(name);
     }
 
     public PropertyKey getPropertyKey(String name) {
@@ -183,8 +226,8 @@ public class SchemaManager {
     }
 
     public IndexLabel addIndexLabel(IndexLabel indexLabel, long seconds) {
-        IndexLabel.CreatedIndexLabel cil = this.indexLabelAPI
-                                               .create(indexLabel);
+        IndexLabel.IndexLabelWithTask cil = this.indexLabelAPI
+                                                .create(indexLabel);
         if (cil.taskId() != 0L) {
             this.taskAPI.waitUntilTaskSuccess(cil.taskId(), seconds);
         }
@@ -192,8 +235,8 @@ public class SchemaManager {
     }
 
     public long addIndexLabelAsync(IndexLabel indexLabel) {
-        IndexLabel.CreatedIndexLabel cil = this.indexLabelAPI
-                                               .create(indexLabel);
+        IndexLabel.IndexLabelWithTask cil = this.indexLabelAPI
+                                                .create(indexLabel);
         return cil.taskId();
     }
 
