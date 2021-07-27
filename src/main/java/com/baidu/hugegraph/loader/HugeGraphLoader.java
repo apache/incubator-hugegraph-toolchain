@@ -228,7 +228,7 @@ public final class HugeGraphLoader {
      * Let load task worked in pipeline mode
      */
     private void loadStruct(InputStruct struct, InputReader reader) {
-        LOG.info("Start parsing '{}'", struct);
+        LOG.info("Start loading '{}'", struct);
         LoadMetrics metrics = this.context.summary().metrics(struct);
         metrics.startInFlight();
 
@@ -276,7 +276,7 @@ public final class HugeGraphLoader {
         }
 
         metrics.stopInFlight();
-        LOG.info("Finish parsing '{}'", struct);
+        LOG.info("Finish loading '{}'", struct);
     }
 
     /**
