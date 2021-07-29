@@ -161,7 +161,7 @@ public abstract class FileReader extends AbstractReader {
                 continue;
             }
 
-            LOG.debug("Ready to open '{}'", this.readable);
+            LOG.info("In loading '{}'", this.readable);
             this.fetcher.openReader(this.readable);
             if (status == LoadStatus.LOADED_HALF) {
                 long offset = this.oldProgress.loadingOffset();

@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
-import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -51,10 +50,10 @@ public final class LoadMetrics {
         this.vertexMetrics = new HashMap<>();
         this.edgeMetrics = new HashMap<>();
         for (VertexMapping mapping : struct.vertices()) {
-            vertexMetrics.put(mapping.label(), new Metrics());
+            this.vertexMetrics.put(mapping.label(), new Metrics());
         }
         for (EdgeMapping mapping : struct.edges()) {
-            edgeMetrics.put(mapping.label(), new Metrics());
+            this.edgeMetrics.put(mapping.label(), new Metrics());
         }
     }
 
@@ -95,17 +94,11 @@ public final class LoadMetrics {
     }
 
     public void plusFlighting(int num) {
-        if (this.inFlight && this.flightingNums.longValue() == 0L) {
-            HugeGraphLoader.LOG.info("Start loading '{}'", struct);
-        }
         this.flightingNums.add(num);
     }
 
     public void minusFlighting(int num) {
         this.flightingNums.add(-num);
-        if (!this.inFlight && this.flightingNums.longValue() == 0L) {
-            HugeGraphLoader.LOG.info("Finish loading '{}'", this.struct);
-        }
     }
 
     public long parseSuccess(ElementMapping mapping) {
