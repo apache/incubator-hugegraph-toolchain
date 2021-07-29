@@ -18,7 +18,7 @@ jobs:
     env:
       TRAVIS_DIR: assembly/travis
       STATIC_DIR: assembly/static
-      COMMIT_ID: 5df904b3c9c1dadc7f48bff78adad6f69894016d
+      COMMIT_ID: e65641517361d7da7ef1801489c15e3af7863a39
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test
