@@ -56,6 +56,7 @@ import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
     VertexLabelApiTest.class,
     EdgeLabelApiTest.class,
     IndexLabelApiTest.class,
+    SchemaApiTest.class,
 
     VertexApiTest.class,
     EdgeApiTest.class,

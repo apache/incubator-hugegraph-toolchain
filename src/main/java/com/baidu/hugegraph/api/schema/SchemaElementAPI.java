@@ -17,27 +17,20 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.functional;
+package com.baidu.hugegraph.api.schema;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import com.baidu.hugegraph.api.API;
+import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.SchemaElement;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-    PropertyKeyTest.class,
-    VertexLabelTest.class,
-    EdgeLabelTest.class,
-    IndexLabelTest.class,
-    SchemaTest.class,
-    VertexTest.class,
-    EdgeTest.class,
-    BatchInsertTest.class,
-    GraphManagerTest.class,
-    AuthManagerTest.class,
-    TraverserManagerTest.class,
-    MetricsManagerTest.class,
-    HugeClientHttpsTest.class,
-    HugeClientTest.class
-})
-public class FuncTestSuite {
+public abstract class SchemaElementAPI extends API {
+
+    private static final String PATH = "graphs/%s/schema/%s";
+
+    public SchemaElementAPI(RestClient client, String graph) {
+        super(client);
+        this.path(PATH, graph, this.type());
+    }
+
+    protected abstract Object checkCreateOrUpdate(SchemaElement schemaElement);
 }

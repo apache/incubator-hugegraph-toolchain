@@ -33,6 +33,7 @@ import com.baidu.hugegraph.api.job.RebuildAPI;
 import com.baidu.hugegraph.api.schema.EdgeLabelAPI;
 import com.baidu.hugegraph.api.schema.IndexLabelAPI;
 import com.baidu.hugegraph.api.schema.PropertyKeyAPI;
+import com.baidu.hugegraph.api.schema.SchemaAPI;
 import com.baidu.hugegraph.api.schema.VertexLabelAPI;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
@@ -52,6 +53,7 @@ public class BaseApiTest extends BaseClientTest {
     protected static VertexLabelAPI vertexLabelAPI;
     protected static EdgeLabelAPI edgeLabelAPI;
     protected static IndexLabelAPI indexLabelAPI;
+    protected static SchemaAPI schemaAPI;
 
     protected static VertexAPI vertexAPI;
     protected static EdgeAPI edgeAPI;
@@ -81,6 +83,7 @@ public class BaseApiTest extends BaseClientTest {
         vertexLabelAPI = new VertexLabelAPI(client, GRAPH);
         edgeLabelAPI = new EdgeLabelAPI(client, GRAPH);
         indexLabelAPI = new IndexLabelAPI(client, GRAPH);
+        schemaAPI = new SchemaAPI(client, GRAPH);
 
         vertexAPI = new VertexAPI(client, GRAPH);
         edgeAPI = new EdgeAPI(client, GRAPH);

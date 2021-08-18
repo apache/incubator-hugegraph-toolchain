@@ -22,13 +22,16 @@ package com.baidu.hugegraph.driver;
 import static com.baidu.hugegraph.api.task.TaskAPI.TASK_TIMEOUT;
 
 import java.util.List;
+import java.util.Map;
 
 import com.baidu.hugegraph.api.schema.EdgeLabelAPI;
 import com.baidu.hugegraph.api.schema.IndexLabelAPI;
 import com.baidu.hugegraph.api.schema.PropertyKeyAPI;
+import com.baidu.hugegraph.api.schema.SchemaAPI;
 import com.baidu.hugegraph.api.schema.VertexLabelAPI;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
+import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.schema.BuilderProxy;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
@@ -41,6 +44,7 @@ public class SchemaManager {
     private VertexLabelAPI vertexLabelAPI;
     private EdgeLabelAPI edgeLabelAPI;
     private IndexLabelAPI indexLabelAPI;
+    private SchemaAPI schemaAPI;
     private TaskAPI taskAPI;
 
     public SchemaManager(RestClient client, String graph) {
@@ -48,6 +52,7 @@ public class SchemaManager {
         this.vertexLabelAPI = new VertexLabelAPI(client, graph);
         this.edgeLabelAPI = new EdgeLabelAPI(client, graph);
         this.indexLabelAPI = new IndexLabelAPI(client, graph);
+        this.schemaAPI = new SchemaAPI(client, graph);
         this.taskAPI = new TaskAPI(client, graph);
     }
 
@@ -271,5 +276,9 @@ public class SchemaManager {
 
     public List<IndexLabel> getIndexLabels(List<String> names) {
         return this.indexLabelAPI.list(names);
+    }
+
+    public Map<String, List<SchemaElement>> getSchema() {
+        return this.schemaAPI.list();
     }
 }

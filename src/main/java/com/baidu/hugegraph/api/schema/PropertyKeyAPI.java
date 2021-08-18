@@ -33,7 +33,7 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
-public class PropertyKeyAPI extends SchemaAPI {
+public class PropertyKeyAPI extends SchemaElementAPI {
 
     public PropertyKeyAPI(RestClient client, String graph) {
         super(client, graph);

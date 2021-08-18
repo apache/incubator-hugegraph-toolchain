@@ -31,7 +31,7 @@ import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
-public class VertexLabelAPI extends SchemaAPI {
+public class VertexLabelAPI extends SchemaElementAPI {
 
     public VertexLabelAPI(RestClient client, String graph) {
         super(client, graph);

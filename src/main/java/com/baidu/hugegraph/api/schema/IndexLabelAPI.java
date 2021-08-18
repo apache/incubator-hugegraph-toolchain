@@ -33,7 +33,7 @@ import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
-public class IndexLabelAPI extends SchemaAPI {
+public class IndexLabelAPI extends SchemaElementAPI {
 
     public IndexLabelAPI(RestClient client, String graph) {
         super(client, graph);

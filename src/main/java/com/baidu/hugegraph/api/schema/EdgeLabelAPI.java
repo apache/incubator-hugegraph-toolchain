@@ -31,7 +31,7 @@ import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
-public class EdgeLabelAPI extends SchemaAPI {
+public class EdgeLabelAPI extends SchemaElementAPI {
 
     public EdgeLabelAPI(RestClient client, String graph) {
         super(client, graph);
