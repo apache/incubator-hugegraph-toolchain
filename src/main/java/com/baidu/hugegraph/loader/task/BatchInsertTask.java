@@ -22,6 +22,8 @@ package com.baidu.hugegraph.loader.task;
 import static com.baidu.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -39,6 +41,10 @@ import com.baidu.hugegraph.util.Log;
 public class BatchInsertTask extends InsertTask {
 
     private static final Logger LOG = Log.logger(TaskManager.class);
+    private static final int MAX_RETRY_INTERVAL = 600;
+    private static final long LOG_BUSY_MESSAGE_PERIOD = 10 * 1000;
+    private static AtomicLong prev_log_time = new AtomicLong(0);
+    private static AtomicInteger err_dup_times = new AtomicInteger(0);
 
     public BatchInsertTask(LoadContext context, InputStruct struct,
                            ElementMapping mapping, List<Record> batch) {
@@ -68,7 +74,19 @@ public class BatchInsertTask extends InsertTask {
                 retryCount = this.waitThenRetry(retryCount, e);
             } catch (ServerException e) {
                 String message = e.getMessage();
-                LOG.error("server exception: {}", message);
+                if (StringUtils.containsAny(message, SERVER_BUSY_MESSAGE) ) {
+                    // eliminate log message
+                    long cur = System.currentTimeMillis();
+                    if (prev_log_time.get() + LOG_BUSY_MESSAGE_PERIOD < cur) {
+                        prev_log_time.getAndSet(cur);
+                        LOG.error("server exception: {} (dup-count={}) ",
+                                message, err_dup_times.getAndSet(0));
+                    } else {
+                        err_dup_times.incrementAndGet();
+                    }
+                } else {
+                    LOG.error("server exception: {}", message);
+                }
                 if (UNACCEPTABLE_EXCEPTIONS.contains(e.exception())) {
                     throw e;
                 }
@@ -95,11 +113,12 @@ public class BatchInsertTask extends InsertTask {
 
         if (++retryCount > options.retryTimes) {
             LOG.error("Batch insert has been retried more than {} times",
-                      options.retryTimes);
+                    options.retryTimes);
             throw e;
         }
 
-        long interval = (1L << retryCount) * options.retryInterval;
+        long interval = (1L << Math.min(retryCount, 16)) *
+                options.retryInterval;
         LOG.debug("Batch insert will sleep {} seconds then do the {}th retry",
                   interval, retryCount);
         try {

@@ -20,3 +20,5 @@ logs
 target
 gen-java
 build
+/hugegraph-loader-0*
+/dist.sh

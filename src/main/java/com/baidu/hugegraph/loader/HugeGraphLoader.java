@@ -23,7 +23,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
+import com.baidu.hugegraph.util.ExecutorUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -203,7 +206,21 @@ public final class HugeGraphLoader {
     }
 
     private void loadStructs(List<InputStruct> structs) {
-        // Load input structs one by one
+        int parallelCount = this.context.options().parallelCount;
+        if ( parallelCount <= 0 ) {
+            parallelCount = structs.size();
+        } else if (parallelCount > structs.size()) {
+            parallelCount = structs.size();
+        }
+
+        LOG.info("{} threads for loading {} structs",
+                parallelCount, structs.size());
+
+        ExecutorService service = ExecutorUtil.newFixedThreadPool(
+                parallelCount, "loader");
+
+        List<CompletableFuture<Void>> loadTasks = new ArrayList<>();
+
         for (InputStruct struct : structs) {
             if (this.context.stopped()) {
                 break;
@@ -211,16 +228,31 @@ public final class HugeGraphLoader {
             if (struct.skip()) {
                 continue;
             }
+
             // Create and init InputReader, fetch next batch lines
             try (InputReader reader = InputReader.create(struct.input())) {
                 // Init reader
                 reader.init(this.context, struct);
                 // Load data from current input mapping
-                this.loadStruct(struct, reader);
+                loadTasks.add(this.asyncLoadStruct(struct, reader, service));
             } catch (InitException e) {
                 throw new LoadException("Failed to init input reader", e);
             }
         }
+        LOG.info("waiting for loading finish {}", loadTasks.size());
+        // wait for finish
+        CompletableFuture.allOf(loadTasks.toArray(new CompletableFuture[0]))
+                .join();
+
+        service.shutdown();
+        LOG.info("load finish");
+    }
+
+    private CompletableFuture<Void> asyncLoadStruct(
+            InputStruct struct, InputReader reader, ExecutorService service) {
+        return CompletableFuture.runAsync(() -> {
+            this.loadStruct(struct, reader);
+            }, service);
     }
 
     /**

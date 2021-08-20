@@ -133,6 +133,10 @@ public final class LoadOptions {
                description = "The number of lines in each submit")
     public int batchSize = 500;
 
+    @Parameter(names = {"--parallel-count"}, arity = 1,
+            description = "The number of parallel read pipelines")
+    public int parallelCount = 1;
+
     @Parameter(names = {"--shutdown-timeout"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The timeout of awaitTermination in seconds")

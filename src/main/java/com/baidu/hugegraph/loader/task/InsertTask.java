@@ -53,6 +53,10 @@ public abstract class InsertTask implements Runnable {
             "with same id and different label"
     };
 
+    public static final String[] SERVER_BUSY_MESSAGE = {
+            "The rest server is too busy to write"
+    };
+
     protected final LoadContext context;
     protected final InputStruct struct;
     protected final ElementMapping mapping;
