@@ -33,28 +33,76 @@ import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 
 public final class LoadSummary {
+    public final class LoadRater {
+        private final LongAdder count;
+        private final AtomicLong cost;
+        private final RangesTimer timer;
 
-    private final LongAdder vertexLoaded;
-    private final LongAdder edgeLoaded;
+        private final AtomicLong prevCount;
+        private final AtomicLong prevCost;
+
+        public LoadRater() {
+            this.timer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
+
+            this.count = new LongAdder();
+            this.cost = new AtomicLong();
+            this.prevCount = new AtomicLong();
+            this.prevCost = new AtomicLong();
+        }
+
+        public void addCount(long value) {
+            this.count.add(value);
+        }
+
+        public void addTimeRange(long start, long end) {
+            this.timer.addTimeRange(start, end);
+        }
+
+        public void calculateTotalTime() {
+            this.cost.set(this.timer.totalTime());
+        }
+
+        public long getTime() {
+            return this.cost.get();
+        }
+
+        public long getCount() {
+            return this.count.longValue();
+        }
+
+        public long avgRate() {
+            this.calculateTotalTime();
+
+            long totalTime = this.cost.get();
+            if (totalTime == 0) {
+                return -1;
+            }
+            return this.count.longValue() * 1000 / totalTime;
+        }
+
+        public long curRate() {
+            long period = this.cost.get() -
+                    this.prevCost.getAndSet(this.cost.get());
+            long count = this.count.longValue() -
+                    this.prevCount.getAndSet(this.count.longValue());
+            if (period == 0)
+                return 0;
+
+            return count * 1000 / period;
+        }
+    }
+
+    private final LoadRater vertexRater = new LoadRater();
+    private final LoadRater edgeRater = new LoadRater();
     private final StopWatch totalTimer;
-    private final AtomicLong vertexTime;
-    private final AtomicLong edgeTime;
     private final AtomicLong loadTime;
-    private final RangesTimer vertexRangesTimer;
-    private final RangesTimer edgeRangesTimer;
     private final RangesTimer loadRangesTimer;
     // Every input struct has a metric
     private final Map<String, LoadMetrics> inputMetricsMap;
 
     public LoadSummary() {
-        this.vertexLoaded = new LongAdder();
-        this.edgeLoaded = new LongAdder();
         this.totalTimer = new StopWatch();
-        this.vertexTime = new AtomicLong();
-        this.edgeTime = new AtomicLong();
         this.loadTime = new AtomicLong();
-        this.vertexRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
-        this.edgeRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
         this.loadRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
         this.inputMetricsMap = InsertionOrderUtil.newMap();
     }
@@ -73,19 +121,19 @@ public final class LoadSummary {
         return this.inputMetricsMap.get(struct.id());
     }
 
-    public long vertexLoaded() {
-        return this.vertexLoaded.longValue();
+    public LoadRater vertex() {
+        return this.vertexRater;
     }
 
-    public long edgeLoaded() {
-        return this.edgeLoaded.longValue();
+    public LoadRater edge() {
+        return this.edgeRater;
     }
 
     public void plusLoaded(ElemType type, int count) {
         if (type.isVertex()) {
-            this.vertexLoaded.add(count);
+            this.vertexRater.addCount(count);
         } else {
-            this.edgeLoaded.add(count);
+            this.edgeRater.addCount(count);
         }
     }
 
@@ -101,53 +149,46 @@ public final class LoadSummary {
 
     public long totalReadSuccess() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::readSuccess)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::readSuccess)
+                .reduce(0L, Long::sum);
     }
 
     public long totalReadFailures() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::readFailure)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::readFailure)
+                .reduce(0L, Long::sum);
     }
 
     public long totalParseFailures() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::totalParseFailures)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::totalParseFailures)
+                .reduce(0L, Long::sum);
     }
 
     public long totalInsertFailures() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::totalInsertFailures)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::totalInsertFailures)
+                .reduce(0L, Long::sum);
     }
 
     public void addTimeRange(ElemType type, long start, long end) {
-        RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
-                                              this.edgeRangesTimer;
-        timer.addTimeRange(start, end);
+        if (type.isVertex()) {
+            this.vertexRater.addTimeRange(start, end);
+        } else {
+            this.edgeRater.addTimeRange(start, end);
+        }
         this.loadRangesTimer.addTimeRange(start, end);
     }
 
-    public void calculateTotalTime(ElemType type) {
-        RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
-                                              this.edgeRangesTimer;
-        AtomicLong elemTime = type.isVertex() ? this.vertexTime : this.edgeTime;
-        elemTime.set(timer.totalTime());
+    public void calculateTotalTime() {
+        this.vertexRater.calculateTotalTime();
+        this.edgeRater.calculateTotalTime();
+
         loadTime.set(this.loadRangesTimer.totalTime());
     }
 
     public long totalTime() {
         return this.totalTimer.getTime();
-    }
-
-    public long vertexTime() {
-        return this.vertexTime.longValue();
-    }
-
-    public long edgeTime() {
-        return this.edgeTime.longValue();
     }
 
     public long loadTime() {
@@ -164,18 +205,5 @@ public final class LoadSummary {
         if (!this.totalTimer.isStopped()) {
             this.totalTimer.stop();
         }
-    }
-
-    public long loadRate(ElemType type) {
-        // Ensure vetex time and edge time has been set
-        this.calculateTotalTime(type);
-
-        boolean isVertex = type.isVertex();
-        long totalTime = isVertex ? this.vertexTime() : this.edgeTime();
-        if (totalTime == 0) {
-            return -1;
-        }
-        long success = isVertex ? this.vertexLoaded() : this.edgeLoaded();
-        return success * 1000 / totalTime;
     }
 }

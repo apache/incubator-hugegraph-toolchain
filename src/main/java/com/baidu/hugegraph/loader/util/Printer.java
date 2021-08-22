@@ -45,11 +45,11 @@ public final class Printer {
             return;
         }
         System.out.printf(">> HugeGraphLoader worked in %s%n",
-                          options.workModeString());
+                options.workModeString());
         if (options.incrementalMode) {
             LoadProgress progress = context.oldProgress();
             System.out.printf("vertices/edges loaded last time: %s/%s%n",
-                              progress.vertexLoaded(), progress.edgeLoaded());
+                    progress.vertexLoaded(), progress.edgeLoaded());
         }
         System.out.print("vertices/edges loaded this time : ");
     }
@@ -60,8 +60,8 @@ public final class Printer {
             return;
         }
         LoadSummary summary = context.summary();
-        long vertexLoaded = summary.vertexLoaded();
-        long edgeLoaded = summary.edgeLoaded();
+        long vertexLoaded = summary.vertex().getCount();
+        long edgeLoaded = summary.edge().getCount();
         System.out.println(vertexLoaded + SLASH + edgeLoaded);
     }
 
@@ -98,36 +98,41 @@ public final class Printer {
         printMeterReport(summary);
     }
 
-    private static void printCountReport(LoadReport report) {
-        printAndLog("count metrics");
-        printAndLog("input read success", report.readSuccess());
-        printAndLog("input read failure", report.readFailure());
-        printAndLog("vertex parse success", report.vertexParseSuccess());
-        printAndLog("vertex parse failure", report.vertexParseFailure());
-        printAndLog("vertex insert success", report.vertexInsertSuccess());
-        printAndLog("vertex insert failure", report.vertexInsertFailure());
-        printAndLog("edge parse success", report.edgeParseSuccess());
-        printAndLog("edge parse failure", report.edgeParseFailure());
-        printAndLog("edge insert success", report.edgeInsertSuccess());
-        printAndLog("edge insert failure", report.edgeInsertFailure());
+    private static void printCountReport(LoadReport r) {
+        // for multi-thread output
+        String sb = "count metrics" +
+                format("\ninput read success", r.readSuccess()) +
+                format("\ninput read failure", r.readFailure()) +
+                format("\nvertex parse success", r.vertexParseSuccess()) +
+                format("\nvertex parse failure", r.vertexParseFailure()) +
+                format("\nvertex insert success", r.vertexInsertSuccess()) +
+                format("\nvertex insert failure", r.vertexInsertFailure()) +
+                format("\nedge parse success", r.edgeParseSuccess()) +
+                format("\nedge parse failure", r.edgeParseFailure()) +
+                format("\nedge insert success", r.edgeInsertSuccess()) +
+                format("\nedge insert failure", r.edgeInsertFailure());
+        printAndLog(sb);
     }
 
     private static void printMeterReport(LoadSummary summary) {
         long totalTime = summary.totalTime();
-        long vertexTime = summary.vertexTime();
-        long edgeTime = summary.edgeTime();
         long loadTime = summary.loadTime();
         long readTime = totalTime - loadTime;
 
-        printAndLog("meter metrics");
-        printAndLog("total time", TimeUtil.readableTime(totalTime));
-        printAndLog("read time", TimeUtil.readableTime(readTime));
-        printAndLog("load time", TimeUtil.readableTime(loadTime));
-        printAndLog("vertex load time", TimeUtil.readableTime(vertexTime));
-        printAndLog("vertex load rate(vertices/s)",
-                    summary.loadRate(ElemType.VERTEX));
-        printAndLog("edge load time", TimeUtil.readableTime(edgeTime));
-        printAndLog("edge load rate(edges/s)", summary.loadRate(ElemType.EDGE));
+        // for multi-thread output
+        String sb = "meter metrics" +
+                format("\ntotal time", TimeUtil.readableTime(totalTime)) +
+                format("\nread time", TimeUtil.readableTime(readTime)) +
+                format("\nload time", TimeUtil.readableTime(loadTime)) +
+                format("\nvertex load time", TimeUtil.readableTime(
+                        summary.vertex().getTime())) +
+                format("\nvertex load rate(vertices/s)",
+                        summary.vertex().avgRate()) +
+                format("\nedge load time",
+                        TimeUtil.readableTime(summary.edge().getTime())) +
+                format("\nedge load rate(edges/s)", summary.edge().avgRate());
+
+        printAndLog(sb);
     }
 
     public static void printError(String message, Object... args) {
@@ -154,16 +159,17 @@ public final class Printer {
     public static void printProgress(LoadContext context, ElemType type,
                                      long frequency, int batchSize) {
         LoadSummary summary = context.summary();
-        long vertexLoaded = summary.vertexLoaded();
-        long edgeLoaded = summary.edgeLoaded();
         if (context.options().printProgress) {
-            Printer.printInBackward(vertexLoaded, edgeLoaded);
+            Printer.printInBackward(summary.vertex().getCount(),
+                    summary.edge().getCount());
         }
 
-        long loadSuccess = type.isVertex() ? vertexLoaded : edgeLoaded;
-        if (loadSuccess % frequency < batchSize) {
-            LOG.info("{} has been loaded: {}, average load rate: {}/s",
-                     type.string(), loadSuccess, summary.loadRate(type));
+        LoadSummary.LoadRater rater =
+                type.isVertex() ? summary.vertex() : summary.edge();
+        if (rater.getCount() % frequency < batchSize) {
+            LOG.info("{} loaded: {}, average rate: {}/s,  cur rate: {}/s",
+                    type.string(), rater.getCount(),
+                    rater.avgRate(), rater.curRate());
         }
     }
 
@@ -171,7 +177,7 @@ public final class Printer {
         int vlength = String.valueOf(vertexLoaded).length();
         int elength = String.valueOf(edgeLoaded).length();
         System.out.print(vertexLoaded + SLASH + edgeLoaded +
-                         backward(vlength + 1 + elength));
+                backward(vlength + 1 + elength));
     }
 
     private static void log(String message) {
@@ -179,11 +185,11 @@ public final class Printer {
     }
 
     private static void log(String key, long value) {
-        LOG.info(String.format("    %-30s: %-20d", key, value));
+        LOG.info(format(key, value));
     }
 
     private static void log(String key, String value) {
-        LOG.info(String.format("    %-30s: %-20s", key, value));
+        LOG.info(format(key, value));
     }
 
     private static void printAndLog(String message) {
@@ -191,12 +197,12 @@ public final class Printer {
         System.out.println(message);
     }
 
-    private static void printAndLog(String key, long value) {
-        printAndLog(String.format("    %-30s: %-20d", key, value));
+    private static String format(String key, long value) {
+        return String.format("    %-30s: %-20d", key, value);
     }
 
-    private static void printAndLog(String key, String value) {
-        printAndLog(String.format("    %-30s: %-20s", key, value));
+    private static String format(String key, String value) {
+        return String.format("    %-30s: %-20s", key, value);
     }
 
     private static String backward(int length) {

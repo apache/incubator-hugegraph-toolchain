@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ReadException;
@@ -181,8 +180,7 @@ public final class HugeGraphLoader {
             // Waiting for async worker threads finish
             this.manager.waitFinished();
         } finally {
-            summary.calculateTotalTime(ElemType.VERTEX);
-            summary.calculateTotalTime(ElemType.EDGE);
+            summary.calculateTotalTime();
             summary.stopTotalTimer();
         }
         Printer.printFinalProgress(this.context);

@@ -168,8 +168,8 @@ public final class LoadContext {
         }
         LOG.info("Close all failure loggers successfully");
 
-        this.newProgress.plusVertexLoaded(this.summary.vertexLoaded());
-        this.newProgress.plusEdgeLoaded(this.summary.edgeLoaded());
+        this.newProgress.plusVertexLoaded(this.summary.vertex().getCount());
+        this.newProgress.plusEdgeLoaded(this.summary.edge().getCount());
         try {
             this.newProgress.write(this);
         } catch (IOException e) {

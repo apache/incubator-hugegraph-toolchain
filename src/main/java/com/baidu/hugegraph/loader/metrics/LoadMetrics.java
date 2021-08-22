@@ -30,7 +30,6 @@ import com.baidu.hugegraph.loader.mapping.VertexMapping;
 
 public final class LoadMetrics {
 
-    private final InputStruct struct;
     private long readSuccess;
     private long readFailure;
     private boolean inFlight;
@@ -41,7 +40,6 @@ public final class LoadMetrics {
     private final Map<String, Metrics> edgeMetrics;
 
     public LoadMetrics(InputStruct struct) {
-        this.struct = struct;
         this.readSuccess = 0L;
         this.readFailure = 0L;
         this.inFlight = false;
