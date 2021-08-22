@@ -117,7 +117,8 @@ public class BatchInsertTask extends InsertTask {
             throw e;
         }
 
-        long interval = (1L << Math.min(retryCount, 16)) *
+        // max wait_time 32 * 10 sec
+        long interval = (1L << Math.min(retryCount, 5)) *
                 options.retryInterval;
         LOG.debug("Batch insert will sleep {} seconds then do the {}th retry",
                   interval, retryCount);
