@@ -138,7 +138,6 @@ public final class HugeGraphLoader {
         LOG.info("Prepare to clear the data of graph '{}'", options.graph);
         client.graphs().clear(options.graph, message);
         LOG.info("The graph '{}' has been cleared successfully", options.graph);
-
         options.timeout = requestTimeout;
         client.close();
     }
