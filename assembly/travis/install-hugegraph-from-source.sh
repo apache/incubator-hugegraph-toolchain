@@ -22,7 +22,7 @@ tar -zxvf hugegraph-*.tar.gz
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
 cp -r hugegraph-*/. ${HTTPS_SERVER_DIR}
-cd hugegraph-*
+cd hugegraph-*/
 # start HugeGraphServer with http protocol
 bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
