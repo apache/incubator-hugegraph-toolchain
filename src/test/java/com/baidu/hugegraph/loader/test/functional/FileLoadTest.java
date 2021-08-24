@@ -3044,7 +3044,7 @@ public class FileLoadTest extends LoadTest {
                                     .configSSL(TRUST_STORE_FILE, "hugegraph")
                                     .build();
             List<Vertex> vertices = httpsClient.graph().listVertices();
-           // Assert.assertEquals(2, vertices.size());
+            Assert.assertEquals(2, vertices.size());
         } finally {
             clearAndClose(httpsClient, GRAPH);
         }
