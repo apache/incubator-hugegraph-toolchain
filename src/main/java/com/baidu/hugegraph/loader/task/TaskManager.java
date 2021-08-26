@@ -151,6 +151,8 @@ public final class TaskManager {
 
         InsertTask task = new BatchInsertTask(this.context, struct,
                                               mapping, batch);
+
+        summary.increaseTaskQueueLen();
         CompletableFuture.runAsync(task, this.batchService).whenComplete(
             (r, e) -> {
                 if (e != null) {
@@ -165,6 +167,7 @@ public final class TaskManager {
                 this.batchSemaphore.release();
                 long end = System.currentTimeMillis();
                 this.context.summary().addTimeRange(mapping.type(), start, end);
+                summary.decreaseTaskQueueLen();
             });
     }
 
@@ -181,6 +184,7 @@ public final class TaskManager {
 
         InsertTask task = new SingleInsertTask(this.context, struct,
                                                mapping, batch);
+        summary.increaseTaskQueueLen();
         CompletableFuture.runAsync(task, this.singleService).whenComplete(
             (r, e) -> {
                 summary.metrics(struct).minusFlighting(batch.size());
@@ -188,6 +192,7 @@ public final class TaskManager {
 
                 long end = System.currentTimeMillis();
                 this.context.summary().addTimeRange(mapping.type(), start, end);
+                summary.decreaseTaskQueueLen();
             });
     }
 }

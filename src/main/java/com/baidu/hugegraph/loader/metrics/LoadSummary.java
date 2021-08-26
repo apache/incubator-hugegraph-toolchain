@@ -100,11 +100,37 @@ public final class LoadSummary {
     // Every input struct has a metric
     private final Map<String, LoadMetrics> inputMetricsMap;
 
+    private final AtomicLong taskQueueLen = new AtomicLong(0);
+    private final AtomicLong taskQueueLenSum = new AtomicLong(0);
+    private final AtomicLong taskQueueLenCount = new AtomicLong(0);
+
     public LoadSummary() {
         this.totalTimer = new StopWatch();
         this.loadTime = new AtomicLong();
         this.loadRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
         this.inputMetricsMap = InsertionOrderUtil.newMap();
+    }
+
+    public void increaseTaskQueueLen() {
+        this.taskQueueLen.incrementAndGet();
+    }
+
+    public void decreaseTaskQueueLen() {
+        taskQueueLenSum.addAndGet(this.taskQueueLen.decrementAndGet());
+        taskQueueLenCount.incrementAndGet();
+    }
+
+    public long getTaskQueueLen() {
+        return this.taskQueueLen.get();
+    }
+
+    public long getAvgTaskQueueLen() {
+        long count = taskQueueLenCount.getAndSet(0);
+        long sum = this.taskQueueLenSum.getAndSet(0);
+        if (count > 0) {
+            return sum / count;
+        }
+        return 0;
     }
 
     public void initMetrics(LoadMapping mapping) {

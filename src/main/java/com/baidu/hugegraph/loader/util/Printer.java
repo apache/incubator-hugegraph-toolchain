@@ -68,33 +68,30 @@ public final class Printer {
     public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
         // Just log vertices/edges metrics
-        log(DIVIDE_LINE);
-        log("detail metrics");
+        log(DIVIDE_LINE + "\ndetail metrics");
         summary.inputMetricsMap().forEach((id, metrics) -> {
-            log(EMPTY_LINE);
-            log(String.format("input-struct '%s'", id));
-            log("read success", metrics.readSuccess());
-            log("read failure", metrics.readFailure());
+            log(EMPTY_LINE + format("\ninput-struct '%s'", id) +
+                format("\nread success", metrics.readSuccess()) +
+                format("\nread failure", metrics.readFailure()));
             metrics.vertexMetrics().forEach((label, labelMetrics) -> {
-                log(String.format("vertex '%s'", label));
-                log("parse success", labelMetrics.parseSuccess());
-                log("parse failure", labelMetrics.parseFailure());
-                log("insert success", labelMetrics.insertSuccess());
-                log("insert failure", labelMetrics.insertFailure());
+                log(String.format("vertex '%s'", label) +
+                    format("\nparse success", labelMetrics.parseSuccess()) +
+                    format("\nparse failure", labelMetrics.parseFailure()) +
+                    format("\ninsert success", labelMetrics.insertSuccess()) +
+                    format("\ninsert failure", labelMetrics.insertFailure()));
             });
             metrics.edgeMetrics().forEach((label, labelMetrics) -> {
-                log(String.format("edge '%s'", label));
-                log("parse success", labelMetrics.parseSuccess());
-                log("parse failure", labelMetrics.parseFailure());
-                log("insert success", labelMetrics.insertSuccess());
-                log("insert failure", labelMetrics.insertFailure());
+                log(String.format("edge '%s'", label) +
+                    format("\nparse success", labelMetrics.parseSuccess()) +
+                    format("\nparse failure", labelMetrics.parseFailure()) +
+                    format("\ninsert success", labelMetrics.insertSuccess()) +
+                    format("\ninsert failure", labelMetrics.insertFailure()));
             });
         });
 
         // Print and log total vertices/edges metrics
-        printAndLog(DIVIDE_LINE);
-        printCountReport(LoadReport.collect(summary));
-        printAndLog(DIVIDE_LINE);
+        printAndLog(DIVIDE_LINE + "\n" + LoadReport.collect(summary) +
+                "\n" + DIVIDE_LINE);
         printMeterReport(summary);
     }
 
@@ -167,9 +164,12 @@ public final class Printer {
         LoadSummary.LoadRater rater =
                 type.isVertex() ? summary.vertex() : summary.edge();
         if (rater.getCount() % frequency < batchSize) {
-            LOG.info("{} loaded: {}, average rate: {}/s,  cur rate: {}/s",
+            LOG.info("{} loaded: {}, " +
+                            "average rate: {}/s, cur rate: {}/s, " +
+                            "average queue: {}, cur queue: {}",
                     type.string(), rater.getCount(),
-                    rater.avgRate(), rater.curRate());
+                    rater.avgRate(), rater.curRate(),
+                    summary.getAvgTaskQueueLen(), summary.getTaskQueueLen());
         }
     }
 

@@ -102,6 +102,8 @@ public final class HugeGraphLoader {
     }
 
     public boolean load() {
+        this.context.options().dumpParams();
+
         try {
             // Switch to loading mode
             this.context.setLoadingMode();
