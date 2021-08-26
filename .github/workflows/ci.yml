@@ -6,15 +6,19 @@ on:
       - master
       - /^release-.*$/
       - /^test-.*$/
+      - gh2021
+      - gh-master
   pull_request:
     branches:
       - master
       - /^release-.*$/
       - /^test-.*$/
+      - gh2021
+      - gh-master
 
 jobs:
   build:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     env:
       TRAVIS_DIR: assembly/travis
       STATIC_DIR: assembly/static
