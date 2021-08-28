@@ -29,6 +29,7 @@ jobs:
 
       - name: Compile
         run: |
+          mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
           mvn package -DskipTests
 
       - name: Upload the artifacts
