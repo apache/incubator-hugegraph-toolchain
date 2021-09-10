@@ -90,12 +90,12 @@ public final class Printer {
         });
 
         // Print and log total vertices/edges metrics
-        printAndLog(DIVIDE_LINE + "\n" + LoadReport.collect(summary) +
+        printAndLog(DIVIDE_LINE + "\n" +
+                 getCountReport(LoadReport.collect(summary)) +
                 "\n" + DIVIDE_LINE);
         printMeterReport(summary);
     }
-
-    private static void printCountReport(LoadReport r) {
+    private static String getCountReport(LoadReport r) {
         // for multi-thread output
         String sb = "count metrics" +
                 format("\ninput read success", r.readSuccess()) +
@@ -108,7 +108,10 @@ public final class Printer {
                 format("\nedge parse failure", r.edgeParseFailure()) +
                 format("\nedge insert success", r.edgeInsertSuccess()) +
                 format("\nedge insert failure", r.edgeInsertFailure());
-        printAndLog(sb);
+        return sb;
+    }
+    private static void printCountReport(LoadReport r) {
+        printAndLog(getCountReport(r));
     }
 
     private static void printMeterReport(LoadSummary summary) {
@@ -163,7 +166,8 @@ public final class Printer {
 
         LoadSummary.LoadRater rater =
                 type.isVertex() ? summary.vertex() : summary.edge();
-        if (rater.getCount() % frequency < batchSize) {
+        if (rater.getCount() % frequency < batchSize &&
+                (rater.curRate() != 0 || rater.getCount() == 0)) {
             LOG.info("{} loaded: {}, " +
                             "average rate: {}/s, cur rate: {}/s, " +
                             "average queue: {}, cur queue: {}",
