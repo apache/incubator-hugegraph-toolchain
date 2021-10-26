@@ -19,9 +19,11 @@
 
 package com.baidu.hugegraph.loader.progress;
 
-import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
 
 import com.baidu.hugegraph.loader.mapping.InputStruct;
+import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -32,41 +34,47 @@ public final class InputProgress {
     @JsonProperty("type")
     private final SourceType type;
     @JsonProperty("loaded_items")
-    private final Set<InputItemProgress> loadedItems;
-    @JsonProperty("loading_item")
-    private InputItemProgress loadingItem;
-
-    private final transient Set<InputItemProgress> loadingItems;
+    private final Map<String, InputItemProgress> loadedItems;
+    @JsonProperty("loading_items")
+    private Map<String, InputItemProgress> loadingItems;
 
     @JsonCreator
     public InputProgress(@JsonProperty("type") SourceType type,
                          @JsonProperty("loaded_items")
-                         Set<InputItemProgress> loadedItems,
-                         @JsonProperty("loading_item")
-                         InputItemProgress loadingItem) {
+                         Map<String, InputItemProgress> loadedItems,
+                         @JsonProperty("loading_items")
+                         Map<String, InputItemProgress> loadingItems) {
         this.type = type;
         this.loadedItems = loadedItems;
-        this.loadingItem = loadingItem;
-        this.loadingItems = InsertionOrderUtil.newSet();
+        this.loadingItems = loadingItems;
     }
 
     public InputProgress(InputStruct struct) {
         this.type = struct.input().type();
-        this.loadedItems = InsertionOrderUtil.newSet();
-        this.loadingItem = null;
-        this.loadingItems = InsertionOrderUtil.newSet();
+        this.loadedItems = Collections.synchronizedMap(
+                           InsertionOrderUtil.newMap());
+        this.loadingItems = Collections.synchronizedMap(
+                            InsertionOrderUtil.newMap());
     }
 
-    public Set<InputItemProgress> loadedItems() {
+    public Map<String, InputItemProgress> loadedItems() {
         return this.loadedItems;
     }
 
-    public InputItemProgress loadingItem() {
-        return this.loadingItem;
+    public Map<String, InputItemProgress> loadingItems() {
+        return this.loadingItems;
+    }
+
+    public InputItemProgress loadedItem(String name) {
+        return this.loadedItems.get(name);
+    }
+
+    public InputItemProgress loadingItem(String name) {
+        return this.loadingItems.get(name);
     }
 
     public InputItemProgress matchLoadedItem(InputItemProgress inputItem) {
-        for (InputItemProgress item : this.loadedItems) {
+        for (InputItemProgress item : this.loadedItems.values()) {
             if (item.equals(inputItem)) {
                 return item;
             }
@@ -75,44 +83,45 @@ public final class InputProgress {
     }
 
     public InputItemProgress matchLoadingItem(InputItemProgress inputItem) {
-        if (this.loadingItem != null && this.loadingItem.equals(inputItem)) {
-            return this.loadingItem;
+        for (InputItemProgress item : this.loadingItems.values()) {
+            if (item.equals(inputItem)) {
+                return item;
+            }
         }
         return null;
     }
 
-    public void addLoadedItem(InputItemProgress inputItemProgress) {
-        this.loadedItems.add(inputItemProgress);
+    public synchronized void addLoadedItem(
+                             String name, InputItemProgress inputItemProgress) {
+        this.loadedItems.put(name,  inputItemProgress);
     }
 
-    public void addLoadingItem(InputItemProgress inputItemProgress) {
-        if (this.loadingItem != null) {
-            this.loadingItems.add(this.loadingItem);
+    public synchronized void addLoadingItem(
+                             String name, InputItemProgress inputItemProgress) {
+        this.loadingItems.put(name, inputItemProgress);
+    }
+
+    public synchronized void markLoaded(Readable readable, boolean markAll) {
+        if (!markAll) {
+            return;
         }
-        this.loadingItem = inputItemProgress;
-    }
-
-    public long loadingOffset() {
-        return this.loadingItem == null ? 0L : this.loadingItem.offset();
-    }
-
-    public void markLoaded(boolean markAll) {
+        if (readable != null) {
+            String name = readable.name();
+            InputItemProgress item = this.loadingItems.remove(name);
+            if (item != null) {
+                this.loadedItems.put(name, item);
+            }
+            return;
+        }
         if (!this.loadingItems.isEmpty()) {
-            this.loadedItems.addAll(this.loadingItems);
+            this.loadedItems.putAll(this.loadingItems);
             this.loadingItems.clear();
-        }
-        if (markAll && this.loadingItem != null) {
-            this.loadedItems.add(this.loadingItem);
-            this.loadingItem = null;
         }
     }
 
     public void confirmOffset() {
-        for (InputItemProgress item : this.loadingItems) {
+        for (InputItemProgress item : this.loadingItems.values()) {
             item.confirmOffset();
-        }
-        if (this.loadingItem != null) {
-            this.loadingItem.confirmOffset();
         }
     }
 }

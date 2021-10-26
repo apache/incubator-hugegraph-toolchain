@@ -8,7 +8,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 VERSION=$1
-HUGEGRAPH_LINK="https://github.com/hugegraph/hugegraph/releases/download/v${VERSION}/hugegraph-${VERSION}.tar.gz"
+HUGEGRAPH_LINK="https://github.com/starhugegraph/hugegraph/releases/download/v${VERSION}/hugegraph-${VERSION}.tar.gz"
 
 wget ${HUGEGRAPH_LINK} || exit 1
 tar -zxvf hugegraph-${VERSION}.tar.gz

@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.reader.file;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -33,8 +34,10 @@ import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.AbstractReader;
+import com.baidu.hugegraph.loader.reader.InputReader;
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.reader.line.Line;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.util.Log;
 
@@ -61,15 +64,28 @@ public abstract class FileReader extends AbstractReader {
         return this.source;
     }
 
-    protected abstract List<Readable> scanReadables() throws IOException;
+    public void readables(Iterator<Readable> readables) {
+        this.readables = readables;
+    }
 
-    protected abstract FileLineFetcher createLineFetcher();
+    public Readable readable() {
+        if (this.readable != null) {
+            return this.readable;
+        }
+        if (this.readables.hasNext()) {
+            this.readable = this.readables.next();
+            return this.readable;
+        }
+        return null;
+    }
 
     @Override
-    public void init(LoadContext context, InputStruct struct)
-                     throws InitException {
-        this.progress(context, struct);
+    public boolean multiReaders() {
+        return true;
+    }
 
+    @Override
+    public List<InputReader> split() {
         List<Readable> readableList;
         try {
             readableList = this.scanReadables();
@@ -79,10 +95,31 @@ public abstract class FileReader extends AbstractReader {
             throw new InitException("Failed to scan readable files for '%s'",
                                     e, this.source);
         }
-
-        this.readables = readableList.iterator();
         this.fetcher = this.createLineFetcher();
         this.fetcher.readHeaderIfNeeded(readableList);
+
+        this.readables = readableList.iterator();
+        List<InputReader> readers = new ArrayList<>();
+        while (this.readables.hasNext()) {
+            Readable readable = this.readables.next();
+            FileReader fileReader = this.newFileReader(this.source, readable);
+            fileReader.fetcher = fileReader.createLineFetcher();
+            readers.add(fileReader);
+        }
+        return readers;
+    }
+
+    protected abstract FileReader newFileReader(InputSource source,
+                                                Readable readable);
+
+    protected abstract List<Readable> scanReadables() throws IOException;
+
+    protected abstract FileLineFetcher createLineFetcher();
+
+    @Override
+    public void init(LoadContext context, InputStruct struct)
+                     throws InitException {
+        this.progress(context, struct);
     }
 
     @Override
@@ -144,7 +181,8 @@ public abstract class FileReader extends AbstractReader {
             }
         } finally {
             // Update loading progress even if throw exception
-            this.newProgress.loadingItem().offset(this.fetcher.offset());
+            this.newProgress.loadingItem(this.readable.name())
+                            .offset(this.fetcher.offset());
         }
         return line;
     }
@@ -164,7 +202,8 @@ public abstract class FileReader extends AbstractReader {
             LOG.info("In loading '{}'", this.readable);
             this.fetcher.openReader(this.readable);
             if (status == LoadStatus.LOADED_HALF) {
-                long offset = this.oldProgress.loadingOffset();
+                long offset = this.oldProgress.loadingItem(this.readable.name())
+                                              .offset();
                 this.fetcher.skipOffset(this.readable, offset);
             }
             return true;
@@ -186,17 +225,17 @@ public abstract class FileReader extends AbstractReader {
         InputItemProgress loaded = this.oldProgress.matchLoadedItem(input);
         // The file has been loaded before and it is not changed
         if (loaded != null) {
-            this.newProgress.addLoadedItem(loaded);
+            this.newProgress.addLoadedItem(readable.name(), loaded);
             return LoadStatus.LOADED;
         }
 
         InputItemProgress loading = this.oldProgress.matchLoadingItem(input);
         if (loading != null) {
             // The file has been loaded half before and it is not changed
-            this.newProgress.addLoadingItem(loading);
+            this.newProgress.addLoadingItem(readable.name(), loading);
             return LoadStatus.LOADED_HALF;
         } else {
-            this.newProgress.addLoadingItem(input);
+            this.newProgress.addLoadingItem(readable.name(), input);
             return LoadStatus.NOT_LOADED;
         }
     }

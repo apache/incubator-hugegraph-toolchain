@@ -6,14 +6,14 @@ on:
       - master
       - /^release-.*$/
       - /^test-.*$/
-      - gh2021
+      - gh-pre-release
       - gh-master
   pull_request:
     branches:
       - master
       - /^release-.*$/
       - /^test-.*$/
-      - gh2021
+      - gh-pre-release
       - gh-master
 
 jobs:
@@ -23,6 +23,7 @@ jobs:
       TRAVIS_DIR: assembly/travis
       STATIC_DIR: assembly/static
       COMMIT_ID: e65641517361d7da7ef1801489c15e3af7863a39
+      BRANCH_ID: gh-master
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test
@@ -48,6 +49,7 @@ jobs:
       - name: Compile
         run: |
           mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+          mvn install:install-file -Dfile=$STATIC_DIR/lib/hugegraph-client-1.9.7.jar -DgroupId=com.baidu.hugegraph -DartifactId=hugegraph-client -Dversion=1.9.7 -Dpackaging=jar
           mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
       - name: Prepare env and service
@@ -55,7 +57,7 @@ jobs:
           $TRAVIS_DIR/install-hadoop.sh
           sudo /etc/init.d/mysql start
           mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASS }}
-          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID | grep -v "Downloading\|Downloaded"
+          $TRAVIS_DIR/install-hugegraph-from-source.sh $BRANCH_ID | grep -v "Downloading\|Downloaded"
 
       - name: Run test
         run: |

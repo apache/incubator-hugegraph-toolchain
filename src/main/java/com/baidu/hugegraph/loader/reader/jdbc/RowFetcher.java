@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.loader.reader.jdbc;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -32,18 +30,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
-public class RowFetcher {
+public class RowFetcher extends Fetcher {
 
     private static final Logger LOG = Log.logger(RowFetcher.class);
 
-    private final JDBCSource source;
-    private final Connection conn;
 
     private String[] columns;
     private String[] primaryKeys;
@@ -51,30 +46,14 @@ public class RowFetcher {
     private boolean fullyFetched;
 
     public RowFetcher(JDBCSource source) throws SQLException {
-        this.source = source;
-        this.conn = this.connect();
+        super(source);
         this.columns = null;
         this.primaryKeys = null;
         this.nextStartRow = null;
         this.fullyFetched = false;
     }
 
-    private Connection connect() throws SQLException {
-        String url = this.source.vendor().buildUrl(this.source);
-        LOG.info("Connect to database {}", url);
-
-        String driverName = this.source.driver();
-        String username = this.source.username();
-        String password = this.source.password();
-        try {
-            // Register JDBC driver
-            Class.forName(driverName);
-        } catch (ClassNotFoundException e) {
-            throw new LoadException("Invalid driver class '%s'", e, driverName);
-        }
-        return DriverManager.getConnection(url, username, password);
-    }
-
+    @Override
     public String[] readHeader() throws SQLException {
         String sql = this.source.vendor().buildGetHeaderSql(this.source);
         LOG.debug("The sql for reading headers is: {}", sql);
@@ -90,11 +69,12 @@ public class RowFetcher {
             throw e;
         }
         E.checkArgument(ArrayUtils.isNotEmpty(this.columns),
-                        "The colmuns of the table '%s' shouldn't be empty",
-                        this.source.table());
+                "The colmuns of the table '%s' shouldn't be empty",
+                this.source.table());
         return this.columns;
     }
 
+    @Override
     public void readPrimaryKey() throws SQLException {
         String sql = this.source.vendor().buildGetPrimaryKeySql(this.source);
         LOG.debug("The sql for reading primary keys is: {}", sql);
@@ -110,17 +90,18 @@ public class RowFetcher {
             throw e;
         }
         E.checkArgument(ArrayUtils.isNotEmpty(this.primaryKeys),
-                        "The primary keys of the table '%s' shouldn't be empty",
-                        this.source.table());
+                "The primary keys of the table '%s' shouldn't be empty",
+                this.source.table());
     }
 
+    @Override
     public List<Line> nextBatch() throws SQLException {
         if (this.fullyFetched) {
             return null;
         }
 
         String select = this.source.vendor().buildSelectSql(this.source,
-                                                            this.nextStartRow);
+                this.nextStartRow);
         LOG.debug("The sql for select is: {}", select);
 
         List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
@@ -155,6 +136,7 @@ public class RowFetcher {
         return batch;
     }
 
+    @Override
     public void close() {
         try {
             this.conn.close();

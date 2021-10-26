@@ -1,0 +1,26 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "jdbc",
+        "vendor": "HIVE",
+        "driver": "org.apache.hive.jdbc.HiveDriver",
+        "url": "jdbc:hive2://127.0.0.1:10000",
+        "database": "graph",
+        "table": "person",
+        "username": "root",
+        "password": "root",
+        "batch_size": 2
+      },
+      "id": "id",
+      "null_values": ["NULL"],
+      "value_mapping": {
+        "city": {
+          "1": "Beijing",
+          "2": "Shanghai"
+        }
+      }
+    }
+  ]
+}

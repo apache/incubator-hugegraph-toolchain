@@ -33,14 +33,23 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.reader.Readable;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.file.FileSource;
+import com.google.common.collect.ImmutableSet;
 
 public class LocalFileReader extends FileReader {
 
     public LocalFileReader(FileSource source) {
         super(source);
+    }
+
+    @Override
+    public FileReader newFileReader(InputSource source, Readable readable) {
+        LocalFileReader reader = new LocalFileReader((FileSource) source);
+        reader.readables(ImmutableSet.of(readable).iterator());
+        return reader;
     }
 
     @Override
@@ -93,6 +102,11 @@ public class LocalFileReader extends FileReader {
             throw new LoadException("Please ensure the file or directory " +
                                     "is readable: '%s'", file);
         }
+    }
+
+    @Override
+    public boolean multiReaders() {
+        return true;
     }
 
     private static class LocalFile implements Readable {

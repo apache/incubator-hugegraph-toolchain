@@ -1,0 +1,24 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "jdbc",
+        "vendor": "hive",
+        "driver": "org.apache.hive.jdbc.HiveDriver",
+        "url": "jdbc:hive2://127.0.0.1:10000",
+        "database": "graph",
+        "table": "vertex",
+        "username": "root",
+        "password": "",
+        "batch_size": 500
+      },
+      "id": "id",
+      "null_values": ["NULL"]
+    }
+
+  ],
+  "edges": [
+
+  ]
+}

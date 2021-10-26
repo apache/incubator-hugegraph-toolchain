@@ -30,8 +30,8 @@ import com.baidu.hugegraph.loader.mapping.VertexMapping;
 
 public final class LoadMetrics {
 
-    private long readSuccess;
-    private long readFailure;
+    private LongAdder readSuccess;
+    private LongAdder readFailure;
     private boolean inFlight;
     // It has been parsed and is in the loading state
     private final LongAdder flightingNums;
@@ -40,8 +40,8 @@ public final class LoadMetrics {
     private final Map<String, Metrics> edgeMetrics;
 
     public LoadMetrics(InputStruct struct) {
-        this.readSuccess = 0L;
-        this.readFailure = 0L;
+        this.readSuccess = new LongAdder();
+        this.readFailure = new LongAdder();
         this.inFlight = false;
         this.flightingNums = new LongAdder();
 
@@ -56,31 +56,23 @@ public final class LoadMetrics {
     }
 
     public long readSuccess() {
-        return this.readSuccess;
-    }
-
-    public void readSuccess(long count) {
-        this.readSuccess = count;
+        return this.readSuccess.longValue();
     }
 
     public void increaseReadSuccess() {
-        this.readSuccess++;
+        this.readSuccess.increment();
     }
 
     public void plusReadSuccess(long count) {
-        this.readSuccess += count;
+        this.readSuccess.add(count);
     }
 
     public long readFailure() {
-        return this.readFailure;
-    }
-
-    public void readFailure(long count) {
-        this.readFailure = count;
+        return this.readFailure.longValue();
     }
 
     public void increaseReadFailure() {
-        this.readFailure++;
+        this.readFailure.increment();
     }
 
     public void startInFlight() {

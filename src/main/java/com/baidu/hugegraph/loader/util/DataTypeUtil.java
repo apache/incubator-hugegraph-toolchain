@@ -31,6 +31,8 @@ import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.source.file.ListFormat;
+import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
+import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
@@ -137,12 +139,20 @@ public final class DataTypeUtil {
         } else if (dataType.isBoolean()) {
             return parseBoolean(key, value);
         } else if (dataType.isDate()) {
-            E.checkState(source instanceof FileSource,
-                         "Only accept FileSource when convert String value " +
-                         "to Date, but got '%s'", source.getClass().getName());
-            String dateFormat = ((FileSource) source).dateFormat();
-            String timeZone = ((FileSource) source).timeZone();
-            return parseDate(key, value, dateFormat, timeZone);
+            if (source instanceof FileSource || source instanceof HDFSSource) {
+                String dateFormat = ((FileSource) source).dateFormat();
+                String timeZone = ((FileSource) source).timeZone();
+                return parseDate(key, value, dateFormat, timeZone);
+            }
+            if (source instanceof JDBCSource) {
+                if (value instanceof java.sql.Date) {
+                    return new Date(((java.sql.Date) value).getTime());
+                } else {
+                    if (value instanceof java.sql.Timestamp) {
+                        return new Date(((java.sql.Timestamp) value).getTime());
+                    }
+                }
+            }
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
         }

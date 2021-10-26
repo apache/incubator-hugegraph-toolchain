@@ -19,6 +19,10 @@
 
 package com.baidu.hugegraph.loader.reader;
 
+import java.util.List;
+
+import org.apache.commons.lang.NotImplementedException;
+
 import com.baidu.hugegraph.loader.constant.AutoCloseableIterator;
 import com.baidu.hugegraph.loader.exception.InitException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
@@ -57,5 +61,11 @@ public interface InputReader extends AutoCloseableIterator<Line> {
                 throw new AssertionError(String.format(
                           "Unsupported input source '%s'", source.type()));
         }
+    }
+
+    boolean multiReaders();
+
+    public default List<InputReader> split() {
+        throw new NotImplementedException("Not support multiple readers");
     }
 }

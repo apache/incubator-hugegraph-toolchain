@@ -36,51 +36,51 @@ public class LoadProgressTest extends LoadTest {
                 "\"input_propgress\": {" +
                 "    \"1\":{" +
                 "        \"type\":\"FILE\"," +
-                "        \"loaded_items\":[" +
-                "            {" +
+                "        \"loaded_items\":{" +
+                "            \"vertex_person.csv\":{" +
                 "                \"name\":\"vertex_person.csv\"," +
                 "                \"last_modified\":1574346235000," +
                 "                \"checksum\":\"4250397517\"," +
                 "                \"offset\":6" +
                 "            }" +
-                "        ]," +
-                "        \"loading_item\":null" +
+                "        }," +
+                "        \"loading_items\":{}" +
                 "    }," +
                 "    \"2\":{" +
                 "        \"type\":\"FILE\"," +
-                "        \"loaded_items\":[" +
-                "            {" +
+                "        \"loaded_items\":{" +
+                "            \"vertex_software.txt\":{" +
                 "                \"name\":\"vertex_software.txt\"," +
                 "                \"last_modified\":1575427304000," +
                 "                \"checksum\":\"2992253526\"," +
                 "                \"offset\":2" +
                 "            }" +
-                "        ]," +
-                "        \"loading_item\":null" +
+                "        }," +
+                "        \"loading_items\":{}" +
                 "    }," +
                 "    \"3\":{" +
                 "        \"type\":\"FILE\"," +
-                "        \"loaded_items\":[" +
-                "            {" +
+                "        \"loaded_items\":{" +
+                "            \"edge_knows.json\":{" +
                 "                \"name\":\"edge_knows.json\"," +
                 "                \"last_modified\":1576658150000," +
                 "                \"checksum\":\"3108779382\"," +
                 "                \"offset\":2" +
                 "            }" +
-                "        ]," +
-                "        \"loading_item\":null" +
+                "        }," +
+                "        \"loading_items\":{}" +
                 "    }," +
                 "    \"4\":{" +
                 "        \"type\":\"FILE\"," +
-                "        \"loaded_items\":[" +
-                "            {" +
+                "        \"loaded_items\":{" +
+                "            \"edge_created.json\":{" +
                 "                \"name\":\"edge_created.json\"," +
                 "                \"last_modified\":1576659393000," +
                 "                \"checksum\":\"1026646359\"," +
                 "                \"offset\":4" +
                 "            }" +
-                "        ]," +
-                "        \"loading_item\":null" +
+                "        }," +
+                "        \"loading_items\":{}" +
                 "    }" +
                 "}}";
         LoadProgress progress = JsonUtil.fromJson(json, LoadProgress.class);

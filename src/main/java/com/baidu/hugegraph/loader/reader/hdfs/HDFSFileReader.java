@@ -42,11 +42,13 @@ import com.baidu.hugegraph.loader.reader.file.FileLineFetcher;
 import com.baidu.hugegraph.loader.reader.file.FileReader;
 import com.baidu.hugegraph.loader.reader.file.OrcFileLineFetcher;
 import com.baidu.hugegraph.loader.reader.file.ParquetFileLineFetcher;
+import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.loader.source.hdfs.KerberosConfig;
 import com.baidu.hugegraph.util.Log;
+import com.google.common.collect.ImmutableSet;
 
 public class HDFSFileReader extends FileReader {
 
@@ -89,6 +91,13 @@ public class HDFSFileReader extends FileReader {
     }
 
     @Override
+    public FileReader newFileReader(InputSource source, Readable readable) {
+        HDFSFileReader reader = new HDFSFileReader((HDFSSource) source);
+        reader.readables(ImmutableSet.of(readable).iterator());
+        return reader;
+    }
+
+    @Override
     public void close() {
         super.close();
         try {
@@ -97,6 +106,11 @@ public class HDFSFileReader extends FileReader {
             LOG.warn("Failed to close reader for {} with exception {}",
                      this.source(), e.getMessage(), e);
         }
+    }
+
+    @Override
+    public boolean multiReaders() {
+        return true;
     }
 
     @Override

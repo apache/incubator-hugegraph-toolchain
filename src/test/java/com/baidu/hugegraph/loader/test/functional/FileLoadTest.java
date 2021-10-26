@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -218,7 +219,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(LoadException.class, () -> {
+        AsyncThrowsAssert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -253,7 +254,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args1);
         }, (e) -> {
             String msg = e.getMessage();
@@ -340,7 +341,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -369,7 +370,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         // Bytes encoded in utf-8 exceed 128
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -413,9 +414,10 @@ public class FileLoadTest extends LoadTest {
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
-                "--test-mode", "true"
+                "--test-mode", "true",
+                "--clear-all-data","true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -434,7 +436,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -549,7 +551,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, (e) -> {
             Assert.assertTrue(e.getMessage().contains("Parse line '' error"));
@@ -840,7 +842,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -884,7 +886,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -1367,7 +1369,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -1948,7 +1950,7 @@ public class FileLoadTest extends LoadTest {
                 "--check-vertex", "false",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         });
 
@@ -2044,10 +2046,11 @@ public class FileLoadTest extends LoadTest {
 
         Map<String, InputProgress> inputProgressMap = context.newProgress()
                                                              .inputProgress();
-        Assert.assertEquals(1, inputProgressMap.size());
+        Assert.assertEquals(2, inputProgressMap.size());
         inputProgressMap.forEach((id, inputProgress) -> {
             if (id.equals("1")) {
-                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
+                Collection<InputItemProgress> loadedItems =
+                        inputProgress.loadedItems().values();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2099,7 +2102,8 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, inputProgressMap.size());
         inputProgressMap.forEach((id, inputProgress) -> {
             if (id.equals("1")) {
-                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
+                Collection<InputItemProgress> loadedItems =
+                        inputProgress.loadedItems().values();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2109,7 +2113,8 @@ public class FileLoadTest extends LoadTest {
                 // Reached last line: "li,nary",26,"Wu,han"
                 Assert.assertEquals(6, fileItem.offset());
             } else if (id.equals("2")) {
-                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
+                Collection<InputItemProgress> loadedItems =
+                        inputProgress.loadedItems().values();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2174,7 +2179,8 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(2, inputProgressMap.size());
         inputProgressMap.forEach((id, inputProgress) -> {
             if (id.equals("1")) {
-                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
+                Collection<InputItemProgress> loadedItems =
+                        inputProgress.loadedItems().values();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2182,7 +2188,8 @@ public class FileLoadTest extends LoadTest {
                 FileItemProgress fileItem = (FileItemProgress) loadedItem;
                 Assert.assertEquals(2, fileItem.offset());
             } else if (id.equals("2")) {
-                Set<InputItemProgress> loadedItems = inputProgress.loadedItems();
+                Collection<InputItemProgress> loadedItems =
+                        inputProgress.loadedItems().values();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2236,7 +2243,8 @@ public class FileLoadTest extends LoadTest {
         inputProgressMap.forEach((id, value) -> {
             if (id.equals("2")) {
                 // The error line is exactly last line
-                Set<InputItemProgress> loadedItems = value.loadedItems();
+                Collection<InputItemProgress> loadedItems =
+                        value.loadedItems().values();
                 Assert.assertEquals(1, loadedItems.size());
 
                 InputItemProgress loadedItem = loadedItems.iterator().next();
@@ -2478,7 +2486,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
             String msgSuffix = "check whether the headers or field_mapping " +
@@ -2518,7 +2526,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
             String msgSuffix = "check whether the headers or field_mapping " +
@@ -2810,7 +2818,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
             String msg = "In case unfold is true, just supported " +
@@ -2961,7 +2969,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
             HugeGraphLoader.main(args);
         }, e -> {
             String msg = "The elements number of source and target must be: " +
@@ -3019,7 +3027,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(6, vertices.size());
     }
 
-    @Test
+//    @Test
     public void testHttpsClientValueMapping() {
         ioUtil.write("vertex_person.csv",
                      "tiny,1,1,1",
@@ -3050,7 +3058,7 @@ public class FileLoadTest extends LoadTest {
         }
     }
 
-    @Test
+//    @Test
     public void testHttpsHolderClientValueMapping() {
         ioUtil.write("vertex_person.csv",
                      "marko,1,1,1",

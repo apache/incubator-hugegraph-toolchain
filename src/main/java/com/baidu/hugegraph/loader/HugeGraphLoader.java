@@ -55,6 +55,7 @@ import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.util.Log;
+import com.google.common.collect.ImmutableList;
 
 public final class HugeGraphLoader {
 
@@ -209,9 +210,7 @@ public final class HugeGraphLoader {
         if (structs.size() == 0) {
             return;
         }
-        if ( parallelCount <= 0 ) {
-            parallelCount = structs.size();
-        } else if (parallelCount > structs.size()) {
+        if (parallelCount <= 0 ) {
             parallelCount = structs.size();
         }
 
@@ -235,11 +234,16 @@ public final class HugeGraphLoader {
             // Create and init InputReader, fetch next batch lines
             try {
                 InputReader reader = InputReader.create(struct.input());
-                // Init reader
-                reader.init(this.context, struct);
-                // Load data from current input mapping
-                loadTasks.add(this.asyncLoadStruct(struct, reader, service));
-                readers.add(reader);
+                List<InputReader> readerList = reader.multiReaders() ?
+                                               reader.split() :
+                                               ImmutableList.of(reader);
+                for (InputReader r : readerList) {
+                    // Init reader
+                    r.init(this.context, struct);
+                    // Load data from current input mapping
+                    loadTasks.add(this.asyncLoadStruct(struct, r, service));
+                    readers.add(r);
+                }
             } catch (InitException e) {
                 throw new LoadException("Failed to init input reader", e);
             }
@@ -251,8 +255,9 @@ public final class HugeGraphLoader {
 
         service.shutdown();
 
-        for (InputReader reader : readers)
+        for (InputReader reader : readers) {
             reader.close();
+        }
         LOG.info("load finish");
     }
 
@@ -304,7 +309,7 @@ public final class HugeGraphLoader {
                 }
                 // Confirm offset to avoid lost records
                 reader.confirmOffset();
-                this.context.newProgress().markLoaded(struct, finished);
+                this.context.newProgress().markLoaded(struct, reader, finished);
 
                 this.handleParseFailure();
                 if (reachedMaxReadLines) {

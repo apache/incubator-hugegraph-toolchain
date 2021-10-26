@@ -20,13 +20,15 @@
 package com.baidu.hugegraph.loader.serializer;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
 
 import com.baidu.hugegraph.loader.progress.InputItemProgress;
 import com.baidu.hugegraph.loader.progress.InputProgress;
 import com.baidu.hugegraph.loader.progress.FileItemProgress;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.util.JsonUtil;
+import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -38,7 +40,7 @@ public class InputProgressDeser extends JsonDeserializer<InputProgress> {
 
     private static final String FIELD_TYPE = "type";
     private static final String FIELD_LOADED_ITEMS = "loaded_items";
-    private static final String FIELD_LOADING_ITEM = "loading_item";
+    private static final String FIELD_LOADING_ITEM = "loading_items";
 
     @Override
     public InputProgress deserialize(JsonParser parser,
@@ -54,27 +56,31 @@ public class InputProgressDeser extends JsonDeserializer<InputProgress> {
         String type = typeNode.asText().toUpperCase();
         SourceType sourceType = SourceType.valueOf(type);
         JsonNode loadedItemsNode = getNode(node, FIELD_LOADED_ITEMS,
-                                           JsonNodeType.ARRAY);
-        JsonNode loadingItemNode = getNode(node, FIELD_LOADING_ITEM,
+                                           JsonNodeType.OBJECT);
+        JsonNode loadingItemsNode = getNode(node, FIELD_LOADING_ITEM,
                                            JsonNodeType.OBJECT,
                                            JsonNodeType.NULL);
-        Set<InputItemProgress> loadedItems;
-        InputItemProgress loadingItem;
+        Map<String, InputItemProgress> loadedItems =
+                Collections.synchronizedMap(InsertionOrderUtil.newMap());
+        Map<String, InputItemProgress> loadingItems =
+                Collections.synchronizedMap(InsertionOrderUtil.newMap());
+        Map<String, FileItemProgress> items;
         switch (sourceType) {
             case FILE:
             case HDFS:
-                loadedItems = (Set<InputItemProgress>) (Object)
-                              JsonUtil.convertSet(loadedItemsNode,
-                                                  FileItemProgress.class);
-                loadingItem = JsonUtil.convert(loadingItemNode,
-                                               FileItemProgress.class);
+                items = JsonUtil.convertMap(loadedItemsNode, String.class,
+                                            FileItemProgress.class);
+                loadedItems.putAll(items);
+                items = JsonUtil.convertMap(loadingItemsNode, String.class,
+                                            FileItemProgress.class);
+                loadingItems.putAll(items);
                 break;
             case JDBC:
             default:
                 throw new AssertionError(String.format(
                           "Unsupported input source '%s'", type));
         }
-        return new InputProgress(sourceType, loadedItems, loadingItem);
+        return new InputProgress(sourceType, loadedItems, loadingItems);
     }
 
     private static JsonNode getNode(JsonNode node, String name,
