@@ -170,12 +170,13 @@ public final class Printer {
             return;
         }
         rater.calculateTotalTime();
-        if (rater.curRate() != 0 || rater.getCount() == 0) {
+        long curRate = rater.curRate();
+        if (curRate != 0 || rater.getCount() == 0) {
             LOG.info("{} loaded: {}, " +
                      "average rate: {}/s, cur rate: {}/s, " +
                      "average queue: {}, cur queue: {}",
                      type.string(), rater.getCount(),
-                     rater.avgRate(), rater.curRate(),
+                     rater.avgRate(), curRate,
                      summary.getAvgTaskQueueLen(), summary.getTaskQueueLen());
         }
     }
