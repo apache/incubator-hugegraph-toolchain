@@ -166,14 +166,17 @@ public final class Printer {
 
         LoadSummary.LoadRater rater =
                 type.isVertex() ? summary.vertex() : summary.edge();
-        if (rater.getCount() % frequency < batchSize &&
-                (rater.curRate() != 0 || rater.getCount() == 0)) {
+        if (rater.getCount() % frequency >= batchSize) {
+            return;
+        }
+        rater.calculateTotalTime();
+        if (rater.curRate() != 0 || rater.getCount() == 0) {
             LOG.info("{} loaded: {}, " +
-                            "average rate: {}/s, cur rate: {}/s, " +
-                            "average queue: {}, cur queue: {}",
-                    type.string(), rater.getCount(),
-                    rater.avgRate(), rater.curRate(),
-                    summary.getAvgTaskQueueLen(), summary.getTaskQueueLen());
+                     "average rate: {}/s, cur rate: {}/s, " +
+                     "average queue: {}, cur queue: {}",
+                     type.string(), rater.getCount(),
+                     rater.avgRate(), rater.curRate(),
+                     summary.getAvgTaskQueueLen(), summary.getTaskQueueLen());
         }
     }
 
