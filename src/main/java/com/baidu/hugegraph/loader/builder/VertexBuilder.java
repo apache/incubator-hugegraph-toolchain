@@ -60,7 +60,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     }
 
     @Override
-    protected SchemaLabel schemaLabel() {
+    public SchemaLabel schemaLabel() {
         return this.vertexLabel;
     }
 

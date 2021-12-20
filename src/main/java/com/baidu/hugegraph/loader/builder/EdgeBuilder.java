@@ -120,7 +120,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     }
 
     @Override
-    protected SchemaLabel schemaLabel() {
+    public SchemaLabel schemaLabel() {
         return this.edgeLabel;
     }
 

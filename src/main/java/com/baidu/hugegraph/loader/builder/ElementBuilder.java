@@ -75,7 +75,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
     public abstract List<GE> build(String[] names, Object[] values);
 
-    protected abstract SchemaLabel schemaLabel();
+    public abstract SchemaLabel schemaLabel();
 
     protected abstract Collection<String> nonNullableKeys();
 
@@ -549,9 +549,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 }
                 addProperties(vertex, this.properties);
                 checkNonNullableKeys(vertex);
-            } else {
-                vertex.id(id);
             }
+            vertex.id(id);
             return ImmutableList.of(vertex);
         }
     }
@@ -646,9 +645,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                     addProperty(vertex, this.pkName, pkValue, false);
                     addProperties(vertex, this.properties);
                     checkNonNullableKeys(vertex);
-                } else {
-                    vertex.id(id);
                 }
+                vertex.id(id);
                 vertices.add(vertex);
             }
             return vertices;

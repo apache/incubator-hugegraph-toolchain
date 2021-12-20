@@ -73,6 +73,20 @@ public final class LoadContext {
         this.schemaCache = new SchemaCache(this.client);
     }
 
+    public LoadContext(ComputerLoadOptions options) {
+        this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
+        this.closed = false;
+        this.stopped = false;
+        this.noError = true;
+        this.options = options;
+        this.summary = new LoadSummary();
+        this.oldProgress = LoadProgress.parse(options);
+        this.newProgress = new LoadProgress();
+        this.loggers = new ConcurrentHashMap<>();
+        this.client = null;
+        this.schemaCache = options.schemaCache();
+    }
+
     public String timestamp() {
         return this.timestamp;
     }
