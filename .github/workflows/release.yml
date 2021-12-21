@@ -1,4 +1,4 @@
-name: release maven package
+name: release package
 
 on:
   release:
@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    env:
+      STATIC_DIR: assembly/static
     steps:
       - name: Install JDK 8
         uses: actions/setup-java@v2
@@ -25,6 +27,21 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 2
+
+      - name: Package
+        run: |
+          mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+          mvn clean package -DskipTests
+
+      - uses: xresloader/upload-to-github-release@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "hugegraph-*.tar.gz"
+          tag_name: ${{ github.ref_name }}
+          overwrite: true
+          verbose: true
+          update_latest_release: true
 
       - name: Release Maven package
         uses: samuelmeuli/action-maven-publish@v1
