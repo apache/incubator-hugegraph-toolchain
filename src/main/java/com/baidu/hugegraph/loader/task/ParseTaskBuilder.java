@@ -38,6 +38,8 @@ import com.baidu.hugegraph.loader.mapping.VertexMapping;
 import com.baidu.hugegraph.loader.metrics.LoadMetrics;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.structure.GraphElement;
+import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 
@@ -81,6 +83,9 @@ public final class ParseTaskBuilder {
         final LoadMetrics metrics = this.context.summary().metrics(this.struct);
         final int batchSize = this.context.options().batchSize;
         final ElementMapping mapping = builder.mapping();
+        final boolean needRemoveId = builder instanceof VertexBuilder &&
+                                     ((VertexLabel) builder.schemaLabel())
+                                     .idStrategy().isPrimaryKey();
         return new ParseTask(mapping, () -> {
             List<List<Record>> batches = new ArrayList<>();
             // One batch record
@@ -103,7 +108,11 @@ public final class ParseTaskBuilder {
                         batches.add(records);
                         records = new ArrayList<>(batchSize);
                     }
+
                     for (GraphElement element : elements) {
+                        if (needRemoveId) {
+                            ((Vertex) element).id(null);
+                        }
                         records.add(new Record(line.rawLine(), element));
                         count++;
                     }

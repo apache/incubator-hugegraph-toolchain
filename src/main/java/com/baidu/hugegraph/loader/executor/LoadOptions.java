@@ -35,7 +35,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 
-public final class LoadOptions {
+public class LoadOptions {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 

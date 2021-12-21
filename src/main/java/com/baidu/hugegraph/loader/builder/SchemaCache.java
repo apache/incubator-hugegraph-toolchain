@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.builder;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.driver.HugeClient;
@@ -28,7 +29,11 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class SchemaCache {
 
     private final HugeClient client;
@@ -41,6 +46,28 @@ public final class SchemaCache {
         this.propertyKeys = new HashMap<>();
         this.vertexLabels = new HashMap<>();
         this.edgeLabels = new HashMap<>();
+    }
+
+    @JsonCreator
+    public SchemaCache(@JsonProperty(value = "propertykeys")
+                       List<PropertyKey> propertyKeyList,
+                       @JsonProperty("vertexlabels")
+                       List<VertexLabel> vertexLabelList,
+                       @JsonProperty("edgelabels")
+                       List<EdgeLabel> edgeLabelList) {
+        this.client = null;
+        this.propertyKeys = new HashMap<>();
+        this.vertexLabels = new HashMap<>();
+        this.edgeLabels = new HashMap<>();
+        propertyKeyList.forEach(pk -> {
+            this.propertyKeys.put(pk.name(), pk);
+        });
+        vertexLabelList.forEach(vl -> {
+            this.vertexLabels.put(vl.name(), vl);
+        });
+        edgeLabelList.forEach(el -> {
+            this.edgeLabels.put(el.name(), el);
+        });
     }
 
     public void updateAll() {
