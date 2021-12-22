@@ -19,11 +19,14 @@
 
 package com.baidu.hugegraph.loader.source.jdbc;
 
+import java.net.URISyntaxException;
+
 import org.apache.http.client.utils.URIBuilder;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.loader.reader.line.Line;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCUtil;
+import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.util.E;
 
 public enum JDBCVendor {
@@ -283,6 +286,8 @@ public enum JDBCVendor {
         return schema == null ? this.defaultSchema(source) : schema;
     }
 
+    private static final String JDBC_PREFIX = "jdbc:";
+
     public String buildUrl(JDBCSource source) {
         String url = source.url();
         if (url.endsWith("/")) {
@@ -291,14 +296,23 @@ public enum JDBCVendor {
             url = String.format("%s/%s", url, source.database());
         }
 
-        URIBuilder uriBuilder = new URIBuilder();
-        uriBuilder.setPath(url)
-                  .setParameter("useSSL", "false")
+        E.checkArgument(url.startsWith(JDBC_PREFIX),
+                        "The url must start with '%s': '%s'",
+                        JDBC_PREFIX, url);
+        String urlWithoutJdbc = url.substring(JDBC_PREFIX.length());
+
+        URIBuilder uriBuilder;
+        try {
+            uriBuilder = new URIBuilder(urlWithoutJdbc);
+        } catch (URISyntaxException e) {
+            throw new LoadException("Invalid url '%s'", e, url);
+        }
+        uriBuilder.setParameter("useSSL", "false")
                   .setParameter("characterEncoding", Constants.CHARSET.name())
                   .setParameter("rewriteBatchedStatements", "true")
                   .setParameter("useServerPrepStmts", "false")
                   .setParameter("autoReconnect", "true");
-        return uriBuilder.toString();
+        return JDBC_PREFIX + uriBuilder.toString();
     }
 
     public abstract String buildGetHeaderSql(JDBCSource source);
