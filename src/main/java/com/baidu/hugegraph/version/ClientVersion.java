@@ -33,9 +33,9 @@ public class ClientVersion {
 
     public static final Version VERSION = Version.of(ClientVersion.class);
 
-    public static final void check() {
+    public static void check() {
         // Check version of hugegraph-common
-        VersionUtil.check(CommonVersion.VERSION, "1.8", "1.9",
+        VersionUtil.check(CommonVersion.VERSION, "1.8", "2.1",
                           CommonVersion.NAME);
     }
 }

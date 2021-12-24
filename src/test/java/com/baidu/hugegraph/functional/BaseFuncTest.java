@@ -56,19 +56,19 @@ public class BaseFuncTest extends BaseClientTest {
         schema().getIndexLabels().forEach(il -> {
             ilTaskIds.add(schema().removeIndexLabelAsync(il.name()));
         });
-        ilTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        ilTaskIds.forEach(BaseFuncTest::waitUntilTaskCompleted);
 
         List<Long> elTaskIds = new ArrayList<>();
         schema().getEdgeLabels().forEach(el -> {
             elTaskIds.add(schema().removeEdgeLabelAsync(el.name()));
         });
-        elTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        elTaskIds.forEach(BaseFuncTest::waitUntilTaskCompleted);
 
         List<Long> vlTaskIds = new ArrayList<>();
         schema().getVertexLabels().forEach(vl -> {
             vlTaskIds.add(schema().removeVertexLabelAsync(vl.name()));
         });
-        vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        vlTaskIds.forEach(BaseFuncTest::waitUntilTaskCompleted);
 
         schema().getPropertyKeys().forEach(pk -> {
             schema().removePropertyKey(pk.name());

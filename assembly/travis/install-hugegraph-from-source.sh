@@ -22,7 +22,7 @@ tar -zxvf hugegraph-*.tar.gz
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
 cp -r hugegraph-*/. ${HTTPS_SERVER_DIR}
-cd hugegraph-*
+cd "$(find hugegraph-* | head -1)"
 cp ../$TRAVIS_DIR/conf/* conf
 # start HugeGraphServer with http protocol
 echo -e "pa" | bin/init-store.sh || exit 1

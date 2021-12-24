@@ -61,7 +61,7 @@ public class ProjectApiTest extends AuthApiTest {
     @After
     public void teardown() throws Exception {
         super.teardown();
-        this.clear();
+        clear();
     }
 
     @Test

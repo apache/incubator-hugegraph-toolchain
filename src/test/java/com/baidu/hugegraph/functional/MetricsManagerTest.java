@@ -43,7 +43,7 @@ public class MetricsManagerTest extends BaseFuncTest {
         Assert.assertEquals(ImmutableSet.of("hugegraph"), results.keySet());
 
         Map<String, Object> graphResults = metrics().backend("hugegraph");
-        Assert.assertTrue(!graphResults.isEmpty());
+        Assert.assertFalse(graphResults.isEmpty());
     }
 
     @Test

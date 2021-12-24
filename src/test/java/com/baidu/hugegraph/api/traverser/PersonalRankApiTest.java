@@ -161,20 +161,14 @@ public class PersonalRankApiTest extends TraverserApiTest {
         PersonalRankAPI.Request.Builder builder;
         builder = PersonalRankAPI.Request.builder();
 
-        builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(1);
+        builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(2);
         PersonalRankAPI.Request request = builder.build();
 
         // Removed root and direct neighbors of root
         Map<Object, Double> ranks = personalRankAPI.post(request);
         assertDoublesEquals(ImmutableMap.of(), ranks);
 
-        builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(2);
-        request = builder.build();
-
-        ranks = personalRankAPI.post(request);
-        assertDoublesEquals(ImmutableMap.of(), ranks);
-
-        builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(1);
+        builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(3);
         request = builder.build();
 
         ranks = personalRankAPI.post(request);
@@ -185,6 +179,12 @@ public class PersonalRankApiTest extends TraverserApiTest {
 
         ranks = personalRankAPI.post(request);
         assertDoublesEquals(ImmutableMap.of("B", 0.405D), ranks);
+
+        builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(3);
+        request = builder.build();
+
+        ranks = personalRankAPI.post(request);
+        Assert.assertEquals(2, ranks.size());
     }
 
     @Test

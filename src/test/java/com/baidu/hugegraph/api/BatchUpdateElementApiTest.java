@@ -736,7 +736,7 @@ public class BatchUpdateElementApiTest extends BaseApiTest {
             String index = String.valueOf(element.property("name"));
             Object value = element.property(property);
             Assert.assertTrue(value instanceof Number);
-            Assert.assertEquals(result * Integer.valueOf(index), value);
+            Assert.assertEquals(result * Integer.parseInt(index), value);
         });
     }
 
