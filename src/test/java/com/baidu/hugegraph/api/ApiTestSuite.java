@@ -67,6 +67,7 @@ import com.baidu.hugegraph.api.traverser.WeightedShortestPathApiTest;
     TaskApiTest.class,
     JobApiTest.class,
     RestoreApiTest.class,
+    GraphsApiTest.class,
 
     CommonTraverserApiTest.class,
     KoutApiTest.class,

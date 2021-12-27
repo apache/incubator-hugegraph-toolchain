@@ -22,6 +22,13 @@ package com.baidu.hugegraph.api.graphs;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.InvalidResponseException;
@@ -33,6 +40,13 @@ import com.google.common.collect.ImmutableMap;
 
 public class GraphsAPI extends API {
 
+    private static final String DELIMITER = "/";
+    private static final String MODE = "mode";
+    private static final String GRAPH_READ_MODE = "graph_read_mode";
+    private static final String CLEAR = "clear";
+
+    private static final String CONFIRM_MESSAGE = "confirm_message";
+
     public GraphsAPI(RestClient client) {
         super(client);
         this.path(this.type());
@@ -41,6 +55,21 @@ public class GraphsAPI extends API {
     @Override
     protected String type() {
         return HugeType.GRAPHS.string();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, String> create(String name, String cloneGraphName,
+                                      String configText) {
+        this.client.checkApiVersion("0.67", "dynamic graph add");
+        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        Map<String, Object> params = null;
+        if (StringUtils.isNotEmpty(cloneGraphName)) {
+            params = ImmutableMap.of("clone_graph_name", cloneGraphName);
+        }
+        RestResult result = this.client.post(joinPath(this.path(), name),
+                                             configText, headers, params);
+        return result.readObject(Map.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -54,19 +83,28 @@ public class GraphsAPI extends API {
         return result.readList(this.type(), String.class);
     }
 
+    public void clear(String graph, String message) {
+        this.client.delete(joinPath(this.path(), graph, CLEAR),
+                           ImmutableMap.of(CONFIRM_MESSAGE, message));
+    }
+
+    public void drop(String graph, String message) {
+        this.client.checkApiVersion("0.67", "dynamic graph delete");
+        this.client.delete(joinPath(this.path(), graph),
+                           ImmutableMap.of(CONFIRM_MESSAGE, message));
+    }
+
     public void mode(String graph, GraphMode mode) {
-        String path = String.join("/", this.path(), graph);
         // NOTE: Must provide id for PUT. If use "graph/mode", "/" will
         // be encoded to "%2F". So use "mode" here although inaccurate.
-        this.client.put(path, "mode", mode);
+        this.client.put(joinPath(this.path(), graph, MODE), null, mode);
     }
 
     public GraphMode mode(String graph) {
-        String path = String.join("/", this.path(), graph);
-        RestResult result =  this.client.get(path, "mode");
+        RestResult result = this.client.get(joinPath(this.path(), graph), MODE);
         @SuppressWarnings("unchecked")
         Map<String, String> mode = result.readObject(Map.class);
-        String value = mode.get("mode");
+        String value = mode.get(MODE);
         if (value == null) {
             throw new InvalidResponseException(
                       "Invalid response, expect 'mode' in response");
@@ -81,20 +119,20 @@ public class GraphsAPI extends API {
 
     public void readMode(String graph, GraphReadMode readMode) {
         this.client.checkApiVersion("0.59", "graph read mode");
-        String path = String.join("/", this.path(), graph);
         // NOTE: Must provide id for PUT. If use "graph/graph_read_mode", "/"
         // will be encoded to "%2F". So use "graph_read_mode" here although
         // inaccurate.
-        this.client.put(path, "graph_read_mode", readMode);
+        this.client.put(joinPath(this.path(), graph, GRAPH_READ_MODE),
+                        null, readMode);
     }
 
     public GraphReadMode readMode(String graph) {
         this.client.checkApiVersion("0.59", "graph read mode");
-        String path = String.join("/", this.path(), graph);
-        RestResult result =  this.client.get(path, "graph_read_mode");
+        RestResult result = this.client.get(joinPath(this.path(), graph),
+                                            GRAPH_READ_MODE);
         @SuppressWarnings("unchecked")
         Map<String, String> readMode = result.readObject(Map.class);
-        String value = readMode.get("graph_read_mode");
+        String value = readMode.get(GRAPH_READ_MODE);
         if (value == null) {
             throw new InvalidResponseException(
                       "Invalid response, expect 'graph_read_mode' in response");
@@ -107,9 +145,11 @@ public class GraphsAPI extends API {
         }
     }
 
-    public void clear(String graph, String message) {
-        String path = String.join("/", this.path(), graph, "clear");
-        this.client.delete(path,
-                           ImmutableMap.of("confirm_message", message));
+    private static String joinPath(String path, String graph) {
+        return String.join(DELIMITER, path, graph);
+    }
+
+    private static String joinPath(String path, String graph, String action) {
+        return String.join(DELIMITER, path, graph, action);
     }
 }
