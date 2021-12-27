@@ -68,7 +68,7 @@ public class LoginApiTest extends AuthApiTest {
         User user1 = new User();
         user1.name("user1");
         user1.password("p1");
-        User user = userAPI.create(user1);
+        userAPI.create(user1);
 
         LoginResult result = loginAPI.login(login);
         Assert.assertNotNull(result);

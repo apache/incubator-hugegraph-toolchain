@@ -33,8 +33,8 @@ import com.baidu.hugegraph.api.gremlin.GremlinRequest;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.constant.GraphReadMode;
-import com.baidu.hugegraph.structure.constant.WriteType;
 import com.baidu.hugegraph.structure.constant.T;
+import com.baidu.hugegraph.structure.constant.WriteType;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
@@ -347,9 +347,8 @@ public class VertexApiTest extends BaseApiTest {
 
         PropertyKey.PropertyKeyWithTask propertyKeyWithTask;
         propertyKeyWithTask = propertyKeyAPI.create(pagerank);
-        long taskId = propertyKeyWithTask.taskId();
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        long taskId1 = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId1);
 
         PropertyKey wcc = schema().propertyKey("wcc")
                                   .asText()
@@ -357,9 +356,8 @@ public class VertexApiTest extends BaseApiTest {
                                   .build();
 
         propertyKeyWithTask = propertyKeyAPI.create(wcc);
-        taskId = propertyKeyWithTask.taskId();
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        long taskId2 = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId2);
 
         PropertyKey none = schema().propertyKey("none")
                                    .asText()
@@ -367,9 +365,12 @@ public class VertexApiTest extends BaseApiTest {
                                    .build();
 
         propertyKeyWithTask = propertyKeyAPI.create(none);
-        taskId = propertyKeyWithTask.taskId();
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        long taskId3 = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId3);
+
+        waitUntilTaskCompleted(taskId1);
+        waitUntilTaskCompleted(taskId2);
+        waitUntilTaskCompleted(taskId3);
 
         // Add olap properties
         vertices = new ArrayList<>(100);
@@ -446,19 +447,20 @@ public class VertexApiTest extends BaseApiTest {
 
         // Clear olap property key
         propertyKeyWithTask = propertyKeyAPI.clear(pagerank);
-        taskId = propertyKeyWithTask.taskId();
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        taskId1 = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId1);
 
         propertyKeyWithTask = propertyKeyAPI.clear(wcc);
-        taskId = propertyKeyWithTask.taskId();
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        taskId2 = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId2);
 
         propertyKeyWithTask = propertyKeyAPI.clear(none);
-        taskId = propertyKeyWithTask.taskId();
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        taskId3 = propertyKeyWithTask.taskId();
+        Assert.assertNotEquals(0L, taskId3);
+
+        waitUntilTaskCompleted(taskId1);
+        waitUntilTaskCompleted(taskId2);
+        waitUntilTaskCompleted(taskId3);
 
         // Query after clear olap property key
         request = new GremlinRequest("g.V().has(\"pagerank\", P.gte(5))");
@@ -471,17 +473,18 @@ public class VertexApiTest extends BaseApiTest {
         Assert.assertEquals(0, resultSet.size());
 
         // Delete olap property key
-        taskId = propertyKeyAPI.delete(pagerank.name());
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        taskId1 = propertyKeyAPI.delete(pagerank.name());
+        Assert.assertNotEquals(0L, taskId1);
 
-        taskId = propertyKeyAPI.delete(wcc.name());
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        taskId2 = propertyKeyAPI.delete(wcc.name());
+        Assert.assertNotEquals(0L, taskId2);
 
-        taskId = propertyKeyAPI.delete(none.name());
-        Assert.assertNotEquals(0L, taskId);
-        waitUntilTaskCompleted(taskId);
+        taskId3 = propertyKeyAPI.delete(none.name());
+        Assert.assertNotEquals(0L, taskId3);
+
+        waitUntilTaskCompleted(taskId1);
+        waitUntilTaskCompleted(taskId2);
+        waitUntilTaskCompleted(taskId3);
 
         // Query after delete olap property key
         Assert.assertThrows(ServerException.class, () -> {

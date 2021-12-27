@@ -42,7 +42,8 @@ public class HugeClientHttpsTest {
     private static final int MAX_CONNS_PER_ROUTE = 10;
     private static final int MAX_CONNS = 10;
     private static final int IDLE_TIME = 30;
-    private static final String TRUST_STORE_FILE = "src/test/resources/hugegraph.truststore";
+    private static final String TRUST_STORE_FILE =
+                                "src/test/resources/hugegraph.truststore";
     private static final String TRUST_STORE_PASSWORD = "hugegraph";
 
     private static HugeClient client;
@@ -66,7 +67,6 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientWithConnectionPoolNoUserParam() {
         client = HugeClient.builder(BASE_URL, GRAPH)
-                           .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
                            .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
@@ -175,7 +175,8 @@ public class HugeClientHttpsTest {
         Vertex marko = graph.addVertex(T.label, "person", "name", "marko",
                                        "age", 29, "city", "Beijing");
         Map<String, Object> props = ImmutableMap.of("name", "marko",
-                                                    "age", 29, "city", "Beijing");
+                                                    "age", 29,
+                                                    "city", "Beijing");
         Assert.assertEquals(props, marko.properties());
     }
 }

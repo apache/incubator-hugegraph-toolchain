@@ -85,6 +85,7 @@ public class TokenApiTest extends AuthApiTest {
         String token = result.token();
         RestClient client = Whitebox.getInternalState(tokenAPI, "client");
         client.setAuthContext("Bearer " + token);
+
         TokenPayload payload = tokenAPI.verifyToken();
         Assert.assertEquals("user1", payload.username());
         Assert.assertEquals(user.id(), payload.userId());
@@ -95,5 +96,16 @@ public class TokenApiTest extends AuthApiTest {
         }, e -> {
             Assert.assertContains("Invalid token", e.getMessage());
         });
+
+        RestClient client2 = Whitebox.getInternalState(logoutAPI, "client");
+        Assert.assertThrows(ServerException.class, () -> {
+            logoutAPI.logout();
+        }, e -> {
+            Assert.assertContains("Only HTTP Bearer authentication is supported",
+                                  e.getMessage());
+        });
+
+        client2.setAuthContext("Bearer " + token);
+        logoutAPI.logout();
     }
 }

@@ -36,8 +36,7 @@ import org.junit.runners.Suite;
     AuthManagerTest.class,
     TraverserManagerTest.class,
     MetricsManagerTest.class,
-    // TODO: Ubuntu20.04 can't run it correctly, fix it later
-    //HugeClientHttpsTest.class,
+    HugeClientHttpsTest.class,
     HugeClientTest.class
 })
 public class FuncTestSuite {
