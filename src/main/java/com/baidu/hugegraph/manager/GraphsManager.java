@@ -41,7 +41,7 @@ public class GraphsManager extends ToolManager {
     }
 
     public void clear(String graph, String confirmMessage) {
-        this.client.graphs().clear(graph, confirmMessage);
+        this.client.graphs().clearGraph(graph, confirmMessage);
     }
 
     public void mode(String graph, GraphMode mode) {
