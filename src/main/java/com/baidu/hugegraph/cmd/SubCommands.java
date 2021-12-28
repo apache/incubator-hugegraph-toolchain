@@ -59,9 +59,12 @@ public class SubCommands {
     }
 
     private void initSubCommands() {
+        this.commands.put("graph-create", new GraphCreate());
+        this.commands.put("graph-clone", new GraphClone());
         this.commands.put("graph-list", new GraphList());
         this.commands.put("graph-get", new GraphGet());
         this.commands.put("graph-clear", new GraphClear());
+        this.commands.put("graph-drop", new GraphDrop());
         this.commands.put("graph-mode-set", new GraphModeSet());
         this.commands.put("graph-mode-get", new GraphModeGet());
 
@@ -370,6 +373,45 @@ public class SubCommands {
         }
     }
 
+    @Parameters(commandDescription = "Create graph with config")
+    public static class GraphCreate {
+
+        @Parameter(names = {"--name", "-n"}, arity = 1,
+                   description = "The name of new created graph, default is g")
+        public String name = "g";
+
+        @ParametersDelegate
+        private ConfigFile configFile = new ConfigFile();
+
+        public String name() {
+            return this.name;
+        }
+
+        public String config() {
+            return this.configFile.config;
+        }
+    }
+
+    @Parameters(commandDescription = "Clone graph")
+    public static class GraphClone {
+
+        @Parameter(names = {"--name", "-n"}, arity = 1,
+                   description = "The name of new created graph, default is g")
+        public String name = "g";
+
+        @Parameter(names = {"--clone-graph-name"}, arity = 1,
+                   description = "The name of cloned graph, default is hugegraph")
+        public String cloneGraphName = "hugegraph";
+
+        public String name() {
+            return this.name;
+        }
+
+        public String cloneGraphName() {
+            return this.cloneGraphName;
+        }
+    }
+
     @Parameters(commandDescription = "List all graphs")
     public static class GraphList {
     }
@@ -381,7 +423,18 @@ public class SubCommands {
     public static class GraphClear {
 
         @ParametersDelegate
-        private ConfirmMessage message = new ConfirmMessage();
+        private ClearConfirmMessage message = new ClearConfirmMessage();
+
+        public String confirmMessage() {
+            return this.message.confirmMessage;
+        }
+    }
+
+    @Parameters(commandDescription = "Drop graph")
+    public static class GraphDrop {
+
+        @ParametersDelegate
+        private DropConfirmMessage message = new DropConfirmMessage();
 
         public String confirmMessage() {
             return this.message.confirmMessage;
@@ -736,11 +789,21 @@ public class SubCommands {
         public String url = null;
     }
 
-    public static class ConfirmMessage {
+    public static class ClearConfirmMessage {
 
         @Parameter(names = {"--confirm-message", "-c"}, arity = 1,
                    description = "Confirm message of graph clear is " +
                                  "\"I'm sure to delete all data\". " +
+                                 "(Note: include \"\")",
+                   required = true)
+        public String confirmMessage;
+    }
+
+    public static class DropConfirmMessage {
+
+        @Parameter(names = {"--confirm-message", "-c"}, arity = 1,
+                   description = "Confirm message of graph clear is " +
+                                 "\"I'm sure to drop the graph\". " +
                                  "(Note: include \"\")",
                    required = true)
         public String confirmMessage;
@@ -763,6 +826,14 @@ public class SubCommands {
                    description = "Gremlin Script file to be executed, UTF-8 " +
                                  "encoded, exclusive to --script")
         public String script;
+    }
+
+    public static class ConfigFile {
+
+        @Parameter(names = {"--file", "-f"}, arity = 1,
+                   converter = FileNameToContentConverter.class,
+                   description = "Creating graph config file")
+        public String config;
     }
 
     public static class GremlinScript {

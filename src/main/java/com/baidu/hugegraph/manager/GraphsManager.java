@@ -32,6 +32,14 @@ public class GraphsManager extends ToolManager {
         super(info, "graphs");
     }
 
+    public Map<String, String> create(String name, String config) {
+        return this.client.graphs().createGraph(name, config);
+    }
+
+    public Map<String, String> clone(String name, String cloneGraphName) {
+        return this.client.graphs().cloneGraph(name, cloneGraphName);
+    }
+
     public List<String> list() {
         return this.client.graphs().listGraph();
     }
@@ -42,6 +50,10 @@ public class GraphsManager extends ToolManager {
 
     public void clear(String graph, String confirmMessage) {
         this.client.graphs().clearGraph(graph, confirmMessage);
+    }
+
+    public void drop(String graph, String confirmMessage) {
+        this.client.graphs().dropGraph(graph, confirmMessage);
     }
 
     public void mode(String graph, GraphMode mode) {

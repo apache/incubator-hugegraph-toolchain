@@ -57,7 +57,8 @@ import static com.baidu.hugegraph.manager.BackupManager.BACKUP_DEFAULT_TIMEOUT;
 
 public class HugeGraphCommand {
 
-    private static final int DEFAULT_CLEAR_TIMEOUT = 300;
+    private static final int DEFAULT_GRAPH_CLEAR_TIMEOUT = 300;
+    private static final int DEFAULT_GRAPH_CREATE_TIMEOUT = 300;
 
     private SubCommands subCommands;
 
@@ -267,6 +268,26 @@ public class HugeGraphCommand {
                 dumpManager.dumpFormatter(dump.formatter());
                 dumpManager.dump();
                 break;
+            case "graph-create":
+                SubCommands.GraphCreate graphCreate = this.subCommand(subCmd);
+                if (timeout() < DEFAULT_GRAPH_CREATE_TIMEOUT) {
+                    this.timeout(DEFAULT_GRAPH_CREATE_TIMEOUT);
+                }
+                graphsManager = manager(GraphsManager.class);
+                graphsManager.create(graphCreate.name(), graphCreate.config());
+                Printer.print("Graph '%s' is created", graphCreate.name());
+                break;
+            case "graph-clone":
+                SubCommands.GraphClone graphClone = this.subCommand(subCmd);
+                if (timeout() < DEFAULT_GRAPH_CREATE_TIMEOUT) {
+                    this.timeout(DEFAULT_GRAPH_CREATE_TIMEOUT);
+                }
+                graphsManager = manager(GraphsManager.class);
+                graphsManager.clone(graphClone.name(),
+                                    graphClone.cloneGraphName());
+                Printer.print("Graph '%s' is created(cloned from '%s')",
+                              graphClone.name(), graphClone.cloneGraphName());
+                break;
             case "graph-list":
                 graphsManager = manager(GraphsManager.class);
                 Printer.printList("Graphs", graphsManager.list());
@@ -278,12 +299,21 @@ public class HugeGraphCommand {
                 break;
             case "graph-clear":
                 SubCommands.GraphClear graphClear = this.subCommand(subCmd);
-                if (timeout() < DEFAULT_CLEAR_TIMEOUT) {
-                    this.timeout(DEFAULT_CLEAR_TIMEOUT);
+                if (timeout() < DEFAULT_GRAPH_CLEAR_TIMEOUT) {
+                    this.timeout(DEFAULT_GRAPH_CLEAR_TIMEOUT);
                 }
                 graphsManager = manager(GraphsManager.class);
                 graphsManager.clear(this.graph(), graphClear.confirmMessage());
                 Printer.print("Graph '%s' is cleared", this.graph());
+                break;
+            case "graph-drop":
+                SubCommands.GraphDrop graphDrop = this.subCommand(subCmd);
+                if (timeout() < DEFAULT_GRAPH_CLEAR_TIMEOUT) {
+                    this.timeout(DEFAULT_GRAPH_CLEAR_TIMEOUT);
+                }
+                graphsManager = manager(GraphsManager.class);
+                graphsManager.drop(this.graph(), graphDrop.confirmMessage());
+                Printer.print("Graph '%s' is dropped", this.graph());
                 break;
             case "graph-mode-set":
                 SubCommands.GraphModeSet graphModeSet = this.subCommand(subCmd);
