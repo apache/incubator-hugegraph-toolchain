@@ -6,7 +6,7 @@
 
     <groupId>com.baidu.hugegraph</groupId>
     <artifactId>hugegraph-loader</artifactId>
-    <version>0.11.3</version>
+    <version>0.12.0</version>
     <packaging>jar</packaging>
 
     <name>hugegraph-loader</name>
@@ -61,19 +61,14 @@
     <dependencies>
         <dependency>
             <groupId>com.baidu.hugegraph</groupId>
-            <artifactId>hugegraph-common</artifactId>
-            <version>1.8.9</version>
+            <artifactId>hugegraph-client</artifactId>
+            <version>2.0.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.baidu.hugegraph</groupId>
-            <artifactId>hugegraph-client</artifactId>
-            <version>1.9.6</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

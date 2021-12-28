@@ -56,14 +56,14 @@ public class LoadTest {
     }
 
     public static void clearServerData() {
-        CLIENT.graphs().clear(GRAPH, CONFIRM_CLEAR);
+        CLIENT.graphs().clearGraph(GRAPH, CONFIRM_CLEAR);
     }
 
     public static void clearAndClose(HugeClient httpsClient, String graph) {
         if (httpsClient == null) {
             return;
         }
-        httpsClient.graphs().clear(graph, CONFIRM_CLEAR);
+        httpsClient.graphs().clearGraph(graph, CONFIRM_CLEAR);
     }
 
     protected static void assertContains(List<Vertex> vertices, String label,
