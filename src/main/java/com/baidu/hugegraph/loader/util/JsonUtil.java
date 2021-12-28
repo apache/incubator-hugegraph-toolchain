@@ -98,7 +98,7 @@ public final class JsonUtil {
                                                 LinkedHashSet.class, clazz);
         try {
             return MAPPER.readValue(json, type);
-        } catch (IOException e) {
+        } catch (JsonProcessingException e) {
             LOG.error("Failed to deserialize json", e);
             throw new DeserializeException("Failed to deserialize json", e);
         }
