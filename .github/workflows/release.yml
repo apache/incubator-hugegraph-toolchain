@@ -40,6 +40,7 @@ jobs:
           file: "hugegraph-*.tar.gz"
           tag_name: ${{ github.ref_name }}
           overwrite: true
+          draft: false
           verbose: true
           update_latest_release: true
 
