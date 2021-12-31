@@ -30,12 +30,9 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
-import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.handler.MessageSourceHandler;
-import com.baidu.hugegraph.license.LicenseVerifier;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.util.Ex;
@@ -59,9 +56,9 @@ public class LicenseService {
     @AllArgsConstructor
     public class VerifyResult {
 
-        private boolean enabled;
-        private String graphsMessage;
-        private List<String> dataSizeMessages;
+        private final boolean enabled;
+        private final String graphsMessage;
+        private final List<String> dataSizeMessages;
 
         public VerifyResult(boolean enabled) {
             this(enabled, null);
@@ -111,49 +108,7 @@ public class LicenseService {
     }
 
     public VerifyResult verifyGraphs(int actualGraphs) {
-        int allowedGraphs = LicenseVerifier.instance().allowedGraphs();
-        if (allowedGraphs != Constant.NO_LIMIT &&
-            actualGraphs > allowedGraphs) {
-            String msg = this.getMessage("license.verify.graphs.exceed",
-                                         actualGraphs, allowedGraphs);
-            return new VerifyResult(false, msg);
-        } else {
-            return new VerifyResult(true);
-        }
-    }
-
-    public VerifyResult verifyDataSize(HugeClient client, String name,
-                                       String graph) {
-        long allowedDataSize = LicenseVerifier.instance().allowedDataSize();
-        long actualDataSize = getActualDataSize(client, graph);
-        if (allowedDataSize != Constant.NO_LIMIT &&
-            actualDataSize > allowedDataSize) {
-            String msg = this.getMessage("license.verify.datasize.exceed",
-                                         name, actualDataSize, allowedDataSize);
-            return new VerifyResult(false, msg);
-        } else {
-            return new VerifyResult(true);
-        }
-    }
-
-    public void checkGraphStatus(int connId) {
-        GraphConnection connection = this.connService.get(connId);
-        Ex.check(connection != null, "graph-connection.not-exist.id", connId);
-
-        int actualGraphs = this.connService.count();
-        VerifyResult verifyResult = this.verifyGraphs(actualGraphs);
-        String msg = null;
-        if (!verifyResult.isEnabled() && !connection.getEnabled()) {
-            msg = String.format("%s, %s", verifyResult.getMessage(),
-                                connection.getDisableReason());
-        } else if (!verifyResult.isEnabled() && connection.getEnabled()) {
-            msg = verifyResult.getMessage();
-        } else if (verifyResult.isEnabled() && !connection.getEnabled()) {
-            msg = connection.getDisableReason();
-        }
-        if (msg != null) {
-            throw new ExternalException(Constant.STATUS_UNAUTHORIZED, msg);
-        }
+        return new VerifyResult(true);
     }
 
     @Async
@@ -178,19 +133,6 @@ public class LicenseService {
             return;
         }
 
-        long allowedDataSize = LicenseVerifier.instance().allowedDataSize();
-        long actualDataSize = getActualDataSize(client, conn.getGraph());
-        if (allowedDataSize != Constant.NO_LIMIT &&
-            actualDataSize > allowedDataSize) {
-            String msg = this.getMessage("license.verify.datasize.exceed",
-                                         conn.getName(), actualDataSize,
-                                         allowedDataSize);
-            conn.setEnabled(false);
-            conn.setDisableReason(msg);
-            this.connService.update(conn);
-            return;
-        }
-
         conn.setEnabled(true);
         conn.setDisableReason("");
         this.connService.update(conn);
@@ -200,6 +142,9 @@ public class LicenseService {
         return this.messageHandler.getMessage(msgKey, args);
     }
 
+    /**
+     * Keep 2 method for future use now
+     */
     private static long getActualDataSize(HugeClient client, String graph) {
         Map<String, Object> metrics = client.metrics().backend(graph);
         Object dataSize = metrics.get(METRICS_DATA_SIZE);

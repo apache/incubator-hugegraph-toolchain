@@ -46,7 +46,6 @@ import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.service.GraphConnectionService;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.service.SettingSSLService;
-import com.baidu.hugegraph.service.license.LicenseService;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HubbleUtil;
 import com.baidu.hugegraph.util.HugeClientUtil;
@@ -70,8 +69,6 @@ public class GraphConnectionController extends BaseController {
     @Autowired
     private HugeClientPoolService poolService;
     @Autowired
-    private LicenseService licenseService;
-    @Autowired
     private SettingSSLService sslService;
 
     @GetMapping
@@ -85,25 +82,6 @@ public class GraphConnectionController extends BaseController {
                          int pageSize) {
         IPage<GraphConnection> conns = this.connService.list(content, pageNo,
                                                              pageSize);
-        LicenseService.VerifyResult verifyResult;
-        verifyResult = this.licenseService.verifyGraphs((int) conns.getTotal());
-        // Verifed graphs failed, all connections marked as disabled
-        if (!verifyResult.isEnabled()) {
-            conns.getRecords().forEach(r -> r.setEnabled(false));
-        }
-        for (GraphConnection conn : conns.getRecords()) {
-            if (!conn.getEnabled()) {
-                verifyResult.setEnabled(false);
-                verifyResult.add(conn.getDisableReason());
-            }
-        }
-        // Verifed failed
-        if (!verifyResult.isEnabled()) {
-            // The first message is about graph connection count
-            return Response.builder().status(Constant.STATUS_UNAUTHORIZED)
-                           .data(conns).message(verifyResult.getMessage())
-                           .build();
-        }
         return Response.builder().status(Constant.STATUS_OK).data(conns)
                        .build();
     }
@@ -124,13 +102,6 @@ public class GraphConnectionController extends BaseController {
 
     @PostMapping
     public GraphConnection create(@RequestBody GraphConnection newEntity) {
-        // Check graph connection count, if exceed limit, throw exception
-        LicenseService.VerifyResult verifyResult;
-        verifyResult = this.licenseService.verifyGraphs(
-                       this.connService.count() + 1);
-        Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
-                 verifyResult.getMessage());
-
         this.checkParamsValid(newEntity, true);
         this.checkAddressSecurity(newEntity);
         // Make sure the new entity doesn't conflict with exists
@@ -141,12 +112,6 @@ public class GraphConnectionController extends BaseController {
         this.sslService.configSSL(this.config, newEntity);
         HugeClient client = HugeClientUtil.tryConnect(newEntity);
         newEntity.setCreateTime(HubbleUtil.nowDate());
-
-        // Check current graph's data size
-        verifyResult = this.licenseService.verifyDataSize(
-                       client, newEntity.getName(), newEntity.getGraph());
-        Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
-                 verifyResult.getMessage());
 
         this.connService.save(newEntity);
         this.poolService.put(newEntity, client);
@@ -170,12 +135,6 @@ public class GraphConnectionController extends BaseController {
         this.checkEntityUnique(entity, false);
         this.sslService.configSSL(this.config, entity);
         HugeClient client = HugeClientUtil.tryConnect(entity);
-        // Check current graph's data size
-        LicenseService.VerifyResult verifyResult;
-        verifyResult = this.licenseService.verifyDataSize(
-                       client, entity.getName(), entity.getGraph());
-        Ex.check(verifyResult.isEnabled(), Constant.STATUS_UNAUTHORIZED,
-                 verifyResult.getMessage());
 
         this.connService.update(entity);
         this.poolService.put(entity, client);
@@ -190,7 +149,6 @@ public class GraphConnectionController extends BaseController {
         }
         this.connService.remove(id);
         this.poolService.remove(oldEntity);
-        this.licenseService.updateAllGraphStatus();
         return oldEntity;
     }
 

@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import com.baidu.hugegraph.exception.InternalException;
-import com.baidu.hugegraph.license.LicenseVerifier;
 import com.baidu.hugegraph.service.license.LicenseService;
 
 import lombok.extern.log4j.Log4j2;
@@ -59,11 +58,6 @@ public class CustomInterceptor extends HandlerInterceptorAdapter {
         if (StringUtils.isEmpty(connIdValue)) {
             throw new InternalException("Not found conn id in url");
         }
-
-        int connId = Integer.parseInt(connIdValue);
-        // Check graph connection valid
-        this.licenseService.checkGraphStatus(connId);
-        LicenseVerifier.instance().verifyIfNeeded();
         return true;
     }
 }
