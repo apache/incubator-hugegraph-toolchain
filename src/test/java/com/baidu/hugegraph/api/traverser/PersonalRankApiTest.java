@@ -304,7 +304,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             PersonalRankAPI.Request.Builder builder;
             builder = PersonalRankAPI.Request.builder();
-            builder.maxDepth(51);
+            builder.maxDepth(10000);
         });
     }
 
