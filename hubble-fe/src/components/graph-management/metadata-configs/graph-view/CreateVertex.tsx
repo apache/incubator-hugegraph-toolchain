@@ -18,7 +18,7 @@ import {
   Checkbox,
   Tooltip,
   Message
-} from '@baidu/one-ui';
+} from 'hubble-ui';
 
 import { Tooltip as CustomTooltip } from '../../../common';
 import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';

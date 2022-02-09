@@ -4,7 +4,7 @@ import { useRoute, useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { isEmpty, size } from 'lodash-es';
 import classnames from 'classnames';
-import { Button, Input, Table, Modal, Message } from '@baidu/one-ui';
+import { Button, Input, Table, Modal, Message } from 'hubble-ui';
 
 import LoadingDataView from '../../../common/LoadingDataView';
 import { Tooltip as CustomTooltip } from '../../../common';

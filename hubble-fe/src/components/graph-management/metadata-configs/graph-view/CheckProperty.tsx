@@ -6,7 +6,7 @@ import React, {
   useCallback
 } from 'react';
 import { observer } from 'mobx-react';
-import { Drawer, Table, Message } from '@baidu/one-ui';
+import { Drawer, Table, Message } from 'hubble-ui';
 
 import { Tooltip } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';

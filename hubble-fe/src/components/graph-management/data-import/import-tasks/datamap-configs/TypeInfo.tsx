@@ -8,7 +8,7 @@ import React, {
 import { observer } from 'mobx-react';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Button } from '@baidu/one-ui';
+import { Button } from 'hubble-ui';
 
 import { Tooltip } from '../../../../common';
 import { DataImportRootStoreContext } from '../../../../../stores';

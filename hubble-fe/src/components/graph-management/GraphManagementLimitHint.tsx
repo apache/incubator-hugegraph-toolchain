@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
-import { Alert } from '@baidu/one-ui';
+import { Alert } from 'hubble-ui';
 
 import { GraphManagementStoreContext } from '../../stores';
 

@@ -2,7 +2,7 @@ import React, { useState, useContext, useCallback, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import classnames from 'classnames';
 import { isUndefined, update } from 'lodash-es';
-import { Drawer, Input, Button, Message } from '@baidu/one-ui';
+import { Drawer, Input, Button, Message } from 'hubble-ui';
 
 import { DataAnalyzeStoreContext } from '../../../stores';
 import { convertArrayToString } from '../../../stores/utils';

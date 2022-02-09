@@ -1,6 +1,6 @@
 import React, { useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
-import { Input, Button } from '@baidu/one-ui';
+import { Input, Button } from 'hubble-ui';
 import { GraphManagementStoreContext } from '../../stores';
 
 const styles = {

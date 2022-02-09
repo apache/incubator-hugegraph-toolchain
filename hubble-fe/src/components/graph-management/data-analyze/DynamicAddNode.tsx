@@ -1,6 +1,6 @@
 import React, { useContext, useCallback, useRef, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Drawer, Select, Input, Button, Message } from '@baidu/one-ui';
+import { Drawer, Select, Input, Button, Message } from 'hubble-ui';
 
 import { DataAnalyzeStoreContext } from '../../../stores';
 import { addGraphNodes } from '../../../stores/utils';

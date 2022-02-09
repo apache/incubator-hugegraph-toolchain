@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react';
-import { Message } from '@baidu/one-ui';
+import { Message } from 'hubble-ui';
 import { isUndefined } from 'lodash-es';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';

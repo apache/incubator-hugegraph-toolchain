@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
-import { Progress } from '@baidu/one-ui';
+import { Progress } from 'hubble-ui';
 
 import { DataImportRootStoreContext } from '../../../../../stores';
 

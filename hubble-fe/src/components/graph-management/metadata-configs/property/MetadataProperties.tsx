@@ -16,7 +16,7 @@ import {
   Select,
   Message,
   Loading
-} from '@baidu/one-ui';
+} from 'hubble-ui';
 import Highlighter from 'react-highlight-words';
 
 import { Tooltip, LoadingDataView } from '../../../common';

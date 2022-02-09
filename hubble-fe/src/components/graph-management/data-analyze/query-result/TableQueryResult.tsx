@@ -1,6 +1,6 @@
 import React, { useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
-import { Table } from '@baidu/one-ui';
+import { Table } from 'hubble-ui';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
 

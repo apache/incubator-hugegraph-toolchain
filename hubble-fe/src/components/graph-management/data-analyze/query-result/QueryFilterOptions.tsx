@@ -1,7 +1,7 @@
 import React, { useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
-import { Select, Input, NumberBox, Calendar } from '@baidu/one-ui';
-import { Message } from '@baidu/one-ui';
+import { Select, Input, NumberBox, Calendar } from 'hubble-ui';
+import { Message } from 'hubble-ui';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
 import { addGraphNodes, addGraphEdges } from '../../../../stores/utils';

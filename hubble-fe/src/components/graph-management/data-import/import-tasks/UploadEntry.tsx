@@ -13,7 +13,7 @@ import {
 import { DndProvider, useDrop, DropTargetMonitor } from 'react-dnd';
 import { useTranslation } from 'react-i18next';
 import { HTML5Backend, NativeTypes } from 'react-dnd-html5-backend';
-import { Button, Progress, Message } from '@baidu/one-ui';
+import { Button, Progress, Message } from 'hubble-ui';
 import { CancellablePromise } from 'mobx/lib/api/flow';
 
 import { DataImportRootStoreContext } from '../../../../stores';

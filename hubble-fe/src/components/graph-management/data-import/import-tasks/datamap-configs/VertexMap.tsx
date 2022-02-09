@@ -9,7 +9,7 @@ import { observer } from 'mobx-react';
 import { isUndefined, isEmpty, size, cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Input, Select, Checkbox, Message } from '@baidu/one-ui';
+import { Input, Select, Checkbox, Message } from 'hubble-ui';
 
 import { Tooltip } from '../../../../common';
 import TypeConfigManipulations from './TypeConfigManipulations';

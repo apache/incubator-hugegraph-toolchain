@@ -15,7 +15,7 @@ import {
   Modal,
   Message,
   Tooltip
-} from '@baidu/one-ui';
+} from 'hubble-ui';
 import { useLocation } from 'wouter';
 import { isNull } from 'lodash-es';
 import { motion } from 'framer-motion';

@@ -9,7 +9,7 @@ import { observer } from 'mobx-react';
 import { isEmpty } from 'lodash-es';
 import vis from 'vis-network';
 import 'vis-network/styles/vis-network.min.css';
-import { Button } from '@baidu/one-ui';
+import { Button } from 'hubble-ui';
 
 import CreateProperty from './CreateProperty';
 import CreateVertex from './CreateVertex';

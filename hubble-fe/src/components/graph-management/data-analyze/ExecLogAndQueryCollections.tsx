@@ -5,7 +5,7 @@ import { isUndefined } from 'lodash-es';
 import Highlighter from 'react-highlight-words';
 import { useRoute, useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
-import { Table, Input, Button, Message } from '@baidu/one-ui';
+import { Table, Input, Button, Message } from 'hubble-ui';
 
 import { Tooltip } from '../../common';
 import Favorite from './common/Favorite';

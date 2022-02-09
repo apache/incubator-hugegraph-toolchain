@@ -28,7 +28,7 @@ import {
   Checkbox,
   Message,
   Loading
-} from '@baidu/one-ui';
+} from 'hubble-ui';
 
 import { Tooltip, LoadingDataView } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';

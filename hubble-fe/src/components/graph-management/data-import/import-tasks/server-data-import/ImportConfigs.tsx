@@ -4,7 +4,7 @@ import { useLocation } from 'wouter';
 import { isEmpty } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Switch, Input, Button, Table, Tooltip, Message } from '@baidu/one-ui';
+import { Switch, Input, Button, Table, Tooltip, Message } from 'hubble-ui';
 
 import { DataImportRootStoreContext } from '../../../../../stores';
 import { useInitDataImport } from '../../../../../hooks';

@@ -10,7 +10,7 @@ import { size, isUndefined, isEmpty } from 'lodash-es';
 import { saveAs } from 'file-saver';
 import vis from 'vis-network';
 import 'vis-network/styles/vis-network.min.css';
-import { Message } from '@baidu/one-ui';
+import { Message } from 'hubble-ui';
 
 import QueryFilterOptions from './QueryFilterOptions';
 import GraphPopOver from './GraphPopOver';

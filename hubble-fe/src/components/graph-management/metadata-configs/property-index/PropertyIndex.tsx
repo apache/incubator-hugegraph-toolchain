@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import Highlighter from 'react-highlight-words';
 import { motion } from 'framer-motion';
-import { Input, Table } from '@baidu/one-ui';
+import { Input, Table } from 'hubble-ui';
 
 import { LoadingDataView } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';

@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import { useRoute, useLocation, Params } from 'wouter';
 import classnames from 'classnames';
 import { AnimatePresence } from 'framer-motion';
-import { Radio, Menu, Modal, Button } from '@baidu/one-ui';
+import { Radio, Menu, Modal, Button } from 'hubble-ui';
 
 import { MetadataProperties } from './property';
 import { VertexTypeList } from './vertex-type';

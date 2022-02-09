@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import { useRoute, useLocation } from 'wouter';
 import { isEmpty } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@baidu/one-ui';
+import { Button } from 'hubble-ui';
 
 import {
   ImportManagerStoreContext,

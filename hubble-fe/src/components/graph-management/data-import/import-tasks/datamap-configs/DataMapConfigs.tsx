@@ -1,7 +1,7 @@
 import React, { useContext, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { isEmpty } from 'lodash-es';
-import { Menu } from '@baidu/one-ui';
+import { Menu } from 'hubble-ui';
 
 import {
   ImportManagerStoreContext,

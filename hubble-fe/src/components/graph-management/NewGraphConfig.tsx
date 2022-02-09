@@ -1,6 +1,6 @@
 import React, { useContext, useCallback, useLayoutEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Embedded, Input, Button, Message, Tooltip } from '@baidu/one-ui';
+import { Embedded, Input, Button, Message, Tooltip } from 'hubble-ui';
 
 import { GraphManagementStoreContext } from '../../stores';
 import HintIcon from '../../assets/imgs/ic_question_mark.svg';

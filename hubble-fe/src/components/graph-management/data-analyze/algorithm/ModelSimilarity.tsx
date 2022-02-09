@@ -1,7 +1,7 @@
 import React, { useContext, createContext } from 'react';
 import { observer } from 'mobx-react';
 import { size } from 'lodash-es';
-import { Button, Radio, Input, Select, Switch } from '@baidu/one-ui';
+import { Button, Radio, Input, Select, Switch } from 'hubble-ui';
 import { useTranslation } from 'react-i18next';
 import { styles } from '../QueryAndAlgorithmLibrary';
 import { Tooltip as CustomTooltip } from '../../../common';

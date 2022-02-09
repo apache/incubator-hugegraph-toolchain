@@ -17,7 +17,7 @@ import {
   Message,
   Table,
   Loading
-} from '@baidu/one-ui';
+} from 'hubble-ui';
 
 import {
   GraphManagementStoreContext,

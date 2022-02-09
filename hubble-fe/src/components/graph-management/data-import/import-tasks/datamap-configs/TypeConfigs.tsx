@@ -4,7 +4,7 @@ import { isEmpty, size } from 'lodash-es';
 import { useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Button } from '@baidu/one-ui';
+import { Button } from 'hubble-ui';
 
 import { DataImportRootStoreContext } from '../../../../../stores';
 

@@ -18,7 +18,7 @@ import {
   Input,
   Radio,
   Select
-} from '@baidu/one-ui';
+} from 'hubble-ui';
 
 import 'codemirror/lib/codemirror.css';
 import 'react-popper-tooltip/dist/styles.css';

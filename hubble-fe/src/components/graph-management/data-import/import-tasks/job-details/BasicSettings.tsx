@@ -4,7 +4,7 @@ import { isEmpty, isNull, isUndefined } from 'lodash-es';
 import { useRoute } from 'wouter';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Button, Modal, Input, Message } from '@baidu/one-ui';
+import { Button, Modal, Input, Message } from 'hubble-ui';
 
 import { ImportManagerStoreContext } from '../../../../../stores';
 import {

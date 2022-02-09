@@ -3,7 +3,7 @@ import { observer } from 'mobx-react';
 import { range, rangeRight } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Radio, Switch, Input, Select, Button, Message } from '@baidu/one-ui';
+import { Radio, Switch, Input, Select, Button, Message } from 'hubble-ui';
 
 import { DataImportRootStoreContext } from '../../../../../stores';
 

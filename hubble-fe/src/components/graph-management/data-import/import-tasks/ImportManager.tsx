@@ -4,7 +4,7 @@ import { useRoute, useLocation, Switch, Route } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { isNull } from 'lodash-es';
 import classnames from 'classnames';
-import { Breadcrumb } from '@baidu/one-ui';
+import { Breadcrumb } from 'hubble-ui';
 
 import { JobDetails } from './job-details';
 import ImportTaskList from './ImportTaskList';

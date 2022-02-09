@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
-import { Select, Steps, Transfer, Button, Table, Input } from '@baidu/one-ui';
+import { Select, Steps, Transfer, Button, Table, Input } from 'hubble-ui';
 
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import PassIcon from '../../../../assets/imgs/ic_pass.svg';

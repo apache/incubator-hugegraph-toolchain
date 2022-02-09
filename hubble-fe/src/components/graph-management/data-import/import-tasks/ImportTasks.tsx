@@ -4,7 +4,7 @@ import { useRoute, useLocation } from 'wouter';
 import { isNull } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import { Steps, Button } from '@baidu/one-ui';
+import { Steps, Button } from 'hubble-ui';
 
 import UploadEntry from './UploadEntry';
 import { DataMapConfigs } from './datamap-configs';

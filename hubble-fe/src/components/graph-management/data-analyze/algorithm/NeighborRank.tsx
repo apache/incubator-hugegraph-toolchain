@@ -4,7 +4,7 @@ import { size, last } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import { styles } from '../QueryAndAlgorithmLibrary';
-import { Button, Radio, Input, Select } from '@baidu/one-ui';
+import { Button, Radio, Input, Select } from 'hubble-ui';
 
 import { Tooltip as CustomTooltip } from '../../../common';
 import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';

@@ -8,7 +8,7 @@ import {
   Table,
   Input,
   Message
-} from '@baidu/one-ui';
+} from 'hubble-ui';
 
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import PassIcon from '../../../../assets/imgs/ic_pass.svg';

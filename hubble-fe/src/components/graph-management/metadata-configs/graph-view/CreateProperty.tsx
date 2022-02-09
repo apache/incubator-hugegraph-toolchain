@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
-import { Drawer, Button, Input, Select, Message } from '@baidu/one-ui';
+import { Drawer, Button, Input, Select, Message } from 'hubble-ui';
 
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 

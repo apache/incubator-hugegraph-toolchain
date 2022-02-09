@@ -1,6 +1,6 @@
 import React, { useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
-import { Button } from '@baidu/one-ui';
+import { Button } from 'hubble-ui';
 
 import { GraphManagementStoreContext } from '../../stores';
 import AddIcon from '../../assets/imgs/ic_add.svg';

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useContext, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import classnames from 'classnames';
 import { useLocation, useRoute } from 'wouter';
-import { Select, Tooltip, PopLayer, Menu } from '@baidu/one-ui';
+import { Select, Tooltip, PopLayer, Menu } from 'hubble-ui';
 
 import {
   GraphManagementStoreContext,

@@ -1,6 +1,6 @@
 import React, { useState, useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
-import { Button, Input, Message } from '@baidu/one-ui';
+import { Button, Input, Message } from 'hubble-ui';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
 

@@ -1,7 +1,7 @@
 import React, { useContext, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { useRoute, useLocation, Params } from 'wouter';
-import { Modal, Button } from '@baidu/one-ui';
+import { Modal, Button } from 'hubble-ui';
 
 import DataAnalyzeContent from './DataAnalyzeContent';
 import DataAnalyzeInfoDrawer from './DataAnalyzeInfoDrawer';

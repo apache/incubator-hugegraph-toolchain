@@ -1,1 +1,1 @@
-declare module '@baidu/one-ui';
+declare module 'hubble-ui';
