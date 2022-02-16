@@ -64,18 +64,18 @@
                         <configuration>
                             <tasks>
                                 <echo file="${top.level.dir}/dist.sh">
-<!--                                    cd ${hubble-fe.dir}-->
-<!--                                    yarn install &amp;&amp; yarn build || exit 1-->
-<!--                                    echo "hubble-fe build ok."-->
+                                    cd ${hubble-fe.dir} &amp;&amp; pwd
+                                    yarn install &amp;&amp; yarn build || exit 1
+                                    echo -e "Hubble-FE build successfully.\n"
 
-<!--                                    cd ..-->
-<!--                                    rm -rf ${final.name}/ui-->
-<!--                                    cp -r ${hubble-fe.dir}/build ${final.name}/ui-->
+                                    cd ..
+                                    rm -rf ${final.name}/ui
+                                    cp -r ${hubble-fe.dir}/build ${final.name}/ui
 
-<!--                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${final.name} || exit 1-->
-<!--                                    echo -n "hugegraph-hubble tar.gz available at: "-->
-<!--                                    echo "${top.level.dir}/${final.name}.tar.gz"-->
-<!--                                    rm -f ${top.level.dir}/dist.sh-->
+                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${final.name} || exit 1
+                                    echo -n "hugegraph-hubble tar.gz available at: "
+                                    echo "${top.level.dir}/${final.name}.tar.gz"
+                                    rm -f ${top.level.dir}/dist.sh
                                 </echo>
                                 <exec executable="${shell-executable}"
                                       dir="${top.level.dir}" failonerror="true">

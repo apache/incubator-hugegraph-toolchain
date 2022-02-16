@@ -9,9 +9,8 @@ scriptEvaluationTimeout: 30000
 # please change `HttpChannelizer` to `WebSocketChannelizer` or comment this line.
 channelizer: org.apache.tinkerpop.gremlin.server.channel.HttpChannelizer
 graphs: {
-  hugegraph1: conf/hugegraph1.properties,
-  hugegraph2: conf/hugegraph2.properties
 }
+
 scriptEngines: {
   gremlin-groovy: {
     plugins: {

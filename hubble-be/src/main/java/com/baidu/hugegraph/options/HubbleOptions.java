@@ -58,7 +58,7 @@ public class HubbleOptions extends OptionHolder {
 
     public static final ConfigOption<String> SERVER_HOST =
             new ConfigOption<>(
-                    "server.host",
+                    "hubble.host",
                     "The host of hugegraph-hubble server.",
                     disallowEmpty(),
                     "localhost"
@@ -66,7 +66,7 @@ public class HubbleOptions extends OptionHolder {
 
     public static final ConfigOption<Integer> SERVER_PORT =
             new ConfigOption<>(
-                    "server.port",
+                    "hubble.port",
                     "The port of hugegraph-hubble server.",
                     rangeInt(1, 65535),
                     8088
@@ -104,10 +104,7 @@ public class HubbleOptions extends OptionHolder {
                         if (CollectionUtils.isEmpty(input)) {
                             return false;
                         }
-                        if (input.contains(-1) && input.size() > 1) {
-                            return false;
-                        }
-                        return true;
+                        return !input.contains(-1) || input.size() <= 1;
                     },
                     -1
             );

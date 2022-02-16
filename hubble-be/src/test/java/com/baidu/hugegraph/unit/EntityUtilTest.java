@@ -50,9 +50,6 @@ public class EntityUtilTest {
         Assert.assertEquals(oldEntity.getTimeout(), entity.getTimeout());
         Assert.assertEquals(newEntity.getUsername(), entity.getUsername());
         Assert.assertEquals(newEntity.getPassword(), entity.getPassword());
-        Assert.assertEquals(newEntity.getEnabled(), entity.getEnabled());
-        Assert.assertEquals(newEntity.getDisableReason(),
-                            entity.getDisableReason());
         Assert.assertEquals(oldEntity.getCreateTime(), entity.getCreateTime());
     }
 }

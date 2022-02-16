@@ -4,11 +4,11 @@ import json
 import sys
 
 import requests
+from imp import reload
 from assertpy import assert_that
 from behave import *
 
 reload(sys)
-sys.setdefaultencoding('utf8')
 use_step_matcher("re")
 
 
