@@ -57,7 +57,7 @@ import com.google.common.collect.ImmutableSet;
 
 public class RestResultTest extends BaseUnitTest {
 
-    private javax.ws.rs.core.Response mockResponse;
+    private jakarta.ws.rs.core.Response mockResponse;
     private static GraphManager graphManager;
 
     @BeforeClass
@@ -76,7 +76,7 @@ public class RestResultTest extends BaseUnitTest {
     @Before
     public void setup() {
         // Mock caches
-        this.mockResponse = Mockito.mock(javax.ws.rs.core.Response.class);
+        this.mockResponse = Mockito.mock(jakarta.ws.rs.core.Response.class);
     }
 
     @After

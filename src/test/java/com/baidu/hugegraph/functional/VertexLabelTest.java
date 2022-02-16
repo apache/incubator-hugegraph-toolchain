@@ -82,6 +82,11 @@ public class VertexLabelTest extends BaseFuncTest {
         Assert.assertEquals(1, player.userdata().size());
         String time = (String) player.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Assert.fail(e.getMessage());
+        }
         Assert.assertTrue(createTime.before(DateUtil.now()));
 
         player = schema.vertexLabel("player")

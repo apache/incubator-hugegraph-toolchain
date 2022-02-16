@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.client;
 
-import javax.ws.rs.core.Response;
-
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.rest.AbstractRestClient;
 import com.baidu.hugegraph.rest.ClientException;
@@ -31,6 +29,7 @@ import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.util.VersionUtil.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import jakarta.ws.rs.core.Response;
 
 public class RestClient extends AbstractRestClient {
 

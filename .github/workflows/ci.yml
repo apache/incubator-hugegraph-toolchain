@@ -18,11 +18,15 @@ jobs:
     env:
       TRAVIS_DIR: assembly/travis
       COMMIT_ID: 1d031c5905cbef008dd5fb468576b0e6a9445181
+    strategy:
+      fail-fast: false
+      matrix:
+        JAVA_VERSION: ['8']
     steps:
       - name: Install JDK 8
         uses: actions/setup-java@v2
         with:
-          java-version: '8'
+          java-version: ${{ matrix.JAVA_VERSION }}
           distribution: 'zulu'
 
       - name: Cache Maven packages

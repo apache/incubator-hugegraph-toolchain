@@ -22,11 +22,9 @@ package com.baidu.hugegraph.api.graphs;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.api.API;
@@ -61,7 +59,7 @@ public class GraphsAPI extends API {
     public Map<String, String> create(String name, String cloneGraphName,
                                       String configText) {
         this.client.checkApiVersion("0.67", "dynamic graph add");
-        MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
+        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         Map<String, Object> params = null;
         if (StringUtils.isNotEmpty(cloneGraphName)) {
