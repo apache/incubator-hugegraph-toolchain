@@ -11,20 +11,19 @@ jobs:
     steps:
       - name: "CLA Assistant"
         if: (github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA') || github.event_name == 'pull_request_target'
-        # Beta Release
         uses: cla-assistant/github-action@v2.1.3-beta
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # the below token should have repo scope and must be manually added by you in the repository's secret
           PERSONAL_ACCESS_TOKEN : ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         with:
-          path-to-signatures: 'signatures/version1/cla.json'
+          path-to-signatures: '.github/cla-signatures/cla.json'
           path-to-document: 'https://github.com/cla-assistant/github-action/blob/master/SAPCLA.md' # e.g. a CLA or a DCO document
           # branch should not be protected
-          branch: 'master'
+          branch: 'cla-assist'
           allowlist: bot*
 
-         #below are the optional inputs - If the optional inputs are not given, then default values will be taken
+         # the following are the optional inputs - If the optional inputs are not given, then default values will be taken
           #remote-organization-name: enter the remote organization name where the signatures should be stored (Default is storing the signatures in the same repository)
           #remote-repository-name:  enter the  remote repository name where the signatures should be stored (Default is storing the signatures in the same repository)
           #create-file-commit-message: 'For example: Creating file for storing CLA Signatures'
