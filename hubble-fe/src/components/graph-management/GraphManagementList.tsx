@@ -24,6 +24,7 @@ import Highlighter from 'react-highlight-words';
 import { GraphManagementStoreContext } from '../../stores';
 import HintIcon from '../../assets/imgs/ic_question_mark.svg';
 import { GraphData } from '../../stores/types/GraphManagementStore/graphManagementStore';
+import { useTranslation } from 'react-i18next'
 
 const dropdownList = [
   {
@@ -144,6 +145,7 @@ const GraphManagementListItem: React.FC<
     index: number;
   }
 > = observer(({ id, name, graph, host, port, enabled, create_time, index }) => {
+  const {t} = useTranslation()
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const [_, setLocation] = useLocation();
   const [isEditing, setEditingState] = useState(false);
@@ -290,7 +292,7 @@ const GraphManagementListItem: React.FC<
             />
           </div>
           <div>
-            <span>端口号:</span>
+            <span>{t('addition.graph-list.port')}:</span>
             <Input
               {...commonInputProps}
               placeholder="请输入端口号"
@@ -396,7 +398,7 @@ const GraphManagementListItem: React.FC<
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">端口号</div>
+        <div className="graph-management-list-title">{t('addition.graph-list.port')}</div>
         <div className="graph-management-list-data" title={String(port)}>
           {port}
         </div>

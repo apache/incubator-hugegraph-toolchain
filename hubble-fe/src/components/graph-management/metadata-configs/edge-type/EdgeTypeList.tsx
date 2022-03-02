@@ -664,19 +664,7 @@ const EdgeTypeList: React.FC = observer(() => {
                       disabled={!isEditEdge}
                       prefixCls="new-fc-one-select-another"
                       dropdownMatchSelectWidth={false}
-                      value={
-                        <div
-                          className="new-vertex-type-select"
-                          style={{
-                            background:
-                              edgeTypeStore.editedSelectedEdgeType.style
-                                .color !== null
-                                ? edgeTypeStore.editedSelectedEdgeType.style.color.toLowerCase()
-                                : edgeTypeStore.selectedEdgeType!.style.color!.toLowerCase(),
-                            marginTop: 5
-                          }}
-                        ></div>
-                      }
+                      value={edgeTypeStore.editedSelectedEdgeType.style.color}
                       onChange={(value: string) => {
                         edgeTypeStore.mutateEditedSelectedEdgeType({
                           ...edgeTypeStore.editedSelectedEdgeType,
@@ -747,28 +735,12 @@ const EdgeTypeList: React.FC = observer(() => {
                       size="medium"
                       showSearch={false}
                       disabled={!isEditEdge}
-                      value={
-                        (
-                          edgeTypeStore.editedSelectedEdgeType.style
-                            .with_arrow !== null
-                            ? edgeTypeStore.editedSelectedEdgeType.style
-                                .with_arrow
-                            : edgeTypeStore.selectedEdgeType!.style.with_arrow
-                        ) ? (
-                          <div>
-                            <img src={NoSelectedSoilidArrowIcon} />
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', marginTop: 14 }}>
-                            <img src={NoSelectedSoilidStraightIcon} />
-                          </div>
-                        )
-                      }
+                      value={edgeTypeStore.editedSelectedEdgeType.style.with_arrow}
                       onChange={(e: any) => {
                         edgeTypeStore.mutateEditedSelectedEdgeType({
                           ...edgeTypeStore.editedSelectedEdgeType,
                           style: {
-                            with_arrow: e[0] && e[1] === 'solid',
+                            with_arrow: e,
                             color:
                               edgeTypeStore.editedSelectedEdgeType.style
                                 .color !== null
@@ -795,7 +767,7 @@ const EdgeTypeList: React.FC = observer(() => {
                     >
                       {edgeTypeStore.edgeShapeSchemas.map((item, index) => (
                         <Select.Option
-                          value={[item.flag, item.shape]}
+                          value={item.flag}
                           key={item.flag}
                           style={{ width: 66 }}
                         >

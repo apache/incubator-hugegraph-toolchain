@@ -118,15 +118,7 @@ const NewVertexType: React.FC = observer(() => {
             <Select
               width={66}
               size="medium"
-              value={
-                <div
-                  className="new-vertex-type-select"
-                  style={{
-                    background: edgeTypeStore.newEdgeType.style.color!.toLowerCase(),
-                    marginTop: 5
-                  }}
-                ></div>
-              }
+              value={edgeTypeStore.newEdgeType.style.color}
               prefixCls="new-fc-one-select-another"
               dropdownMatchSelectWidth={false}
               onChange={(value: string) => {
@@ -172,30 +164,20 @@ const NewVertexType: React.FC = observer(() => {
             <Select
               width={66}
               size="medium"
-              value={
-                edgeTypeStore.newEdgeType.style.with_arrow ? (
-                  <div>
-                    <img src={NoSelectedSoilidArrowIcon} />
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', marginTop: 14 }}>
-                    <img src={NoSelectedSoilidStraightIcon} />
-                  </div>
-                )
-              }
+              value={edgeTypeStore.newEdgeType.style.with_arrow}
               onChange={(e: any) => {
                 edgeTypeStore.mutateNewEdgeType({
                   ...edgeTypeStore.newEdgeType,
                   style: {
                     ...edgeTypeStore.newEdgeType.style,
-                    with_arrow: e[0] && e[1] === 'solid'
+                    with_arrow: e
                   }
                 });
               }}
             >
               {edgeTypeStore.edgeShapeSchemas.map((item, index) => (
                 <Select.Option
-                  value={[item.flag, item.shape]}
+                  value={item.flag}
                   key={item.flag}
                   style={{ width: 66 }}
                 >

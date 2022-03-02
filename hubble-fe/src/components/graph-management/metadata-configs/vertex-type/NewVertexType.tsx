@@ -121,15 +121,7 @@ const NewVertexType: React.FC = observer(() => {
             <Select
               width={66}
               size="medium"
-              value={
-                <div
-                  className="new-vertex-type-select"
-                  style={{
-                    background: vertexTypeStore.newVertexType.style.color!.toLowerCase(),
-                    marginTop: 5
-                  }}
-                ></div>
-              }
+              value={vertexTypeStore.newVertexType.style.color}
               prefixCls="new-fc-one-select-another"
               dropdownMatchSelectWidth={false}
               onChange={(value: string) => {

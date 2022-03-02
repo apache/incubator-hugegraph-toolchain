@@ -1,0 +1,10 @@
+{
+  "addition": {
+    "appbar": {
+      "graph-manager": "图管理"
+    },
+    "graph-list": {
+      "port": "端口号"
+    }
+  }
+}

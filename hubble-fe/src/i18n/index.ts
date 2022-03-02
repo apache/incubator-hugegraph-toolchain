@@ -1,14 +1,15 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import { zhCNResources } from './resources';
+import { zhCNResources, enUSResources } from './resources';
 
 i18n.use(initReactI18next).init({
-  lng: 'zh-CN',
+  lng: localStorage.getItem('languageType') || 'zh-CN',
   fallbackLng: 'zh-CN',
 
   resources: {
-    'zh-CN': zhCNResources
+    'zh-CN': zhCNResources,
+    'en-US': enUSResources
   },
 
   interpolation: {

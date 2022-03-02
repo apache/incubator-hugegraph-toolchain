@@ -1,0 +1,10 @@
+{
+  "addition": {
+    "appbar": {
+      "graph-manager": "Graph Manager"
+    },
+    "graph-list": {
+      "port": "port"
+    }
+  }
+}
