@@ -1,10 +1,99 @@
 {
   "addition": {
+    "common": {
+      "vertex-type": "顶点类型",
+      "vertex-id": "顶点ID",
+      "edge-type": "边类型",
+      "edge-id": "边ID",
+      "origin": "起点",
+      "end": "终点",
+      "required-attribute": "不可空属性",
+      "nullable-attribute": "可空属性",
+      "primary-key": "主键",
+      "distinguishing-key": "区分键",
+      "property-input-desc": "请输入属性值",
+      "del-comfirm": "确认删除",
+      "ask": "吗？",
+      "confirm": "确认",
+      "del-success": "删除成功",
+      "save-scuccess": "保存成功",
+      "save-fail": "保存失败",
+      "save": "保存",
+      "cancel": "取消",
+      "more": "更多",
+      "edit": "编辑",
+      "del": "删除",
+      "fold": "折叠",
+      "open": "展开",
+      "close": "关闭",
+      "required": "必填项",
+      "format-error-desc": "必须以字母开头，允许出现英文、数字、下划线"
+    },
     "appbar": {
       "graph-manager": "图管理"
     },
-    "graph-list": {
-      "port": "端口号"
+    "graphManagementHeader": {
+      "graph-manager": "图管理",
+      "community": "社区版",
+      "business": "商业版",
+      "limit-desc": "支持图上限",
+      "limit-desc1": "图磁盘上限",
+      "individual": "个",
+      "input-placeholder": "搜索图名称或ID",
+      "graph-create": "创建图"
+    },
+    "graphManagementList": {
+      "save-scuccess": "保存成功",
+      "graph-del": "删除图",
+      "graph-del-comfirm-msg": "删除后该图所有配置均不可恢复",
+      "graph-edit": "编辑图",
+      "id": "图ID",
+      "id-desc": "为创建的图设置唯一标识的ID",
+      "name": "图名称",
+      "name-desc": "填写需要连接的图的名称",
+      "host": "主机名",
+      "port": "端口号",
+      "port-desc": "请输入端口号",
+      "username": "用户名",
+      "password": "密码",
+      "creation-time": "创建时间",
+      "visit": "访问"
+    },
+    "graphManagementEmptyList": {
+      "graph-create": "创建图",
+      "graph-create-desc": "您暂时还没有任何图，立即创建",
+      "no-matching-results": "无匹配结果"
+    },
+    "newGraphConfig": {
+      "graph-create": "创建图",
+      "create": "创建",
+      "create-scuccess": "创建成功",
+      "id": "图ID",
+      "id-desc": "为创建的图设置唯一标识的ID",
+      "name": "图名称",
+      "name-desc": "填写需要连接的图的名称",
+      "host": "主机名",
+      "host-desc": "请输入主机名",
+      "port": "端口号",
+      "port-desc": "请输入端口号",
+      "username": "用户名",
+      "password": "密码",
+      "not-required-desc": "未设置则无需填写"
+    },
+    "graphManagementSidebar": {
+      "data-analysis": "数据分析",
+      "graph-select": "选择图",
+      "metadata-config": "元数据配置",
+      "data-import": "数据导入",
+      "task-management": "任务管理"
+    },
+    "dataAnalyze": {
+      "cannot-access": "无法访问",
+      "return-home": "返回首页"
+    },
+    "dataAnalyzeInfoDrawer": {
+      "edit-details": "编辑详情",
+      "data-details": "数据详情"
     }
   }
 }

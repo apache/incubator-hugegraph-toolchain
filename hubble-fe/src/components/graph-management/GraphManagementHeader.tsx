@@ -2,6 +2,7 @@ import React, { useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
 import { Input, Button } from 'hubble-ui';
 import { GraphManagementStoreContext } from '../../stores';
+import { useTranslation } from 'react-i18next';
 
 const styles = {
   marginLeft: '20px',
@@ -10,7 +11,7 @@ const styles = {
 
 const GraphManagementHeader: React.FC = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
-
+  const { t } = useTranslation();
   const handleLayoutSwitch = useCallback(
     (flag: boolean) => () => {
       graphManagementStore.switchCreateNewGraph(flag);
@@ -43,27 +44,27 @@ const GraphManagementHeader: React.FC = observer(() => {
       {graphManagementStore.licenseInfo &&
       graphManagementStore.licenseInfo.edition === 'community' ? (
         <div className="graph-management-header-description-community">
-          <div>图管理</div>
+          <div>{t('addition.graphManagementHeader.graph-manager')}</div>
           <div>
             {graphManagementStore.licenseInfo.edition === 'community'
-              ? '社区版'
-              : '商业版'}
-            ：支持图上限 {graphManagementStore.licenseInfo.allowed_graphs + ' '}
-            个，图磁盘上限 {graphManagementStore.licenseInfo.allowed_datasize}
+              ? t('addition.graphManagementHeader.community')
+              : t('addition.graphManagementHeader.business')}
+            ：{t('addition.graphManagementHeader.limit-desc')}{' '}
+            {graphManagementStore.licenseInfo.allowed_graphs + ' '}
+            {t('addition.graphManagementHeader.individual')}，
+            {t('addition.graphManagementHeader.limit-desc1')}{' '}
+            {graphManagementStore.licenseInfo.allowed_datasize}
           </div>
         </div>
       ) : (
-        <span className="graph-management-header-description">图管理</span>
+        <span className="graph-management-header-description">
+          {t('addition.graphManagementHeader.graph-manager')}
+        </span>
       )}
-      {/* <span>图管理</span> */}
-      {/* <div className="graph-management-header-description-community">
-        <div>图管理</div>
-        <div>社区版：支持图上限3个，图磁盘上限100G</div>
-      </div> */}
       <Input.Search
         size="medium"
         width={200}
-        placeholder="搜索图名称或ID"
+        placeholder={t('addition.graphManagementHeader.input-placeholder')}
         value={graphManagementStore.searchWords}
         onChange={handleSearchChange}
         onSearch={handleSearch}
@@ -87,7 +88,7 @@ const GraphManagementHeader: React.FC = observer(() => {
           graphManagementStore.selectedEditIndex !== null
         }
       >
-        创建图
+        {t('addition.graphManagementHeader.graph-create')}
       </Button>
     </div>
   );

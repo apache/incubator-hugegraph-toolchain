@@ -5,9 +5,11 @@ import { Button } from 'hubble-ui';
 import { GraphManagementStoreContext } from '../../stores';
 import AddIcon from '../../assets/imgs/ic_add.svg';
 import EmptyIcon from '../../assets/imgs/ic_sousuo_empty.svg';
+import { useTranslation } from 'react-i18next';
 
 const GraphManagementEmptyList: React.FC = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
+  const { t } = useTranslation();
 
   const handleLayoutSwitch = useCallback(
     (flag: boolean) => () => {
@@ -25,13 +27,23 @@ const GraphManagementEmptyList: React.FC = observer(() => {
         {graphManagementStore.isSearched.status &&
         graphManagementStore.requestStatus.fetchGraphData === 'success' ? (
           <>
-            <img src={EmptyIcon} alt="无匹配结果" />
-            <div>无匹配结果</div>
+            <img
+              src={EmptyIcon}
+              alt={t('addition.graphManagementEmptyList.no-matching-results')}
+            />
+            <div>
+              {t('addition.graphManagementEmptyList.no-matching-results')}
+            </div>
           </>
         ) : (
           <>
-            <img src={AddIcon} alt="创建图" />
-            <div>您暂时还没有任何图，立即创建</div>
+            <img
+              src={AddIcon}
+              alt={t('addition.graphManagementEmptyList.graph-create')}
+            />
+            <div>
+              {t('addition.graphManagementEmptyList.graph-create-desc')}
+            </div>
             <Button
               type="primary"
               size="large"
@@ -40,7 +52,7 @@ const GraphManagementEmptyList: React.FC = observer(() => {
               }}
               onClick={handleLayoutSwitch(true)}
             >
-              创建图
+              {t('addition.graphManagementEmptyList.graph-create')}
             </Button>
           </>
         )}

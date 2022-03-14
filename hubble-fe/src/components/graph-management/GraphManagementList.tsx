@@ -24,30 +24,8 @@ import Highlighter from 'react-highlight-words';
 import { GraphManagementStoreContext } from '../../stores';
 import HintIcon from '../../assets/imgs/ic_question_mark.svg';
 import { GraphData } from '../../stores/types/GraphManagementStore/graphManagementStore';
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next';
 
-const dropdownList = [
-  {
-    label: '编辑',
-    value: 'edit'
-  },
-  {
-    label: '删除',
-    value: 'delete'
-  }
-];
-
-const disabledDropdownList = [
-  {
-    label: '编辑',
-    value: 'edit',
-    disabled: true
-  },
-  {
-    label: '删除',
-    value: 'delete'
-  }
-];
 
 const commonInputProps = {
   size: 'medium',
@@ -145,7 +123,7 @@ const GraphManagementListItem: React.FC<
     index: number;
   }
 > = observer(({ id, name, graph, host, port, enabled, create_time, index }) => {
-  const {t} = useTranslation()
+  const { t } = useTranslation();
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const [_, setLocation] = useLocation();
   const [isEditing, setEditingState] = useState(false);
@@ -169,7 +147,7 @@ const GraphManagementListItem: React.FC<
 
     if (graphManagementStore.requestStatus.upgradeGraphData === 'success') {
       Message.success({
-        content: '保存成功',
+        content: t('addition.graphManagementList.save-scuccess'),
         size: 'medium',
         showCloseIcon: false
       });
@@ -199,16 +177,18 @@ const GraphManagementListItem: React.FC<
 
       if (e.key === 'delete') {
         Modal.confirm({
-          title: '删除图',
+          title: t('addition.graphManagementList.graph-del'),
           content: (
             <div className="graph-data-delete-confirm">
-              {`确认删除 ${name} 吗？`}
+              {`${t('addition.common.del-comfirm')} ${name} ${t(
+                'addition.common.ask'
+              )}`}
               <br />
-              删除后该图所有配置均不可恢复
+              {t('addition.graphManagementList.graph-del-comfirm-msg')}
             </div>
           ),
           buttonSize: 'medium',
-          okText: '确认',
+          okText: t('addition.common.confirm'),
           onOk: async () => {
             await graphManagementStore.deleteGraphData(id);
 
@@ -216,7 +196,7 @@ const GraphManagementListItem: React.FC<
               graphManagementStore.requestStatus.deleteGraphData === 'success'
             ) {
               Message.success({
-                content: '删除成功',
+                content: t('addition.common.del-success'),
                 size: 'medium',
                 showCloseIcon: false
               });
@@ -244,9 +224,31 @@ const GraphManagementListItem: React.FC<
     setLocation(`/graph-management/${id}/data-analyze`);
   }, [id, setLocation]);
 
+  const dropdownList = [
+    {
+      label: t('addition.common.edit'),
+      value: 'edit'
+    },
+    {
+      label: t('addition.common.del'),
+      value: 'delete'
+    }
+  ];
+  
+  const disabledDropdownList = [
+    {
+      label: t('addition.common.edit'),
+      value: 'edit',
+      disabled: true
+    },
+    {
+      label: t('addition.common.del'),
+      value: 'delete'
+    }
+  ];
   return isEditing ? (
     <Embedded
-      title="编辑图"
+      title={t('addition.graphManagementList.graph-edit')}
       className="graph-management-list-data-config"
       onClose={handleCancel}
       visible={isEditing}
@@ -254,10 +256,10 @@ const GraphManagementListItem: React.FC<
       <div className="graph-management-list-create-content">
         <div>
           <div>
-            <span>图ID:</span>
+            <span>{t('addition.graphManagementList.id')}:</span>
             <Tooltip
               placement="right"
-              title="为创建的图设置唯一标识的ID"
+              title={t('addition.graphManagementList.id-desc')}
               type="dark"
             >
               <img src={HintIcon} alt="hint" />
@@ -269,10 +271,10 @@ const GraphManagementListItem: React.FC<
             />
           </div>
           <div>
-            <span>图名称:</span>
+            <span>{t('addition.graphManagementList.name')}:</span>
             <Tooltip
               placement="right"
-              title="填写需要连接的图的名称"
+              title={t('addition.graphManagementList.name-desc')}
               type="dark"
             >
               <img src={HintIcon} alt="hint" />
@@ -284,7 +286,7 @@ const GraphManagementListItem: React.FC<
             />
           </div>
           <div>
-            <span>主机名:</span>
+            <span>{t('addition.graphManagementList.host')}:</span>
             <Input
               {...commonInputProps}
               disabled
@@ -292,16 +294,16 @@ const GraphManagementListItem: React.FC<
             />
           </div>
           <div>
-            <span>{t('addition.graph-list.port')}:</span>
+            <span>{t('addition.graphManagementList.port')}:</span>
             <Input
               {...commonInputProps}
-              placeholder="请输入端口号"
+              placeholder={t('addition.graphManagementList.port-desc')}
               disabled
               value={graphManagementStore.editGraphData.port}
             />
           </div>
           <div>
-            <span>用户名:</span>
+            <span>{t('addition.graphManagementList.username')}:</span>
             <Input
               {...commonInputProps}
               errorMessage={
@@ -320,7 +322,7 @@ const GraphManagementListItem: React.FC<
             />
           </div>
           <div id="graph-password">
-            <span>密码:</span>
+            <span>{t('addition.graphManagementList.password')}:</span>
             <Input
               {...commonInputProps}
               errorMessage={
@@ -346,7 +348,7 @@ const GraphManagementListItem: React.FC<
                 style={{ width: 78 }}
                 onClick={handleSave}
               >
-                保存
+                {t('addition.common.save')}
               </Button>
               <Button
                 size="medium"
@@ -356,7 +358,7 @@ const GraphManagementListItem: React.FC<
                 }}
                 onClick={handleCancel}
               >
-                取消
+                {t('addition.common.cancel')}
               </Button>
             </div>
           </div>
@@ -366,7 +368,7 @@ const GraphManagementListItem: React.FC<
   ) : (
     <div className="graph-management-list" key={id}>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">图ID</div>
+        <div className="graph-management-list-title">{t('addition.graphManagementList.id')}</div>
         <div className="graph-management-list-data">
           <span title={name}>
             <Highlighter
@@ -379,7 +381,7 @@ const GraphManagementListItem: React.FC<
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">图名称</div>
+        <div className="graph-management-list-title">{t('addition.graphManagementList.name')}</div>
         <div className="graph-management-list-data">
           <span title={graph}>
             <Highlighter
@@ -392,19 +394,21 @@ const GraphManagementListItem: React.FC<
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">主机名</div>
+        <div className="graph-management-list-title">{t('addition.graphManagementList.host')}</div>
         <div className="graph-management-list-data" title={host}>
           {host}
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">{t('addition.graph-list.port')}</div>
+        <div className="graph-management-list-title">
+          {t('addition.graphManagementList.port')}
+        </div>
         <div className="graph-management-list-data" title={String(port)}>
           {port}
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">创建时间</div>
+        <div className="graph-management-list-title">{t('addition.graphManagementList.creation-time')}</div>
         <div className="graph-management-list-data" title={create_time}>
           {create_time}
         </div>
@@ -421,11 +425,11 @@ const GraphManagementListItem: React.FC<
           }
           onClick={handleVisit}
         >
-          访问
+          {t('addition.graphManagementList.visit')}
         </Button>
         <Dropdown.Button
           options={enabled ? dropdownList : disabledDropdownList}
-          title="更多"
+          title={t('addition.common.more')}
           size="medium"
           trigger={['click']}
           width={78}

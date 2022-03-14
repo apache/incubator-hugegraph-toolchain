@@ -22,6 +22,7 @@ import DataImportIconNormal from '../../assets/imgs/ic_daorushuju_normal.svg';
 import DataImportIconPressed from '../../assets/imgs/ic_daorushuju_pressed.svg';
 import AsyncTaskManagerIconNormal from '../../assets/imgs/ic_renwuguanli_normal.svg';
 import AsyncTaskManagerIconPressed from '../../assets/imgs/ic_renwuguanli_pressed.svg';
+import { useTranslation } from 'react-i18next';
 
 const GraphManagementSidebar: React.FC = observer(() => {
   const [match, params] = useRoute(
@@ -35,6 +36,7 @@ const GraphManagementSidebar: React.FC = observer(() => {
   // caution
   const [sidebarKey, setSidebarKey] = useState('');
   const [isShowNamePop, switchShowNamePop] = useState(false);
+  const { t } = useTranslation();
 
   const sidebarWrapperClassName = classnames({
     'data-analyze-sidebar': true,
@@ -89,8 +91,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
 
   const handleSelectId = useCallback(
     (value: string) => {
-      const id = graphManagementStore.idList.find(({ name }) => name === value)!
-        .id;
+      const id = graphManagementStore.idList.find(
+        ({ name }) => name === value
+      )!.id;
 
       dataAnalyzeStore.resetIdState();
       setLocation(`/graph-management/${id}/data-analyze`);
@@ -164,7 +167,7 @@ const GraphManagementSidebar: React.FC = observer(() => {
               <div className="data-analyze-sidebar-graph-selection-instruction">
                 <img
                   src={ArrowIcon}
-                  alt="选择图"
+                  alt={t('addition.graphManagementSidebar.graph-select')}
                   style={{
                     transform: isShowNamePop ? 'rotate(180deg)' : 'rotate(0deg)'
                   }}
@@ -223,9 +226,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
                     ? DataAnalyzeIconPressed
                     : DataAnalyzeIconNormal
                 }
-                alt="数据分析"
+                alt={t('addition.graphManagementSidebar.data-analysis')}
               />
-              <div>数据分析</div>
+              <div>{t('addition.graphManagementSidebar.data-analysis')}</div>
             </div>
           </Menu.Item>
           <Menu.Item key="metadata-configs">
@@ -236,9 +239,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
                     ? MetaDataManagementIconPressed
                     : MetaDataManagementIconNormal
                 }
-                alt="元数据配置"
+                alt={t('addition.graphManagementSidebar.metadata-config')}
               />
-              <div>元数据配置</div>
+              <div>{t('addition.graphManagementSidebar.metadata-config')}</div>
             </div>
           </Menu.Item>
           <Menu.Item key="data-import">
@@ -249,9 +252,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
                     ? DataImportIconPressed
                     : DataImportIconNormal
                 }
-                alt="数据导入"
+                alt={t('addition.graphManagementSidebar.data-import')}
               />
-              <div>数据导入</div>
+              <div>{t('addition.graphManagementSidebar.data-import')}</div>
             </div>
           </Menu.Item>
           {/* <Menu.SubMenu
@@ -282,9 +285,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
                     ? AsyncTaskManagerIconPressed
                     : AsyncTaskManagerIconNormal
                 }
-                alt="任务管理"
+                alt={t('addition.graphManagementSidebar.task-management')}
               />
-              <div>任务管理</div>
+              <div>{t('addition.graphManagementSidebar.task-management')}</div>
             </div>
           </Menu.Item>
         </Menu>
@@ -294,9 +297,9 @@ const GraphManagementSidebar: React.FC = observer(() => {
         onClick={handleExpandClick}
       >
         {graphManagementStore.isExpanded ? (
-          <img src={SidebarCollapseIcon} alt="折叠" />
+          <img src={SidebarCollapseIcon} alt={t('addition.common.fold')} />
         ) : (
-          <img src={SidebarExpandIcon} alt="展开" />
+          <img src={SidebarExpandIcon} alt={t('addition.common.open')} />
         )}
       </li>
     </ul>

@@ -6,8 +6,10 @@ import { Drawer, Input, Button, Message } from 'hubble-ui';
 
 import { DataAnalyzeStoreContext } from '../../../stores';
 import { convertArrayToString } from '../../../stores/utils';
+import { useTranslation } from 'react-i18next';
 
 const DataAnalyzeInfoDrawer: React.FC = observer(() => {
+  const { t } = useTranslation();
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
   const [isEdit, switchEdit] = useState(false);
 
@@ -59,7 +61,11 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
 
   return (
     <Drawer
-      title={isEdit ? '编辑详情' : '数据详情'}
+      title={
+        isEdit
+          ? t('addition.dtaAnalyzeInfoDrawer.edit-details')
+          : t('addition.dtaAnalyzeInfoDrawer.data-details')
+      }
       visible={dataAnalyzeStore.isShowGraphInfo}
       onClose={handleDrawerClose}
       mask={isEdit}
@@ -85,11 +91,11 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
                   properties: updatedInfo.properties,
                   title: `
                     <div class="tooltip-fields">
-                      <div>顶点类型：</div>
+                      <div>${t('addition.common.vertex-type')}：</div>
                       <div>${updatedInfo.label}</div>
                     </div>
                     <div class="tooltip-fields">
-                      <div>顶点ID：</div>
+                      <div>${t('addition.common.vertex-id')}：</div>
                       <div>${updatedInfo.id}</div>
                     </div>
                     ${Object.entries(updatedInfo.properties)
@@ -110,11 +116,11 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
                   properties: updatedInfo.properties,
                   title: `
                       <div class="tooltip-fields">
-                        <div>边类型：</div>
+                        <div>${t('addition.common.edge-type')}：</div>
                         <div>${updatedInfo.label}</div>
                       </div>
                       <div class="tooltip-fields">
-                        <div>边ID：</div>
+                        <div>${t('addition.common.edge-id')}：</div>
                         <div>${updatedInfo.id}</div>
                       </div>
                       ${Object.entries(updatedInfo.properties)
@@ -135,13 +141,13 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
               dataAnalyzeStore.requestStatus.updateGraphProperties === 'success'
             ) {
               Message.success({
-                content: '保存成功',
+                content: t('addition.common.save-scuccess'),
                 size: 'medium',
                 showCloseIcon: false
               });
             } else {
               Message.error({
-                content: '保存失败',
+                content: t('addition.common.save-fail'),
                 size: 'medium',
                 showCloseIcon: false
               });
@@ -151,7 +157,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
           }}
           key="save"
         >
-          {isEdit ? '保存' : '编辑'}
+          {isEdit ? t('addition.common.save') : t('addition.common.edit')}
         </Button>,
         <Button
           size="medium"
@@ -159,7 +165,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
           onClick={handleDrawerClose}
           key="close"
         >
-          关闭
+          {t('addition.common.close')}
         </Button>
       ]}
     >
@@ -167,30 +173,30 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
         {dataAnalyzeStore.graphInfoDataSet === 'node' ? (
           <>
             <div className={graphInfoItemClassName}>
-              <div>顶点类型：</div>
+              <div>{t('addition.common.vertex-type')}：</div>
               <div>{dataAnalyzeStore.selectedGraphData.label}</div>
             </div>
             <div className={graphInfoItemClassName}>
-              <div>顶点ID：</div>
+              <div>{t('addition.common.vertex-id')}：</div>
               <div>{dataAnalyzeStore.selectedGraphData.id}</div>
             </div>
           </>
         ) : (
           <>
             <div className={graphInfoItemClassName}>
-              <div>边类型：</div>
+              <div>{t('addition.common.edge-type')}：</div>
               <div>{dataAnalyzeStore.selectedGraphLinkData.label}</div>
             </div>
             <div className={graphInfoItemClassName}>
-              <div>边ID：</div>
+              <div>{t('addition.common.edge-id')}：</div>
               <div>{dataAnalyzeStore.selectedGraphLinkData.id}</div>
             </div>
             <div className={graphInfoItemClassName}>
-              <div>起点：</div>
+              <div>{t('addition.common.origin')}：</div>
               <div>{dataAnalyzeStore.selectedGraphLinkData.source}</div>
             </div>
             <div className={graphInfoItemClassName}>
-              <div>终点：</div>
+              <div>{t('addition.common.end')}：</div>
               <div>{dataAnalyzeStore.selectedGraphLinkData.target}</div>
             </div>
           </>
@@ -201,7 +207,9 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
             0 ||
             dataAnalyzeStore.editedSelectedGraphDataProperties.nonNullable
               .size !== 0) && (
-            <div style={{ marginTop: 24, marginBottom: 3 }}>不可空属性：</div>
+            <div style={{ marginTop: 24, marginBottom: 3 }}>
+              {t('addition.common.required-attribute')}：
+            </div>
           )}
         {[...dataAnalyzeStore.editedSelectedGraphDataProperties.primary].map(
           ([key, value], primaryKeyIndex) => (
@@ -209,8 +217,8 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
               <div>
                 {key}(
                 {dataAnalyzeStore.graphInfoDataSet === 'node'
-                  ? '主键'
-                  : '区分键'}
+                  ? t('addition.common.primary-key')
+                  : t('addition.common.distinguishing-key')}
                 {`${primaryKeyIndex + 1}`})：
               </div>
               <div>{value}</div>
@@ -236,7 +244,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
                 <Input
                   size="medium"
                   width={268}
-                  placeholder="请输入属性值"
+                  placeholder={t('addition.common.property-input-desc')}
                   errorLocation="layer"
                   errorMessage={dataAnalyzeStore.validateEditableGraphDataPropertyErrorMessage!.nonNullable.get(
                     key
@@ -270,7 +278,11 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
 
         {isEdit &&
           dataAnalyzeStore.editedSelectedGraphDataProperties.nullable.size !==
-            0 && <div style={{ marginTop: 24 }}>可空属性：</div>}
+            0 && (
+            <div style={{ marginTop: 24 }}>
+              {t('addition.common.nullable-attribute')}：
+            </div>
+          )}
         {[...dataAnalyzeStore.editedSelectedGraphDataProperties.nullable].map(
           ([key, value], nullableIndex) => (
             <div
@@ -289,7 +301,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
                   <Input
                     size="medium"
                     width={268}
-                    placeholder="请输入属性值"
+                    placeholder={t('addition.common.property-input-desc')}
                     errorLocation="layer"
                     errorMessage={dataAnalyzeStore.validateEditableGraphDataPropertyErrorMessage!.nullable.get(
                       key

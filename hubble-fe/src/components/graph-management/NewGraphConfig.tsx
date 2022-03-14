@@ -5,19 +5,20 @@ import { Embedded, Input, Button, Message, Tooltip } from 'hubble-ui';
 import { GraphManagementStoreContext } from '../../stores';
 import HintIcon from '../../assets/imgs/ic_question_mark.svg';
 import { isNull } from 'lodash-es';
+import { useTranslation } from 'react-i18next';
 
 const commonInputProps = {
   size: 'medium',
   width: 420
 };
 
-const isRequiredInputProps = {
-  ...commonInputProps,
-  isRequired: true,
-  requiredErrorMessage: '必填项'
-};
-
 const NewGraphConfig: React.FC = observer(() => {
+  const { t } = useTranslation();
+  const isRequiredInputProps = {
+    ...commonInputProps,
+    isRequired: true,
+    requiredErrorMessage: t('addition.common.required')
+  };
   const graphManagementStore = useContext(GraphManagementStoreContext);
 
   const handleCancel = useCallback(() => {
@@ -38,7 +39,7 @@ const NewGraphConfig: React.FC = observer(() => {
 
     if (graphManagementStore.requestStatus.AddGraphData === 'success') {
       Message.success({
-        content: '创建成功',
+        content: t('addition.newGraphConfig.create-success'),
         size: 'medium',
         showCloseIcon: false
       });
@@ -66,7 +67,7 @@ const NewGraphConfig: React.FC = observer(() => {
 
   return (
     <Embedded
-      title="创建图"
+      title={t('addition.newGraphConfig.graph-create')}
       className="graph-management-list-data-config"
       onClose={handleCancel}
       visible={graphManagementStore.showCreateNewGraph}
@@ -74,10 +75,10 @@ const NewGraphConfig: React.FC = observer(() => {
       <div className="graph-management-list-create-content">
         <div>
           <div>
-            <span>图ID:</span>
+            <span>{t('addition.newGraphConfig.id')}:</span>
             <Tooltip
               placement="right"
-              title="为创建的图设置唯一标识的ID"
+              title={t('addition.newGraphConfig.id-desc')}
               type="dark"
             >
               <img src={HintIcon} alt="hint" />
@@ -85,7 +86,7 @@ const NewGraphConfig: React.FC = observer(() => {
             <Input
               {...isRequiredInputProps}
               maxLen={48}
-              placeholder="必须以字母开头，允许出现英文、数字、下划线"
+              placeholder={t('addition.common.format-error-desc')}
               errorMessage={
                 graphManagementStore.isValidated &&
                 graphManagementStore.validateErrorMessage.name !== ''
@@ -100,10 +101,10 @@ const NewGraphConfig: React.FC = observer(() => {
             />
           </div>
           <div>
-            <span>图名称:</span>
+            <span>{t('addition.newGraphConfig.name')}:</span>
             <Tooltip
               placement="right"
-              title="填写需要连接的图的名称"
+              title={t('addition.newGraphConfig.name-desc')}
               type="dark"
             >
               <img src={HintIcon} alt="hint" />
@@ -111,7 +112,7 @@ const NewGraphConfig: React.FC = observer(() => {
             <Input
               {...isRequiredInputProps}
               maxLen={48}
-              placeholder="必须以字母开头，允许出现英文、数字、下划线"
+              placeholder={t('addition.common.format-error-desc')}
               errorMessage={
                 graphManagementStore.isValidated &&
                 graphManagementStore.validateErrorMessage.graph !== ''
@@ -126,10 +127,10 @@ const NewGraphConfig: React.FC = observer(() => {
             />
           </div>
           <div>
-            <span>主机名:</span>
+            <span>{t('addition.newGraphConfig.host')}:</span>
             <Input
               {...isRequiredInputProps}
-              placeholder="请输入主机名"
+              placeholder={t('addition.newGraphConfig.host-desc')}
               errorMessage={
                 graphManagementStore.isValidated &&
                 graphManagementStore.validateErrorMessage.host !== ''
@@ -144,10 +145,10 @@ const NewGraphConfig: React.FC = observer(() => {
             />
           </div>
           <div>
-            <span>端口号:</span>
+            <span>{t('addition.newGraphConfig.port')}:</span>
             <Input
               {...isRequiredInputProps}
-              placeholder="请输入端口号"
+              placeholder={t('addition.newGraphConfig.host-desc')}
               errorMessage={
                 graphManagementStore.isValidated &&
                 graphManagementStore.validateErrorMessage.port !== ''
@@ -162,10 +163,10 @@ const NewGraphConfig: React.FC = observer(() => {
             />
           </div>
           <div>
-            <span>用户名:</span>
+            <span>{t('addition.newGraphConfig.username')}:</span>
             <Input
               {...commonInputProps}
-              placeholder="未设置则无需填写"
+              placeholder={t('addition.newGraphConfig.not-required-desc')}
               errorMessage={
                 graphManagementStore.isValidated &&
                 graphManagementStore.validateErrorMessage
@@ -182,10 +183,10 @@ const NewGraphConfig: React.FC = observer(() => {
             />
           </div>
           <div className="input-password">
-            <span>密码:</span>
+            <span>{t('addition.newGraphConfig.password')}:</span>
             <Input
               {...commonInputProps}
-              placeholder="未设置则无需填写"
+              placeholder={t('addition.newGraphConfig.not-required-desc')}
               errorMessage={
                 graphManagementStore.isValidated &&
                 graphManagementStore.validateErrorMessage
@@ -209,7 +210,7 @@ const NewGraphConfig: React.FC = observer(() => {
                 style={{ width: 78 }}
                 onClick={handleCreate}
               >
-                创建
+                {t('addition.newGraphConfig.create')}
               </Button>
               <Button
                 size="medium"
@@ -219,7 +220,7 @@ const NewGraphConfig: React.FC = observer(() => {
                 }}
                 onClick={handleCancel}
               >
-                取消
+                {t('addition.common.cancel')}
               </Button>
             </div>
           </div>

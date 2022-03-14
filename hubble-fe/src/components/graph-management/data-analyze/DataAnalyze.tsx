@@ -13,8 +13,10 @@ import {
   DataAnalyzeStoreContext
 } from '../../../stores';
 import './DataAnalyze.less';
+import { useTranslation } from 'react-i18next';
 
 const DataAnalyze: React.FC = observer(() => {
+  const { t } = useTranslation();
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const appStore = useContext(AppStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
@@ -55,7 +57,7 @@ const DataAnalyze: React.FC = observer(() => {
       <DynamicAddNode />
       <DynamicAddEdge />
       <Modal
-        title="无法访问"
+        title={t('addition.dataAnalyze.cannot-access')}
         footer={[
           <Button
             size="medium"
@@ -65,7 +67,7 @@ const DataAnalyze: React.FC = observer(() => {
               setLocation('/');
             }}
           >
-            返回首页
+            {t('addition.dataAnalyze.return-home')}
           </Button>
         ]}
         visible={Object.values(dataAnalyzeStore.errorInfo)
