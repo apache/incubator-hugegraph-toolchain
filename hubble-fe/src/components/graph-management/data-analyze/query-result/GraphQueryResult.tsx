@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 import vis from 'vis-network';
 import 'vis-network/styles/vis-network.min.css';
 import { Message } from 'hubble-ui';
+import { useTranslation } from 'react-i18next';
 
 import QueryFilterOptions from './QueryFilterOptions';
 import GraphPopOver from './GraphPopOver';
@@ -33,6 +34,7 @@ export interface GraphQueryResult {
 
 const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
+  const { t } = useTranslation();
   const graphWrapper = useRef<HTMLDivElement>(null);
   const resultWrapper = useRef<HTMLDivElement>(null);
   const legendViewPointWrapper = useRef<HTMLDivElement>(null);
@@ -119,9 +121,10 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
 
             timer = window.setTimeout(() => {
               const nodeId = nodes[0];
-              const node = dataAnalyzeStore.graphData.data.graph_view.vertices.find(
-                ({ id }) => id === nodeId
-              );
+              const node =
+                dataAnalyzeStore.graphData.data.graph_view.vertices.find(
+                  ({ id }) => id === nodeId
+                );
 
               if (isUndefined(node)) {
                 return;
@@ -161,9 +164,10 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             timer = window.setTimeout(() => {
               const edgeId = edges[0];
 
-              const edge = dataAnalyzeStore.graphData.data.graph_view.edges.find(
-                ({ id }) => id === edgeId
-              );
+              const edge =
+                dataAnalyzeStore.graphData.data.graph_view.edges.find(
+                  ({ id }) => id === edgeId
+                );
 
               if (isUndefined(edge)) {
                 return;
@@ -201,15 +205,16 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           dataAnalyzeStore.switchClickOnNodeOrEdge(false);
           if (!isEmpty(nodes)) {
             const nodeId = nodes[0];
-            const node = dataAnalyzeStore.graphData.data.graph_view.vertices.find(
-              ({ id }) => id === nodeId
-            );
+            const node =
+              dataAnalyzeStore.graphData.data.graph_view.vertices.find(
+                ({ id }) => id === nodeId
+              );
 
             if (!isUndefined(node)) {
               // specific symbol (~undefined) in schema
               if (node.label === '~undefined') {
                 Message.info({
-                  content: '该顶点是非法顶点，可能是由悬空边导致',
+                  content: t('addition.common.illegal-vertex-desc'),
                   size: 'medium',
                   showCloseIcon: false,
                   duration: 1
@@ -239,14 +244,14 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
                 ) {
                   if (isEmpty(network.getConnectedNodes(nodeId))) {
                     Message.info({
-                      content: '不存在邻接点',
+                      content: t('addition.message.no-adjacency-points'),
                       size: 'medium',
                       showCloseIcon: false,
                       duration: 1
                     });
                   } else {
                     Message.info({
-                      content: '不存在更多邻接点',
+                      content: t('addition.message.no-more-points'),
                       size: 'medium',
                       showCloseIcon: false,
                       duration: 1
@@ -509,8 +514,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
           <div>
             <img
               src={AddNodeIcon}
-              alt="添加顶点"
-              title="添加顶点"
+              alt={t('addition.common.add-vertex')}
+              title={t('addition.common.add-vertex')}
               onClick={() => {
                 if (graph) {
                   dataAnalyzeStore.setDynamicAddGraphDataStatus('vertex');
@@ -519,8 +524,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             />
             <img
               src={ZoomInIcon}
-              alt="放大"
-              title="放大"
+              alt={t('addition.operate.enlarge')}
+              title={t('addition.operate.enlarge')}
               onClick={() => {
                 if (graph) {
                   const currentScale = graph.getScale();
@@ -533,8 +538,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             />
             <img
               src={ZoomOutIcon}
-              alt="缩小"
-              title="缩小"
+              alt={t('addition.operate.narrow')}
+              title={t('addition.operate.narrow')}
               onClick={() => {
                 if (graph) {
                   const currentScale = graph.getScale();
@@ -548,8 +553,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             />
             <img
               src={CenterIcon}
-              alt="居中"
-              title="居中"
+              alt={t('addition.operate.center')}
+              title={t('addition.operate.center')}
               onClick={() => {
                 if (graph) {
                   graph.moveTo({
@@ -563,8 +568,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             />
             <img
               src={DownloadIcon}
-              alt="下载"
-              title="下载"
+              alt={t('addition.operate.download')}
+              title={t('addition.operate.download')}
               onClick={() => {
                 const blob = new Blob(
                   [
@@ -583,8 +588,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             {dataAnalyzeStore.isFullScreenReuslt ? (
               <img
                 src={ResetScreenIcon}
-                alt="退出全屏"
-                title="退出全屏"
+                alt={t('addition.operate.exit-full-screen')}
+                title={t('addition.operate.exit-full-screen')}
                 onClick={() => {
                   dataAnalyzeStore.setFullScreenReuslt(false);
                 }}
@@ -592,8 +597,8 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             ) : (
               <img
                 src={FullScreenIcon}
-                alt="全屏"
-                title="全屏"
+                alt={t('addition.operate.full-screen')}
+                title={t('addition.operate.full-screen')}
                 onClick={() => {
                   dataAnalyzeStore.setFullScreenReuslt(true);
                 }}
@@ -619,15 +624,15 @@ const GraphQueryResult: React.FC<GraphQueryResult> = observer(({ hidden }) => {
             <img
               className="query-result-loading-back"
               src={LoadingBackIcon}
-              alt="加载背景"
+              alt={t('addition.operate.load-background')}
             />
             <img
               className="query-result-loading-front"
               src={LoadingFrontIcon}
-              alt="加载 spinner"
+              alt={t('addition.operate.load-spinner')}
             />
           </div>
-          <span>正在渲染...</span>
+          <span>{t('addition.operate.rendering')}...</span>
         </div>
       )}
     </>

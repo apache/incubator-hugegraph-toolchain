@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { observer } from 'mobx-react';
 import { Select, Steps, Transfer, Button, Table, Input } from 'hubble-ui';
+import { useTranslation } from 'react-i18next';
 
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import PassIcon from '../../../../assets/imgs/ic_pass.svg';
@@ -10,6 +11,7 @@ import { cloneDeep } from 'lodash-es';
 const ReuseProperties: React.FC = observer(() => {
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
   const { metadataPropertyStore } = metadataConfigsRootStore;
+  const { t } = useTranslation();
   const [currentStatus, setCurrentStatus] = useState(1);
   // acutally the name, not id in database
   const [selectedId, mutateSelectedId] = useState<[] | string>([]);
@@ -24,7 +26,7 @@ const ReuseProperties: React.FC = observer(() => {
 
   const columnConfigs = [
     {
-      title: '属性名称',
+      title: t('addition.common.property-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -40,7 +42,7 @@ const ReuseProperties: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={
               metadataPropertyStore.validateRenameReusePropertyErrorMessage.name
@@ -72,7 +74,7 @@ const ReuseProperties: React.FC = observer(() => {
       }
     },
     {
-      title: '数据类型',
+      title: t('addition.common.data-type'),
       dataIndex: 'data_type',
       width: '15%',
       render(text: string) {
@@ -92,7 +94,7 @@ const ReuseProperties: React.FC = observer(() => {
       }
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       align: 'center',
       width: '15%',
@@ -104,24 +106,26 @@ const ReuseProperties: React.FC = observer(() => {
           metadataPropertyStore.reusablePropertyNameChangeIndexes.has(index)
         ) {
           return (
-            <div className="reuse-properties-validate-duplicate">待校验</div>
+            <div className="reuse-properties-validate-duplicate">
+              {t('addition.edge.be-verified')}
+            </div>
           );
         }
 
         switch (value) {
           case 'DUPNAME':
             classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -129,7 +133,7 @@ const ReuseProperties: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
@@ -140,9 +144,8 @@ const ReuseProperties: React.FC = observer(() => {
                 className="metadata-properties-manipulation"
                 style={{ marginRight: 16 }}
                 onClick={() => {
-                  const isReady = metadataPropertyStore.validateRenameReuseProperty(
-                    index
-                  );
+                  const isReady =
+                    metadataPropertyStore.validateRenameReuseProperty(index);
 
                   if (isReady) {
                     setEditIndex(null);
@@ -153,7 +156,7 @@ const ReuseProperties: React.FC = observer(() => {
                   }
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -163,7 +166,7 @@ const ReuseProperties: React.FC = observer(() => {
                   metadataPropertyStore.resetEditedReusablePropertyName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -185,7 +188,7 @@ const ReuseProperties: React.FC = observer(() => {
                 setEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
             <span
               className="metadata-properties-manipulation"
@@ -211,7 +214,7 @@ const ReuseProperties: React.FC = observer(() => {
                 // remove selected status of the property in <Transfer />
                 mutateSelectedList(
                   [...selectedList].filter(
-                    property =>
+                    (property) =>
                       property !==
                       metadataPropertyStore.editedCheckedReusableProperties!
                         .propertykey_conflicts[index].entity.name
@@ -224,7 +227,7 @@ const ReuseProperties: React.FC = observer(() => {
                 );
               }}
             >
-              删除
+              {t('addition.common.del')}
             </span>
           </div>
         );
@@ -241,24 +244,28 @@ const ReuseProperties: React.FC = observer(() => {
 
   return (
     <div className="reuse-properties-wrapper">
-      <div className="metadata-title">复用属性</div>
+      <div className="metadata-title">
+        {t('addition.operate.reuse-property')}
+      </div>
       <div className="reuse-steps">
         <Steps current={currentStatus}>
-          {['选择复用项', '确认复用项', '完成复用'].map(
-            (title: string, index: number) => (
-              <Steps.Step
-                title={title}
-                status={
-                  currentStatus === index + 1
-                    ? 'process'
-                    : currentStatus > index + 1
-                    ? 'finish'
-                    : 'wait'
-                }
-                key={title}
-              />
-            )
-          )}
+          {[
+            t('addition.menu.select-reuse-item'),
+            t('addition.menu.confirm-reuse-item'),
+            t('addition.menu.complete-reuse')
+          ].map((title: string, index: number) => (
+            <Steps.Step
+              title={title}
+              status={
+                currentStatus === index + 1
+                  ? 'process'
+                  : currentStatus > index + 1
+                  ? 'finish'
+                  : 'wait'
+              }
+              key={title}
+            />
+          ))}
         </Steps>
 
         {currentStatus === 1 && (
@@ -266,11 +273,13 @@ const ReuseProperties: React.FC = observer(() => {
             <div className="reuse-properties-row">
               <div className="reuse-properties-row-name">
                 <span className="metdata-essential-form-options">*</span>
-                <span>图ID：</span>
+                <span>{t('addition.newGraphConfig.id')}：</span>
               </div>
               <Select
                 width={420}
-                placeholder="请选择要复用的图"
+                placeholder={t(
+                  'addition.message.select-reuse-graph-placeholder'
+                )}
                 size="medium"
                 showSearch={false}
                 onChange={(selectedName: string) => {
@@ -306,10 +315,10 @@ const ReuseProperties: React.FC = observer(() => {
             >
               <div className="reuse-properties-row-name">
                 <span className="metdata-essential-form-options">*</span>
-                <span>复用属性：</span>
+                <span>{t('addition.operate.reuse-property')}：</span>
               </div>
               <Transfer
-                treeName="属性"
+                treeName={t('addition.common.property')}
                 allDataMap={metadataPropertyStore.reuseablePropertyDataMap}
                 candidateList={metadataPropertyStore.reuseableProperties.map(
                   ({ name }) => name
@@ -349,7 +358,7 @@ const ReuseProperties: React.FC = observer(() => {
                   metadataPropertyStore.checkConflict(selectedList);
                 }}
               >
-                下一步
+                {t('addition.operate.next-step')}
               </Button>
               <Button
                 size="medium"
@@ -363,7 +372,7 @@ const ReuseProperties: React.FC = observer(() => {
                     : metadataPropertyStore.changeCurrentTabStatus('list');
                 }}
               >
-                取消复用
+                {t('addition.operate.de-multiplexing')}
               </Button>
             </div>
           </>
@@ -375,7 +384,7 @@ const ReuseProperties: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 18, marginBottom: 16 }}
             >
-              已选属性
+              {t('addition.common.selected-property')}
             </div>
             <Table
               columns={columnConfigs}
@@ -417,7 +426,9 @@ const ReuseProperties: React.FC = observer(() => {
                 }}
                 disabled={editIndex !== null}
               >
-                {metadataPropertyStore.isReadyToReuse ? '完成' : '重新校验'}
+                {metadataPropertyStore.isReadyToReuse
+                  ? t('addition.operate.complete')
+                  : t('addition.edge.verified-again')}
               </Button>
               <Button
                 size="medium"
@@ -426,7 +437,7 @@ const ReuseProperties: React.FC = observer(() => {
                   setCurrentStatus(1);
                 }}
               >
-                上一步
+                {t('addition.operate.previous-step')}
               </Button>
             </div>
           </>
@@ -435,10 +446,10 @@ const ReuseProperties: React.FC = observer(() => {
         {currentStatus === 3 && (
           <div className="reuse-properties-complete-hint">
             <div className="reuse-properties-complete-hint-description">
-              <img src={PassIcon} alt="复用完成" />
+              <img src={PassIcon} alt={t('addition.message.reuse-complete')} />
               <div>
-                <div>复用完成</div>
-                <div>已成功复用属性</div>
+                <div>{t('addition.message.reuse-complete')}</div>
+                <div>{t('addition.message.reuse-property-success')}</div>
               </div>
             </div>
             <div className="reuse-properties-complete-hint-manipulations">
@@ -453,7 +464,7 @@ const ReuseProperties: React.FC = observer(() => {
                   metadataPropertyStore.changeCurrentTabStatus('list');
                 }}
               >
-                返回查看
+                {t('addition.operate.back-to-view')}
               </Button>
               <Button
                 size="medium"
@@ -465,7 +476,7 @@ const ReuseProperties: React.FC = observer(() => {
                   setCurrentStatus(1);
                 }}
               >
-                继续复用
+                {t('addition.operate.continue-reuse')}
               </Button>
             </div>
           </div>

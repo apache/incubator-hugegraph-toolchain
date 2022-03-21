@@ -101,9 +101,8 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
 
     const addNullValueClassName = classnames({
       'import-tasks-manipulation': true,
-      'import-tasks-manipulation-disabled': edgeMap.null_values.customized.includes(
-        ''
-      )
+      'import-tasks-manipulation-disabled':
+        edgeMap.null_values.customized.includes('')
     });
 
     const addPropertyMapClassName = classnames({
@@ -797,7 +796,7 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                     )
                     .map((value) =>
                       value === ''
-                        ? '空值'
+                        ? t('addition.common.null-value')
                         : value === 'NULL'
                         ? 'NULL/null'
                         : value
@@ -1303,10 +1302,11 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                               <div
                                 className={classnames({
                                   'import-tasks-manipulation': true,
-                                  'import-tasks-manipulation-disabled': !dataMapStore.allowAddPropertyValueMapping(
-                                    'edge',
-                                    valueMapIndex
-                                  )
+                                  'import-tasks-manipulation-disabled':
+                                    !dataMapStore.allowAddPropertyValueMapping(
+                                      'edge',
+                                      valueMapIndex
+                                    )
                                 })}
                               >
                                 <span
@@ -1555,10 +1555,11 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                               <div
                                 className={classnames({
                                   'import-tasks-manipulation': true,
-                                  'import-tasks-manipulation-disabled': !dataMapStore.allowAddPropertyValueMapping(
-                                    'edge',
-                                    valueMapIndex
-                                  )
+                                  'import-tasks-manipulation-disabled':
+                                    !dataMapStore.allowAddPropertyValueMapping(
+                                      'edge',
+                                      valueMapIndex
+                                    )
                                 })}
                               >
                                 <span

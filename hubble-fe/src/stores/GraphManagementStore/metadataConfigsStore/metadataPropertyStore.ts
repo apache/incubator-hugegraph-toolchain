@@ -14,6 +14,7 @@ import {
   CheckedReusableData,
   NewMetadataProperty
 } from '../../types/GraphManagementStore/metadataConfigsStore';
+import i18next from '../../../i18n';
 
 export class MetadataPropertyStore {
   metadataConfigsRootStore: MetadataConfigsRootStore;
@@ -64,10 +65,8 @@ export class MetadataPropertyStore {
 
   @observable.ref metadataProperties: MetadataProperty[] = [];
 
-  @observable metadataPropertyUsingStatus: Record<
-    string,
-    boolean
-  > | null = null;
+  @observable metadataPropertyUsingStatus: Record<string, boolean> | null =
+    null;
 
   @observable selectedMetadataProperty: MetadataProperty | null = null;
   // table selection from user
@@ -79,9 +78,8 @@ export class MetadataPropertyStore {
   checkedReusableProperties: CheckedReusableData | null = null;
   @observable
   editedCheckedReusableProperties: CheckedReusableData | null = null;
-  @observable reusablePropertyNameChangeIndexes: Set<number> = new Set<
-    number
-  >();
+  @observable reusablePropertyNameChangeIndexes: Set<number> =
+    new Set<number>();
 
   @observable validateNewPropertyErrorMessage = {
     name: ''
@@ -220,11 +218,14 @@ export class MetadataPropertyStore {
 
     if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(this.newMetadataProperty._name!)) {
       if (this.newMetadataProperty._name!.length === 0) {
-        this.validateNewPropertyErrorMessage.name = '此项为必填项';
+        this.validateNewPropertyErrorMessage.name = i18next.t(
+          'addition.store.item-is-required'
+        );
         isReady = false;
       } else {
-        this.validateNewPropertyErrorMessage.name =
-          '必须为中英文，数字和下划线';
+        this.validateNewPropertyErrorMessage.name = i18next.t(
+          'addition.store.rule4'
+        );
         isReady = false;
       }
     } else {
@@ -238,16 +239,20 @@ export class MetadataPropertyStore {
   @action
   validateRenameReuseProperty(index: number) {
     let isReady = true;
-    const propertyName = this.editedCheckedReusableProperties!
-      .propertykey_conflicts[index].entity.name;
+    const propertyName =
+      this.editedCheckedReusableProperties!.propertykey_conflicts[index].entity
+        .name;
 
     if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(propertyName)) {
       if (propertyName.length === 0) {
-        this.validateRenameReusePropertyErrorMessage.name = '此项为必填项';
+        this.validateRenameReusePropertyErrorMessage.name = i18next.t(
+          'addition.store.item-is-required'
+        );
         isReady = false;
       } else {
-        this.validateRenameReusePropertyErrorMessage.name =
-          '必须为中英文，数字和下划线';
+        this.validateRenameReusePropertyErrorMessage.name = i18next.t(
+          'addition.store.rule4'
+        );
         isReady = false;
       }
     } else {
@@ -272,9 +277,8 @@ export class MetadataPropertyStore {
   resetEditedReusablePropertyName(index: number) {
     this.editedCheckedReusableProperties!.propertykey_conflicts[
       index
-    ].entity.name = this.checkedReusableProperties!.propertykey_conflicts[
-      index
-    ].entity.name;
+    ].entity.name =
+      this.checkedReusableProperties!.propertykey_conflicts[index].entity.name;
   }
 
   @action
@@ -328,24 +332,23 @@ export class MetadataPropertyStore {
         : this.metadataConfigsRootStore.currentId;
 
     try {
-      const result: AxiosResponse<responseData<
-        MetadataPropertyListResponse
-      >> = yield axios
-        .get(`${baseUrl}/${conn_id}/schema/propertykeys`, {
-          params: {
-            page_no: this.metadataPropertyPageConfig.pageNumber,
-            page_size: !options ? 10 : -1,
-            name_order:
-              this.metadataPropertyPageConfig.sort !== ''
-                ? this.metadataPropertyPageConfig.sort
-                : null,
-            content:
-              this.isSearched.status && this.searchWords !== ''
-                ? this.searchWords
-                : null
-          }
-        })
-        .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<MetadataPropertyListResponse>> =
+        yield axios
+          .get(`${baseUrl}/${conn_id}/schema/propertykeys`, {
+            params: {
+              page_no: this.metadataPropertyPageConfig.pageNumber,
+              page_size: !options ? 10 : -1,
+              name_order:
+                this.metadataPropertyPageConfig.sort !== ''
+                  ? this.metadataPropertyPageConfig.sort
+                  : null,
+              content:
+                this.isSearched.status && this.searchWords !== ''
+                  ? this.searchWords
+                  : null
+            }
+          })
+          .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         if (result.data.status === 401) {
@@ -387,16 +390,15 @@ export class MetadataPropertyStore {
     this.requestStatus.checkIfUsing = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<
-        Record<string, boolean>
-      >> = yield axios
-        .post(
-          `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/check_using`,
-          {
-            names: selectedPropertyNames
-          }
-        )
-        .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<Record<string, boolean>>> =
+        yield axios
+          .post(
+            `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/check_using`,
+            {
+              names: selectedPropertyNames
+            }
+          )
+          .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -484,18 +486,19 @@ export class MetadataPropertyStore {
     this.requestStatus.checkConflict = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<
-        CheckedReusableData
-      >> = yield axios
-        .post(
-          `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/check_conflict`,
-          {
-            propertykeys: selectedNameList.map((selectedName) =>
-              this.reuseableProperties.find(({ name }) => name === selectedName)
-            )
-          }
-        )
-        .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<CheckedReusableData>> =
+        yield axios
+          .post(
+            `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/check_conflict`,
+            {
+              propertykeys: selectedNameList.map((selectedName) =>
+                this.reuseableProperties.find(
+                  ({ name }) => name === selectedName
+                )
+              )
+            }
+          )
+          .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -516,20 +519,20 @@ export class MetadataPropertyStore {
     this.requestStatus.recheckConflict = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<
-        CheckedReusableData
-      >> = yield axios
-        .post(
-          `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/recheck_conflict`,
-          {
-            propertykeys: this.editedCheckedReusableProperties!.propertykey_conflicts.map(
-              ({ entity }) => ({
-                ...entity
-              })
-            )
-          }
-        )
-        .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<CheckedReusableData>> =
+        yield axios
+          .post(
+            `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/propertykeys/recheck_conflict`,
+            {
+              propertykeys:
+                this.editedCheckedReusableProperties!.propertykey_conflicts.map(
+                  ({ entity }) => ({
+                    ...entity
+                  })
+                )
+            }
+          )
+          .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);

@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
 import { Drawer, Button, Input, Select, Message } from 'hubble-ui';
+import { useTranslation } from 'react-i18next';
 
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 
@@ -23,7 +24,7 @@ const CreateProperty: React.FC = observer(() => {
   const { metadataPropertyStore, graphViewStore } = useContext(
     MetadataConfigsRootStore
   );
-
+  const { t } = useTranslation();
   const handleCloseDrawer = () => {
     graphViewStore.setCurrentDrawer('');
     metadataPropertyStore.resetNewProperties();
@@ -32,7 +33,7 @@ const CreateProperty: React.FC = observer(() => {
 
   return (
     <Drawer
-      title="创建属性"
+      title={t('addition.operate.create-property')}
       width={548}
       destroyOnClose
       visible={graphViewStore.currentDrawer === 'create-property'}
@@ -60,7 +61,7 @@ const CreateProperty: React.FC = observer(() => {
               graphViewStore.setCurrentDrawer('');
 
               Message.success({
-                content: '创建成功',
+                content: t('addition.newGraphConfig.create-scuccess'),
                 size: 'medium',
                 showCloseIcon: false
               });
@@ -81,10 +82,10 @@ const CreateProperty: React.FC = observer(() => {
             metadataPropertyStore.resetNewProperties();
           }}
         >
-          创建
+          {t('addition.newGraphConfig.create')}
         </Button>,
         <Button size="medium" style={{ width: 60 }} onClick={handleCloseDrawer}>
-          取消
+          {t('addition.common.cancel')}
         </Button>
       ]}
     >
@@ -97,13 +98,13 @@ const CreateProperty: React.FC = observer(() => {
                 style={{ width: 67, marginRight: 14 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>属性名称:</span>
+                <span>{t('addition.common.property-name')}:</span>
               </div>
               <Input
                 size="medium"
                 width={419}
                 maxLen={128}
-                placeholder="允许出现中英文、数字、下划线"
+                placeholder={t('addition.message.edge-name-rule')}
                 errorLocation="layer"
                 errorMessage={
                   metadataPropertyStore.validateNewPropertyErrorMessage.name
@@ -131,7 +132,7 @@ const CreateProperty: React.FC = observer(() => {
                 style={{ width: 67, marginRight: 14 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>数据类型:</span>
+                <span>{t('addition.common.data-type')}:</span>
               </div>
               <Select
                 options={dataTypeOptions}
@@ -162,7 +163,7 @@ const CreateProperty: React.FC = observer(() => {
                 style={{ width: 67, marginRight: 14 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>基数:</span>
+                <span>{t('addition.common.cardinal-number')}:</span>
               </div>
               <Select
                 options={cardinalityOptions}

@@ -53,6 +53,8 @@ import SelectedSoilidArrowIcon from '../../../../assets/imgs/ic_arrow_selected.s
 import NoSelectedSoilidArrowIcon from '../../../../assets/imgs/ic_arrow.svg';
 import SelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight_selected.svg';
 import NoSelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight.svg';
+import i18next from '../../../../i18n';
+import { useTranslation } from 'react-i18next';
 
 import './EdgeTypeList.less';
 
@@ -96,12 +98,13 @@ const variants = {
 };
 
 const propertyIndexTypeMappings: Record<string, string> = {
-  SECONDARY: '二级索引',
-  RANGE: '范围索引',
-  SEARCH: '全文索引'
+  SECONDARY: i18next.t('addition.menu.secondary-index'),
+  RANGE: i18next.t('addition.menu.range-index'),
+  SEARCH: i18next.t('addition.menu.full-text-index')
 };
 
 const EdgeTypeList: React.FC = observer(() => {
+  const { t } = useTranslation();
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
   const { metadataPropertyStore, edgeTypeStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
@@ -110,14 +113,10 @@ const EdgeTypeList: React.FC = observer(() => {
   const [isShowModal, switchShowModal] = useState(false);
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isEditEdge, switchIsEditEdge] = useState(false);
-  const [
-    deleteExistPopIndexInDrawer,
-    setDeleteExistPopIndexInDrawer
-  ] = useState<number | null>(null);
-  const [
-    deleteAddedPopIndexInDrawer,
-    setDeleteAddedPopIndexInDrawer
-  ] = useState<number | null>(null);
+  const [deleteExistPopIndexInDrawer, setDeleteExistPopIndexInDrawer] =
+    useState<number | null>(null);
+  const [deleteAddedPopIndexInDrawer, setDeleteAddedPopIndexInDrawer] =
+    useState<number | null>(null);
   const [, setLocation] = useLocation();
 
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
@@ -166,7 +165,7 @@ const EdgeTypeList: React.FC = observer(() => {
 
     if (edgeTypeStore.requestStatus.deleteEdgeType === 'success') {
       Message.success({
-        content: '删除成功',
+        content: t('addition.common.del-success'),
         size: 'medium',
         showCloseIcon: false
       });
@@ -204,7 +203,7 @@ const EdgeTypeList: React.FC = observer(() => {
 
   const columnConfigs = [
     {
-      title: '边类型名称',
+      title: t('addition.common.edge-type-name'),
       dataIndex: 'name',
       sorter: true,
       sortOrder,
@@ -225,8 +224,8 @@ const EdgeTypeList: React.FC = observer(() => {
                   icon: null,
                   with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
                   thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
-                  display_fields: edgeTypeStore.selectedEdgeType!.style
-                    .display_fields
+                  display_fields:
+                    edgeTypeStore.selectedEdgeType!.style.display_fields
                 }
               });
             }}
@@ -237,7 +236,7 @@ const EdgeTypeList: React.FC = observer(() => {
       }
     },
     {
-      title: '起点类型',
+      title: t('addition.common.source-type'),
       dataIndex: 'source_label',
       width: '14%',
       render(text: string, records: any[], index: number) {
@@ -249,7 +248,7 @@ const EdgeTypeList: React.FC = observer(() => {
       }
     },
     {
-      title: '终点类型',
+      title: t('addition.common.target-type'),
       dataIndex: 'target_label',
       width: '14%',
       render(text: string, records: any[], index: number) {
@@ -261,7 +260,7 @@ const EdgeTypeList: React.FC = observer(() => {
       }
     },
     {
-      title: '关联属性',
+      title: t('addition.common.association-property'),
       dataIndex: 'properties',
       width: '14%',
       render(properties: { name: string; nullable: boolean }[]) {
@@ -278,7 +277,7 @@ const EdgeTypeList: React.FC = observer(() => {
       }
     },
     {
-      title: '区分键',
+      title: t('addition.common.distinguishing-key'),
       dataIndex: 'sort_keys',
       width: '10%',
       render(values: string[]) {
@@ -292,14 +291,14 @@ const EdgeTypeList: React.FC = observer(() => {
       }
     },
     {
-      title: '类型索引',
+      title: t('addition.menu.type-index'),
       dataIndex: 'open_label_index',
       width: '8%',
       render(value: boolean) {
         return (
           <Switch
-            checkedChildren="开"
-            unCheckedChildren="关"
+            checkedChildren={t('addition.operate.open')}
+            unCheckedChildren={t('addition.operate.close')}
             checked={value}
             size="large"
             disabled
@@ -308,7 +307,7 @@ const EdgeTypeList: React.FC = observer(() => {
       }
     },
     {
-      title: '属性索引',
+      title: t('addition.common.property-index'),
       dataIndex: 'property_indexes',
       width: '14%',
       render(indexes: { name: string; type: string; fields: string[] }[]) {
@@ -325,7 +324,7 @@ const EdgeTypeList: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '12%',
       render(_: any, records: EdgeType, index: number) {
@@ -404,7 +403,7 @@ const EdgeTypeList: React.FC = observer(() => {
               edgeTypeStore.changeCurrentTabStatus('new');
             }}
           >
-            创建
+            {t('addition.newGraphConfig.create')}
           </Button>
           <Button
             size="medium"
@@ -414,22 +413,26 @@ const EdgeTypeList: React.FC = observer(() => {
               edgeTypeStore.changeCurrentTabStatus('reuse');
             }}
           >
-            复用
+            {t('addition.operate.multiplexing')}
           </Button>
         </div>
         {size(currentSelectedRowKeys) !== 0 && (
           <div className="metadata-properties-selected-reveals">
-            <div>已选{size(currentSelectedRowKeys)}项</div>
+            <div>
+              {t('addition.message.selected')}
+              {size(currentSelectedRowKeys)}
+              {t('addition.common.term')}
+            </div>
             <Button
               onClick={() => {
                 switchShowModal(true);
               }}
             >
-              批量删除
+              {t('addition.operate.batch-del')}
             </Button>
             <img
               src={WhiteCloseIcon}
-              alt="关闭"
+              alt={t('addition.common.close')}
               onClick={() => {
                 mutateSelectedRowKeys([]);
               }}
@@ -474,8 +477,8 @@ const EdgeTypeList: React.FC = observer(() => {
         <Modal
           visible={isShowModal}
           needCloseIcon={false}
-          okText="删除"
-          cancelText="取消"
+          okText={t('addition.common.del')}
+          cancelText={t('addition.common.cancel')}
           onOk={batchDeleteProperties}
           buttonSize="medium"
           onCancel={() => {
@@ -484,10 +487,10 @@ const EdgeTypeList: React.FC = observer(() => {
         >
           <div className="metadata-properties-modal">
             <div className="metadata-title metadata-properties-modal-title">
-              <span>确认删除</span>
+              <span>{t('addition.common.del-comfirm')}</span>
               <img
                 src={CloseIcon}
-                alt="关闭"
+                alt={t('addition.common.close')}
                 onClick={() => {
                   switchShowModal(false);
                 }}
@@ -497,15 +500,15 @@ const EdgeTypeList: React.FC = observer(() => {
               className="metadata-properties-modal-description"
               style={{ marginBottom: 0 }}
             >
-              确认删除以下边？
+              {t('addition.message.edge-del-confirm')}
             </div>
             <div className="metadata-properties-modal-description">
-              删除元数据耗时较久，详情可在任务管理中查看。
+              {t('addition.message.long-time-notice')}
             </div>
             <Table
               columns={[
                 {
-                  title: '边名称',
+                  title: t('addition.common.edge-name'),
                   dataIndex: 'name',
                   render(text: string, records: Record<string, any>) {
                     return (
@@ -524,7 +527,11 @@ const EdgeTypeList: React.FC = observer(() => {
           </div>
         </Modal>
         <Drawer
-          title={isEditEdge ? '编辑边类型' : '边类型详情'}
+          title={
+            isEditEdge
+              ? t('addition.common.modify-edge-type')
+              : t('addition.common.edge-type-detail')
+          }
           width={580}
           destroyOnClose
           maskClosable={!isEditEdge}
@@ -550,12 +557,12 @@ const EdgeTypeList: React.FC = observer(() => {
                     style: {
                       color: edgeTypeStore.selectedEdgeType!.style.color,
                       icon: null,
-                      with_arrow: edgeTypeStore.selectedEdgeType!.style
-                        .with_arrow,
-                      thickness: edgeTypeStore.selectedEdgeType!.style
-                        .thickness,
-                      display_fields: edgeTypeStore.selectedEdgeType!.style
-                        .display_fields
+                      with_arrow:
+                        edgeTypeStore.selectedEdgeType!.style.with_arrow,
+                      thickness:
+                        edgeTypeStore.selectedEdgeType!.style.thickness,
+                      display_fields:
+                        edgeTypeStore.selectedEdgeType!.style.display_fields
                     }
                   });
                 } else {
@@ -581,7 +588,7 @@ const EdgeTypeList: React.FC = observer(() => {
                       )
                     ) {
                       Message.success({
-                        content: '修改成功',
+                        content: t('addition.operate.modify-success'),
                         size: 'medium',
                         showCloseIcon: false
                       });
@@ -593,10 +600,10 @@ const EdgeTypeList: React.FC = observer(() => {
                             style={{ width: 168 }}
                           >
                             <div className="message-wrapper-title">
-                              保存成功
+                              {t('addition.common.save-scuccess')}
                             </div>
                             <div style={{ marginBottom: 2 }}>
-                              创建索引可能耗时较久，详情可在任务管理中查看
+                              {t('addition.message.index-long-time-notice')}
                             </div>
                             <div
                               className="message-wrapper-manipulation"
@@ -607,7 +614,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                 );
                               }}
                             >
-                              去任务管理查看
+                              {t('addition.operate.view-task-management')}
                             </div>
                           </div>
                         ),
@@ -623,14 +630,16 @@ const EdgeTypeList: React.FC = observer(() => {
                 }
               }}
             >
-              {isEditEdge ? '保存' : '编辑'}
+              {isEditEdge
+                ? t('addition.common.save')
+                : t('addition.common.edit')}
             </Button>,
             <Button
               size="medium"
               style={{ width: 60 }}
               onClick={handleCloseDrawer}
             >
-              关闭
+              {t('addition.common.close')}
             </Button>
           ]}
         >
@@ -641,20 +650,22 @@ const EdgeTypeList: React.FC = observer(() => {
                   className="metadata-title"
                   style={{ marginBottom: 16, width: 88, textAlign: 'right' }}
                 >
-                  基础信息
+                  {t('addition.menu.base-info')}
                 </div>
                 <div
                   className={metadataDrawerOptionClass}
                   style={{ alignItems: 'center' }}
                 >
                   <div className="metadata-drawer-options-name">
-                    <span>边类型名称：</span>
+                    <span>{t('addition.common.edge-type-name')}：</span>
                   </div>
                   {edgeTypeStore.selectedEdgeType!.name}
                 </div>
                 <div className="metadata-drawer-options">
                   <div className="metadata-drawer-options-name">
-                    <span style={{ lineHeight: 2.5 }}>边样式：</span>
+                    <span style={{ lineHeight: 2.5 }}>
+                      {t('addition.common.edge-style')}：
+                    </span>
                   </div>
                   <div className="new-vertex-type-options-colors">
                     <Select
@@ -735,7 +746,9 @@ const EdgeTypeList: React.FC = observer(() => {
                       size="medium"
                       showSearch={false}
                       disabled={!isEditEdge}
-                      value={edgeTypeStore.editedSelectedEdgeType.style.with_arrow}
+                      value={
+                        edgeTypeStore.editedSelectedEdgeType.style.with_arrow
+                      }
                       onChange={(e: any) => {
                         edgeTypeStore.mutateEditedSelectedEdgeType({
                           ...edgeTypeStore.editedSelectedEdgeType,
@@ -861,23 +874,25 @@ const EdgeTypeList: React.FC = observer(() => {
 
                 <div className={metadataDrawerOptionClass}>
                   <div className="metadata-drawer-options-name">
-                    <span>起点类型：</span>
+                    <span>{t('addition.common.source-type')}：</span>
                   </div>
                   {edgeTypeStore.selectedEdgeType!.source_label}
                 </div>
                 <div className={metadataDrawerOptionClass}>
                   <div className="metadata-drawer-options-name">
-                    <span>终点类型：</span>
+                    <span>{t('addition.common.target-type')}：</span>
                   </div>
                   {edgeTypeStore.selectedEdgeType!.target_label}
                 </div>
                 <div className={metadataDrawerOptionClass}>
                   <div className="metadata-drawer-options-name">
-                    <span>允许多次连接：</span>
+                    <span>
+                      {t('addition.common.allow-multiple-connections')}：
+                    </span>
                   </div>
                   <Switch
-                    checkedChildren="开"
-                    unCheckedChildren="关"
+                    checkedChildren={t('addition.operate.open')}
+                    unCheckedChildren={t('addition.operate.close')}
                     checked={edgeTypeStore.selectedEdgeType!.link_multi_times}
                     size="large"
                     disabled
@@ -885,12 +900,12 @@ const EdgeTypeList: React.FC = observer(() => {
                 </div>
                 <div className="metadata-drawer-options">
                   <div className="metadata-drawer-options-name">
-                    <span>关联属性：</span>
+                    <span>{t('addition.common.association-property')}：</span>
                   </div>
                   <div className="metadata-drawer-options-list">
                     <div className="metadata-drawer-options-list-row">
-                      <span>属性</span>
-                      <span>允许为空</span>
+                      <span>{t('addition.common.property')}</span>
+                      <span>{t('addition.common.allow-null')}</span>
                     </div>
                     {edgeTypeStore.selectedEdgeType!.properties.map(
                       ({ name, nullable }) => (
@@ -901,8 +916,8 @@ const EdgeTypeList: React.FC = observer(() => {
                           <div>{name}</div>
                           <div style={{ width: 70, textAlign: 'center' }}>
                             <Switch
-                              checkedChildren="开"
-                              unCheckedChildren="关"
+                              checkedChildren={t('addition.operate.open')}
+                              unCheckedChildren={t('addition.operate.close')}
                               checked={nullable}
                               size="large"
                               disabled
@@ -921,8 +936,8 @@ const EdgeTypeList: React.FC = observer(() => {
                             <div>{name}</div>
                             <div style={{ width: 70, textAlign: 'center' }}>
                               <Switch
-                                checkedChildren="开"
-                                unCheckedChildren="关"
+                                checkedChildren={t('addition.operate.open')}
+                                unCheckedChildren={t('addition.operate.close')}
                                 checked={true}
                                 size="large"
                                 disabled
@@ -944,7 +959,9 @@ const EdgeTypeList: React.FC = observer(() => {
                           switchIsAddProperty(!isAddProperty);
                         }}
                       >
-                        <span style={{ marginRight: 4 }}>添加属性</span>
+                        <span style={{ marginRight: 4 }}>
+                          {t('addition.common.add-property')}
+                        </span>
                         <img src={BlueArrowIcon} alt="toogleAddProperties" />
                       </div>
                     )}
@@ -991,9 +1008,10 @@ const EdgeTypeList: React.FC = observer(() => {
                                       append_properties: [
                                         ...addedPropertiesInSelectedVertextType
                                       ].map((propertyName) => {
-                                        const currentProperty = edgeTypeStore.newEdgeType.properties.find(
-                                          ({ name }) => name === propertyName
-                                        );
+                                        const currentProperty =
+                                          edgeTypeStore.newEdgeType.properties.find(
+                                            ({ name }) => name === propertyName
+                                          );
 
                                         return {
                                           name: propertyName,
@@ -1018,7 +1036,9 @@ const EdgeTypeList: React.FC = observer(() => {
                 </div>
                 <div className={metadataDrawerOptionClass}>
                   <div className="metadata-drawer-options-name">
-                    <span>区分键属性：</span>
+                    <span>
+                      {t('addition.common.distinguishing-key-property')}：
+                    </span>
                   </div>
                   {edgeTypeStore.selectedEdgeType!.sort_keys.join(';')}
                 </div>
@@ -1029,7 +1049,7 @@ const EdgeTypeList: React.FC = observer(() => {
                         isEditEdge ? 'metadata-drawer-options-name-edit' : ''
                       }
                     >
-                      边展示内容：
+                      {t('addition.edge.display-content')}：
                     </span>
                   </div>
                   {isEditEdge ? (
@@ -1038,20 +1058,30 @@ const EdgeTypeList: React.FC = observer(() => {
                       mode="multiple"
                       size="medium"
                       showSearch={false}
-                      placeholder="请选择边展示内容"
+                      placeholder={t(
+                        'addition.edge.display-content-select-desc'
+                      )}
                       onChange={(value: string[]) => {
                         edgeTypeStore.mutateEditedSelectedEdgeType({
                           ...edgeTypeStore.editedSelectedEdgeType,
                           style: {
                             ...edgeTypeStore.editedSelectedEdgeType.style,
                             display_fields: value.map((field) =>
-                              formatVertexIdText(field, '边类型', true)
+                              formatVertexIdText(
+                                field,
+                                t('addition.function-parameter.edge-type'),
+                                true
+                              )
                             )
                           }
                         });
                       }}
                       value={edgeTypeStore.editedSelectedEdgeType.style.display_fields.map(
-                        (field) => formatVertexIdText(field, '边类型')
+                        (field) =>
+                          formatVertexIdText(
+                            field,
+                            t('addition.function-parameter.edge-type')
+                          )
                       )}
                     >
                       {edgeTypeStore.selectedEdgeType?.properties
@@ -1061,9 +1091,10 @@ const EdgeTypeList: React.FC = observer(() => {
                         )
                         .filter(({ nullable }) => !nullable)
                         .map((item) => {
-                          const order = edgeTypeStore.editedSelectedEdgeType.style.display_fields.findIndex(
-                            (name) => name === item.name
-                          );
+                          const order =
+                            edgeTypeStore.editedSelectedEdgeType.style.display_fields.findIndex(
+                              (name) => name === item.name
+                            );
 
                           const multiSelectOptionClassName = classnames({
                             'metadata-configs-sorted-multiSelect-option': true,
@@ -1073,28 +1104,36 @@ const EdgeTypeList: React.FC = observer(() => {
 
                           return (
                             <Select.Option
-                              value={formatVertexIdText(item.name, '边类型')}
+                              value={formatVertexIdText(
+                                item.name,
+                                t('addition.function-parameter.edge-type')
+                              )}
                               key={item.name}
                             >
                               <div className={multiSelectOptionClassName}>
                                 <div
                                   style={{
-                                    backgroundColor: edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
-                                      item.name
-                                    )
-                                      ? '#2b65ff'
-                                      : '#fff',
-                                    borderColor: edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
-                                      item.name
-                                    )
-                                      ? '#fff'
-                                      : '#e0e0e0'
+                                    backgroundColor:
+                                      edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
+                                        item.name
+                                      )
+                                        ? '#2b65ff'
+                                        : '#fff',
+                                    borderColor:
+                                      edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
+                                        item.name
+                                      )
+                                        ? '#fff'
+                                        : '#e0e0e0'
                                   }}
                                 >
                                   {order !== -1 ? order + 1 : ''}
                                 </div>
                                 <div style={{ color: '#333' }}>
-                                  {formatVertexIdText(item.name, '边类型')}
+                                  {formatVertexIdText(
+                                    item.name,
+                                    t('addition.function-parameter.edge-type')
+                                  )}
                                 </div>
                               </div>
                             </Select.Option>
@@ -1104,7 +1143,12 @@ const EdgeTypeList: React.FC = observer(() => {
                   ) : (
                     <div>
                       {edgeTypeStore.selectedEdgeType?.style.display_fields
-                        .map((field) => formatVertexIdText(field, '边类型'))
+                        .map((field) =>
+                          formatVertexIdText(
+                            field,
+                            t('addition.function-parameter.edge-type')
+                          )
+                        )
                         .join('-')}
                     </div>
                   )}
@@ -1118,15 +1162,15 @@ const EdgeTypeList: React.FC = observer(() => {
                     textAlign: 'right'
                   }}
                 >
-                  索引信息
+                  {t('addition.edge.index-info')}
                 </div>
                 <div className={metadataDrawerOptionClass}>
                   <div className="metadata-drawer-options-name">
-                    <span>类型索引：</span>
+                    <span>{t('addition.menu.type-index')}：</span>
                   </div>
                   <Switch
-                    checkedChildren="开"
-                    unCheckedChildren="关"
+                    checkedChildren={t('addition.operate.open')}
+                    unCheckedChildren={t('addition.operate.close')}
                     checked={edgeTypeStore.selectedEdgeType!.open_label_index}
                     size="large"
                     disabled
@@ -1134,7 +1178,7 @@ const EdgeTypeList: React.FC = observer(() => {
                 </div>
                 <div className="metadata-drawer-options">
                   <div className="metadata-drawer-options-name">
-                    <span>属性索引：</span>
+                    <span>{t('addition.common.property-index')}：</span>
                   </div>
                   <div className="metadata-drawer-options-list">
                     {(edgeTypeStore.selectedEdgeType!.property_indexes
@@ -1142,9 +1186,9 @@ const EdgeTypeList: React.FC = observer(() => {
                       edgeTypeStore.editedSelectedEdgeType
                         .append_property_indexes.length !== 0) && (
                       <div className="metadata-drawer-options-list-row metadata-drawer-options-list-row-normal">
-                        <span>索引名称</span>
-                        <span>索引类型</span>
-                        <span>属性</span>
+                        <span>{t('addition.edge.index-name')}</span>
+                        <span>{t('addition.edge.index-type')}</span>
+                        <span>{t('addition.common.property')}</span>
                       </div>
                     )}
                     {edgeTypeStore
@@ -1209,7 +1253,9 @@ const EdgeTypeList: React.FC = observer(() => {
                                           lineHeight: '28px'
                                         }}
                                       >
-                                        确认删除此属性？
+                                        {t(
+                                          'addition.message.property-del-confirm'
+                                        )}
                                       </p>
                                       <p
                                         style={{
@@ -1217,7 +1263,9 @@ const EdgeTypeList: React.FC = observer(() => {
                                           lineHeight: '28px'
                                         }}
                                       >
-                                        删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                                        {t(
+                                          'addition.message.index-del-confirm'
+                                        )}
                                       </p>
                                       <div
                                         style={{
@@ -1233,11 +1281,12 @@ const EdgeTypeList: React.FC = observer(() => {
                                             cursor: 'pointer'
                                           }}
                                           onClick={() => {
-                                            const removedPropertyIndex = cloneDeep(
-                                              edgeTypeStore
-                                                .editedSelectedEdgeType
-                                                .remove_property_indexes
-                                            );
+                                            const removedPropertyIndex =
+                                              cloneDeep(
+                                                edgeTypeStore
+                                                  .editedSelectedEdgeType
+                                                  .remove_property_indexes
+                                              );
 
                                             removedPropertyIndex.push(
                                               edgeTypeStore.selectedEdgeType!
@@ -1247,7 +1296,8 @@ const EdgeTypeList: React.FC = observer(() => {
                                             edgeTypeStore.mutateEditedSelectedEdgeType(
                                               {
                                                 ...edgeTypeStore.editedSelectedEdgeType,
-                                                remove_property_indexes: removedPropertyIndex
+                                                remove_property_indexes:
+                                                  removedPropertyIndex
                                               }
                                             );
 
@@ -1259,7 +1309,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                             );
                                           }}
                                         >
-                                          确认
+                                          {t('addition.common.confirm')}
                                         </div>
                                         <div
                                           onClick={() => {
@@ -1268,7 +1318,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                             );
                                           }}
                                         >
-                                          取消
+                                          {t('addition.common.cancel')}
                                         </div>
                                       </div>
                                     </div>
@@ -1304,16 +1354,18 @@ const EdgeTypeList: React.FC = observer(() => {
                               <Input
                                 size="medium"
                                 width={100}
-                                placeholder="索引名称"
+                                placeholder={t('addition.edge.index-name')}
                                 errorLocation="layer"
                                 errorMessage={
                                   edgeTypeStore.validateEditEdgeTypeErrorMessage
                                     .propertyIndexes.length !== 0
-                                    ? (edgeTypeStore
-                                        .validateEditEdgeTypeErrorMessage
-                                        .propertyIndexes[
-                                        index
-                                      ] as EdgeTypeValidatePropertyIndexes).name
+                                    ? (
+                                        edgeTypeStore
+                                          .validateEditEdgeTypeErrorMessage
+                                          .propertyIndexes[
+                                          index
+                                        ] as EdgeTypeValidatePropertyIndexes
+                                      ).name
                                     : ''
                                 }
                                 value={name}
@@ -1327,7 +1379,8 @@ const EdgeTypeList: React.FC = observer(() => {
 
                                   edgeTypeStore.mutateEditedSelectedEdgeType({
                                     ...edgeTypeStore.editedSelectedEdgeType,
-                                    append_property_indexes: propertyIndexEntities
+                                    append_property_indexes:
+                                      propertyIndexEntities
                                   });
                                 }}
                                 originInputProps={{
@@ -1341,7 +1394,9 @@ const EdgeTypeList: React.FC = observer(() => {
                             <div>
                               <Select
                                 width={110}
-                                placeholder="请选择索引类型"
+                                placeholder={t(
+                                  'addition.edge.index-type-select-desc'
+                                )}
                                 size="medium"
                                 showSearch={false}
                                 value={type === '' ? [] : type}
@@ -1356,7 +1411,8 @@ const EdgeTypeList: React.FC = observer(() => {
 
                                   edgeTypeStore.mutateEditedSelectedEdgeType({
                                     ...edgeTypeStore.editedSelectedEdgeType,
-                                    append_property_indexes: propertyIndexEntities
+                                    append_property_indexes:
+                                      propertyIndexEntities
                                   });
 
                                   edgeTypeStore.validateEditEdgeType();
@@ -1366,13 +1422,13 @@ const EdgeTypeList: React.FC = observer(() => {
                                   value="SECONDARY"
                                   key="SECONDARY"
                                 >
-                                  二级索引
+                                  {t('addition.menu.secondary-index')}
                                 </Select.Option>
                                 <Select.Option value="RANGE" key="RANGE">
-                                  范围索引
+                                  {t('addition.menu.range-index')}
                                 </Select.Option>
                                 <Select.Option value="SEARCH" key="SEARCH">
-                                  全文索引
+                                  {t('addition.menu.full-text-index')}
                                 </Select.Option>
                               </Select>
                             </div>
@@ -1382,7 +1438,9 @@ const EdgeTypeList: React.FC = observer(() => {
                                 mode={
                                   type === 'SECONDARY' ? 'multiple' : 'default'
                                 }
-                                placeholder="请选择属性"
+                                placeholder={t(
+                                  'addition.edge.property-select-desc'
+                                )}
                                 size="medium"
                                 showSearch={false}
                                 value={fields}
@@ -1402,7 +1460,8 @@ const EdgeTypeList: React.FC = observer(() => {
 
                                   edgeTypeStore.mutateEditedSelectedEdgeType({
                                     ...edgeTypeStore.editedSelectedEdgeType,
-                                    append_property_indexes: propertyIndexEntities
+                                    append_property_indexes:
+                                      propertyIndexEntities
                                   });
 
                                   edgeTypeStore.validateEditEdgeType();
@@ -1415,19 +1474,20 @@ const EdgeTypeList: React.FC = observer(() => {
                                         .append_properties
                                     )
                                     .map((property) => {
-                                      const order = edgeTypeStore.editedSelectedEdgeType.append_property_indexes[
-                                        index
-                                      ].fields.findIndex(
-                                        (name) => name === property.name
-                                      );
+                                      const order =
+                                        edgeTypeStore.editedSelectedEdgeType.append_property_indexes[
+                                          index
+                                        ].fields.findIndex(
+                                          (name) => name === property.name
+                                        );
 
-                                      const multiSelectOptionClassName = classnames(
-                                        {
-                                          'metadata-configs-sorted-multiSelect-option': true,
+                                      const multiSelectOptionClassName =
+                                        classnames({
+                                          'metadata-configs-sorted-multiSelect-option':
+                                            true,
                                           'metadata-configs-sorted-multiSelect-option-selected':
                                             order !== -1
-                                        }
-                                      );
+                                        });
 
                                       return (
                                         <Select.Option
@@ -1455,9 +1515,10 @@ const EdgeTypeList: React.FC = observer(() => {
                                         .append_properties
                                     )
                                     .filter((property) => {
-                                      const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                                        ({ name }) => name === property.name
-                                      );
+                                      const matchedProperty =
+                                        metadataPropertyStore.metadataProperties.find(
+                                          ({ name }) => name === property.name
+                                        );
 
                                       if (!isUndefined(matchedProperty)) {
                                         const { data_type } = matchedProperty;
@@ -1483,9 +1544,10 @@ const EdgeTypeList: React.FC = observer(() => {
                                         .append_properties
                                     )
                                     .filter((property) => {
-                                      const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                                        ({ name }) => name === property.name
-                                      );
+                                      const matchedProperty =
+                                        metadataPropertyStore.metadataProperties.find(
+                                          ({ name }) => name === property.name
+                                        );
 
                                       if (!isUndefined(matchedProperty)) {
                                         const { data_type } = matchedProperty;
@@ -1522,7 +1584,9 @@ const EdgeTypeList: React.FC = observer(() => {
                                         lineHeight: '28px'
                                       }}
                                     >
-                                      确认删除此属性？
+                                      {t(
+                                        'addition.message.property-del-confirm'
+                                      )}
                                     </p>
                                     <p
                                       style={{
@@ -1530,7 +1594,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                         lineHeight: '28px'
                                       }}
                                     >
-                                      删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                                      {t('addition.message.index-del-confirm')}
                                     </p>
                                     <div
                                       style={{
@@ -1546,10 +1610,11 @@ const EdgeTypeList: React.FC = observer(() => {
                                           cursor: 'pointer'
                                         }}
                                         onClick={() => {
-                                          const appendPropertyIndexes = cloneDeep(
-                                            edgeTypeStore.editedSelectedEdgeType!
-                                              .append_property_indexes
-                                          );
+                                          const appendPropertyIndexes =
+                                            cloneDeep(
+                                              edgeTypeStore.editedSelectedEdgeType!
+                                                .append_property_indexes
+                                            );
 
                                           appendPropertyIndexes.splice(
                                             index,
@@ -1559,7 +1624,8 @@ const EdgeTypeList: React.FC = observer(() => {
                                           edgeTypeStore.mutateEditedSelectedEdgeType(
                                             {
                                               ...edgeTypeStore.editedSelectedEdgeType,
-                                              append_property_indexes: appendPropertyIndexes
+                                              append_property_indexes:
+                                                appendPropertyIndexes
                                             }
                                           );
 
@@ -1569,7 +1635,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                           );
                                         }}
                                       >
-                                        确认
+                                        {t('addition.common.confirm')}
                                       </div>
                                       <div
                                         onClick={() => {
@@ -1577,7 +1643,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                           setDeleteAddedPopIndexInDrawer(null);
                                         }}
                                       >
-                                        取消
+                                        {t('addition.common.cancel')}
                                       </div>
                                     </div>
                                   </div>
@@ -1626,7 +1692,7 @@ const EdgeTypeList: React.FC = observer(() => {
                           color: edgeTypeStore.isEditReady ? '#2b65ff' : '#999'
                         }}
                       >
-                        新增一组
+                        {t('addition.edge.add-group')}
                       </span>
                     )}
                   </div>
@@ -1649,6 +1715,7 @@ export interface EdgeTypeListManipulation {
 const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
   ({ edgeName, edgeIndex, switchIsEditEdge }) => {
     const { edgeTypeStore } = useContext(MetadataConfigsRootStore);
+    const { t } = useTranslation();
     const [isPopDeleteModal, switchPopDeleteModal] = useState(false);
     const [isDeleting, switchDeleting] = useState(false);
     const deleteWrapperRef = useRef<HTMLDivElement>(null);
@@ -1696,13 +1763,13 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
                 icon: null,
                 with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
                 thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
-                display_fields: edgeTypeStore.selectedEdgeType!.style
-                  .display_fields
+                display_fields:
+                  edgeTypeStore.selectedEdgeType!.style.display_fields
               }
             });
           }}
         >
-          编辑
+          {t('addition.common.edit')}
         </span>
         <div className="no-line-break">
           {isDeleteOrBatchDeleting && (
@@ -1722,10 +1789,10 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
             tooltipWrapper={
               <div ref={deleteWrapperRef}>
                 <p className="metadata-properties-tooltips-title">
-                  确认删除此边类型？
+                  {t('addition.edge.confirm-del-edge-type')}
                 </p>
-                <p>确认删除边类型？删除后无法恢复，请谨慎操作</p>
-                <p>删除元数据耗时较久，详情可在任务管理中查看</p>
+                <p>{t('addition.edge.confirm-del-edge-type-again')}</p>
+                <p>{t('addition.message.long-time-notice')}</p>
                 <div className="metadata-properties-tooltips-footer">
                   <Button
                     size="medium"
@@ -1741,7 +1808,7 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
                         edgeTypeStore.requestStatus.deleteEdgeType === 'success'
                       ) {
                         Message.success({
-                          content: '删除成功',
+                          content: t('addition.common.del-success'),
                           size: 'medium',
                           showCloseIcon: false
                         });
@@ -1760,7 +1827,7 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
                       }
                     }}
                   >
-                    确认
+                    {t('addition.common.confirm')}
                   </Button>
                   <Button
                     size="medium"
@@ -1769,14 +1836,16 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
                       switchPopDeleteModal(false);
                     }}
                   >
-                    取消
+                    {t('addition.common.cancel')}
                   </Button>
                 </div>
               </div>
             }
             childrenProps={{
               className: 'metadata-properties-manipulation',
-              title: isDeleteOrBatchDeleting ? '删除中' : '删除',
+              title: isDeleteOrBatchDeleting
+                ? t('addition.operate.del-ing')
+                : t('addition.common.del'),
               onClick() {
                 if (isDeleteOrBatchDeleting) {
                   return;
@@ -1786,7 +1855,9 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
               }
             }}
           >
-            {isDeleteOrBatchDeleting ? '删除中' : '删除'}
+            {isDeleteOrBatchDeleting
+              ? t('addition.operate.del-ing')
+              : t('addition.common.del')}
           </Tooltip>
         </div>
       </div>
@@ -1796,7 +1867,7 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
 
 const EmptyEdgeTypeHints: React.FC = observer(() => {
   const { edgeTypeStore } = useContext(MetadataConfigsRootStore);
-
+  const { t } = useTranslation();
   return (
     <div
       style={{
@@ -1807,7 +1878,7 @@ const EmptyEdgeTypeHints: React.FC = observer(() => {
     >
       <img src={AddIcon} alt="Add new property" />
       <div style={{ marginTop: 8, fontSize: 14 }}>
-        您暂时还没有任何边类型，立即创建
+        {t('addition.edge.no-edge-desc')}
       </div>
       <div
         style={{
@@ -1824,7 +1895,7 @@ const EmptyEdgeTypeHints: React.FC = observer(() => {
             edgeTypeStore.changeCurrentTabStatus('new');
           }}
         >
-          创建边类型
+          {t('addition.edge.create-edge')}
         </Button>
         <Button
           size="large"
@@ -1833,7 +1904,7 @@ const EmptyEdgeTypeHints: React.FC = observer(() => {
             edgeTypeStore.changeCurrentTabStatus('reuse');
           }}
         >
-          复用已有类型
+          {t('addition.edge.multiplexing-existing-type')}
         </Button>
       </div>
     </div>

@@ -7,6 +7,8 @@ import { Input, Table } from 'hubble-ui';
 import { LoadingDataView } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 import './PropertyIndex.less';
+import i18next from '../../../../i18n';
+import { useTranslation } from 'react-i18next';
 
 const variants = {
   initial: {
@@ -27,16 +29,16 @@ const variants = {
 };
 
 const IndexTypeMappings: Record<string, string> = {
-  SECONDARY: '二级索引',
-  RANGE: '范围索引',
-  SEARCH: '全文索引'
+  SECONDARY: i18next.t('addition.menu.secondary-index'),
+  RANGE: i18next.t('addition.menu.range-index'),
+  SEARCH: i18next.t('addition.menu.full-text-index')
 };
 
 const PropertyIndex: React.FC = observer(() => {
   const { metadataPropertyIndexStore } = useContext(MetadataConfigsRootStore);
   const [preLoading, switchPreLoading] = useState(true);
   const [currentTab, switchCurrentTab] = useState<'vertex' | 'edge'>('vertex');
-
+  const { t } = useTranslation();
   const isLoading =
     preLoading ||
     metadataPropertyIndexStore.requestStatus.fetchMetadataPropertIndexes ===
@@ -80,7 +82,10 @@ const PropertyIndex: React.FC = observer(() => {
 
   const columnConfigs = [
     {
-      title: currentTab === 'vertex' ? '顶点类型名称' : '边类型名称',
+      title:
+        currentTab === 'vertex'
+          ? t('addition.vertex.vertex-type-name')
+          : t('addition.common.edge-type-name'),
       dataIndex: 'owner',
       render(text: string, records: any[], index: number) {
         if (metadataPropertyIndexStore.collpaseInfo === null) {
@@ -95,10 +100,8 @@ const PropertyIndex: React.FC = observer(() => {
           );
         }
 
-        const [
-          collpaseStartIndexes,
-          collpaseNumbers
-        ] = metadataPropertyIndexStore.collpaseInfo;
+        const [collpaseStartIndexes, collpaseNumbers] =
+          metadataPropertyIndexStore.collpaseInfo;
 
         const startIndex = collpaseStartIndexes.findIndex(
           (indexNumber) => indexNumber === index
@@ -138,7 +141,7 @@ const PropertyIndex: React.FC = observer(() => {
       }
     },
     {
-      title: '索引名称',
+      title: t('addition.edge.index-name'),
       dataIndex: 'name',
       render(text: string) {
         return (
@@ -154,14 +157,14 @@ const PropertyIndex: React.FC = observer(() => {
       }
     },
     {
-      title: '索引类型',
+      title: t('addition.edge.index-type'),
       dataIndex: 'type',
       render(text: string) {
         return IndexTypeMappings[text];
       }
     },
     {
-      title: '属性',
+      title: t('addition.common.property'),
       dataIndex: 'fields',
       render(properties: string[]) {
         return (
@@ -204,7 +207,7 @@ const PropertyIndex: React.FC = observer(() => {
               : 'vertex-index-tab-index'
           }
         >
-          顶点索引
+          {t('addition.vertex.vertex-index')}
         </div>
         <div
           onClick={() => {
@@ -224,7 +227,7 @@ const PropertyIndex: React.FC = observer(() => {
               : 'vertex-index-tab-index'
           }
         >
-          边索引
+          {t('addition.edge.edge-index')}
         </div>
       </div>
       <div className="vertex-index-wrapper">
@@ -232,7 +235,7 @@ const PropertyIndex: React.FC = observer(() => {
           <Input.Search
             size="medium"
             width={200}
-            placeholder="请输入搜索关键字"
+            placeholder={t('addition.message.please-enter-keywords')}
             value={metadataPropertyIndexStore.searchWords}
             onChange={handleSearchChange}
             onSearch={handleSearch}
@@ -250,9 +253,9 @@ const PropertyIndex: React.FC = observer(() => {
                 isLoading={isLoading}
                 emptyView={
                   metadataPropertyIndexStore.isSearched.status ? (
-                    <span>无结果</span>
+                    <span>{t('addition.common.no-result')}</span>
                   ) : (
-                    <span>您暂时还没有任何索引</span>
+                    <span>{t('addition.message.no-index-notice')}</span>
                   )
                 }
               />

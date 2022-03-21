@@ -192,11 +192,11 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
               <div>{dataAnalyzeStore.selectedGraphLinkData.id}</div>
             </div>
             <div className={graphInfoItemClassName}>
-              <div>{t('addition.common.origin')}：</div>
+              <div>{t('addition.common.source')}：</div>
               <div>{dataAnalyzeStore.selectedGraphLinkData.source}</div>
             </div>
             <div className={graphInfoItemClassName}>
-              <div>{t('addition.common.end')}：</div>
+              <div>{t('addition.common.target')}：</div>
               <div>{dataAnalyzeStore.selectedGraphLinkData.target}</div>
             </div>
           </>
@@ -208,7 +208,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
             dataAnalyzeStore.editedSelectedGraphDataProperties.nonNullable
               .size !== 0) && (
             <div style={{ marginTop: 24, marginBottom: 3 }}>
-              {t('addition.common.required-attribute')}：
+              {t('addition.common.required-property')}：
             </div>
           )}
         {[...dataAnalyzeStore.editedSelectedGraphDataProperties.primary].map(
@@ -280,7 +280,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
           dataAnalyzeStore.editedSelectedGraphDataProperties.nullable.size !==
             0 && (
             <div style={{ marginTop: 24 }}>
-              {t('addition.common.nullable-attribute')}：
+              {t('addition.common.nullable-property')}：
             </div>
           )}
         {[...dataAnalyzeStore.editedSelectedGraphDataProperties.nullable].map(

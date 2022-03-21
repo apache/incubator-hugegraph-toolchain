@@ -115,7 +115,7 @@ export const GremlinQuery: React.FC = observer(() => {
   const codeContainer = useRef<HTMLTextAreaElement>(null);
   const codeEditor = useRef<CodeMirror.Editor>();
   const keyPressed = useMultiKeyPress();
-
+  const { t } = useTranslation();
   const isDisabledExec =
     dataAnalyzeStore.codeEditorText.length === 0 ||
     !codeRegexp.test(dataAnalyzeStore.codeEditorText) ||
@@ -191,7 +191,7 @@ export const GremlinQuery: React.FC = observer(() => {
       {
         lineNumbers: true,
         lineWrapping: true,
-        placeholder: '请输入查询语句'
+        placeholder: t('addition.operate.input-query-statement')
       }
     );
 
@@ -271,8 +271,8 @@ export const GremlinQuery: React.FC = observer(() => {
             className="query-tab-expand"
             onClick={handleCodeExpandChange(false)}
           >
-            <img src={ArrowIcon} alt="展开" />
-            <span>收起</span>
+            <img src={ArrowIcon} alt={t('addition.operate.expand')} />
+            <span>{t('addition.operate.collapse')}</span>
           </div>
         ) : (
           <div
@@ -280,8 +280,8 @@ export const GremlinQuery: React.FC = observer(() => {
             onClick={handleCodeExpandChange(true)}
           >
             <div>
-              <img src={ArrowIcon} alt="展开" />
-              <span>展开</span>
+              <img src={ArrowIcon} alt={t('addition.operate.collapse')} />
+              <span>{t('addition.operate.expand')}</span>
             </div>
           </div>
         )}
@@ -316,22 +316,22 @@ export const GremlinQuery: React.FC = observer(() => {
             }}
             tooltipWrapper={
               dataAnalyzeStore.codeEditorText.length === 0
-                ? '查询语句不能为空'
+                ? t('addition.operate.execute-query')
                 : '⌘ + Enter'
             }
           >
             <Dropdown.Button
               options={[
-                { label: '执行查询', value: 'query' },
-                { label: '执行任务', value: 'task' }
+                { label: t('addition.operate.execute-query'), value: 'query' },
+                { label: t('addition.operate.execute-task'), value: 'task' }
               ]}
               trigger={['click']}
               title={
                 dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
-                  ? '执行中　'
+                  ? t('addition.operate.execute-ing')
                   : dataAnalyzeStore.queryMode === 'query'
-                  ? '执行查询'
-                  : '执行任务'
+                  ? t('addition.operate.execute-query')
+                  : t('addition.operate.execute-task')
               }
               onHandleMenuClick={(e: any) => {
                 dataAnalyzeStore.setQueryMode(e.key);
@@ -349,7 +349,7 @@ export const GremlinQuery: React.FC = observer(() => {
           </CustomTooltip>
           <Tooltip
             placement="bottomLeft"
-            title="查询模式适合30秒内可返回结果的小规模分析；任务模式适合较长时间返回结果的大规模分析，任务详情可在任务管理中查看"
+            title={t('addition.operate.query-result-desc')}
             type="dark"
           >
             <div style={{ marginLeft: 6, paddingTop: 6 }}>
@@ -384,7 +384,7 @@ export const GremlinQuery: React.FC = observer(() => {
                   switchFavoritePop(true);
                 }}
               >
-                收藏
+                {t('addition.operate.favorite')}
               </Button>
             </CustomTooltip>
           ) : (
@@ -392,13 +392,13 @@ export const GremlinQuery: React.FC = observer(() => {
               placement="bottom"
               title={
                 dataAnalyzeStore.codeEditorText.length === 0
-                  ? '查询语句不能为空'
+                  ? t('addition.operate.query-statement-required')
                   : ''
               }
               type="dark"
             >
               <Button style={styles.primaryButton} disabled={true}>
-                收藏
+                {t('addition.operate.favorite')}
               </Button>
             </Tooltip>
           )}
@@ -407,7 +407,7 @@ export const GremlinQuery: React.FC = observer(() => {
             onClick={resetCodeEditorText}
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
           >
-            清空
+            {t('addition.operate.clean')}
           </Button>
         </div>
       )}

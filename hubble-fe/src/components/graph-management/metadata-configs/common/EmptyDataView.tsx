@@ -4,6 +4,7 @@ import { observer } from 'mobx-react';
 import LoadingBackIcon from '../../../../assets/imgs/ic_loading_back.svg';
 import LoadingFrontIcon from '../../../../assets/imgs/ic_loading_front.svg';
 
+import i18next from '../../../../i18n';
 export interface LoadingDataViewProps {
   isLoading: boolean;
   emptyText?: string;
@@ -25,7 +26,7 @@ const LoadingDataView: React.FC<LoadingDataViewProps> = observer(
             alt="load spinner"
           />
         </div>
-        <span>数据加载中...</span>
+        <span>{i18next.t('addition.message.data-loading')}...</span>
       </div>
     ) : emptyText ? (
       <span>{emptyText}</span>

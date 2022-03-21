@@ -19,7 +19,7 @@ import type {
   ExecutionLogs,
   FavoriteQuery
 } from '../../../stores/types/GraphManagementStore/dataAnalyzeStore';
-import {Algorithm} from '../../../stores/factory/dataAnalyzeStore/algorithmStore';
+import { Algorithm } from '../../../stores/factory/dataAnalyzeStore/algorithmStore';
 
 import ArrowIcon from '../../../assets/imgs/ic_arrow_16.svg';
 import EmptyIcon from '../../../assets/imgs/ic_sousuo_empty.svg';
@@ -167,7 +167,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                   setLocation(`/graph-management/${params!.id}/async-tasks`);
                 }}
               >
-                详情
+                {t('addition.operate.detail')}
               </span>
             )}
             <Tooltip
@@ -202,7 +202,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                 }
               }}
             >
-              收藏
+              {t('addition.operate.favorite')}
             </Tooltip>
             <span
               className="exec-log-manipulation"
@@ -211,7 +211,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                 rowData.type === 'GREMLIN_ASYNC' ? 'task' : 'query'
               )}
             >
-              加载语句
+              {t('addition.operate.load-statement')}
             </span>
           </div>
         );
@@ -221,13 +221,13 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
 
   const queryFavoriteColumnConfigs = [
     {
-      title: '时间',
+      title: t('addition.operate.time'),
       dataIndex: 'create_time',
       width: '25%',
       sorter: true
     },
     {
-      title: '名称',
+      title: t('addition.operate.name'),
       dataIndex: 'name',
       width: '15%',
       sorter: true,
@@ -243,7 +243,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
       }
     },
     {
-      title: '收藏语句',
+      title: t('addition.operate.favorite-statement'),
       dataIndex: 'content',
       width: '40%',
       render(text: string, rowData: FavoriteQuery) {
@@ -257,7 +257,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: string, rowData: FavoriteQuery, index: number) {
@@ -267,7 +267,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
               className="exec-log-manipulation"
               onClick={loadStatements(rowData.content)}
             >
-              加载语句
+              {t('addition.operate.load-statement')}
             </span>
             <Tooltip
               placement="left"
@@ -305,7 +305,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                 }
               }}
             >
-              修改名称
+              {t('addition.operate.modify-name')}
             </Tooltip>
             <Tooltip
               placement="left"
@@ -334,7 +334,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                 }
               }}
             >
-              删除
+              {t('addition.common.del')}
             </Tooltip>
           </div>
         );
@@ -463,7 +463,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
             tabIndex === 0 ? 'query-tab-index active' : 'query-tab-index'
           }
         >
-          执行记录
+          {t('addition.operate.execution-record')}
         </div>
         <div
           onClick={() => {
@@ -474,7 +474,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
             tabIndex === 1 ? 'query-tab-index active' : 'query-tab-index'
           }
         >
-          收藏的查询
+          {t('addition.operate.favorite-queries')}
         </div>
       </div>
       <div className="exec-log-favorite-tab-content-wrapper">
@@ -500,7 +500,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                   <Input.Search
                     size="medium"
                     width={200}
-                    placeholder="搜索收藏名称或语句"
+                    placeholder={t('addition.operate.favorite-search-desc')}
                     value={dataAnalyzeStore.searchText}
                     onChange={handleSearchChange}
                     onSearch={handleSearch}
@@ -514,13 +514,16 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
                       dataAnalyzeStore.requestStatus.fetchFavoriteQueries ===
                       'success' ? (
                         <>
-                          <img src={EmptyIcon} alt="无匹配结果" />
+                          <img
+                            src={EmptyIcon}
+                            alt={t('addition.common.no-matching-results')}
+                          />
                           <div style={{ fontSize: 14, color: '#333' }}>
-                            无匹配结果
+                            {t('addition.common.no-matching-results')}
                           </div>
                         </>
                       ) : (
-                        '暂无数据'
+                        t('addition.common.no-data')
                       )
                   }}
                   columns={queryFavoriteColumnConfigs}
@@ -597,7 +600,7 @@ const ExecutionContent: React.FC<{
     <div className="data-analyze-logs-favorite-content">
       <img
         src={ArrowIcon}
-        alt="展开/收起"
+        alt={t('addition.operate.expand-collapse')}
         className={arrowIconClassName}
         onClick={handleExpandClick}
       />
@@ -616,7 +619,7 @@ export interface DeleteConfirmProps {
 export const DeleteConfirm: React.FC<DeleteConfirmProps> = observer(
   ({ id, handlePop }) => {
     const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
-
+    const { t } = useTranslation();
     const handleDelete = useCallback(async () => {
       await dataAnalyzeStore.deleteQueryCollection(id);
 
@@ -639,8 +642,8 @@ export const DeleteConfirm: React.FC<DeleteConfirmProps> = observer(
     return (
       <div className="data-analyze">
         <div className="delete-confirm-wrapper">
-          <span>确认删除</span>
-          <span>是否确认删除该条收藏语句？</span>
+          <span>{t('addition.common.del-comfirm')}</span>
+          <span>{t('addition.operate.favorite-del-desc')}</span>
           <div className="delete-confirm-footer">
             <Button
               type="primary"
@@ -648,7 +651,7 @@ export const DeleteConfirm: React.FC<DeleteConfirmProps> = observer(
               style={{ width: 60 }}
               onClick={handleDelete}
             >
-              删除
+              {t('addition.common.del')}
             </Button>
             <Button
               size="medium"
@@ -658,7 +661,7 @@ export const DeleteConfirm: React.FC<DeleteConfirmProps> = observer(
               }}
               onClick={handleCancel}
             >
-              取消
+              {t('addition.common.cancel')}
             </Button>
           </div>
         </div>

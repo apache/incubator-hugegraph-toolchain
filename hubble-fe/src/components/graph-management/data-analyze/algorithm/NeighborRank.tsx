@@ -301,7 +301,7 @@ const NeighborRank = observer(() => {
                         );
                       }}
                     >
-                      删除
+                      {t('addition.common.del')}
                     </div>
                   )}
                 </div>
@@ -496,9 +496,11 @@ const NeighborRank = observer(() => {
                   algorithmAnalyzerStore.addNeighborRankRule();
 
                   algorithmAnalyzerStore.validateDuplicateNeighborRankRules(
-                    (last(
-                      algorithmAnalyzerStore.neighborRankParams.steps
-                    ) as NeighborRankRule).uuid
+                    (
+                      last(
+                        algorithmAnalyzerStore.neighborRankParams.steps
+                      ) as NeighborRankRule
+                    ).uuid
                   );
                 }
               }}

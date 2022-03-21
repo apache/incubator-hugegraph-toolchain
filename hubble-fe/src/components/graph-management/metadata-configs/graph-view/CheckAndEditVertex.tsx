@@ -33,35 +33,34 @@ import type {
 
 import BlueArrowIcon from '../../../../assets/imgs/ic_arrow_blue.svg';
 import CloseIcon from '../../../../assets/imgs/ic_close_16.svg';
+import i18next from '../../../../i18n';
+import { useTranslation } from 'react-i18next';
 
 const IDStrategyMappings: Record<string, string> = {
-  PRIMARY_KEY: '主键ID',
-  AUTOMATIC: '自动生成',
-  CUSTOMIZE_STRING: '自定义字符串',
-  CUSTOMIZE_NUMBER: '自定义数字',
-  CUSTOMIZE_UUID: '自定义UUID'
+  PRIMARY_KEY: i18next.t('addition.constant.primary-key-id'),
+  AUTOMATIC: i18next.t('addition.constant.automatic-generation'),
+  CUSTOMIZE_STRING: i18next.t('addition.constant.custom-string'),
+  CUSTOMIZE_NUMBER: i18next.t('addition.constant.custom-number'),
+  CUSTOMIZE_UUID: i18next.t('addition.constant.custom-uuid')
 };
 
 const propertyIndexTypeMappings: Record<string, string> = {
-  SECONDARY: '二级索引',
-  RANGE: '范围索引',
-  SEARCH: '全文索引'
+  SECONDARY: i18next.t('addition.menu.secondary-index'),
+  RANGE: i18next.t('addition.menu.range-index'),
+  SEARCH: i18next.t('addition.menu.full-text-index')
 };
 
 const CheckAndEditVertex: React.FC = observer(() => {
   const { metadataPropertyStore, vertexTypeStore, graphViewStore } = useContext(
     MetadataConfigsRootStore
   );
+  const { t } = useTranslation();
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isDeletePop, switchDeletePop] = useState(false);
-  const [
-    deleteExistPopIndexInDrawer,
-    setDeleteExistPopIndexInDrawer
-  ] = useState<number | null>(null);
-  const [
-    deleteAddedPopIndexInDrawer,
-    setDeleteAddedPopIndexInDrawer
-  ] = useState<number | null>(null);
+  const [deleteExistPopIndexInDrawer, setDeleteExistPopIndexInDrawer] =
+    useState<number | null>(null);
+  const [deleteAddedPopIndexInDrawer, setDeleteAddedPopIndexInDrawer] =
+    useState<number | null>(null);
 
   const deleteWrapperRef = useRef<HTMLImageElement>(null);
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
@@ -148,7 +147,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
 
     if (vertexTypeStore.requestStatus.deleteVertexType === 'success') {
       Message.success({
-        content: '删除成功',
+        content: t('addition.common.del-success'),
         size: 'medium',
         showCloseIcon: false
       });
@@ -189,7 +188,11 @@ const CheckAndEditVertex: React.FC = observer(() => {
 
   return (
     <Drawer
-      title={!isEditVertex ? '顶点类型详情' : '编辑顶点类型'}
+      title={
+        !isEditVertex
+          ? t('addition.vertex.type-detail')
+          : t('addition.vertex.edit-type')
+      }
       width={580}
       destroyOnClose
       visible={['check-vertex', 'edit-vertex'].includes(
@@ -238,11 +241,13 @@ const CheckAndEditVertex: React.FC = observer(() => {
 
                 updateInfo.title = `
                   <div class="metadata-graph-view-tooltip-fields">
-                    <div>顶点类型：</div>
+                    <div>${t('addition.common.vertex-type')}：</div>
                     <div style="min-width: 60px; max-width: 145px; marigin-right: 0">${id}</div>
                   </div>
                   <div class="metadata-graph-view-tooltip-fields">
-                    <div style="max-width: 120px">关联属性及类型：</div>
+                    <div style="max-width: 120px">${t(
+                      'addition.common.association-property-and-type'
+                    )}：</div>
                   </div>
                   ${Object.entries(mergedProperties)
                     .map(([key, value]) => {
@@ -301,7 +306,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 vertexTypeStore.requestStatus.updateVertexType === 'success'
               ) {
                 Message.success({
-                  content: '修改成功',
+                  content: t('addition.operate.modify-success'),
                   size: 'medium',
                   showCloseIcon: false
                 });
@@ -314,7 +319,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
           }}
           key="drawer-manipulation"
         >
-          {isEditVertex ? '保存' : '编辑'}
+          {isEditVertex ? t('addition.common.save') : t('addition.common.edit')}
         </Button>,
         <Tooltip
           placement="top-start"
@@ -336,12 +341,16 @@ const CheckAndEditVertex: React.FC = observer(() => {
               vertexTypeStore.vertexTypeUsingStatus[
                 vertexTypeStore.selectedVertexType!.name
               ] ? (
-                <p style={{ width: 200 }}>当前顶点类型正在使用中，不可删除。</p>
+                <p style={{ width: 200 }}>
+                  {t('addition.vertex.using-cannot-delete')}
+                </p>
               ) : (
                 <>
-                  <p style={{ marginBottom: 8 }}>确认删除此顶点类型？</p>
-                  <p>删除后无法恢复，请谨慎操作</p>
-                  <p>删除元数据耗时较久，详情可在任务管理中查看</p>
+                  <p style={{ marginBottom: 8 }}>
+                    {t('addition.vertex.del-vertex-confirm')}
+                  </p>
+                  <p>{t('addition.edge.confirm-del-edge-careful-notice')}</p>
+                  <p>{t('addition.message.long-time-notice')}</p>
                   <div
                     style={{
                       display: 'flex',
@@ -354,14 +363,14 @@ const CheckAndEditVertex: React.FC = observer(() => {
                       style={{ marginRight: 16, cursor: 'pointer' }}
                       onClick={handleDeleteVertex}
                     >
-                      确认
+                      {t('addition.common.confirm')}
                     </div>
                     <div
                       onClick={() => {
                         switchDeletePop(false);
                       }}
                     >
-                      取消
+                      {t('addition.common.cancel')}
                     </div>
                   </div>
                 </>
@@ -380,7 +389,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
           }}
         >
           <Button size="medium" style={{ width: 60 }}>
-            {isEditVertex ? '关闭' : '删除'}
+            {isEditVertex
+              ? t('addition.common.close')
+              : t('addition.common.del')}
           </Button>
         </Tooltip>
       ]}
@@ -390,14 +401,14 @@ const CheckAndEditVertex: React.FC = observer(() => {
           className="metadata-title"
           style={{ marginBottom: 16, width: 88, textAlign: 'right' }}
         >
-          基础信息
+          {t('addition.menu.base-info')}
         </div>
         <div
           className={metadataDrawerOptionClass}
           style={{ alignItems: 'center' }}
         >
           <div className="metadata-drawer-options-name">
-            <span>顶点类型名称：</span>
+            <span>{t('addition.vertex.vertex-type-name')}：</span>
           </div>
           {vertexTypeStore.selectedVertexType!.name}
         </div>
@@ -409,7 +420,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 isEditVertex ? 'metadata-drawer-options-name-edit' : ''
               }
             >
-              顶点样式：
+              {t('addition.vertex.vertex-style')}：
             </span>
           </div>
           <div className="new-vertex-type-options-colors">
@@ -532,18 +543,18 @@ const CheckAndEditVertex: React.FC = observer(() => {
         </div>
         <div className={metadataDrawerOptionClass}>
           <div className="metadata-drawer-options-name">
-            <span>ID策略：</span>
+            <span>{t('addition.common.id-strategy')}：</span>
           </div>
           {IDStrategyMappings[vertexTypeStore.selectedVertexType!.id_strategy]}
         </div>
         <div className="metadata-drawer-options">
           <div className="metadata-drawer-options-name">
-            <span>关联属性：</span>
+            <span>{t('addition.common.association-property')}：</span>
           </div>
           <div className="metadata-drawer-options-list">
             <div className="metadata-drawer-options-list-row">
-              <span>属性</span>
-              <span>允许为空</span>
+              <span>{t('addition.common.property')}</span>
+              <span>{t('addition.common.allow-null')}</span>
             </div>
             {vertexTypeStore.selectedVertexType!.properties.map(
               ({ name, nullable }) => (
@@ -551,8 +562,8 @@ const CheckAndEditVertex: React.FC = observer(() => {
                   <div>{name}</div>
                   <div style={{ width: 70, textAlign: 'center' }}>
                     <Switch
-                      checkedChildren="开"
-                      unCheckedChildren="关"
+                      checkedChildren={t('addition.operate.open')}
+                      unCheckedChildren={t('addition.operate.close')}
                       checked={nullable}
                       size="large"
                       disabled
@@ -568,8 +579,8 @@ const CheckAndEditVertex: React.FC = observer(() => {
                     <div>{name}</div>
                     <div style={{ width: 70, textAlign: 'center' }}>
                       <Switch
-                        checkedChildren="开"
-                        unCheckedChildren="关"
+                        checkedChildren={t('addition.operate.open')}
+                        unCheckedChildren={t('addition.operate.close')}
                         checked={true}
                         size="large"
                         disabled
@@ -591,7 +602,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
                   switchIsAddProperty(!isAddProperty);
                 }}
               >
-                <span style={{ marginRight: 4 }}>添加属性</span>
+                <span style={{ marginRight: 4 }}>
+                  {t('addition.common.add-property')}
+                </span>
                 <img src={BlueArrowIcon} alt="toogleAddProperties" />
               </div>
             )}
@@ -637,9 +650,10 @@ const CheckAndEditVertex: React.FC = observer(() => {
                               append_properties: [
                                 ...addedPropertiesInSelectedVertextType
                               ].map((propertyName) => {
-                                const currentProperty = vertexTypeStore.newVertexType.properties.find(
-                                  ({ name }) => name === propertyName
-                                );
+                                const currentProperty =
+                                  vertexTypeStore.newVertexType.properties.find(
+                                    ({ name }) => name === propertyName
+                                  );
 
                                 return {
                                   name: propertyName,
@@ -662,7 +676,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
         </div>
         <div className={metadataDrawerOptionClass}>
           <div className="metadata-drawer-options-name">
-            <span>主键属性：</span>
+            <span>{t('addition.common.primary-key-property')}：</span>
           </div>
           {vertexTypeStore.selectedVertexType!.primary_keys.join(';')}
         </div>
@@ -673,7 +687,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 isEditVertex ? 'metadata-drawer-options-name-edit' : ''
               }
             >
-              顶点展示内容：
+              {t('addition.vertex.vertex-display-content')}：
             </span>
           </div>
           {isEditVertex ? (
@@ -683,14 +697,20 @@ const CheckAndEditVertex: React.FC = observer(() => {
               size="medium"
               showSearch={false}
               disabled={!isEditVertex}
-              placeholder="请选择顶点展示内容"
+              placeholder={t(
+                'addition.vertex.select-vertex-display-content-placeholder'
+              )}
               onChange={(value: string[]) => {
                 vertexTypeStore.mutateEditedSelectedVertexType({
                   ...vertexTypeStore.editedSelectedVertexType,
                   style: {
                     ...vertexTypeStore.editedSelectedVertexType.style,
                     display_fields: value.map((field) =>
-                      formatVertexIdText(field, '顶点ID', true)
+                      formatVertexIdText(
+                        field,
+                        t('addition.function-parameter.vertex-id'),
+                        true
+                      )
                     )
                   }
                 });
@@ -698,7 +718,11 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 vertexTypeStore.validateEditVertexType();
               }}
               value={vertexTypeStore.editedSelectedVertexType.style.display_fields.map(
-                (field) => formatVertexIdText(field, '顶点ID')
+                (field) =>
+                  formatVertexIdText(
+                    field,
+                    t('addition.function-parameter.vertex-id')
+                  )
               )}
             >
               {vertexTypeStore.selectedVertexType?.properties
@@ -708,9 +732,10 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 )
                 .filter(({ nullable }) => !nullable)
                 .map((item) => {
-                  const order = vertexTypeStore.editedSelectedVertexType.style.display_fields.findIndex(
-                    (name) => name === item.name
-                  );
+                  const order =
+                    vertexTypeStore.editedSelectedVertexType.style.display_fields.findIndex(
+                      (name) => name === item.name
+                    );
 
                   const multiSelectOptionClassName = classnames({
                     'metadata-configs-sorted-multiSelect-option': true,
@@ -720,28 +745,36 @@ const CheckAndEditVertex: React.FC = observer(() => {
 
                   return (
                     <Select.Option
-                      value={formatVertexIdText(item.name, '顶点ID')}
+                      value={formatVertexIdText(
+                        item.name,
+                        t('addition.function-parameter.vertex-id')
+                      )}
                       key={item.name}
                     >
                       <div className={multiSelectOptionClassName}>
                         <div
                           style={{
-                            backgroundColor: vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
-                              item.name
-                            )
-                              ? '#2b65ff'
-                              : '#fff',
-                            borderColor: vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
-                              item.name
-                            )
-                              ? '#fff'
-                              : '#e0e0e0'
+                            backgroundColor:
+                              vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#2b65ff'
+                                : '#fff',
+                            borderColor:
+                              vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#fff'
+                                : '#e0e0e0'
                           }}
                         >
                           {order !== -1 ? order + 1 : ''}
                         </div>
                         <div style={{ color: '#333' }}>
-                          {formatVertexIdText(item.name, '顶点ID')}
+                          {formatVertexIdText(
+                            item.name,
+                            t('addition.function-parameter.vertex-id')
+                          )}
                         </div>
                       </div>
                     </Select.Option>
@@ -751,7 +784,12 @@ const CheckAndEditVertex: React.FC = observer(() => {
           ) : (
             <div>
               {vertexTypeStore.selectedVertexType?.style.display_fields
-                .map((field) => formatVertexIdText(field, '顶点ID'))
+                .map((field) =>
+                  formatVertexIdText(
+                    field,
+                    t('addition.function-parameter.vertex-id')
+                  )
+                )
                 .join('-')}
             </div>
           )}
@@ -765,15 +803,15 @@ const CheckAndEditVertex: React.FC = observer(() => {
             textAlign: 'right'
           }}
         >
-          索引信息
+          {t('addition.edge.index-info')}
         </div>
         <div className={metadataDrawerOptionClass}>
           <div className="metadata-drawer-options-name">
-            <span>类型索引：</span>
+            <span>{t('addition.menu.type-index')}：</span>
           </div>
           <Switch
-            checkedChildren="开"
-            unCheckedChildren="关"
+            checkedChildren={t('addition.operate.open')}
+            unCheckedChildren={t('addition.operate.close')}
             checked={vertexTypeStore.selectedVertexType!.open_label_index}
             size="large"
             disabled
@@ -781,7 +819,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
         </div>
         <div className="metadata-drawer-options">
           <div className="metadata-drawer-options-name">
-            <span>属性索引：</span>
+            <span>{t('addition.common.property-index')}：</span>
           </div>
           <div className="metadata-drawer-options-list">
             {(vertexTypeStore.selectedVertexType!.property_indexes.length !==
@@ -789,9 +827,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
               vertexTypeStore.editedSelectedVertexType.append_property_indexes
                 .length !== 0) && (
               <div className="metadata-drawer-options-list-row metadata-drawer-options-list-row-normal">
-                <span>索引名称</span>
-                <span>索引类型</span>
-                <span>属性</span>
+                <span>{t('addition.edge.index-name')}</span>
+                <span>{t('addition.edge.index-type')}</span>
+                <span>{t('addition.common.property')}</span>
               </div>
             )}
             {vertexTypeStore
@@ -845,7 +883,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                   lineHeight: '28px'
                                 }}
                               >
-                                确认删除此属性？
+                                {t('addition.message.property-del-confirm')}
                               </p>
                               <p
                                 style={{
@@ -853,7 +891,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                   lineHeight: '28px'
                                 }}
                               >
-                                删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                                {t('addition.message.index-del-confirm')}
                               </p>
                               <div
                                 style={{
@@ -882,7 +920,8 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                     vertexTypeStore.mutateEditedSelectedVertexType(
                                       {
                                         ...vertexTypeStore.editedSelectedVertexType,
-                                        remove_property_indexes: removedPropertyIndexes
+                                        remove_property_indexes:
+                                          removedPropertyIndexes
                                       }
                                     );
 
@@ -892,14 +931,14 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                     );
                                   }}
                                 >
-                                  确认
+                                  {t('addition.common.confirm')}
                                 </div>
                                 <div
                                   onClick={() => {
                                     setDeleteExistPopIndexInDrawer(null);
                                   }}
                                 >
-                                  取消
+                                  {t('addition.common.cancel')}
                                 </div>
                               </div>
                             </div>
@@ -933,16 +972,18 @@ const CheckAndEditVertex: React.FC = observer(() => {
                       <Input
                         size="medium"
                         width={100}
-                        placeholder="索引名称"
+                        placeholder={t('addition.edge.index-name')}
                         errorLocation="layer"
                         errorMessage={
                           vertexTypeStore.validateEditVertexTypeErrorMessage
                             .propertyIndexes.length !== 0
-                            ? (vertexTypeStore
-                                .validateEditVertexTypeErrorMessage
-                                .propertyIndexes[
-                                index
-                              ] as VertexTypeValidatePropertyIndexes).name
+                            ? (
+                                vertexTypeStore
+                                  .validateEditVertexTypeErrorMessage
+                                  .propertyIndexes[
+                                  index
+                                ] as VertexTypeValidatePropertyIndexes
+                              ).name
                             : ''
                         }
                         value={name}
@@ -970,7 +1011,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                     <div>
                       <Select
                         width={110}
-                        placeholder="请选择索引类型"
+                        placeholder={t('addition.edge.index-type-select-desc')}
                         size="medium"
                         showSearch={false}
                         value={type === '' ? [] : type}
@@ -991,13 +1032,13 @@ const CheckAndEditVertex: React.FC = observer(() => {
                         }}
                       >
                         <Select.Option value="SECONDARY" key="SECONDARY">
-                          二级索引
+                          {t('addition.menu.secondary-index')}
                         </Select.Option>
                         <Select.Option value="RANGE" key="RANGE">
-                          范围索引
+                          {t('addition.range.secondary-index')}
                         </Select.Option>
                         <Select.Option value="SEARCH" key="SEARCH">
-                          全文索引
+                          {t('addition.range.full-text-index')}
                         </Select.Option>
                       </Select>
                     </div>
@@ -1005,7 +1046,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                       <Select
                         width={120}
                         mode={type === 'SECONDARY' ? 'multiple' : 'default'}
-                        placeholder="请选择属性"
+                        placeholder={t('addition.edge.property-select-desc')}
                         size="medium"
                         showSearch={false}
                         value={fields}
@@ -1042,14 +1083,16 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 )
                             )
                             .map((property) => {
-                              const order = vertexTypeStore.editedSelectedVertexType.append_property_indexes[
-                                index
-                              ].fields.findIndex(
-                                (name) => name === property.name
-                              );
+                              const order =
+                                vertexTypeStore.editedSelectedVertexType.append_property_indexes[
+                                  index
+                                ].fields.findIndex(
+                                  (name) => name === property.name
+                                );
 
                               const multiSelectOptionClassName = classnames({
-                                'metadata-configs-sorted-multiSelect-option': true,
+                                'metadata-configs-sorted-multiSelect-option':
+                                  true,
                                 'metadata-configs-sorted-multiSelect-option-selected':
                                   order !== -1
                               });
@@ -1074,9 +1117,10 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 .append_properties
                             )
                             .filter((property) => {
-                              const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                                ({ name }) => name === property.name
-                              );
+                              const matchedProperty =
+                                metadataPropertyStore.metadataProperties.find(
+                                  ({ name }) => name === property.name
+                                );
 
                               if (!isUndefined(matchedProperty)) {
                                 const { data_type } = matchedProperty;
@@ -1102,9 +1146,10 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 .append_properties
                             )
                             .filter((property) => {
-                              const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                                ({ name }) => name === property.name
-                              );
+                              const matchedProperty =
+                                metadataPropertyStore.metadataProperties.find(
+                                  ({ name }) => name === property.name
+                                );
 
                               if (!isUndefined(matchedProperty)) {
                                 const { data_type } = matchedProperty;
@@ -1139,7 +1184,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 lineHeight: '28px'
                               }}
                             >
-                              确认删除此属性？
+                              {t('addition.message.property-del-confirm')}
                             </p>
                             <p
                               style={{
@@ -1147,7 +1192,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 lineHeight: '28px'
                               }}
                             >
-                              删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                              {t('addition.message.index-del-confirm')}
                             </p>
                             <div
                               style={{
@@ -1173,7 +1218,8 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                   vertexTypeStore.mutateEditedSelectedVertexType(
                                     {
                                       ...vertexTypeStore.editedSelectedVertexType,
-                                      append_property_indexes: appendPropertyIndexes
+                                      append_property_indexes:
+                                        appendPropertyIndexes
                                     }
                                   );
 
@@ -1181,7 +1227,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                   vertexTypeStore.validateEditVertexType(true);
                                 }}
                               >
-                                确认
+                                {t('addition.common.confirm')}
                               </div>
                               <div
                                 onClick={() => {
@@ -1189,7 +1235,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                   setDeleteAddedPopIndexInDrawer(null);
                                 }}
                               >
-                                取消
+                                {t('addition.common.cancel')}
                               </div>
                             </div>
                           </div>
@@ -1238,7 +1284,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                   color: vertexTypeStore.isEditReady ? '#2b65ff' : '#999'
                 }}
               >
-                新增一组
+                {t('addition.edge.add-group')}
               </div>
             )}
           </div>

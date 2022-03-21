@@ -28,6 +28,7 @@ import {
   mapMetadataProperties,
   formatVertexIdText
 } from '../../../../stores/utils';
+import { useTranslation } from 'react-i18next';
 
 import type { VertexTypeValidatePropertyIndexes } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
 
@@ -41,6 +42,7 @@ const CreateVertex: React.FC = observer(() => {
   const { metadataPropertyStore, vertexTypeStore, graphViewStore } = useContext(
     MetadataConfigsRootStore
   );
+  const { t } = useTranslation();
   const [isAddNewProperty, switchIsAddNewProperty] = useState(false);
   const [deletePopIndex, setDeletePopIndex] = useState<number | null>(null);
   const deleteWrapperRef = useRef<HTMLImageElement>(null);
@@ -85,7 +87,7 @@ const CreateVertex: React.FC = observer(() => {
 
   return (
     <Drawer
-      title="创建顶点类型"
+      title={t('addition.vertex.create-vertex-type')}
       width={669}
       destroyOnClose
       maskClosable={false}
@@ -104,13 +106,8 @@ const CreateVertex: React.FC = observer(() => {
               return;
             }
 
-            const {
-              name,
-              properties,
-              primary_keys,
-              style,
-              ...rest
-            } = vertexTypeStore.newVertexType;
+            const { name, properties, primary_keys, style, ...rest } =
+              vertexTypeStore.newVertexType;
 
             const mappedProperties = mapMetadataProperties(
               properties,
@@ -127,11 +124,13 @@ const CreateVertex: React.FC = observer(() => {
               font: { size: 16 },
               title: `
                 <div class="metadata-graph-view-tooltip-fields">
-                  <div>顶点类型：</div>
+                  <div>${t('addition.common.vertex-type')}：</div>
                   <div style="min-width: 60px; max-width: 145px; marigin-right: 0">${name}</div>
                 </div>
                 <div class="metadata-graph-view-tooltip-fields">
-                  <div style="max-width: 120px">关联属性及类型：</div>
+                  <div style="max-width: 120px">${t(
+                    'addition.common.association-property-and-type'
+                  )}：</div>
                 </div>
                 ${Object.entries(mappedProperties)
                   .map(([key, value]) => {
@@ -150,7 +149,9 @@ const CreateVertex: React.FC = observer(() => {
                           <div>${
                             primaryKeyIndex === -1
                               ? ''
-                              : `(主键${primaryKeyIndex + 1})`
+                              : `(${t('addition.common.primary-key')}${
+                                  primaryKeyIndex + 1
+                                })`
                           }</div>
                         </div>`;
                   })
@@ -196,7 +197,7 @@ const CreateVertex: React.FC = observer(() => {
               graphViewStore.setCurrentDrawer('');
 
               Message.success({
-                content: '创建成功',
+                content: t('addition.newGraphConfig.create-scuccess'),
                 size: 'medium',
                 showCloseIcon: false
               });
@@ -229,10 +230,10 @@ const CreateVertex: React.FC = observer(() => {
             }
           }}
         >
-          创建
+          {t('addition.newGraphConfig.create')}
         </Button>,
         <Button size="medium" style={{ width: 60 }} onClick={handleCloseDrawer}>
-          取消
+          {t('addition.common.cancel')}
         </Button>
       ]}
     >
@@ -243,7 +244,7 @@ const CreateVertex: React.FC = observer(() => {
               className="metadata-title metadata-graph-drawer-title"
               style={{ width: 88 }}
             >
-              基础信息
+              {t('addition.menu.base-info')}
             </div>
             <div className="metadata-graph-drawer-options">
               <div
@@ -251,13 +252,13 @@ const CreateVertex: React.FC = observer(() => {
                 style={{ width: 95, marginRight: 14 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>顶点类型名称:</span>
+                <span>{t('addition.vertex.vertex-type-name')}:</span>
               </div>
               <Input
                 size="medium"
                 width={356}
                 maxLen={128}
-                placeholder="允许出现中英文、数字、下划线"
+                placeholder={t('addition.message.edge-name-rule')}
                 errorLocation="layer"
                 errorMessage={
                   vertexTypeStore.validateNewVertexTypeErrorMessage.name
@@ -283,7 +284,7 @@ const CreateVertex: React.FC = observer(() => {
                 style={{ width: 95, marginRight: 0 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>顶点样式:</span>
+                <span>{t('addition.vertex.vertex-style')}:</span>
               </div>
               <div className="metadata-graph-drawer-options-colors">
                 <Select
@@ -375,7 +376,7 @@ const CreateVertex: React.FC = observer(() => {
                 style={{ width: 95, marginRight: 14 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>ID策略:</span>
+                <span>{t('addition.common.id-strategy')}:</span>
               </div>
               <Radio.Group
                 value={vertexTypeStore.newVertexType.id_strategy}
@@ -388,13 +389,21 @@ const CreateVertex: React.FC = observer(() => {
                   vertexTypeStore.validateNewVertexType('primaryKeys');
                 }}
               >
-                <Radio.Button value="PRIMARY_KEY">主键ID</Radio.Button>
-                <Radio.Button value="AUTOMATIC">自动生成</Radio.Button>
-                <Radio.Button value="CUSTOMIZE_STRING">
-                  自定义字符串
+                <Radio.Button value="PRIMARY_KEY">
+                  {t('addition.constant.primary-key-id')}
                 </Radio.Button>
-                <Radio.Button value="CUSTOMIZE_NUMBER">自定义数字</Radio.Button>
-                <Radio.Button value="CUSTOMIZE_UUID">自定义UUID</Radio.Button>
+                <Radio.Button value="AUTOMATIC">
+                  {t('addition.constant.automatic-generation')}
+                </Radio.Button>
+                <Radio.Button value="CUSTOMIZE_STRING">
+                  {t('addition.constant.custom-string')}
+                </Radio.Button>
+                <Radio.Button value="CUSTOMIZE_NUMBER">
+                  {t('addition.constant.custom-number')}
+                </Radio.Button>
+                <Radio.Button value="CUSTOMIZE_UUID">
+                  {t('addition.constant.custom-uuid')}
+                </Radio.Button>
               </Radio.Group>
             </div>
             <div
@@ -412,7 +421,7 @@ const CreateVertex: React.FC = observer(() => {
                   'PRIMARY_KEY' && (
                   <span className="metdata-essential-form-options">*</span>
                 )}
-                <span>关联属性:</span>
+                <span>{t('addition.common.association-property')}:</span>
               </div>
               <div
                 className="metadata-graph-drawer-options-expands"
@@ -426,8 +435,8 @@ const CreateVertex: React.FC = observer(() => {
                         justifyContent: 'space-between'
                       }}
                     >
-                      <div>属性</div>
-                      <div>允许为空</div>
+                      <div>{t('addition.common.property')}</div>
+                      <div>{t('addition.common.allow-null')}</div>
                     </div>
                     {vertexTypeStore.newVertexType.properties.map(
                       (property, index) => {
@@ -445,10 +454,8 @@ const CreateVertex: React.FC = observer(() => {
                               <Switch
                                 checked={property.nullable}
                                 onChange={() => {
-                                  currentProperties[
-                                    index
-                                  ].nullable = !currentProperties[index]
-                                    .nullable;
+                                  currentProperties[index].nullable =
+                                    !currentProperties[index].nullable;
 
                                   vertexTypeStore.mutateNewProperty({
                                     ...vertexTypeStore.newVertexType,
@@ -474,7 +481,7 @@ const CreateVertex: React.FC = observer(() => {
                     switchIsAddNewProperty(!isAddNewProperty);
                   }}
                 >
-                  <span>添加属性</span>
+                  <span>{t('addition.common.add-property')}</span>
                   <img
                     src={BlueArrowIcon}
                     alt="toggleAddProperty"
@@ -532,9 +539,10 @@ const CreateVertex: React.FC = observer(() => {
                               properties: [
                                 ...addedPropertiesInSelectedVertextType
                               ].map((propertyName) => {
-                                const currentProperty = vertexTypeStore.newVertexType.properties.find(
-                                  ({ name }) => name === propertyName
-                                );
+                                const currentProperty =
+                                  vertexTypeStore.newVertexType.properties.find(
+                                    ({ name }) => name === propertyName
+                                  );
 
                                 return {
                                   name: propertyName,
@@ -568,12 +576,14 @@ const CreateVertex: React.FC = observer(() => {
                   }}
                 >
                   <span className="metdata-essential-form-options">*</span>
-                  <span>主键属性:</span>
+                  <span>{t('addition.common.primary-key-property')}:</span>
                 </div>
                 <Select
                   width={356}
                   mode="multiple"
-                  placeholder="请选择主键属性"
+                  placeholder={t(
+                    'addition.common.select-primary-key-property-placeholder'
+                  )}
                   size="medium"
                   showSearch={false}
                   onChange={(e: string[]) => {
@@ -590,9 +600,10 @@ const CreateVertex: React.FC = observer(() => {
                   {vertexTypeStore.newVertexType.properties
                     .filter(({ nullable }) => !nullable)
                     .map((item) => {
-                      const order = vertexTypeStore.newVertexType.primary_keys.findIndex(
-                        (name) => name === item.name
-                      );
+                      const order =
+                        vertexTypeStore.newVertexType.primary_keys.findIndex(
+                          (name) => name === item.name
+                        );
 
                       const multiSelectOptionClassName = classnames({
                         'metadata-configs-sorted-multiSelect-option': true,
@@ -619,13 +630,15 @@ const CreateVertex: React.FC = observer(() => {
                 style={{ width: 95, marginRight: 14 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>顶点展示内容:</span>
+                <span>{t('addition.vertex.vertex-display-content')}:</span>
               </div>
               <Select
                 width={356}
                 mode="multiple"
                 size="medium"
-                placeholder="请选择顶点展示内容"
+                placeholder={t(
+                  'addition.vertex.select-vertex-display-content-placeholder'
+                )}
                 showSearch={false}
                 onChange={(value: string[]) => {
                   vertexTypeStore.mutateNewProperty({
@@ -633,7 +646,11 @@ const CreateVertex: React.FC = observer(() => {
                     style: {
                       ...vertexTypeStore.newVertexType.style,
                       display_fields: value.map((field) =>
-                        formatVertexIdText(field, '顶点ID', true)
+                        formatVertexIdText(
+                          field,
+                          t('addition.function-parameter.vertex-id'),
+                          true
+                        )
                       )
                     }
                   });
@@ -642,16 +659,21 @@ const CreateVertex: React.FC = observer(() => {
                   vertexTypeStore.validateNewVertexType('displayFeilds');
                 }}
                 value={vertexTypeStore.newVertexType.style.display_fields.map(
-                  (field) => formatVertexIdText(field, '顶点ID')
+                  (field) =>
+                    formatVertexIdText(
+                      field,
+                      t('addition.function-parameter.vertex-id')
+                    )
                 )}
               >
                 {vertexTypeStore.newVertexType.properties
                   .concat({ name: '~id', nullable: false })
                   .filter(({ nullable }) => !nullable)
                   .map((item) => {
-                    const order = vertexTypeStore.newVertexType.style.display_fields.findIndex(
-                      (name) => name === item.name
-                    );
+                    const order =
+                      vertexTypeStore.newVertexType.style.display_fields.findIndex(
+                        (name) => name === item.name
+                      );
 
                     const multiSelectOptionClassName = classnames({
                       'metadata-configs-sorted-multiSelect-option': true,
@@ -661,28 +683,36 @@ const CreateVertex: React.FC = observer(() => {
 
                     return (
                       <Select.Option
-                        value={formatVertexIdText(item.name, '顶点ID')}
+                        value={formatVertexIdText(
+                          item.name,
+                          t('addition.function-parameter.vertex-id')
+                        )}
                         key={item.name}
                       >
                         <div className={multiSelectOptionClassName}>
                           <div
                             style={{
-                              backgroundColor: vertexTypeStore.newVertexType.style.display_fields.includes(
-                                item.name
-                              )
-                                ? '#2b65ff'
-                                : '#fff',
-                              borderColor: vertexTypeStore.newVertexType.style.display_fields.includes(
-                                item.name
-                              )
-                                ? '#fff'
-                                : '#e0e0e0'
+                              backgroundColor:
+                                vertexTypeStore.newVertexType.style.display_fields.includes(
+                                  item.name
+                                )
+                                  ? '#2b65ff'
+                                  : '#fff',
+                              borderColor:
+                                vertexTypeStore.newVertexType.style.display_fields.includes(
+                                  item.name
+                                )
+                                  ? '#fff'
+                                  : '#e0e0e0'
                             }}
                           >
                             {order !== -1 ? order + 1 : ''}
                           </div>
                           <div style={{ color: '#333' }}>
-                            {formatVertexIdText(item.name, '顶点ID')}
+                            {formatVertexIdText(
+                              item.name,
+                              t('addition.function-parameter.vertex-id')
+                            )}
                           </div>
                         </div>
                       </Select.Option>
@@ -701,10 +731,12 @@ const CreateVertex: React.FC = observer(() => {
                 width: 86
               }}
             >
-              <span style={{ marginRight: 5 }}>索引信息</span>
+              <span style={{ marginRight: 5 }}>
+                {t('addition.edge.index-info')}
+              </span>
               <Tooltip
                 placement="right"
-                title="开启索引会影响使用性能，请按需开启"
+                title={t('addition.message.index-open-notice')}
                 type="dark"
               >
                 <img src={HintIcon} alt="hint" />
@@ -717,15 +749,15 @@ const CreateVertex: React.FC = observer(() => {
                 style={{ width: 95, marginRight: 14 }}
               >
                 <span className="metdata-essential-form-options">*</span>
-                <span>类型索引:</span>
+                <span>{t('addition.menu.type-index')}:</span>
               </div>
               <Switch
                 checked={vertexTypeStore.newVertexType.open_label_index}
                 onChange={() => {
                   vertexTypeStore.mutateNewProperty({
                     ...vertexTypeStore.newVertexType,
-                    open_label_index: !vertexTypeStore.newVertexType
-                      .open_label_index
+                    open_label_index:
+                      !vertexTypeStore.newVertexType.open_label_index
                   });
                 }}
                 size="large"
@@ -740,7 +772,7 @@ const CreateVertex: React.FC = observer(() => {
                 className="metadata-graph-drawer-options-name"
                 style={{ width: 95, marginRight: 14 }}
               >
-                <span>属性索引:</span>
+                <span>{t('addition.common.property-index')}:</span>
               </div>
               <div className="metadata-graph-drawer-options-expands">
                 {vertexTypeStore.newVertexType.property_indexes.length !==
@@ -752,9 +784,13 @@ const CreateVertex: React.FC = observer(() => {
                       marginBottom: 12
                     }}
                   >
-                    <div style={{ width: 110, marginRight: 12 }}>索引名称</div>
-                    <div style={{ width: 130, marginRight: 12 }}>索引类型</div>
-                    <div>属性</div>
+                    <div style={{ width: 110, marginRight: 12 }}>
+                      {t('addition.edge.index-name')}
+                    </div>
+                    <div style={{ width: 130, marginRight: 12 }}>
+                      {t('addition.edge.index-type')}
+                    </div>
+                    <div>{t('addition.common.property')}</div>
                   </div>
                 )}
                 {vertexTypeStore.newVertexType.property_indexes.map(
@@ -770,16 +806,18 @@ const CreateVertex: React.FC = observer(() => {
                         <Input
                           size="medium"
                           width={110}
-                          placeholder="索引名称"
+                          placeholder={t('addition.edge.index-name')}
                           errorLocation="layer"
                           errorMessage={
                             vertexTypeStore.validateNewVertexTypeErrorMessage
                               .propertyIndexes.length !== 0
-                              ? (vertexTypeStore
-                                  .validateNewVertexTypeErrorMessage
-                                  .propertyIndexes[
-                                  index
-                                ] as VertexTypeValidatePropertyIndexes).name
+                              ? (
+                                  vertexTypeStore
+                                    .validateNewVertexTypeErrorMessage
+                                    .propertyIndexes[
+                                    index
+                                  ] as VertexTypeValidatePropertyIndexes
+                                ).name
                               : ''
                           }
                           value={name}
@@ -809,7 +847,9 @@ const CreateVertex: React.FC = observer(() => {
                       <div style={{ marginRight: 12 }}>
                         <Select
                           width={130}
-                          placeholder="请选择索引类型"
+                          placeholder={t(
+                            'addition.edge.index-type-select-desc'
+                          )}
                           size="medium"
                           showSearch={false}
                           value={type === '' ? [] : type}
@@ -832,13 +872,13 @@ const CreateVertex: React.FC = observer(() => {
                           }}
                         >
                           <Select.Option value="SECONDARY" key="SECONDARY">
-                            二级索引
+                            {t('addition.menu.secondary-index')}
                           </Select.Option>
                           <Select.Option value="RANGE" key="RANGE">
-                            范围索引
+                            {t('addition.menu.range-index')}
                           </Select.Option>
                           <Select.Option value="SEARCH" key="SEARCH">
-                            全文索引
+                            {t('addition.menu.full-text-index')}
                           </Select.Option>
                         </Select>
                       </div>
@@ -846,7 +886,7 @@ const CreateVertex: React.FC = observer(() => {
                         <Select
                           width={220}
                           mode={type === 'SECONDARY' ? 'multiple' : 'default'}
-                          placeholder="请选择属性"
+                          placeholder={t('addition.edge.property-select-desc')}
                           size="medium"
                           showSearch={false}
                           value={fields}
@@ -881,14 +921,16 @@ const CreateVertex: React.FC = observer(() => {
                                   )
                               )
                               .map((property) => {
-                                const order = vertexTypeStore.newVertexType.property_indexes[
-                                  index
-                                ].fields.findIndex(
-                                  (name) => name === property.name
-                                );
+                                const order =
+                                  vertexTypeStore.newVertexType.property_indexes[
+                                    index
+                                  ].fields.findIndex(
+                                    (name) => name === property.name
+                                  );
 
                                 const multiSelectOptionClassName = classnames({
-                                  'metadata-configs-sorted-multiSelect-option': true,
+                                  'metadata-configs-sorted-multiSelect-option':
+                                    true,
                                   'metadata-configs-sorted-multiSelect-option-selected':
                                     order !== -1
                                 });
@@ -909,9 +951,10 @@ const CreateVertex: React.FC = observer(() => {
                           {type === 'RANGE' &&
                             vertexTypeStore.newVertexType.properties
                               .filter((property) => {
-                                const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                                  ({ name }) => name === property.name
-                                );
+                                const matchedProperty =
+                                  metadataPropertyStore.metadataProperties.find(
+                                    ({ name }) => name === property.name
+                                  );
 
                                 if (!isUndefined(matchedProperty)) {
                                   const { data_type } = matchedProperty;
@@ -933,9 +976,10 @@ const CreateVertex: React.FC = observer(() => {
                           {type === 'SEARCH' &&
                             vertexTypeStore.newVertexType.properties
                               .filter((property) => {
-                                const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                                  ({ name }) => name === property.name
-                                );
+                                const matchedProperty =
+                                  metadataPropertyStore.metadataProperties.find(
+                                    ({ name }) => name === property.name
+                                  );
 
                                 if (!isUndefined(matchedProperty)) {
                                   const { data_type } = matchedProperty;
@@ -966,10 +1010,10 @@ const CreateVertex: React.FC = observer(() => {
                         tooltipWrapper={
                           <div ref={deleteWrapperRef}>
                             <p style={{ width: 200, lineHeight: '28px' }}>
-                              确认删除此属性？
+                              {t('addition.message.property-del-confirm')}
                             </p>
                             <p style={{ width: 200, lineHeight: '28px' }}>
-                              删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                              {t('addition.message.index-del-confirm')}
                             </p>
                             <div
                               style={{
@@ -1004,14 +1048,14 @@ const CreateVertex: React.FC = observer(() => {
                                   setDeletePopIndex(null);
                                 }}
                               >
-                                确认
+                                {t('addition.common.confirm')}
                               </div>
                               <div
                                 onClick={() => {
                                   setDeletePopIndex(null);
                                 }}
                               >
-                                取消
+                                {t('addition.common.cancel')}
                               </div>
                             </div>
                           </div>
@@ -1064,7 +1108,7 @@ const CreateVertex: React.FC = observer(() => {
                     lineHeight: '32px'
                   }}
                 >
-                  新增一组
+                  {t('addition.edge.add-group')}
                 </span>
               </div>
             </div>

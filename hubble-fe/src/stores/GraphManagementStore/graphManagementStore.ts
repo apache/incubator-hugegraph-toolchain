@@ -10,6 +10,7 @@ import {
   GraphDataPageConfig,
   GraphDataResponse
 } from '../types/GraphManagementStore/graphManagementStore';
+import i18next from '../../i18n';
 
 export class GraphManagementStore {
   [key: string]: any;
@@ -226,7 +227,8 @@ export class GraphManagementStore {
   validate(type: 'new' | 'edit') {
     const nameReg = /^[A-Za-z]\w{0,47}$/;
     const hostReg = /((\d{1,3}\.){3}\d{1,3}|([\w!~*'()-]+\.)*[\w!~*'()-]+)$/;
-    const portReg = /^([1-9]|[1-9]\d{1}|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/;
+    const portReg =
+      /^([1-9]|[1-9]\d{1}|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/;
     const dataName = type + 'GraphData';
     let readyToSubmit = true;
 
@@ -234,29 +236,41 @@ export class GraphManagementStore {
 
     if (!nameReg.test(this[dataName].name)) {
       this[dataName].name.length === 0
-        ? (this.validateErrorMessage.name = '必填项')
-        : (this.validateErrorMessage.name = '不符合输入要求');
+        ? (this.validateErrorMessage.name = i18next.t(
+            'addition.store.required'
+          ))
+        : (this.validateErrorMessage.name = i18next.t(
+            'addition.store.no-match-input-requirements'
+          ));
       readyToSubmit = false;
     }
 
     if (!nameReg.test(this[dataName].graph)) {
       this[dataName].graph.length === 0
-        ? (this.validateErrorMessage.graph = '必填项')
-        : (this.validateErrorMessage.graph = '不符合输入要求');
+        ? (this.validateErrorMessage.graph = i18next.t(
+            'addition.store.required'
+          ))
+        : (this.validateErrorMessage.graph = i18next.t(
+            'addition.store.no-match-input-requirements'
+          ));
       readyToSubmit = false;
     }
 
     if (!hostReg.test(this[dataName].host)) {
       this[dataName].host.length === 0
-        ? (this.validateErrorMessage.host = '必填项')
-        : (this.validateErrorMessage.host = '请输入字母、数字或特殊字符');
+        ? (this.validateErrorMessage.host = i18next.t(
+            'addition.store.required'
+          ))
+        : (this.validateErrorMessage.host = i18next.t('addition.store.rule1'));
       readyToSubmit = false;
     }
 
     if (!portReg.test(this[dataName].port)) {
       this[dataName].port.length === 0
-        ? (this.validateErrorMessage.port = '必填项')
-        : (this.validateErrorMessage.port = '请输入范围在 1-65535 的数字');
+        ? (this.validateErrorMessage.port = i18next.t(
+            'addition.store.required'
+          ))
+        : (this.validateErrorMessage.port = i18next.t('addition.store.rule2'));
       readyToSubmit = false;
     }
 
@@ -267,8 +281,9 @@ export class GraphManagementStore {
         (this[dataName].username.length === 0 &&
           this[dataName].password.length !== 0))
     ) {
-      this.validateErrorMessage.usernameAndPassword =
-        '必须同时填写用户名和密码';
+      this.validateErrorMessage.usernameAndPassword = i18next.t(
+        'addition.store.rule3'
+      );
       readyToSubmit = false;
     }
 
@@ -346,13 +361,12 @@ export class GraphManagementStore {
     this.requestStatus.fetchIdList = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> = yield axios.get<
-        GraphData
-      >(baseUrl, {
-        params: {
-          page_size: -1
-        }
-      });
+      const result: AxiosResponse<GraphDataResponse> =
+        yield axios.get<GraphData>(baseUrl, {
+          params: {
+            page_size: -1
+          }
+        });
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -389,9 +403,8 @@ export class GraphManagementStore {
     this.requestStatus.fetchGraphData = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> = yield axios.get<
-        GraphData
-      >(url);
+      const result: AxiosResponse<GraphDataResponse> =
+        yield axios.get<GraphData>(url);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -419,9 +432,8 @@ export class GraphManagementStore {
     const filteredParams = filterParams(this.newGraphData);
 
     try {
-      const result: AxiosResponse<GraphDataResponse> = yield axios.post<
-        GraphDataResponse
-      >(baseUrl, filteredParams);
+      const result: AxiosResponse<GraphDataResponse> =
+        yield axios.post<GraphDataResponse>(baseUrl, filteredParams);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -449,9 +461,8 @@ export class GraphManagementStore {
     const filteredParams = filterParams(this.editGraphData);
 
     try {
-      const result: AxiosResponse<GraphDataResponse> = yield axios.put<
-        GraphDataResponse
-      >(`${baseUrl}/${id}`, filteredParams);
+      const result: AxiosResponse<GraphDataResponse> =
+        yield axios.put<GraphDataResponse>(`${baseUrl}/${id}`, filteredParams);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -478,9 +489,8 @@ export class GraphManagementStore {
     this.requestStatus.deleteGraphData = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> = yield axios.delete<
-        GraphDataResponse
-      >(`${baseUrl}/${id}`);
+      const result: AxiosResponse<GraphDataResponse> =
+        yield axios.delete<GraphDataResponse>(`${baseUrl}/${id}`);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {

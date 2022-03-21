@@ -11,19 +11,25 @@ import {
   DataAnalyzeStoreContext,
   AsyncTasksStoreContext
 } from '../../../../stores';
-import {Algorithm} from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
+import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
 import EmptyIcon from '../../../../assets/imgs/ic_sousuo_empty.svg';
 import LoadingBackIcon from '../../../../assets/imgs/ic_loading_back.svg';
 import LoadingFrontIcon from '../../../../assets/imgs/ic_loading_front.svg';
 import FinishedIcon from '../../../../assets/imgs/ic_done_144.svg';
 import FailedIcon from '../../../../assets/imgs/ic_fail.svg';
+import i18next from '../../../../i18n';
+import { useTranslation } from 'react-i18next';
 
 export interface QueryResultProps {
   sidebarIndex: number;
   handleSetSidebarIndex: (index: number) => void;
 }
 
-const dataAnalyzeContentSidebarOptions = ['图', '表格', 'Json'];
+const dataAnalyzeContentSidebarOptions = [
+  i18next.t('addition.menu.chart'),
+  i18next.t('addition.menu.table'),
+  'Json'
+];
 
 const QueryResult: React.FC<QueryResultProps> = observer(
   ({ sidebarIndex, handleSetSidebarIndex }) => {
@@ -31,6 +37,7 @@ const QueryResult: React.FC<QueryResultProps> = observer(
     const { algorithmAnalyzerStore } = dataAnalyzeStore;
     const asyncTasksStore = useContext(AsyncTasksStoreContext);
     const [, setLocation] = useLocation();
+    const { t } = useTranslation();
 
     const renderReuslt = (index: number) => {
       switch (index) {
@@ -101,8 +108,11 @@ const QueryResult: React.FC<QueryResultProps> = observer(
               dataAnalyzeStore.graphData.data.graph_view.edges === null ||
               isEmpty(dataAnalyzeStore.graphData.data.graph_view.vertices)) && (
               <div className="query-result-content-empty">
-                <img src={EmptyIcon} alt="无图结果，请查看表格或Json数据" />
-                <span>无图结果，请查看表格或Json数据</span>
+                <img
+                  src={EmptyIcon}
+                  alt={t('addition.message.no-chart-desc')}
+                />
+                <span>{t('addition.message.no-chart-desc')}</span>
               </div>
             )}
 
@@ -111,8 +121,11 @@ const QueryResult: React.FC<QueryResultProps> = observer(
               <div className="query-result-content-empty">
                 {dataAnalyzeStore.requestStatus.fetchGraphs === 'standby' && (
                   <>
-                    <img src={EmptyIcon} alt="暂无数据结果" />
-                    <span>暂无数据结果</span>
+                    <img
+                      src={EmptyIcon}
+                      alt={t('addition.message.no-data-desc')}
+                    />
+                    <span>{t('addition.message.no-data-desc')}</span>
                   </>
                 )}
                 {dataAnalyzeStore.requestStatus.fetchGraphs === 'pending' && (
@@ -121,15 +134,15 @@ const QueryResult: React.FC<QueryResultProps> = observer(
                       <img
                         className="query-result-loading-back"
                         src={LoadingBackIcon}
-                        alt="加载背景"
+                        alt={t('addition.operate.load-background')}
                       />
                       <img
                         className="query-result-loading-front"
                         src={LoadingFrontIcon}
-                        alt="加载 spinner"
+                        alt={t('addition.operate.load-spinner')}
                       />
                     </div>
-                    <span>数据加载中...</span>
+                    <span>{t('addition.message.data-loading')}...</span>
                   </>
                 )}
                 {dataAnalyzeStore.requestStatus.fetchGraphs === 'failed' && (
@@ -155,23 +168,29 @@ const QueryResult: React.FC<QueryResultProps> = observer(
                     <img
                       className="query-result-loading-back"
                       src={LoadingBackIcon}
-                      alt="加载背景"
+                      alt={t('addition.operate.load-background')}
                     />
                     <img
                       className="query-result-loading-front"
                       src={LoadingFrontIcon}
-                      alt="加载 spinner"
+                      alt={t('addition.operate.load-spinner')}
                     />
                   </div>
-                  <span>提交异步任务中...</span>
+                  <span>{t('addition.message.submit-async-task')}...</span>
                 </>
               )}
               {dataAnalyzeStore.requestStatus.createAsyncTask === 'success' && (
                 <>
-                  <img src={FinishedIcon} alt="提交成功" />
-                  <span style={{ marginBottom: 4 }}>提交成功</span>
+                  <img
+                    src={FinishedIcon}
+                    alt={t('addition.message.submit-success')}
+                  />
                   <span style={{ marginBottom: 4 }}>
-                    任务ID：{dataAnalyzeStore.executionLogData[0]?.async_id}
+                    {t('addition.message.submit-success')}
+                  </span>
+                  <span style={{ marginBottom: 4 }}>
+                    {t('addition.menu.task-id')}：
+                    {dataAnalyzeStore.executionLogData[0]?.async_id}
                   </span>
                   <span
                     style={{ cursor: 'pointer', color: '#2b65ff' }}
@@ -187,14 +206,17 @@ const QueryResult: React.FC<QueryResultProps> = observer(
                       );
                     }}
                   >
-                    查看
+                    {t('addition.operate.look')}
                   </span>
                 </>
               )}
               {dataAnalyzeStore.requestStatus.createAsyncTask === 'failed' && (
                 <>
-                  <img src={FailedIcon} alt="提交失败" />
-                  <span>任务提交失败</span>
+                  <img
+                    src={FailedIcon}
+                    alt={t('addition.message.submit-fail')}
+                  />
+                  <span>{t('addition.message.task-submit-fail')}</span>
                 </>
               )}
             </div>

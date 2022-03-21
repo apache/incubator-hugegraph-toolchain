@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { observer } from 'mobx-react';
 import { Drawer, Table, Message } from 'hubble-ui';
+import { useTranslation } from 'react-i18next';
 
 import { Tooltip } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
@@ -17,6 +18,7 @@ const CheckProperty: React.FC = observer(() => {
   const { metadataPropertyStore, graphViewStore } = useContext(
     MetadataConfigsRootStore
   );
+  const { t } = useTranslation();
   const [popIndex, setPopIndex] = useState<number | null>(null);
   const deleteWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -79,11 +81,11 @@ const CheckProperty: React.FC = observer(() => {
 
   const columnConfigs = [
     {
-      title: '属性名称',
+      title: t('addition.common.property-name'),
       dataIndex: 'name'
     },
     {
-      title: '数据类型',
+      title: t('addition.common.data-type'),
       dataIndex: 'data_type',
       render(text: string) {
         const realText = text === 'TEXT' ? 'string' : text.toLowerCase();
@@ -92,11 +94,11 @@ const CheckProperty: React.FC = observer(() => {
       }
     },
     {
-      title: '基数',
+      title: t('addition.common.cardinal-number'),
       dataIndex: 'cardinality'
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       render(_: any, records: MetadataProperty, index: number) {
         return (
           <Tooltip
@@ -118,12 +120,12 @@ const CheckProperty: React.FC = observer(() => {
                   records.name
                 ] ? (
                   <p style={{ width: 200 }}>
-                    当前属性数据正在使用中，不可删除。
+                    {t('addition.message.property-using-cannot-delete')}
                   </p>
                 ) : (
                   <>
-                    <p>确认删除此属性？</p>
-                    <p>删除后无法恢复，请谨慎操作。</p>
+                    <p>{t('addition.message.property-del-confirm')}</p>
+                    <p>{t('addition.edge.confirm-del-edge-careful-notice')}</p>
                     <div
                       style={{
                         display: 'flex',
@@ -144,7 +146,7 @@ const CheckProperty: React.FC = observer(() => {
                               .deleteMetadataProperty === 'success'
                           ) {
                             Message.success({
-                              content: '删除成功',
+                              content: t('addition.common.del-success'),
                               size: 'medium',
                               showCloseIcon: false
                             });
@@ -162,14 +164,14 @@ const CheckProperty: React.FC = observer(() => {
                           }
                         }}
                       >
-                        确认
+                        {t('addition.common.confirm')}
                       </div>
                       <div
                         onClick={() => {
                           setPopIndex(null);
                         }}
                       >
-                        取消
+                        {t('addition.common.cancel')}
                       </div>
                     </div>
                   </>
@@ -188,7 +190,7 @@ const CheckProperty: React.FC = observer(() => {
               }
             }}
           >
-            删除
+            {t('addition.common.del')}
           </Tooltip>
         );
       }
@@ -197,7 +199,7 @@ const CheckProperty: React.FC = observer(() => {
 
   return (
     <Drawer
-      title="查看属性"
+      title={t('addition.operate.view-property')}
       width={634}
       destroyOnClose
       mask={false}

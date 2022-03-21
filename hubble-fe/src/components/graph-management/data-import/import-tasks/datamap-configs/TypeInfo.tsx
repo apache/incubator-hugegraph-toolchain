@@ -178,14 +178,14 @@ const TypeInfo: React.FC<TypeInfoProps> = observer(({ type, mapIndex }) => {
                 (vertexInfo?.id_strategy === 'PRIMARY_KEY'
                   ? '-' + vertexInfo?.primary_keys.join('，')
                   : '')
-              : `起点：${
+              : `${t('addition.common.source')}：${
                   t(
                     `data-configs.type.ID-strategy.${sourceVertexInfo?.id_strategy}`
                   ) +
                   (sourceVertexInfo?.id_strategy === 'PRIMARY_KEY'
                     ? '-' + sourceVertexInfo?.primary_keys.join('，')
                     : '')
-                } 终点：${
+                } ${t('addition.common.target')}：${
                   t(
                     `data-configs.type.ID-strategy.${targetVertexInfo?.id_strategy}`
                   ) +

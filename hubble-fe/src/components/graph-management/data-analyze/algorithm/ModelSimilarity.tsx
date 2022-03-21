@@ -265,7 +265,7 @@ const ModelSimilarity = observer(() => {
               disabled={
                 dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
               }
-              value={algorithmAnalyzerStore.shortestPathAllParams.direction}
+              value={algorithmAnalyzerStore.modelSimilarityParams.direction}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 algorithmAnalyzerStore.mutateModelSimilarityParams(
                   'direction',
@@ -441,7 +441,7 @@ const ModelSimilarity = observer(() => {
               disabled={
                 dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
               }
-              value={algorithmAnalyzerStore.shortestPathAllParams.direction}
+              value={algorithmAnalyzerStore.modelSimilarityParams.direction}
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 algorithmAnalyzerStore.mutateModelSimilarityParams(
                   'direction',

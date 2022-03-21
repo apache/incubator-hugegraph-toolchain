@@ -30,6 +30,7 @@ import CloseIcon from '../../../../assets/imgs/ic_close_16.svg';
 import WhiteCloseIcon from '../../../../assets/imgs/ic_close_white.svg';
 import './MetadataProperties.less';
 import ReuseProperties from './ReuseProperties';
+import { useTranslation } from 'react-i18next';
 
 const styles = {
   button: {
@@ -84,6 +85,7 @@ const variants = {
 
 const MetadataProperties: React.FC = observer(() => {
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
+  const { t } = useTranslation();
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
   const { metadataPropertyStore, graphViewStore } = metadataConfigsRootStore;
   const [preLoading, switchPreLoading] = useState(true);
@@ -172,7 +174,7 @@ const MetadataProperties: React.FC = observer(() => {
       )
     ) {
       Message.error({
-        content: '无可删除属性',
+        content: t('addition.message.no-property-can-delete'),
         size: 'medium',
         showCloseIcon: false
       });
@@ -193,7 +195,7 @@ const MetadataProperties: React.FC = observer(() => {
       metadataPropertyStore.requestStatus.deleteMetadataProperty === 'success'
     ) {
       Message.success({
-        content: '删除成功',
+        content: t('addition.common.del-success'),
         size: 'medium',
         showCloseIcon: false
       });
@@ -234,7 +236,7 @@ const MetadataProperties: React.FC = observer(() => {
 
   const columnConfigs = [
     {
-      title: '属性名称',
+      title: t('addition.common.property-name'),
       dataIndex: 'name',
       width: '45%',
       sorter: true,
@@ -246,7 +248,7 @@ const MetadataProperties: React.FC = observer(() => {
               size="medium"
               width={320}
               maxLen={128}
-              placeholder="允许出现中英文、数字、下划线"
+              placeholder={t('addition.message.edge-name-rule')}
               errorLocation="layer"
               errorMessage={
                 metadataPropertyStore.validateNewPropertyErrorMessage.name
@@ -295,7 +297,7 @@ const MetadataProperties: React.FC = observer(() => {
       }
     },
     {
-      title: '数据类型',
+      title: t('addition.common.data-type'),
       dataIndex: 'data_type',
       width: '20%',
       render(text: string, records: any, index: number) {
@@ -336,7 +338,7 @@ const MetadataProperties: React.FC = observer(() => {
       }
     },
     {
-      title: '基数',
+      title: t('addition.common.cardinal-number'),
       dataIndex: 'cardinality',
       width: '20%',
       render(text: string, records: any, index: number) {
@@ -375,7 +377,7 @@ const MetadataProperties: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '15%',
       align: 'right',
@@ -432,7 +434,7 @@ const MetadataProperties: React.FC = observer(() => {
           <Input.Search
             size="medium"
             width={200}
-            placeholder="请输入搜索关键字"
+            placeholder={t('addition.message.please-enter-keywords')}
             value={metadataPropertyStore.searchWords}
             onChange={handleSearchChange}
             onSearch={handleSearch}
@@ -453,7 +455,7 @@ const MetadataProperties: React.FC = observer(() => {
               metadataPropertyStore.switchIsCreateNewProperty(true);
             }}
           >
-            创建
+            {t('addition.newGraphConfig.create')}
           </Button>
           <Button
             size="medium"
@@ -464,23 +466,27 @@ const MetadataProperties: React.FC = observer(() => {
               metadataPropertyStore.changeCurrentTabStatus('reuse');
             }}
           >
-            复用
+            {t('addition.operate.multiplexing')}
           </Button>
         </div>
         {size(currentSelectedRowKeys) !== 0 && (
           <div className="metadata-properties-selected-reveals">
-            <div>已选{size(currentSelectedRowKeys)}项</div>
+            <div>
+              {t('addition.message.selected')}
+              {size(currentSelectedRowKeys)}
+              {t('addition.common.term')}
+            </div>
             <Button
               onClick={() => {
                 switchShowModal(true);
                 metadataPropertyStore.checkIfUsing(currentSelectedRowKeys);
               }}
             >
-              批量删除
+              {t('addition.operate.batch-del')}
             </Button>
             <img
               src={WhiteCloseIcon}
-              alt="关闭"
+              alt={t('addition.common.close')}
               onClick={() => {
                 mutateSelectedRowKeys([]);
               }}
@@ -496,7 +502,7 @@ const MetadataProperties: React.FC = observer(() => {
                 isLoading={isLoading}
                 emptyView={
                   metadataPropertyStore.isSearched.status ? (
-                    <span>无结果</span>
+                    <span>{t('addition.common.no-result')}</span>
                   ) : (
                     <EmptyPropertyHints />
                   )
@@ -535,8 +541,8 @@ const MetadataProperties: React.FC = observer(() => {
         <Modal
           visible={isShowModal}
           needCloseIcon={false}
-          okText="删除"
-          cancelText="取消"
+          okText={t('addition.common.del')}
+          cancelText={t('addition.common.cancel')}
           onOk={batchDeleteProperties}
           buttonSize="medium"
           onCancel={() => {
@@ -545,22 +551,22 @@ const MetadataProperties: React.FC = observer(() => {
         >
           <div className="metadata-properties-modal">
             <div className="metadata-title metadata-properties-modal-title">
-              <span>确认删除</span>
+              <span>{t('addition.common.del-comfirm')}</span>
               <img
                 src={CloseIcon}
-                alt="关闭"
+                alt={t('addition.common.close')}
                 onClick={() => {
                   switchShowModal(false);
                 }}
               />
             </div>
             <div className="metadata-properties-modal-description">
-              使用中属性不可删除，确认删除以下未使用属性？
+              {t('addition.message.del-unused-property-notice')}
             </div>
             <Table
               columns={[
                 {
-                  title: '属性名称',
+                  title: t('addition.common.property-name'),
                   dataIndex: 'name',
                   render(text: string, records: Record<string, any>) {
                     return (
@@ -571,7 +577,7 @@ const MetadataProperties: React.FC = observer(() => {
                   }
                 },
                 {
-                  title: '状态',
+                  title: t('addition.common.status'),
                   dataIndex: 'status',
                   render(isUsing: boolean) {
                     return (
@@ -582,7 +588,9 @@ const MetadataProperties: React.FC = observer(() => {
                             : 'property-status-not-used'
                         }
                       >
-                        {isUsing ? '使用中' : '未使用'}
+                        {isUsing
+                          ? t('addition.common.in-use')
+                          : t('addition.common.not-used')}
                       </div>
                     );
                   }
@@ -613,9 +621,10 @@ export interface MetadataPropertiesManipulationProps {
   // allSelectedKeys: number[];
 }
 
-const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationProps> = observer(
-  ({ propertyName, propertyIndex }) => {
+const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationProps> =
+  observer(({ propertyName, propertyIndex }) => {
     const { metadataPropertyStore } = useContext(MetadataConfigsRootStore);
+    const { t } = useTranslation();
     const [isPopDeleteModal, switchPopDeleteModal] = useState(false);
     const [isDeleting, switchDeleting] = useState(false);
     const deleteWrapperRef = useRef<HTMLDivElement>(null);
@@ -677,7 +686,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
                 'success'
               ) {
                 Message.success({
-                  content: '创建成功',
+                  content: t('addition.newGraphConfig.create-scuccess'),
                   size: 'medium',
                   showCloseIcon: false
                 });
@@ -698,7 +707,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
               metadataPropertyStore.resetNewProperties();
             }}
           >
-            创建
+            {t('addition.newGraphConfig.create')}
           </span>
           <span
             className="metadata-properties-manipulation"
@@ -713,7 +722,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
               }
             }}
           >
-            取消
+            {t('addition.common.cancel')}
           </span>
         </div>
       );
@@ -741,14 +750,16 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
               metadataPropertyStore.metadataPropertyUsingStatus[
                 propertyName
               ] ? (
-                <p style={{ width: 200 }}>当前属性数据正在使用中，不可删除。</p>
+                <p style={{ width: 200 }}>
+                  {t('addition.message.property-using-cannot-delete')}
+                </p>
               ) : (
                 <>
                   <p className="metadata-properties-tooltips-title">
-                    确认删除此属性？
+                    {t('addition.message.property-del-confirm')}
                   </p>
-                  <p>确认删除此属性？删除后无法恢复，请谨慎操作</p>
-                  <p>删除元数据耗时较久，详情可在任务管理中查看</p>
+                  <p>{t('addition.message.property-del-confirm-again')}</p>
+                  <p>{t('addition.message.long-time-notice')}</p>
                   <div className="metadata-properties-tooltips-footer">
                     <Button
                       size="medium"
@@ -769,7 +780,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
                             .deleteMetadataProperty === 'success'
                         ) {
                           Message.success({
-                            content: '删除成功',
+                            content: t('addition.common.del-success'),
                             size: 'medium',
                             showCloseIcon: false
                           });
@@ -789,7 +800,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
                         }
                       }}
                     >
-                      确认
+                      {t('addition.common.confirm')}
                     </Button>
                     <Button
                       size="medium"
@@ -798,7 +809,7 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
                         switchPopDeleteModal(false);
                       }}
                     >
-                      取消
+                      {t('addition.common.cancel')}
                     </Button>
                   </div>
                 </>
@@ -808,7 +819,9 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
           childrenProps={{
             className: 'metadata-properties-manipulation no-line-break',
             style: styles.extraMargin,
-            title: isDeleteOrBatchDeleting ? '删除中' : '删除',
+            title: isDeleteOrBatchDeleting
+              ? t('addition.operate.del-ing')
+              : t('addition.common.del'),
             async onClick() {
               if (isDeleteOrBatchDeleting) {
                 return;
@@ -824,16 +837,17 @@ const MetadataPropertiesManipulation: React.FC<MetadataPropertiesManipulationPro
             }
           }}
         >
-          {isDeleteOrBatchDeleting ? '删除中' : '删除'}
+          {isDeleteOrBatchDeleting
+            ? t('addition.operate.del-ing')
+            : t('addition.common.del')}
         </Tooltip>
       </div>
     );
-  }
-);
+  });
 
 const EmptyPropertyHints: React.FC = observer(() => {
   const { metadataPropertyStore } = useContext(MetadataConfigsRootStore);
-
+  const { t } = useTranslation();
   return (
     <div
       style={{
@@ -844,7 +858,7 @@ const EmptyPropertyHints: React.FC = observer(() => {
     >
       <img src={AddIcon} alt="Add new property" />
       <div style={{ marginTop: 8, fontSize: 14 }}>
-        您暂时还没有任何属性，立即创建
+        {t('addition.message.property-create-desc')}
       </div>
       <div
         style={{
@@ -862,7 +876,7 @@ const EmptyPropertyHints: React.FC = observer(() => {
             metadataPropertyStore.changeCurrentTabStatus('list');
           }}
         >
-          创建属性
+          {t('addition.operate.create-property')}
         </Button>
         <Button
           size="large"
@@ -871,7 +885,7 @@ const EmptyPropertyHints: React.FC = observer(() => {
             metadataPropertyStore.changeCurrentTabStatus('reuse');
           }}
         >
-          复用已有属性
+          {t('addition.operate.reuse-existing-property')}
         </Button>
       </div>
     </div>

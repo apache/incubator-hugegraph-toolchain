@@ -3,6 +3,7 @@ import { useRoute } from 'wouter';
 import { observer } from 'mobx-react';
 import { motion } from 'framer-motion';
 import { Menu } from 'hubble-ui';
+import { useTranslation } from 'react-i18next';
 
 import { ImportManagerStoreContext } from '../../../../../stores';
 
@@ -25,6 +26,7 @@ const failedReasonVariants = {
 
 const JobErrorLogs: React.FC = observer(() => {
   const importManagerStore = useContext(ImportManagerStoreContext);
+  const { t } = useTranslation();
   const [, params] = useRoute(
     '/graph-management/:id/data-import/job-error-log/:jobId'
   );
@@ -47,7 +49,9 @@ const JobErrorLogs: React.FC = observer(() => {
 
   return (
     <section className="job-error-logs">
-      <div className="job-error-logs-title">失败原因</div>
+      <div className="job-error-logs-title">
+        {t('addition.message.fail-reason')}
+      </div>
       <motion.div
         initial="initial"
         animate="animate"
@@ -83,7 +87,9 @@ const JobErrorLogs: React.FC = observer(() => {
                   .map((text, index) => (
                     <div className="job-error-logs-content-item">
                       <div className="job-error-logs-content-item-title">
-                        {index % 2 === 0 ? '失败原因：' : '失败位置：'}
+                        {index % 2 === 0
+                          ? `${t('addition.message.fail-reason')}：`
+                          : `${t('addition.message.fail-position')}：`}
                       </div>
                       <div className="job-error-logs-content-item-text">
                         {text.replace('#### INSERT ERROR:', '')}

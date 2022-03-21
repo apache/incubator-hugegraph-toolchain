@@ -3,6 +3,7 @@ import { observer } from 'mobx-react';
 import { Button, Input, Message } from 'hubble-ui';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
+import { useTranslation } from 'react-i18next';
 
 export interface FavoriteProps {
   handlePop: (flag: boolean) => void;
@@ -28,6 +29,7 @@ const styles = {
 const Favorite: React.FC<FavoriteProps> = observer(
   ({ handlePop, queryStatement = '', isEdit = false, id, name = '' }) => {
     const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
+    const { t } = useTranslation();
     const initialText = isEdit ? name : '';
     const [inputValue, setInputValue] = useState(initialText);
 
@@ -44,7 +46,9 @@ const Favorite: React.FC<FavoriteProps> = observer(
         setInputValue('');
 
         Message.success({
-          content: isEdit ? '修改成功' : '收藏成功',
+          content: isEdit
+            ? t('addition.operate.modify-success')
+            : t('addition.operate.favorite-success'),
           size: 'medium',
           showCloseIcon: false
         });
@@ -66,7 +70,7 @@ const Favorite: React.FC<FavoriteProps> = observer(
         setInputValue('');
 
         Message.success({
-          content: '修改成功',
+          content: t('addition.operate.modify-success'),
           size: 'medium',
           showCloseIcon: false
         });
@@ -88,13 +92,17 @@ const Favorite: React.FC<FavoriteProps> = observer(
     return (
       <div className="data-analyze">
         <div className="query-tab-favorite">
-          <span>{isEdit ? '修改名称' : '收藏语句'}</span>
+          <span>
+            {isEdit
+              ? t('addition.operate.modify-name')
+              : t('addition.operate.favorite-statement')}
+          </span>
           <Input
             size="large"
             width={320}
             maxLen={48}
             countMode="en"
-            placeholder="请输入收藏名称"
+            placeholder={t('addition.operate.favorite-desc')}
             value={inputValue}
             onChange={handleChange}
             errorLocation="bottom"
@@ -121,7 +129,9 @@ const Favorite: React.FC<FavoriteProps> = observer(
                 isEdit ? handleEditQueryCollection : handleAddQueryCollection
               }
             >
-              {isEdit ? '保存' : '收藏'}
+              {isEdit
+                ? t('addition.common.save')
+                : t('addition.operate.favorite')}
             </Button>
             <Button
               size="medium"
@@ -131,7 +141,7 @@ const Favorite: React.FC<FavoriteProps> = observer(
               }}
               onClick={handleCancel(isEdit ? 'edit' : 'add')}
             >
-              取消
+              {t('addition.common.cancel')}
             </Button>
           </div>
         </div>

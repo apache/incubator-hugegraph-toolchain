@@ -5,6 +5,7 @@ import { isUndefined } from 'lodash-es';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
 import { addGraphNodes, addGraphEdges } from '../../../../stores/utils';
+import { useTranslation } from 'react-i18next';
 
 interface GraphPopOverProps {
   x: number;
@@ -18,7 +19,7 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
   ({ x, y, isAfterDragging, switchAfterDragging, switchIsPopover }) => {
     const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
     const popoverWrapperRef = useRef<HTMLDivElement>(null);
-
+    const { t } = useTranslation();
     const handleOutSideClick = useCallback(
       (e: MouseEvent) => {
         // if clicked element is not on dropdown, collpase it
@@ -60,7 +61,7 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
               dataAnalyzeStore.setDynamicAddGraphDataStatus('vertex');
             }}
           >
-            添加顶点
+            {t('addition.common.add-vertex')}
           </div>
         ) : (
           <>
@@ -111,7 +112,7 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
                 }
               }}
             >
-              展开
+              {t('addition.operate.expand')}
             </div>
             <div
               className="graph-pop-over-item"
@@ -120,7 +121,7 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
                 switchIsPopover(false);
               }}
             >
-              查询
+              {t('addition.operate.query')}
             </div>
             <div
               className="graph-pop-over-item"
@@ -135,7 +136,7 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
                 switchIsPopover(false);
               }}
             >
-              隐藏
+              {t('addition.operate.hidden')}
             </div>
             <div
               className="graph-pop-over-item"
@@ -145,7 +146,7 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
                 switchIsPopover(false);
               }}
             >
-              添加出边
+              {t('addition.common.add-out-edge')}
             </div>
             <div
               className="graph-pop-over-item"
@@ -155,7 +156,7 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
                 switchIsPopover(false);
               }}
             >
-              添加入边
+              {t('addition.common.add-in-edge')}
             </div>
           </>
         )}

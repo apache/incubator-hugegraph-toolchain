@@ -25,6 +25,7 @@ import { generateGraphModeId } from '../../../../stores/utils';
 import AddIcon from '../../../../assets/imgs/ic_add.svg';
 import LoadingBackIcon from '../../../../assets/imgs/ic_loading_back.svg';
 import LoadingFrontIcon from '../../../../assets/imgs/ic_loading_front.svg';
+import { useTranslation } from 'react-i18next';
 
 import '../../data-analyze/DataAnalyze.less';
 import './GraphView.less';
@@ -40,7 +41,7 @@ const GraphView: React.FC = observer(() => {
     edgeTypeStore,
     graphViewStore
   } = useContext(MetadataConfigsRootStore);
-
+  const { t } = useTranslation();
   useEffect(() => {
     metadataPropertyStore.fetchMetadataPropertyList({
       fetchAll: true
@@ -66,7 +67,7 @@ const GraphView: React.FC = observer(() => {
             graphViewStore.setCurrentDrawer('create-property');
           }}
         >
-          创建属性
+          {t('addition.operate.create-property')}
         </Button>
         <Button
           size="medium"
@@ -75,7 +76,7 @@ const GraphView: React.FC = observer(() => {
             graphViewStore.setCurrentDrawer('create-vertex');
           }}
         >
-          创建顶点类型
+          {t('addition.vertex.create-vertex-type')}
         </Button>
         <Button
           size="medium"
@@ -84,7 +85,7 @@ const GraphView: React.FC = observer(() => {
             graphViewStore.setCurrentDrawer('create-edge');
           }}
         >
-          创建边类型
+          {t('addition.edge.create-edge')}
         </Button>
         {/* <CreateProperty />.outsideClick need id to specify logic here */}
         {!isEmpty(metadataPropertyStore.metadataProperties) && (
@@ -96,7 +97,7 @@ const GraphView: React.FC = observer(() => {
                 graphViewStore.setCurrentDrawer('check-property');
               }}
             >
-              查看属性
+              {t('addition.operate.view-property')}
             </Button>
           </div>
         )}
@@ -127,7 +128,7 @@ const GraphDataView: React.FC = observer(() => {
   const [graph, setGraph] = useState<vis.Network | null>(null);
   const [showLoadingGraphs, switchShowLoadingGraphs] = useState(true);
   const [isGraphDataLoaded, switchIsGraphLoaded] = useState(false);
-
+  const { t } = useTranslation();
   const graphWrapper = useRef<HTMLDivElement>(null);
   const resultWrapper = useRef<HTMLDivElement>(null);
 
@@ -277,8 +278,8 @@ const GraphDataView: React.FC = observer(() => {
                   color: vertexTypeStore.selectedVertexType!.style.color,
                   icon: null,
                   size: vertexTypeStore.selectedVertexType!.style.size,
-                  display_fields: vertexTypeStore.selectedVertexType!.style
-                    .display_fields
+                  display_fields:
+                    vertexTypeStore.selectedVertexType!.style.display_fields
                 }
               });
 
@@ -320,8 +321,8 @@ const GraphDataView: React.FC = observer(() => {
                   icon: null,
                   with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
                   thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
-                  display_fields: edgeTypeStore.selectedEdgeType!.style
-                    .display_fields
+                  display_fields:
+                    edgeTypeStore.selectedEdgeType!.style.display_fields
                 }
               });
 
@@ -391,15 +392,15 @@ const GraphDataView: React.FC = observer(() => {
               <img
                 className="metadata-graph-loading-back"
                 src={LoadingBackIcon}
-                alt="加载背景"
+                alt={t('addition.operate.load-background')}
               />
               <img
                 className="metadata-graph-loading-front"
                 src={LoadingFrontIcon}
-                alt="加载 spinner"
+                alt={t('addition.operate.load-spinner')}
               />
             </div>
-            <span>数据加载中...</span>
+            <span>{t('addition.message.data-loading')}...</span>
           </div>
         )}
         {graphViewStore.requestStatus.fetchGraphViewData === 'success' &&
@@ -411,15 +412,15 @@ const GraphDataView: React.FC = observer(() => {
                 <img
                   className="metadata-graph-loading-back"
                   src={LoadingBackIcon}
-                  alt="加载背景"
+                  alt={t('addition.operate.load-background')}
                 />
                 <img
                   className="metadata-graph-loading-front"
                   src={LoadingFrontIcon}
-                  alt="加载 spinner"
+                  alt={t('addition.operate.load-spinner')}
                 />
               </div>
-              <span>正在渲染...</span>
+              <span>{t('addition.operate.rendering')}...</span>
             </div>
           )}
         {graphViewStore.requestStatus.fetchGraphViewData === 'success' &&
@@ -437,14 +438,15 @@ const GraphDataView: React.FC = observer(() => {
 
 const EmptyGraphDataView: React.FC<{ hasProeprties: boolean }> = observer(
   ({ hasProeprties }) => {
+    const { t } = useTranslation();
     return (
       <div className="metadata-graph-view-empty-wrapper">
         <div className="metadata-graph-view-empty">
-          <img src={AddIcon} alt="您暂时还没有任何元数据" />
+          <img src={AddIcon} alt={t('addition.message.no-metadata-notice')} />
           <div>
             {hasProeprties
-              ? '您还未设置顶点类型或边类型'
-              : '您暂时还没有任何元数据'}
+              ? t('addition.message.no-vertex-or-edge-notice')
+              : t('addition.message.no-metadata-notice')}
           </div>
         </div>
       </div>

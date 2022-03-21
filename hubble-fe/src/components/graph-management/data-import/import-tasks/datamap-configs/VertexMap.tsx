@@ -690,7 +690,7 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                     )
                     .map((value) =>
                       value === ''
-                        ? '空值'
+                        ? t('addition.common.null-value')
                         : value === 'NULL'
                         ? 'NULL/null'
                         : value
@@ -1199,10 +1199,11 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                               <div
                                 className={classnames({
                                   'import-tasks-manipulation': true,
-                                  'import-tasks-manipulation-disabled': !dataMapStore.allowAddPropertyValueMapping(
-                                    'vertex',
-                                    valueMapIndex
-                                  )
+                                  'import-tasks-manipulation-disabled':
+                                    !dataMapStore.allowAddPropertyValueMapping(
+                                      'vertex',
+                                      valueMapIndex
+                                    )
                                 })}
                               >
                                 <span
@@ -1451,10 +1452,11 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                               <div
                                 className={classnames({
                                   'import-tasks-manipulation': true,
-                                  'import-tasks-manipulation-disabled': !dataMapStore.allowAddPropertyValueMapping(
-                                    'vertex',
-                                    valueMapIndex
-                                  )
+                                  'import-tasks-manipulation-disabled':
+                                    !dataMapStore.allowAddPropertyValueMapping(
+                                      'vertex',
+                                      valueMapIndex
+                                    )
                                 })}
                               >
                                 <span

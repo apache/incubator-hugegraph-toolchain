@@ -32,9 +32,11 @@ import NoSelectedSoilidArrowIcon from '../../../../assets/imgs/ic_arrow.svg';
 import SelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight_selected.svg';
 import NoSelectedSoilidStraightIcon from '../../../../assets/imgs/ic_straight.svg';
 import closeIcon from '../../../../assets/imgs/ic_close_16.svg';
+import { useTranslation } from 'react-i18next';
 
 const NewVertexType: React.FC = observer(() => {
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
+  const { t } = useTranslation();
   const { metadataPropertyStore, vertexTypeStore, edgeTypeStore } = useContext(
     MetadataConfigsRootStore
   );
@@ -81,17 +83,19 @@ const NewVertexType: React.FC = observer(() => {
   return (
     <div className="new-vertex-type-wrapper">
       <div className="new-vertex-type">
-        <div className="metadata-title new-vertex-type-title">基础信息</div>
+        <div className="metadata-title new-vertex-type-title">
+          {t('addition.menu.base-info')}
+        </div>
         <div className="new-vertex-type-options">
           <div className="new-vertex-type-options-name">
             <span className="metdata-essential-form-options">*</span>
-            <span>边类型名称：</span>
+            <span>{t('addition.common.edge-type-name')}：</span>
           </div>
           <Input
             size="medium"
             width={420}
             maxLen={128}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={edgeTypeStore.validateNewEdgeTypeErrorMessage.name}
             value={edgeTypeStore.newEdgeType.name}
@@ -112,7 +116,7 @@ const NewVertexType: React.FC = observer(() => {
         <div className="new-vertex-type-options">
           <div className="new-vertex-type-options-name">
             <span className="metdata-essential-form-options">*</span>
-            <span>边样式：</span>
+            <span>{t('addition.common.edge-style')}：</span>
           </div>
           <div className="new-vertex-type-options-colors">
             <Select
@@ -242,11 +246,11 @@ const NewVertexType: React.FC = observer(() => {
         <div className="new-vertex-type-options">
           <div className="new-vertex-type-options-name">
             <span className="metdata-essential-form-options">*</span>
-            <span>起点类型：</span>
+            <span>{t('addition.common.source-type')}：</span>
           </div>
           <Select
             width={420}
-            placeholder="请选择起点类型"
+            placeholder={t('addition.message.source-type-select-placeholder')}
             size="medium"
             onChange={(value: string) => {
               edgeTypeStore.mutateNewEdgeType({
@@ -268,11 +272,11 @@ const NewVertexType: React.FC = observer(() => {
         <div className="new-vertex-type-options">
           <div className="new-vertex-type-options-name">
             <span className="metdata-essential-form-options">*</span>
-            <span>终点类型：</span>
+            <span>{t('addition.common.target-type')}：</span>
           </div>
           <Select
             width={420}
-            placeholder="请选择终点类型"
+            placeholder={t('addition.message.target-type-select-placeholder')}
             size="medium"
             onChange={(value: string) => {
               edgeTypeStore.mutateNewEdgeType({
@@ -302,10 +306,10 @@ const NewVertexType: React.FC = observer(() => {
             }}
           >
             <span className="metdata-essential-form-options">*</span>
-            <span>允许多次连接：</span>
+            <span>{t('addition.common.allow-multiple-connections')}：</span>
             <Tooltip
               placement="right"
-              title="开启后两顶点间允许存在多条该类型的边"
+              title={t('addition.common.multiple-connections-notice')}
               type="dark"
             >
               <img src={HintIcon} alt="hint" />
@@ -336,7 +340,7 @@ const NewVertexType: React.FC = observer(() => {
             {edgeTypeStore.newEdgeType.link_multi_times && (
               <span className="metdata-essential-form-options">*</span>
             )}
-            <span>关联属性：</span>
+            <span>{t('addition.common.association-property')}：</span>
           </div>
           <div
             className="new-vertex-type-options-expands"
@@ -347,8 +351,8 @@ const NewVertexType: React.FC = observer(() => {
                 <div
                   style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
-                  <div>属性</div>
-                  <div>允许为空</div>
+                  <div>{t('addition.common.property')}</div>
+                  <div>{t('addition.common.allow-null')}</div>
                 </div>
                 {edgeTypeStore.newEdgeType.properties.map((property, index) => {
                   const currentProperties = cloneDeep(
@@ -365,9 +369,8 @@ const NewVertexType: React.FC = observer(() => {
                         <Switch
                           checked={property.nullable}
                           onChange={(checked: boolean) => {
-                            currentProperties[
-                              index
-                            ].nullable = !currentProperties[index].nullable;
+                            currentProperties[index].nullable =
+                              !currentProperties[index].nullable;
 
                             edgeTypeStore.mutateNewEdgeType({
                               ...edgeTypeStore.newEdgeType,
@@ -378,9 +381,10 @@ const NewVertexType: React.FC = observer(() => {
                             if (checked) {
                               edgeTypeStore.mutateNewEdgeType({
                                 ...edgeTypeStore.newEdgeType,
-                                sort_keys: edgeTypeStore.newEdgeType.sort_keys.filter(
-                                  (key) => key !== property.name
-                                )
+                                sort_keys:
+                                  edgeTypeStore.newEdgeType.sort_keys.filter(
+                                    (key) => key !== property.name
+                                  )
                               });
                             }
                           }}
@@ -403,7 +407,7 @@ const NewVertexType: React.FC = observer(() => {
                 switchIsAddNewProperty(!isAddNewProperty);
               }}
             >
-              <span>添加属性</span>
+              <span>{t('addition.common.add-property')}</span>
               <img
                 src={BlueArrowIcon}
                 alt="toggleAddProperty"
@@ -454,9 +458,10 @@ const NewVertexType: React.FC = observer(() => {
                           properties: [
                             ...addedPropertiesIndexInSelectedEdgeType
                           ].map((propertyName) => {
-                            const currentProperty = edgeTypeStore.newEdgeType.properties.find(
-                              ({ name }) => name === propertyName
-                            );
+                            const currentProperty =
+                              edgeTypeStore.newEdgeType.properties.find(
+                                ({ name }) => name === propertyName
+                              );
 
                             return {
                               name: propertyName,
@@ -484,13 +489,17 @@ const NewVertexType: React.FC = observer(() => {
           <div className="new-vertex-type-options">
             <div className="new-vertex-type-options-name">
               <span className="metdata-essential-form-options">*</span>
-              <span>区分键：</span>
+              <span>{t('addition.common.distinguishing-key')}：</span>
             </div>
             <Select
               width={420}
               mode="multiple"
-              placeholder="请选择区分键属性"
-              selectorName="请先选择关联属性"
+              placeholder={t(
+                'addition.message.select-distinguishing-key-property-placeholder'
+              )}
+              selectorName={t(
+                'addition.message.select-association-key-property-placeholder'
+              )}
               size="medium"
               showSearch={false}
               onChange={(e: string[]) => {
@@ -557,21 +566,26 @@ const NewVertexType: React.FC = observer(() => {
         <div className="new-vertex-type-options">
           <div className="new-vertex-type-options-name">
             <span className="metdata-essential-form-options">*</span>
-            <span>边展示内容：</span>
+            <span>{t('addition.edge.display-content')}：</span>
           </div>
           <Select
             width={420}
             mode="multiple"
             size="medium"
-            placeholder="请选择边展示内容"
+            placeholder={t('addition.edge.display-content-select-desc')}
             showSearch={false}
             onChange={(value: string[]) => {
+              console.log(value, 123, edgeTypeStore.newEdgeType.properties);
               edgeTypeStore.mutateNewEdgeType({
                 ...edgeTypeStore.newEdgeType,
                 style: {
                   ...edgeTypeStore.newEdgeType.style,
                   display_fields: value.map((field) =>
-                    formatVertexIdText(field, '边类型', true)
+                    formatVertexIdText(
+                      field,
+                      t('addition.function-parameter.edge-type'),
+                      true
+                    )
                   )
                 }
               });
@@ -580,16 +594,20 @@ const NewVertexType: React.FC = observer(() => {
               edgeTypeStore.validateNewEdgeType('displayFeilds');
             }}
             value={edgeTypeStore.newEdgeType.style.display_fields.map((field) =>
-              formatVertexIdText(field, '边类型')
+              formatVertexIdText(
+                field,
+                t('addition.function-parameter.edge-type')
+              )
             )}
           >
             {edgeTypeStore.newEdgeType.properties
               .concat({ name: '~id', nullable: false })
               .filter(({ nullable }) => !nullable)
               .map((item) => {
-                const order = edgeTypeStore.newEdgeType.style.display_fields.findIndex(
-                  (name) => name === item.name
-                );
+                const order =
+                  edgeTypeStore.newEdgeType.style.display_fields.findIndex(
+                    (name) => name === item.name
+                  );
 
                 const multiSelectOptionClassName = classnames({
                   'metadata-configs-sorted-multiSelect-option': true,
@@ -599,28 +617,36 @@ const NewVertexType: React.FC = observer(() => {
 
                 return (
                   <Select.Option
-                    value={formatVertexIdText(item.name, '边类型')}
+                    value={formatVertexIdText(
+                      item.name,
+                      t('addition.function-parameter.edge-type')
+                    )}
                     key={item.name}
                   >
                     <div className={multiSelectOptionClassName}>
                       <div
                         style={{
-                          backgroundColor: edgeTypeStore.newEdgeType.style.display_fields.includes(
-                            item.name
-                          )
-                            ? '#2b65ff'
-                            : '#fff',
-                          borderColor: edgeTypeStore.newEdgeType.style.display_fields.includes(
-                            item.name
-                          )
-                            ? '#fff'
-                            : '#e0e0e0'
+                          backgroundColor:
+                            edgeTypeStore.newEdgeType.style.display_fields.includes(
+                              item.name
+                            )
+                              ? '#2b65ff'
+                              : '#fff',
+                          borderColor:
+                            edgeTypeStore.newEdgeType.style.display_fields.includes(
+                              item.name
+                            )
+                              ? '#fff'
+                              : '#e0e0e0'
                         }}
                       >
                         {order !== -1 ? order + 1 : ''}
                       </div>
                       <div style={{ color: '#333' }}>
-                        {formatVertexIdText(item.name, '边类型')}
+                        {formatVertexIdText(
+                          item.name,
+                          t('addition.function-parameter.edge-type')
+                        )}
                       </div>
                     </div>
                   </Select.Option>
@@ -638,10 +664,12 @@ const NewVertexType: React.FC = observer(() => {
             alignItems: 'center'
           }}
         >
-          <span style={{ marginRight: 5 }}>索引信息</span>
+          <span style={{ marginRight: 5 }}>
+            {t('addition.edge.index-info')}
+          </span>
           <Tooltip
             placement="right"
-            title="开启索引会影响使用性能，请按需开启"
+            title={t('addition.message.index-open-notice')}
             type="dark"
           >
             <img src={HintIcon} alt="hint" />
@@ -650,7 +678,7 @@ const NewVertexType: React.FC = observer(() => {
         <div className="new-vertex-type-options">
           <div className="new-vertex-type-options-name">
             <span className="metdata-essential-form-options">*</span>
-            <span>类型索引：</span>
+            <span>{t('addition.menu.type-index')}：</span>
           </div>
           <Switch
             checked={edgeTypeStore.newEdgeType.open_label_index}
@@ -669,7 +697,7 @@ const NewVertexType: React.FC = observer(() => {
           style={{ marginBottom: 12, alignItems: 'start' }}
         >
           <div className="new-vertex-type-options-name">
-            <span>属性索引：</span>
+            <span>{t('addition.common.property-index')}：</span>
           </div>
           <div className="new-vertex-type-options-expands">
             {edgeTypeStore.newEdgeType.property_indexes.length !== 0 && (
@@ -680,9 +708,13 @@ const NewVertexType: React.FC = observer(() => {
                   marginBottom: 12
                 }}
               >
-                <div style={{ width: 110, marginRight: 12 }}>索引名称</div>
-                <div style={{ width: 130, marginRight: 12 }}>索引类型</div>
-                <div>属性</div>
+                <div style={{ width: 110, marginRight: 12 }}>
+                  {t('addition.edge.index-name')}
+                </div>
+                <div style={{ width: 130, marginRight: 12 }}>
+                  {t('addition.edge.index-type')}
+                </div>
+                <div>{t('addition.common.property')}</div>
               </div>
             )}
             {edgeTypeStore.newEdgeType.property_indexes.map(
@@ -698,15 +730,17 @@ const NewVertexType: React.FC = observer(() => {
                     <Input
                       size="medium"
                       width={110}
-                      placeholder="索引名称"
+                      placeholder={t('addition.edge.index-name')}
                       errorLocation="layer"
                       errorMessage={
                         edgeTypeStore.validateNewEdgeTypeErrorMessage
                           .propertyIndexes.length !== 0
-                          ? (edgeTypeStore.validateNewEdgeTypeErrorMessage
-                              .propertyIndexes[
-                              index
-                            ] as EdgeTypeValidatePropertyIndexes).name
+                          ? (
+                              edgeTypeStore.validateNewEdgeTypeErrorMessage
+                                .propertyIndexes[
+                                index
+                              ] as EdgeTypeValidatePropertyIndexes
+                            ).name
                           : ''
                       }
                       value={name}
@@ -734,7 +768,7 @@ const NewVertexType: React.FC = observer(() => {
                   <div style={{ marginRight: 12 }}>
                     <Select
                       width={130}
-                      placeholder="请选择索引类型"
+                      placeholder={t('addition.edge.index-type-select-desc')}
                       size="medium"
                       showSearch={false}
                       value={type === '' ? [] : type}
@@ -755,13 +789,13 @@ const NewVertexType: React.FC = observer(() => {
                       }}
                     >
                       <Select.Option value="SECONDARY" key="SECONDARY">
-                        二级索引
+                        {t('addition.menu.secondary-index')}
                       </Select.Option>
                       <Select.Option value="RANGE" key="RANGE">
-                        范围索引
+                        {t('addition.menu.range-index')}
                       </Select.Option>
                       <Select.Option value="SEARCH" key="SEARCH">
-                        全文索引
+                        {t('addition.menu.full-text-index')}
                       </Select.Option>
                     </Select>
                   </div>
@@ -769,7 +803,7 @@ const NewVertexType: React.FC = observer(() => {
                     <Select
                       width={220}
                       mode="multiple"
-                      placeholder="请选择属性"
+                      placeholder={t('addition.edge.property-select-desc')}
                       size="medium"
                       showSearch={false}
                       value={fields}
@@ -795,9 +829,12 @@ const NewVertexType: React.FC = observer(() => {
                     >
                       {type === 'SECONDARY' &&
                         edgeTypeStore.newEdgeType.properties.map((property) => {
-                          const order = edgeTypeStore.newEdgeType.property_indexes[
-                            index
-                          ].fields.findIndex((name) => name === property.name);
+                          const order =
+                            edgeTypeStore.newEdgeType.property_indexes[
+                              index
+                            ].fields.findIndex(
+                              (name) => name === property.name
+                            );
 
                           const multiSelectOptionClassName = classnames({
                             'metadata-configs-sorted-multiSelect-option': true,
@@ -821,9 +858,10 @@ const NewVertexType: React.FC = observer(() => {
                       {type === 'RANGE' &&
                         edgeTypeStore.newEdgeType.properties
                           .filter((property) => {
-                            const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                              ({ name }) => name === property.name
-                            );
+                            const matchedProperty =
+                              metadataPropertyStore.metadataProperties.find(
+                                ({ name }) => name === property.name
+                              );
 
                             if (!isUndefined(matchedProperty)) {
                               const { data_type } = matchedProperty;
@@ -845,9 +883,10 @@ const NewVertexType: React.FC = observer(() => {
                       {type === 'SEARCH' &&
                         edgeTypeStore.newEdgeType.properties
                           .filter((property) => {
-                            const matchedProperty = metadataPropertyStore.metadataProperties.find(
-                              ({ name }) => name === property.name
-                            );
+                            const matchedProperty =
+                              metadataPropertyStore.metadataProperties.find(
+                                ({ name }) => name === property.name
+                              );
 
                             if (!isUndefined(matchedProperty)) {
                               const { data_type } = matchedProperty;
@@ -871,10 +910,10 @@ const NewVertexType: React.FC = observer(() => {
                     tooltipWrapper={
                       <div ref={deleteWrapperRef}>
                         <p style={{ width: 200, lineHeight: '28px' }}>
-                          确认删除此属性？
+                          {t('addition.message.property-del-confirm')}
                         </p>
                         <p style={{ width: 200, lineHeight: '28px' }}>
-                          删除索引后，无法根据此属性索引进行查询，请谨慎操作。
+                          {t('addition.message.index-del-confirm')}
                         </p>
                         <div
                           style={{
@@ -904,14 +943,14 @@ const NewVertexType: React.FC = observer(() => {
                               );
                             }}
                           >
-                            确认
+                            {t('addition.common.confirm')}
                           </div>
                           <div
                             onClick={() => {
                               setDeletePopIndex(null);
                             }}
                           >
-                            取消
+                            {t('addition.common.cancel')}
                           </div>
                         </div>
                       </div>
@@ -960,7 +999,7 @@ const NewVertexType: React.FC = observer(() => {
                 lineHeight: '32px'
               }}
             >
-              新增一组
+              {t('addition.edge.add-group')}
             </span>
           </div>
         </div>
@@ -981,9 +1020,8 @@ const NewVertexType: React.FC = observer(() => {
 
               const id = edgeTypeStore.newEdgeType.name;
               if (edgeTypeStore.newEdgeType.style.color !== null) {
-                dataAnalyzeStore.edgeColorMappings[
-                  id
-                ] = edgeTypeStore.newEdgeType.style.color!;
+                dataAnalyzeStore.edgeColorMappings[id] =
+                  edgeTypeStore.newEdgeType.style.color!;
               }
 
               if (edgeTypeStore.newEdgeType.style.with_arrow !== null) {
@@ -1005,7 +1043,7 @@ const NewVertexType: React.FC = observer(() => {
                 edgeTypeStore.changeCurrentTabStatus('list');
 
                 Message.success({
-                  content: '创建成功',
+                  content: t('addition.newGraphConfig.create-scuccess'),
                   size: 'medium',
                   showCloseIcon: false
                 });
@@ -1020,7 +1058,7 @@ const NewVertexType: React.FC = observer(() => {
               }
             }}
           >
-            创建
+            {t('addition.newGraphConfig.create')}
           </Button>
           <Button
             size="medium"
@@ -1033,7 +1071,7 @@ const NewVertexType: React.FC = observer(() => {
               edgeTypeStore.resetAddedPropertiesInSelectedEdgeType();
             }}
           >
-            取消
+            {t('addition.common.cancel')}
           </Button>
         </div>
       </div>

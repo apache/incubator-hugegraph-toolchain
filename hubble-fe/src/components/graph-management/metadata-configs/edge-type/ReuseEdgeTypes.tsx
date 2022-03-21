@@ -14,9 +14,11 @@ import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/me
 import PassIcon from '../../../../assets/imgs/ic_pass.svg';
 import './ReuseEdgeTypes.less';
 import { cloneDeep } from 'lodash-es';
+import { useTranslation } from 'react-i18next';
 
 const ReuseEdgeTypes: React.FC = observer(() => {
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
+  const { t } = useTranslation();
   const { edgeTypeStore } = metadataConfigsRootStore;
   const [currentStatus, setCurrentStatus] = useState(1);
   // acutally the name, not id in database
@@ -46,7 +48,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
   const edgeTypeColumnConfigs = [
     {
-      title: '边类型名称',
+      title: t('addition.common.edge-type-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -62,7 +64,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={edgeTypeStore.validateReuseErrorMessage.edgeType}
             value={
@@ -99,7 +101,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       width: '30%',
       render(value: string, records: any, index: number) {
@@ -112,7 +114,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
               className="reuse-properties-validate-duplicate"
               style={{ marginLeft: 0 }}
             >
-              待校验
+              {t('addition.edge.be-verified')}
             </div>
           );
         }
@@ -120,22 +122,22 @@ const ReuseEdgeTypes: React.FC = observer(() => {
         switch (value) {
           case 'DUPNAME':
             classname = classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'DEP_CONFLICT':
             classname = 'reuse-properties-validate-duplicate';
-            text = '依赖冲突';
+            text = t('addition.message.dependency-conflict');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -147,14 +149,16 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
-        const originalName = edgeTypeStore.checkedReusableData!
-          .edgelabel_conflicts[index].entity.name;
-        const changedName = edgeTypeStore.editedCheckedReusableData!
-          .edgelabel_conflicts[index].entity.name;
+        const originalName =
+          edgeTypeStore.checkedReusableData!.edgelabel_conflicts[index].entity
+            .name;
+        const changedName =
+          edgeTypeStore.editedCheckedReusableData!.edgelabel_conflicts[index]
+            .entity.name;
         const isChanged = changedName !== originalName;
 
         if (edgeTypeEditIndex === index) {
@@ -187,7 +191,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.mutateReusableEdgeTypeChangeIndexes(index);
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -197,7 +201,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.resetEditedReusableEdgeTypeName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -219,7 +223,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 setEdgeTypeEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
             <span
               className="metadata-properties-manipulation"
@@ -235,7 +239,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
                 // remove selected status of the property in <Transfer />
                 const newSelectedList = [...selectedList].filter(
-                  property =>
+                  (property) =>
                     property !==
                     edgeTypeStore.editedCheckedReusableData!
                       .edgelabel_conflicts[index].entity.name
@@ -254,7 +258,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 edgeTypeStore.deleteReuseData('edgelabel_conflicts', index);
               }}
             >
-              删除
+              {t('addition.common.del')}
             </span>
           </div>
         );
@@ -264,7 +268,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
   const vertexTypeColumnConfigs = [
     {
-      title: '顶点名称',
+      title: t('addition.common.vertex-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -276,7 +280,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={edgeTypeStore.validateReuseErrorMessage.vertexType}
             value={
@@ -314,7 +318,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       width: '30%',
       render(value: string, records: any, index: number) {
@@ -327,7 +331,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
               className="reuse-properties-validate-duplicate"
               style={{ marginLeft: 0 }}
             >
-              待校验
+              {t('addition.edge.be-verified')}
             </div>
           );
         }
@@ -335,22 +339,22 @@ const ReuseEdgeTypes: React.FC = observer(() => {
         switch (value) {
           case 'DUPNAME':
             classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'DEP_CONFLICT':
             classname = 'reuse-properties-validate-duplicate';
-            text = '依赖冲突';
+            text = t('addition.message.dependency-conflict');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -362,14 +366,16 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
-        const originalName = edgeTypeStore.checkedReusableData!
-          .vertexlabel_conflicts[index].entity.name;
-        const changedName = edgeTypeStore.editedCheckedReusableData!
-          .vertexlabel_conflicts[index].entity.name;
+        const originalName =
+          edgeTypeStore.checkedReusableData!.vertexlabel_conflicts[index].entity
+            .name;
+        const changedName =
+          edgeTypeStore.editedCheckedReusableData!.vertexlabel_conflicts[index]
+            .entity.name;
         const isChanged = changedName !== originalName;
 
         if (index === vertexTypeEditIndex) {
@@ -402,7 +408,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.mutateReusableVertexTypeChangeIndexes(index);
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -412,7 +418,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.resetEditedReusableVertexTypeName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -434,7 +440,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 setVertexTypeEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
           </div>
         );
@@ -444,7 +450,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
   const metadataPropertyColumnConfigs = [
     {
-      title: '属性名称',
+      title: t('addition.common.property-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -456,7 +462,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={edgeTypeStore.validateReuseErrorMessage.property}
             value={
@@ -494,7 +500,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '数据类型',
+      title: t('addition.common.data-type'),
       dataIndex: 'data_type',
       width: '15%',
       render(text: string) {
@@ -506,7 +512,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       align: 'center',
       width: '15%',
@@ -516,29 +522,31 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
         if (edgeTypeStore.reusablePropertyNameChangeIndexes.has(index)) {
           return (
-            <div className="reuse-properties-validate-duplicate">待校验</div>
+            <div className="reuse-properties-validate-duplicate">
+              {t('addition.edge.be-verified')}
+            </div>
           );
         }
 
         switch (value) {
           case 'DUPNAME':
             classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'DEP_CONFLICT':
             classname = 'reuse-properties-validate-duplicate';
-            text = '依赖冲突';
+            text = t('addition.message.dependency-conflict');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -546,15 +554,18 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
         if (index === propertyEditIndex) {
-          const originalName = edgeTypeStore.checkedReusableData!
-            .propertykey_conflicts[index].entity.name;
-          const changedName = edgeTypeStore.editedCheckedReusableData!
-            .propertykey_conflicts[index].entity.name;
+          const originalName =
+            edgeTypeStore.checkedReusableData!.propertykey_conflicts[index]
+              .entity.name;
+          const changedName =
+            edgeTypeStore.editedCheckedReusableData!.propertykey_conflicts[
+              index
+            ].entity.name;
           const isChanged = changedName !== originalName;
 
           return (
@@ -586,7 +597,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.mutateReusablePropertyNameChangeIndexes(index);
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -596,7 +607,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.resetEditedReusablePropertyName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -618,7 +629,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 setPropertyEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
             <span
               className="metadata-properties-manipulation"
@@ -635,7 +646,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 edgeTypeStore.deleteReuseData('propertykey_conflicts', index);
               }}
             >
-              删除
+              {t('addition.common.del')}
             </span>
           </div>
         );
@@ -645,7 +656,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
   const metadataPropertyIndexColumnConfigs = [
     {
-      title: '属性索引名称',
+      title: t('addition.common.property-index-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -657,7 +668,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={
               edgeTypeStore.validateReuseErrorMessage.property_index
@@ -697,12 +708,12 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '对应类型',
+      title: t('addition.common.corresponding-type'),
       dataIndex: 'owner',
       width: '15%'
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       align: 'center',
       width: '15%',
@@ -712,29 +723,31 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
         if (edgeTypeStore.reusablePropertyIndexNameChangeIndexes.has(index)) {
           return (
-            <div className="reuse-properties-validate-duplicate">待校验</div>
+            <div className="reuse-properties-validate-duplicate">
+              {t('addition.edge.be-verified')}
+            </div>
           );
         }
 
         switch (value) {
           case 'DUPNAME':
             classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'DEP_CONFLICT':
             classname = 'reuse-properties-validate-duplicate';
-            text = '依赖冲突';
+            text = t('addition.message.dependency-conflict');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -742,15 +755,18 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
         if (index === propertyIndexEditIndex) {
-          const originalName = edgeTypeStore.checkedReusableData!
-            .propertyindex_conflicts[index].entity.name;
-          const changedName = edgeTypeStore.editedCheckedReusableData!
-            .propertyindex_conflicts[index].entity.name;
+          const originalName =
+            edgeTypeStore.checkedReusableData!.propertyindex_conflicts[index]
+              .entity.name;
+          const changedName =
+            edgeTypeStore.editedCheckedReusableData!.propertyindex_conflicts[
+              index
+            ].entity.name;
           const isChanged = changedName !== originalName;
 
           return (
@@ -782,7 +798,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.mutateReusableVertexTypeChangeIndexes(index);
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -794,7 +810,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.resetEditedReusablePropertyIndexName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -816,7 +832,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 setPropertyIndexEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
             <span
               className="metadata-properties-manipulation"
@@ -833,7 +849,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 edgeTypeStore.deleteReuseData('propertyindex_conflicts', index);
               }}
             >
-              删除
+              {t('addition.common.del')}
             </span>
           </div>
         );
@@ -848,7 +864,9 @@ const ReuseEdgeTypes: React.FC = observer(() => {
 
   return (
     <div className="reuse-properties-wrapper">
-      <div className="metadata-title">复用边类型</div>
+      <div className="metadata-title">
+        {t('addition.edge.multiplexing-edge-type')}
+      </div>
       <div
         style={{
           marginTop: 8,
@@ -857,25 +875,27 @@ const ReuseEdgeTypes: React.FC = observer(() => {
           lineHeight: '18px'
         }}
       >
-        边类型关联的属性和属性索引、起点类型和终点类型及其关联的属性和属性索引将一同复用
+        {t('addition.edge.multiplexing-edge-type-notice')}
       </div>
       <div className="reuse-steps">
         <Steps current={currentStatus}>
-          {['选择复用项', '确认复用项', '完成复用'].map(
-            (title: string, index: number) => (
-              <Steps.Step
-                title={title}
-                status={
-                  currentStatus === index + 1
-                    ? 'process'
-                    : currentStatus > index + 1
-                    ? 'finish'
-                    : 'wait'
-                }
-                key={title}
-              />
-            )
-          )}
+          {[
+            t('addition.menu.select-reuse-item'),
+            t('addition.menu.confirm-reuse-item'),
+            t('addition.menu.complete-reuse')
+          ].map((title: string, index: number) => (
+            <Steps.Step
+              title={title}
+              status={
+                currentStatus === index + 1
+                  ? 'process'
+                  : currentStatus > index + 1
+                  ? 'finish'
+                  : 'wait'
+              }
+              key={title}
+            />
+          ))}
         </Steps>
 
         {currentStatus === 1 && (
@@ -883,11 +903,13 @@ const ReuseEdgeTypes: React.FC = observer(() => {
             <div className="reuse-properties-row">
               <div className="reuse-properties-row-name">
                 <span className="metdata-essential-form-options">*</span>
-                <span>图ID：</span>
+                <span>{t('addition.newGraphConfig.id')}：</span>
               </div>
               <Select
                 width={420}
-                placeholder="请选择要复用的图"
+                placeholder={t(
+                  'addition.message.select-reuse-graph-placeholder'
+                )}
                 size="medium"
                 showSearch={false}
                 onChange={(selectedName: string) => {
@@ -923,10 +945,10 @@ const ReuseEdgeTypes: React.FC = observer(() => {
             >
               <div className="reuse-properties-row-name">
                 <span className="metdata-essential-form-options">*</span>
-                <span>复用边类型：</span>
+                <span>{t('addition.edge.multiplexing-edge-type')}：</span>
               </div>
               <Transfer
-                treeName="边类型"
+                treeName={t('addition.common.edge-type')}
                 allDataMap={edgeTypeStore.reusableEdgeTypeDataMap}
                 candidateList={edgeTypeStore.reusableEdgeTypes.map(
                   ({ name }) => name
@@ -969,7 +991,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   );
                 }}
               >
-                下一步
+                {t('addition.operate.next-step')}
               </Button>
               <Button
                 size="medium"
@@ -984,7 +1006,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                     : edgeTypeStore.changeCurrentTabStatus('list');
                 }}
               >
-                取消复用
+                {t('addition.operate.de-multiplexing')}
               </Button>
             </div>
           </>
@@ -996,7 +1018,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 34, marginBottom: 16 }}
             >
-              已选边类型
+              {t('addition.common.selected-edge-type')}
             </div>
             <Table
               columns={edgeTypeColumnConfigs}
@@ -1017,7 +1039,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 30, marginBottom: 16 }}
             >
-              已选顶点类型
+              {t('addition.common.selected-vertex-type')}
             </div>
             <Table
               columns={vertexTypeColumnConfigs}
@@ -1038,7 +1060,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 30, marginBottom: 16 }}
             >
-              已选属性
+              {t('addition.common.selected-property')}
             </div>
             <Table
               columns={metadataPropertyColumnConfigs}
@@ -1060,7 +1082,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 30, marginBottom: 16 }}
             >
-              已选属性索引
+              {t('addition.common.selected-property-index')}
             </div>
             <Table
               columns={metadataPropertyIndexColumnConfigs}
@@ -1121,7 +1143,9 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   propertyIndexEditIndex !== null
                 }
               >
-                {edgeTypeStore.isReadyToReuse ? '完成' : '重新校验'}
+                {edgeTypeStore.isReadyToReuse
+                  ? t('addition.operate.complete')
+                  : t('addition.edge.verified-again')}
               </Button>
               <Button
                 size="medium"
@@ -1130,7 +1154,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   setCurrentStatus(1);
                 }}
               >
-                上一步
+                {t('addition.operate.previous-step')}
               </Button>
             </div>
           </>
@@ -1139,10 +1163,10 @@ const ReuseEdgeTypes: React.FC = observer(() => {
         {currentStatus === 3 && (
           <div className="reuse-properties-complete-hint">
             <div className="reuse-properties-complete-hint-description">
-              <img src={PassIcon} alt="复用完成" />
+              <img src={PassIcon} alt={t('addition.message.reuse-complete')} />
               <div>
-                <div>复用完成</div>
-                <div>已成功复用顶点类型</div>
+                <div>{t('addition.message.reuse-complete')}</div>
+                <div>{t('addition.message.vertex-type-reuse-success')}</div>
               </div>
             </div>
             <div className="reuse-properties-complete-hint-manipulations">
@@ -1157,7 +1181,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.changeCurrentTabStatus('list');
                 }}
               >
-                返回查看
+                {t('addition.operate.back-to-view')}
               </Button>
               <Button
                 size="medium"
@@ -1169,7 +1193,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   setCurrentStatus(1);
                 }}
               >
-                继续复用
+                {t('addition.operate.continue-reuse')}
               </Button>
             </div>
           </div>

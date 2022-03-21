@@ -14,10 +14,12 @@ import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/me
 import PassIcon from '../../../../assets/imgs/ic_pass.svg';
 import './ReuseVertexTypes.less';
 import { cloneDeep } from 'lodash-es';
+import { useTranslation } from 'react-i18next';
 
 const ReuseVertexTypes: React.FC = observer(() => {
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
   const { vertexTypeStore } = metadataConfigsRootStore;
+  const { t } = useTranslation();
   const [currentStatus, setCurrentStatus] = useState(1);
   // acutally the name, not id in database
   const [selectedId, mutateSelectedId] = useState<[] | string>([]);
@@ -42,7 +44,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
 
   const vertexTypeColumnConfigs = [
     {
-      title: '顶点名称',
+      title: t('addition.common.vertex-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -58,7 +60,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={vertexTypeStore.validateReuseErrorMessage.vertexType}
             value={
@@ -99,7 +101,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       width: '30%',
       render(value: string, records: any, index: number) {
@@ -112,7 +114,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
               className="reuse-properties-validate-duplicate"
               style={{ marginLeft: 0 }}
             >
-              待校验
+              {t('addition.edge.be-verified')}
             </div>
           );
         }
@@ -120,22 +122,22 @@ const ReuseVertexTypes: React.FC = observer(() => {
         switch (value) {
           case 'DUPNAME':
             classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'DEP_CONFLICT':
             classname = 'reuse-properties-validate-duplicate';
-            text = '依赖冲突';
+            text = t('addition.message.dependency-conflict');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -147,15 +149,18 @@ const ReuseVertexTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
         if (index === vertexTypeEditIndex) {
-          const originalName = vertexTypeStore.checkedReusableData!
-            .vertexlabel_conflicts[index].entity.name;
-          const changedName = vertexTypeStore.editedCheckedReusableData!
-            .vertexlabel_conflicts[index].entity.name;
+          const originalName =
+            vertexTypeStore.checkedReusableData!.vertexlabel_conflicts[index]
+              .entity.name;
+          const changedName =
+            vertexTypeStore.editedCheckedReusableData!.vertexlabel_conflicts[
+              index
+            ].entity.name;
           const isChanged = changedName !== originalName;
 
           return (
@@ -187,7 +192,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   vertexTypeStore.mutateReusableVertexTypeChangeIndexes(index);
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -197,7 +202,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   vertexTypeStore.resetEditedReusableVertexTypeName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -219,7 +224,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                 setVertexTypeEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
             <span
               className="metadata-properties-manipulation"
@@ -235,7 +240,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
 
                 // remove selected status of the property in <Transfer />
                 const newSelectedList = [...selectedList].filter(
-                  property =>
+                  (property) =>
                     property !==
                     vertexTypeStore.editedCheckedReusableData!
                       .vertexlabel_conflicts[index].entity.name
@@ -254,7 +259,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                 vertexTypeStore.deleteReuseData('vertexlabel_conflicts', index);
               }}
             >
-              删除
+              {t('addition.common.del')}
             </span>
           </div>
         );
@@ -264,7 +269,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
 
   const metadataPropertyColumnConfigs = [
     {
-      title: '属性名称',
+      title: t('addition.common.property-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -276,7 +281,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={vertexTypeStore.validateReuseErrorMessage.property}
             value={
@@ -317,7 +322,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '数据类型',
+      title: t('addition.common.data-type'),
       dataIndex: 'data_type',
       width: '15%',
       render(text: string) {
@@ -329,7 +334,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       align: 'center',
       width: '15%',
@@ -339,29 +344,31 @@ const ReuseVertexTypes: React.FC = observer(() => {
 
         if (vertexTypeStore.reusablePropertyNameChangeIndexes.has(index)) {
           return (
-            <div className="reuse-properties-validate-duplicate">待校验</div>
+            <div className="reuse-properties-validate-duplicate">
+              {t('addition.edge.be-verified')}
+            </div>
           );
         }
 
         switch (value) {
           case 'DUPNAME':
             classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'DEP_CONFLICT':
             classname = 'reuse-properties-validate-duplicate';
-            text = '依赖冲突';
+            text = t('addition.message.dependency-conflict');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -369,15 +376,18 @@ const ReuseVertexTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
         if (index === propertyEditIndex) {
-          const originalName = vertexTypeStore.checkedReusableData!
-            .propertykey_conflicts[index].entity.name;
-          const changedName = vertexTypeStore.editedCheckedReusableData!
-            .propertykey_conflicts[index].entity.name;
+          const originalName =
+            vertexTypeStore.checkedReusableData!.propertykey_conflicts[index]
+              .entity.name;
+          const changedName =
+            vertexTypeStore.editedCheckedReusableData!.propertykey_conflicts[
+              index
+            ].entity.name;
           const isChanged = changedName !== originalName;
 
           return (
@@ -412,7 +422,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   );
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -422,7 +432,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   vertexTypeStore.resetEditedReusablePropertyName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -444,7 +454,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                 setPropertyEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
             <span
               className="metadata-properties-manipulation"
@@ -461,7 +471,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                 vertexTypeStore.deleteReuseData('propertykey_conflicts', index);
               }}
             >
-              删除
+              {t('addition.common.del')}
             </span>
           </div>
         );
@@ -471,7 +481,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
 
   const metadataPropertyIndexColumnConfigs = [
     {
-      title: '属性索引名称',
+      title: t('addition.common.property-index-name'),
       dataIndex: 'name',
       width: '50%',
       render(text: string, records: any, index: number) {
@@ -483,7 +493,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
           <Input
             size="medium"
             width={370}
-            placeholder="允许出现中英文、数字、下划线"
+            placeholder={t('addition.message.edge-name-rule')}
             errorLocation="layer"
             errorMessage={
               vertexTypeStore.validateReuseErrorMessage.property_index
@@ -524,12 +534,12 @@ const ReuseVertexTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '对应顶点类型',
+      title: t('addition.vertex.corresponding-vertex-type'),
       dataIndex: 'owner',
       width: '15%'
     },
     {
-      title: '校验结果',
+      title: t('addition.edge.verification-result'),
       dataIndex: 'status',
       align: 'center',
       width: '15%',
@@ -539,29 +549,31 @@ const ReuseVertexTypes: React.FC = observer(() => {
 
         if (vertexTypeStore.reusablePropertyIndexNameChangeIndexes.has(index)) {
           return (
-            <div className="reuse-properties-validate-duplicate">待校验</div>
+            <div className="reuse-properties-validate-duplicate">
+              {t('addition.edge.be-verified')}
+            </div>
           );
         }
 
         switch (value) {
           case 'DUPNAME':
             classname = 'reuse-properties-validate-duplicate';
-            text = '有重名';
+            text = t('addition.message.duplicate-name');
             break;
 
           case 'DEP_CONFLICT':
             classname = 'reuse-properties-validate-duplicate';
-            text = '依赖冲突';
+            text = t('addition.message.dependency-conflict');
             break;
 
           case 'EXISTED':
             classname = 'reuse-properties-validate-exist';
-            text = '已存在';
+            text = t('addition.message.already-exist');
             break;
 
           case 'PASSED':
             classname = 'reuse-properties-validate-pass';
-            text = '通过';
+            text = t('addition.message.pass');
             break;
         }
 
@@ -569,15 +581,18 @@ const ReuseVertexTypes: React.FC = observer(() => {
       }
     },
     {
-      title: '操作',
+      title: t('addition.operate.operate'),
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
         if (index === propertyIndexEditIndex) {
-          const originalName = vertexTypeStore.checkedReusableData!
-            .propertyindex_conflicts[index].entity.name;
-          const changedName = vertexTypeStore.editedCheckedReusableData!
-            .propertyindex_conflicts[index].entity.name;
+          const originalName =
+            vertexTypeStore.checkedReusableData!.propertyindex_conflicts[index]
+              .entity.name;
+          const changedName =
+            vertexTypeStore.editedCheckedReusableData!.propertyindex_conflicts[
+              index
+            ].entity.name;
           const isChanged = changedName !== originalName;
 
           return (
@@ -612,7 +627,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   );
                 }}
               >
-                保存
+                {t('addition.common.save')}
               </span>
               <span
                 className="metadata-properties-manipulation"
@@ -624,7 +639,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   vertexTypeStore.resetEditedReusablePropertyIndexName(index);
                 }}
               >
-                取消
+                {t('addition.common.cancel')}
               </span>
             </div>
           );
@@ -646,7 +661,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                 setPropertyIndexEditIndex(index);
               }}
             >
-              重命名
+              {t('addition.operate.rename')}
             </span>
             <span
               className="metadata-properties-manipulation"
@@ -666,7 +681,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                 );
               }}
             >
-              删除
+              {t('addition.common.del')}
             </span>
           </div>
         );
@@ -681,7 +696,9 @@ const ReuseVertexTypes: React.FC = observer(() => {
 
   return (
     <div className="reuse-properties-wrapper">
-      <div className="metadata-title">复用顶点类型</div>
+      <div className="metadata-title">
+        {t('addition.operate.reuse-vertex-type')}
+      </div>
       <div
         style={{
           marginTop: 8,
@@ -690,25 +707,27 @@ const ReuseVertexTypes: React.FC = observer(() => {
           lineHeight: '18px'
         }}
       >
-        顶点类型关联的属性和属性索引将一同复用
+        {t('addition.message.reuse-vertex-type-notice')}
       </div>
       <div className="reuse-steps">
         <Steps current={currentStatus}>
-          {['选择复用项', '确认复用项', '完成复用'].map(
-            (title: string, index: number) => (
-              <Steps.Step
-                title={title}
-                status={
-                  currentStatus === index + 1
-                    ? 'process'
-                    : currentStatus > index + 1
-                    ? 'finish'
-                    : 'wait'
-                }
-                key={title}
-              />
-            )
-          )}
+          {[
+            t('addition.menu.select-reuse-item'),
+            t('addition.menu.confirm-reuse-item'),
+            t('addition.menu.complete-reuse')
+          ].map((title: string, index: number) => (
+            <Steps.Step
+              title={title}
+              status={
+                currentStatus === index + 1
+                  ? 'process'
+                  : currentStatus > index + 1
+                  ? 'finish'
+                  : 'wait'
+              }
+              key={title}
+            />
+          ))}
         </Steps>
 
         {currentStatus === 1 && (
@@ -716,11 +735,13 @@ const ReuseVertexTypes: React.FC = observer(() => {
             <div className="reuse-properties-row">
               <div className="reuse-properties-row-name" style={{ width: 106 }}>
                 <span className="metdata-essential-form-options">*</span>
-                <span>图ID：</span>
+                <span>{t('addition.newGraphConfig.id')}：</span>
               </div>
               <Select
                 width={420}
-                placeholder="请选择要复用的图"
+                placeholder={t(
+                  'addition.message.select-reuse-graph-placeholder'
+                )}
                 size="medium"
                 showSearch={false}
                 onChange={(selectedName: string) => {
@@ -756,10 +777,10 @@ const ReuseVertexTypes: React.FC = observer(() => {
             >
               <div className="reuse-properties-row-name" style={{ width: 106 }}>
                 <span className="metdata-essential-form-options">*</span>
-                <span>复用顶点类型：</span>
+                <span>{t('addition.operate.reuse-vertex-type')}：</span>
               </div>
               <Transfer
-                treeName="顶点类型"
+                treeName={t('addition.common.vertex-type')}
                 allDataMap={vertexTypeStore.reusableVertexTypeDataMap}
                 candidateList={vertexTypeStore.reusableVertexTypes.map(
                   ({ name }) => name
@@ -802,7 +823,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   );
                 }}
               >
-                下一步
+                {t('addition.operate.next-step')}
               </Button>
               <Button
                 size="medium"
@@ -817,7 +838,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                     : vertexTypeStore.changeCurrentTabStatus('list');
                 }}
               >
-                取消复用
+                {t('addition.operate.de-multiplexing')}
               </Button>
             </div>
           </>
@@ -829,7 +850,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 34, marginBottom: 16 }}
             >
-              已选顶点类型
+              {t('addition.common.selected-vertex-type')}
             </div>
             <Table
               columns={vertexTypeColumnConfigs}
@@ -850,7 +871,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 30, marginBottom: 16 }}
             >
-              已选属性
+              {t('addition.common.selected-property')}
             </div>
             <Table
               columns={metadataPropertyColumnConfigs}
@@ -872,7 +893,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
               className="metadata-title"
               style={{ marginTop: 30, marginBottom: 16 }}
             >
-              已选属性索引
+              {t('addition.common.selected-property-index')}
             </div>
             <Table
               columns={metadataPropertyIndexColumnConfigs}
@@ -932,7 +953,9 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   propertyIndexEditIndex !== null
                 }
               >
-                {vertexTypeStore.isReadyToReuse ? '完成' : '重新校验'}
+                {vertexTypeStore.isReadyToReuse
+                  ? t('addition.operate.complete')
+                  : t('addition.edge.verified-again')}
               </Button>
               <Button
                 size="medium"
@@ -943,7 +966,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   vertexTypeStore.clearReusableNameChangeIndexes();
                 }}
               >
-                上一步
+                {t('addition.operate.previous-step')}
               </Button>
             </div>
           </>
@@ -952,10 +975,10 @@ const ReuseVertexTypes: React.FC = observer(() => {
         {currentStatus === 3 && (
           <div className="reuse-properties-complete-hint">
             <div className="reuse-properties-complete-hint-description">
-              <img src={PassIcon} alt="复用完成" />
+              <img src={PassIcon} alt={t('addition.message.reuse-complete')} />
               <div>
-                <div>复用完成</div>
-                <div>已成功复用顶点类型</div>
+                <div>{t('addition.message.reuse-complete')}</div>
+                <div>{t('addition.message.vertex-type-reuse-success')}</div>
               </div>
             </div>
             <div className="reuse-properties-complete-hint-manipulations">
@@ -970,7 +993,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   vertexTypeStore.changeCurrentTabStatus('list');
                 }}
               >
-                返回查看
+                {t('addition.operate.back-to-view')}
               </Button>
               <Button
                 size="medium"
@@ -982,7 +1005,7 @@ const ReuseVertexTypes: React.FC = observer(() => {
                   setCurrentStatus(1);
                 }}
               >
-                继续复用
+                {t('addition.operate.continue-reuse')}
               </Button>
             </div>
           </div>

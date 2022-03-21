@@ -15,6 +15,7 @@ import type {
   GraphViewData,
   DrawerTypes
 } from '../../types/GraphManagementStore/metadataConfigsStore';
+import i18next from '../../../i18n';
 
 export class GraphViewStore {
   metadataConfigsRootStore: MetadataConfigsRootStore;
@@ -71,11 +72,13 @@ export class GraphViewStore {
           properties,
           title: `
             <div class="metadata-graph-view-tooltip-fields">
-              <div>顶点类型：</div>
+              <div>${i18next.t('addition.common.vertex-type')}：</div>
               <div style="min-width: 60px; max-width: 145px; marigin-right: 0">${label}</div>
             </div>
             <div class="metadata-graph-view-tooltip-fields">
-              <div style="max-width: 120px">关联属性及类型：</div>
+              <div style="max-width: 120px">${i18next.t(
+                'addition.common.association-property-and-type'
+              )}：</div>
             </div>
             ${Object.entries(properties)
               .map(([key, value]) => {
@@ -94,7 +97,9 @@ export class GraphViewStore {
                           <div>${
                             primaryKeyIndex === -1
                               ? ''
-                              : `(主键${primaryKeyIndex + 1})`
+                              : `(${i18next.t('addition.common.primary-key')}${
+                                  primaryKeyIndex + 1
+                                })`
                           }</div>
                         </div>`;
               })
@@ -151,11 +156,13 @@ export class GraphViewStore {
           value: edgeWidthMapping[this.edgeThicknessMappings[label]],
           title: `
             <div class="metadata-graph-view-tooltip-fields">
-              <div>边类型：</div>
+              <div>${i18next.t('addition.common.edge-type')}：</div>
               <div style="min-width: 60px; max-width: 145px; marigin-right: 0">${label}</div>
             </div>
             <div class="metadata-graph-view-tooltip-fields">
-              <div style="max-width: 120px">关联属性及类型：</div>
+              <div style="max-width: 120px">${i18next.t(
+                'addition.common.association-property-and-type'
+              )}：</div>
             </div>
             ${Object.entries(properties)
               .map(([key, value]) => {
@@ -174,7 +181,9 @@ export class GraphViewStore {
                           <div>${
                             sortKeyIndex === -1
                               ? ''
-                              : `(区分键${sortKeyIndex + 1})`
+                              : `(${i18next.t(
+                                  'addition.common.distinguishing-key'
+                                )}${sortKeyIndex + 1})`
                           }</div>
                         </div>`;
               })

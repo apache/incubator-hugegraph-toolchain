@@ -5,6 +5,7 @@ import isBoolean from 'validator/lib/isBoolean';
 import isISO8601 from 'validator/lib/isISO8601';
 import isUUID from 'validator/lib/isUUID';
 import isEmpty from 'validator/lib/isEmpty';
+import i18next from '../../i18n';
 
 import type vis from 'vis-network';
 import type {
@@ -36,7 +37,7 @@ export const edgeWidthMapping: Record<string, number> = {
 
 export function checkIfLocalNetworkOffline(error: any) {
   if (error.request) {
-    throw new Error('网络异常，请稍后重试');
+    throw new Error(i18next.t('addition.store.network-error'));
   }
 }
 
@@ -133,11 +134,11 @@ export function addGraphNodes(
       properties,
       title: `
             <div class="tooltip-fields">
-              <div>顶点类型：</div>
+              <div>${i18next.t('addition.common.vertex-type')}：</div>
               <div>${label}</div>
             </div>
             <div class="tooltip-fields">
-              <div>顶点ID：</div>
+              <div>${i18next.t('addition.common.vertex-id')}：</div>
               <div>${id}</div>
             </div>
             ${Object.entries(properties)
@@ -204,11 +205,11 @@ export function addGraphEdges(
       value: edgeWidthMapping[edgeThicknessMappings[label]],
       title: `
             <div class="tooltip-fields">
-              <div>边类型：</div>
+              <div>${i18next.t('addition.common.edge-type')}：</div>
             <div>${label}</div>
             </div>
             <div class="tooltip-fields">
-              <div>边ID：</div>
+              <div>${i18next.t('addition.common.edge-id')}：</div>
               <div>${id}</div>
             </div>
             ${Object.entries(properties)

@@ -5,17 +5,20 @@ import { Drawer, Select, Input, Button, Message } from 'hubble-ui';
 import { DataAnalyzeStoreContext } from '../../../stores';
 import { addGraphNodes } from '../../../stores/utils';
 import { isUndefined, isEmpty } from 'lodash-es';
+import { useTranslation } from 'react-i18next';
+import i18next from '../../../i18n';
 
 const IDStrategyMappings: Record<string, string> = {
-  PRIMARY_KEY: '主键ID',
-  AUTOMATIC: '自动生成',
-  CUSTOMIZE_STRING: '自定义字符串',
-  CUSTOMIZE_NUMBER: '自定义数字',
-  CUSTOMIZE_UUID: '自定义UUID'
+  PRIMARY_KEY: i18next.t('addition.constant.primary-key-id'),
+  AUTOMATIC: i18next.t('addition.constant.automatic-generation'),
+  CUSTOMIZE_STRING: i18next.t('addition.constant.custom-string'),
+  CUSTOMIZE_NUMBER: i18next.t('addition.constant.custom-number'),
+  CUSTOMIZE_UUID: i18next.t('addition.constant.custom-uuid')
 };
 
 const DataAnalyzeAddNode: React.FC = observer(() => {
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
+  const { t } = useTranslation();
 
   const selectedVertexLabel = dataAnalyzeStore.vertexTypes.find(
     ({ name }) => name === dataAnalyzeStore.newGraphNodeConfigs.label
@@ -81,7 +84,7 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
   return (
     <Drawer
       width={580}
-      title="添加顶点"
+      title={t('addition.common.add-vertex')}
       visible={dataAnalyzeStore.dynamicAddGraphDataStatus === 'vertex'}
       onClose={handleDrawerClose}
       maskClosable={false}
@@ -122,13 +125,13 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
               );
 
               Message.success({
-                content: '添加成功',
+                content: t('addition.common.add-success'),
                 size: 'medium',
                 showCloseIcon: false
               });
             } else {
               Message.error({
-                content: '添加失败',
+                content: t('addition.common.add-fail'),
                 size: 'medium',
                 showCloseIcon: false
               });
@@ -137,20 +140,20 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
             handleDrawerClose();
           }}
         >
-          添加
+          {t('addition.common.add')}
         </Button>,
         <Button size="medium" style={{ width: 60 }} onClick={handleDrawerClose}>
-          取消
+          {t('addition.common.vertex-type-select-desc')}
         </Button>
       ]}
     >
       <div className="data-analyze-dynamic-add-options">
         <div className="data-analyze-dynamic-add-option">
-          <div>顶点类型：</div>
+          <div>{t('addition.common.id-strategy')}：</div>
           <Select
             size="medium"
             trigger="click"
-            selectorName="请选择顶点类型"
+            selectorName={t('addition.common.vertex-type-select-desc')}
             value={dataAnalyzeStore.newGraphNodeConfigs.label}
             width={420}
             onChange={(value: string) => {
@@ -171,10 +174,12 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
         {!isUndefined(selectedVertexLabel) && (
           <>
             <div className="data-analyze-dynamic-add-option">
-              <div>ID策略：</div>
+              <div>{t('addition.common.id-strategy')}</div>
               <span>
                 {selectedVertexLabel.id_strategy === 'PRIMARY_KEY'
-                  ? `主键属性-${selectedVertexLabel.primary_keys.join('，')}`
+                  ? `${t(
+                      'addition.common.primary-key-property'
+                    )}-${selectedVertexLabel.primary_keys.join('，')}`
                   : IDStrategyMappings[selectedVertexLabel.id_strategy]}
               </span>
             </div>
@@ -184,12 +189,14 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
                 // override style bugs in index.less
                 style={{ alignItems: 'normal' }}
               >
-                <div style={{ lineHeight: '32px' }}>ID值：</div>
+                <div style={{ lineHeight: '32px' }}>
+                  {t('addition.common.id-value')}：
+                </div>
                 <div>
                   <Input
                     size="medium"
                     width={420}
-                    placeholder="请输入ID值"
+                    placeholder={t('addition.common.id-input-desc')}
                     errorLocation="layer"
                     errorMessage={
                       dataAnalyzeStore.validateAddGraphNodeErrorMessage!.id
@@ -223,11 +230,11 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
             {dataAnalyzeStore.newGraphNodeConfigs.properties.nonNullable
               .size !== 0 && (
               <div className="data-analyze-dynamic-add-option data-analyze-dynamic-add-option-with-expand">
-                <div>不可空属性：</div>
+                <div>{t('addition.common.required-property')}：</div>
                 <div className="data-analyze-dynamic-add-option-expands">
                   <div className="data-analyze-dynamic-add-option-expand">
-                    <div>属性</div>
-                    <div>属性值</div>
+                    <div>{t('addition.common.property')}</div>
+                    <div>{t('addition.common.property-value')}</div>
                   </div>
                   {nonNullableProperties.map((property) => (
                     <div
@@ -239,7 +246,7 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
                         <Input
                           size="medium"
                           width={190}
-                          placeholder="请输入属性值"
+                          placeholder={t('addition.common.property-input-desc')}
                           errorLocation="layer"
                           errorMessage={dataAnalyzeStore.validateAddGraphNodeErrorMessage?.properties.nonNullable.get(
                             property
@@ -281,11 +288,11 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
             {dataAnalyzeStore.newGraphNodeConfigs.properties.nullable.size !==
               0 && (
               <div className="data-analyze-dynamic-add-option data-analyze-dynamic-add-option-with-expand">
-                <div>可空属性：</div>
+                <div>{t('addition.common.nullable-property')}：</div>
                 <div className="data-analyze-dynamic-add-option-expands">
                   <div className="data-analyze-dynamic-add-option-expand">
-                    <div>属性</div>
-                    <div>属性值</div>
+                    <div>{t('addition.common.property')}</div>
+                    <div>{t('addition.common.property-value')}</div>
                   </div>
                   {nullableProperties.map((property) => (
                     <div
@@ -297,7 +304,7 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
                         <Input
                           size="medium"
                           width={190}
-                          placeholder="请输入属性值"
+                          placeholder={t('addition.common.property-input-desc')}
                           errorLocation="layer"
                           errorMessage={dataAnalyzeStore.validateAddGraphNodeErrorMessage?.properties.nullable.get(
                             property

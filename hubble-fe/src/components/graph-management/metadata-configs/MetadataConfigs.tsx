@@ -18,6 +18,7 @@ import ActiveTableIcon from '../../../assets/imgs/ic_liebiaomoshi_white.svg';
 import TableIcon from '../../../assets/imgs/ic_liebiaomoshi_black.svg';
 import ActiveShowGraphIcon from '../../../assets/imgs/ic_tumoshi_white.svg';
 import ShowGraphIcon from '../../../assets/imgs/ic_tumoshi_black.svg';
+import { useTranslation } from 'react-i18next';
 
 const MetadataConfig: React.FC = observer(() => {
   const appStore = useContext(AppStoreContext);
@@ -28,6 +29,7 @@ const MetadataConfig: React.FC = observer(() => {
   const [selectedMenuItem, setSelectedMenuItem] = useState('property');
   const [match, params] = useRoute('/graph-management/:id/metadata-configs');
   const [_, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const handleRadioGroupChange = (e: React.ChangeEvent<HTMLButtonElement>) => {
     setViewMode(e.target.value);
@@ -96,7 +98,7 @@ const MetadataConfig: React.FC = observer(() => {
                   src={viewMode === 'list' ? ActiveTableIcon : TableIcon}
                   alt="table mode"
                 />
-                <span>列表模式</span>
+                <span>{t('addition.menu.list-mode')}</span>
               </div>
             </Radio.Button>
             <Radio.Button value="graph">
@@ -107,7 +109,7 @@ const MetadataConfig: React.FC = observer(() => {
                   }
                   alt="graph mode"
                 />
-                <span>图模式</span>
+                <span>{t('addition.menu.chart-mode')}</span>
               </div>
             </Radio.Button>
           </Radio.Group>
@@ -120,10 +122,18 @@ const MetadataConfig: React.FC = observer(() => {
               selectedKeys={[selectedMenuItem]}
               onClick={handleMenuItemChange}
             >
-              <Menu.Item key="property">属性</Menu.Item>
-              <Menu.Item key="vertex-type">顶点类型</Menu.Item>
-              <Menu.Item key="edge-type">边类型</Menu.Item>
-              <Menu.Item key="property-index">属性索引</Menu.Item>
+              <Menu.Item key="property">
+                {t('addition.common.property')}
+              </Menu.Item>
+              <Menu.Item key="vertex-type">
+                {t('addition.common.vertex-type')}
+              </Menu.Item>
+              <Menu.Item key="edge-type">
+                {t('addition.common.edge-type')}
+              </Menu.Item>
+              <Menu.Item key="property-index">
+                {t('addition.common.property-index')}
+              </Menu.Item>
             </Menu>
             <AnimatePresence exitBeforeEnter>
               {renderListView()}
@@ -134,7 +144,7 @@ const MetadataConfig: React.FC = observer(() => {
         )}
       </div>
       <Modal
-        title="无法访问"
+        title={t('addition.dataAnalyze.cannot-access')}
         footer={[
           <Button
             size="medium"
@@ -144,7 +154,7 @@ const MetadataConfig: React.FC = observer(() => {
               setLocation('/');
             }}
           >
-            返回首页
+            {t('addition.dataAnalyze.return-home')}
           </Button>
         ]}
         visible={

@@ -5,6 +5,7 @@ import { isUndefined, cloneDeep, isEmpty, remove, size } from 'lodash-es';
 import vis from 'vis-network';
 import isInt from 'validator/lib/isInt';
 import isUUID from 'validator/lib/isUUID';
+import i18next from '../../../i18n';
 
 import { AlgorithmAnalyzerStore } from './algorithmAnalyzerStore';
 import {
@@ -240,11 +241,11 @@ export class DataAnalyzeStore {
           properties,
           title: `
             <div class="tooltip-fields">
-              <div>顶点类型：</div>
+              <div>${i18next.t('addition.common.vertex-type')}：</div>
               <div>${label}</div>
             </div>
             <div class="tooltip-fields">
-              <div>顶点ID：</div>
+              <div>${i18next.t('addition.common.vertex-id')}：</div>
               <div>${id}</div>
             </div>
             ${Object.entries(properties)
@@ -319,11 +320,11 @@ export class DataAnalyzeStore {
           value: edgeWidthMapping[this.edgeThicknessMappings[label]],
           title: `
             <div class="tooltip-fields">
-              <div>边类型：</div>
+              <div>${i18next.t('addition.common.edge-type')}：</div>
             <div>${label}</div>
             </div>
             <div class="tooltip-fields">
-              <div>边ID：</div>
+              <div>${i18next.t('addition.common.edge-id')}：</div>
               <div>${id}</div>
             </div>
             ${Object.entries(properties)
@@ -771,21 +772,21 @@ export class DataAnalyzeStore {
         this.validateAddGraphNodeErrorMessage!.id =
           initial || !isEmpty(this.newGraphNodeConfigs.id)
             ? ''
-            : '非法的数据格式';
+            : i18next.t('addition.store.illegal-data-format');
       }
 
       if (idStrategy === 'CUSTOMIZE_NUMBER') {
         this.validateAddGraphNodeErrorMessage!.id =
           initial || isInt(this.newGraphNodeConfigs.id!)
             ? ''
-            : '非法的数据格式';
+            : i18next.t('addition.store.illegal-data-format');
       }
 
       if (idStrategy === 'CUSTOMIZE_UUID') {
         this.validateAddGraphNodeErrorMessage!.id =
           initial || isUUID(String(this.newGraphNodeConfigs.id), 4)
             ? ''
-            : '非法的数据格式';
+            : i18next.t('addition.store.illegal-data-format');
       }
     }
 
@@ -796,7 +797,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateAddGraphNodeErrorMessage?.properties.nonNullable.set(
           key!,
-          '此项不能为空'
+          i18next.t('addition.store.cannot-be-empty')
         );
 
         return;
@@ -811,7 +812,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateAddGraphNodeErrorMessage?.properties.nonNullable.set(
           key!,
-          '非法的数据格式'
+          i18next.t('addition.store.illegal-data-format')
         );
 
         return;
@@ -834,7 +835,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateAddGraphNodeErrorMessage?.properties.nullable.set(
           key!,
-          '非法的数据格式'
+          i18next.t('addition.store.illegal-data-format')
         );
 
         return;
@@ -854,7 +855,7 @@ export class DataAnalyzeStore {
       this.validateAddGraphEdgeErrorMessage!.id =
         initial || !isEmpty(this.newGraphEdgeConfigs.id)
           ? ''
-          : '非法的数据格式';
+          : i18next.t('addition.store.illegal-data-format');
     }
 
     if (category === 'nonNullable') {
@@ -864,7 +865,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateAddGraphEdgeErrorMessage?.properties.nonNullable.set(
           key!,
-          '此项不能为空'
+          i18next.t('addition.store.cannot-be-empty')
         );
 
         return;
@@ -879,7 +880,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateAddGraphEdgeErrorMessage?.properties.nonNullable.set(
           key!,
-          '非法的数据格式'
+          i18next.t('addition.store.illegal-data-format')
         );
 
         return;
@@ -902,7 +903,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateAddGraphEdgeErrorMessage?.properties.nullable.set(
           key!,
-          '非法的数据格式'
+          i18next.t('addition.store.illegal-data-format')
         );
 
         return;
@@ -923,7 +924,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateEditableGraphDataPropertyErrorMessage?.nonNullable.set(
           key,
-          '此项不能为空'
+          i18next.t('addition.store.cannot-be-empty')
         );
 
         return;
@@ -937,7 +938,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateEditableGraphDataPropertyErrorMessage?.nonNullable.set(
           key,
-          '非法的数据格式'
+          i18next.t('addition.store.illegal-data-format')
         );
 
         return;
@@ -959,7 +960,7 @@ export class DataAnalyzeStore {
       ) {
         this.validateEditableGraphDataPropertyErrorMessage?.nullable.set(
           key,
-          '非法的数据格式'
+          i18next.t('addition.store.illegal-data-format')
         );
 
         return;
@@ -1103,13 +1104,12 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchIdList = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> = yield axios.get<
-        GraphData
-      >(baseUrl, {
-        params: {
-          page_size: -1
-        }
-      });
+      const result: AxiosResponse<GraphDataResponse> =
+        yield axios.get<GraphData>(baseUrl, {
+          params: {
+            page_size: -1
+          }
+        });
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchIdList.code = result.data.status;
@@ -1169,18 +1169,17 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchVertexTypeList = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<
-        VertexTypeListResponse
-      >> = yield axios
-        .get<responseData<VertexTypeListResponse>>(
-          `${baseUrl}/${this.currentId}/schema/vertexlabels`,
-          {
-            params: {
-              page_size: -1
+      const result: AxiosResponse<responseData<VertexTypeListResponse>> =
+        yield axios
+          .get<responseData<VertexTypeListResponse>>(
+            `${baseUrl}/${this.currentId}/schema/vertexlabels`,
+            {
+              params: {
+                page_size: -1
+              }
             }
-          }
-        )
-        .catch(checkIfLocalNetworkOffline);
+          )
+          .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchVertexTypeList.code = result.data.status;
@@ -1199,9 +1198,10 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchColorSchemas = 'pending';
 
     try {
-      const result: AxiosResponse<FetchColorSchemas> = yield axios.get<
-        FetchGraphResponse
-      >(`${baseUrl}/${this.currentId}/schema/vertexlabels/style`);
+      const result: AxiosResponse<FetchColorSchemas> =
+        yield axios.get<FetchGraphResponse>(
+          `${baseUrl}/${this.currentId}/schema/vertexlabels/style`
+        );
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchColorSchemas.code = result.data.status;
@@ -1241,14 +1241,13 @@ export class DataAnalyzeStore {
   fetchAllNodeStyle = flow(function* fetchAllNodeStyle(this: DataAnalyzeStore) {
     this.requestStatus.fetchAllNodeStyle = 'pending';
     try {
-      const result: AxiosResponse<responseData<
-        VertexTypeListResponse
-      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/vertexlabels`, {
-        params: {
-          page_no: 1,
-          page_size: -1
-        }
-      });
+      const result: AxiosResponse<responseData<VertexTypeListResponse>> =
+        yield axios.get(`${baseUrl}/${this.currentId}/schema/vertexlabels`, {
+          params: {
+            page_no: 1,
+            page_size: -1
+          }
+        });
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1278,14 +1277,13 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchEdgeTypes = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<
-        EdgeTypeListResponse
-      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
-        params: {
-          page_no: 1,
-          page_size: -1
-        }
-      });
+      const result: AxiosResponse<responseData<EdgeTypeListResponse>> =
+        yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
+          params: {
+            page_no: 1,
+            page_size: -1
+          }
+        });
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1304,14 +1302,13 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchAllEdgeStyle = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<
-        EdgeTypeListResponse
-      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
-        params: {
-          page_no: 1,
-          page_size: -1
-        }
-      });
+      const result: AxiosResponse<responseData<EdgeTypeListResponse>> =
+        yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
+          params: {
+            page_no: 1,
+            page_size: -1
+          }
+        });
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1571,7 +1568,8 @@ export class DataAnalyzeStore {
       }
 
       this.graphData = result.data;
-      this.pageConfigs.tableResult.pageTotal = this.originalGraphData.data.table_view.rows.length;
+      this.pageConfigs.tableResult.pageTotal =
+        this.originalGraphData.data.table_view.rows.length;
       this.requestStatus.fetchGraphs = 'success';
       this.isLoadingGraph = false;
     } catch (error) {
@@ -1832,9 +1830,10 @@ export class DataAnalyzeStore {
 
   @action
   hideGraphNode(nodeId: any) {
-    this.graphData.data.graph_view.vertices = this.graphData.data.graph_view.vertices.filter(
-      (data) => data.id !== this.rightClickedGraphData.id
-    );
+    this.graphData.data.graph_view.vertices =
+      this.graphData.data.graph_view.vertices.filter(
+        (data) => data.id !== this.rightClickedGraphData.id
+      );
 
     // only delete node in vertexCollection, not edges in EdgeCollection
     this.vertexCollection.delete(nodeId);
@@ -1879,26 +1878,25 @@ export class DataAnalyzeStore {
     });
 
     try {
-      const result: AxiosResponse<responseData<
-        GraphNode | GraphEdge
-      >> = yield axios.put<responseData<GraphNode | GraphEdge>>(
-        `${baseUrl}/${this.currentId}/graph/${
-          this.graphInfoDataSet === 'node' ? 'vertex' : 'edge'
-        }/${encodeURIComponent(id)}`,
-        this.graphInfoDataSet === 'node'
-          ? {
-              id,
-              label,
-              properties: editedProperties
-            }
-          : {
-              id,
-              label,
-              properties: editedProperties,
-              source: this.selectedGraphLinkData.source,
-              target: this.selectedGraphLinkData.target
-            }
-      );
+      const result: AxiosResponse<responseData<GraphNode | GraphEdge>> =
+        yield axios.put<responseData<GraphNode | GraphEdge>>(
+          `${baseUrl}/${this.currentId}/graph/${
+            this.graphInfoDataSet === 'node' ? 'vertex' : 'edge'
+          }/${encodeURIComponent(id)}`,
+          this.graphInfoDataSet === 'node'
+            ? {
+                id,
+                label,
+                properties: editedProperties
+              }
+            : {
+                id,
+                label,
+                properties: editedProperties,
+                source: this.selectedGraphLinkData.source,
+                target: this.selectedGraphLinkData.target
+              }
+        );
 
       if (result.data.status !== 200) {
         this.errorInfo.updateGraphProperties.code = result.data.status;
@@ -1975,9 +1973,10 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchFilteredPropertyOptions = 'pending';
 
     try {
-      const result: AxiosResponse<FetchFilteredPropertyOptions> = yield axios.get(
-        `${baseUrl}/${this.currentId}/schema/edgelabels/${edgeName}`
-      );
+      const result: AxiosResponse<FetchFilteredPropertyOptions> =
+        yield axios.get(
+          `${baseUrl}/${this.currentId}/schema/edgelabels/${edgeName}`
+        );
 
       if (result.data.status !== 200) {
         this.errorInfo.filteredPropertyOptions.code = result.data.status;
@@ -2188,14 +2187,16 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchExecutionLogs = 'pending';
 
     try {
-      const result: AxiosResponse<ExecutionLogsResponse> = yield axios.get<
-        ExecutionLogsResponse
-      >(`${baseUrl}/${this.currentId}/execute-histories`, {
-        params: {
-          page_size: this.pageConfigs.executionLog.pageSize,
-          page_no: this.pageConfigs.executionLog.pageNumber
-        }
-      });
+      const result: AxiosResponse<ExecutionLogsResponse> =
+        yield axios.get<ExecutionLogsResponse>(
+          `${baseUrl}/${this.currentId}/execute-histories`,
+          {
+            params: {
+              page_size: this.pageConfigs.executionLog.pageSize,
+              page_no: this.pageConfigs.executionLog.pageNumber
+            }
+          }
+        );
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchExecutionLogs.code = result.data.status;
@@ -2232,9 +2233,8 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchFavoriteQueries = 'pending';
 
     try {
-      const result: AxiosResponse<FavoriteQueryResponse> = yield axios.get<
-        FavoriteQueryResponse
-      >(url);
+      const result: AxiosResponse<FavoriteQueryResponse> =
+        yield axios.get<FavoriteQueryResponse>(url);
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchFavoriteQueries.code = result.data.status;
