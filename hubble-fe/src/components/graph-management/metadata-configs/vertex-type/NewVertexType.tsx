@@ -405,7 +405,7 @@ const NewVertexType: React.FC = observer(() => {
                 'addition.common.select-primary-key-property-placeholder'
               )}
               selectorName={t(
-                'addition.message.select-association-key-property-placeholde'
+                'addition.message.select-association-key-property-placeholder'
               )}
               size="medium"
               showSearch={false}

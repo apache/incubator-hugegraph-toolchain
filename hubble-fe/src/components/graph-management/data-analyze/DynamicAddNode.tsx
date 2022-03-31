@@ -143,7 +143,7 @@ const DataAnalyzeAddNode: React.FC = observer(() => {
           {t('addition.common.add')}
         </Button>,
         <Button size="medium" style={{ width: 60 }} onClick={handleDrawerClose}>
-          {t('addition.common.vertex-type-select-desc')}
+          {t('addition.common.cancel')}
         </Button>
       ]}
     >

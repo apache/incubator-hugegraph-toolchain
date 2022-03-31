@@ -63,8 +63,8 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
     <Drawer
       title={
         isEdit
-          ? t('addition.dtaAnalyzeInfoDrawer.edit-details')
-          : t('addition.dtaAnalyzeInfoDrawer.data-details')
+          ? t('addition.dataAnalyzeInfoDrawer.edit-details')
+          : t('addition.dataAnalyzeInfoDrawer.data-details')
       }
       visible={dataAnalyzeStore.isShowGraphInfo}
       onClose={handleDrawerClose}
@@ -214,7 +214,13 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
         {[...dataAnalyzeStore.editedSelectedGraphDataProperties.primary].map(
           ([key, value], primaryKeyIndex) => (
             <div className={graphInfoItemClassName} key={key}>
-              <div>
+              <div
+                title={`${key}(${
+                  dataAnalyzeStore.graphInfoDataSet === 'node'
+                    ? t('addition.common.primary-key')
+                    : t('addition.common.distinguishing-key')
+                })${`${primaryKeyIndex + 1}`}`}
+              >
                 {key}(
                 {dataAnalyzeStore.graphInfoDataSet === 'node'
                   ? t('addition.common.primary-key')
@@ -236,7 +242,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
               marginTop: !isEdit ? 0 : nonNullableIndex === 0 ? 8 : 32
             }}
           >
-            <div>{key}: </div>
+            <div title={key}>{key}: </div>
             {!isEdit ? (
               <div>{convertArrayToString(value)}</div>
             ) : (
