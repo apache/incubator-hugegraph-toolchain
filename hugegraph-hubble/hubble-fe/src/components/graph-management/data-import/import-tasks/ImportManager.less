@@ -1,0 +1,196 @@
+.import-manager {
+  position: absolute;
+  width: calc(100% - 60px);
+  padding: 0 16px 16px;
+  left: 60px;
+  top: 60px;
+
+  &-with-expand-sidebar {
+    width: calc(100% - 200px);
+    left: 200px;
+  }
+
+  &-content-wrapper {
+    height: calc(100vh - 130px);
+    background: #fff;
+    padding: 16px;
+    overflow: auto;
+  }
+
+  &-content-header {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &-breadcrumb-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 16px 0;
+  }
+
+  &-empty-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    & > div {
+      margin: 8px 0 24px;
+    }
+  }
+
+  &-table {
+    &-job-name {
+      display: flex;
+
+      & > .link {
+        color: #2b65ff;
+        cursor: pointer;
+      }
+
+      & > img {
+        display: block;
+        margin-left: 6px;
+        cursor: pointer;
+      }
+    }
+
+    &-status-wrapper {
+      height: 28px;
+      text-align: center;
+      border-radius: 2px;
+      line-height: 28px;
+      font-size: 14px;
+    }
+
+    &-status-pending {
+      width: 58px;
+      border: 1px solid #e0e0e0;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    &-status-process {
+      width: 58px;
+      background-color: #f2f7ff;
+      border: 1px solid #8cb8ff;
+      color: #3d88f2;
+    }
+
+    &-status-failed {
+      width: 44px;
+      border: 1px solid #ff9499;
+      background-color: #fff2f2;
+      color: #e64552;
+    }
+
+    &-status-success {
+      width: 44px;
+      border: 1px solid #7ed988;
+      background-color: #f2fff4;
+      color: #39bf45;
+    }
+
+    &-manipulations {
+      display: flex;
+      justify-content: flex-end;
+      color: #2b65ff;
+      width: 100px;
+
+      & > span {
+        cursor: pointer;
+
+        &:last-child {
+          margin-left: 16px;
+        }
+      }
+
+      &-outlink {
+        font-size: 14px;
+        color: #2b65ff;
+        line-height: 22px;
+        cursor: pointer;
+        display: flex;
+        width: fit-content;
+        text-decoration: none;
+
+        &:hover {
+          color: #527dff;
+        }
+
+        &:active {
+          color: #184bcc;
+        }
+
+        &-disabled {
+          color: #999;
+        }
+      }
+    }
+  }
+
+  &-create-job-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+
+    &:first-child {
+      margin-top: 8px;
+    }
+
+    &:last-child {
+      margin-bottom: 12px;
+    }
+
+    & > div:first-child {
+      width: 78px;
+      text-align: right;
+    }
+
+    &-required-mark {
+      color: #d0021b;
+    }
+  }
+
+  &-delete-job-option {
+    & span {
+      display: block;
+    }
+  }
+}
+
+/* overrides */
+
+// reset breadcrumb line-height
+.import-manager .new-fc-one-breadcrumb.new-fc-one-breadcrumb-small {
+  line-height: 22px;
+}
+
+.import-manager .new-fc-one-menu {
+  background-color: transparent;
+}
+
+.import-manager-content-wrapper {
+  & table {
+    table-layout: fixed;
+  }
+}
+
+.import-manager .new-fc-one-breadcrumb > span:not(:last-of-type) .new-fc-one-breadcrumb-link {
+  color: #2b65ff;
+}
+
+// weired, when checking img block in devtool
+// its size doesn't match what it seems
+// need to hard-code it's left px here
+// .import-management-table-job-name .new-fc-one-tooltip {
+//   left: 323px !important;
+// }
+
+// remove horizon padding of close icon in <Modal />
+.new-fc-one-modal-close-x {
+  padding: 8px 0;
+}

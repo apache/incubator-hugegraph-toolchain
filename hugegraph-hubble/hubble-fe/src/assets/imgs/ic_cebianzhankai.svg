@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55 (78076) - https://sketchapp.com -->
+    <title>收起</title>
+    <desc>Created with Sketch.</desc>
+    <g id="V1.1-浅色模式" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="10" transform="translate(-23.000000, -820.000000)" fill="#666666">
+            <g id="侧边导航栏备份">
+                <path d="M23,820 L37,820 L37,822 L23,822 L23,820 Z M27.375,824 L37,824 L37,826 L27.375,826 L27.375,824 Z M27.375,828 L37,828 L37,830 L27.375,830 L27.375,828 Z M23,832 L37,832 L37,834 L23,834 L23,832 Z M23,827 L25.625,825 L25.625,829 L23,827 Z" id="收起" transform="translate(30.000000, 827.000000) scale(-1, 1) translate(-30.000000, -827.000000) "></path>
+            </g>
+        </g>
+    </g>
+</svg>

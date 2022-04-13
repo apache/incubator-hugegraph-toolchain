@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144px" height="144px" viewBox="0 0 144 144" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55 (78076) - https://sketchapp.com -->
+    <title>ic_add@2x</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="-1.11022302e-14%" y1="50%" x2="100%" y2="50%" id="linearGradient-1">
+            <stop stop-color="#3388FF" stop-opacity="0.5" offset="0%"></stop>
+            <stop stop-color="#3388FF" stop-opacity="0" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="ic_add" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="ic_chanpin_empty">
+            <rect id="Rectangle-7" x="0" y="0" width="144" height="144" rx="1"></rect>
+            <g id="Group-51" transform="translate(22.000000, 25.000000)">
+                <path d="M14,25 C13.4477153,25 13,25.4477153 13,26 L13,34 C13,34.5522847 13.4477153,35 14,35 L65,35 L65,25 L14,25 Z M14,45 C13.4477153,45 13,45.4477153 13,46 L13,54 C13,54.5522847 13.4477153,55 14,55 L65,55 L65,45 L14,45 Z M14,65 C13.4477153,65 13,65.4477153 13,66 L13,74 C13,74.5522847 13.4477153,75 14,75 L65,75 L65,65 L14,65 Z" id="Combined-Shape" stroke="url(#linearGradient-1)" stroke-width="2"></path>
+                <g id="Group-57" transform="translate(34.000000, 31.000000)" stroke-linecap="round" stroke-linejoin="round" stroke-width="6">
+                    <g id="Group-54" transform="translate(4.000000, 11.000000)" stroke="#B9D6FF">
+                        <path d="M13.5,0 L13.5,26" id="Path-11"></path>
+                        <path d="M0,13.5 L26,13.5" id="Path-12"></path>
+                    </g>
+                    <g id="Group-54" transform="translate(9.000000, 9.000000)" stroke="#3388FF">
+                        <path d="M13.5,0 L13.5,26" id="Path-11"></path>
+                        <path d="M0,13.5 L26,13.5" id="Path-12"></path>
+                    </g>
+                </g>
+                <path d="M46.9990173,1 L14.0277227,1 L0,16.0403159 L0,98.0284323 C0,98.5629507 0.447705889,98.9962634 0.99997909,98.9962634 C51.2692189,99.0012455 76.6020225,99.0012455 76.99839,98.9962634 C77.5929411,98.9887902 77.9951072,98.2870374 77.9983691,98.0284323 C78.0005436,97.856029 78.0005436,71.7522367 77.9983691,19.7170554" id="Path-10" stroke="#3388FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M1,2 L1,11.2265932 C1,13.8623131 2.94847714,16 5.35250766,16 L14,16" id="Stroke-9" stroke="#3388FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(7.500000, 9.000000) scale(-1, 1) translate(-7.500000, -9.000000) "></path>
+                <path d="M23,95 L55,95 C56.1045695,95 57,95.8954305 57,97 L57,99 L21,99 L21,97 C21,95.8954305 21.8954305,95 23,95 Z" id="Rectangle-57-Copy-6" fill="#3388FF"></path>
+                <path d="M98.0385363,96 L78.4238998,96 C77.3406134,96 78.6434441,94 78.9142657,94 L97.5481704,94 C97.818992,94 98.0385363,93.7761424 98.0385363,93.5 L98.0385363,57.5 C98.0385363,57.2238576 97.818992,57 97.5481704,57 L79.4046316,57 L79.4046316,55 L98.0385363,55 C99.1218228,55 100,55.8954305 100,57 L100,94 C100,95.1045695 99.1218228,96 98.0385363,96 Z" id="Combined-Shape" fill="#3388FF"></path>
+                <path d="M79.0344828,68 L91.9655172,68 C92.5368463,68 93,68.4477153 93,69 C93,69.5522847 92.5368463,70 91.9655172,70 L79.0344828,70 C78.4631537,70 78,69.5522847 78,69 C78,68.4477153 78.4631537,68 79.0344828,68 Z" id="Rectangle-57-Copy-13" fill="#3388FF" opacity="0.5"></path>
+                <path d="M79.0344828,81 L91.9655172,81 C92.5368463,81 93,81.4477153 93,82 C93,82.5522847 92.5368463,83 91.9655172,83 L79.0344828,83 C78.4631537,83 78,82.5522847 78,82 C78,81.4477153 78.4631537,81 79.0344828,81 Z" id="Rectangle-57-Copy-13" fill="#3388FF" opacity="0.5"></path>
+                <path d="M64,2 C63.4477153,2 63,1.55228475 63,1 C63,0.44771525 63.4477153,0 64,0 L68,0 C68.5522847,0 69,0.44771525 69,1 C69,1.55228475 68.5522847,2 68,2 L64,2 Z" id="Rectangle-3" fill="#3388FF" opacity="0.5"></path>
+                <path d="M52,2 C51.4477153,2 51,1.55228475 51,1 C51,0.44771525 51.4477153,0 52,0 L59,0 C59.5522847,0 60,0.44771525 60,1 C60,1.55228475 59.5522847,2 59,2 L52,2 Z" id="Rectangle-3" fill="#3388FF" opacity="0.800000012"></path>
+                <path d="M73,2 C72.4477153,2 72,1.55228475 72,1 C72,0.44771525 72.4477153,0 73,0 L75,0 C75.5522847,0 76,0.44771525 76,1 C76,1.55228475 75.5522847,2 75,2 L73,2 Z" id="Rectangle-3-Copy" fill="#3388FF" opacity="0.200000003"></path>
+            </g>
+        </g>
+    </g>
+</svg>

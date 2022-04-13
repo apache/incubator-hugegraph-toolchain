@@ -1,0 +1,87 @@
+@import '~antd/dist/antd.css';
+.new-fc-one-input-count-visible {
+  display: inline-block;
+}
+
+.new-fc-one-input-count-error {
+  color: #e64552;
+}
+
+.new-fc-one-input-all-container,
+.new-fc-one-input-all-container .new-fc-one-input-detail {
+  display: inline-block;
+  position: relative;
+}
+
+.new-fc-one-input-all-container-error .new-fc-one-input {
+  border: 1px solid #e64552;
+  background-color: #fff;
+  color: #333;
+}
+
+.new-fc-one-input-all-container-error .new-fc-one-input:active,
+.new-fc-one-input-all-container-error .new-fc-one-input:focus,
+.new-fc-one-input-all-container-error .new-fc-one-input:hover {
+  outline: 0;
+  border-color: #e64552;
+}
+
+.new-fc-one-input-all-container-error .new-fc-one-input:focus {
+  box-shadow: 0 0 0 2px rgba(230, 69, 82, 0.2);
+}
+
+.new-fc-one-input-error {
+  color: #e64552;
+}
+
+.new-fc-one-input-error-bottom {
+  margin-top: 8px;
+}
+
+.new-fc-one-input-error-right {
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.new-fc-one-input-error-layer {
+  line-height: 100%;
+  z-index: 2;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
+  background: #fff;
+  position: absolute;
+  left: 0;
+  display: inline-block;
+  padding: 16px;
+  color: #e64552;
+}
+
+.new-fc-one-input-error-layer:before {
+  content: '';
+  width: 0;
+  height: 0;
+  left: 16px;
+  border: 8px solid transparent;
+  border-bottom-color: #fff;
+  top: -12px;
+  position: absolute;
+}
+
+.new-fc-one-input-group-addon > div {
+  border: 1px solid #e0e0e0 !important;
+}
+
+.new-fc-one-input-group-addon-before > div {
+  border-right: 0 !important;
+}
+
+.new-fc-one-input-group-addon-after > div {
+  border-left: 0 !important;
+}
+
+.new-fc-one-input-group {
+  display: flex;
+}
+
+.new-fc-one-input-group .new-fc-one-input {
+  border-radius: 0;
+}

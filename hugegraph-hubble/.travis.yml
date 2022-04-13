@@ -1,0 +1,43 @@
+sudo: required
+
+language: java
+jdk:
+  - oraclejdk8
+
+dist: trusty
+
+cache:
+  directories:
+    - $HOME/.m2
+    - $HOME/.cache/pip
+    - $HOME/downloads
+
+branches:
+  only:
+    - master
+    - /^release-.*$/
+    - /^test-.*$/
+
+install:
+  - mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
+  - sudo pip install -r ${TRAVIS_DIR}/requirements.txt
+
+before_script:
+  - $TRAVIS_DIR/download-hugegraph.sh $SERVER_VERSION
+  - $TRAVIS_DIR/hugegraph-server1/install-hugegraph.sh
+  - $TRAVIS_DIR/hugegraph-server2/install-hugegraph.sh
+  - $TRAVIS_DIR/install-hugegraph-hubble.sh
+  - jps
+
+script:
+  - mvn test -Punit-test
+  - $TRAVIS_DIR/run-api-test.sh
+  - $TRAVIS_DIR/build-report.sh
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+env:
+  global:
+    - TRAVIS_DIR=hubble-dist/assembly/travis
+    - SERVER_VERSION=0.10.4

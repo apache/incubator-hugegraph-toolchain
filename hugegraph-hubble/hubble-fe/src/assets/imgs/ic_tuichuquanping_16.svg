@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 55 (78076) - https://sketchapp.com -->
+    <title>ic_tuichuquanping_16</title>
+    <desc>Created with Sketch.</desc>
+    <g id="ic_tuichuquanping_16" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="退出全屏">
+            <rect id="矩形" fill="#D8D8D8" opacity="0" x="0" y="0" width="16" height="16"></rect>
+            <g id="Group-59" transform="translate(2.909091, 2.909091)" stroke="#666666" stroke-linecap="round" stroke-width="1.2">
+                <path d="M7.73818182,2.27373675e-13 L8.96,2.32850507e-13 C9.63479155,2.35875277e-13 10.1818182,0.54232211 10.1818182,1.22181818 L10.1818182,2.44363636 M4.48,0 L4.48,2.24 C4.48,3.47711784 3.4857428,4.48 2.24,4.48 L0,4.48 M2.44363636,10.1818182 L1.22181818,10.1818182 C0.547026633,10.1818182 2.56832639e-15,9.63949607 5.78628055e-15,8.96 L1.15725611e-14,7.73818182 M5.70181818,10.1818182 L5.70181818,7.94181818 C5.70181818,6.70470034 6.69607538,5.70181818 7.94181818,5.70181818 L10.1818182,5.70181818" id="Rectangle-39-Copy-2"></path>
+                <path d="M0,0 L3.09090909,3.09090909 M7.09090909,7.09090909 L10.1818182,10.1818182" id="Path-24-Copy-2"></path>
+            </g>
+        </g>
+    </g>
+</svg>
