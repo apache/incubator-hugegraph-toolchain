@@ -1,3 +1,4 @@
+# loader start
 .DS_Store
 *.iml
 *.iws
@@ -20,3 +21,4 @@ logs
 target
 gen-java
 build
+# loader end
