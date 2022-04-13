@@ -15,6 +15,25 @@ hugegraph-loader is a customizable command line utility for loading small to med
 - Detecting schema from data automatically, reduce the complex work of schema management.
 - Advanced customized operations with groovy script, users can configure how to construct vertices and edges by themselves.
 
+## Building
+
+Required:
+
+- Java 8
+- Maven 3.6+
+
+To build without executing tests:
+
+```bash
+mvn clean install -DskipTests=true
+```
+
+To build with default tests:
+
+```bash
+mvn clean install
+```
+
 ## Learn More
 
 The [project homepage](https://hugegraph.github.io/hugegraph-doc/) contains more information about hugegraph-loader. 

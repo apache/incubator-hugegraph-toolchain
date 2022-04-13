@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.baidu.hugegraph</groupId>
-    <artifactId>hugegraph-toolchains</artifactId>
+    <artifactId>hugegraph-loader</artifactId>
     <version>0.12.0</version>
     <packaging>jar</packaging>
 
-    <name>hugegraph-toolchains</name>
-    <url>https://github.com/hugegraph/hugegraph-toolchains</url>
+    <name>hugegraph-loader</name>
+    <url>https://github.com/hugegraph/hugegraph-loader</url>
 
     <parent>
         <groupId>org.sonatype.oss</groupId>
@@ -31,6 +31,20 @@
         <developerConnection>https://github.com/hugegraph/hugegraph-loader
         </developerConnection>
     </scm>
+    <developers>
+        <developer>
+            <name>lizhangmei</name>
+            <email>javaloveme@gmail.com</email>
+        </developer>
+        <developer>
+            <name>zhoney</name>
+            <email>zhangyi89817@126.com</email>
+        </developer>
+        <developer>
+            <name>liningrui</name>
+            <email>liningrui@vip.qq.com</email>
+        </developer>
+    </developers>
 
     <properties>
         <release.name>hugegraph-loader</release.name>
