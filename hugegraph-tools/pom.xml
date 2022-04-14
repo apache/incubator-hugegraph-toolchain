@@ -16,7 +16,7 @@
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <shell-executable>bash</shell-executable>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <java.version>1.8</java.version>
         <source.encoding>UTF-8</source.encoding>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ssZ</maven.build.timestamp.format>
