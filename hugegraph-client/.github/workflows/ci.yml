@@ -1,0 +1,61 @@
+name: hugegraph-client ci
+
+on:
+  push:
+    branches:
+      - master
+      - /^release-.*$/
+      - /^test-.*$/
+  pull_request:
+    branches:
+      - master
+      - /^release-.*$/
+      - /^test-.*$/
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    env:
+      TRAVIS_DIR: assembly/travis
+      COMMIT_ID: 1d031c5905cbef008dd5fb468576b0e6a9445181
+    strategy:
+      fail-fast: false
+      matrix:
+        JAVA_VERSION: ['8']
+    steps:
+      - name: Install JDK 8
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.JAVA_VERSION }}
+          distribution: 'zulu'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Compile
+        run: |
+          mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
+
+      - name: Prepare env and service
+        run: |
+          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
+
+      - name: Run test
+        run: |
+          mvn test -Dtest=UnitTestSuite
+          mvn test -Dtest=ApiTestSuite
+          mvn test -Dtest=FuncTestSuite
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: target/jacoco.xml
