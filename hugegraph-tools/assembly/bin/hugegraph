@@ -1,0 +1,131 @@
+#!/bin/bash
+
+# Set environment here if needed
+#export HUGEGRAPH_URL=
+#export HUGEGRAPH_GRAPH=
+#export HUGEGRAPH_USERNAME=
+#export HUGEGRAPH_PASSWORD=
+#export HUGEGRAPH_TIMEOUT=
+#export HUGEGRAPH_TRUST_STORE_FILE=
+#export HUGEGRAPH_TRUST_STORE_PASSWORD=
+
+abs_path() {
+    SOURCE="${BASH_SOURCE[0]}"
+    while [ -h "$SOURCE" ]; do
+        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        SOURCE="$(readlink "$SOURCE")"
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    done
+    echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+}
+
+BIN=`abs_path`
+TOP="$(cd $BIN/../ && pwd)"
+LIB=$TOP/lib:$JAVA_HOME/lib/ext:$JAVA_HOME/jre/lib/ext
+
+. $BIN/util.sh
+
+MAX_MEM=$[96*1024]
+MIN_MEM=512
+
+if [ -n "$JAVA_HOME" ]; then
+    JAVA="$JAVA_HOME"/bin/java
+else
+    JAVA=java
+    echo "Warning: please set JAVA_HOME variable, otherwise some libraries related to https may be missing"
+fi
+
+if [ "$1" == "deploy" ]; then
+    shift
+    bash $BIN/deploy.sh $@
+    exit $?
+fi
+
+if [ "$1" == "start-all" ]; then
+    shift
+    bash $BIN/start-all.sh $@
+    exit $?
+fi
+
+if [ "$1" == "clear" ]; then
+    shift
+    bash $BIN/clear.sh $@
+    exit $?
+fi
+
+if [ "$1" == "stop-all" ]; then
+    bash $BIN/stop-all.sh
+    exit $?
+fi
+
+# Set default environment variables if not exist
+echo $* | grep "\--url" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_URL" ]; then
+    URL_ARG="--url $HUGEGRAPH_URL"
+else
+    URL_ARG=""
+fi
+
+echo $* | grep "\--graph " > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_GRAPH" ]; then
+    GRAPH_ARG="--graph $HUGEGRAPH_GRAPH"
+else
+    GRAPH_ARG=""
+fi
+
+echo $* | grep "\--user" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_USERNAME" ]; then
+    USER_ARG="--user $HUGEGRAPH_USERNAME"
+else
+    USER_ARG=""
+fi
+
+echo $* | grep "\--password" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_PASSWORD" ]; then
+    PASSWORD_ARG="--password $HUGEGRAPH_PASSWORD"
+else
+    PASSWORD_ARG=""
+fi
+
+echo $* | grep "\--timeout" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_TIMEOUT" ]; then
+    TIMEOUT_ARG="--timeout $HUGEGRAPH_TIMEOUT"
+else
+    TIMEOUT_ARG=""
+fi
+
+echo $* | grep "\--trust-store-file" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_TRUST_STORE_FILE" ]; then
+    TRUST_STORE_FILE_ARG="--trust-store-file $HUGEGRAPH_TRUST_STORE_FILE"
+else
+    TRUST_STORE_FILE_ARG=""
+fi
+
+echo $* | grep "\--trust-store-password" > /dev/null 2>&1
+if [ $? -ne 0 -a -n "$HUGEGRAPH_TRUST_STORE_PASSWORD" ]; then
+    TRUST_STORE_PASSWORD_ARG="--trust-store-password $HUGEGRAPH_TRUST_STORE_PASSWORD"
+else
+    TRUST_STORE_PASSWORD_ARG=""
+fi
+
+for ((i=1;i<=$#;i++));
+do
+    if [ "`eval echo '$'"$i"`" == "schedule-backup" ]; then
+        ARGS=${*//schedule-backup/}
+        bash $BIN/schedule-backup.sh $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG ${ARGS//'*'/'\*'}
+        exit $?
+    fi
+done
+
+# Set Java options
+if [ "$JAVA_OPTIONS" = "" ] ; then
+    XMX=`calc_xmx $MIN_MEM $MAX_MEM`
+    if [ $? -ne 0 ]; then
+        echo "Failed to run bin/hugegraph, requires at least ${MIN_MEM}m free memory"
+        exit 1
+    fi
+    JAVA_OPTIONS="-Xms${MIN_MEM}m -Xmx${XMX}m"
+fi
+
+exec $JAVA -Dtools.home.path=${TOP} $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
+com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG "$@"
