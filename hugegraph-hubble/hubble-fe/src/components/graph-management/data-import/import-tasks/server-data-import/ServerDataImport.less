@@ -1,0 +1,90 @@
+.import-tasks {
+  &-server-data-import {
+    &-configs-wrapper {
+      width: 100%;
+      margin-bottom: 30px;
+    }
+
+    &-configs {
+      display: flex;
+      width: 100%;
+    }
+
+    &-config {
+      height: 128px;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+      flex-basis: 50%;
+
+      &:first-child {
+        align-items: flex-end;
+        // margin-right: 87px;
+      }
+
+      &:last-child {
+        align-items: flex-start;
+      }
+    }
+
+    &-config-option {
+      display: flex;
+      align-items: center;
+
+      & > div:first-child,
+      & > span:first-child {
+        width: 200.7px;
+        margin-right: 44px;
+        text-align: right;
+        color: #333;
+        font-size: 14px;
+      }
+
+      &-readonly-data {
+        width: 100px;
+        font-size: 14px;
+        color: #333;
+        line-height: 20px;
+      }
+    }
+
+    &-manipulations {
+      width: 100%;
+      margin: 40px 0 6px;
+      display: flex;
+      justify-content: center;
+    }
+
+    &-table-wrapper {
+      & table {
+        table-layout: fixed;
+      }
+    }
+
+    &-table-tooltip-title {
+      width: 234px;
+    }
+
+    &-table-progress {
+      position: relative;
+      width: 80%;
+      height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    &-table-manipulations {
+      display: flex;
+      // justify-content: space-between;
+    }
+  }
+}
+
+/* override */
+
+.import-tasks-server-data-import-config-option .new-fc-one-input-error.new-fc-one-input-error-layer {
+  // safari bug
+  // width: max-content;
+  word-break: keep-all;
+}

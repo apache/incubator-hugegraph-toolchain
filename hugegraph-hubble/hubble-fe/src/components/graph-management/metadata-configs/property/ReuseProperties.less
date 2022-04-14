@@ -1,0 +1,83 @@
+.reuse-properties-wrapper {
+  width: 100%;
+  background: #fff;
+  margin-top: 16px;
+  padding: 16px;
+
+  .reuse-steps {
+    width: 860px;
+    margin: 16px auto 18px;
+  }
+
+  .reuse-properties {
+    &-row {
+      display: flex;
+      align-items: center;
+      margin: 18px 0 32px;
+      font-size: 14px;
+      color: #333;
+
+      &:last-child {
+        margin-bottom: 24px;
+      }
+
+      &-name {
+        width: 98px;
+        text-align: right;
+        margin-right: 13.9px;
+      }
+    }
+
+    &-manipulations {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 88px;
+    }
+
+    &-validate {
+      &-duplicate,
+      &-exist,
+      &-pass {
+        width: 58px;
+        margin: 0 auto;
+        border-radius: 2px;
+        letter-spacing: 0;
+        line-height: 22px;
+        text-align: center;
+      }
+
+      &-duplicate {
+        background: #fff2f2;
+        border: 1px solid #ff9499;
+        color: #e64552;
+      }
+
+      &-exist,
+      &-pass {
+        background: #f2fff4;
+        border: 1px solid #7ed988;
+        color: #39bf45;
+      }
+    }
+
+    &-complete-hint {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin: 88px auto 327px;
+
+      &-description {
+        display: flex;
+        justify-content: center;
+
+        & > div {
+          margin-left: 20px;
+        }
+      }
+
+      &-manipulations {
+        margin: 42px auto 0;
+      }
+    }
+  }
+}

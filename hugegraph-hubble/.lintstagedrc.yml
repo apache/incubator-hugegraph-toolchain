@@ -1,0 +1,6 @@
+hubble-fe/**/*.json:
+  - prettier --write
+hubble-fe/src/**/*.{ts,tsx}:
+  - prettier --write
+hubble-fe/src/**/*.{css,less}:
+  - stylelint --fix

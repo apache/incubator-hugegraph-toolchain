@@ -1,0 +1,69 @@
+.import-job-details {
+  position: absolute;
+  width: calc(100% - 60px);
+  padding: 0 16px 16px;
+  left: 60px;
+  top: 60px;
+
+  &-with-expand-sidebar {
+    width: calc(100% - 200px);
+    left: 200px;
+  }
+
+  &-breadcrumb-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 16px 0;
+  }
+
+  &-content-wrapper {
+    height: calc(100vh - 201px);
+    background: #fff;
+    padding: 24px;
+    overflow: auto;
+  }
+
+  &-content-header {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &-basic-text {
+    font-size: 14px;
+    color: #333;
+
+    & > div {
+      margin-bottom: 14px;
+    }
+
+    & span:last-child {
+      margin-left: 24px;
+    }
+  }
+
+  &-uploaded-file-infos {
+    margin-bottom: 19px;
+    font-size: 14px;
+
+    &-titles {
+      width: 300px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &-progress-status {
+      width: 374px;
+      display: flex;
+      align-items: center;
+    }
+  }
+}
+
+/* override */
+
+// reveal error layer in <Modal />
+.new-fc-one-modal-body {
+  overflow: visible;
+}

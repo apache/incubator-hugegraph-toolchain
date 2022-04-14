@@ -1,0 +1,89 @@
+.import-tasks {
+  &-upload-wrapper {
+    padding: 0 16px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 250px);
+  }
+
+  &-upload-drag-area {
+    width: 400px;
+    height: 200px;
+    padding: 83px 73px;
+    border: 1px dashed #979797;
+    // display: flex;
+    // justify-content: center;
+    // align-items: center;
+    font-size: 12px;
+    color: #666;
+
+    &:hover,
+    &.file-above {
+      border-color: #2b65ff;
+    }
+  }
+
+  &-upload-file-list {
+    margin-top: 30px;
+    width: 400px;
+    max-height: calc(100vh - 512px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-size: 14px;
+    line-height: 20px;
+    color: #333;
+  }
+
+  &-upload-file-info {
+    margin-bottom: 19px;
+
+    &-titles {
+      width: 75%;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &-progress-status {
+      width: 400px;
+      display: flex;
+      align-items: center;
+
+      &-refresh-icon {
+        position: relative;
+        left: -22px;
+        cursor: pointer;
+      }
+
+      &-close-icon {
+        position: relative;
+        left: -35px;
+        cursor: pointer;
+        top: 0;
+
+        &.in-progress {
+          left: 0;
+          top: 1px;
+        }
+
+        &.in-error {
+          left: -12px;
+          top: 0;
+        }
+      }
+    }
+  }
+
+  &-manipulation-wrapper {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* override */
+
+// disable original delete icon in progress bar due to the img bug
+.import-tasks-upload-file-info .new-fc-one-progress-operation {
+  display: none;
+}

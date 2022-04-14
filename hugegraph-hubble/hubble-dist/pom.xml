@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>hugegraph-hubble</artifactId>
+        <groupId>com.baidu.hugegraph</groupId>
+        <version>1.6.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>hubble-dist</artifactId>
+
+    <properties>
+        <release.name>hugegraph-hubble</release.name>
+        <final.name>${release.name}-${project.version}</final.name>
+        <top.level.basedir>${project.basedir}/..</top.level.basedir>
+        <assembly.dir>${project.basedir}/assembly</assembly.dir>
+        <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
+        <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
+        <hubble-fe.dir>${top.level.basedir}/hubble-fe</hubble-fe.dir>
+        <shell-executable>bash</shell-executable>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.baidu.hugegraph</groupId>
+            <artifactId>hubble-be</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <id>assembly-hugegraph-hubble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <outputDirectory>${top.level.dir}</outputDirectory>
+                            <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>
+                            <finalName>${final.name}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <echo file="${top.level.dir}/dist.sh">
+                                    cd ${hubble-fe.dir} &amp;&amp; pwd
+                                    yarn install &amp;&amp; yarn build || exit 1
+                                    echo -e "Hubble-FE build successfully.\n"
+
+                                    cd ..
+                                    rm -rf ${final.name}/ui
+                                    cp -r ${hubble-fe.dir}/build ${final.name}/ui
+
+                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${final.name} || exit 1
+                                    echo -n "hugegraph-hubble tar.gz available at: "
+                                    echo "${top.level.dir}/${final.name}.tar.gz"
+                                    rm -f ${top.level.dir}/dist.sh
+                                </echo>
+                                <exec executable="${shell-executable}"
+                                      dir="${top.level.dir}" failonerror="true">
+                                    <arg line="./dist.sh"/>
+                                </exec>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${top.level.dir}</directory>
+                            <includes>
+                                <include>*.tar.gz</include>
+                                <include>${final.name}/**</include>
+                            </includes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                        <fileset>
+                            <directory>${final.name}</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

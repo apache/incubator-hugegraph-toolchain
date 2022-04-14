@@ -1,0 +1,48 @@
+.job-error-logs {
+  width: 75vw;
+  position: relative;
+  top: 76px;
+  margin: 0 auto;
+  font-size: 14px;
+
+  &-title {
+    margin-bottom: 16px;
+    color: #333;
+    line-height: 22px;
+    font-weight: 900;
+  }
+
+  &-content-wrapper {
+    display: flex;
+    height: calc(100vh - 139px);
+    padding-top: 25px;
+    padding-right: 16px;
+    background-color: #fff;
+  }
+
+  &-content {
+    margin-left: 19px;
+    overflow: auto;
+    line-height: 2;
+
+    &-item {
+      display: flex;
+
+      &:nth-child(even) {
+        margin-bottom: 32px;
+      }
+    }
+
+    &-item-title {
+      word-break: keep-all;
+    }
+
+    &-item-text {
+      margin-left: 6px;
+    }
+
+    &-with-error-only {
+      margin-left: 16px;
+    }
+  }
+}
