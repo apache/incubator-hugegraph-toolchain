@@ -1,0 +1,27 @@
+language: java
+
+jdk:
+  - openjdk8
+
+sudo: required
+
+branches:
+  only:
+  - master
+  - /^release-.*$/
+  - /^test-.*$/
+
+install: mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
+
+before_script:
+  - $TRAVIS_DIR/install-hugegraph.sh $TRAVIS_BRANCH | grep -v "Downloading\|Downloaded"
+
+script:
+  - mvn test -Dtest=FuncTestSuite
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+env:
+  global:
+  - TRAVIS_DIR=assembly/travis

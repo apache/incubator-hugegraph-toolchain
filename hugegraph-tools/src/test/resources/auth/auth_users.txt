@@ -1,0 +1,1 @@
+{"id":"-66:test_user1","user_name":"test_user1","user_password":"$2a$04$vXkz8UYV7Gwagj6zA1ifNuSQfAmzuYb2tXdqDoWKEG.nYVc186JXO","user_create":"2020-11-30 22:26:42.225","user_update":"2020-11-30 22:26:42.225","user_creator":"admin"}

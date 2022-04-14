@@ -1,0 +1,1 @@
+{"id":"-66:test_target1","target_name":"test_target1","target_graph":"hugegraph","target_url":"127.0.0.1:8080","target_resources":[{"type":"ALL","label":"*","properties":null}],"target_create":"2020-11-11 15:32:01.192","target_update":"2020-11-11 15:32:01.192","target_creator":"admin"}

@@ -24,6 +24,7 @@ build
 
 ### IntelliJ IDEA ###
 .idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -73,3 +74,23 @@ yarn-error.log*
 *.swp
 *.log
 *.pyc
+
+# maven ignore
+output/
+*.war
+*.zip
+*.tar
+*.tar.gz
+tree.txt
+
+# eclipse ignore
+.settings/
+
+# temp ignore
+*.cache
+*.diff
+*.patch
+*.tmp
+
+# system ignore
+Thumbs.db
