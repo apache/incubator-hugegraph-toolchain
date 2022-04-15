@@ -15,5 +15,9 @@ hugegraph-client is a Java-written client of [HugeGraph](https://github.com/huge
 - RESTful Traversals, shortest path, k-out, k-neighbor, paths and crosspoints etc.
 - Variables, CRUD of variables
 
+## Doc
+
+The [client homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-client.html) contains more information about it.
+
 ## Licence
 The same as HugeGraph, hugegraph-client is also licensed under Apache 2.0 License.

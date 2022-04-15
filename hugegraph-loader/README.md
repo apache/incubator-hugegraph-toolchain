@@ -34,9 +34,9 @@ To build with default tests:
 mvn clean install
 ```
 
-## Learn More
+## Doc
 
-The [project homepage](https://hugegraph.github.io/hugegraph-doc/) contains more information about hugegraph-loader. 
+The [loader homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-loader.html) contains more information about it. 
 
 ## License
 
