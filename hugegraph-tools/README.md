@@ -10,7 +10,7 @@ HugeGraph-Tools is a customizable command line utility for deploying, managing a
 
 ## Learn More
 
-The [project homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-tools.html) contains more information about HugeGraph-Tools. 
+The [tools homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-tools.html) contains more information about it. 
 
 ## License
 
