@@ -1,5 +1,5 @@
 # TODO: refactor it later
-name: hugegraph-toolchains ci
+name: hugegraph-toolchain ci
 
 on:
   push:
