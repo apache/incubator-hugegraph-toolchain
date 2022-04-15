@@ -1,8 +1,6 @@
-name: Bug report (反馈 Bug)
-description: Create a bug report to help HugeGraph improve
-title: '[Bug] describe the main problem'
-labels:
-  - bug
+name: Ask question (提问)
+description: Question about usage or configs in HugeGraph
+title: '[Question] describe your problem'
 
 body:
   - type: markdown
@@ -11,7 +9,7 @@ body:
         ### Note (特别注意) : 
 
         > 1. 请先**搜索**现有的[Server-Issues](https://github.com/hugegraph/hugegraph/issues) 与
-        [Loader-Issues](https://github.com/hugegraph/hugegraph-loader/issues) 中没有与您相同
+        [Toolchain-Issues](https://github.com/hugegraph/hugegraph-loader/issues) 中没有与您相同
         / 相关的问题 (请勿重复提交)
 
         > 2. 我们需要尽可能**详细**的信息来**复现**问题, 越详细的信息 (包括**日志 / 截图 / 配置**等)
@@ -24,19 +22,23 @@ body:
   
   - type: dropdown
     attributes:
-      label: Bug Type (问题类型)
+      label: Problem Type (问题类型)
       options:
-        - exception / error (导入时异常报错)
-        - data inconsistency (导入 / 统计结果不合预期)
+        - gremlin (结果不合预期)
+        - rest-api (结果不合预期)
         - logic (逻辑设计问题)
-        - performence (性能下降)
-        - others (please edit later)
+        - performence (性能问题)
+        - dashboard render (前端渲染问题)
+        - data inconsistency (数据不一致)
+        - configs (配置项 / 文档相关)
+        - exception / error (异常报错)
+        - others (please comment below)
   
   - type: checkboxes
     attributes:
       label: Before submit
       options:
-        - label: 我已经确认现有的 [Server-Issues](https://github.com/hugegraph/hugegraph/issues) 与 [Loader-Issues](https://github.com/hugegraph/hugegraph-loader/issues) 中没有相同 / 重复问题
+        - label: 我已经确认现有的 [Server-Issues](https://github.com/hugegraph/hugegraph/issues) 与 [Toolchain-Issues](https://github.com/hugegraph/hugegraph-loader/issues) 中没有相同 / 重复问题
           required: true
 
   - type: textarea
@@ -45,17 +47,17 @@ body:
       description: |
         > server version could get from [rest-api](https://hugegraph.github.io/hugegraph-doc/clients/restful-api/other.html) (http://localhost:8080/versions)
       value: |
-        - Server Version: v0.11.x
-        - Loader Version: v0.11.x
+        - Server Version: v0.12.x
+        - Loader Version: v0.12.x
         - Data Size:  xx vertices, xx edges <!-- (like 1000W 点, 9000W 边) -->
     validations:
       required: true
   
   - type: textarea
     attributes:
-      label: Expected & Actual behavior (期望与实际表现)
+      label: Your Question (问题描述)
       description: |
-        > we can refer [How to create a minimal reproducible Example](https://stackoverflow.com/help/minimal-reproducible-example) (如何提供最简的可复现用例)
+        > 图使用 / 配置相关问题，请优先参考 [REST-API 文档](https://hugegraph.github.io/hugegraph-doc/clients/hugegraph-api.html), 以及 [Server 配置文档](https://hugegraph.github.io/hugegraph-doc/config/config-option.html)
         > if possible, please provide screenshots or GIF (请提供清晰的截图, 动图录屏更佳)
       placeholder: |        
         type the main problem here 
