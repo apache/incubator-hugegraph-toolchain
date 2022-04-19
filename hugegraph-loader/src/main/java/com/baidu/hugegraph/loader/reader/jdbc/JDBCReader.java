@@ -59,11 +59,13 @@ public class JDBCReader extends AbstractReader {
     public void init(LoadContext context, InputStruct struct)
                      throws InitException {
         this.progress(context, struct);
-        try {
-            this.source.header(this.fetcher.readHeader());
-            this.fetcher.readPrimaryKey();
-        } catch (SQLException e) {
-            throw new InitException("Failed to fetch table structure info", e);
+        if (!this.source.existsSql()) {
+            try {
+                this.source.header(this.fetcher.readHeader());
+                this.fetcher.readPrimaryKey();
+            } catch (SQLException e) {
+                throw new InitException("Failed to fetch table structure info", e);
+            }
         }
     }
 

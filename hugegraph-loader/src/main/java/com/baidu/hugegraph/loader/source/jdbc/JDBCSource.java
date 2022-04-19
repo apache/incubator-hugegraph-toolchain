@@ -29,6 +29,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({"type", "vendor"})
 public class JDBCSource extends AbstractSource {
 
+    @JsonProperty("sql")
+    private String sql;
     @JsonProperty("vendor")
     private JDBCVendor vendor;
     @JsonProperty("driver")
@@ -59,14 +61,22 @@ public class JDBCSource extends AbstractSource {
         E.checkArgument(this.vendor != null, "The vendor can't be null");
         E.checkArgument(this.url != null, "The url can't be null");
         E.checkArgument(this.database != null, "The database can't be null");
-        E.checkArgument(this.table != null, "The table can't be null");
         E.checkArgument(this.username != null, "The username can't be null");
         E.checkArgument(this.password != null, "The password can't be null");
+        E.checkArgument(this.table != null || this.sql != null, "At least one of table and sql can't be null");
 
         this.schema = this.vendor.checkSchema(this);
         if (this.driver == null) {
             this.driver = this.vendor.defaultDriver();
         }
+    }
+
+    public String sql() {
+        return this.sql;
+    }
+
+    public boolean existsSql() {
+        return this.sql != null;
     }
 
     public JDBCVendor vendor() {
