@@ -19,7 +19,12 @@
 
 package com.baidu.hugegraph.loader.reader.jdbc;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,12 +91,12 @@ public class RowFetcher {
             throw e;
         }
         E.checkArgument(ArrayUtils.isNotEmpty(this.columns),
-                "The colmuns of the table '%s' shouldn't be empty",
-                this.source.table());
+                        "The colmuns of the table '%s' shouldn't be empty",
+                        this.source.table());
         return this.columns;
     }
 
-    public String[] readHeader(ResultSet rs) {
+    public String[] readHeader(ResultSet rs) throws SQLException {
         ResultSetMetaData metaData = rs.getMetaData();
         List<String> columns = new ArrayList<>();
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
