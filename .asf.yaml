@@ -23,7 +23,7 @@ github:
     wiki: true
     # Enable projects for project management boards
     projects: true
-  description: HugeGraph toolchain: include a series useful modules
+  description: HugeGraph toolchain - include a series useful modules
   homepage: https://apache.github.io/incubator-hugegraph-doc/
   del_branch_on_merge: true
   #labels:
