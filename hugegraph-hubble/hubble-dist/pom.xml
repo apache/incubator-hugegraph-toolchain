@@ -2,24 +2,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>hugegraph-hubble</artifactId>
-        <groupId>com.baidu.hugegraph</groupId>
-        <version>1.6.0</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.hugegraph</groupId>
+        <artifactId>hugegraph-hubble</artifactId>
+        <version>${revision}</version>
+    </parent>
 
     <artifactId>hubble-dist</artifactId>
 
     <properties>
-        <release.name>hugegraph-hubble</release.name>
+        <release.name>${artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
         <top.level.basedir>${project.basedir}/..</top.level.basedir>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
         <hubble-fe.dir>${top.level.basedir}/hubble-fe</hubble-fe.dir>
-        <shell-executable>bash</shell-executable>
     </properties>
 
     <dependencies>
