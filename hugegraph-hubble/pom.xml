@@ -2,18 +2,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.1.8.RELEASE</version>
-        <relativePath/>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.hugegraph</groupId>
+        <artifactId>hugegraph-toolchain</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
-    <groupId>com.baidu.hugegraph</groupId>
     <artifactId>hugegraph-hubble</artifactId>
     <packaging>pom</packaging>
-    <version>1.6.0</version>
+
+    <name>${artifactId}}</name>
+    <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-hubble</url>
+    <description>
+        hugegraph-hubble is a graph management and analysis platform that provides features:
+        graph data load, schema management, graph relationship analysis and graphical display.
+    </description>
+
     <modules>
         <module>hubble-be</module>
         <module>hubble-dist</module>
@@ -22,5 +28,15 @@
     <properties>
         <top.level.dir>${project.basedir}/..</top.level.dir>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-dependencies</artifactId>
+            <version>2.1.8.RELEASE</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
 
 </project>

@@ -3,50 +3,62 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.apache.hugegraph</groupId>
-        <artifactId>hugegraph-toolchain</artifactId>
-        <version>${revision}</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
 
-    <artifactId>hugegraph-loader</artifactId>
-    <packaging>jar</packaging>
+    <groupId>org.apache.hugegraph</groupId>
+    <artifactId>hugegraph-toolchain</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
 
-    <name>${artifactId}</name>
-    <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-loader</url>
+    <name>${project.artifactId}</name>
+    <url>https://github.com/apache/incubator-hugegraph-toolchain</url>
     <description>
-        hugegraph-loader is a customizable command line utility for loading small to medium size graph datasets
-        into the HugeGraph database from multiple data sources with various input formats.
+        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it includes 4 main modules (loader/hubble/tools/client)
     </description>
 
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- TODO: we need update the url and all package together  -->
     <scm>
-        <url>https://github.com/hugegraph/hugegraph-loader</url>
-        <connection>https://github.com/hugegraph/hugegraph-loader</connection>
-        <developerConnection>https://github.com/hugegraph/hugegraph-loader
+        <url>https://github.com/hugegraph/hugegraph-toolchain</url>
+        <connection>https://github.com/hugegraph/hugegraph-toolchain</connection>
+        <developerConnection>https://github.com/hugegraph/hugegraph-toolchain
         </developerConnection>
     </scm>
 
+    <modules>
+        <module>hugegraph-client</module>
+        <module>hugegraph-hubble</module>
+        <module>hugegraph-loader</module>
+        <module>hugegraph-tools</module>
+    </modules>
+
     <properties>
-        <release.name>${artifactId}</release.name>
+        <revision>1.0.0</revision>
+        <release.name>${project.artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
+        <shell-executable>bash</shell-executable>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+        <compiler.source>1.8</compiler.source>
+        <compiler.target>1.8</compiler.target>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.baidu.hugegraph</groupId>
-            <artifactId>hugegraph-client</artifactId>
-            <version>2.0.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -78,55 +90,6 @@
             <version>29.0-jre</version>
         </dependency>
 
-        <!-- hadoop dependency -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>2.8.5</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.ws.rs</groupId>
-                    <artifactId>jsr311-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-servlet</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-json</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-compress</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-hdfs-client</artifactId>
-            <version>2.8.5</version>
-        </dependency>
         <!--
         <dependency>
             <groupId>com.baidu.inf.hadoop</groupId>
@@ -380,6 +343,37 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>1.19</version>
+                <executions>
+                    <execution>
+                        <id>default-cli</id>
+                        <configuration>
+                            <!-- Accept the pom module -->
+                            <acceptPomPackaging>true</acceptPomPackaging>
+                            <!-- Using the template which is grouped by License file -->
+                            <fileTemplate>/org/codehaus/mojo/license/third-party-file-groupByMultiLicense.ftl</fileTemplate>
+                            <licenseMerges>
+                                <licenseMerge>The Apache Software License, Version 2.0|The Apache License, Version 2.0</licenseMerge>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache License, Version 2.0</licenseMerge>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache Public License 2.0</licenseMerge>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache 2</licenseMerge>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache 2.0</licenseMerge>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache-2.0</licenseMerge>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache License 2.0</licenseMerge>
+                                <licenseMerge>The Apache Software License, Version 2.0|Apache License, version 2.0</licenseMerge>
+                                <licenseMerge>3-Clause BSD License|BSD 3-clause</licenseMerge>
+                                <licenseMerge>3-Clause BSD License|BSD 3-Clause</licenseMerge>
+                                <licenseMerge>Eclipse Public License v1.0|Eclipse Public License 1.0</licenseMerge>
+                                <licenseMerge>Eclipse Public License v1.0|Eclipse Public License - v 1.0</licenseMerge>
+                                <licenseMerge>The MIT License|MIT License</licenseMerge>
+                            </licenseMerges>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
