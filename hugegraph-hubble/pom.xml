@@ -27,13 +27,14 @@
 
     <properties>
         <top.level.dir>${project.basedir}/..</top.level.dir>
+        <springboot.version>2.1.8.RELEASE</springboot.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-dependencies</artifactId>
-            <version>2.1.8.RELEASE</version>
+            <version>${springboot.version}</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
