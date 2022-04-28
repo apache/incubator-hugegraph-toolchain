@@ -16,7 +16,7 @@
         <final.name>${release.name}-${project.version}</final.name>
         <!-- TODO: why the baseDir == parent.baseDir? -->
         <top.level.basedir>${project.basedir}/hubble-dist</top.level.basedir>
-        <assembly.dir>${project.basedir}/assembly</assembly.dir>
+        <assembly.dir>${top.level.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
         <hubble-fe.dir>${top.level.basedir}/hubble-fe</hubble-fe.dir>
