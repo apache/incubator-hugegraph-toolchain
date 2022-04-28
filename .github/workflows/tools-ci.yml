@@ -41,9 +41,8 @@ jobs:
           fetch-depth: 2
       - name: Compile
         run: |
-          mvn install:install-file -Dfile=./assembly/static/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
           cd hugegraph-tools && ls *
-          mvn compile -Dmaven.javadoc.skip=true
+          mvn -e compile -Dmaven.javadoc.skip=true
       - name: Prepare env and service
         run: |
           $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID

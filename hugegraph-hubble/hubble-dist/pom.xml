@@ -15,7 +15,7 @@
         <release.name>${project.artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
         <!-- TODO: why the baseDir == parent.baseDir? -->
-        <top.level.basedir>hubble-dist</top.level.basedir>
+        <top.level.basedir>hubble-dist11</top.level.basedir>
 <!--        <top.level.basedir>${project.basedir}/hubble-dist</top.level.basedir>-->
         <assembly.dir>${top.level.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>

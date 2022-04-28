@@ -26,7 +26,8 @@
     </modules>
 
     <properties>
-        <top.level.dir>${project.basedir}/..</top.level.dir>
+        <top.level.dir>abc</top.level.dir>
+<!--        <top.level.dir>${project.basedir}/..</top.level.dir>-->
         <springboot.version>2.1.8.RELEASE</springboot.version>
     </properties>
 
@@ -36,7 +37,7 @@
             <artifactId>spring-boot-dependencies</artifactId>
             <version>${springboot.version}</version>
             <type>pom</type>
-            <scope>import</scope>
+<!--            <scope>import</scope>-->
         </dependency>
     </dependencies>
 
