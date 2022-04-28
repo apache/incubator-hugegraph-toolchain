@@ -13,7 +13,7 @@
     <artifactId>hugegraph-hubble</artifactId>
     <packaging>pom</packaging>
 
-    <name>${artifactId}}</name>
+    <name>${project.artifactId}}</name>
     <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-hubble</url>
     <description>
         hugegraph-hubble is a graph management and analysis platform that provides features:
@@ -26,7 +26,7 @@
     </modules>
 
     <properties>
-        <top.level.dir>${project.basedir}/..</top.level.dir>
+<!--        <top.level.dir>${project.basedir}/..</top.level.dir>-->
         <springboot.version>2.1.8.RELEASE</springboot.version>
     </properties>
 

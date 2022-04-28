@@ -12,7 +12,7 @@
     <artifactId>hubble-dist</artifactId>
 
     <properties>
-        <release.name>${artifactId}</release.name>
+        <release.name>${project.artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
         <top.level.basedir>${project.basedir}/..</top.level.basedir>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>

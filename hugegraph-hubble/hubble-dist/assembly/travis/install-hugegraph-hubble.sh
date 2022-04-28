@@ -4,7 +4,7 @@ set -ev
 
 TRAVIS_DIR=$(dirname "$0")
 
-mvn -e clean package -DskipTests
+pwd && mvn -e clean package -DskipTests
 
 cp "${TRAVIS_DIR}"/jacocoagent.jar hugegraph-hubble-*/lib
 cp "${TRAVIS_DIR}"/start-hubble.sh hugegraph-hubble-*/bin
