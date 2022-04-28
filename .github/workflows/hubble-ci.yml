@@ -15,7 +15,7 @@ on:
       - /^v[0-9]\..*$/
 
 env:
-  TRAVIS_DIR: hubble-dist/assembly/travis
+  TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
   SERVER_VERSION: 0.12.0
 
 jobs:
