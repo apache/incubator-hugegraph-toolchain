@@ -1,5 +1,4 @@
-# TODO: refactor it later
-name: hugegraph-loader ci
+name: hugegraph-loader-ci
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: hugegraph-hubble ci
+name: hugegraph-hubble-ci
 
 on:
   push:

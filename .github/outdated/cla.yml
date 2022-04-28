@@ -1,4 +1,4 @@
-# due to apache action permission, stop use cla action now
+# due to the permission with apache action, stop use cla action now
 name: "CLA Assistant"
 on:
   issue_comment:

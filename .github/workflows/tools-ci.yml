@@ -1,4 +1,4 @@
-name: hugegraph-tools ci
+name: hugegraph-tools-ci
 on:
   push:
     branches:

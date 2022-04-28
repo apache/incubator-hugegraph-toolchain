@@ -2,10 +2,11 @@
 
 set -ev
 
+EXEC_PATH="hubble-dist/assembly/travis"
 pwd
 
-"$TRAVIS_DIR"/install-hugegraph-hubble.sh
+"$EXEC_PATH"/install-hugegraph-hubble.sh
 
 behave hubble-be/src/test/python
 
-"$TRAVIS_DIR"/build-report.sh
+"$EXEC_PATH"/build-report.sh
