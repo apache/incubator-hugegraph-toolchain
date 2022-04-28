@@ -33,8 +33,7 @@
     <scm>
         <url>https://github.com/hugegraph/hugegraph-toolchain</url>
         <connection>https://github.com/hugegraph/hugegraph-toolchain</connection>
-        <developerConnection>https://github.com/hugegraph/hugegraph-toolchain
-        </developerConnection>
+        <developerConnection>https://github.com/hugegraph/hugegraph-toolchain</developerConnection>
     </scm>
 
     <modules>
