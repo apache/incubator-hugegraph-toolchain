@@ -18,7 +18,7 @@
         <assembly.dir>${top.level.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
-        <hubble-fe.dir>${project.parent.basedir}/hubble-fe</hubble-fe.dir>
+        <hubble-fe.dir>${top.level.basedir}/hubble-fe</hubble-fe.dir>
     </properties>
 
     <dependencies>
