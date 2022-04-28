@@ -5,11 +5,18 @@ on:
       - master
       - /^release-.*$/
       - /^test-.*$/
+    paths:
+      - hugegraph-tools/**
+      - pom.xml
   pull_request:
     branches:
       - master
       - /^release-.*$/
       - /^test-.*$/
+    paths:
+      - hugegraph-tools/**
+      - pom.xml
+
 jobs:
   build:
     runs-on: ubuntu-20.04

@@ -6,11 +6,17 @@ on:
       - master
       - /^release-.*$/
       - /^test-.*$/
+    paths:
+      - hugegraph-client/**
+      - pom.xml
   pull_request:
     branches:
       - master
       - /^release-.*$/
       - /^test-.*$/
+    paths:
+      - hugegraph-client/**
+      - pom.xml
 
 jobs:
   build:

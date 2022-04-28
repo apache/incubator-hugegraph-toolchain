@@ -7,12 +7,18 @@ on:
       - /^release-.*$/
       - /^test-.*$/
       - /^v[0-9]\..*$/
+    paths:
+      - hugegraph-hubble/**
+      - pom.xml
   pull_request:
     branches:
       - master
       - /^release-.*$/
       - /^test-.*$/
       - /^v[0-9]\..*$/
+    paths:
+      - hugegraph-hubble/**
+      - pom.xml
 
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
