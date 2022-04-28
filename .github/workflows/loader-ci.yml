@@ -44,6 +44,7 @@ jobs:
 
       - name: Compile
         run: |
+          cd hugegraph-loader && ls
           mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
           mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
@@ -68,6 +69,7 @@ jobs:
 
       - name: Run test
         run: |
+          ls && echo "run test now"
           mvn test -P unit
           mvn test -P file
           mvn test -P hdfs
