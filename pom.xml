@@ -190,72 +190,72 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.4</version>
-                <executions>
-                    <execution>
-                        <id>assembly-hugegraph-toolchain</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <attach>false</attach>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <outputDirectory>${project.basedir}</outputDirectory>
-                            <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>
-                            <finalName>${final.name}</finalName>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <tasks>
-                                <echo file="${project.basedir}/dist.sh">
-                                    tar -zcvf \
-                                    ${project.basedir}/${final.name}.tar.gz ${final.name} || exit 1
-                                    rm -f ${project.basedir}/dist.sh
-                                    echo -n "hugegraph-loader tar.gz available at: "
-                                    echo "${project.basedir}/${final.name}.tar.gz"
-                                </echo>
-                                <exec executable="${shell-executable}"
-                                      dir="${project.basedir}" failonerror="true">
-                                    <arg line="./dist.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${project.basedir}</directory>
-                            <includes>
-                                <include>*.tar.gz</include>
-                                <include>${final.name}/**</include>
-                            </includes>
-                            <followSymlinks>false</followSymlinks>
-                        </fileset>
-                        <fileset>
-                            <directory>${final.name}</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-assembly-plugin</artifactId>-->
+<!--                <version>2.4</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>assembly-hugegraph-toolchain</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>single</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <attach>false</attach>-->
+<!--                            <appendAssemblyId>false</appendAssemblyId>-->
+<!--                            <outputDirectory>${project.basedir}</outputDirectory>-->
+<!--                            <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>-->
+<!--                            <finalName>${final.name}</finalName>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <artifactId>maven-antrun-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>run</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <tasks>-->
+<!--                                <echo file="${project.basedir}/dist.sh">-->
+<!--                                    tar -zcvf \-->
+<!--                                    ${project.basedir}/${final.name}.tar.gz ${final.name} || exit 1-->
+<!--                                    rm -f ${project.basedir}/dist.sh-->
+<!--                                    echo -n "hugegraph-loader tar.gz available at: "-->
+<!--                                    echo "${project.basedir}/${final.name}.tar.gz"-->
+<!--                                </echo>-->
+<!--                                <exec executable="${shell-executable}"-->
+<!--                                      dir="${project.basedir}" failonerror="true">-->
+<!--                                    <arg line="./dist.sh"/>-->
+<!--                                </exec>-->
+<!--                            </tasks>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <artifactId>maven-clean-plugin</artifactId>-->
+<!--                <version>3.0.0</version>-->
+<!--                <configuration>-->
+<!--                    <filesets>-->
+<!--                        <fileset>-->
+<!--                            <directory>${project.basedir}</directory>-->
+<!--                            <includes>-->
+<!--                                <include>*.tar.gz</include>-->
+<!--                                <include>${final.name}/**</include>-->
+<!--                            </includes>-->
+<!--                            <followSymlinks>false</followSymlinks>-->
+<!--                        </fileset>-->
+<!--                        <fileset>-->
+<!--                            <directory>${final.name}</directory>-->
+<!--                        </fileset>-->
+<!--                    </filesets>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
