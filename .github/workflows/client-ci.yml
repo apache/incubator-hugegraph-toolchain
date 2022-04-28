@@ -43,8 +43,8 @@ jobs:
 
       - name: Compile
         run: |
-          mvn install:install-file -Dfile=./assembly/static/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-          cd hugegraph-client && ls
+#          mvn install:install-file -Dfile=./assembly/static/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+          cd hugegraph-client && ls *
           mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
       - name: Prepare env and service
@@ -53,6 +53,7 @@ jobs:
 
       - name: Run test
         run: |
+          cd hugegraph-client && ls *
           mvn test -Dtest=UnitTestSuite
           mvn test -Dtest=ApiTestSuite
           mvn test -Dtest=FuncTestSuite
