@@ -47,22 +47,23 @@ jobs:
           mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
           mvn compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
-      - name: Init Mysql Env
-        uses: mirromutth/mysql-action@v1.1
-        with:
-          host port: 3306 # Optional, default value is 3306. The port of host
-          container port: 3306 # Optional, default value is 3306. The port of container
-          character set server: 'utf8mb4' # Optional, default value is 'utf8mb4'. The '--character-set-server' option for mysqld
-          collation server: 'utf8mb4_general_ci' # Optional, default value is 'utf8mb4_general_ci'. The '--collation-server' option for mysqld
-          mysql version: '5.7' # Optional, default value is "latest". The version of the MySQL
-          mysql database: ${{ env.DB_DATABASE }} # Optional, default value is "test". The specified database which will be create
-          mysql root password: ${{ env.DB_PASS }} # Required if "mysql user" is empty, default is empty. The root superuser password
-          #mysql user: 'root' # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
-          #mysql password: ${{ secrets.DatabasePassword }} # Required if "mysql user" exists. The password for the "mysql user"
+#      - name: Init Mysql Env
+#        uses: mirromutth/mysql-action@v1.1
+#        with:
+#          host port: 3306 # Optional, default value is 3306. The port of host
+#          container port: 3306 # Optional, default value is 3306. The port of container
+#          character set server: 'utf8mb4' # Optional, default value is 'utf8mb4'. The '--character-set-server' option for mysqld
+#          collation server: 'utf8mb4_general_ci' # Optional, default value is 'utf8mb4_general_ci'. The '--collation-server' option for mysqld
+#          mysql version: '5.7' # Optional, default value is "latest". The version of the MySQL
+#          mysql database: ${{ env.DB_DATABASE }} # Optional, default value is "test". The specified database which will be create
+#          mysql root password: ${{ env.DB_PASS }} # Required if "mysql user" is empty, default is empty. The root superuser password
+#          #mysql user: 'root' # Required if "mysql root password" is empty, default is empty. The superuser for the specified database. Can use secrets, too
+#          #mysql password: ${{ secrets.DatabasePassword }} # Required if "mysql user" exists. The password for the "mysql user"
 
       - name: Prepare env and service
         run: |
           $TRAVIS_DIR/install-hadoop.sh
+          $TRAVIS_DIR/install-mysql.sh ${{ env.DB_DATABASE }} ${{ env.DB_PASS }}
           $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
 
       - name: Run test
@@ -73,6 +74,6 @@ jobs:
           mvn test -P jdbc
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3.0.0
         with:
           file: target/jacoco.xml
