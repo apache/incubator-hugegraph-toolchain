@@ -83,7 +83,7 @@ jobs:
           CI: false
         run: |
           cd hugegraph-hubble && ls
-          $TRAVIS_DIR/run-api-test.sh
+          hubble-dist/assembly/travis/run-api-test.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0

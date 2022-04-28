@@ -2,6 +2,8 @@
 
 set -ev
 
+pwd
+
 "$TRAVIS_DIR"/install-hugegraph-hubble.sh
 
 behave hubble-be/src/test/python
