@@ -20,7 +20,7 @@ tar -zxvf "${TAR}" -C ../
 cd ../
 rm -rf "${GIT_DIR}"
 
-HTTP_SERVER_DIR=$(echo hugegraph-*)
+HTTP_SERVER_DIR=$(echo hugegraph-*.*)
 HTTPS_SERVER_DIR="hugegraph_https"
 
 cp -r "${HTTP_SERVER_DIR}" "${HTTPS_SERVER_DIR}"
