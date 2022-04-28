@@ -14,8 +14,8 @@
     <properties>
         <release.name>${project.artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
-        <top.level.basedir>${project.basedir}/</top.level.basedir>
-        <assembly.dir>${top.level.basedir}/assembly</assembly.dir>
+        <current.basedir>${project.basedir}/</current.basedir>
+        <assembly.dir>${current.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
         <hubble-fe.dir>${project.parent.basedir}/hubble-fe</hubble-fe.dir>
@@ -63,11 +63,11 @@
                         <configuration>
                             <tasks>
                                 <echo file="${top.level.dir}/dist.sh">
-                                    cd ${hubble-fe.dir} &amp;&amp; pwd || exit 1
+                                    cd ${hubble-fe.dir} || exit 1
                                     yarn install &amp;&amp; yarn build || exit 1
                                     echo -e "Hubble-FE build successfully.\n"
 
-                                    cd ..
+                                    cd ${current.basedir} &amp;&amp; pwd
                                     rm -rf ${final.name}/ui
                                     cp -r ${hubble-fe.dir}/build ${final.name}/ui
 
@@ -76,8 +76,7 @@
                                     echo "${top.level.dir}/${final.name}.tar.gz"
                                     rm -f ${top.level.dir}/dist.sh
                                 </echo>
-                                <exec executable="${shell-executable}"
-                                      dir="${top.level.dir}" failonerror="true">
+                                <exec executable="${shell-executable}" dir="${top.level.dir}" failonerror="true">
                                     <arg line="./dist.sh"/>
                                 </exec>
                             </tasks>

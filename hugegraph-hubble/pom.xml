@@ -26,7 +26,6 @@
     </modules>
 
     <properties>
-        <top.level.dir>abc</top.level.dir>
         <top.level.dir>${project.basedir}/</top.level.dir>
         <springboot.version>2.1.8.RELEASE</springboot.version>
     </properties>
