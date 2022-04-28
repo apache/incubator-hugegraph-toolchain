@@ -12,7 +12,7 @@ HUGEGRAPH_GIT_URL="https://github.com/apache/incubator-hugegraph.git"
 GIT_DIR=hugegraph
 
 # download code and compile
-git clone --depth 100 ${HUGEGRAPH_GIT_URL}
+git clone --depth 100 ${HUGEGRAPH_GIT_URL} $GIT_DIR
 cd "${GIT_DIR}"
 git checkout "${COMMIT_ID}"
 mvn package -DskipTests
