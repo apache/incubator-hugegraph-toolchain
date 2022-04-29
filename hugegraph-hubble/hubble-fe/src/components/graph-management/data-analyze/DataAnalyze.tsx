@@ -44,6 +44,7 @@ const DataAnalyze: React.FC = observer(() => {
       dataAnalyzeStore.setCurrentId(Number(params.id));
       dataAnalyzeStore.fetchValueTypes();
       dataAnalyzeStore.fetchVertexTypes();
+      dataAnalyzeStore.fetchAllPropertyIndexes('vertex');
       dataAnalyzeStore.fetchEdgeTypes();
       dataAnalyzeStore.fetchAllNodeStyle();
       dataAnalyzeStore.fetchAllEdgeStyle();
@@ -70,9 +71,9 @@ const DataAnalyze: React.FC = observer(() => {
             {t('addition.dataAnalyze.return-home')}
           </Button>
         ]}
-        visible={Object.values(dataAnalyzeStore.errorInfo)
-          .map(({ code }) => code)
-          .includes(401)}
+        visible={graphManagementStore.graphData.some(
+          ({ id, enabled }) => dataAnalyzeStore.currentId === id && !enabled
+        )}
         destroyOnClose
         needCloseIcon={false}
       >

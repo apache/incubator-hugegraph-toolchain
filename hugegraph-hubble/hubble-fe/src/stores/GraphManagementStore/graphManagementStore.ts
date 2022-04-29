@@ -227,8 +227,7 @@ export class GraphManagementStore {
   validate(type: 'new' | 'edit') {
     const nameReg = /^[A-Za-z]\w{0,47}$/;
     const hostReg = /((\d{1,3}\.){3}\d{1,3}|([\w!~*'()-]+\.)*[\w!~*'()-]+)$/;
-    const portReg =
-      /^([1-9]|[1-9]\d{1}|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/;
+    const portReg = /^([1-9]|[1-9]\d{1}|[1-9]\d{2}|[1-9]\d{3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/;
     const dataName = type + 'GraphData';
     let readyToSubmit = true;
 
@@ -361,12 +360,13 @@ export class GraphManagementStore {
     this.requestStatus.fetchIdList = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> =
-        yield axios.get<GraphData>(baseUrl, {
-          params: {
-            page_size: -1
-          }
-        });
+      const result: AxiosResponse<GraphDataResponse> = yield axios.get<
+        GraphData
+      >(baseUrl, {
+        params: {
+          page_size: -1
+        }
+      });
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -377,6 +377,9 @@ export class GraphManagementStore {
           id,
           name
         }));
+
+        this.graphData = result.data.data.records;
+        this.graphDataPageConfig.pageTotal = result.data.data.total;
       }
 
       if (result.data.status !== 200) {
@@ -403,8 +406,9 @@ export class GraphManagementStore {
     this.requestStatus.fetchGraphData = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> =
-        yield axios.get<GraphData>(url);
+      const result: AxiosResponse<GraphDataResponse> = yield axios.get<
+        GraphData
+      >(url);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -432,8 +436,9 @@ export class GraphManagementStore {
     const filteredParams = filterParams(this.newGraphData);
 
     try {
-      const result: AxiosResponse<GraphDataResponse> =
-        yield axios.post<GraphDataResponse>(baseUrl, filteredParams);
+      const result: AxiosResponse<GraphDataResponse> = yield axios.post<
+        GraphDataResponse
+      >(baseUrl, filteredParams);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -461,8 +466,9 @@ export class GraphManagementStore {
     const filteredParams = filterParams(this.editGraphData);
 
     try {
-      const result: AxiosResponse<GraphDataResponse> =
-        yield axios.put<GraphDataResponse>(`${baseUrl}/${id}`, filteredParams);
+      const result: AxiosResponse<GraphDataResponse> = yield axios.put<
+        GraphDataResponse
+      >(`${baseUrl}/${id}`, filteredParams);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -489,8 +495,9 @@ export class GraphManagementStore {
     this.requestStatus.deleteGraphData = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> =
-        yield axios.delete<GraphDataResponse>(`${baseUrl}/${id}`);
+      const result: AxiosResponse<GraphDataResponse> = yield axios.delete<
+        GraphDataResponse
+      >(`${baseUrl}/${id}`);
 
       if (result.data.status === 200 || result.data.status === 401) {
         if (result.data.status === 200) {
@@ -533,4 +540,7 @@ function filterParams(originParams: GraphDataConfig): GraphDataConfig {
   return newParams;
 }
 
-export default createContext(new GraphManagementStore());
+// For DI in subclass
+export const GraphManagementStoreInstance = new GraphManagementStore();
+
+export default createContext(GraphManagementStoreInstance);

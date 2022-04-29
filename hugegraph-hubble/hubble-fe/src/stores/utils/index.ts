@@ -156,6 +156,13 @@ export function addGraphNodes(
         highlight: { background: '#fb6a02', border: '#fb6a02' },
         hover: { background: '#ec3112', border: '#ec3112' }
       },
+      // reveal label when zoom to max
+      scaling: {
+        label: {
+          max: Infinity,
+          maxVisible: Infinity
+        }
+      },
       chosen: {
         node(values: any, id: string, selected: boolean, hovering: boolean) {
           if (hovering || selected) {
@@ -235,4 +242,15 @@ export function formatVertexIdText(
   } else {
     return text === replacedText ? '~id' : text;
   }
+}
+
+export function isGtNegativeOneButZero(value: string | number) {
+  if (typeof value === 'number') {
+    value = String(value);
+  }
+
+  return !(
+    !isEmpty(value) &&
+    (!isInt(value as string, { min: -1 }) || String(Number(value)) === '0')
+  );
 }

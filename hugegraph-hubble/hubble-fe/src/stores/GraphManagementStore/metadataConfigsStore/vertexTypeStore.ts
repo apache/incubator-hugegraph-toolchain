@@ -126,12 +126,15 @@ export class VertexTypeStore {
   @observable
   editedCheckedReusableData: CheckedReusableData | null = null;
 
-  @observable reusableVertexTypeNameChangeIndexes: Set<number> =
-    new Set<number>();
-  @observable reusablePropertyNameChangeIndexes: Set<number> =
-    new Set<number>();
-  @observable reusablePropertyIndexNameChangeIndexes: Set<number> =
-    new Set<number>();
+  @observable reusableVertexTypeNameChangeIndexes: Set<number> = new Set<
+    number
+  >();
+  @observable reusablePropertyNameChangeIndexes: Set<number> = new Set<
+    number
+  >();
+  @observable reusablePropertyIndexNameChangeIndexes: Set<number> = new Set<
+    number
+  >();
 
   @observable validateNewVertexTypeErrorMessage: Record<
     VertexTypeValidateFields,
@@ -322,22 +325,31 @@ export class VertexTypeStore {
   // if cancel clicked, reset to the original name
   @action
   resetEditedReusableVertexTypeName(index: number) {
-    this.editedCheckedReusableData!.vertexlabel_conflicts[index].entity.name =
-      this.checkedReusableData!.vertexlabel_conflicts[index].entity.name;
+    this.editedCheckedReusableData!.vertexlabel_conflicts[
+      index
+    ].entity.name = this.checkedReusableData!.vertexlabel_conflicts[
+      index
+    ].entity.name;
   }
 
   // if cancel clicked, reset to the original name
   @action
   resetEditedReusablePropertyName(index: number) {
-    this.editedCheckedReusableData!.propertykey_conflicts[index].entity.name =
-      this.checkedReusableData!.propertykey_conflicts[index].entity.name;
+    this.editedCheckedReusableData!.propertykey_conflicts[
+      index
+    ].entity.name = this.checkedReusableData!.propertykey_conflicts[
+      index
+    ].entity.name;
   }
 
   // if cancel clicked, reset to the original name
   @action
   resetEditedReusablePropertyIndexName(index: number) {
-    this.editedCheckedReusableData!.propertyindex_conflicts[index].entity.name =
-      this.checkedReusableData!.propertyindex_conflicts[index].entity.name;
+    this.editedCheckedReusableData!.propertyindex_conflicts[
+      index
+    ].entity.name = this.checkedReusableData!.propertyindex_conflicts[
+      index
+    ].entity.name;
   }
 
   @action
@@ -417,8 +429,8 @@ export class VertexTypeStore {
     if (category === 'propertyIndexes') {
       this.isAddNewPropertyIndexReady = true;
 
-      this.validateNewVertexTypeErrorMessage.propertyIndexes =
-        this.newVertexType.property_indexes.map(({ name, type, fields }) => {
+      this.validateNewVertexTypeErrorMessage.propertyIndexes = this.newVertexType.property_indexes.map(
+        ({ name, type, fields }) => {
           const validatedPropertyIndex = {
             name: '',
             type: '',
@@ -467,7 +479,8 @@ export class VertexTypeStore {
           }
 
           return validatedPropertyIndex;
-        });
+        }
+      );
     }
 
     return isReady;
@@ -487,55 +500,54 @@ export class VertexTypeStore {
   validateEditVertexType(initial = false) {
     this.isEditReady = true;
 
-    this.validateEditVertexTypeErrorMessage.propertyIndexes =
-      this.editedSelectedVertexType.append_property_indexes.map(
-        ({ name, type, fields }) => {
-          const validatedPropertyIndex = {
-            name: '',
-            type: '',
-            properties: ''
-          };
-          if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(name)) {
-            if (!initial) {
-              if (name.length !== 0) {
-                validatedPropertyIndex.name = i18next.t('addition.store.rule4');
-              } else {
-                validatedPropertyIndex.name = i18next.t(
-                  'addition.store.item-is-required'
-                );
-              }
+    this.validateEditVertexTypeErrorMessage.propertyIndexes = this.editedSelectedVertexType.append_property_indexes.map(
+      ({ name, type, fields }) => {
+        const validatedPropertyIndex = {
+          name: '',
+          type: '',
+          properties: ''
+        };
+        if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(name)) {
+          if (!initial) {
+            if (name.length !== 0) {
+              validatedPropertyIndex.name = i18next.t('addition.store.rule4');
+            } else {
+              validatedPropertyIndex.name = i18next.t(
+                'addition.store.item-is-required'
+              );
             }
-
-            this.isEditReady = false;
-          } else {
-            validatedPropertyIndex.name = '';
           }
 
-          if (type.length === 0) {
+          this.isEditReady = false;
+        } else {
+          validatedPropertyIndex.name = '';
+        }
+
+        if (type.length === 0) {
+          !initial &&
+            (validatedPropertyIndex.type = i18next.t(
+              'addition.store.item-is-required'
+            ));
+          this.isEditReady = false;
+        } else {
+          validatedPropertyIndex.type = '';
+        }
+
+        if (Array.isArray(fields)) {
+          if (fields.length === 0) {
             !initial &&
-              (validatedPropertyIndex.type = i18next.t(
+              (validatedPropertyIndex.properties = i18next.t(
                 'addition.store.item-is-required'
               ));
             this.isEditReady = false;
-          } else {
-            validatedPropertyIndex.type = '';
           }
-
-          if (Array.isArray(fields)) {
-            if (fields.length === 0) {
-              !initial &&
-                (validatedPropertyIndex.properties = i18next.t(
-                  'addition.store.item-is-required'
-                ));
-              this.isEditReady = false;
-            }
-          } else {
-            validatedPropertyIndex.properties = '';
-          }
-
-          return validatedPropertyIndex;
+        } else {
+          validatedPropertyIndex.properties = '';
         }
-      );
+
+        return validatedPropertyIndex;
+      }
+    );
   }
 
   @action
@@ -833,8 +845,10 @@ export class VertexTypeStore {
       }
 
       if (category === 'propertyindex_conflicts') {
-        const { name: deletedPropertyIndexName, fields } =
-          editedCheckedReusableData.propertyindex_conflicts[index].entity;
+        const {
+          name: deletedPropertyIndexName,
+          fields
+        } = editedCheckedReusableData.propertyindex_conflicts[index].entity;
 
         editedCheckedReusableData.propertyindex_conflicts.splice(index, 1);
 
@@ -876,12 +890,10 @@ export class VertexTypeStore {
     }
 
     if (category === 'propertyIndexes') {
-      (
-        this.validateNewVertexTypeErrorMessage
-          .propertyIndexes as VertexTypeValidatePropertyIndexes[]
-      )[propertIndexIndex as number][
-        propertIndexProperty as keyof VertexTypeValidatePropertyIndexes
-      ] = '';
+      (this.validateNewVertexTypeErrorMessage
+        .propertyIndexes as VertexTypeValidatePropertyIndexes[])[
+        propertIndexIndex as number
+      ][propertIndexProperty as keyof VertexTypeValidatePropertyIndexes] = '';
 
       return;
     }
@@ -956,19 +968,20 @@ export class VertexTypeStore {
         : this.metadataConfigsRootStore.currentId;
 
     try {
-      const result: AxiosResponse<responseData<VertexTypeListResponse>> =
-        yield axios
-          .get(`${baseUrl}/${conn_id}/schema/vertexlabels`, {
-            params: {
-              page_no: this.vertexListPageConfig.pageNumber,
-              page_size: !options ? 10 : -1,
-              name_order:
-                this.vertexListPageConfig.sort !== ''
-                  ? this.vertexListPageConfig.sort
-                  : null
-            }
-          })
-          .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<
+        VertexTypeListResponse
+      >> = yield axios
+        .get(`${baseUrl}/${conn_id}/schema/vertexlabels`, {
+          params: {
+            page_no: this.vertexListPageConfig.pageNumber,
+            page_size: !options ? 10 : -1,
+            name_order:
+              this.vertexListPageConfig.sort !== ''
+                ? this.vertexListPageConfig.sort
+                : null
+          }
+        })
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         if (result.data.status === 401) {
@@ -1005,15 +1018,16 @@ export class VertexTypeStore {
     this.requestStatus.checkIfUsing = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<Record<string, boolean>>> =
-        yield axios
-          .post(
-            `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/check_using`,
-            {
-              names: selectedPropertyNames
-            }
-          )
-          .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<
+        Record<string, boolean>
+      >> = yield axios
+        .post(
+          `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/check_using`,
+          {
+            names: selectedPropertyNames
+          }
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1068,10 +1082,10 @@ export class VertexTypeStore {
           }/schema/vertexlabels/${this.selectedVertexType!.name}`,
           {
             append_properties: this.editedSelectedVertexType.append_properties,
-            append_property_indexes:
-              this.editedSelectedVertexType.append_property_indexes,
-            remove_property_indexes:
-              this.editedSelectedVertexType.remove_property_indexes,
+            append_property_indexes: this.editedSelectedVertexType
+              .append_property_indexes,
+            remove_property_indexes: this.editedSelectedVertexType
+              .remove_property_indexes,
             style: this.editedSelectedVertexType.style
           }
         )
@@ -1148,7 +1162,7 @@ export class VertexTypeStore {
           },
           {
             params: {
-              reused_conn_id: this.metadataConfigsRootStore.idList.find(
+              reused_conn_id: this.metadataConfigsRootStore.graphManagementStore.idList.find(
                 ({ name }) => name === reuseId
               )!.id
             }
@@ -1173,32 +1187,30 @@ export class VertexTypeStore {
     this.requestStatus.recheckConflict = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<CheckedReusableData>> =
-        yield axios
-          .post(
-            `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/recheck_conflict`,
-            {
-              propertykeys:
-                this.editedCheckedReusableData!.propertykey_conflicts.map(
-                  ({ entity }) => ({
-                    ...entity
-                  })
-                ),
-              propertyindexes:
-                this.editedCheckedReusableData!.propertyindex_conflicts.map(
-                  ({ entity }) => ({
-                    ...entity
-                  })
-                ),
-              vertexlabels:
-                this.editedCheckedReusableData!.vertexlabel_conflicts.map(
-                  ({ entity }) => ({
-                    ...entity
-                  })
-                )
-            }
-          )
-          .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
+        .post(
+          `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/vertexlabels/recheck_conflict`,
+          {
+            propertykeys: this.editedCheckedReusableData!.propertykey_conflicts.map(
+              ({ entity }) => ({
+                ...entity
+              })
+            ),
+            propertyindexes: this.editedCheckedReusableData!.propertyindex_conflicts.map(
+              ({ entity }) => ({
+                ...entity
+              })
+            ),
+            vertexlabels: this.editedCheckedReusableData!.vertexlabel_conflicts.map(
+              ({ entity }) => ({
+                ...entity
+              })
+            )
+          }
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);

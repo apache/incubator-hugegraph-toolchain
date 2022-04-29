@@ -1,4 +1,4 @@
-import { observable, action, flow, computed, toJS } from 'mobx';
+import { observable, action, flow, computed } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
 import { isUndefined, isEmpty, cloneDeep, remove, flatMap } from 'lodash-es';
 
@@ -61,11 +61,9 @@ export class DataMapStore {
 
   // validators
   @observable
-  validateFileInfoErrorMessage: FileValidator =
-    createValidateFileInfoErrorMessage();
+  validateFileInfoErrorMessage: FileValidator = createValidateFileInfoErrorMessage();
   @observable
-  validateAdvanceConfigErrorMessage: ValueMapValidator =
-    createValidateAdvanceConfigErrorMessage();
+  validateAdvanceConfigErrorMessage: ValueMapValidator = createValidateAdvanceConfigErrorMessage();
 
   @observable requestStatus = initRequestStatus();
   @observable errorInfo = initErrorInfo();
@@ -274,8 +272,9 @@ export class DataMapStore {
     if (type === 'new') {
       this.newVertexType.field_mapping[vertexMapFieldIndex].mapped_name = value;
     } else {
-      this.editedVertexMap!.field_mapping[vertexMapFieldIndex].mapped_name =
-        value;
+      this.editedVertexMap!.field_mapping[
+        vertexMapFieldIndex
+      ].mapped_name = value;
     }
   }
 
@@ -639,8 +638,9 @@ export class DataMapStore {
     valueIndex: number
   ) {
     if (type === 'new') {
-      this.newEdgeType.value_mapping[valueMapIndex].values[valueIndex][field] =
-        value;
+      this.newEdgeType.value_mapping[valueMapIndex].values[valueIndex][
+        field
+      ] = value;
     } else {
       this.editedEdgeMap!.value_mapping[valueMapIndex].values[valueIndex][
         field
@@ -797,8 +797,9 @@ export class DataMapStore {
       const value = mapping!.null_values.customized[optionIndex];
 
       if (isEmpty(value)) {
-        this.validateAdvanceConfigErrorMessage.null_values[optionIndex] =
-          i18next.t('data-configs.validator.no-empty');
+        this.validateAdvanceConfigErrorMessage.null_values[
+          optionIndex
+        ] = i18next.t('data-configs.validator.no-empty');
       } else {
         this.validateAdvanceConfigErrorMessage.null_values[optionIndex] = '';
       }
@@ -814,8 +815,9 @@ export class DataMapStore {
           ? i18next.t('data-configs.validator.no-empty')
           : '';
       } else {
-        const { column_value, mapped_value } =
-          values[valueMapOptions?.valueIndex!];
+        const { column_value, mapped_value } = values[
+          valueMapOptions?.valueIndex!
+        ];
 
         if (valueMapOptions?.field === 'column_value') {
           this.validateAdvanceConfigErrorMessage.value_mapping[
@@ -1000,8 +1002,7 @@ export class DataMapStore {
         this.validateAdvanceConfigErrorMessage[category] = [];
         return;
       case 'all':
-        this.validateAdvanceConfigErrorMessage =
-          createValidateAdvanceConfigErrorMessage();
+        this.validateAdvanceConfigErrorMessage = createValidateAdvanceConfigErrorMessage();
         return;
     }
   }
@@ -1018,8 +1019,7 @@ export class DataMapStore {
     this.editedEdgeMap = null;
 
     this.validateFileInfoErrorMessage = createValidateFileInfoErrorMessage();
-    this.validateAdvanceConfigErrorMessage =
-      createValidateAdvanceConfigErrorMessage();
+    this.validateAdvanceConfigErrorMessage = createValidateAdvanceConfigErrorMessage();
 
     this.requestStatus = initRequestStatus();
     this.errorInfo = initErrorInfo();
@@ -1243,7 +1243,9 @@ export class DataMapStore {
     this.requestStatus.deleteVertexMap = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<FileMapInfo>> = yield axios
+      const result: AxiosResponse<responseData<
+        FileMapInfo
+      >> = yield axios
         .delete<responseData<FileMapInfo>>(
           `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${
             this.dataImportRootStore.currentJobId
@@ -1274,7 +1276,9 @@ export class DataMapStore {
     this.requestStatus.deleteEdgeMap = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<FileMapInfo>> = yield axios
+      const result: AxiosResponse<responseData<
+        FileMapInfo
+      >> = yield axios
         .delete<responseData<FileMapInfo>>(
           `${baseUrl}/${this.dataImportRootStore.currentId}/job-manager/${
             this.dataImportRootStore.currentJobId

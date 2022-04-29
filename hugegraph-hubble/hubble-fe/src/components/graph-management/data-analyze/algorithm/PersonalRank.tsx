@@ -1,17 +1,18 @@
-import React, { useContext, createContext } from 'react';
+import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
 import { Button, Radio, Input, Select, Switch } from 'hubble-ui';
 import { useTranslation } from 'react-i18next';
 
 import { styles } from '../QueryAndAlgorithmLibrary';
 import { Tooltip as CustomTooltip } from '../../../common';
-import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import { GraphManagementStoreContext } from '../../../../stores';
-
-import QuestionMarkIcon from '../../../../assets/imgs/ic_question_mark.svg';
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
+import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
 import { calcAlgorithmFormWidth } from '../../../../utils';
 
-const FocusDetection = observer(() => {
+import QuestionMarkIcon from '../../../../assets/imgs/ic_question_mark.svg';
+
+const PersonalRank = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const algorithmAnalyzerStore = dataAnalyzeStore.algorithmAnalyzerStore;
@@ -25,20 +26,24 @@ const FocusDetection = observer(() => {
 
   const isValidExec =
     Object.values(
-      algorithmAnalyzerStore.validateFocusDetectionParamsErrorMessage
+      algorithmAnalyzerStore.validatePersonalRankErrorMessage
     ).every((value) => value === '') &&
-    algorithmAnalyzerStore.focusDetectionParams.source !== '' &&
-    algorithmAnalyzerStore.focusDetectionParams.target !== '' &&
-    algorithmAnalyzerStore.focusDetectionParams.max_depth !== '';
+    algorithmAnalyzerStore.personalRankParams.source !== '' &&
+    algorithmAnalyzerStore.personalRankParams.alpha !== '' &&
+    algorithmAnalyzerStore.personalRankParams.label !== '' &&
+    algorithmAnalyzerStore.personalRankParams.max_depth !== '';
 
   return (
     <div className="query-tab-content-form">
       <div className="query-tab-content-form-row">
         <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
+          <div
+            className="query-tab-content-form-item-title"
+            style={{ minWidth: 112 }}
+          >
             <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.focus-detection.options.source')}
+              {t('data-analyze.algorithm-forms.personal-rank.options.source')}
             </span>
           </div>
           <Input
@@ -46,51 +51,51 @@ const FocusDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.focus-detection.placeholder.input-source-id'
+              'data-analyze.algorithm-forms.personal-rank.placeholder.input-source-id'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateFocusDetectionParamsErrorMessage
-                .source
+              algorithmAnalyzerStore.validatePersonalRankErrorMessage.source
             }
-            value={algorithmAnalyzerStore.focusDetectionParams.source}
+            value={algorithmAnalyzerStore.personalRankParams.source}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams(
+              algorithmAnalyzerStore.mutatePersonalRankParams(
                 'source',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateFocusDetectionParams('source');
+              algorithmAnalyzerStore.validatePersonalRankParams('source');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateFocusDetectionParams('source');
+                algorithmAnalyzerStore.validatePersonalRankParams('source');
               }
             }}
           />
         </div>
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
+            <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.focus-detection.options.label')}
+              {t('data-analyze.algorithm-forms.personal-rank.options.label')}
             </span>
           </div>
           <Select
             size="medium"
             trigger="click"
-            value={algorithmAnalyzerStore.focusDetectionParams.label}
+            value={algorithmAnalyzerStore.personalRankParams.label}
+            selectorName={t(
+              'data-analyze.algorithm-forms.personal-rank.placeholder.select-edge'
+            )}
             notFoundContent={t(
-              'data-analyze.algorithm-forms.focus-detection.placeholder.no-edge-types'
+              'data-analyze.algorithm-forms.personal-rank.placeholder.no-edge-types'
             )}
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             width={formWidth}
             onChange={(value: string) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams('label', value);
+              algorithmAnalyzerStore.mutatePersonalRankParams('label', value);
             }}
           >
-            <Select.Option value="__all__" key="__all__">
-              {t('data-analyze.algorithm-forms.focus-detection.pre-value')}
-            </Select.Option>
             {dataAnalyzeStore.edgeTypes.map(({ name }) => (
               <Select.Option value={name} key={name}>
                 {name}
@@ -101,10 +106,13 @@ const FocusDetection = observer(() => {
       </div>
       <div className="query-tab-content-form-row">
         <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
+          <div
+            className="query-tab-content-form-item-title"
+            style={{ minWidth: 112 }}
+          >
             <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.focus-detection.options.target')}
+              {t('data-analyze.algorithm-forms.personal-rank.options.alpha')}
             </span>
           </div>
           <Input
@@ -112,25 +120,24 @@ const FocusDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.focus-detection.placeholder.input-target-id'
+              'data-analyze.algorithm-forms.personal-rank.placeholder.alpha'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateFocusDetectionParamsErrorMessage
-                .target
+              algorithmAnalyzerStore.validatePersonalRankErrorMessage.alpha
             }
-            value={algorithmAnalyzerStore.focusDetectionParams.target}
+            value={algorithmAnalyzerStore.personalRankParams.alpha}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams(
-                'target',
+              algorithmAnalyzerStore.mutatePersonalRankParams(
+                'alpha',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateFocusDetectionParams('target');
+              algorithmAnalyzerStore.validatePersonalRankParams('alpha');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateFocusDetectionParams('target');
+                algorithmAnalyzerStore.validatePersonalRankParams('alpha');
               }
             }}
           />
@@ -138,8 +145,147 @@ const FocusDetection = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
+              {t('data-analyze.algorithm-forms.personal-rank.options.degree')}
+            </span>
+            <CustomTooltip
+              trigger="hover"
+              placement="bottom-start"
+              modifiers={{
+                offset: {
+                  offset: '0, 8'
+                }
+              }}
+              tooltipWrapperProps={{
+                className: 'tooltips-dark',
+                style: {
+                  zIndex: 7
+                }
+              }}
+              tooltipWrapper={t(
+                'data-analyze.algorithm-forms.personal-rank.hint.degree'
+              )}
+              childrenProps={{
+                src: QuestionMarkIcon,
+                alt: 'hint',
+                style: {
+                  marginLeft: 5
+                }
+              }}
+              childrenWrapperElement="img"
+            />
+          </div>
+          <Input
+            width={formWidth}
+            size="medium"
+            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
+            placeholder={t(
+              'data-analyze.algorithm-forms.personal-rank.placeholder.input-positive-integer-or-negative-one-degree'
+            )}
+            errorLocation="layer"
+            errorMessage={
+              algorithmAnalyzerStore.validatePersonalRankErrorMessage.degree
+            }
+            value={algorithmAnalyzerStore.personalRankParams.degree}
+            onChange={(e: any) => {
+              algorithmAnalyzerStore.mutatePersonalRankParams(
+                'degree',
+                e.value as string
+              );
+
+              algorithmAnalyzerStore.validatePersonalRankParams('degree');
+            }}
+            originInputProps={{
+              onBlur() {
+                algorithmAnalyzerStore.validatePersonalRankParams('degree');
+              }
+            }}
+          />
+        </div>
+      </div>
+      <div className="query-tab-content-form-row">
+        <div className="query-tab-content-form-item">
+          <div
+            className="query-tab-content-form-item-title"
+            style={{ minWidth: 112 }}
+          >
+            <i>*</i>
+            <span>
               {t(
-                'data-analyze.algorithm-forms.focus-detection.options.max_degree'
+                'data-analyze.algorithm-forms.personal-rank.options.max_depth'
+              )}
+            </span>
+          </div>
+          <Input
+            width={formWidth}
+            size="medium"
+            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
+            placeholder={t(
+              'data-analyze.algorithm-forms.personal-rank.placeholder.max_depth'
+            )}
+            errorLocation="layer"
+            errorMessage={
+              algorithmAnalyzerStore.validatePersonalRankErrorMessage.max_depth
+            }
+            value={algorithmAnalyzerStore.personalRankParams.max_depth}
+            onChange={(e: any) => {
+              algorithmAnalyzerStore.mutatePersonalRankParams(
+                'max_depth',
+                e.value as string
+              );
+
+              algorithmAnalyzerStore.validatePersonalRankParams('max_depth');
+            }}
+            originInputProps={{
+              onBlur() {
+                algorithmAnalyzerStore.validatePersonalRankParams('max_depth');
+              }
+            }}
+          />
+        </div>
+        <div className="query-tab-content-form-item">
+          <div className="query-tab-content-form-item-title">
+            <span>
+              {t('data-analyze.algorithm-forms.personal-rank.options.limit')}
+            </span>
+          </div>
+          <Input
+            width={formWidth}
+            size="medium"
+            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
+            placeholder={t(
+              'data-analyze.algorithm-forms.personal-rank.placeholder.input-positive-integer-or-negative-one-limit'
+            )}
+            errorLocation="layer"
+            errorMessage={
+              algorithmAnalyzerStore.validatePersonalRankErrorMessage.limit
+            }
+            value={algorithmAnalyzerStore.personalRankParams.limit}
+            onChange={(e: any) => {
+              algorithmAnalyzerStore.mutatePersonalRankParams(
+                'limit',
+                e.value as string
+              );
+
+              algorithmAnalyzerStore.validatePersonalRankParams('limit');
+            }}
+            originInputProps={{
+              onBlur() {
+                algorithmAnalyzerStore.validatePersonalRankParams('limit');
+              }
+            }}
+          />
+        </div>
+      </div>
+      <div className="query-tab-content-form-row">
+        <div className="query-tab-content-form-item">
+          <div
+            className="query-tab-content-form-item-title"
+            style={{ minWidth: 112 }}
+          >
+            <i>*</i>
+            <span>
+              {t(
+                'data-analyze.algorithm-forms.personal-rank.options.with_label'
               )}
             </span>
             <CustomTooltip
@@ -157,7 +303,7 @@ const FocusDetection = observer(() => {
                 }
               }}
               tooltipWrapper={t(
-                'data-analyze.algorithm-forms.focus-detection.hint.max-degree'
+                'data-analyze.algorithm-forms.personal-rank.hint.with-label'
               )}
               childrenProps={{
                 src: QuestionMarkIcon,
@@ -169,107 +315,37 @@ const FocusDetection = observer(() => {
               childrenWrapperElement="img"
             />
           </div>
-          <Input
-            width={formWidth}
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            placeholder={t(
-              'data-analyze.algorithm-forms.focus-detection.placeholder.input-positive-integer-or-negative-one-max-degree'
-            )}
-            errorLocation="layer"
-            errorMessage={
-              algorithmAnalyzerStore.validateFocusDetectionParamsErrorMessage
-                .max_degree
-            }
-            value={algorithmAnalyzerStore.focusDetectionParams.max_degree}
-            onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams(
-                'max_degree',
-                e.value as string
-              );
-
-              algorithmAnalyzerStore.validateFocusDetectionParams('max_degree');
-            }}
-            originInputProps={{
-              onBlur() {
-                algorithmAnalyzerStore.validateFocusDetectionParams(
-                  'max_degree'
-                );
-              }
-            }}
-          />
-        </div>
-      </div>
-      <div className="query-tab-content-form-row">
-        <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
-            <i>*</i>
-            <span>
-              {t(
-                'data-analyze.algorithm-forms.focus-detection.options.direction'
-              )}
-            </span>
-          </div>
           <Radio.Group
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            value={algorithmAnalyzerStore.focusDetectionParams.direction}
+            value={algorithmAnalyzerStore.personalRankParams.with_label}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams(
-                'direction',
+              algorithmAnalyzerStore.mutatePersonalRankParams(
+                'with_label',
                 e.target.value
               );
             }}
           >
-            <Radio value="BOTH">both</Radio>
-            <Radio value="OUT">out</Radio>
-            <Radio value="IN">in</Radio>
+            <Radio value="SAME_LABEL">
+              {t(
+                'data-analyze.algorithm-forms.personal-rank.with-label-radio-value.same_label'
+              )}
+            </Radio>
+            <Radio value="OTHER_LABEL">
+              {t(
+                'data-analyze.algorithm-forms.personal-rank.with-label-radio-value.other_label'
+              )}
+            </Radio>
+            <Radio value="BOTH_LABEL">
+              {t(
+                'data-analyze.algorithm-forms.personal-rank.with-label-radio-value.both_label'
+              )}
+            </Radio>
           </Radio.Group>
         </div>
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t(
-                'data-analyze.algorithm-forms.focus-detection.options.capacity'
-              )}
-            </span>
-          </div>
-          <Input
-            width={formWidth}
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            placeholder={t(
-              'data-analyze.algorithm-forms.focus-detection.placeholder.input-positive-integer-or-negative-one-capacity'
-            )}
-            errorLocation="layer"
-            errorMessage={
-              algorithmAnalyzerStore.validateFocusDetectionParamsErrorMessage
-                .capacity
-            }
-            value={algorithmAnalyzerStore.focusDetectionParams.capacity}
-            onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams(
-                'capacity',
-                e.value as string
-              );
-
-              algorithmAnalyzerStore.validateFocusDetectionParams('capacity');
-            }}
-            originInputProps={{
-              onBlur() {
-                algorithmAnalyzerStore.validateFocusDetectionParams('capacity');
-              }
-            }}
-          />
-        </div>
-      </div>
-      <div className="query-tab-content-form-row">
-        <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
-            <i>*</i>
-            <span>
-              {t(
-                'data-analyze.algorithm-forms.focus-detection.options.max_depth'
-              )}
+              {t('data-analyze.algorithm-forms.personal-rank.options.sorted')}
             </span>
             <CustomTooltip
               trigger="hover"
@@ -286,7 +362,7 @@ const FocusDetection = observer(() => {
                 }
               }}
               tooltipWrapper={t(
-                'data-analyze.algorithm-forms.focus-detection.hint.max-depth'
+                'data-analyze.algorithm-forms.personal-rank.hint.sorted'
               )}
               childrenProps={{
                 src: QuestionMarkIcon,
@@ -298,69 +374,21 @@ const FocusDetection = observer(() => {
               childrenWrapperElement="img"
             />
           </div>
-          <Input
-            width={formWidth}
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            placeholder={t(
-              'data-analyze.algorithm-forms.focus-detection.placeholder.input-positive-integer'
-            )}
-            errorLocation="layer"
-            errorMessage={
-              algorithmAnalyzerStore.validateFocusDetectionParamsErrorMessage
-                .max_depth
-            }
-            value={algorithmAnalyzerStore.focusDetectionParams.max_depth}
-            onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams(
-                'max_depth',
-                e.value as string
-              );
-
-              algorithmAnalyzerStore.validateFocusDetectionParams('max_depth');
-            }}
-            originInputProps={{
-              onBlur() {
-                algorithmAnalyzerStore.validateFocusDetectionParams(
-                  'max_depth'
+          <div style={{ width: formWidth }}>
+            <Switch
+              size="medium"
+              disabled={
+                dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
+              }
+              checked={algorithmAnalyzerStore.personalRankParams.sorted}
+              onChange={(checked: boolean) => {
+                algorithmAnalyzerStore.mutatePersonalRankParams(
+                  'sorted',
+                  checked
                 );
-              }
-            }}
-          />
-        </div>
-        <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
-            <span>
-              {t('data-analyze.algorithm-forms.focus-detection.options.limit')}
-            </span>
+              }}
+            />
           </div>
-          <Input
-            width={formWidth}
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            placeholder={t(
-              'data-analyze.algorithm-forms.focus-detection.placeholder.input-positive-integer-or-negative-one-limit'
-            )}
-            errorLocation="layer"
-            errorMessage={
-              algorithmAnalyzerStore.validateFocusDetectionParamsErrorMessage
-                .limit
-            }
-            value={algorithmAnalyzerStore.focusDetectionParams.limit}
-            onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateFocusDetectionParams(
-                'limit',
-                e.value as string
-              );
-
-              algorithmAnalyzerStore.validateFocusDetectionParams('limit');
-            }}
-            originInputProps={{
-              onBlur() {
-                algorithmAnalyzerStore.validateFocusDetectionParams('limit');
-              }
-            }}
-          />
         </div>
       </div>
       <div
@@ -380,8 +408,8 @@ const FocusDetection = observer(() => {
 
             const timerId = dataAnalyzeStore.addTempExecLog();
             await dataAnalyzeStore.fetchGraphs({
-              url: 'crosspoints',
-              type: 'focus-detection'
+              url: 'personalrank',
+              type: Algorithm.personalRankRecommendation
             });
             await dataAnalyzeStore.fetchExecutionLogs();
             window.clearTimeout(timerId);
@@ -393,7 +421,7 @@ const FocusDetection = observer(() => {
           style={styles.primaryButton}
           disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
           onClick={() => {
-            algorithmAnalyzerStore.resetFocusDetectionParams();
+            algorithmAnalyzerStore.resetPersonalRankParams();
           }}
         >
           {t('data-analyze.manipulations.reset')}
@@ -403,4 +431,4 @@ const FocusDetection = observer(() => {
   );
 });
 
-export default FocusDetection;
+export default PersonalRank;

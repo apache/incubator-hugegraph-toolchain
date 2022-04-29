@@ -10,14 +10,7 @@ import classnames from 'classnames';
 import { useRoute } from 'wouter';
 import { useTranslation } from 'react-i18next';
 import { isEmpty, size, intersection, without } from 'lodash-es';
-import {
-  Breadcrumb,
-  Input,
-  Button,
-  Message,
-  Table,
-  Loading
-} from 'hubble-ui';
+import { Breadcrumb, Input, Button, Message, Table, Loading } from 'hubble-ui';
 
 import {
   GraphManagementStoreContext,
@@ -151,7 +144,7 @@ const AsyncTaskList: React.FC = observer(() => {
             {t('async-tasks.table-filters.task-type.gremlin')}
           </div>
           <div onClick={handleFilterOptions('type', 'algorithm')}>
-            {t('async-tasks.table-filters.task-type.algorithm')}{' '}
+            {t('async-tasks.table-filters.task-type.algorithm')}
           </div>
           <div onClick={handleFilterOptions('type', 'remove_schema')}>
             {t('async-tasks.table-filters.task-type.remove-schema')}
@@ -229,6 +222,10 @@ const AsyncTaskList: React.FC = observer(() => {
 
         if (restTime > 0) {
           timeString += ' ' + restTime + 'ms';
+        }
+
+        if (restTime <= 0) {
+          timeString = '0s';
         }
 
         return <div className="no-line-break">{timeString}</div>;
@@ -412,7 +409,7 @@ const AsyncTaskList: React.FC = observer(() => {
         <div className="async-task-list-content-header">
           <Input.Search
             size="medium"
-            width={205}
+            width={215}
             placeholder={t('async-tasks.placeholders.search')}
             value={asyncTasksStore.searchWords}
             onChange={handleSearchChange}

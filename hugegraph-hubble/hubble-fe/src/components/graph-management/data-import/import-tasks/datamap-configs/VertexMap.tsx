@@ -159,6 +159,9 @@ const VertexMap: React.FC<VertexMapProps> = observer(
               selectorName={t(
                 'data-configs.type.placeholder.select-vertex-type'
               )}
+              notFoundContent={t(
+                'data-configs.type.placeholder.select-vertex-type'
+              )}
               value={
                 isEdit
                   ? dataMapStore.editedVertexMap!.label
@@ -442,11 +445,20 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                             );
                           }}
                         >
-                          {selectedVertex?.properties.map(({ name }) => (
-                            <Select.Option value={name} key={name}>
-                              {name}
-                            </Select.Option>
-                          ))}
+                          {selectedVertex?.properties
+                            .filter(
+                              ({ name }) =>
+                                !(
+                                  selectedVertex.id_strategy ===
+                                    'PRIMARY_KEY' &&
+                                  selectedVertex.primary_keys.includes(name)
+                                )
+                            )
+                            .map(({ name }) => (
+                              <Select.Option value={name} key={name}>
+                                {name}
+                              </Select.Option>
+                            ))}
                         </Select>
                       )}
                     </div>
@@ -1199,11 +1211,10 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                               <div
                                 className={classnames({
                                   'import-tasks-manipulation': true,
-                                  'import-tasks-manipulation-disabled':
-                                    !dataMapStore.allowAddPropertyValueMapping(
-                                      'vertex',
-                                      valueMapIndex
-                                    )
+                                  'import-tasks-manipulation-disabled': !dataMapStore.allowAddPropertyValueMapping(
+                                    'vertex',
+                                    valueMapIndex
+                                  )
                                 })}
                               >
                                 <span
@@ -1452,11 +1463,10 @@ const VertexMap: React.FC<VertexMapProps> = observer(
                               <div
                                 className={classnames({
                                   'import-tasks-manipulation': true,
-                                  'import-tasks-manipulation-disabled':
-                                    !dataMapStore.allowAddPropertyValueMapping(
-                                      'vertex',
-                                      valueMapIndex
-                                    )
+                                  'import-tasks-manipulation-disabled': !dataMapStore.allowAddPropertyValueMapping(
+                                    'vertex',
+                                    valueMapIndex
+                                  )
                                 })}
                               >
                                 <span

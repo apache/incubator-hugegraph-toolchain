@@ -1,10 +1,12 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { observer } from 'mobx-react';
 import classnames from 'classnames';
-import { isUndefined } from 'lodash-es';
+import { isUndefined, cloneDeep, isEmpty, isNull } from 'lodash-es';
 import Highlighter from 'react-highlight-words';
 import { useRoute, useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
+
+import { v4 } from 'uuid';
 import { Table, Input, Button, Message } from 'hubble-ui';
 
 import { Tooltip } from '../../common';
@@ -13,16 +15,53 @@ import {
   DataAnalyzeStoreContext,
   AsyncTasksStoreContext
 } from '../../../stores';
+import { formatAlgorithmStatement } from '../../../utils';
 
-import type { TFunction } from 'i18next';
 import type {
   ExecutionLogs,
-  FavoriteQuery
+  FavoriteQuery,
+  LoopDetectionParams,
+  FocusDetectionParams,
+  ShortestPathAlgorithmParams,
+  ShortestPathAllAlgorithmParams,
+  AllPathAlgorithmParams,
+  KStepNeighbor,
+  KHop,
+  RadiographicInspection,
+  SameNeighbor,
+  Jaccard,
+  WeightedShortestPath,
+  SingleSourceWeightedShortestPath,
+  PersonalRank,
+  ModelSimilarityParams,
+  NeighborRankParams,
+  CustomPathParams,
+  CustomPathRule
 } from '../../../stores/types/GraphManagementStore/dataAnalyzeStore';
 import { Algorithm } from '../../../stores/factory/dataAnalyzeStore/algorithmStore';
 
 import ArrowIcon from '../../../assets/imgs/ic_arrow_16.svg';
 import EmptyIcon from '../../../assets/imgs/ic_sousuo_empty.svg';
+import { toJS } from 'mobx';
+
+export const AlgorithmInternalNameMapping: Record<string, string> = {
+  rings: 'loop-detection',
+  crosspoints: 'focus-detection',
+  shortpath: 'shortest-path',
+  allshortpath: 'shortest-path-all',
+  paths: 'all-path',
+  fsimilarity: 'model-similarity',
+  neighborrank: 'neighbor-rank',
+  kneighbor: 'k-step-neighbor',
+  kout: 'k-hop',
+  customizedpaths: 'custom-path',
+  rays: 'radiographic-inspection',
+  sameneighbors: 'same-neighbor',
+  weightedshortpath: 'weighted-shortest-path',
+  singleshortpath: 'single-source-weighted-shortest-path',
+  jaccardsimilarity: 'jaccard',
+  personalrank: 'personal-rank'
+};
 
 const styles = {
   tableCenter: {
@@ -39,6 +78,7 @@ const styles = {
 const ExecLogAndQueryCollections: React.FC = observer(() => {
   const asyncTasksStore = useContext(AsyncTasksStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
+  const { algorithmAnalyzerStore } = dataAnalyzeStore;
   const [tabIndex, setTabIndex] = useState(0);
   const [, params] = useRoute('/graph-management/:id/data-analyze');
   const { t } = useTranslation();
@@ -80,6 +120,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
           <ExecutionContent
             type={rowData.type}
             content={text}
+            algorithmName={rowData.algorithm_name}
             highlightText=""
           />
         );
@@ -208,7 +249,12 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
               className="exec-log-manipulation"
               onClick={loadStatements(
                 rowData.content,
-                rowData.type === 'GREMLIN_ASYNC' ? 'task' : 'query'
+                rowData.type === 'GREMLIN_ASYNC'
+                  ? 'task'
+                  : rowData.type === 'GREMLIN'
+                  ? 'query'
+                  : 'algorithm',
+                rowData.algorithm_name
               )}
             >
               {t('addition.operate.load-statement')}
@@ -383,8 +429,356 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
   );
 
   const loadStatements = useCallback(
-    (content: string, type?: 'query' | 'task') => () => {
+    (
+      content: string,
+      type?: 'query' | 'task' | 'algorithm',
+      algorithmName?: string
+    ) => () => {
       if (!dataAnalyzeStore.isLoadingGraph) {
+        if (type === 'algorithm') {
+          const params: Record<string, any> = JSON.parse(content);
+          dataAnalyzeStore.setCurrentTab('algorithm-analyze');
+
+          if (params.hasOwnProperty('direction')) {
+            params.direction = params.direction.toUpperCase();
+          }
+
+          if (params.hasOwnProperty('label')) {
+            params['label'] === null && (params['label'] = '__all__');
+          }
+
+          window.scrollTo(0, 0);
+
+          switch (algorithmName) {
+            case 'rings':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.loopDetection
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateLoopDetectionParams(
+                  key as keyof LoopDetectionParams,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'crosspoints':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.focusDetection
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateFocusDetectionParams(
+                  key as keyof FocusDetectionParams,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'shortpath':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.shortestPath
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateShortestPathParams(
+                  key as keyof ShortestPathAlgorithmParams,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'allshortpath':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.shortestPathAll
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateShortestPathAllParams(
+                  key as keyof ShortestPathAllAlgorithmParams,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'paths':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(Algorithm.allPath);
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateAllPathParams(
+                  key as keyof AllPathAlgorithmParams,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'fsimilarity': {
+              const clonedParams = cloneDeep(params);
+
+              if (isEmpty(params.sources.ids)) {
+                clonedParams.method = 'property';
+              } else {
+                clonedParams.method = 'id';
+              }
+
+              clonedParams.source = clonedParams.sources.ids.join(',');
+              clonedParams.vertexType = clonedParams.sources.label;
+              clonedParams.vertexProperty = Object.entries(
+                clonedParams.sources.properties
+              );
+
+              if (isEmpty(clonedParams.vertexProperty)) {
+                clonedParams.vertexProperty = [['', '']];
+              } else {
+                clonedParams.vertexProperty = clonedParams.vertexProperty.map(
+                  ([key, value]: [string, string[]]) => [key, value.join(',')]
+                );
+              }
+
+              clonedParams.least_neighbor = clonedParams.min_neighbors;
+              clonedParams.similarity = clonedParams.alpha;
+              clonedParams.least_similar = clonedParams.min_similars;
+              clonedParams.max_similar = clonedParams.top;
+              clonedParams.property_filter = clonedParams.group_property;
+              clonedParams.least_property_number = clonedParams.min_groups;
+              clonedParams.return_common_connection =
+                clonedParams.with_intermediary;
+              clonedParams.return_complete_info = clonedParams.with_vertex;
+
+              delete clonedParams.sources;
+              delete clonedParams.min_neighbors;
+              delete clonedParams.alpha;
+              delete clonedParams.min_similars;
+              delete clonedParams.top;
+              delete clonedParams.group_property;
+              delete clonedParams.min_groups;
+              delete clonedParams.with_intermediary;
+              delete clonedParams.with_vertex;
+
+              Object.keys(clonedParams).forEach((key) => {
+                algorithmAnalyzerStore.mutateModelSimilarityParams(
+                  key as keyof ModelSimilarityParams,
+                  clonedParams[key]
+                );
+              });
+
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.modelSimilarity
+              );
+
+              return;
+            }
+            case 'neighborrank': {
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.neighborRank
+              );
+
+              const clonedParams = cloneDeep(params) as NeighborRankParams;
+
+              // remove neighborrank validate rules first;
+              algorithmAnalyzerStore.removeValidateNeighborRankRule(0);
+              clonedParams.steps.forEach(({ labels }, index) => {
+                clonedParams.steps[index].uuid = v4();
+                // add neighborrank rule validation per each
+                algorithmAnalyzerStore.addValidateNeighborRankRule();
+
+                if (isEmpty(labels)) {
+                  clonedParams.steps[index].labels = ['__all__'];
+                }
+              });
+
+              Object.keys(clonedParams).forEach((key) => {
+                algorithmAnalyzerStore.mutateNeighborRankParams(
+                  key as keyof NeighborRankParams,
+                  // @ts-ignore
+                  clonedParams[key]
+                );
+              });
+
+              return;
+            }
+            case 'kneighbor':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.kStepNeighbor
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateKStepNeighborParams(
+                  key as keyof KStepNeighbor,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'kout':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(Algorithm.kHop);
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateKHopParams(
+                  key as keyof KHop,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'customizedpaths':
+              const clonedParams = cloneDeep(params);
+
+              if (isEmpty(params.sources.ids)) {
+                clonedParams.method = 'property';
+              } else {
+                clonedParams.method = 'id';
+              }
+              clonedParams.source = clonedParams.sources.ids.join(',');
+              clonedParams.vertexType = clonedParams.sources.label;
+              clonedParams.vertexProperty = Object.entries(
+                clonedParams.sources.properties
+              );
+
+              if (isEmpty(clonedParams.vertexProperty)) {
+                clonedParams.vertexProperty = [['', '']];
+              } else {
+                clonedParams.vertexProperty = clonedParams.vertexProperty.map(
+                  ([key, value]: [string, string[]]) => [key, value.join(',')]
+                );
+
+                clonedParams.vertexProperty = Object.keys(
+                  clonedParams.vertexProperty
+                ).map((key) => [
+                  key,
+                  clonedParams.vertexProperty[key].join(',')
+                ]);
+              }
+
+              clonedParams.steps.forEach((step: any, index: number) => {
+                const { labels, properties, weight_by, default_weight } = step;
+                clonedParams.steps[index].uuid = v4();
+
+                if (isEmpty(labels)) {
+                  step.labels = dataAnalyzeStore.edgeTypes.map(
+                    ({ name }) => name
+                  );
+                }
+
+                if (isEmpty(properties)) {
+                  step.properties = [['', '']];
+                } else {
+                  step.properties = Object.keys(step.properties).map((key) => [
+                    key,
+                    step.properties[key].join(',')
+                  ]);
+                }
+
+                if (clonedParams.sort_by === 'NONE') {
+                  step.weight_by = '';
+                  step.default_weight = '';
+                } else {
+                  if (!isNull(weight_by)) {
+                    step.default_weight = '';
+                  } else {
+                    // custom weight
+                    step.weight_by = '__CUSTOM_WEIGHT__';
+                    step.default_weight = default_weight;
+                  }
+                }
+              });
+
+              delete clonedParams.sources;
+
+              Object.keys(clonedParams).forEach((key) => {
+                algorithmAnalyzerStore.mutateCustomPathParams(
+                  key as keyof CustomPathParams,
+                  clonedParams[key]
+                );
+              });
+
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.customPath
+              );
+
+              return;
+            case 'rays':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.radiographicInspection
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateRadiographicInspectionParams(
+                  key as keyof RadiographicInspection,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'sameneighbors':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.sameNeighbor
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateSameNeighborParams(
+                  key as keyof SameNeighbor,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'weightedshortpath':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.weightedShortestPath
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateWeightedShortestPathParams(
+                  key as keyof WeightedShortestPath,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'singleshortpath':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.singleSourceWeightedShortestPath
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateSingleSourceWeightedShortestPathParams(
+                  key as keyof SingleSourceWeightedShortestPath,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'jaccardsimilarity':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(Algorithm.jaccard);
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutateJaccardParams(
+                  key as keyof Jaccard,
+                  params[key]
+                );
+              });
+
+              return;
+            case 'personalrank':
+              algorithmAnalyzerStore.changeCurrentAlgorithm(
+                Algorithm.personalRankRecommendation
+              );
+
+              Object.keys(params).forEach((key) => {
+                algorithmAnalyzerStore.mutatePersonalRankParams(
+                  key as keyof PersonalRank,
+                  params[key]
+                );
+              });
+
+              return;
+            default:
+              return;
+          }
+        }
+
         if (!isUndefined(type)) {
           type === 'task'
             ? dataAnalyzeStore.setQueryMode('task')
@@ -556,13 +950,15 @@ const ExecutionContent: React.FC<{
   type: string;
   content: string;
   highlightText: string;
-}> = observer(({ type, content, highlightText }) => {
+  algorithmName?: string;
+}> = observer(({ type, content, highlightText, algorithmName }) => {
   const dataAnalyzeStore = useContext(DataAnalyzeStoreContext);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isExpand, switchExpand] = useState(dataAnalyzeStore.isSearched.status);
+
   const statements =
     type === 'ALGORITHM'
-      ? formatAlgorithmStatement(content, Algorithm.shortestPath, t)
+      ? formatAlgorithmStatement(content, algorithmName, t, i18n)
       : content.split('\n').filter((statement) => statement !== '');
 
   const arrowIconClassName = classnames({
@@ -669,31 +1065,5 @@ export const DeleteConfirm: React.FC<DeleteConfirmProps> = observer(
     );
   }
 );
-
-function formatAlgorithmStatement(
-  content: string,
-  algorithmType: string,
-  translator: TFunction
-) {
-  const convertedString = content
-    .replace(/^.*\(/, '')
-    .replace(/\)$/, '')
-    .replace(/ /g, '');
-  const statements: string[] = [
-    translator(`data-analyze.algorithm-list.${algorithmType}`)
-  ];
-
-  convertedString.split(',').forEach((item) => {
-    const [key, value] = item.split('=');
-
-    statements.push(
-      `${translator(
-        `data-analyze.algorithm-forms.shortest-path.options.${key}`
-      )} ${value}`
-    );
-  });
-
-  return statements;
-}
 
 export default ExecLogAndQueryCollections;

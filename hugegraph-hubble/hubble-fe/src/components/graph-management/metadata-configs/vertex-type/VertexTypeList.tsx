@@ -115,10 +115,14 @@ const VertexTypeList: React.FC = observer(() => {
   const [isShowModal, switchShowModal] = useState(false);
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isEditVertex, switchIsEditVertex] = useState(false);
-  const [deleteExistPopIndexInDrawer, setDeleteExistPopIndexInDrawer] =
-    useState<number | null>(null);
-  const [deleteAddedPopIndexInDrawer, setDeleteAddedPopIndexInDrawer] =
-    useState<number | null>(null);
+  const [
+    deleteExistPopIndexInDrawer,
+    setDeleteExistPopIndexInDrawer
+  ] = useState<number | null>(null);
+  const [
+    deleteAddedPopIndexInDrawer,
+    setDeleteAddedPopIndexInDrawer
+  ] = useState<number | null>(null);
   const [, setLocation] = useLocation();
 
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
@@ -131,6 +135,31 @@ const VertexTypeList: React.FC = observer(() => {
   const currentSelectedRowKeys = intersection(
     selectedRowKeys,
     vertexTypeStore.vertexTypes.map(({ name }) => name)
+  );
+
+  // need useCallback to stop infinite callings of useEffect
+  const handleOutSideClick = useCallback(
+    (e: MouseEvent) => {
+      // if clicked element is not on dropdown, collpase it
+      if (
+        isEditVertex &&
+        isAddProperty &&
+        dropdownWrapperRef.current &&
+        !dropdownWrapperRef.current.contains(e.target as Element)
+      ) {
+        switchIsAddProperty(false);
+      }
+
+      if (
+        (deleteExistPopIndexInDrawer || deleteAddedPopIndexInDrawer) &&
+        deleteWrapperInDrawerRef.current &&
+        !deleteWrapperInDrawerRef.current.contains(e.target as Element)
+      ) {
+        setDeleteExistPopIndexInDrawer(null);
+        setDeleteAddedPopIndexInDrawer(null);
+      }
+    },
+    [deleteExistPopIndexInDrawer, deleteAddedPopIndexInDrawer, isAddProperty]
   );
 
   const handleSelectedTableRow = (newSelectedRowKeys: string[]) => {
@@ -240,8 +269,8 @@ const VertexTypeList: React.FC = observer(() => {
                   color: vertexTypeStore.selectedVertexType!.style.color,
                   icon: null,
                   size: vertexTypeStore.selectedVertexType!.style.size,
-                  display_fields:
-                    vertexTypeStore.selectedVertexType!.style.display_fields
+                  display_fields: vertexTypeStore.selectedVertexType!.style
+                    .display_fields
                 }
               });
             }}
@@ -381,6 +410,14 @@ const VertexTypeList: React.FC = observer(() => {
     metadataConfigsRootStore.currentId,
     vertexTypeStore
   ]);
+
+  useEffect(() => {
+    document.addEventListener('click', handleOutSideClick, false);
+
+    return () => {
+      document.removeEventListener('click', handleOutSideClick, false);
+    };
+  }, [handleOutSideClick]);
 
   if (vertexTypeStore.currentTabStatus === 'new') {
     return <NewVertexType />;
@@ -591,8 +628,8 @@ const VertexTypeList: React.FC = observer(() => {
                       color: vertexTypeStore.selectedVertexType!.style.color,
                       icon: null,
                       size: vertexTypeStore.selectedVertexType!.style.size,
-                      display_fields:
-                        vertexTypeStore.selectedVertexType!.style.display_fields
+                      display_fields: vertexTypeStore.selectedVertexType!.style
+                        .display_fields
                     }
                   });
                 } else {
@@ -692,7 +729,9 @@ const VertexTypeList: React.FC = observer(() => {
                 <div className="metadata-drawer-options-name">
                   <span>{t('addition.vertex.vertex-type-name')}：</span>
                 </div>
-                {vertexTypeStore.selectedVertexType!.name}
+                <div style={{ maxWidth: 420 }}>
+                  {vertexTypeStore.selectedVertexType!.name}
+                </div>
               </div>
               <div className="metadata-drawer-options">
                 <div className="metadata-drawer-options-name">
@@ -845,7 +884,7 @@ const VertexTypeList: React.FC = observer(() => {
                         className="metadata-drawer-options-list-row"
                         key={name}
                       >
-                        <div>{name}</div>
+                        <div style={{ maxWidth: 260 }}>{name}</div>
                         <div style={{ width: 70, textAlign: 'center' }}>
                           <Switch
                             checkedChildren={t('addition.operate.open')}
@@ -865,7 +904,7 @@ const VertexTypeList: React.FC = observer(() => {
                           className="metadata-drawer-options-list-row"
                           key={name}
                         >
-                          <div>{name}</div>
+                          <div style={{ maxWidth: 260 }}>{name}</div>
                           <div style={{ width: 70, textAlign: 'center' }}>
                             <Switch
                               checkedChildren={t('addition.operate.open')}
@@ -941,10 +980,9 @@ const VertexTypeList: React.FC = observer(() => {
                                       append_properties: [
                                         ...addedPropertiesInSelectedVertextType
                                       ].map((propertyName) => {
-                                        const currentProperty =
-                                          vertexTypeStore.newVertexType.properties.find(
-                                            ({ name }) => name === propertyName
-                                          );
+                                        const currentProperty = vertexTypeStore.newVertexType.properties.find(
+                                          ({ name }) => name === propertyName
+                                        );
 
                                         return {
                                           name: propertyName,
@@ -1026,10 +1064,9 @@ const VertexTypeList: React.FC = observer(() => {
                       )
                       .filter(({ nullable }) => !nullable)
                       .map((item) => {
-                        const order =
-                          vertexTypeStore.editedSelectedVertexType.style.display_fields.findIndex(
-                            (name) => name === item.name
-                          );
+                        const order = vertexTypeStore.editedSelectedVertexType.style.display_fields.findIndex(
+                          (name) => name === item.name
+                        );
 
                         const multiSelectOptionClassName = classnames({
                           'metadata-configs-sorted-multiSelect-option': true,
@@ -1048,18 +1085,16 @@ const VertexTypeList: React.FC = observer(() => {
                             <div className={multiSelectOptionClassName}>
                               <div
                                 style={{
-                                  backgroundColor:
-                                    vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
-                                      item.name
-                                    )
-                                      ? '#2b65ff'
-                                      : '#fff',
-                                  borderColor:
-                                    vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
-                                      item.name
-                                    )
-                                      ? '#fff'
-                                      : '#e0e0e0'
+                                  backgroundColor: vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
+                                    item.name
+                                  )
+                                    ? '#2b65ff'
+                                    : '#fff',
+                                  borderColor: vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
+                                    item.name
+                                  )
+                                    ? '#fff'
+                                    : '#e0e0e0'
                                 }}
                               >
                                 {order !== -1 ? order + 1 : ''}
@@ -1076,7 +1111,7 @@ const VertexTypeList: React.FC = observer(() => {
                       })}
                   </Select>
                 ) : (
-                  <div>
+                  <div style={{ maxWidth: 420 }}>
                     {vertexTypeStore.selectedVertexType?.style.display_fields
                       .map((field) =>
                         formatVertexIdText(
@@ -1210,12 +1245,11 @@ const VertexTypeList: React.FC = observer(() => {
                                           cursor: 'pointer'
                                         }}
                                         onClick={() => {
-                                          const removedPropertyIndexes =
-                                            cloneDeep(
-                                              vertexTypeStore
-                                                .editedSelectedVertexType
-                                                .remove_property_indexes
-                                            );
+                                          const removedPropertyIndexes = cloneDeep(
+                                            vertexTypeStore
+                                              .editedSelectedVertexType
+                                              .remove_property_indexes
+                                          );
 
                                           removedPropertyIndexes.push(
                                             vertexTypeStore.selectedVertexType!
@@ -1225,8 +1259,7 @@ const VertexTypeList: React.FC = observer(() => {
                                           vertexTypeStore.mutateEditedSelectedVertexType(
                                             {
                                               ...vertexTypeStore.editedSelectedVertexType,
-                                              remove_property_indexes:
-                                                removedPropertyIndexes
+                                              remove_property_indexes: removedPropertyIndexes
                                             }
                                           );
 
@@ -1284,13 +1317,11 @@ const VertexTypeList: React.FC = observer(() => {
                                 vertexTypeStore
                                   .validateEditVertexTypeErrorMessage
                                   .propertyIndexes.length !== 0
-                                  ? (
-                                      vertexTypeStore
-                                        .validateEditVertexTypeErrorMessage
-                                        .propertyIndexes[
-                                        index
-                                      ] as VertexTypeValidatePropertyIndexes
-                                    ).name
+                                  ? (vertexTypeStore
+                                      .validateEditVertexTypeErrorMessage
+                                      .propertyIndexes[
+                                      index
+                                    ] as VertexTypeValidatePropertyIndexes).name
                                   : ''
                               }
                               value={name}
@@ -1398,20 +1429,19 @@ const VertexTypeList: React.FC = observer(() => {
                                       )
                                   )
                                   .map((property) => {
-                                    const order =
-                                      vertexTypeStore.editedSelectedVertexType.append_property_indexes[
-                                        index
-                                      ].fields.findIndex(
-                                        (name) => name === property.name
-                                      );
+                                    const order = vertexTypeStore.editedSelectedVertexType.append_property_indexes[
+                                      index
+                                    ].fields.findIndex(
+                                      (name) => name === property.name
+                                    );
 
-                                    const multiSelectOptionClassName =
-                                      classnames({
-                                        'metadata-configs-sorted-multiSelect-option':
-                                          true,
+                                    const multiSelectOptionClassName = classnames(
+                                      {
+                                        'metadata-configs-sorted-multiSelect-option': true,
                                         'metadata-configs-sorted-multiSelect-option-selected':
                                           order !== -1
-                                      });
+                                      }
+                                    );
 
                                     return (
                                       <Select.Option
@@ -1437,10 +1467,9 @@ const VertexTypeList: React.FC = observer(() => {
                                       .append_properties
                                   )
                                   .filter((property) => {
-                                    const matchedProperty =
-                                      metadataPropertyStore.metadataProperties.find(
-                                        ({ name }) => name === property.name
-                                      );
+                                    const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                      ({ name }) => name === property.name
+                                    );
 
                                     if (!isUndefined(matchedProperty)) {
                                       const { data_type } = matchedProperty;
@@ -1466,10 +1495,9 @@ const VertexTypeList: React.FC = observer(() => {
                                       .append_properties
                                   )
                                   .filter((property) => {
-                                    const matchedProperty =
-                                      metadataPropertyStore.metadataProperties.find(
-                                        ({ name }) => name === property.name
-                                      );
+                                    const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                      ({ name }) => name === property.name
+                                    );
 
                                     if (!isUndefined(matchedProperty)) {
                                       const { data_type } = matchedProperty;
@@ -1540,8 +1568,7 @@ const VertexTypeList: React.FC = observer(() => {
                                         vertexTypeStore.mutateEditedSelectedVertexType(
                                           {
                                             ...vertexTypeStore.editedSelectedVertexType,
-                                            append_property_indexes:
-                                              appendPropertyIndexes
+                                            append_property_indexes: appendPropertyIndexes
                                           }
                                         );
 
@@ -1627,8 +1654,8 @@ export interface VertexTypeListManipulation {
   switchIsEditVertex: (flag: boolean) => void;
 }
 
-const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> =
-  observer(({ vertexName, vertexIndex, switchIsEditVertex }) => {
+const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> = observer(
+  ({ vertexName, vertexIndex, switchIsEditVertex }) => {
     const { vertexTypeStore } = useContext(MetadataConfigsRootStore);
     const [isPopDeleteModal, switchPopDeleteModal] = useState(false);
     const [isDeleting, switchDeleting] = useState(false);
@@ -1677,8 +1704,8 @@ const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> =
                 color: vertexTypeStore.selectedVertexType!.style.color,
                 icon: null,
                 size: vertexTypeStore.selectedVertexType!.style.size,
-                display_fields:
-                  vertexTypeStore.selectedVertexType!.style.display_fields
+                display_fields: vertexTypeStore.selectedVertexType!.style
+                  .display_fields
               }
             });
           }}
@@ -1791,7 +1818,8 @@ const VertexTypeListManipulation: React.FC<VertexTypeListManipulation> =
         </div>
       </div>
     );
-  });
+  }
+);
 
 const EmptyVertxTypeHints: React.FC = observer(() => {
   const { vertexTypeStore } = useContext(MetadataConfigsRootStore);

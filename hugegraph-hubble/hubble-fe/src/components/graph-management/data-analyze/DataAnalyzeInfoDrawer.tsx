@@ -299,7 +299,7 @@ const DataAnalyzeInfoDrawer: React.FC = observer(() => {
                 marginTop: !isEdit ? 0 : nullableIndex === 0 ? 8 : 32
               }}
             >
-              <div>{key}: </div>
+              <div title={key}>{key}: </div>
               {!isEdit ? (
                 <div>{convertArrayToString(value)}</div>
               ) : (

@@ -2,17 +2,17 @@ import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
 import { Button, Radio, Input, Select, Switch } from 'hubble-ui';
 import { useTranslation } from 'react-i18next';
-
 import { styles } from '../QueryAndAlgorithmLibrary';
+
 import { Tooltip as CustomTooltip } from '../../../common';
+import { GraphManagementStoreContext } from '../../../../stores';
 import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
-import { GraphManagementStoreContext } from '../../../../stores';
 import { calcAlgorithmFormWidth } from '../../../../utils';
 
 import QuestionMarkIcon from '../../../../assets/imgs/ic_question_mark.svg';
 
-const LoopDetection = observer(() => {
+const KHop = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const algorithmAnalyzerStore = dataAnalyzeStore.algorithmAnalyzerStore;
@@ -25,11 +25,11 @@ const LoopDetection = observer(() => {
   );
 
   const isValidExec =
-    Object.values(
-      algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-    ).every((value) => value === '') &&
-    algorithmAnalyzerStore.loopDetectionParams.source !== '' &&
-    algorithmAnalyzerStore.loopDetectionParams.max_depth !== '';
+    Object.values(algorithmAnalyzerStore.validateKHopParamsErrorMessage).every(
+      (value) => value === ''
+    ) &&
+    algorithmAnalyzerStore.kHopParams.source !== '' &&
+    algorithmAnalyzerStore.kHopParams.max_depth !== '';
 
   return (
     <div className="query-tab-content-form">
@@ -38,7 +38,7 @@ const LoopDetection = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.loop-detection.options.source')}
+              {t('data-analyze.algorithm-forms.k-hop.options.source')}
             </span>
           </div>
           <Input
@@ -46,50 +46,47 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-source-id'
+              'data-analyze.algorithm-forms.k-hop.placeholder.input-source-id'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-                .source
+              algorithmAnalyzerStore.validateKHopParamsErrorMessage.source
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.source}
+            value={algorithmAnalyzerStore.kHopParams.source}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateKHopParams(
                 'source',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('source');
+              algorithmAnalyzerStore.validateKHopParams('source');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('source');
+                algorithmAnalyzerStore.validateKHopParams('source');
               }
             }}
           />
         </div>
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
-            <span>
-              {t('data-analyze.algorithm-forms.loop-detection.options.label')}
-            </span>
+            <span>{t('data-analyze.algorithm-forms.k-hop.options.label')}</span>
           </div>
           <Select
             size="medium"
             trigger="click"
-            value={algorithmAnalyzerStore.loopDetectionParams.label}
+            value={algorithmAnalyzerStore.kHopParams.label}
             notFoundContent={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.no-edge-types'
+              'data-analyze.algorithm-forms.k-hop.placeholder.no-edge-types'
             )}
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             width={formWidth}
             onChange={(value: string) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams('label', value);
+              algorithmAnalyzerStore.mutateKHopParams('label', value);
             }}
           >
             <Select.Option value="__all__" key="__all__">
-              {t('data-analyze.algorithm-forms.loop-detection.pre-value')}
+              {t('data-analyze.algorithm-forms.k-hop.pre-value')}
             </Select.Option>
             {dataAnalyzeStore.edgeTypes.map(({ name }) => (
               <Select.Option value={name} key={name}>
@@ -104,16 +101,14 @@ const LoopDetection = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
-              {t(
-                'data-analyze.algorithm-forms.loop-detection.options.direction'
-              )}
+              {t('data-analyze.algorithm-forms.k-hop.options.direction')}
             </span>
           </div>
           <Radio.Group
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            value={algorithmAnalyzerStore.loopDetectionParams.direction}
+            value={algorithmAnalyzerStore.kHopParams.direction}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateKHopParams(
                 'direction',
                 e.target.value
               );
@@ -127,9 +122,7 @@ const LoopDetection = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t(
-                'data-analyze.algorithm-forms.loop-detection.options.max_degree'
-              )}
+              {t('data-analyze.algorithm-forms.k-hop.options.max_degree')}
             </span>
             <CustomTooltip
               trigger="hover"
@@ -146,7 +139,7 @@ const LoopDetection = observer(() => {
                 }
               }}
               tooltipWrapper={t(
-                'data-analyze.algorithm-forms.loop-detection.hint.max-degree'
+                'data-analyze.algorithm-forms.k-hop.hint.max-degree'
               )}
               childrenProps={{
                 src: QuestionMarkIcon,
@@ -163,27 +156,24 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer-or-negative-one-max-degree'
+              'data-analyze.algorithm-forms.k-hop.placeholder.input-positive-integer-or-negative-one-max-degree'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-                .max_degree
+              algorithmAnalyzerStore.validateKHopParamsErrorMessage.max_degree
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.max_degree}
+            value={algorithmAnalyzerStore.kHopParams.max_degree}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateKHopParams(
                 'max_degree',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('max_degree');
+              algorithmAnalyzerStore.validateKHopParams('max_degree');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams(
-                  'max_degree'
-                );
+                algorithmAnalyzerStore.validateKHopParams('max_degree');
               }
             }}
           />
@@ -194,9 +184,7 @@ const LoopDetection = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
-              {t(
-                'data-analyze.algorithm-forms.loop-detection.options.max_depth'
-              )}
+              {t('data-analyze.algorithm-forms.k-hop.options.max_depth')}
             </span>
             <CustomTooltip
               trigger="hover"
@@ -213,7 +201,7 @@ const LoopDetection = observer(() => {
                 }
               }}
               tooltipWrapper={t(
-                'data-analyze.algorithm-forms.loop-detection.hint.max-depth'
+                'data-analyze.algorithm-forms.k-hop.hint.max-depth'
               )}
               childrenProps={{
                 src: QuestionMarkIcon,
@@ -230,25 +218,24 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer'
+              'data-analyze.algorithm-forms.k-hop.placeholder.input-positive-integer'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-                .max_depth
+              algorithmAnalyzerStore.validateKHopParamsErrorMessage.max_depth
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.max_depth}
+            value={algorithmAnalyzerStore.kHopParams.max_depth}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateKHopParams(
                 'max_depth',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('max_depth');
+              algorithmAnalyzerStore.validateKHopParams('max_depth');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('max_depth');
+                algorithmAnalyzerStore.validateKHopParams('max_depth');
               }
             }}
           />
@@ -256,7 +243,7 @@ const LoopDetection = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t('data-analyze.algorithm-forms.loop-detection.options.limit')}
+              {t('data-analyze.algorithm-forms.k-hop.options.capacity')}
             </span>
           </div>
           <Input
@@ -264,25 +251,24 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer-or-negative-one-limit'
+              'data-analyze.algorithm-forms.k-hop.placeholder.input-positive-integer-or-negative-one-capacity'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-                .limit
+              algorithmAnalyzerStore.validateKHopParamsErrorMessage.capacity
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.limit}
+            value={algorithmAnalyzerStore.kHopParams.capacity}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
-                'limit',
+              algorithmAnalyzerStore.mutateKHopParams(
+                'capacity',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('limit');
+              algorithmAnalyzerStore.validateKHopParams('capacity');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('limit');
+                algorithmAnalyzerStore.validateKHopParams('capacity');
               }
             }}
           />
@@ -291,57 +277,72 @@ const LoopDetection = observer(() => {
       <div className="query-tab-content-form-row">
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
-            <i>*</i>
             <span>
-              {t(
-                'data-analyze.algorithm-forms.loop-detection.options.source_in_ring'
-              )}
+              {t('data-analyze.algorithm-forms.k-hop.options.nearest')}
             </span>
+            <CustomTooltip
+              trigger="hover"
+              placement="bottom-start"
+              modifiers={{
+                offset: {
+                  offset: '0, 8'
+                }
+              }}
+              tooltipWrapperProps={{
+                className: 'tooltips-dark',
+                style: {
+                  zIndex: 7
+                }
+              }}
+              tooltipWrapper={t(
+                'data-analyze.algorithm-forms.k-hop.hint.shortest-path'
+              )}
+              childrenProps={{
+                src: QuestionMarkIcon,
+                alt: 'hint',
+                style: {
+                  marginLeft: 5
+                }
+              }}
+              childrenWrapperElement="img"
+            />
           </div>
           <Switch
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            checked={algorithmAnalyzerStore.loopDetectionParams.source_in_ring}
+            checked={algorithmAnalyzerStore.kHopParams.nearest}
             onChange={(checked: boolean) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
-                'source_in_ring',
-                checked
-              );
+              algorithmAnalyzerStore.mutateKHopParams('nearest', checked);
             }}
           />
         </div>
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
-            <span>
-              {t(
-                'data-analyze.algorithm-forms.loop-detection.options.capacity'
-              )}
-            </span>
+            <span>{t('data-analyze.algorithm-forms.k-hop.options.limit')}</span>
           </div>
           <Input
             width={formWidth}
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer-or-negative-one-capacity'
+              'data-analyze.algorithm-forms.k-hop.placeholder.input-positive-integer-or-negative-one-limit'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-                .capacity
+              algorithmAnalyzerStore.validateKHopParamsErrorMessage.limit
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.capacity}
+            value={algorithmAnalyzerStore.kHopParams.limit}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
-                'capacity',
+              algorithmAnalyzerStore.mutateKHopParams(
+                'limit',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('capacity');
+              algorithmAnalyzerStore.validateKHopParams('limit');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('capacity');
+                algorithmAnalyzerStore.validateKHopParams('limit');
               }
             }}
           />
@@ -364,8 +365,8 @@ const LoopDetection = observer(() => {
 
             const timerId = dataAnalyzeStore.addTempExecLog();
             await dataAnalyzeStore.fetchGraphs({
-              url: 'rings',
-              type: Algorithm.loopDetection
+              url: 'kout',
+              type: Algorithm.kHop
             });
             await dataAnalyzeStore.fetchExecutionLogs();
             window.clearTimeout(timerId);
@@ -377,7 +378,7 @@ const LoopDetection = observer(() => {
           style={styles.primaryButton}
           disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
           onClick={() => {
-            algorithmAnalyzerStore.resetLoopDetectionParams();
+            algorithmAnalyzerStore.resetKHopParams();
           }}
         >
           {t('data-analyze.manipulations.reset')}
@@ -387,4 +388,4 @@ const LoopDetection = observer(() => {
   );
 });
 
-export default LoopDetection;
+export default KHop;

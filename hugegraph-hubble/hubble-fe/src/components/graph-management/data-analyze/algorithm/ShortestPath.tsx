@@ -1,18 +1,18 @@
 import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
-import { Button, Radio, Input, Select, Switch } from 'hubble-ui';
+import { Button, Radio, Input, Select } from 'hubble-ui';
 import { useTranslation } from 'react-i18next';
-
 import { styles } from '../QueryAndAlgorithmLibrary';
 import { Tooltip as CustomTooltip } from '../../../common';
-import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
-import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
+
 import { GraphManagementStoreContext } from '../../../../stores';
-import { calcAlgorithmFormWidth } from '../../../../utils';
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 
 import QuestionMarkIcon from '../../../../assets/imgs/ic_question_mark.svg';
+import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
+import { calcAlgorithmFormWidth } from '../../../../utils';
 
-const LoopDetection = observer(() => {
+const ShortestPath = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const algorithmAnalyzerStore = dataAnalyzeStore.algorithmAnalyzerStore;
@@ -26,10 +26,11 @@ const LoopDetection = observer(() => {
 
   const isValidExec =
     Object.values(
-      algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
+      algorithmAnalyzerStore.validateShortestPathParamsErrorMessage
     ).every((value) => value === '') &&
-    algorithmAnalyzerStore.loopDetectionParams.source !== '' &&
-    algorithmAnalyzerStore.loopDetectionParams.max_depth !== '';
+    algorithmAnalyzerStore.shortestPathAlgorithmParams.source !== '' &&
+    algorithmAnalyzerStore.shortestPathAlgorithmParams.target !== '' &&
+    algorithmAnalyzerStore.shortestPathAlgorithmParams.max_depth !== '';
 
   return (
     <div className="query-tab-content-form">
@@ -38,7 +39,7 @@ const LoopDetection = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.loop-detection.options.source')}
+              {t('data-analyze.algorithm-forms.shortest-path.options.source')}
             </span>
           </div>
           <Input
@@ -46,25 +47,25 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-source-id'
+              'data-analyze.algorithm-forms.shortest-path.placeholder.input-source-id'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
+              algorithmAnalyzerStore.validateShortestPathParamsErrorMessage
                 .source
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.source}
+            value={algorithmAnalyzerStore.shortestPathAlgorithmParams.source}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateShortestPathParams(
                 'source',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('source');
+              algorithmAnalyzerStore.validateShortestPathParams('source');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('source');
+                algorithmAnalyzerStore.validateShortestPathParams('source');
               }
             }}
           />
@@ -72,24 +73,24 @@ const LoopDetection = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t('data-analyze.algorithm-forms.loop-detection.options.label')}
+              {t('data-analyze.algorithm-forms.shortest-path.options.label')}
             </span>
           </div>
           <Select
             size="medium"
             trigger="click"
-            value={algorithmAnalyzerStore.loopDetectionParams.label}
+            value={algorithmAnalyzerStore.shortestPathAlgorithmParams.label}
             notFoundContent={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.no-edge-types'
+              'data-analyze.algorithm-forms.shortest-path.placeholder.no-edge-types'
             )}
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             width={formWidth}
             onChange={(value: string) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams('label', value);
+              algorithmAnalyzerStore.mutateShortestPathParams('label', value);
             }}
           >
             <Select.Option value="__all__" key="__all__">
-              {t('data-analyze.algorithm-forms.loop-detection.pre-value')}
+              {t('data-analyze.algorithm-forms.shortest-path.pre-value')}
             </Select.Option>
             {dataAnalyzeStore.edgeTypes.map(({ name }) => (
               <Select.Option value={name} key={name}>
@@ -104,16 +105,117 @@ const LoopDetection = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
+              {t('data-analyze.algorithm-forms.shortest-path.options.target')}
+            </span>
+          </div>
+          <Input
+            width={formWidth}
+            size="medium"
+            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
+            placeholder={t(
+              'data-analyze.algorithm-forms.shortest-path.placeholder.input-target-id'
+            )}
+            errorLocation="layer"
+            errorMessage={
+              algorithmAnalyzerStore.validateShortestPathParamsErrorMessage
+                .target
+            }
+            value={algorithmAnalyzerStore.shortestPathAlgorithmParams.target}
+            onChange={(e: any) => {
+              algorithmAnalyzerStore.mutateShortestPathParams(
+                'target',
+                e.value as string
+              );
+
+              algorithmAnalyzerStore.validateShortestPathParams('target');
+            }}
+            originInputProps={{
+              onBlur() {
+                algorithmAnalyzerStore.validateShortestPathParams('target');
+              }
+            }}
+          />
+        </div>
+        <div className="query-tab-content-form-item">
+          <div className="query-tab-content-form-item-title">
+            <span>
               {t(
-                'data-analyze.algorithm-forms.loop-detection.options.direction'
+                'data-analyze.algorithm-forms.shortest-path.options.max_degree'
+              )}
+            </span>
+            <CustomTooltip
+              trigger="hover"
+              placement="bottom-start"
+              modifiers={{
+                offset: {
+                  offset: '0, 8'
+                }
+              }}
+              tooltipWrapperProps={{
+                className: 'tooltips-dark',
+                style: {
+                  zIndex: 7
+                }
+              }}
+              tooltipWrapper={t(
+                'data-analyze.algorithm-forms.shortest-path.hint.max-degree'
+              )}
+              childrenProps={{
+                src: QuestionMarkIcon,
+                alt: 'hint',
+                style: {
+                  marginLeft: 5
+                }
+              }}
+              childrenWrapperElement="img"
+            />
+          </div>
+          <Input
+            width={formWidth}
+            size="medium"
+            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
+            placeholder={t(
+              'data-analyze.algorithm-forms.shortest-path.placeholder.input-positive-integer-or-negative-one-max-degree'
+            )}
+            errorLocation="layer"
+            errorMessage={
+              algorithmAnalyzerStore.validateShortestPathParamsErrorMessage
+                .max_degree
+            }
+            value={
+              algorithmAnalyzerStore.shortestPathAlgorithmParams.max_degree
+            }
+            onChange={(e: any) => {
+              algorithmAnalyzerStore.mutateShortestPathParams(
+                'max_degree',
+                e.value as string
+              );
+
+              algorithmAnalyzerStore.validateShortestPathParams('max_degree');
+            }}
+            originInputProps={{
+              onBlur() {
+                algorithmAnalyzerStore.validateShortestPathParams('max_degree');
+              }
+            }}
+          />
+        </div>
+      </div>
+      <div className="query-tab-content-form-row">
+        <div className="query-tab-content-form-item">
+          <div className="query-tab-content-form-item-title">
+            <i>*</i>
+            <span>
+              {t(
+                'data-analyze.algorithm-forms.shortest-path.options.direction'
               )}
             </span>
           </div>
           <Radio.Group
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            value={algorithmAnalyzerStore.loopDetectionParams.direction}
+            value={algorithmAnalyzerStore.shortestPathAlgorithmParams.direction}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateShortestPathParams(
                 'direction',
                 e.target.value
               );
@@ -128,7 +230,7 @@ const LoopDetection = observer(() => {
           <div className="query-tab-content-form-item-title">
             <span>
               {t(
-                'data-analyze.algorithm-forms.loop-detection.options.max_degree'
+                'data-analyze.algorithm-forms.shortest-path.options.skip_degree'
               )}
             </span>
             <CustomTooltip
@@ -146,7 +248,7 @@ const LoopDetection = observer(() => {
                 }
               }}
               tooltipWrapper={t(
-                'data-analyze.algorithm-forms.loop-detection.hint.max-degree'
+                'data-analyze.algorithm-forms.shortest-path.hint.skip-degree'
               )}
               childrenProps={{
                 src: QuestionMarkIcon,
@@ -163,26 +265,28 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer-or-negative-one-max-degree'
+              'data-analyze.algorithm-forms.shortest-path.placeholder.input-integer'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-                .max_degree
+              algorithmAnalyzerStore.validateShortestPathParamsErrorMessage
+                .skip_degree
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.max_degree}
+            value={
+              algorithmAnalyzerStore.shortestPathAlgorithmParams.skip_degree
+            }
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
-                'max_degree',
+              algorithmAnalyzerStore.mutateShortestPathParams(
+                'skip_degree',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('max_degree');
+              algorithmAnalyzerStore.validateShortestPathParams('skip_degree');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams(
-                  'max_degree'
+                algorithmAnalyzerStore.validateShortestPathParams(
+                  'skip_degree'
                 );
               }
             }}
@@ -195,7 +299,7 @@ const LoopDetection = observer(() => {
             <i>*</i>
             <span>
               {t(
-                'data-analyze.algorithm-forms.loop-detection.options.max_depth'
+                'data-analyze.algorithm-forms.shortest-path.options.max_depth'
               )}
             </span>
             <CustomTooltip
@@ -213,7 +317,7 @@ const LoopDetection = observer(() => {
                 }
               }}
               tooltipWrapper={t(
-                'data-analyze.algorithm-forms.loop-detection.hint.max-depth'
+                'data-analyze.algorithm-forms.shortest-path.hint.max-depth'
               )}
               childrenProps={{
                 src: QuestionMarkIcon,
@@ -230,25 +334,25 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer'
+              'data-analyze.algorithm-forms.shortest-path.placeholder.input-positive-integer'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
+              algorithmAnalyzerStore.validateShortestPathParamsErrorMessage
                 .max_depth
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.max_depth}
+            value={algorithmAnalyzerStore.shortestPathAlgorithmParams.max_depth}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateShortestPathParams(
                 'max_depth',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('max_depth');
+              algorithmAnalyzerStore.validateShortestPathParams('max_depth');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('max_depth');
+                algorithmAnalyzerStore.validateShortestPathParams('max_depth');
               }
             }}
           />
@@ -256,7 +360,7 @@ const LoopDetection = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t('data-analyze.algorithm-forms.loop-detection.options.limit')}
+              {t('data-analyze.algorithm-forms.shortest-path.options.capacity')}
             </span>
           </div>
           <Input
@@ -264,84 +368,25 @@ const LoopDetection = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer-or-negative-one-limit'
+              'data-analyze.algorithm-forms.shortest-path.placeholder.input-positive-integer-or-negative-one-capacity'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
-                .limit
-            }
-            value={algorithmAnalyzerStore.loopDetectionParams.limit}
-            onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
-                'limit',
-                e.value as string
-              );
-
-              algorithmAnalyzerStore.validateLoopDetectionParams('limit');
-            }}
-            originInputProps={{
-              onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('limit');
-              }
-            }}
-          />
-        </div>
-      </div>
-      <div className="query-tab-content-form-row">
-        <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
-            <i>*</i>
-            <span>
-              {t(
-                'data-analyze.algorithm-forms.loop-detection.options.source_in_ring'
-              )}
-            </span>
-          </div>
-          <Switch
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            checked={algorithmAnalyzerStore.loopDetectionParams.source_in_ring}
-            onChange={(checked: boolean) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
-                'source_in_ring',
-                checked
-              );
-            }}
-          />
-        </div>
-        <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
-            <span>
-              {t(
-                'data-analyze.algorithm-forms.loop-detection.options.capacity'
-              )}
-            </span>
-          </div>
-          <Input
-            width={formWidth}
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            placeholder={t(
-              'data-analyze.algorithm-forms.loop-detection.placeholder.input-positive-integer-or-negative-one-capacity'
-            )}
-            errorLocation="layer"
-            errorMessage={
-              algorithmAnalyzerStore.validateLoopDetectionParamsErrorMessage
+              algorithmAnalyzerStore.validateShortestPathParamsErrorMessage
                 .capacity
             }
-            value={algorithmAnalyzerStore.loopDetectionParams.capacity}
+            value={algorithmAnalyzerStore.shortestPathAlgorithmParams.capacity}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateLoopDetectionParams(
+              algorithmAnalyzerStore.mutateShortestPathParams(
                 'capacity',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateLoopDetectionParams('capacity');
+              algorithmAnalyzerStore.validateShortestPathParams('capacity');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateLoopDetectionParams('capacity');
+                algorithmAnalyzerStore.validateShortestPathParams('capacity');
               }
             }}
           />
@@ -364,8 +409,8 @@ const LoopDetection = observer(() => {
 
             const timerId = dataAnalyzeStore.addTempExecLog();
             await dataAnalyzeStore.fetchGraphs({
-              url: 'rings',
-              type: Algorithm.loopDetection
+              url: 'shortpath',
+              type: Algorithm.shortestPath
             });
             await dataAnalyzeStore.fetchExecutionLogs();
             window.clearTimeout(timerId);
@@ -377,7 +422,9 @@ const LoopDetection = observer(() => {
           style={styles.primaryButton}
           disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
           onClick={() => {
-            algorithmAnalyzerStore.resetLoopDetectionParams();
+            algorithmAnalyzerStore.resetShortestPathParams();
+            // temp solution
+            algorithmAnalyzerStore.mutateShortestPathParams('label', '__all__');
           }}
         >
           {t('data-analyze.manipulations.reset')}
@@ -387,4 +434,4 @@ const LoopDetection = observer(() => {
   );
 });
 
-export default LoopDetection;
+export default ShortestPath;

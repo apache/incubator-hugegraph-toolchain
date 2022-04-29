@@ -51,10 +51,14 @@ const CheckAndEditEdge: React.FC = observer(() => {
   const { t } = useTranslation();
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isDeletePop, switchDeletePop] = useState(false);
-  const [deleteExistPopIndexInDrawer, setDeleteExistPopIndexInDrawer] =
-    useState<number | null>(null);
-  const [deleteAddedPopIndexInDrawer, setDeleteAddedPopIndexInDrawer] =
-    useState<number | null>(null);
+  const [
+    deleteExistPopIndexInDrawer,
+    setDeleteExistPopIndexInDrawer
+  ] = useState<number | null>(null);
+  const [
+    deleteAddedPopIndexInDrawer,
+    setDeleteAddedPopIndexInDrawer
+  ] = useState<number | null>(null);
 
   const deleteWrapperRef = useRef<HTMLImageElement>(null);
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
@@ -322,7 +326,7 @@ const CheckAndEditEdge: React.FC = observer(() => {
             }
           }}
           tooltipWrapperProps={{
-            className: 'metadata-properties-tooltips',
+            className: 'metadata-graph-tooltips',
             style: {
               zIndex: 1042
             }
@@ -390,7 +394,9 @@ const CheckAndEditEdge: React.FC = observer(() => {
             <div className="metadata-drawer-options-name">
               <span>{t('addition.common.edge-type-name')}：</span>
             </div>
-            {edgeTypeStore.selectedEdgeType!.name}
+            <div style={{ maxWidth: 420 }}>
+              {edgeTypeStore.selectedEdgeType!.name}
+            </div>
           </div>
 
           <div className="metadata-drawer-options">
@@ -626,13 +632,17 @@ const CheckAndEditEdge: React.FC = observer(() => {
             <div className="metadata-drawer-options-name">
               <span>{t('addition.common.source-type')}：</span>
             </div>
-            {edgeTypeStore.selectedEdgeType!.source_label}
+            <div style={{ maxWidth: 420 }}>
+              {edgeTypeStore.selectedEdgeType!.source_label}
+            </div>
           </div>
           <div className={metadataDrawerOptionClass}>
             <div className="metadata-drawer-options-name">
               <span>{t('addition.common.target-type')}：</span>
             </div>
-            {edgeTypeStore.selectedEdgeType!.target_label}
+            <div style={{ maxWidth: 420 }}>
+              {edgeTypeStore.selectedEdgeType!.target_label}
+            </div>
           </div>
           <div className={metadataDrawerOptionClass}>
             <div className="metadata-drawer-options-name">
@@ -658,7 +668,7 @@ const CheckAndEditEdge: React.FC = observer(() => {
               {edgeTypeStore.selectedEdgeType!.properties.map(
                 ({ name, nullable }) => (
                   <div className="metadata-drawer-options-list-row" key={name}>
-                    <div>{name}</div>
+                    <div style={{ maxWidth: 260 }}>{name}</div>
                     <div style={{ width: 70, textAlign: 'center' }}>
                       <Switch
                         checkedChildren={t('addition.operate.open')}
@@ -753,10 +763,9 @@ const CheckAndEditEdge: React.FC = observer(() => {
                                 append_properties: [
                                   ...addedPropertiesInSelectedVertextType
                                 ].map((propertyName) => {
-                                  const currentProperty =
-                                    edgeTypeStore.newEdgeType.properties.find(
-                                      ({ name }) => name === propertyName
-                                    );
+                                  const currentProperty = edgeTypeStore.newEdgeType.properties.find(
+                                    ({ name }) => name === propertyName
+                                  );
 
                                   return {
                                     name: propertyName,
@@ -782,7 +791,9 @@ const CheckAndEditEdge: React.FC = observer(() => {
             <div className="metadata-drawer-options-name">
               <span>{t('addition.common.distinguishing-key-property')}：</span>
             </div>
-            {edgeTypeStore.selectedEdgeType!.sort_keys.join(';')}
+            <div style={{ maxWidth: 420 }}>
+              {edgeTypeStore.selectedEdgeType!.sort_keys.join(';')}
+            </div>
           </div>
 
           <div className="metadata-drawer-options">
@@ -833,10 +844,9 @@ const CheckAndEditEdge: React.FC = observer(() => {
                   )
                   .filter(({ nullable }) => !nullable)
                   .map((item) => {
-                    const order =
-                      edgeTypeStore.editedSelectedEdgeType.style.display_fields.findIndex(
-                        (name) => name === item.name
-                      );
+                    const order = edgeTypeStore.editedSelectedEdgeType.style.display_fields.findIndex(
+                      (name) => name === item.name
+                    );
 
                     const multiSelectOptionClassName = classnames({
                       'metadata-configs-sorted-multiSelect-option': true,
@@ -855,18 +865,16 @@ const CheckAndEditEdge: React.FC = observer(() => {
                         <div className={multiSelectOptionClassName}>
                           <div
                             style={{
-                              backgroundColor:
-                                edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
-                                  item.name
-                                )
-                                  ? '#2b65ff'
-                                  : '#fff',
-                              borderColor:
-                                edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
-                                  item.name
-                                )
-                                  ? '#fff'
-                                  : '#e0e0e0'
+                              backgroundColor: edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#2b65ff'
+                                : '#fff',
+                              borderColor: edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#fff'
+                                : '#e0e0e0'
                             }}
                           >
                             {order !== -1 ? order + 1 : ''}
@@ -883,7 +891,7 @@ const CheckAndEditEdge: React.FC = observer(() => {
                   })}
               </Select>
             ) : (
-              <div>
+              <div style={{ maxWidth: 420 }}>
                 {edgeTypeStore.selectedEdgeType?.style.display_fields
                   .map((field) =>
                     formatVertexIdText(
@@ -1027,8 +1035,7 @@ const CheckAndEditEdge: React.FC = observer(() => {
                                       edgeTypeStore.mutateEditedSelectedEdgeType(
                                         {
                                           ...edgeTypeStore.editedSelectedEdgeType,
-                                          remove_property_indexes:
-                                            removedPropertyIndex
+                                          remove_property_indexes: removedPropertyIndex
                                         }
                                       );
 
@@ -1084,12 +1091,10 @@ const CheckAndEditEdge: React.FC = observer(() => {
                           errorMessage={
                             edgeTypeStore.validateEditEdgeTypeErrorMessage
                               .propertyIndexes.length !== 0
-                              ? (
-                                  edgeTypeStore.validateEditEdgeTypeErrorMessage
-                                    .propertyIndexes[
-                                    index
-                                  ] as EdgeTypeValidatePropertyIndexes
-                                ).name
+                              ? (edgeTypeStore.validateEditEdgeTypeErrorMessage
+                                  .propertyIndexes[
+                                  index
+                                ] as EdgeTypeValidatePropertyIndexes).name
                               : ''
                           }
                           value={name}
@@ -1185,16 +1190,14 @@ const CheckAndEditEdge: React.FC = observer(() => {
                                   .append_properties
                               )
                               .map((property) => {
-                                const order =
-                                  edgeTypeStore.editedSelectedEdgeType.append_property_indexes[
-                                    index
-                                  ].fields.findIndex(
-                                    (name) => name === property.name
-                                  );
+                                const order = edgeTypeStore.editedSelectedEdgeType.append_property_indexes[
+                                  index
+                                ].fields.findIndex(
+                                  (name) => name === property.name
+                                );
 
                                 const multiSelectOptionClassName = classnames({
-                                  'metadata-configs-sorted-multiSelect-option':
-                                    true,
+                                  'metadata-configs-sorted-multiSelect-option': true,
                                   'metadata-configs-sorted-multiSelect-option-selected':
                                     order !== -1
                                 });
@@ -1219,10 +1222,9 @@ const CheckAndEditEdge: React.FC = observer(() => {
                                   .append_properties
                               )
                               .filter((property) => {
-                                const matchedProperty =
-                                  metadataPropertyStore.metadataProperties.find(
-                                    ({ name }) => name === property.name
-                                  );
+                                const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                  ({ name }) => name === property.name
+                                );
 
                                 if (!isUndefined(matchedProperty)) {
                                   const { data_type } = matchedProperty;
@@ -1248,10 +1250,9 @@ const CheckAndEditEdge: React.FC = observer(() => {
                                   .append_properties
                               )
                               .filter((property) => {
-                                const matchedProperty =
-                                  metadataPropertyStore.metadataProperties.find(
-                                    ({ name }) => name === property.name
-                                  );
+                                const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                  ({ name }) => name === property.name
+                                );
 
                                 if (!isUndefined(matchedProperty)) {
                                   const { data_type } = matchedProperty;
@@ -1319,8 +1320,7 @@ const CheckAndEditEdge: React.FC = observer(() => {
 
                                     edgeTypeStore.mutateEditedSelectedEdgeType({
                                       ...edgeTypeStore.editedSelectedEdgeType,
-                                      append_property_indexes:
-                                        appendPropertyIndexes
+                                      append_property_indexes: appendPropertyIndexes
                                     });
 
                                     setDeleteAddedPopIndexInDrawer(null);

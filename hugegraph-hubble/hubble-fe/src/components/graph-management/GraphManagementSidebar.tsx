@@ -10,7 +10,6 @@ import {
   ImportManagerStoreContext
 } from '../../stores';
 
-import BackIcon from '../../assets/imgs/ic_topback.svg';
 import ArrowIcon from '../../assets/imgs/ic_arrow_white.svg';
 import DataAnalyzeIconNormal from '../../assets/imgs/ic_shuju_normal.svg';
 import DataAnalyzeIconPressed from '../../assets/imgs/ic_shuju_pressed.svg';
@@ -40,11 +39,6 @@ const GraphManagementSidebar: React.FC = observer(() => {
 
   const sidebarWrapperClassName = classnames({
     'data-analyze-sidebar': true,
-    expand: graphManagementStore.isExpanded
-  });
-
-  const sidebarGoBackClassName = classnames({
-    'data-analyze-sidebar-go-back': true,
     expand: graphManagementStore.isExpanded
   });
 
@@ -91,9 +85,8 @@ const GraphManagementSidebar: React.FC = observer(() => {
 
   const handleSelectId = useCallback(
     (value: string) => {
-      const id = graphManagementStore.idList.find(
-        ({ name }) => name === value
-      )!.id;
+      const id = graphManagementStore.idList.find(({ name }) => name === value)!
+        .id;
 
       dataAnalyzeStore.resetIdState();
       setLocation(`/graph-management/${id}/data-analyze`);

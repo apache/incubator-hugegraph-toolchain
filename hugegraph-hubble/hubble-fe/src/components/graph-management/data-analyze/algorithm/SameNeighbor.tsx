@@ -5,14 +5,14 @@ import { useTranslation } from 'react-i18next';
 
 import { styles } from '../QueryAndAlgorithmLibrary';
 import { Tooltip as CustomTooltip } from '../../../common';
-import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
 import { GraphManagementStoreContext } from '../../../../stores';
+import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
+import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
 import { calcAlgorithmFormWidth } from '../../../../utils';
 
 import QuestionMarkIcon from '../../../../assets/imgs/ic_question_mark.svg';
-import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
 
-const AllPath = observer(() => {
+const SameNeighbor = observer(() => {
   const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const algorithmAnalyzerStore = dataAnalyzeStore.algorithmAnalyzerStore;
@@ -26,11 +26,10 @@ const AllPath = observer(() => {
 
   const isValidExec =
     Object.values(
-      algorithmAnalyzerStore.validateAllPathParamsErrorMessage
+      algorithmAnalyzerStore.validateSameNeighborParamsErrorMessage
     ).every((value) => value === '') &&
-    algorithmAnalyzerStore.allPathParams.source !== '' &&
-    algorithmAnalyzerStore.allPathParams.target !== '' &&
-    algorithmAnalyzerStore.allPathParams.max_depth !== '';
+    algorithmAnalyzerStore.sameNeighborParams.vertex !== '' &&
+    algorithmAnalyzerStore.sameNeighborParams.other !== '';
 
   return (
     <div className="query-tab-content-form">
@@ -39,7 +38,7 @@ const AllPath = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.all-path.options.source')}
+              {t('data-analyze.algorithm-forms.same-neighbor.options.vertex')}
             </span>
           </div>
           <Input
@@ -47,24 +46,25 @@ const AllPath = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.all-path.placeholder.input-source-id'
+              'data-analyze.algorithm-forms.same-neighbor.placeholder.input-source-id'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateAllPathParamsErrorMessage.source
+              algorithmAnalyzerStore.validateSameNeighborParamsErrorMessage
+                .vertex
             }
-            value={algorithmAnalyzerStore.allPathParams.source}
+            value={algorithmAnalyzerStore.sameNeighborParams.vertex}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateAllPathParams(
-                'source',
+              algorithmAnalyzerStore.mutateSameNeighborParams(
+                'vertex',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateAllPathParams('source');
+              algorithmAnalyzerStore.validateSameNeighborParams('vertex');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateAllPathParams('source');
+                algorithmAnalyzerStore.validateSameNeighborParams('vertex');
               }
             }}
           />
@@ -72,24 +72,24 @@ const AllPath = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t('data-analyze.algorithm-forms.all-path.options.label')}
+              {t('data-analyze.algorithm-forms.same-neighbor.options.label')}
             </span>
           </div>
           <Select
             size="medium"
             trigger="click"
-            value={algorithmAnalyzerStore.allPathParams.label}
+            value={algorithmAnalyzerStore.sameNeighborParams.label}
             notFoundContent={t(
-              'data-analyze.algorithm-forms.all-path.placeholder.no-edge-types'
+              'data-analyze.algorithm-forms.same-neighbor.placeholder.no-edge-types'
             )}
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             width={formWidth}
             onChange={(value: string) => {
-              algorithmAnalyzerStore.mutateAllPathParams('label', value);
+              algorithmAnalyzerStore.mutateSameNeighborParams('label', value);
             }}
           >
             <Select.Option value="__all__" key="__all__">
-              {t('data-analyze.algorithm-forms.all-path.pre-value')}
+              {t('data-analyze.algorithm-forms.same-neighbor.pre-value')}
             </Select.Option>
             {dataAnalyzeStore.edgeTypes.map(({ name }) => (
               <Select.Option value={name} key={name}>
@@ -104,7 +104,7 @@ const AllPath = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.all-path.options.target')}
+              {t('data-analyze.algorithm-forms.same-neighbor.options.other')}
             </span>
           </div>
           <Input
@@ -112,24 +112,25 @@ const AllPath = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.all-path.placeholder.input-target-id'
+              'data-analyze.algorithm-forms.same-neighbor.placeholder.input-other-id'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateAllPathParamsErrorMessage.target
+              algorithmAnalyzerStore.validateSameNeighborParamsErrorMessage
+                .other
             }
-            value={algorithmAnalyzerStore.allPathParams.target}
+            value={algorithmAnalyzerStore.sameNeighborParams.other}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateAllPathParams(
-                'target',
+              algorithmAnalyzerStore.mutateSameNeighborParams(
+                'other',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateAllPathParams('target');
+              algorithmAnalyzerStore.validateSameNeighborParams('other');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateAllPathParams('target');
+                algorithmAnalyzerStore.validateSameNeighborParams('other');
               }
             }}
           />
@@ -137,7 +138,9 @@ const AllPath = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t('data-analyze.algorithm-forms.all-path.options.max_degree')}
+              {t(
+                'data-analyze.algorithm-forms.same-neighbor.options.max_degree'
+              )}
             </span>
             <CustomTooltip
               trigger="hover"
@@ -154,7 +157,7 @@ const AllPath = observer(() => {
                 }
               }}
               tooltipWrapper={t(
-                'data-analyze.algorithm-forms.all-path.hint.max-degree'
+                'data-analyze.algorithm-forms.same-neighbor.hint.max-degree'
               )}
               childrenProps={{
                 src: QuestionMarkIcon,
@@ -171,25 +174,25 @@ const AllPath = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.all-path.placeholder.input-positive-integer-or-negative-one-max-degree'
+              'data-analyze.algorithm-forms.same-neighbor.placeholder.input-positive-integer-or-negative-one-max-degree'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateAllPathParamsErrorMessage
+              algorithmAnalyzerStore.validateSameNeighborParamsErrorMessage
                 .max_degree
             }
-            value={algorithmAnalyzerStore.allPathParams.max_degree}
+            value={algorithmAnalyzerStore.sameNeighborParams.max_degree}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateAllPathParams(
+              algorithmAnalyzerStore.mutateSameNeighborParams(
                 'max_degree',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateAllPathParams('max_degree');
+              algorithmAnalyzerStore.validateSameNeighborParams('max_degree');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateAllPathParams('max_degree');
+                algorithmAnalyzerStore.validateSameNeighborParams('max_degree');
               }
             }}
           />
@@ -200,14 +203,16 @@ const AllPath = observer(() => {
           <div className="query-tab-content-form-item-title">
             <i>*</i>
             <span>
-              {t('data-analyze.algorithm-forms.all-path.options.direction')}
+              {t(
+                'data-analyze.algorithm-forms.same-neighbor.options.direction'
+              )}
             </span>
           </div>
           <Radio.Group
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            value={algorithmAnalyzerStore.allPathParams.direction}
+            value={algorithmAnalyzerStore.sameNeighborParams.direction}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              algorithmAnalyzerStore.mutateAllPathParams(
+              algorithmAnalyzerStore.mutateSameNeighborParams(
                 'direction',
                 e.target.value
               );
@@ -221,7 +226,7 @@ const AllPath = observer(() => {
         <div className="query-tab-content-form-item">
           <div className="query-tab-content-form-item-title">
             <span>
-              {t('data-analyze.algorithm-forms.all-path.options.capacity')}
+              {t('data-analyze.algorithm-forms.same-neighbor.options.limit')}
             </span>
           </div>
           <Input
@@ -229,119 +234,25 @@ const AllPath = observer(() => {
             size="medium"
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             placeholder={t(
-              'data-analyze.algorithm-forms.all-path.placeholder.input-positive-integer-or-negative-one-capacity'
+              'data-analyze.algorithm-forms.same-neighbor.placeholder.input-positive-integer-or-negative-one-limit'
             )}
             errorLocation="layer"
             errorMessage={
-              algorithmAnalyzerStore.validateAllPathParamsErrorMessage.capacity
+              algorithmAnalyzerStore.validateSameNeighborParamsErrorMessage
+                .limit
             }
-            value={algorithmAnalyzerStore.allPathParams.capacity}
+            value={algorithmAnalyzerStore.sameNeighborParams.limit}
             onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateAllPathParams(
-                'capacity',
-                e.value as string
-              );
-
-              algorithmAnalyzerStore.validateAllPathParams('capacity');
-            }}
-            originInputProps={{
-              onBlur() {
-                algorithmAnalyzerStore.validateAllPathParams('capacity');
-              }
-            }}
-          />
-        </div>
-      </div>
-      <div className="query-tab-content-form-row">
-        <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
-            <i>*</i>
-            <span>
-              {t('data-analyze.algorithm-forms.all-path.options.max_depth')}
-            </span>
-            <CustomTooltip
-              trigger="hover"
-              placement="bottom-start"
-              modifiers={{
-                offset: {
-                  offset: '0, 8'
-                }
-              }}
-              tooltipWrapperProps={{
-                className: 'tooltips-dark',
-                style: {
-                  zIndex: 7
-                }
-              }}
-              tooltipWrapper={t(
-                'data-analyze.algorithm-forms.all-path.hint.max-depth'
-              )}
-              childrenProps={{
-                src: QuestionMarkIcon,
-                alt: 'hint',
-                style: {
-                  marginLeft: 5
-                }
-              }}
-              childrenWrapperElement="img"
-            />
-          </div>
-          <Input
-            width={formWidth}
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            placeholder={t(
-              'data-analyze.algorithm-forms.all-path.placeholder.input-positive-integer'
-            )}
-            errorLocation="layer"
-            errorMessage={
-              algorithmAnalyzerStore.validateAllPathParamsErrorMessage.max_depth
-            }
-            value={algorithmAnalyzerStore.allPathParams.max_depth}
-            onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateAllPathParams(
-                'max_depth',
-                e.value as string
-              );
-
-              algorithmAnalyzerStore.validateAllPathParams('max_depth');
-            }}
-            originInputProps={{
-              onBlur() {
-                algorithmAnalyzerStore.validateAllPathParams('max_depth');
-              }
-            }}
-          />
-        </div>
-        <div className="query-tab-content-form-item">
-          <div className="query-tab-content-form-item-title">
-            <span>
-              {t('data-analyze.algorithm-forms.all-path.options.limit')}
-            </span>
-          </div>
-          <Input
-            width={formWidth}
-            size="medium"
-            disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
-            placeholder={t(
-              'data-analyze.algorithm-forms.all-path.placeholder.input-positive-integer-or-negative-one-limit'
-            )}
-            errorLocation="layer"
-            errorMessage={
-              algorithmAnalyzerStore.validateAllPathParamsErrorMessage.limit
-            }
-            value={algorithmAnalyzerStore.allPathParams.limit}
-            onChange={(e: any) => {
-              algorithmAnalyzerStore.mutateAllPathParams(
+              algorithmAnalyzerStore.mutateSameNeighborParams(
                 'limit',
                 e.value as string
               );
 
-              algorithmAnalyzerStore.validateAllPathParams('limit');
+              algorithmAnalyzerStore.validateSameNeighborParams('limit');
             }}
             originInputProps={{
               onBlur() {
-                algorithmAnalyzerStore.validateAllPathParams('limit');
+                algorithmAnalyzerStore.validateSameNeighborParams('limit');
               }
             }}
           />
@@ -364,8 +275,8 @@ const AllPath = observer(() => {
 
             const timerId = dataAnalyzeStore.addTempExecLog();
             await dataAnalyzeStore.fetchGraphs({
-              url: 'paths',
-              type: Algorithm.allPath
+              url: 'sameneighbors',
+              type: Algorithm.sameNeighbor
             });
             await dataAnalyzeStore.fetchExecutionLogs();
             window.clearTimeout(timerId);
@@ -377,7 +288,7 @@ const AllPath = observer(() => {
           style={styles.primaryButton}
           disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
           onClick={() => {
-            algorithmAnalyzerStore.resetAllPathParams();
+            algorithmAnalyzerStore.resetSameNeighborParams();
           }}
         >
           {t('data-analyze.manipulations.reset')}
@@ -387,4 +298,4 @@ const AllPath = observer(() => {
   );
 });
 
-export default AllPath;
+export default SameNeighbor;

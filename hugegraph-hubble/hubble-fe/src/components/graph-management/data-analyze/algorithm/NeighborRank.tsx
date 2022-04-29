@@ -1,22 +1,35 @@
 import React, { useContext } from 'react';
 import { observer } from 'mobx-react';
-import { size, last } from 'lodash-es';
+import { size } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
-import classnames from 'classnames';
 import { styles } from '../QueryAndAlgorithmLibrary';
 import { Button, Radio, Input, Select } from 'hubble-ui';
 
 import { Tooltip as CustomTooltip } from '../../../common';
+import { GraphManagementStoreContext } from '../../../../stores';
 import DataAnalyzeStore from '../../../../stores/GraphManagementStore/dataAnalyzeStore/dataAnalyzeStore';
+import { calcAlgorithmFormWidth } from '../../../../utils';
 
 import QuestionMarkIcon from '../../../../assets/imgs/ic_question_mark.svg';
 import { Algorithm } from '../../../../stores/factory/dataAnalyzeStore/algorithmStore';
-import { NeighborRankRule } from '../../../../stores/types/GraphManagementStore/dataAnalyzeStore';
 
 const NeighborRank = observer(() => {
-  const { t } = useTranslation();
+  const graphManagementStore = useContext(GraphManagementStoreContext);
   const dataAnalyzeStore = useContext(DataAnalyzeStore);
   const algorithmAnalyzerStore = dataAnalyzeStore.algorithmAnalyzerStore;
+  const { t } = useTranslation();
+
+  const formWidth = calcAlgorithmFormWidth(
+    graphManagementStore.isExpanded,
+    340,
+    400
+  );
+
+  const formWidthInStep = calcAlgorithmFormWidth(
+    graphManagementStore.isExpanded,
+    310,
+    380
+  );
 
   const isValidExec =
     Object.values(
@@ -28,17 +41,9 @@ const NeighborRank = observer(() => {
     algorithmAnalyzerStore.neighborRankParams.source !== '' &&
     algorithmAnalyzerStore.neighborRankParams.alpha !== '';
 
-  const isValidAddRule =
-    algorithmAnalyzerStore.validateNeighborRankParamsParamsErrorMessage.steps.every(
-      (step) => Object.values(step).every((value) => value === '')
-    ) && algorithmAnalyzerStore.duplicateNeighborRankRuleSet.size === 0;
-
-  const invalidExtendFormClassname = (flag: boolean) => {
-    return classnames({
-      'query-tab-content-form-expand-items': true,
-      'query-tab-content-form-expand-items-invalid': flag
-    });
-  };
+  const isValidAddRule = algorithmAnalyzerStore.validateNeighborRankParamsParamsErrorMessage.steps.every(
+    (step) => Object.values(step).every((value) => value === '')
+  );
 
   return (
     <div style={{ display: 'flex' }}>
@@ -55,7 +60,7 @@ const NeighborRank = observer(() => {
               </span>
             </div>
             <Input
-              width={400}
+              width={formWidth}
               size="medium"
               disabled={
                 dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
@@ -97,7 +102,7 @@ const NeighborRank = observer(() => {
               </span>
             </div>
             <Input
-              width={400}
+              width={formWidth}
               size="medium"
               disabled={
                 dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
@@ -133,37 +138,6 @@ const NeighborRank = observer(() => {
               className="query-tab-content-form-item-title"
               style={{ width: 105 }}
             >
-              <i>*</i>
-              <span>
-                {t(
-                  'data-analyze.algorithm-forms.neighbor-rank.options.direction'
-                )}
-              </span>
-            </div>
-            <Radio.Group
-              disabled={
-                dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
-              }
-              value={algorithmAnalyzerStore.neighborRankParams.direction}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                algorithmAnalyzerStore.mutateNeighborRankParams(
-                  'direction',
-                  e.target.value
-                );
-              }}
-            >
-              <Radio value="BOTH">both</Radio>
-              <Radio value="OUT">out</Radio>
-              <Radio value="IN">in</Radio>
-            </Radio.Group>
-          </div>
-        </div>
-        <div className="query-tab-content-form-row">
-          <div className="query-tab-content-form-item">
-            <div
-              className="query-tab-content-form-item-title"
-              style={{ width: 105 }}
-            >
               <span>
                 {t(
                   'data-analyze.algorithm-forms.neighbor-rank.options.capacity'
@@ -171,13 +145,13 @@ const NeighborRank = observer(() => {
               </span>
             </div>
             <Input
-              width={400}
+              width={formWidth}
               size="medium"
               disabled={
                 dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
               }
               placeholder={t(
-                'data-analyze.algorithm-forms.neighbor-rank.placeholder.input-positive-integer'
+                'data-analyze.algorithm-forms.neighbor-rank.placeholder.input-positive-integer-or-negative-one-capacity'
               )}
               errorLocation="layer"
               errorMessage={
@@ -219,7 +193,7 @@ const NeighborRank = observer(() => {
               const timerId = dataAnalyzeStore.addTempExecLog();
               await dataAnalyzeStore.fetchGraphs({
                 url: 'neighborrank',
-                type: Algorithm.neighborRankRecommendation
+                type: Algorithm.neighborRank
               });
               await dataAnalyzeStore.fetchExecutionLogs();
               window.clearTimeout(timerId);
@@ -231,7 +205,7 @@ const NeighborRank = observer(() => {
             style={styles.primaryButton}
             disabled={dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'}
             onClick={() => {
-              algorithmAnalyzerStore.resetShortestPathAllParams();
+              algorithmAnalyzerStore.resetNeighborRankParams();
             }}
           >
             {t('data-analyze.manipulations.reset')}
@@ -244,13 +218,9 @@ const NeighborRank = observer(() => {
         style={{ width: '50%' }}
       >
         {algorithmAnalyzerStore.neighborRankParams.steps.map(
-          ({ uuid, direction, label, degree, top }, ruleIndex) => {
+          ({ uuid, direction, labels, degree, top }, ruleIndex) => {
             return (
-              <div
-                className={invalidExtendFormClassname(
-                  algorithmAnalyzerStore.duplicateNeighborRankRuleSet.has(uuid)
-                )}
-              >
+              <div className="query-tab-content-form-expand-items">
                 <div className="query-tab-content-form-expand-item">
                   <div className="query-tab-content-form-item-title query-tab-content-form-expand-title">
                     <i>*</i>
@@ -271,10 +241,6 @@ const NeighborRank = observer(() => {
                         e.target.value,
                         ruleIndex
                       );
-
-                      algorithmAnalyzerStore.validateDuplicateNeighborRankRules(
-                        uuid
-                      );
                     }}
                   >
                     <Radio value="BOTH">both</Radio>
@@ -285,7 +251,7 @@ const NeighborRank = observer(() => {
                     1 && (
                     <div
                       style={{
-                        marginLeft: 198,
+                        marginLeft: 175,
                         fontSize: 14,
                         color: '#2b65ff',
                         cursor: 'pointer',
@@ -294,10 +260,6 @@ const NeighborRank = observer(() => {
                       onClick={() => {
                         algorithmAnalyzerStore.removeNeighborRankRule(
                           ruleIndex
-                        );
-
-                        algorithmAnalyzerStore.validateDuplicateNeighborRankRules(
-                          uuid
                         );
                       }}
                     >
@@ -316,23 +278,19 @@ const NeighborRank = observer(() => {
                   <Select
                     size="medium"
                     trigger="click"
-                    value={label}
+                    value={labels[0]}
                     notFoundContent={t(
                       'data-analyze.algorithm-forms.neighbor-rank.placeholder.no-edge-types'
                     )}
                     disabled={
                       dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
                     }
-                    width={400}
+                    width={formWidthInStep}
                     onChange={(value: string) => {
                       algorithmAnalyzerStore.mutateNeighborRankRuleParams(
-                        'label',
-                        value,
+                        'labels',
+                        [value],
                         ruleIndex
-                      );
-
-                      algorithmAnalyzerStore.validateDuplicateNeighborRankRules(
-                        uuid
                       );
                     }}
                   >
@@ -355,15 +313,41 @@ const NeighborRank = observer(() => {
                         'data-analyze.algorithm-forms.neighbor-rank.options.degree'
                       )}
                     </span>
+                    <CustomTooltip
+                      trigger="hover"
+                      placement="bottom-start"
+                      modifiers={{
+                        offset: {
+                          offset: '0, 8'
+                        }
+                      }}
+                      tooltipWrapperProps={{
+                        className: 'tooltips-dark',
+                        style: {
+                          zIndex: 7
+                        }
+                      }}
+                      tooltipWrapper={t(
+                        'data-analyze.algorithm-forms.neighbor-rank.hint.max-degree'
+                      )}
+                      childrenProps={{
+                        src: QuestionMarkIcon,
+                        alt: 'hint',
+                        style: {
+                          marginLeft: 5
+                        }
+                      }}
+                      childrenWrapperElement="img"
+                    />
                   </div>
                   <Input
-                    width={400}
+                    width={formWidthInStep}
                     size="medium"
                     disabled={
                       dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
                     }
                     placeholder={t(
-                      'data-analyze.algorithm-forms.neighbor-rank.placeholder.input-integer'
+                      'data-analyze.algorithm-forms.neighbor-rank.placeholder.input-positive-integer-or-negative-one-max-degree'
                     )}
                     errorLocation="layer"
                     errorMessage={
@@ -383,10 +367,6 @@ const NeighborRank = observer(() => {
                       algorithmAnalyzerStore.validateNeighborRankRules(
                         'degree',
                         ruleIndex
-                      );
-
-                      algorithmAnalyzerStore.validateDuplicateNeighborRankRules(
-                        uuid
                       );
                     }}
                     originInputProps={{
@@ -434,13 +414,13 @@ const NeighborRank = observer(() => {
                     />
                   </div>
                   <Input
-                    width={400}
+                    width={formWidthInStep}
                     size="medium"
                     disabled={
                       dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
                     }
                     placeholder={t(
-                      'data-analyze.algorithm-forms.neighbor-rank.placeholder.input-integer'
+                      'data-analyze.algorithm-forms.neighbor-rank.placeholder.input-integer-lt-1000'
                     )}
                     errorLocation="layer"
                     errorMessage={
@@ -460,10 +440,6 @@ const NeighborRank = observer(() => {
                       algorithmAnalyzerStore.validateNeighborRankRules(
                         'top',
                         ruleIndex
-                      );
-
-                      algorithmAnalyzerStore.validateDuplicateNeighborRankRules(
-                        uuid
                       );
                     }}
                     originInputProps={{
@@ -488,42 +464,16 @@ const NeighborRank = observer(() => {
             marginTop: 8
           }}
         >
-          {algorithmAnalyzerStore.duplicateNeighborRankRuleSet.size === 0 ? (
-            <span
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (isValidAddRule) {
-                  algorithmAnalyzerStore.addNeighborRankRule();
-
-                  algorithmAnalyzerStore.validateDuplicateNeighborRankRules(
-                    (
-                      last(
-                        algorithmAnalyzerStore.neighborRankParams.steps
-                      ) as NeighborRankRule
-                    ).uuid
-                  );
-                }
-              }}
-            >
-              {t('data-analyze.algorithm-forms.neighbor-rank.add-new-rule')}
-            </span>
-          ) : (
-            <div
-              style={{
-                width: 150,
-                boxShadow: '0 1px 4px 0 rgba(0, 0, 0, 0.15)',
-                lineHeight: '18px',
-                padding: '16px',
-                color: '#e64552',
-                fontSize: 14,
-                textAlign: 'center'
-              }}
-            >
-              {t(
-                'data-analyze.algorithm-forms.neighbor-rank.validations.input-chars'
-              )}
-            </div>
-          )}
+          <span
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              if (isValidAddRule) {
+                algorithmAnalyzerStore.addNeighborRankRule();
+              }
+            }}
+          >
+            {t('data-analyze.algorithm-forms.neighbor-rank.add-new-rule')}
+          </span>
         </div>
       </div>
     </div>
