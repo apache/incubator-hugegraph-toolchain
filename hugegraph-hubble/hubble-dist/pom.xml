@@ -12,7 +12,7 @@
     <artifactId>hubble-dist</artifactId>
 
     <properties>
-        <release.name>${project.artifactId}</release.name>
+        <release.name>${project.parent.artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
         <current.basedir>${project.basedir}/</current.basedir>
         <assembly.dir>${current.basedir}/assembly</assembly.dir>
@@ -67,7 +67,7 @@
                                     yarn install &amp;&amp; yarn build || exit 1
                                     echo -e "Hubble-FE build successfully.\n"
 
-                                    cd ${current.basedir} &amp;&amp; pwd
+                                    cd ${top.level.dir} &amp;&amp; pwd
                                     rm -rf ${final.name}/ui
                                     cp -r ${hubble-fe.dir}/build ${final.name}/ui
 
