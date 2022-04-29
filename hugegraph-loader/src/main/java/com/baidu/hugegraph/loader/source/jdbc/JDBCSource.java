@@ -63,7 +63,8 @@ public class JDBCSource extends AbstractSource {
         E.checkArgument(this.database != null, "The database can't be null");
         E.checkArgument(this.username != null, "The username can't be null");
         E.checkArgument(this.password != null, "The password can't be null");
-        E.checkArgument(this.table != null || this.customSQL != null, "At least one of table and sql can't be null");
+        E.checkArgument(this.table != null || this.customSQL != null,
+                        "At least one of table and sql can't be null");
 
         this.schema = this.vendor.checkSchema(this);
         if (this.driver == null) {
@@ -75,7 +76,7 @@ public class JDBCSource extends AbstractSource {
         return this.customSQL;
     }
 
-    public boolean existsSql() {
+    public boolean existsSQL() {
         return this.customSQL != null;
     }
 

@@ -130,15 +130,16 @@ public class RowFetcher {
             return null;
         }
 
-        String select = this.source.existsSql() ?
-                this.source.customSQL() : this.source.vendor().buildSelectSql(this.source, this.nextStartRow);
+        String select = this.source.existsSQL() ?
+                        this.source.customSQL() :
+                        this.source.vendor().buildSelectSql(this.source, this.nextStartRow);
 
         LOG.debug("The sql for select is: {}", select);
 
         List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
-            if (this.source.existsSql()) {
+            if (this.source.existsSQL()) {
                 this.readHeader(result);
             }
             while (result.next()) {
@@ -159,7 +160,7 @@ public class RowFetcher {
             throw e;
         }
 
-        if (this.source.existsSql() || batch.size() != this.source.batchSize() + 1) {
+        if (this.source.existsSQL() || batch.size() != this.source.batchSize() + 1) {
             this.fullyFetched = true;
         } else {
             // Remove the last one
