@@ -96,7 +96,7 @@ public class RowFetcher {
         return this.columns;
     }
 
-    public String[] readHeader(ResultSet rs) throws SQLException {
+    private String[] readHeader(ResultSet rs) throws SQLException {
         ResultSetMetaData metaData = rs.getMetaData();
         List<String> columns = new ArrayList<>();
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
@@ -131,7 +131,7 @@ public class RowFetcher {
         }
 
         String select = this.source.existsSql() ?
-                this.source.sql() : this.source.vendor().buildSelectSql(this.source, this.nextStartRow);
+                this.source.customSQL() : this.source.vendor().buildSelectSql(this.source, this.nextStartRow);
 
         LOG.debug("The sql for select is: {}", select);
 
@@ -139,7 +139,7 @@ public class RowFetcher {
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
             if (this.source.existsSql()) {
-                readHeader(result);
+                this.readHeader(result);
             }
             while (result.next()) {
                 Object[] values = new Object[this.columns.length];
