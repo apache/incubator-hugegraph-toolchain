@@ -130,7 +130,7 @@ public class RowFetcher {
             return null;
         }
 
-        String select = this.source.existsSQL() ?
+        String select = this.source.existsCustomSQL() ?
                         this.source.customSQL() :
                         this.source.vendor().buildSelectSql(this.source, this.nextStartRow);
 
@@ -139,7 +139,7 @@ public class RowFetcher {
         List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
-            if (this.source.existsSQL()) {
+            if (this.source.existsCustomSQL()) {
                 this.readHeader(result);
             }
             while (result.next()) {
@@ -160,7 +160,7 @@ public class RowFetcher {
             throw e;
         }
 
-        if (this.source.existsSQL() || batch.size() != this.source.batchSize() + 1) {
+        if (this.source.existsCustomSQL() || batch.size() != this.source.batchSize() + 1) {
             this.fullyFetched = true;
         } else {
             // Remove the last one

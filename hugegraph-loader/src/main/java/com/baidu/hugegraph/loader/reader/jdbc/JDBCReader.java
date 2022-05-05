@@ -59,7 +59,7 @@ public class JDBCReader extends AbstractReader {
     public void init(LoadContext context, InputStruct struct)
                      throws InitException {
         this.progress(context, struct);
-        if (!this.source.existsSql()) {
+        if (!this.source.existsCustomSQL()) {
             try {
                 this.source.header(this.fetcher.readHeader());
                 this.fetcher.readPrimaryKey();

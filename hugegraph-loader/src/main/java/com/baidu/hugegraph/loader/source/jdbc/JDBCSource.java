@@ -76,7 +76,7 @@ public class JDBCSource extends AbstractSource {
         return this.customSQL;
     }
 
-    public boolean existsSQL() {
+    public boolean existsCustomSQL() {
         return this.customSQL != null;
     }
 
