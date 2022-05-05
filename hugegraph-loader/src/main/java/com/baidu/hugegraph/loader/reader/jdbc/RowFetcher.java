@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.reader.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -95,6 +96,16 @@ public class RowFetcher {
         return this.columns;
     }
 
+    private String[] readHeader(ResultSet rs) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+        List<String> columns = new ArrayList<>();
+        for (int i = 1; i <= metaData.getColumnCount(); i++) {
+            columns.add(metaData.getColumnName(i));
+        }
+        this.columns = columns.toArray(new String[]{});
+        return this.columns;
+    }
+
     public void readPrimaryKey() throws SQLException {
         String sql = this.source.vendor().buildGetPrimaryKeySql(this.source);
         LOG.debug("The sql for reading primary keys is: {}", sql);
@@ -119,13 +130,18 @@ public class RowFetcher {
             return null;
         }
 
-        String select = this.source.vendor().buildSelectSql(this.source,
-                                                            this.nextStartRow);
+        String select = this.source.existsCustomSQL() ?
+                        this.source.customSQL() :
+                        this.source.vendor().buildSelectSql(this.source, this.nextStartRow);
+
         LOG.debug("The sql for select is: {}", select);
 
         List<Line> batch = new ArrayList<>(this.source.batchSize() + 1);
         try (Statement stmt = this.conn.createStatement();
              ResultSet result = stmt.executeQuery(select)) {
+            if (this.source.existsCustomSQL()) {
+                this.readHeader(result);
+            }
             while (result.next()) {
                 Object[] values = new Object[this.columns.length];
                 for (int i = 1, n = this.columns.length; i <= n; i++) {
@@ -144,7 +160,7 @@ public class RowFetcher {
             throw e;
         }
 
-        if (batch.size() != this.source.batchSize() + 1) {
+        if (this.source.existsCustomSQL() || batch.size() != this.source.batchSize() + 1) {
             this.fullyFetched = true;
         } else {
             // Remove the last one
