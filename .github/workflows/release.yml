@@ -1,4 +1,5 @@
-name: release package
+# TODO: unify all modules later
+name: release-package
 
 on:
   release:

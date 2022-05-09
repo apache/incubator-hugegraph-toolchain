@@ -13,10 +13,10 @@
     <packaging>jar</packaging>
 
     <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-tools</url>
-    <name>${artifactId}</name>
+    <name>${project.artifactId}</name>
 
     <properties>
-        <release.name>${artifactId}</release.name>
+        <release.name>${project.artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
@@ -246,7 +246,7 @@
                         <artifactId>maven-checkstyle-plugin</artifactId>
                         <version>3.1.0</version>
                         <configuration>
-                            <configLocation>checkstyle.xml</configLocation>
+                            <configLocation>../checkstyle.xml</configLocation>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>

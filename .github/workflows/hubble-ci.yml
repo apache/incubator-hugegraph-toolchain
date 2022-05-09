@@ -1,4 +1,4 @@
-name: hugegraph-hubble ci
+name: hugegraph-hubble-ci
 
 on:
   push:
@@ -7,15 +7,21 @@ on:
       - /^release-.*$/
       - /^test-.*$/
       - /^v[0-9]\..*$/
+    paths:
+      - hugegraph-hubble/**
+      - pom.xml
   pull_request:
     branches:
       - master
       - /^release-.*$/
       - /^test-.*$/
       - /^v[0-9]\..*$/
+    paths:
+      - hugegraph-hubble/**
+      - pom.xml
 
 env:
-  TRAVIS_DIR: hubble-dist/assembly/travis
+  TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
   SERVER_VERSION: 0.12.0
 
 jobs:
@@ -66,7 +72,8 @@ jobs:
 
       - name: Compile
         run: |
-          mvn clean compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
+          cd hugegraph-hubble && ls *
+          mvn -e clean compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
 
       - name: Prepare env and service
         run: |
@@ -74,15 +81,16 @@ jobs:
           $TRAVIS_DIR/install-hugegraph.sh $SERVER_VERSION
 
       - name: Unit test
-        run: mvn test -P unit-test
+        run: cd hugegraph-hubble && mvn test -P unit-test
 
       - name: API test
         env:
           CI: false
         run: |
-          $TRAVIS_DIR/run-api-test.sh
+          cd hugegraph-hubble && ls
+          hubble-dist/assembly/travis/run-api-test.sh
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3.0.0
         with:
           file: target/site/jacoco/*.xml

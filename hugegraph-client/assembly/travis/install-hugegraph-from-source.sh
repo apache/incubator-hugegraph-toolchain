@@ -8,13 +8,13 @@ if [[ $# -ne 1 ]]; then
 fi
 
 COMMIT_ID=$1
-HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
+HUGEGRAPH_GIT_URL="https://github.com/apache/incubator-hugegraph.git"
 GIT_DIR=hugegraph
 
 # download code and compile
-git clone --depth 100 ${HUGEGRAPH_GIT_URL}
+git clone --depth 100 ${HUGEGRAPH_GIT_URL} $GIT_DIR
 cd "${GIT_DIR}"
-git checkout ${COMMIT_ID}
+git checkout "${COMMIT_ID}"
 mvn package -DskipTests
 
 TAR=$(echo hugegraph-*.tar.gz)
@@ -22,7 +22,7 @@ tar -zxvf "${TAR}" -C ../
 cd ../
 rm -rf "${GIT_DIR}"
 
-HTTP_SERVER_DIR=$(echo hugegraph-*)
+HTTP_SERVER_DIR=$(echo hugegraph-*.*)
 HTTPS_SERVER_DIR="hugegraph_https"
 
 cp -r "${HTTP_SERVER_DIR}" "${HTTPS_SERVER_DIR}"

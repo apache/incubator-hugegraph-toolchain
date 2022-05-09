@@ -12,7 +12,7 @@
     <artifactId>hugegraph-client</artifactId>
     <packaging>jar</packaging>
 
-    <name>${artifactId}}</name>
+    <name>${project.artifactId}</name>
     <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-client</url>
     <description>
         hugegraph-client is a Java-written client of HugeGraph, providing
