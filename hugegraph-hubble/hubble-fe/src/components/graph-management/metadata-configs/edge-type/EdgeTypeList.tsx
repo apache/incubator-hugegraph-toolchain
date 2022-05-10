@@ -113,10 +113,14 @@ const EdgeTypeList: React.FC = observer(() => {
   const [isShowModal, switchShowModal] = useState(false);
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isEditEdge, switchIsEditEdge] = useState(false);
-  const [deleteExistPopIndexInDrawer, setDeleteExistPopIndexInDrawer] =
-    useState<number | null>(null);
-  const [deleteAddedPopIndexInDrawer, setDeleteAddedPopIndexInDrawer] =
-    useState<number | null>(null);
+  const [
+    deleteExistPopIndexInDrawer,
+    setDeleteExistPopIndexInDrawer
+  ] = useState<number | null>(null);
+  const [
+    deleteAddedPopIndexInDrawer,
+    setDeleteAddedPopIndexInDrawer
+  ] = useState<number | null>(null);
   const [, setLocation] = useLocation();
 
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
@@ -128,6 +132,28 @@ const EdgeTypeList: React.FC = observer(() => {
   const currentSelectedRowKeys = intersection(
     selectedRowKeys,
     edgeTypeStore.edgeTypes.map(({ name }) => name)
+  );
+
+  const handleOutSideClick = useCallback(
+    (e: MouseEvent) => {
+      if (
+        isAddProperty &&
+        dropdownWrapperRef.current &&
+        !dropdownWrapperRef.current.contains(e.target as Element)
+      ) {
+        switchIsAddProperty(false);
+      }
+
+      if (
+        (deleteExistPopIndexInDrawer || deleteAddedPopIndexInDrawer) &&
+        deleteWrapperInDrawerRef.current &&
+        !deleteWrapperInDrawerRef.current.contains(e.target as Element)
+      ) {
+        setDeleteExistPopIndexInDrawer(null);
+        setDeleteAddedPopIndexInDrawer(null);
+      }
+    },
+    [deleteExistPopIndexInDrawer, deleteWrapperInDrawerRef, isAddProperty]
   );
 
   const handleSelectedTableRow = (newSelectedRowKeys: string[]) => {
@@ -224,8 +250,8 @@ const EdgeTypeList: React.FC = observer(() => {
                   icon: null,
                   with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
                   thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
-                  display_fields:
-                    edgeTypeStore.selectedEdgeType!.style.display_fields
+                  display_fields: edgeTypeStore.selectedEdgeType!.style
+                    .display_fields
                 }
               });
             }}
@@ -376,6 +402,14 @@ const EdgeTypeList: React.FC = observer(() => {
     metadataConfigsRootStore.currentId,
     edgeTypeStore
   ]);
+
+  useEffect(() => {
+    document.addEventListener('click', handleOutSideClick, false);
+
+    return () => {
+      document.removeEventListener('click', handleOutSideClick, false);
+    };
+  }, [handleOutSideClick]);
 
   if (edgeTypeStore.currentTabStatus === 'new') {
     return <NewEdgeType />;
@@ -557,12 +591,12 @@ const EdgeTypeList: React.FC = observer(() => {
                     style: {
                       color: edgeTypeStore.selectedEdgeType!.style.color,
                       icon: null,
-                      with_arrow:
-                        edgeTypeStore.selectedEdgeType!.style.with_arrow,
-                      thickness:
-                        edgeTypeStore.selectedEdgeType!.style.thickness,
-                      display_fields:
-                        edgeTypeStore.selectedEdgeType!.style.display_fields
+                      with_arrow: edgeTypeStore.selectedEdgeType!.style
+                        .with_arrow,
+                      thickness: edgeTypeStore.selectedEdgeType!.style
+                        .thickness,
+                      display_fields: edgeTypeStore.selectedEdgeType!.style
+                        .display_fields
                     }
                   });
                 } else {
@@ -659,7 +693,9 @@ const EdgeTypeList: React.FC = observer(() => {
                   <div className="metadata-drawer-options-name">
                     <span>{t('addition.common.edge-type-name')}：</span>
                   </div>
-                  {edgeTypeStore.selectedEdgeType!.name}
+                  <div style={{ maxWidth: 420 }}>
+                    {edgeTypeStore.selectedEdgeType!.name}
+                  </div>
                 </div>
                 <div className="metadata-drawer-options">
                   <div className="metadata-drawer-options-name">
@@ -876,13 +912,17 @@ const EdgeTypeList: React.FC = observer(() => {
                   <div className="metadata-drawer-options-name">
                     <span>{t('addition.common.source-type')}：</span>
                   </div>
-                  {edgeTypeStore.selectedEdgeType!.source_label}
+                  <div style={{ maxWidth: 420 }}>
+                    {edgeTypeStore.selectedEdgeType!.source_label}
+                  </div>
                 </div>
                 <div className={metadataDrawerOptionClass}>
                   <div className="metadata-drawer-options-name">
                     <span>{t('addition.common.target-type')}：</span>
                   </div>
-                  {edgeTypeStore.selectedEdgeType!.target_label}
+                  <div style={{ maxWidth: 420 }}>
+                    {edgeTypeStore.selectedEdgeType!.target_label}
+                  </div>
                 </div>
                 <div className={metadataDrawerOptionClass}>
                   <div className="metadata-drawer-options-name">
@@ -913,7 +953,7 @@ const EdgeTypeList: React.FC = observer(() => {
                           className="metadata-drawer-options-list-row"
                           key={name}
                         >
-                          <div>{name}</div>
+                          <div style={{ maxWidth: 260 }}>{name}</div>
                           <div style={{ width: 70, textAlign: 'center' }}>
                             <Switch
                               checkedChildren={t('addition.operate.open')}
@@ -933,7 +973,7 @@ const EdgeTypeList: React.FC = observer(() => {
                             className="metadata-drawer-options-list-row"
                             key={name}
                           >
-                            <div>{name}</div>
+                            <div style={{ maxWidth: 260 }}>{name}</div>
                             <div style={{ width: 70, textAlign: 'center' }}>
                               <Switch
                                 checkedChildren={t('addition.operate.open')}
@@ -1008,10 +1048,9 @@ const EdgeTypeList: React.FC = observer(() => {
                                       append_properties: [
                                         ...addedPropertiesInSelectedVertextType
                                       ].map((propertyName) => {
-                                        const currentProperty =
-                                          edgeTypeStore.newEdgeType.properties.find(
-                                            ({ name }) => name === propertyName
-                                          );
+                                        const currentProperty = edgeTypeStore.newEdgeType.properties.find(
+                                          ({ name }) => name === propertyName
+                                        );
 
                                         return {
                                           name: propertyName,
@@ -1040,7 +1079,9 @@ const EdgeTypeList: React.FC = observer(() => {
                       {t('addition.common.distinguishing-key-property')}：
                     </span>
                   </div>
-                  {edgeTypeStore.selectedEdgeType!.sort_keys.join(';')}
+                  <div style={{ maxWidth: 420 }}>
+                    {edgeTypeStore.selectedEdgeType!.sort_keys.join(';')}
+                  </div>
                 </div>
                 <div className="metadata-drawer-options">
                   <div className="metadata-drawer-options-name">
@@ -1091,10 +1132,9 @@ const EdgeTypeList: React.FC = observer(() => {
                         )
                         .filter(({ nullable }) => !nullable)
                         .map((item) => {
-                          const order =
-                            edgeTypeStore.editedSelectedEdgeType.style.display_fields.findIndex(
-                              (name) => name === item.name
-                            );
+                          const order = edgeTypeStore.editedSelectedEdgeType.style.display_fields.findIndex(
+                            (name) => name === item.name
+                          );
 
                           const multiSelectOptionClassName = classnames({
                             'metadata-configs-sorted-multiSelect-option': true,
@@ -1113,18 +1153,16 @@ const EdgeTypeList: React.FC = observer(() => {
                               <div className={multiSelectOptionClassName}>
                                 <div
                                   style={{
-                                    backgroundColor:
-                                      edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
-                                        item.name
-                                      )
-                                        ? '#2b65ff'
-                                        : '#fff',
-                                    borderColor:
-                                      edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
-                                        item.name
-                                      )
-                                        ? '#fff'
-                                        : '#e0e0e0'
+                                    backgroundColor: edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
+                                      item.name
+                                    )
+                                      ? '#2b65ff'
+                                      : '#fff',
+                                    borderColor: edgeTypeStore.editedSelectedEdgeType.style.display_fields.includes(
+                                      item.name
+                                    )
+                                      ? '#fff'
+                                      : '#e0e0e0'
                                   }}
                                 >
                                   {order !== -1 ? order + 1 : ''}
@@ -1141,7 +1179,7 @@ const EdgeTypeList: React.FC = observer(() => {
                         })}
                     </Select>
                   ) : (
-                    <div>
+                    <div style={{ maxWidth: 420 }}>
                       {edgeTypeStore.selectedEdgeType?.style.display_fields
                         .map((field) =>
                           formatVertexIdText(
@@ -1281,12 +1319,11 @@ const EdgeTypeList: React.FC = observer(() => {
                                             cursor: 'pointer'
                                           }}
                                           onClick={() => {
-                                            const removedPropertyIndex =
-                                              cloneDeep(
-                                                edgeTypeStore
-                                                  .editedSelectedEdgeType
-                                                  .remove_property_indexes
-                                              );
+                                            const removedPropertyIndex = cloneDeep(
+                                              edgeTypeStore
+                                                .editedSelectedEdgeType
+                                                .remove_property_indexes
+                                            );
 
                                             removedPropertyIndex.push(
                                               edgeTypeStore.selectedEdgeType!
@@ -1296,8 +1333,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                             edgeTypeStore.mutateEditedSelectedEdgeType(
                                               {
                                                 ...edgeTypeStore.editedSelectedEdgeType,
-                                                remove_property_indexes:
-                                                  removedPropertyIndex
+                                                remove_property_indexes: removedPropertyIndex
                                               }
                                             );
 
@@ -1359,13 +1395,11 @@ const EdgeTypeList: React.FC = observer(() => {
                                 errorMessage={
                                   edgeTypeStore.validateEditEdgeTypeErrorMessage
                                     .propertyIndexes.length !== 0
-                                    ? (
-                                        edgeTypeStore
-                                          .validateEditEdgeTypeErrorMessage
-                                          .propertyIndexes[
-                                          index
-                                        ] as EdgeTypeValidatePropertyIndexes
-                                      ).name
+                                    ? (edgeTypeStore
+                                        .validateEditEdgeTypeErrorMessage
+                                        .propertyIndexes[
+                                        index
+                                      ] as EdgeTypeValidatePropertyIndexes).name
                                     : ''
                                 }
                                 value={name}
@@ -1379,8 +1413,7 @@ const EdgeTypeList: React.FC = observer(() => {
 
                                   edgeTypeStore.mutateEditedSelectedEdgeType({
                                     ...edgeTypeStore.editedSelectedEdgeType,
-                                    append_property_indexes:
-                                      propertyIndexEntities
+                                    append_property_indexes: propertyIndexEntities
                                   });
                                 }}
                                 originInputProps={{
@@ -1411,8 +1444,7 @@ const EdgeTypeList: React.FC = observer(() => {
 
                                   edgeTypeStore.mutateEditedSelectedEdgeType({
                                     ...edgeTypeStore.editedSelectedEdgeType,
-                                    append_property_indexes:
-                                      propertyIndexEntities
+                                    append_property_indexes: propertyIndexEntities
                                   });
 
                                   edgeTypeStore.validateEditEdgeType();
@@ -1460,8 +1492,7 @@ const EdgeTypeList: React.FC = observer(() => {
 
                                   edgeTypeStore.mutateEditedSelectedEdgeType({
                                     ...edgeTypeStore.editedSelectedEdgeType,
-                                    append_property_indexes:
-                                      propertyIndexEntities
+                                    append_property_indexes: propertyIndexEntities
                                   });
 
                                   edgeTypeStore.validateEditEdgeType();
@@ -1474,20 +1505,19 @@ const EdgeTypeList: React.FC = observer(() => {
                                         .append_properties
                                     )
                                     .map((property) => {
-                                      const order =
-                                        edgeTypeStore.editedSelectedEdgeType.append_property_indexes[
-                                          index
-                                        ].fields.findIndex(
-                                          (name) => name === property.name
-                                        );
+                                      const order = edgeTypeStore.editedSelectedEdgeType.append_property_indexes[
+                                        index
+                                      ].fields.findIndex(
+                                        (name) => name === property.name
+                                      );
 
-                                      const multiSelectOptionClassName =
-                                        classnames({
-                                          'metadata-configs-sorted-multiSelect-option':
-                                            true,
+                                      const multiSelectOptionClassName = classnames(
+                                        {
+                                          'metadata-configs-sorted-multiSelect-option': true,
                                           'metadata-configs-sorted-multiSelect-option-selected':
                                             order !== -1
-                                        });
+                                        }
+                                      );
 
                                       return (
                                         <Select.Option
@@ -1515,10 +1545,9 @@ const EdgeTypeList: React.FC = observer(() => {
                                         .append_properties
                                     )
                                     .filter((property) => {
-                                      const matchedProperty =
-                                        metadataPropertyStore.metadataProperties.find(
-                                          ({ name }) => name === property.name
-                                        );
+                                      const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                        ({ name }) => name === property.name
+                                      );
 
                                       if (!isUndefined(matchedProperty)) {
                                         const { data_type } = matchedProperty;
@@ -1544,10 +1573,9 @@ const EdgeTypeList: React.FC = observer(() => {
                                         .append_properties
                                     )
                                     .filter((property) => {
-                                      const matchedProperty =
-                                        metadataPropertyStore.metadataProperties.find(
-                                          ({ name }) => name === property.name
-                                        );
+                                      const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                        ({ name }) => name === property.name
+                                      );
 
                                       if (!isUndefined(matchedProperty)) {
                                         const { data_type } = matchedProperty;
@@ -1610,11 +1638,10 @@ const EdgeTypeList: React.FC = observer(() => {
                                           cursor: 'pointer'
                                         }}
                                         onClick={() => {
-                                          const appendPropertyIndexes =
-                                            cloneDeep(
-                                              edgeTypeStore.editedSelectedEdgeType!
-                                                .append_property_indexes
-                                            );
+                                          const appendPropertyIndexes = cloneDeep(
+                                            edgeTypeStore.editedSelectedEdgeType!
+                                              .append_property_indexes
+                                          );
 
                                           appendPropertyIndexes.splice(
                                             index,
@@ -1624,8 +1651,7 @@ const EdgeTypeList: React.FC = observer(() => {
                                           edgeTypeStore.mutateEditedSelectedEdgeType(
                                             {
                                               ...edgeTypeStore.editedSelectedEdgeType,
-                                              append_property_indexes:
-                                                appendPropertyIndexes
+                                              append_property_indexes: appendPropertyIndexes
                                             }
                                           );
 
@@ -1763,8 +1789,8 @@ const EdgeTypeListManipulation: React.FC<EdgeTypeListManipulation> = observer(
                 icon: null,
                 with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
                 thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
-                display_fields:
-                  edgeTypeStore.selectedEdgeType!.style.display_fields
+                display_fields: edgeTypeStore.selectedEdgeType!.style
+                  .display_fields
               }
             });
           }}

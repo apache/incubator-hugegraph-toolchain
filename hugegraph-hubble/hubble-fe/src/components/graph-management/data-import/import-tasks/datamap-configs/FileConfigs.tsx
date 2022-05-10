@@ -121,6 +121,7 @@ const FileConfigs: React.FC = observer(() => {
                   <Input
                     size="medium"
                     width={122}
+                    disabled={dataMapStore.readOnly || dataMapStore.lock}
                     placeholder={t(
                       'data-configs.file.placeholder.input-delimiter'
                     )}
@@ -192,6 +193,7 @@ const FileConfigs: React.FC = observer(() => {
                     size="medium"
                     width={122}
                     countMode="en"
+                    disabled={dataMapStore.readOnly || dataMapStore.lock}
                     placeholder={t(
                       'data-configs.file.placeholder.input-charset'
                     )}
@@ -253,6 +255,7 @@ const FileConfigs: React.FC = observer(() => {
                       size="medium"
                       width={122}
                       countMode="en"
+                      disabled={dataMapStore.readOnly || dataMapStore.lock}
                       placeholder={t(
                         'data-configs.file.placeholder.input-date-format'
                       )}

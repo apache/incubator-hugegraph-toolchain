@@ -240,6 +240,9 @@ const GraphDataView: React.FC = observer(() => {
         physics: {
           maxVelocity: 50,
           solver: 'forceAtlas2Based',
+          forceAtlas2Based: {
+            avoidOverlap: 0
+          },
           timestep: 0.3,
           stabilization: { iterations: 150 }
         }
@@ -278,8 +281,8 @@ const GraphDataView: React.FC = observer(() => {
                   color: vertexTypeStore.selectedVertexType!.style.color,
                   icon: null,
                   size: vertexTypeStore.selectedVertexType!.style.size,
-                  display_fields:
-                    vertexTypeStore.selectedVertexType!.style.display_fields
+                  display_fields: vertexTypeStore.selectedVertexType!.style
+                    .display_fields
                 }
               });
 
@@ -321,8 +324,8 @@ const GraphDataView: React.FC = observer(() => {
                   icon: null,
                   with_arrow: edgeTypeStore.selectedEdgeType!.style.with_arrow,
                   thickness: edgeTypeStore.selectedEdgeType!.style.thickness,
-                  display_fields:
-                    edgeTypeStore.selectedEdgeType!.style.display_fields
+                  display_fields: edgeTypeStore.selectedEdgeType!.style
+                    .display_fields
                 }
               });
 

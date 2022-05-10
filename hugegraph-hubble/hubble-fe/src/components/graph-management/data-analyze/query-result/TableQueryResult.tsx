@@ -1,6 +1,7 @@
 import React, { useContext, useCallback } from 'react';
 import { observer } from 'mobx-react';
 import { Table } from 'hubble-ui';
+import { size } from 'lodash-es';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
 
@@ -11,6 +12,9 @@ const TableQueryResult: React.FC = observer(() => {
     (title) => ({
       title,
       dataIndex: title,
+      width:
+        100 / size(dataAnalyzeStore.originalGraphData.data.table_view.header) +
+        '%',
       render(text: any) {
         if (title === 'path') {
           return <PathItem items={text} />;

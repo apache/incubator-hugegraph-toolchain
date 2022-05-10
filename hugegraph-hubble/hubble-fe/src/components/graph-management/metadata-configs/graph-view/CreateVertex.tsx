@@ -106,8 +106,13 @@ const CreateVertex: React.FC = observer(() => {
               return;
             }
 
-            const { name, properties, primary_keys, style, ...rest } =
-              vertexTypeStore.newVertexType;
+            const {
+              name,
+              properties,
+              primary_keys,
+              style,
+              ...rest
+            } = vertexTypeStore.newVertexType;
 
             const mappedProperties = mapMetadataProperties(
               properties,
@@ -165,6 +170,13 @@ const CreateVertex: React.FC = observer(() => {
                   border: '#fb6a02'
                 },
                 hover: { background: '#ec3112', border: '#ec3112' }
+              },
+              // reveal label when zoom to max
+              scaling: {
+                label: {
+                  max: Infinity,
+                  maxVisible: Infinity
+                }
               },
               chosen: {
                 node(
@@ -454,8 +466,10 @@ const CreateVertex: React.FC = observer(() => {
                               <Switch
                                 checked={property.nullable}
                                 onChange={() => {
-                                  currentProperties[index].nullable =
-                                    !currentProperties[index].nullable;
+                                  currentProperties[
+                                    index
+                                  ].nullable = !currentProperties[index]
+                                    .nullable;
 
                                   vertexTypeStore.mutateNewProperty({
                                     ...vertexTypeStore.newVertexType,
@@ -539,10 +553,9 @@ const CreateVertex: React.FC = observer(() => {
                               properties: [
                                 ...addedPropertiesInSelectedVertextType
                               ].map((propertyName) => {
-                                const currentProperty =
-                                  vertexTypeStore.newVertexType.properties.find(
-                                    ({ name }) => name === propertyName
-                                  );
+                                const currentProperty = vertexTypeStore.newVertexType.properties.find(
+                                  ({ name }) => name === propertyName
+                                );
 
                                 return {
                                   name: propertyName,
@@ -600,10 +613,9 @@ const CreateVertex: React.FC = observer(() => {
                   {vertexTypeStore.newVertexType.properties
                     .filter(({ nullable }) => !nullable)
                     .map((item) => {
-                      const order =
-                        vertexTypeStore.newVertexType.primary_keys.findIndex(
-                          (name) => name === item.name
-                        );
+                      const order = vertexTypeStore.newVertexType.primary_keys.findIndex(
+                        (name) => name === item.name
+                      );
 
                       const multiSelectOptionClassName = classnames({
                         'metadata-configs-sorted-multiSelect-option': true,
@@ -670,10 +682,9 @@ const CreateVertex: React.FC = observer(() => {
                   .concat({ name: '~id', nullable: false })
                   .filter(({ nullable }) => !nullable)
                   .map((item) => {
-                    const order =
-                      vertexTypeStore.newVertexType.style.display_fields.findIndex(
-                        (name) => name === item.name
-                      );
+                    const order = vertexTypeStore.newVertexType.style.display_fields.findIndex(
+                      (name) => name === item.name
+                    );
 
                     const multiSelectOptionClassName = classnames({
                       'metadata-configs-sorted-multiSelect-option': true,
@@ -692,18 +703,16 @@ const CreateVertex: React.FC = observer(() => {
                         <div className={multiSelectOptionClassName}>
                           <div
                             style={{
-                              backgroundColor:
-                                vertexTypeStore.newVertexType.style.display_fields.includes(
-                                  item.name
-                                )
-                                  ? '#2b65ff'
-                                  : '#fff',
-                              borderColor:
-                                vertexTypeStore.newVertexType.style.display_fields.includes(
-                                  item.name
-                                )
-                                  ? '#fff'
-                                  : '#e0e0e0'
+                              backgroundColor: vertexTypeStore.newVertexType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#2b65ff'
+                                : '#fff',
+                              borderColor: vertexTypeStore.newVertexType.style.display_fields.includes(
+                                item.name
+                              )
+                                ? '#fff'
+                                : '#e0e0e0'
                             }}
                           >
                             {order !== -1 ? order + 1 : ''}
@@ -756,8 +765,8 @@ const CreateVertex: React.FC = observer(() => {
                 onChange={() => {
                   vertexTypeStore.mutateNewProperty({
                     ...vertexTypeStore.newVertexType,
-                    open_label_index:
-                      !vertexTypeStore.newVertexType.open_label_index
+                    open_label_index: !vertexTypeStore.newVertexType
+                      .open_label_index
                   });
                 }}
                 size="large"
@@ -811,13 +820,11 @@ const CreateVertex: React.FC = observer(() => {
                           errorMessage={
                             vertexTypeStore.validateNewVertexTypeErrorMessage
                               .propertyIndexes.length !== 0
-                              ? (
-                                  vertexTypeStore
-                                    .validateNewVertexTypeErrorMessage
-                                    .propertyIndexes[
-                                    index
-                                  ] as VertexTypeValidatePropertyIndexes
-                                ).name
+                              ? (vertexTypeStore
+                                  .validateNewVertexTypeErrorMessage
+                                  .propertyIndexes[
+                                  index
+                                ] as VertexTypeValidatePropertyIndexes).name
                               : ''
                           }
                           value={name}
@@ -921,16 +928,14 @@ const CreateVertex: React.FC = observer(() => {
                                   )
                               )
                               .map((property) => {
-                                const order =
-                                  vertexTypeStore.newVertexType.property_indexes[
-                                    index
-                                  ].fields.findIndex(
-                                    (name) => name === property.name
-                                  );
+                                const order = vertexTypeStore.newVertexType.property_indexes[
+                                  index
+                                ].fields.findIndex(
+                                  (name) => name === property.name
+                                );
 
                                 const multiSelectOptionClassName = classnames({
-                                  'metadata-configs-sorted-multiSelect-option':
-                                    true,
+                                  'metadata-configs-sorted-multiSelect-option': true,
                                   'metadata-configs-sorted-multiSelect-option-selected':
                                     order !== -1
                                 });
@@ -951,10 +956,9 @@ const CreateVertex: React.FC = observer(() => {
                           {type === 'RANGE' &&
                             vertexTypeStore.newVertexType.properties
                               .filter((property) => {
-                                const matchedProperty =
-                                  metadataPropertyStore.metadataProperties.find(
-                                    ({ name }) => name === property.name
-                                  );
+                                const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                  ({ name }) => name === property.name
+                                );
 
                                 if (!isUndefined(matchedProperty)) {
                                   const { data_type } = matchedProperty;
@@ -976,10 +980,9 @@ const CreateVertex: React.FC = observer(() => {
                           {type === 'SEARCH' &&
                             vertexTypeStore.newVertexType.properties
                               .filter((property) => {
-                                const matchedProperty =
-                                  metadataPropertyStore.metadataProperties.find(
-                                    ({ name }) => name === property.name
-                                  );
+                                const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                  ({ name }) => name === property.name
+                                );
 
                                 if (!isUndefined(matchedProperty)) {
                                   const { data_type } = matchedProperty;
