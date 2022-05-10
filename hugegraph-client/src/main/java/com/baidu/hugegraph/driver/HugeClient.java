@@ -40,6 +40,7 @@ public class HugeClient implements Closeable {
     private SchemaManager schema;
     private GraphManager graph;
     private GremlinManager gremlin;
+    private CypherManager cypher;
     private TraverserManager traverser;
     private VariablesManager variable;
     private JobManager job;
@@ -97,6 +98,7 @@ public class HugeClient implements Closeable {
         this.schema = new SchemaManager(client, graph);
         this.graph = new GraphManager(client, graph);
         this.gremlin = new GremlinManager(client, graph, this.graph);
+        this.cypher = new CypherManager(client, graph, this.graph);
         this.traverser = new TraverserManager(client, this.graph);
         this.variable = new VariablesManager(client, graph);
         this.job = new JobManager(client, graph);
@@ -108,7 +110,7 @@ public class HugeClient implements Closeable {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(
                                          this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.38", "0.68",
+        VersionUtil.check(apiVersion, "0.38", "0.70",
                           "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
     }
@@ -127,6 +129,10 @@ public class HugeClient implements Closeable {
 
     public GremlinManager gremlin() {
         return this.gremlin;
+    }
+
+    public CypherManager cypher() {
+        return this.cypher;
     }
 
     public TraverserManager traverser() {

@@ -60,7 +60,10 @@ public enum HugeType {
     VERSION(230, "versions"),
 
     // Metrics
-    METRICS(240, "metrics");
+    METRICS(240, "metrics"),
+
+    // Cypher
+    CYPHER(250, "cypher");
 
     private int code;
     private String name = null;
