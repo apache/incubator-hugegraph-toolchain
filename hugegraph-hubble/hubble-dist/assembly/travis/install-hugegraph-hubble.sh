@@ -11,4 +11,4 @@ pwd && mvn -e -X clean package -DskipTests
 cp "${TRAVIS_DIR}"/jacocoagent.jar $HUBBLE_DIR/lib || exit 1
 cp "${TRAVIS_DIR}"/start-hubble.sh $HUBBLE_DIR/bin || exit 1
 
-sh hugegraph-hubble-*/bin/start-hubble.sh
+bash hugegraph-hubble-*/bin/start-hubble.sh
