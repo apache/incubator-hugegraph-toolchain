@@ -198,8 +198,6 @@
                         <configuration>
                             <tasks>
                                 <echo file="${project.basedir}/dist.sh">
-                                    echo -n "666 ${project.basedir}/${final.name}.tar.gz ${final.name}"
-                                    pwd
                                     tar -zcvf \
                                     ${project.basedir}/${final.name}.tar.gz ${final.name} || exit 1
                                     rm -f ${project.basedir}/dist.sh
