@@ -223,15 +223,11 @@
 <!--                        <configuration>-->
 <!--                            <tasks>-->
 <!--                                <echo file="${project.basedir}/dist.sh">-->
-<!--                                    \cp -r hugegraph-hubble/hugegraph-hubble-*  ${project.basedir}-->
-<!--                                    \cp -r hugegraph-client/hugegraph-client-*  ${project.basedir}-->
-<!--                                    \cp -r hugegraph-loader/hugegraph-loader-*  ${project.basedir}-->
-<!--                                    \cp -r hugegraph-tools/hugegraph-tools-*    ${project.basedir}-->
-
 <!--                                    tar -zcvf \-->
-<!--                                    ${project.basedir}/${final.name}.tar.gz hugegraph-hubble-* \-->
-<!--                                    hugegraph-client-* hugegraph-loader-* hugegraph-tools-* || exit 1-->
-
+<!--                                    ${project.basedir}/${final.name}.tar.gz ${final.name} || exit 1-->
+<!--                                    rm -f ${project.basedir}/dist.sh-->
+<!--                                    echo -n "hugegraph-loader tar.gz available at: "-->
+<!--                                    echo "${project.basedir}/${final.name}.tar.gz"-->
 <!--                                </echo>-->
 <!--                                <exec executable="${shell-executable}"-->
 <!--                                      dir="${project.basedir}" failonerror="true">-->
