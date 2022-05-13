@@ -30,6 +30,10 @@
                         <configuration>
                             <tasks>
                                 <echo file="${project.basedir}/dist.sh">
+                                    ls ${project.parent.basedir}/hugegraph-hubble/hubble-dist/*
+                                    ls ${project.parent.basedir}/hugegraph-loader/*
+                                    ls ${project.parent.basedir}/hugegraph-tools/*
+
                                     \cp -r ${project.parent.basedir}/hugegraph-hubble/hubble-dist/hugegraph-hubble-${project.version} ${project.basedir}
                                     \cp -r ${project.parent.basedir}/hugegraph-loader/hugegraph-loader-${project.version} ${project.basedir}
                                     \cp -r ${project.parent.basedir}/hugegraph-tools/hugegraph-tools-${project.version} ${project.basedir}
@@ -37,9 +41,13 @@
                                     tar -zcvf ${project.parent.basedir}/${final.name}.tar.gz \
                                     hugegraph-hubble-* hugegraph-loader-* hugegraph-tools-* || exit 1
 
+                                    md5sum ${project.parent.basedir}/${final.name}.tar.gz
+                                    echo -n "hugegraph-toolchain tar.gz available at: "
+                                    echo "${project.parent.basedir}/${final.name}.tar.gz"
+                                    rm -f ${project.basedir}/dist.sh
+
                                 </echo>
-                                <exec executable="${shell-executable}"
-                                      dir="${project.basedir}" failonerror="true">
+                                <exec executable="${shell-executable}" dir="${project.basedir}" failonerror="true">
                                     <arg line="./dist.sh"/>
                                 </exec>
                             </tasks>
