@@ -180,7 +180,7 @@
                         <configuration>
                             <attach>false</attach>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <outputDirectory>..</outputDirectory>
+                            <outputDirectory>${project.basedir}</outputDirectory>
                             <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>
                             <finalName>${final.name}</finalName>
                         </configuration>

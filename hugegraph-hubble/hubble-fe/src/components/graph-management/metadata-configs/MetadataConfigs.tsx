@@ -38,6 +38,10 @@ const MetadataConfig: React.FC = observer(() => {
   const handleMenuItemChange = ({ key }: { key: string }) => {
     // reset store current tab status to default
     switch (selectedMenuItem) {
+      case 'property':
+        metadataConfigRootStore.metadataPropertyStore.changeCurrentTabStatus(
+          'list'
+        );
       case 'vertex-type':
         metadataConfigRootStore.vertexTypeStore.changeCurrentTabStatus('list');
       case 'edge-type':
@@ -79,7 +83,7 @@ const MetadataConfig: React.FC = observer(() => {
       dataAnalyzeStore.fetchAllNodeStyle();
       dataAnalyzeStore.fetchAllEdgeStyle();
       metadataConfigRootStore.setCurrentId(Number(params.id));
-      metadataConfigRootStore.fetchIdList();
+      // metadataConfigRootStore.fetchIdList();
     }
 
     return () => {
@@ -151,20 +155,17 @@ const MetadataConfig: React.FC = observer(() => {
             type="primary"
             style={{ width: 88 }}
             onClick={() => {
+              metadataConfigRootStore.setCurrentId(null);
               setLocation('/');
             }}
           >
             {t('addition.dataAnalyze.return-home')}
           </Button>
         ]}
-        visible={
-          !metadataConfigRootStore.metadataPropertyStore
-            .validateLicenseOrMemories ||
-          !metadataConfigRootStore.vertexTypeStore.validateLicenseOrMemories ||
-          !metadataConfigRootStore.edgeTypeStore.validateLicenseOrMemories ||
-          !metadataConfigRootStore.metadataPropertyIndexStore
-            .validateLicenseOrMemories
-        }
+        visible={graphManagementStore.graphData.some(
+          ({ id, enabled }) =>
+            metadataConfigRootStore.currentId === id && !enabled
+        )}
         destroyOnClose
         needCloseIcon={false}
       >

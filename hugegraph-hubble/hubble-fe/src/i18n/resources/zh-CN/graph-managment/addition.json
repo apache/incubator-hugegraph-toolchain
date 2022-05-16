@@ -132,7 +132,8 @@
       "vertex-type-reuse-success": "已成功复用顶点类型",
       "property-using-cannot-delete": "当前属性数据正在使用中，不可删除。",
       "reuse-property-success": "已成功复用属性",
-      "reuse-vertex-type-notice": "顶点类型关联的属性和属性索引将一同复用"
+      "reuse-vertex-type-notice": "顶点类型关联的属性和属性索引将一同复用",
+      "illegal-vertex": "该顶点是非法顶点，可能是由悬空边导致"
     },
     "operate": {
       "reuse-vertex-type": "复用顶点类型",

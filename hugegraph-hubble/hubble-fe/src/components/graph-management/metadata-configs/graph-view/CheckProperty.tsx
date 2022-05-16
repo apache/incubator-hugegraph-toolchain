@@ -13,6 +13,7 @@ import { Tooltip } from '../../../common';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
 
 import type { MetadataProperty } from '../../../../stores/types/GraphManagementStore/metadataConfigsStore';
+import { signal } from 'codemirror';
 
 const CheckProperty: React.FC = observer(() => {
   const { metadataPropertyStore, graphViewStore } = useContext(

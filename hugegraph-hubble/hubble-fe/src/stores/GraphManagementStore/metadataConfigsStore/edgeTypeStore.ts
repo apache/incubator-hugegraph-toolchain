@@ -145,14 +145,18 @@ export class EdgeTypeStore {
   @observable
   editedCheckedReusableData: CheckedReusableData | null = null;
 
-  @observable reusableEdgeTypeNameChangeIndexes: Set<number> =
-    new Set<number>();
-  @observable reusableVertexTypeNameChangeIndexes: Set<number> =
-    new Set<number>();
-  @observable reusablePropertyNameChangeIndexes: Set<number> =
-    new Set<number>();
-  @observable reusablePropertyIndexNameChangeIndexes: Set<number> =
-    new Set<number>();
+  @observable reusableEdgeTypeNameChangeIndexes: Set<number> = new Set<
+    number
+  >();
+  @observable reusableVertexTypeNameChangeIndexes: Set<number> = new Set<
+    number
+  >();
+  @observable reusablePropertyNameChangeIndexes: Set<number> = new Set<
+    number
+  >();
+  @observable reusablePropertyIndexNameChangeIndexes: Set<number> = new Set<
+    number
+  >();
 
   @observable validateNewEdgeTypeErrorMessage: Record<
     EdgeTypeValidateFields,
@@ -341,29 +345,41 @@ export class EdgeTypeStore {
   // if cancel clicked, reset to the original name
   @action
   resetEditedReusableEdgeTypeName(index: number) {
-    this.editedCheckedReusableData!.edgelabel_conflicts[index].entity.name =
-      this.checkedReusableData!.edgelabel_conflicts[index].entity.name;
+    this.editedCheckedReusableData!.edgelabel_conflicts[
+      index
+    ].entity.name = this.checkedReusableData!.edgelabel_conflicts[
+      index
+    ].entity.name;
   }
 
   // if cancel clicked, reset to the original name
   @action
   resetEditedReusableVertexTypeName(index: number) {
-    this.editedCheckedReusableData!.vertexlabel_conflicts[index].entity.name =
-      this.checkedReusableData!.vertexlabel_conflicts[index].entity.name;
+    this.editedCheckedReusableData!.vertexlabel_conflicts[
+      index
+    ].entity.name = this.checkedReusableData!.vertexlabel_conflicts[
+      index
+    ].entity.name;
   }
 
   // if cancel clicked, reset to the original name
   @action
   resetEditedReusablePropertyName(index: number) {
-    this.editedCheckedReusableData!.propertykey_conflicts[index].entity.name =
-      this.checkedReusableData!.propertykey_conflicts[index].entity.name;
+    this.editedCheckedReusableData!.propertykey_conflicts[
+      index
+    ].entity.name = this.checkedReusableData!.propertykey_conflicts[
+      index
+    ].entity.name;
   }
 
   // if cancel clicked, reset to the original name
   @action
   resetEditedReusablePropertyIndexName(index: number) {
-    this.editedCheckedReusableData!.propertyindex_conflicts[index].entity.name =
-      this.checkedReusableData!.propertyindex_conflicts[index].entity.name;
+    this.editedCheckedReusableData!.propertyindex_conflicts[
+      index
+    ].entity.name = this.checkedReusableData!.propertyindex_conflicts[
+      index
+    ].entity.name;
   }
 
   @action
@@ -461,8 +477,8 @@ export class EdgeTypeStore {
 
     if (category === 'propertyIndexes') {
       this.isAddNewPropertyIndexReady = true;
-      this.validateNewEdgeTypeErrorMessage.propertyIndexes =
-        this.newEdgeType.property_indexes.map(({ name, type, fields }) => {
+      this.validateNewEdgeTypeErrorMessage.propertyIndexes = this.newEdgeType.property_indexes.map(
+        ({ name, type, fields }) => {
           const validatedPropertyIndex = {
             name: '',
             type: '',
@@ -511,7 +527,8 @@ export class EdgeTypeStore {
           }
 
           return validatedPropertyIndex;
-        });
+        }
+      );
     }
 
     return isReady;
@@ -533,56 +550,55 @@ export class EdgeTypeStore {
   validateEditEdgeType(initial = false) {
     this.isEditReady = true;
 
-    this.validateEditEdgeTypeErrorMessage.propertyIndexes =
-      this.editedSelectedEdgeType.append_property_indexes.map(
-        ({ name, type, fields }) => {
-          const validatedPropertyIndex = {
-            name: '',
-            type: '',
-            properties: ''
-          };
+    this.validateEditEdgeTypeErrorMessage.propertyIndexes = this.editedSelectedEdgeType.append_property_indexes.map(
+      ({ name, type, fields }) => {
+        const validatedPropertyIndex = {
+          name: '',
+          type: '',
+          properties: ''
+        };
 
-          if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(name)) {
-            if (!initial) {
-              if (name.length !== 0) {
-                validatedPropertyIndex.name = i18next.t('addition.store.rule4');
-              } else {
-                validatedPropertyIndex.name = i18next.t(
-                  'addition.store.item-is-required'
-                );
-              }
+        if (!/^[\w\u4e00-\u9fa5]{1,128}$/.test(name)) {
+          if (!initial) {
+            if (name.length !== 0) {
+              validatedPropertyIndex.name = i18next.t('addition.store.rule4');
+            } else {
+              validatedPropertyIndex.name = i18next.t(
+                'addition.store.item-is-required'
+              );
             }
-
-            this.isEditReady = false;
-          } else {
-            validatedPropertyIndex.name = '';
           }
 
-          if (type.length === 0) {
+          this.isEditReady = false;
+        } else {
+          validatedPropertyIndex.name = '';
+        }
+
+        if (type.length === 0) {
+          !initial &&
+            (validatedPropertyIndex.type = i18next.t(
+              'addition.store.item-is-required'
+            ));
+          this.isEditReady = false;
+        } else {
+          validatedPropertyIndex.type = '';
+        }
+
+        if (Array.isArray(fields)) {
+          if (fields.length === 0) {
             !initial &&
-              (validatedPropertyIndex.type = i18next.t(
+              (validatedPropertyIndex.properties = i18next.t(
                 'addition.store.item-is-required'
               ));
             this.isEditReady = false;
-          } else {
-            validatedPropertyIndex.type = '';
           }
-
-          if (Array.isArray(fields)) {
-            if (fields.length === 0) {
-              !initial &&
-                (validatedPropertyIndex.properties = i18next.t(
-                  'addition.store.item-is-required'
-                ));
-              this.isEditReady = false;
-            }
-          } else {
-            validatedPropertyIndex.properties = '';
-          }
-
-          return validatedPropertyIndex;
+        } else {
+          validatedPropertyIndex.properties = '';
         }
-      );
+
+        return validatedPropertyIndex;
+      }
+    );
   }
 
   @action
@@ -819,12 +835,11 @@ export class EdgeTypeStore {
             this.reusableVertexTypeNameChangeIndexes.add(index);
 
             // current vertex belongs to which edge
-            const mutateEdgeIndex =
-              editedCheckedReusableData!.edgelabel_conflicts.findIndex(
-                (edge) =>
-                  edge.entity.source_label === entity.name ||
-                  edge.entity.target_label === entity.name
-              );
+            const mutateEdgeIndex = editedCheckedReusableData!.edgelabel_conflicts.findIndex(
+              (edge) =>
+                edge.entity.source_label === entity.name ||
+                edge.entity.target_label === entity.name
+            );
 
             // property name in source_label or target_label has been edited
             this.reusableEdgeTypeNameChangeIndexes.add(mutateEdgeIndex);
@@ -1091,8 +1106,9 @@ export class EdgeTypeStore {
       }
 
       if (category === 'propertyindex_conflicts') {
-        const { name: deletedPropertyIndexName } =
-          editedCheckedReusableData.propertyindex_conflicts[index].entity;
+        const {
+          name: deletedPropertyIndexName
+        } = editedCheckedReusableData.propertyindex_conflicts[index].entity;
 
         editedCheckedReusableData.propertyindex_conflicts.splice(index, 1);
 
@@ -1147,12 +1163,10 @@ export class EdgeTypeStore {
     }
 
     if (category === 'propertyIndexes') {
-      (
-        this.validateNewEdgeTypeErrorMessage
-          .propertyIndexes as EdgeTypeValidatePropertyIndexes[]
-      )[propertIndexIndex as number][
-        propertIndexProperty as keyof EdgeTypeValidatePropertyIndexes
-      ] = '';
+      (this.validateNewEdgeTypeErrorMessage
+        .propertyIndexes as EdgeTypeValidatePropertyIndexes[])[
+        propertIndexIndex as number
+      ][propertIndexProperty as keyof EdgeTypeValidatePropertyIndexes] = '';
 
       return;
     }
@@ -1239,19 +1253,20 @@ export class EdgeTypeStore {
         : this.metadataConfigsRootStore.currentId;
 
     try {
-      const result: AxiosResponse<responseData<EdgeTypeListResponse>> =
-        yield axios
-          .get(`${baseUrl}/${conn_id}/schema/edgelabels`, {
-            params: {
-              page_no: this.edgeTypeListPageConfig.pageNumber,
-              page_size: !options ? 10 : -1,
-              name_order:
-                this.edgeTypeListPageConfig.sort !== ''
-                  ? this.edgeTypeListPageConfig.sort
-                  : null
-            }
-          })
-          .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<
+        EdgeTypeListResponse
+      >> = yield axios
+        .get(`${baseUrl}/${conn_id}/schema/edgelabels`, {
+          params: {
+            page_no: this.edgeTypeListPageConfig.pageNumber,
+            page_size: !options ? 10 : -1,
+            name_order:
+              this.edgeTypeListPageConfig.sort !== ''
+                ? this.edgeTypeListPageConfig.sort
+                : null
+          }
+        })
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         if (result.data.status === 401) {
@@ -1324,10 +1339,10 @@ export class EdgeTypeStore {
           }/schema/edgelabels/${this.selectedEdgeType!.name}`,
           {
             append_properties: this.editedSelectedEdgeType.append_properties,
-            append_property_indexes:
-              this.editedSelectedEdgeType.append_property_indexes,
-            remove_property_indexes:
-              this.editedSelectedEdgeType.remove_property_indexes,
+            append_property_indexes: this.editedSelectedEdgeType
+              .append_property_indexes,
+            remove_property_indexes: this.editedSelectedEdgeType
+              .remove_property_indexes,
             style: this.editedSelectedEdgeType.style
           }
         )
@@ -1395,26 +1410,27 @@ export class EdgeTypeStore {
     this.requestStatus.checkConflict = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<CheckedReusableData>> =
-        yield axios
-          .post(
-            `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels/check_conflict`,
-            {
-              edgelabels: selectedEdgeTypes.map((selectedEdgeType) =>
-                this.reusableEdgeTypes.find(
-                  ({ name }) => name === selectedEdgeType
-                )
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
+        .post(
+          `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels/check_conflict`,
+          {
+            edgelabels: selectedEdgeTypes.map((selectedEdgeType) =>
+              this.reusableEdgeTypes.find(
+                ({ name }) => name === selectedEdgeType
               )
-            },
-            {
-              params: {
-                reused_conn_id: this.metadataConfigsRootStore.idList.find(
-                  ({ name }) => name === reuseId
-                )!.id
-              }
+            )
+          },
+          {
+            params: {
+              reused_conn_id: this.metadataConfigsRootStore.graphManagementStore.idList.find(
+                ({ name }) => name === reuseId
+              )!.id
             }
-          )
-          .catch(checkIfLocalNetworkOffline);
+          }
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1433,38 +1449,35 @@ export class EdgeTypeStore {
     this.requestStatus.recheckConflict = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<CheckedReusableData>> =
-        yield axios
-          .post(
-            `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels/recheck_conflict`,
-            {
-              propertykeys:
-                this.editedCheckedReusableData!.propertykey_conflicts.map(
-                  ({ entity }) => ({
-                    ...entity
-                  })
-                ),
-              propertyindexes:
-                this.editedCheckedReusableData!.propertyindex_conflicts.map(
-                  ({ entity }) => ({
-                    ...entity
-                  })
-                ),
-              vertexlabels:
-                this.editedCheckedReusableData!.vertexlabel_conflicts.map(
-                  ({ entity }) => ({
-                    ...entity
-                  })
-                ),
-              edgelabels:
-                this.editedCheckedReusableData!.edgelabel_conflicts.map(
-                  ({ entity }) => ({
-                    ...entity
-                  })
-                )
-            }
-          )
-          .catch(checkIfLocalNetworkOffline);
+      const result: AxiosResponse<responseData<
+        CheckedReusableData
+      >> = yield axios
+        .post(
+          `${baseUrl}/${this.metadataConfigsRootStore.currentId}/schema/edgelabels/recheck_conflict`,
+          {
+            propertykeys: this.editedCheckedReusableData!.propertykey_conflicts.map(
+              ({ entity }) => ({
+                ...entity
+              })
+            ),
+            propertyindexes: this.editedCheckedReusableData!.propertyindex_conflicts.map(
+              ({ entity }) => ({
+                ...entity
+              })
+            ),
+            vertexlabels: this.editedCheckedReusableData!.vertexlabel_conflicts.map(
+              ({ entity }) => ({
+                ...entity
+              })
+            ),
+            edgelabels: this.editedCheckedReusableData!.edgelabel_conflicts.map(
+              ({ entity }) => ({
+                ...entity
+              })
+            )
+          }
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);

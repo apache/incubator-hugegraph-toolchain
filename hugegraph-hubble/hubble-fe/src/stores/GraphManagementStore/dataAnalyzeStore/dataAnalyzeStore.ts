@@ -1,7 +1,17 @@
 import { createContext } from 'react';
 import { observable, action, flow, computed, runInAction } from 'mobx';
 import axios, { AxiosResponse } from 'axios';
-import { isUndefined, cloneDeep, isEmpty, remove, size } from 'lodash-es';
+import {
+  isUndefined,
+  cloneDeep,
+  isEmpty,
+  remove,
+  size,
+  fromPairs,
+  invert,
+  flatten,
+  uniq
+} from 'lodash-es';
 import vis from 'vis-network';
 import isInt from 'validator/lib/isInt';
 import isUUID from 'validator/lib/isUUID';
@@ -54,14 +64,29 @@ import type {
   AllPathAlgorithmParams,
   ModelSimilarityParams,
   NeighborRankParams,
-  NeighborRankRule
+  NeighborRankRule,
+  KHop,
+  RadiographicInspection,
+  SameNeighbor,
+  WeightedShortestPath,
+  SingleSourceWeightedShortestPath,
+  Jaccard,
+  PersonalRank,
+  CustomPathRule,
+  KStepNeighbor
 } from '../../types/GraphManagementStore/dataAnalyzeStore';
 import type {
   VertexTypeListResponse,
   VertexType,
-  EdgeType
+  EdgeType,
+  MetadataPropertyIndex
 } from '../../types/GraphManagementStore/metadataConfigsStore';
 import type { EdgeTypeListResponse } from '../../types/GraphManagementStore/metadataConfigsStore';
+import {
+  AlgorithmInternalNameMapping,
+  removeLabelKey,
+  filterEmptyAlgorightmParams
+} from '../../../utils';
 
 const ruleMap: RuleMap = {
   大于: 'gt',
@@ -112,6 +137,7 @@ export class DataAnalyzeStore {
   @observable favoritePopUp = '';
   // whether user selects vertex or edge
   @observable graphInfoDataSet = '';
+  @observable codeEditorInstance: CodeMirror.Editor | null = null;
   @observable codeEditorText = '';
   @observable dynamicAddGraphDataStatus = '';
   @observable favoriteQueriesSortOrder: Record<
@@ -141,6 +167,7 @@ export class DataAnalyzeStore {
   @observable.ref valueTypes: Record<string, string> = {};
   @observable.ref vertexTypes: VertexType[] = [];
   @observable.ref edgeTypes: EdgeType[] = [];
+  @observable.ref propertyIndexes: MetadataPropertyIndex[] = [];
   @observable.ref colorSchemas: ColorSchemas = {};
   @observable.ref colorList: string[] = [];
   @observable.ref colorMappings: Record<string, string> = {};
@@ -217,6 +244,16 @@ export class DataAnalyzeStore {
   @observable.shallow requestStatus = initalizeRequestStatus();
   @observable errorInfo = initalizeErrorInfo();
 
+  @computed get allPropertiesFromEdge() {
+    return uniq(
+      flatten(
+        this.edgeTypes.map(({ properties }) =>
+          properties.map(({ name }) => name)
+        )
+      )
+    );
+  }
+
   @computed get graphNodes(): GraphNode[] {
     return this.originalGraphData.data.graph_view.vertices.map(
       ({ id, label, properties }) => {
@@ -262,6 +299,13 @@ export class DataAnalyzeStore {
             border: this.colorMappings[label] || '#5c73e6',
             highlight: { background: '#fb6a02', border: '#fb6a02' },
             hover: { background: '#ec3112', border: '#ec3112' }
+          },
+          // reveal label when zoom to max
+          scaling: {
+            label: {
+              max: Infinity,
+              maxVisible: Infinity
+            }
           },
           chosen: {
             node(
@@ -579,6 +623,11 @@ export class DataAnalyzeStore {
   }
 
   @action
+  assignCodeEditorInstance(instance: CodeMirror.Editor) {
+    this.codeEditorInstance = instance;
+  }
+
+  @action
   mutateCodeEditorText(text: string) {
     this.codeEditorText = text;
   }
@@ -647,8 +696,23 @@ export class DataAnalyzeStore {
     const tempData: ExecutionLogs = {
       id: NaN,
       async_id: NaN,
-      type: 'GREMLIN',
-      content: this.codeEditorText,
+      algorithm_name:
+        this.currentTab === 'algorithm-analyze'
+          ? invert(AlgorithmInternalNameMapping)[
+              this.algorithmAnalyzerStore.currentAlgorithm
+            ]
+          : '',
+      async_status: 'UNKNOWN',
+      type:
+        this.currentTab === 'algorithm-analyze'
+          ? 'ALGORITHM'
+          : this.queryMode === 'query'
+          ? 'GREMLIN'
+          : 'GREMLIN_ASYNC',
+      content:
+        this.currentTab === 'algorithm-analyze'
+          ? JSON.stringify(this.algorithmAnalyzerStore.currentAlgorithmParams)
+          : this.codeEditorText,
       status: 'RUNNING',
       duration: '0ms',
       create_time: timeString
@@ -1047,6 +1111,7 @@ export class DataAnalyzeStore {
     this.isFullScreenReuslt = false;
     this.isClickOnNodeOrEdge = false;
     this.queryMode = 'query';
+    this.codeEditorInstance = null;
     this.codeEditorText = '';
     this.dynamicAddGraphDataStatus = '';
     this.graphData = {} as FetchGraphResponse;
@@ -1104,12 +1169,13 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchIdList = 'pending';
 
     try {
-      const result: AxiosResponse<GraphDataResponse> =
-        yield axios.get<GraphData>(baseUrl, {
-          params: {
-            page_size: -1
-          }
-        });
+      const result: AxiosResponse<GraphDataResponse> = yield axios.get<
+        GraphData
+      >(baseUrl, {
+        params: {
+          page_size: -1
+        }
+      });
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchIdList.code = result.data.status;
@@ -1169,17 +1235,18 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchVertexTypeList = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<VertexTypeListResponse>> =
-        yield axios
-          .get<responseData<VertexTypeListResponse>>(
-            `${baseUrl}/${this.currentId}/schema/vertexlabels`,
-            {
-              params: {
-                page_size: -1
-              }
+      const result: AxiosResponse<responseData<
+        VertexTypeListResponse
+      >> = yield axios
+        .get<responseData<VertexTypeListResponse>>(
+          `${baseUrl}/${this.currentId}/schema/vertexlabels`,
+          {
+            params: {
+              page_size: -1
             }
-          )
-          .catch(checkIfLocalNetworkOffline);
+          }
+        )
+        .catch(checkIfLocalNetworkOffline);
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchVertexTypeList.code = result.data.status;
@@ -1198,10 +1265,9 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchColorSchemas = 'pending';
 
     try {
-      const result: AxiosResponse<FetchColorSchemas> =
-        yield axios.get<FetchGraphResponse>(
-          `${baseUrl}/${this.currentId}/schema/vertexlabels/style`
-        );
+      const result: AxiosResponse<FetchColorSchemas> = yield axios.get<
+        FetchGraphResponse
+      >(`${baseUrl}/${this.currentId}/schema/vertexlabels/style`);
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchColorSchemas.code = result.data.status;
@@ -1241,13 +1307,14 @@ export class DataAnalyzeStore {
   fetchAllNodeStyle = flow(function* fetchAllNodeStyle(this: DataAnalyzeStore) {
     this.requestStatus.fetchAllNodeStyle = 'pending';
     try {
-      const result: AxiosResponse<responseData<VertexTypeListResponse>> =
-        yield axios.get(`${baseUrl}/${this.currentId}/schema/vertexlabels`, {
-          params: {
-            page_no: 1,
-            page_size: -1
-          }
-        });
+      const result: AxiosResponse<responseData<
+        VertexTypeListResponse
+      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/vertexlabels`, {
+        params: {
+          page_no: 1,
+          page_size: -1
+        }
+      });
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1277,13 +1344,14 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchEdgeTypes = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<EdgeTypeListResponse>> =
-        yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
-          params: {
-            page_no: 1,
-            page_size: -1
-          }
-        });
+      const result: AxiosResponse<responseData<
+        EdgeTypeListResponse
+      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
+        params: {
+          page_no: 1,
+          page_size: -1
+        }
+      });
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1302,13 +1370,14 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchAllEdgeStyle = 'pending';
 
     try {
-      const result: AxiosResponse<responseData<EdgeTypeListResponse>> =
-        yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
-          params: {
-            page_no: 1,
-            page_size: -1
-          }
-        });
+      const result: AxiosResponse<responseData<
+        EdgeTypeListResponse
+      >> = yield axios.get(`${baseUrl}/${this.currentId}/schema/edgelabels`, {
+        params: {
+          page_no: 1,
+          page_size: -1
+        }
+      });
 
       if (result.data.status !== 200) {
         throw new Error(result.data.message);
@@ -1337,6 +1406,34 @@ export class DataAnalyzeStore {
     }
   });
 
+  fetchAllPropertyIndexes = flow(function* fetchAllPropertyIndexes(
+    this: DataAnalyzeStore,
+    indexType: 'vertex' | 'edge'
+  ) {
+    this.requestStatus.fetchAllPropertyIndexes = 'pending';
+
+    try {
+      const result = yield axios
+        .get(`${baseUrl}/${this.currentId}/schema/propertyindexes`, {
+          params: {
+            page_size: -1,
+            is_vertex_label: indexType === 'vertex'
+          }
+        })
+        .catch(checkIfLocalNetworkOffline);
+
+      if (result.data.status !== 200) {
+        throw new Error(result.data.message);
+      }
+
+      this.propertyIndexes = result.data.data.records;
+      this.requestStatus.fetchAllPropertyIndexes = 'success';
+    } catch (error) {
+      this.requestStatus.fetchAllPropertyIndexes = 'failed';
+      this.errorMessage = error.message;
+    }
+  });
+
   fetchGraphs = flow(function* fetchGraphs(
     this: DataAnalyzeStore,
     algorithmConfigs?: { url: string; type: string }
@@ -1346,98 +1443,55 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchGraphs = 'pending';
     this.isLoadingGraph = true;
 
-    let params:
-      | LoopDetectionParams
-      | FocusDetectionParams
-      | ShortestPathAlgorithmParams
-      | ShortestPathAllAlgorithmParams
-      | AllPathAlgorithmParams
-      | ModelSimilarityParams
-      | NeighborRankParams
-      | null = null;
+    let params: object | null = null;
 
     if (!isUndefined(algorithmConfigs)) {
       switch (algorithmConfigs.type) {
         case Algorithm.loopDetection: {
-          if (
-            this.algorithmAnalyzerStore.loopDetectionParams.label === '__all__'
-          ) {
-            const clonedParams: LoopDetectionParams = cloneDeep(
-              this.algorithmAnalyzerStore.loopDetectionParams
-            );
-
-            delete clonedParams.label;
-            params = clonedParams;
-            break;
-          }
-
-          params = this.algorithmAnalyzerStore.loopDetectionParams;
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.loopDetectionParams,
+            ['max_degree', 'capacity', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
           break;
         }
         case Algorithm.focusDetection: {
-          if (
-            this.algorithmAnalyzerStore.loopDetectionParams.label === '__all__'
-          ) {
-            const clonedParams: FocusDetectionParams = cloneDeep(
-              this.algorithmAnalyzerStore.focusDetectionParams
-            );
-
-            delete clonedParams.label;
-            params = clonedParams;
-            break;
-          }
-
-          params = this.algorithmAnalyzerStore.focusDetectionParams;
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.focusDetectionParams,
+            ['max_degree', 'capacity', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
           break;
         }
         case Algorithm.shortestPath: {
-          if (
-            this.algorithmAnalyzerStore.shortestPathAlgorithmParams.label ===
-            '__all__'
-          ) {
-            const clonedParams: ShortestPathAlgorithmParams = cloneDeep(
-              this.algorithmAnalyzerStore.shortestPathAlgorithmParams
-            );
-
-            delete clonedParams.label;
-            params = clonedParams;
-            break;
-          }
-
-          params = this.algorithmAnalyzerStore.shortestPathAlgorithmParams;
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.shortestPathAlgorithmParams,
+            ['max_degree', 'capacity', 'skip_degree']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
           break;
         }
 
         case Algorithm.shortestPathAll: {
-          if (
-            this.algorithmAnalyzerStore.shortestPathAllParams.label ===
-            '__all__'
-          ) {
-            const clonedParams: ShortestPathAllAlgorithmParams = cloneDeep(
-              this.algorithmAnalyzerStore.shortestPathAllParams
-            );
-
-            delete clonedParams.label;
-            params = clonedParams;
-            break;
-          }
-
-          params = this.algorithmAnalyzerStore.shortestPathAllParams;
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.shortestPathAllParams,
+            ['max_degree', 'capacity', 'skip_degree']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
           break;
         }
 
         case Algorithm.allPath: {
-          if (this.algorithmAnalyzerStore.allPathParams.label === '__all__') {
-            const clonedParams: AllPathAlgorithmParams = cloneDeep(
-              this.algorithmAnalyzerStore.allPathParams
-            );
-
-            delete clonedParams.label;
-            params = clonedParams;
-            break;
-          }
-
-          params = this.algorithmAnalyzerStore.allPathParams;
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.allPathParams,
+            ['max_degree', 'capacity', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
           break;
         }
 
@@ -1455,19 +1509,32 @@ export class DataAnalyzeStore {
             property_filter,
             least_property_number,
             max_degree,
-            skip_degree,
             capacity,
             limit,
             return_common_connection,
             return_complete_info
           } = this.algorithmAnalyzerStore.modelSimilarityParams;
 
+          const sources: Record<string, any> = {};
+
+          if (source !== '') {
+            sources.ids = source.split(',');
+          } else {
+            if (vertexType !== '') {
+              sources.label = vertexType;
+            }
+
+            if (vertexProperty[0][0] !== '') {
+              const convertedVertexProperty = vertexProperty.map(
+                ([key, value]) => [key, value.split(',')]
+              );
+
+              sources.properties = fromPairs(convertedVertexProperty);
+            }
+          }
+
           const convertedParams = {
-            sources: {
-              ids: [source],
-              label: vertexType,
-              properties: vertexProperty
-            },
+            sources,
             label,
             direction,
             min_neighbors: least_neighbor,
@@ -1487,22 +1554,61 @@ export class DataAnalyzeStore {
             delete convertedParams.label;
           }
 
+          if (max_degree === '') {
+            delete convertedParams.max_degree;
+          }
+
+          if (capacity === '') {
+            delete convertedParams.capacity;
+          }
+
+          if (limit === '') {
+            delete convertedParams.limit;
+          }
+
+          if (max_similar === '') {
+            delete convertedParams.top;
+          }
+
+          if (least_similar === '') {
+            delete convertedParams.min_similars;
+          }
+
+          if (convertedParams.group_property === '') {
+            delete convertedParams.group_property;
+            delete convertedParams.min_groups;
+          }
+
           // @ts-ignore
           params = convertedParams;
           break;
         }
 
-        case Algorithm.neighborRankRecommendation: {
+        case Algorithm.neighborRank: {
           const clonedNeighborRankParams = cloneDeep(
             this.algorithmAnalyzerStore.neighborRankParams
           );
 
+          if (clonedNeighborRankParams.capacity === '') {
+            clonedNeighborRankParams.capacity = '10000000';
+          }
+
           clonedNeighborRankParams.steps.forEach((step, index) => {
             delete step.uuid;
+            const clonedStep = cloneDeep(step);
 
-            if (step.label === '__all__') {
-              const clonedStep: NeighborRankRule = cloneDeep(step);
-              delete clonedStep.label;
+            if (step.labels[0] === '__all__') {
+              delete clonedStep.labels;
+              clonedNeighborRankParams.steps[index] = clonedStep;
+            }
+
+            if (step.degree === '') {
+              clonedStep.degree = '10000';
+              clonedNeighborRankParams.steps[index] = clonedStep;
+            }
+
+            if (step.top === '') {
+              clonedStep.top = '100';
               clonedNeighborRankParams.steps[index] = clonedStep;
             }
           });
@@ -1511,8 +1617,171 @@ export class DataAnalyzeStore {
           break;
         }
 
-        // default:
-        //   params = this.algorithmAnalyzerStore.shortestPathAlgorithmParams;
+        case Algorithm.kStepNeighbor: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.kStepNeighborParams,
+            ['max_degree', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
+
+        case Algorithm.kHop: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.kHopParams,
+            ['max_degree', 'capacity', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
+
+        case Algorithm.customPath: {
+          const {
+            source,
+            vertexType,
+            vertexProperty,
+            sort_by,
+            capacity,
+            limit,
+            steps
+          } = this.algorithmAnalyzerStore.customPathParams;
+
+          const sources: Record<string, any> = {};
+
+          if (source !== '') {
+            sources.ids = source.split(',');
+          } else {
+            if (vertexType !== '') {
+              sources.label = vertexType;
+            }
+
+            if (vertexProperty[0][0] !== '') {
+              const convertedVertexProperty = vertexProperty.map(
+                ([key, value]) => [key, value.split(',')]
+              );
+
+              sources.properties = fromPairs(convertedVertexProperty);
+            }
+          }
+
+          const clonedCustomPathRules = cloneDeep(steps);
+
+          clonedCustomPathRules.forEach((step, index) => {
+            delete step.uuid;
+
+            if (isEmpty(step.labels)) {
+              delete step.labels;
+            }
+
+            if (step.properties[0][0] !== '') {
+              // omit property types here
+              // @ts-ignore
+              step.properties = fromPairs(
+                step.properties.map(([key, value]) => [key, value.split(',')])
+              );
+            } else {
+              delete step.properties;
+            }
+
+            if (isEmpty(step.degree)) {
+              delete step.degree;
+            }
+
+            if (isEmpty(step.sample)) {
+              delete step.sample;
+            }
+
+            if (step.weight_by === '__CUSTOM_WEIGHT__') {
+              delete step.weight_by;
+            } else {
+              delete step.default_weight;
+            }
+
+            if (step.weight_by === '') {
+              delete step.weight_by;
+            }
+          });
+
+          const convertedParams: Record<string, any> = {
+            sources,
+            sort_by,
+            steps: clonedCustomPathRules
+          };
+
+          if (!isEmpty(capacity)) {
+            convertedParams.capactiy = capacity;
+          }
+
+          if (!isEmpty(limit)) {
+            convertedParams.limit = limit;
+          }
+
+          // @ts-ignore
+          params = convertedParams;
+          break;
+        }
+
+        case Algorithm.radiographicInspection: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.radiographicInspectionParams,
+            ['max_degree', 'capacity', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
+
+        case Algorithm.sameNeighbor: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.sameNeighborParams,
+            ['max_degree', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
+
+        case Algorithm.weightedShortestPath: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.weightedShortestPathParams,
+            ['max_degree', 'capacity', 'skip_degree']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
+
+        case Algorithm.singleSourceWeightedShortestPath: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.singleSourceWeightedShortestPathParams,
+            ['max_degree', 'capacity', 'skip_degree', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
+
+        case Algorithm.jaccard: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.jaccardParams,
+            ['max_degree']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
+
+        case Algorithm.personalRankRecommendation: {
+          const filterdObject = filterEmptyAlgorightmParams(
+            this.algorithmAnalyzerStore.personalRankParams,
+            ['degree', 'limit']
+          );
+          removeLabelKey(filterdObject);
+          params = filterdObject;
+          break;
+        }
       }
     }
 
@@ -1568,8 +1837,7 @@ export class DataAnalyzeStore {
       }
 
       this.graphData = result.data;
-      this.pageConfigs.tableResult.pageTotal =
-        this.originalGraphData.data.table_view.rows.length;
+      this.pageConfigs.tableResult.pageTotal = this.originalGraphData.data.table_view.rows.length;
       this.requestStatus.fetchGraphs = 'success';
       this.isLoadingGraph = false;
     } catch (error) {
@@ -1830,10 +2098,9 @@ export class DataAnalyzeStore {
 
   @action
   hideGraphNode(nodeId: any) {
-    this.graphData.data.graph_view.vertices =
-      this.graphData.data.graph_view.vertices.filter(
-        (data) => data.id !== this.rightClickedGraphData.id
-      );
+    this.graphData.data.graph_view.vertices = this.graphData.data.graph_view.vertices.filter(
+      (data) => data.id !== this.rightClickedGraphData.id
+    );
 
     // only delete node in vertexCollection, not edges in EdgeCollection
     this.vertexCollection.delete(nodeId);
@@ -1878,25 +2145,26 @@ export class DataAnalyzeStore {
     });
 
     try {
-      const result: AxiosResponse<responseData<GraphNode | GraphEdge>> =
-        yield axios.put<responseData<GraphNode | GraphEdge>>(
-          `${baseUrl}/${this.currentId}/graph/${
-            this.graphInfoDataSet === 'node' ? 'vertex' : 'edge'
-          }/${encodeURIComponent(id)}`,
-          this.graphInfoDataSet === 'node'
-            ? {
-                id,
-                label,
-                properties: editedProperties
-              }
-            : {
-                id,
-                label,
-                properties: editedProperties,
-                source: this.selectedGraphLinkData.source,
-                target: this.selectedGraphLinkData.target
-              }
-        );
+      const result: AxiosResponse<responseData<
+        GraphNode | GraphEdge
+      >> = yield axios.put<responseData<GraphNode | GraphEdge>>(
+        `${baseUrl}/${this.currentId}/graph/${
+          this.graphInfoDataSet === 'node' ? 'vertex' : 'edge'
+        }/${encodeURIComponent(id)}`,
+        this.graphInfoDataSet === 'node'
+          ? {
+              id,
+              label,
+              properties: editedProperties
+            }
+          : {
+              id,
+              label,
+              properties: editedProperties,
+              source: this.selectedGraphLinkData.source,
+              target: this.selectedGraphLinkData.target
+            }
+      );
 
       if (result.data.status !== 200) {
         this.errorInfo.updateGraphProperties.code = result.data.status;
@@ -1973,10 +2241,9 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchFilteredPropertyOptions = 'pending';
 
     try {
-      const result: AxiosResponse<FetchFilteredPropertyOptions> =
-        yield axios.get(
-          `${baseUrl}/${this.currentId}/schema/edgelabels/${edgeName}`
-        );
+      const result: AxiosResponse<FetchFilteredPropertyOptions> = yield axios.get(
+        `${baseUrl}/${this.currentId}/schema/edgelabels/${edgeName}`
+      );
 
       if (result.data.status !== 200) {
         this.errorInfo.filteredPropertyOptions.code = result.data.status;
@@ -2187,16 +2454,14 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchExecutionLogs = 'pending';
 
     try {
-      const result: AxiosResponse<ExecutionLogsResponse> =
-        yield axios.get<ExecutionLogsResponse>(
-          `${baseUrl}/${this.currentId}/execute-histories`,
-          {
-            params: {
-              page_size: this.pageConfigs.executionLog.pageSize,
-              page_no: this.pageConfigs.executionLog.pageNumber
-            }
-          }
-        );
+      const result: AxiosResponse<ExecutionLogsResponse> = yield axios.get<
+        ExecutionLogsResponse
+      >(`${baseUrl}/${this.currentId}/execute-histories`, {
+        params: {
+          page_size: this.pageConfigs.executionLog.pageSize,
+          page_no: this.pageConfigs.executionLog.pageNumber
+        }
+      });
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchExecutionLogs.code = result.data.status;
@@ -2233,8 +2498,9 @@ export class DataAnalyzeStore {
     this.requestStatus.fetchFavoriteQueries = 'pending';
 
     try {
-      const result: AxiosResponse<FavoriteQueryResponse> =
-        yield axios.get<FavoriteQueryResponse>(url);
+      const result: AxiosResponse<FavoriteQueryResponse> = yield axios.get<
+        FavoriteQueryResponse
+      >(url);
 
       if (result.data.status !== 200) {
         this.errorInfo.fetchFavoriteQueries.code = result.data.status;

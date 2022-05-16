@@ -26,7 +26,6 @@ import HintIcon from '../../assets/imgs/ic_question_mark.svg';
 import { GraphData } from '../../stores/types/GraphManagementStore/graphManagementStore';
 import { useTranslation } from 'react-i18next';
 
-
 const commonInputProps = {
   size: 'medium',
   width: 420
@@ -234,7 +233,7 @@ const GraphManagementListItem: React.FC<
       value: 'delete'
     }
   ];
-  
+
   const disabledDropdownList = [
     {
       label: t('addition.common.edit'),
@@ -338,6 +337,9 @@ const GraphManagementListItem: React.FC<
                 'password',
                 'edit'
               )}
+              originInputProps={{
+                type: 'password'
+              }}
             />
           </div>
           <div>
@@ -368,7 +370,9 @@ const GraphManagementListItem: React.FC<
   ) : (
     <div className="graph-management-list" key={id}>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">{t('addition.graphManagementList.id')}</div>
+        <div className="graph-management-list-title">
+          {t('addition.graphManagementList.id')}
+        </div>
         <div className="graph-management-list-data">
           <span title={name}>
             <Highlighter
@@ -381,7 +385,9 @@ const GraphManagementListItem: React.FC<
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">{t('addition.graphManagementList.name')}</div>
+        <div className="graph-management-list-title">
+          {t('addition.graphManagementList.name')}
+        </div>
         <div className="graph-management-list-data">
           <span title={graph}>
             <Highlighter
@@ -394,7 +400,9 @@ const GraphManagementListItem: React.FC<
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">{t('addition.graphManagementList.host')}</div>
+        <div className="graph-management-list-title">
+          {t('addition.graphManagementList.host')}
+        </div>
         <div className="graph-management-list-data" title={host}>
           {host}
         </div>
@@ -408,7 +416,9 @@ const GraphManagementListItem: React.FC<
         </div>
       </div>
       <div className="graph-management-list-item">
-        <div className="graph-management-list-title">{t('addition.graphManagementList.creation-time')}</div>
+        <div className="graph-management-list-title">
+          {t('addition.graphManagementList.creation-time')}
+        </div>
         <div className="graph-management-list-data" title={create_time}>
           {create_time}
         </div>

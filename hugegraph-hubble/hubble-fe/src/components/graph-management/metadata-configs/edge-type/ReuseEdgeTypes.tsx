@@ -10,13 +10,17 @@ import {
   Message
 } from 'hubble-ui';
 
+import { GraphManagementStoreContext } from '../../../../stores';
 import MetadataConfigsRootStore from '../../../../stores/GraphManagementStore/metadataConfigsStore/metadataConfigsStore';
+
 import PassIcon from '../../../../assets/imgs/ic_pass.svg';
+
 import './ReuseEdgeTypes.less';
 import { cloneDeep } from 'lodash-es';
 import { useTranslation } from 'react-i18next';
 
 const ReuseEdgeTypes: React.FC = observer(() => {
+  const graphManagementStore = useContext(GraphManagementStoreContext);
   const metadataConfigsRootStore = useContext(MetadataConfigsRootStore);
   const { t } = useTranslation();
   const { edgeTypeStore } = metadataConfigsRootStore;
@@ -153,12 +157,10 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
-        const originalName =
-          edgeTypeStore.checkedReusableData!.edgelabel_conflicts[index].entity
-            .name;
-        const changedName =
-          edgeTypeStore.editedCheckedReusableData!.edgelabel_conflicts[index]
-            .entity.name;
+        const originalName = edgeTypeStore.checkedReusableData!
+          .edgelabel_conflicts[index].entity.name;
+        const changedName = edgeTypeStore.editedCheckedReusableData!
+          .edgelabel_conflicts[index].entity.name;
         const isChanged = changedName !== originalName;
 
         if (edgeTypeEditIndex === index) {
@@ -370,12 +372,10 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       dataIndex: 'manipulation',
       width: '20%',
       render(_: never, records: any, index: number) {
-        const originalName =
-          edgeTypeStore.checkedReusableData!.vertexlabel_conflicts[index].entity
-            .name;
-        const changedName =
-          edgeTypeStore.editedCheckedReusableData!.vertexlabel_conflicts[index]
-            .entity.name;
+        const originalName = edgeTypeStore.checkedReusableData!
+          .vertexlabel_conflicts[index].entity.name;
+        const changedName = edgeTypeStore.editedCheckedReusableData!
+          .vertexlabel_conflicts[index].entity.name;
         const isChanged = changedName !== originalName;
 
         if (index === vertexTypeEditIndex) {
@@ -559,13 +559,10 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       width: '20%',
       render(_: never, records: any, index: number) {
         if (index === propertyEditIndex) {
-          const originalName =
-            edgeTypeStore.checkedReusableData!.propertykey_conflicts[index]
-              .entity.name;
-          const changedName =
-            edgeTypeStore.editedCheckedReusableData!.propertykey_conflicts[
-              index
-            ].entity.name;
+          const originalName = edgeTypeStore.checkedReusableData!
+            .propertykey_conflicts[index].entity.name;
+          const changedName = edgeTypeStore.editedCheckedReusableData!
+            .propertykey_conflicts[index].entity.name;
           const isChanged = changedName !== originalName;
 
           return (
@@ -760,13 +757,10 @@ const ReuseEdgeTypes: React.FC = observer(() => {
       width: '20%',
       render(_: never, records: any, index: number) {
         if (index === propertyIndexEditIndex) {
-          const originalName =
-            edgeTypeStore.checkedReusableData!.propertyindex_conflicts[index]
-              .entity.name;
-          const changedName =
-            edgeTypeStore.editedCheckedReusableData!.propertyindex_conflicts[
-              index
-            ].entity.name;
+          const originalName = edgeTypeStore.checkedReusableData!
+            .propertyindex_conflicts[index].entity.name;
+          const changedName = edgeTypeStore.editedCheckedReusableData!
+            .propertyindex_conflicts[index].entity.name;
           const isChanged = changedName !== originalName;
 
           return (
@@ -915,7 +909,7 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                 onChange={(selectedName: string) => {
                   mutateSelectedId(selectedName);
 
-                  const id = metadataConfigsRootStore.idList.find(
+                  const id = graphManagementStore.idList.find(
                     ({ name }) => name === selectedName
                   )!.id;
 
@@ -924,10 +918,22 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                   edgeTypeStore.fetchEdgeTypeList({
                     reuseId: Number(id)
                   });
+
+                  const enable = graphManagementStore.graphData.find(
+                    ({ name }) => name === selectedName
+                  )?.enabled;
+
+                  if (!enable) {
+                    Message.error({
+                      content: t('data-analyze.hint.graph-disabled'),
+                      size: 'medium',
+                      showCloseIcon: false
+                    });
+                  }
                 }}
                 value={selectedId}
               >
-                {metadataConfigsRootStore.idList
+                {graphManagementStore.idList
                   .filter(
                     ({ id }) =>
                       Number(id) !== metadataConfigsRootStore.currentId
@@ -989,6 +995,14 @@ const ReuseEdgeTypes: React.FC = observer(() => {
                     selectedId as string,
                     selectedList
                   );
+
+                  if (edgeTypeStore.requestStatus.checkConflict === 'failed') {
+                    Message.error({
+                      content: edgeTypeStore.errorMessage,
+                      size: 'medium',
+                      showCloseIcon: false
+                    });
+                  }
                 }}
               >
                 {t('addition.operate.next-step')}

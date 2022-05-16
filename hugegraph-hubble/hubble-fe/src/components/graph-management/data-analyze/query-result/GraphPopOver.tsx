@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef, useCallback } from 'react';
 import { observer } from 'mobx-react';
 import { Message } from 'hubble-ui';
-import { isUndefined } from 'lodash-es';
+import { isUndefined, size, isEmpty } from 'lodash-es';
 
 import { DataAnalyzeStoreContext } from '../../../../stores';
 import { addGraphNodes, addGraphEdges } from '../../../../stores/utils';
@@ -68,11 +68,27 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
             <div
               className="graph-pop-over-item"
               onClick={async () => {
+                const node = dataAnalyzeStore.graphData.data.graph_view.vertices.find(
+                  ({ id }) => id === dataAnalyzeStore.rightClickedGraphData.id
+                );
+
+                if (isUndefined(node)) {
+                  return;
+                }
+
+                if (node.label === '~undefined') {
+                  Message.info({
+                    content: t('addition.message.illegal-vertex'),
+                    size: 'medium',
+                    showCloseIcon: false,
+                    duration: 1
+                  });
+                }
+
                 if (
                   isUndefined(
                     dataAnalyzeStore.vertexTypes.find(
-                      ({ name }) =>
-                        name === dataAnalyzeStore.rightClickedGraphData.label
+                      ({ name }) => name === node.label
                     )
                   )
                 ) {
@@ -84,6 +100,36 @@ const GraphPopOver: React.FC<GraphPopOverProps> = observer(
                 if (
                   dataAnalyzeStore.requestStatus.expandGraphNode === 'success'
                 ) {
+                  // prompt if there's no extra node
+                  if (
+                    size(
+                      dataAnalyzeStore.expandedGraphData.data.graph_view
+                        .vertices
+                    ) === 0
+                  ) {
+                    if (
+                      isEmpty(
+                        dataAnalyzeStore.visNetwork?.getConnectedNodes(node.id)
+                      )
+                    ) {
+                      Message.info({
+                        content: t('addition.message.no-adjacency-points'),
+                        size: 'medium',
+                        showCloseIcon: false,
+                        duration: 1
+                      });
+                    } else {
+                      Message.info({
+                        content: t('addition.message.no-more-points'),
+                        size: 'medium',
+                        showCloseIcon: false,
+                        duration: 1
+                      });
+                    }
+
+                    return;
+                  }
+
                   addGraphNodes(
                     dataAnalyzeStore.expandedGraphData.data.graph_view.vertices,
                     dataAnalyzeStore.visDataSet?.nodes,

@@ -256,7 +256,8 @@
       "placeholder": {
         "select-vertex-type": "请选择顶点类型",
         "select-edge-type": "请选择边类型",
-        "select-id-column": "请选择 ID 列"
+        "select-id-column": "请选择 ID 列",
+        "empty-value": "空"
       }
     },
     "manipulations": {

@@ -57,10 +57,14 @@ const CheckAndEditVertex: React.FC = observer(() => {
   const { t } = useTranslation();
   const [isAddProperty, switchIsAddProperty] = useState(false);
   const [isDeletePop, switchDeletePop] = useState(false);
-  const [deleteExistPopIndexInDrawer, setDeleteExistPopIndexInDrawer] =
-    useState<number | null>(null);
-  const [deleteAddedPopIndexInDrawer, setDeleteAddedPopIndexInDrawer] =
-    useState<number | null>(null);
+  const [
+    deleteExistPopIndexInDrawer,
+    setDeleteExistPopIndexInDrawer
+  ] = useState<number | null>(null);
+  const [
+    deleteAddedPopIndexInDrawer,
+    setDeleteAddedPopIndexInDrawer
+  ] = useState<number | null>(null);
 
   const deleteWrapperRef = useRef<HTMLImageElement>(null);
   const dropdownWrapperRef = useRef<HTMLDivElement>(null);
@@ -330,7 +334,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
             }
           }}
           tooltipWrapperProps={{
-            className: 'metadata-properties-tooltips',
+            className: 'metadata-graph-tooltips',
             style: {
               zIndex: 1042
             }
@@ -410,7 +414,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
           <div className="metadata-drawer-options-name">
             <span>{t('addition.vertex.vertex-type-name')}：</span>
           </div>
-          {vertexTypeStore.selectedVertexType!.name}
+          <div style={{ maxWidth: 420 }}>
+            {vertexTypeStore.selectedVertexType!.name}
+          </div>
         </div>
 
         <div className="metadata-drawer-options">
@@ -559,7 +565,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
             {vertexTypeStore.selectedVertexType!.properties.map(
               ({ name, nullable }) => (
                 <div className="metadata-drawer-options-list-row" key={name}>
-                  <div>{name}</div>
+                  <div style={{ maxWidth: 260 }}>{name}</div>
                   <div style={{ width: 70, textAlign: 'center' }}>
                     <Switch
                       checkedChildren={t('addition.operate.open')}
@@ -650,10 +656,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
                               append_properties: [
                                 ...addedPropertiesInSelectedVertextType
                               ].map((propertyName) => {
-                                const currentProperty =
-                                  vertexTypeStore.newVertexType.properties.find(
-                                    ({ name }) => name === propertyName
-                                  );
+                                const currentProperty = vertexTypeStore.newVertexType.properties.find(
+                                  ({ name }) => name === propertyName
+                                );
 
                                 return {
                                   name: propertyName,
@@ -678,7 +683,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
           <div className="metadata-drawer-options-name">
             <span>{t('addition.common.primary-key-property')}：</span>
           </div>
-          {vertexTypeStore.selectedVertexType!.primary_keys.join(';')}
+          <div style={{ maxWidth: 420 }}>
+            {vertexTypeStore.selectedVertexType!.primary_keys.join(';')}
+          </div>
         </div>
         <div className="metadata-drawer-options">
           <div className="metadata-drawer-options-name">
@@ -732,10 +739,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 )
                 .filter(({ nullable }) => !nullable)
                 .map((item) => {
-                  const order =
-                    vertexTypeStore.editedSelectedVertexType.style.display_fields.findIndex(
-                      (name) => name === item.name
-                    );
+                  const order = vertexTypeStore.editedSelectedVertexType.style.display_fields.findIndex(
+                    (name) => name === item.name
+                  );
 
                   const multiSelectOptionClassName = classnames({
                     'metadata-configs-sorted-multiSelect-option': true,
@@ -754,18 +760,16 @@ const CheckAndEditVertex: React.FC = observer(() => {
                       <div className={multiSelectOptionClassName}>
                         <div
                           style={{
-                            backgroundColor:
-                              vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
-                                item.name
-                              )
-                                ? '#2b65ff'
-                                : '#fff',
-                            borderColor:
-                              vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
-                                item.name
-                              )
-                                ? '#fff'
-                                : '#e0e0e0'
+                            backgroundColor: vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
+                              item.name
+                            )
+                              ? '#2b65ff'
+                              : '#fff',
+                            borderColor: vertexTypeStore.editedSelectedVertexType.style.display_fields.includes(
+                              item.name
+                            )
+                              ? '#fff'
+                              : '#e0e0e0'
                           }}
                         >
                           {order !== -1 ? order + 1 : ''}
@@ -782,7 +786,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                 })}
             </Select>
           ) : (
-            <div>
+            <div style={{ maxWidth: 420 }}>
               {vertexTypeStore.selectedVertexType?.style.display_fields
                 .map((field) =>
                   formatVertexIdText(
@@ -920,8 +924,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                     vertexTypeStore.mutateEditedSelectedVertexType(
                                       {
                                         ...vertexTypeStore.editedSelectedVertexType,
-                                        remove_property_indexes:
-                                          removedPropertyIndexes
+                                        remove_property_indexes: removedPropertyIndexes
                                       }
                                     );
 
@@ -977,13 +980,11 @@ const CheckAndEditVertex: React.FC = observer(() => {
                         errorMessage={
                           vertexTypeStore.validateEditVertexTypeErrorMessage
                             .propertyIndexes.length !== 0
-                            ? (
-                                vertexTypeStore
-                                  .validateEditVertexTypeErrorMessage
-                                  .propertyIndexes[
-                                  index
-                                ] as VertexTypeValidatePropertyIndexes
-                              ).name
+                            ? (vertexTypeStore
+                                .validateEditVertexTypeErrorMessage
+                                .propertyIndexes[
+                                index
+                              ] as VertexTypeValidatePropertyIndexes).name
                             : ''
                         }
                         value={name}
@@ -1083,16 +1084,14 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 )
                             )
                             .map((property) => {
-                              const order =
-                                vertexTypeStore.editedSelectedVertexType.append_property_indexes[
-                                  index
-                                ].fields.findIndex(
-                                  (name) => name === property.name
-                                );
+                              const order = vertexTypeStore.editedSelectedVertexType.append_property_indexes[
+                                index
+                              ].fields.findIndex(
+                                (name) => name === property.name
+                              );
 
                               const multiSelectOptionClassName = classnames({
-                                'metadata-configs-sorted-multiSelect-option':
-                                  true,
+                                'metadata-configs-sorted-multiSelect-option': true,
                                 'metadata-configs-sorted-multiSelect-option-selected':
                                   order !== -1
                               });
@@ -1117,10 +1116,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 .append_properties
                             )
                             .filter((property) => {
-                              const matchedProperty =
-                                metadataPropertyStore.metadataProperties.find(
-                                  ({ name }) => name === property.name
-                                );
+                              const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                ({ name }) => name === property.name
+                              );
 
                               if (!isUndefined(matchedProperty)) {
                                 const { data_type } = matchedProperty;
@@ -1146,10 +1144,9 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                 .append_properties
                             )
                             .filter((property) => {
-                              const matchedProperty =
-                                metadataPropertyStore.metadataProperties.find(
-                                  ({ name }) => name === property.name
-                                );
+                              const matchedProperty = metadataPropertyStore.metadataProperties.find(
+                                ({ name }) => name === property.name
+                              );
 
                               if (!isUndefined(matchedProperty)) {
                                 const { data_type } = matchedProperty;
@@ -1218,8 +1215,7 @@ const CheckAndEditVertex: React.FC = observer(() => {
                                   vertexTypeStore.mutateEditedSelectedVertexType(
                                     {
                                       ...vertexTypeStore.editedSelectedVertexType,
-                                      append_property_indexes:
-                                        appendPropertyIndexes
+                                      append_property_indexes: appendPropertyIndexes
                                     }
                                   );
 

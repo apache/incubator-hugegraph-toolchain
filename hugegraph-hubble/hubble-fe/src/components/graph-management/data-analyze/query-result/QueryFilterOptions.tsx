@@ -96,7 +96,7 @@ const QueryFilterOptions: React.FC = observer(() => {
             placeholder={t('addition.message.please-enter-number')}
             value={value}
             onChange={(e: any) => {
-              handlePropertyChange('value', e.value, index);
+              handlePropertyChange('value', Number(e.value), index);
             }}
             disabled={shouldDisabled}
           />

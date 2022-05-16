@@ -111,6 +111,13 @@ export class GraphViewStore {
             highlight: { background: '#fb6a02', border: '#fb6a02' },
             hover: { background: '#ec3112', border: '#ec3112' }
           },
+          // reveal label when zoom to max
+          scaling: {
+            label: {
+              max: Infinity,
+              maxVisible: Infinity
+            }
+          },
           chosen: {
             node(
               values: any,
@@ -145,7 +152,7 @@ export class GraphViewStore {
       ({ id, label, source, target, properties, sort_keys }) => {
         return {
           id,
-          label,
+          label: label.length < 15 ? label : label.slice(0, 15) + '...',
           properties,
           source,
           target,
