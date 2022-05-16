@@ -54,16 +54,16 @@ public enum HugeType {
     // Gremlin
     GREMLIN(201, "gremlin"),
 
+    // Cypher
+    CYPHER(202, "cypher"),
+
     GRAPHS(220, "graphs"),
 
     // Version
     VERSION(230, "versions"),
 
     // Metrics
-    METRICS(240, "metrics"),
-
-    // Cypher
-    CYPHER(250, "cypher");
+    METRICS(240, "metrics");
 
     private int code;
     private String name = null;
