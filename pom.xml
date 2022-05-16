@@ -41,6 +41,7 @@
         <module>hugegraph-hubble</module>
         <module>hugegraph-loader</module>
         <module>hugegraph-tools</module>
+        <module>hugegraph-dist</module>
     </modules>
 
     <properties>
