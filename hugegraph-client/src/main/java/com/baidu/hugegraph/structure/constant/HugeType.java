@@ -54,6 +54,9 @@ public enum HugeType {
     // Gremlin
     GREMLIN(201, "gremlin"),
 
+    // Cypher
+    CYPHER(202, "cypher"),
+
     GRAPHS(220, "graphs"),
 
     // Version

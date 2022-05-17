@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.baidu.hugegraph.driver.AuthManager;
+import com.baidu.hugegraph.driver.CypherManager;
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.driver.GraphsManager;
 import com.baidu.hugegraph.driver.GremlinManager;
@@ -75,6 +76,11 @@ public class BaseClientTest {
     public static GremlinManager gremlin() {
         Assert.assertNotNull("Not opened client", client);
         return client.gremlin();
+    }
+
+    public static CypherManager cypher() {
+        Assert.assertNotNull("Not opened client", client);
+        return client.cypher();
     }
 
     public static TraverserManager traverser() {
