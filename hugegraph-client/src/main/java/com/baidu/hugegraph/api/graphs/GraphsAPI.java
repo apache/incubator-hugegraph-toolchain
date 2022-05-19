@@ -60,7 +60,7 @@ public class GraphsAPI extends API {
                                       String configText) {
         this.client.checkApiVersion("0.67", "dynamic graph add");
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
         Map<String, Object> params = null;
         if (StringUtils.isNotEmpty(cloneGraphName)) {
             params = ImmutableMap.of("clone_graph_name", cloneGraphName);
