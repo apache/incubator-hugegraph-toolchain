@@ -90,7 +90,7 @@ public class HugeGraphSparkLoader implements Serializable {
 
                 p.forEachRemaining((Row row) -> {
                     for (Map.Entry<ElementBuilder, ArrayList<GraphElement>> builderMap :
-                            builders.entrySet()) {
+                         builders.entrySet()) {
                         // Parse
                         if (builderMap.getKey().mapping().skip()) continue;
                         parse(row, builderMap, struct);
