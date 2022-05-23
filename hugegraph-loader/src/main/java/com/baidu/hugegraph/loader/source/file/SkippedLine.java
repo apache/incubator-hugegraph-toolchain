@@ -19,13 +19,14 @@
 
 package com.baidu.hugegraph.loader.source.file;
 
+import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class SkippedLine {
+public class SkippedLine implements Serializable {
 
     @JsonProperty("regex")
     private String regex;

@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.source.file;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
@@ -26,7 +27,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
 
-public class FileFilter {
+public class FileFilter implements Serializable {
 
     private static final String ALL_EXTENSION = "*";
 

@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.source;
 
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +30,7 @@ import com.baidu.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public abstract class AbstractSource implements InputSource {
+public abstract class AbstractSource implements InputSource, Serializable {
 
     @JsonProperty("header")
     private String[] header;

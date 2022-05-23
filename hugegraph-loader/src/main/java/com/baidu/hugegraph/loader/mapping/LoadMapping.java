@@ -53,6 +53,8 @@ public class LoadMapping implements Checkable {
     private String version;
     @JsonProperty("structs")
     private List<InputStruct> structs;
+    @JsonProperty("env")
+    private Map<String, String> env;
 
     public static LoadMapping of(String filePath) {
         File file = FileUtils.getFile(filePath);
@@ -99,6 +101,10 @@ public class LoadMapping implements Checkable {
 
     public List<InputStruct> structs() {
         return this.structs;
+    }
+
+    public Map<String, String> env() {
+        return this.env;
     }
 
     public List<InputStruct> structsForFailure(LoadOptions options) {

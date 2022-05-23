@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.HugeClient;
+import com.baidu.hugegraph.loader.spark.HugeGraphSparkLoader;
 import com.baidu.hugegraph.loader.builder.Record;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
@@ -63,14 +64,44 @@ public final class HugeGraphLoader {
     private final TaskManager manager;
 
     public static void main(String[] args) {
-        HugeGraphLoader loader;
-        try {
-            loader = new HugeGraphLoader(args);
-        } catch (Throwable e) {
-            Printer.printError("Failed to start loading", e);
-            return;
+        String[] args1 = new String[]{
+                "-e", "spark"
+                , "-g", "talent_graph"
+                , "-h", "10.22.21.33"
+                , "-p", "8093"
+                , "--username", "admin"
+                , "--token", "dm@cvte"
+                , "-f", "/Users/zsm/Desktop/code-github/github/hugegraph-all/" +
+                        "hugegraph-toolchain/hugegraph-loader/config/spark" +
+                        "-test.json"
+                , "-s", "/Users/zsm/Desktop/code-github/github/hugegraph-all/" +
+                        "hugegraph-toolchain/hugegraph-loader/config/schema" +
+                        "-talent.groovy"
+        };
+        LoadOptions loadOptions = LoadOptions.parseOptions(args1);
+        switch (loadOptions.engine) {
+            case LoadOptions.ENGINE_SPARK:
+                HugeGraphSparkLoader hugeGraphSparkLoader =
+                        new HugeGraphSparkLoader(loadOptions);
+                hugeGraphSparkLoader.load();
+                break;
+            case LoadOptions.ENGINE_LOCAL:
+                HugeGraphLoader loader;
+                try {
+                    loader = new HugeGraphLoader(args1);
+                } catch (Throwable e) {
+                    Printer.printError("Failed to start loading", e);
+                    return;
+                }
+                loader.load();
+                break;
+            case LoadOptions.ENGINE_FLINK:
+                // TODO
+                break;
+            default:
+                throw new IllegalStateException(
+                        "Unexpected value: " + loadOptions.engine);
         }
-        loader.load();
     }
 
     public HugeGraphLoader(String[] args) {
@@ -236,7 +267,7 @@ public final class HugeGraphLoader {
                                                             struct);
         final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
-        for (boolean finished = false; !finished;) {
+        for (boolean finished = false; !finished; ) {
             if (this.context.stopped()) {
                 break;
             }

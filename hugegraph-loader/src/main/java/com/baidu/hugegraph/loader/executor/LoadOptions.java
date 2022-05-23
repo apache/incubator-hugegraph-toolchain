@@ -20,6 +20,8 @@
 package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -35,13 +37,17 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 
-public class LoadOptions {
+public class LoadOptions implements Serializable {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 
     public static final String HTTPS_SCHEMA = "https";
     public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
+
+    public static final String ENGINE_SPARK = "spark";
+    public static final String ENGINE_LOCAL = "local";
+    public static final String ENGINE_FLINK = "flink";
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
@@ -66,6 +72,12 @@ public class LoadOptions {
                validateWith = {PositiveValidator.class},
                description = "The port of HugeGraphServer")
     public int port = 8080;
+
+    @Parameter(names = {"-e", "--engine"}, arity = 1,
+               validateWith = {UrlValidator.class},
+               description = "The engine for loading data," +
+                             "allowed values are: local, spark or flink")
+    public String engine = "local";
 
     @Parameter(names = {"--username"}, arity = 1,
                description = "The username of graph for authentication")
@@ -230,6 +242,11 @@ public class LoadOptions {
             LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
         }
 
+        // Check option "-e"
+        E.checkArgument(Arrays.asList(ENGINE_FLINK, ENGINE_LOCAL, ENGINE_SPARK)
+                              .contains(options.engine),
+                        "The engine must be one of local, spark or flink");
+
         // Check option "-g"
         E.checkArgument(!StringUtils.isEmpty(options.graph),
                         "The graph must be specified");
@@ -264,7 +281,7 @@ public class LoadOptions {
                            "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
-                          "Invalid url value of args '%s': '%s'", name, value));
+                        "Invalid url value of args '%s': '%s'", name, value));
             }
         }
     }
@@ -279,8 +296,8 @@ public class LoadOptions {
         public void validate(String name, String value) {
             if (!SSL_PROTOCOL.contains(value.toLowerCase())) {
                 throw new ParameterException(String.format(
-                          "Invalid --protocol '%s', valid value is %s",
-                          value, SSL_PROTOCOL));
+                        "Invalid --protocol '%s', valid value is %s",
+                        value, SSL_PROTOCOL));
             }
         }
     }
@@ -292,8 +309,8 @@ public class LoadOptions {
             File file = new File(value);
             if (!file.exists() || !file.isDirectory()) {
                 throw new ParameterException(String.format(
-                          "Ensure the directory exists and is indeed a " +
-                          "directory instead of a file: '%s'", value));
+                        "Ensure the directory exists and is indeed a " +
+                        "directory instead of a file: '%s'", value));
             }
         }
     }
@@ -305,8 +322,8 @@ public class LoadOptions {
             File file = new File(value);
             if (!file.exists() || !file.isFile()) {
                 throw new ParameterException(String.format(
-                          "Ensure the file exists and is indeed a file " +
-                          "instead of a directory: '%s'", value));
+                        "Ensure the file exists and is indeed a file " +
+                        "instead of a directory: '%s'", value));
             }
         }
     }
@@ -318,8 +335,8 @@ public class LoadOptions {
             int retry = Integer.parseInt(value);
             if (retry <= 0) {
                 throw new ParameterException(String.format(
-                          "Parameter '%s' should be positive, but got '%s'",
-                          name, value));
+                        "Parameter '%s' should be positive, but got '%s'",
+                        name, value));
             }
         }
     }

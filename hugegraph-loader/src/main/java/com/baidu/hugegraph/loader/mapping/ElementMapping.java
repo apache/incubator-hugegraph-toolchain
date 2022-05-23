@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.mapping;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.collect.ImmutableSet;
 
 @JsonPropertyOrder({"label", "skip"})
-public abstract class ElementMapping implements Checkable {
+public abstract class ElementMapping implements Checkable, Serializable {
 
     @JsonProperty("label")
     private String label;
