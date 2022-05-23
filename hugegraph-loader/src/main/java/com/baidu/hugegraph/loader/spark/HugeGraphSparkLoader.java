@@ -36,18 +36,20 @@ import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
 import com.baidu.hugegraph.loader.source.file.SkippedLine;
 import com.baidu.hugegraph.loader.source.file.Compression;
+import com.baidu.hugegraph.loader.util.Printer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.BatchEdgeRequest;
 import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
+import com.baidu.hugegraph.util.Log;
 
-import org.apache.spark.SparkConf;
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
+import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -56,10 +58,24 @@ import java.util.List;
 import java.util.Map;
 
 public class HugeGraphSparkLoader implements Serializable {
+
+    public static final Logger LOG = Log.logger(HugeGraphSparkLoader.class);
+
     private final LoadOptions loadOptions;
 
-    public HugeGraphSparkLoader(LoadOptions loadOptions) {
-        this.loadOptions = loadOptions;
+    public static void main(String[] args) {
+        HugeGraphSparkLoader loader;
+        try {
+            loader = new HugeGraphSparkLoader(args);
+        } catch (Throwable e) {
+            Printer.printError("Failed to start loading", e);
+            return;
+        }
+        loader.load();
+    }
+
+    public HugeGraphSparkLoader(String[] args) {
+        this.loadOptions = LoadOptions.parseOptions(args);
     }
 
     public void load() {
@@ -67,10 +83,7 @@ public class HugeGraphSparkLoader implements Serializable {
         boolean isCheckVertex = loadOptions.checkVertex;
         List<InputStruct> structs = mapping.structs();
 
-        SparkConf conf = new SparkConf();
-        mapping.env().forEach(conf::set);
-        SparkSession ss = SparkSession.builder().config(conf).getOrCreate();
-
+        SparkSession ss = SparkSession.builder().getOrCreate();
         for (InputStruct struct : structs) {
             // Read
             Dataset<Row> ds = read(ss, struct);
@@ -90,7 +103,7 @@ public class HugeGraphSparkLoader implements Serializable {
 
                 p.forEachRemaining((Row row) -> {
                     for (Map.Entry<ElementBuilder, ArrayList<GraphElement>> builderMap :
-                         builders.entrySet()) {
+                            builders.entrySet()) {
                         // Parse
                         if (builderMap.getKey().mapping().skip()) continue;
                         parse(row, builderMap, struct);

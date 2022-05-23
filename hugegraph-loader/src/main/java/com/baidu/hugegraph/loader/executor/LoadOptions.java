@@ -45,10 +45,6 @@ public class LoadOptions implements Serializable {
     public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
 
-    public static final String ENGINE_SPARK = "spark";
-    public static final String ENGINE_LOCAL = "local";
-    public static final String ENGINE_FLINK = "flink";
-
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
                description = "The path of the data mapping description file")
@@ -73,10 +69,6 @@ public class LoadOptions implements Serializable {
                description = "The port of HugeGraphServer")
     public int port = 8080;
 
-    @Parameter(names = {"-e", "--engine"}, arity = 1,
-               validateWith = {UrlValidator.class},
-               description = "The engine for loading data," +
-                             "allowed values are: local, spark or flink")
     public String engine = "local";
 
     @Parameter(names = {"--username"}, arity = 1,
@@ -241,11 +233,6 @@ public class LoadOptions implements Serializable {
             LOG.error("The mapping file must be readable: '{}'", mappingFile);
             LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_ERROR);
         }
-
-        // Check option "-e"
-        E.checkArgument(Arrays.asList(ENGINE_FLINK, ENGINE_LOCAL, ENGINE_SPARK)
-                              .contains(options.engine),
-                        "The engine must be one of local, spark or flink");
 
         // Check option "-g"
         E.checkArgument(!StringUtils.isEmpty(options.graph),
