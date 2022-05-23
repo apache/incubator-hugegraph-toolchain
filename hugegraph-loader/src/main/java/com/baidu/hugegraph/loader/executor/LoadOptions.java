@@ -21,7 +21,6 @@ package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -68,8 +67,6 @@ public class LoadOptions implements Serializable {
                validateWith = {PositiveValidator.class},
                description = "The port of HugeGraphServer")
     public int port = 8080;
-
-    public String engine = "local";
 
     @Parameter(names = {"--username"}, arity = 1,
                description = "The username of graph for authentication")
