@@ -44,8 +44,8 @@ github:
         strict: true
         # contexts are the names of checks that must pass
         contexts:
-          - build
-          - Analyze
+#          - build
+          - CodeQL/Analyze
       required_pull_request_reviews:
         dismiss_stale_reviews: true
         require_code_owner_reviews: false
