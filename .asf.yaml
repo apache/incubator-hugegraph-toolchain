@@ -34,17 +34,18 @@ github:
     - tool
     
   enabled_merge_buttons:
-    merge:  true
+    merge:  false
+    rebase: false
     squash: true
-    rebase: true
   protected_branches:
     master:
       required_status_checks:
         # strict means "Require branches to be up to date before merging".
         strict: true
         # contexts are the names of checks that must pass
-        #contexts:
-        #  - hugegraph ci/build
+        contexts:
+          - build
+          - Analyze
       required_pull_request_reviews:
         dismiss_stale_reviews: true
         require_code_owner_reviews: false
