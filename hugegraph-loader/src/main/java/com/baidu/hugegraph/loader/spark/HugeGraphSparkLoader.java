@@ -54,6 +54,7 @@ import org.slf4j.Logger;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -62,6 +63,7 @@ public class HugeGraphSparkLoader implements Serializable {
     public static final Logger LOG = Log.logger(HugeGraphSparkLoader.class);
 
     private final LoadOptions loadOptions;
+    private final Map<ElementBuilder, List<GraphElement>> builders;
 
     public static void main(String[] args) {
         HugeGraphSparkLoader loader;
@@ -76,58 +78,68 @@ public class HugeGraphSparkLoader implements Serializable {
 
     public HugeGraphSparkLoader(String[] args) {
         this.loadOptions = LoadOptions.parseOptions(args);
+        this.builders = new HashMap<>();
     }
 
     public void load() {
-        LoadMapping mapping = LoadMapping.of(loadOptions.file);
-        boolean isCheckVertex = loadOptions.checkVertex;
+        LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
 
-        SparkSession ss = SparkSession.builder().getOrCreate();
+        SparkSession session =
+                SparkSession.builder().getOrCreate();
         for (InputStruct struct : structs) {
-            // Read
-            Dataset<Row> ds = read(ss, struct);
-            ds.foreachPartition(p -> {
-                LoadContext context = new LoadContext(loadOptions);
-                HashMap<ElementBuilder, ArrayList<GraphElement>> builders =
-                        new HashMap<>();
-                for (VertexMapping vertexMapping : struct.vertices()) {
-                    builders.put(
-                            new VertexBuilder(context, struct, vertexMapping),
-                            new ArrayList<>());
-                }
-                for (EdgeMapping edgeMapping : struct.edges()) {
-                    builders.put(new EdgeBuilder(context, struct, edgeMapping),
-                                 new ArrayList<>());
-                }
-
+            Dataset<Row> ds = read(session, struct);
+            ds.foreachPartition((Iterator<Row> p) -> {
+                LoadContext context = initPartition(this.loadOptions, struct);
                 p.forEachRemaining((Row row) -> {
-                    for (Map.Entry<ElementBuilder, ArrayList<GraphElement>> builderMap :
-                            builders.entrySet()) {
-                        ElementMapping elementMapping =
-                                builderMap.getKey().mapping();
-                        // Parse
-                        if (elementMapping.skip()) continue;
-                        parse(row, builderMap, struct);
-
-                        // Insert
-                        ArrayList<GraphElement> graphElements =
-                                builderMap.getValue();
-                        if (graphElements.size() > elementMapping.batchSize() ||
-                            (!p.hasNext() && graphElements.size() > 0)) {
-                            sink(builderMap, context.client().graph(),
-                                 isCheckVertex);
-                        }
-                    }
+                    loadRow(struct, row, p, context);
                 });
                 context.close();
             });
         }
-        ss.close();
-        ss.stop();
+        session.close();
+        session.stop();
     }
 
-    public Dataset<Row> read(SparkSession ss, InputStruct struct) {
+    private LoadContext initPartition(
+            LoadOptions loadOptions, InputStruct struct) {
+        LoadContext context = new LoadContext(loadOptions);
+        for (VertexMapping vertexMapping : struct.vertices()) {
+            this.builders.put(
+                    new VertexBuilder(context, struct, vertexMapping),
+                    new ArrayList<>());
+        }
+        for (EdgeMapping edgeMapping : struct.edges()) {
+            this.builders.put(new EdgeBuilder(context, struct, edgeMapping),
+                              new ArrayList<>());
+        }
+        return context;
+    }
+
+    private void loadRow(InputStruct struct, Row row, Iterator<Row> p,
+                         LoadContext context) {
+        for (Map.Entry<ElementBuilder, List<GraphElement>> builderMap :
+                this.builders.entrySet()) {
+            ElementMapping elementMapping =
+                    builderMap.getKey().mapping();
+            // Parse
+            if (elementMapping.skip()) {
+                continue;
+            }
+            parse(row, builderMap, struct);
+
+            // Insert
+            List<GraphElement> graphElements =
+                    builderMap.getValue();
+            if (graphElements.size() > elementMapping.batchSize() ||
+                (!p.hasNext() && graphElements.size() > 0)) {
+                sink(builderMap, context.client().graph(),
+                     this.loadOptions.checkVertex);
+            }
+        }
+    }
+
+    private Dataset<Row> read(SparkSession ss, InputStruct struct) {
         InputSource input = struct.input();
         String charset = input.charset();
         FileSource fileSource = input.asFileSource();
@@ -160,54 +172,54 @@ public class HugeGraphSparkLoader implements Serializable {
                         break;
                     default:
                         throw new IllegalStateException(
-                                "Unexpected format value: " + format);
+                                  "Unexpected format value: " + format);
                 }
                 break;
             case JDBC: // TODO
             default:
                 throw new AssertionError(String.format(
-                        "Unsupported input source '%s'", input.type()));
+                          "Unsupported input source '%s'", input.type()));
         }
         return ds;
     }
 
-    public void parse(Row row,
-                      Map.Entry<ElementBuilder, ArrayList<GraphElement>> builderMap,
-                      InputStruct struct) {
+    private void parse(Row row,
+                       Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
+                       InputStruct struct) {
         ElementBuilder builder = builderMap.getKey();
-        ArrayList<GraphElement> graphElements = builderMap.getValue();
-        if (!row.mkString().equals("")) {
-            List<GraphElement> build;
-            switch (struct.input().type()) {
-                case FILE:
-                case HDFS:
-                    FileSource fileSource = struct.input().asFileSource();
-                    build = builder.build(fileSource.header(),
-                                          row.mkString()
-                                             .split(fileSource.delimiter()));
-                    break;
-                case JDBC:
-                    //TODO
-                default:
-                    throw new AssertionError(String.format(
-                            "Unsupported input source '%s'",
-                            struct.input().type()));
-            }
-
-            graphElements.addAll(build);
+        List<GraphElement> graphElements = builderMap.getValue();
+        if (row.mkString().equals("")) {
+            return;
         }
+        List<GraphElement> elements;
+        switch (struct.input().type()) {
+            case FILE:
+            case HDFS:
+                FileSource fileSource = struct.input().asFileSource();
+                elements = builder.build(fileSource.header(),
+                                         row.mkString()
+                                            .split(fileSource.delimiter()));
+                break;
+            case JDBC:
+                //TODO
+            default:
+                throw new AssertionError(String.format(
+                          "Unsupported input source '%s'",
+                          struct.input().type()));
+        }
+        graphElements.addAll(elements);
     }
 
-    public void sink(
-            Map.Entry<ElementBuilder, ArrayList<GraphElement>> builderMap,
+    private void sink(
+            Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
             GraphManager g, boolean isCheckVertex) {
         ElementBuilder builder = builderMap.getKey();
         ElementMapping elementMapping = builder.mapping();
-        ArrayList<GraphElement> graphElements = builderMap.getValue();
+        List<GraphElement> graphElements = builderMap.getValue();
         boolean isVertex = builder.mapping().type().isVertex();
-        Map<String, UpdateStrategy> stringUpdateStrategyMap =
+        Map<String, UpdateStrategy> updateStrategyMap =
                 elementMapping.updateStrategies();
-        if (stringUpdateStrategyMap.isEmpty()) {
+        if (updateStrategyMap.isEmpty()) {
             if (isVertex) {
                 g.addVertices((List<Vertex>) (Object) graphElements);
             } else {
@@ -219,20 +231,18 @@ public class HugeGraphSparkLoader implements Serializable {
                 BatchVertexRequest.Builder req =
                         new BatchVertexRequest.Builder();
                 req.vertices((List<Vertex>) (Object) graphElements)
-                   .updatingStrategies(stringUpdateStrategyMap)
+                   .updatingStrategies(updateStrategyMap)
                    .createIfNotExist(true);
                 g.updateVertices(req.build());
             } else {
                 BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                 req.edges((List<Edge>) (Object) graphElements)
-                   .updatingStrategies(stringUpdateStrategyMap)
+                   .updatingStrategies(updateStrategyMap)
                    .checkVertex(isCheckVertex)
                    .createIfNotExist(true);
-
                 g.updateEdges(req.build());
             }
         }
         graphElements.clear();
     }
-
 }
