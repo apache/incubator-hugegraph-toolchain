@@ -43,7 +43,7 @@ github:
         # strict means "Require branches to be up to date before merging".
         strict: true
         # contexts are the names of checks that must pass
-        contexts:
+        contexts: []
          # - build
          # - Analyze (java)
       required_pull_request_reviews:
