@@ -56,6 +56,8 @@ public abstract class ElementMapping implements Checkable, Serializable {
     private Set<Object> nullValues;
     @JsonProperty("update_strategies")
     private Map<String, UpdateStrategy> updateStrategies;
+    @JsonProperty("batch_size")
+    private long batchSize;
 
     public ElementMapping() {
         this.skip = false;
@@ -65,6 +67,7 @@ public abstract class ElementMapping implements Checkable, Serializable {
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
         this.updateStrategies = new HashMap<>();
+        this.batchSize = 1000;
     }
 
     public abstract ElemType type();
@@ -172,6 +175,10 @@ public abstract class ElementMapping implements Checkable, Serializable {
             }
         }
         return mappingValue;
+    }
+
+    public long batchSize() {
+       return this.batchSize;
     }
 
     public Set<String> selectedFields() {

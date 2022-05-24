@@ -104,14 +104,16 @@ public class HugeGraphSparkLoader implements Serializable {
                 p.forEachRemaining((Row row) -> {
                     for (Map.Entry<ElementBuilder, ArrayList<GraphElement>> builderMap :
                             builders.entrySet()) {
+                        ElementMapping elementMapping =
+                                builderMap.getKey().mapping();
                         // Parse
-                        if (builderMap.getKey().mapping().skip()) continue;
+                        if (elementMapping.skip()) continue;
                         parse(row, builderMap, struct);
 
                         // Insert
                         ArrayList<GraphElement> graphElements =
                                 builderMap.getValue();
-                        if (graphElements.size() > 2 ||
+                        if (graphElements.size() > elementMapping.batchSize() ||
                             (!p.hasNext() && graphElements.size() > 0)) {
                             sink(builderMap, context.client().graph(),
                                  isCheckVertex);
