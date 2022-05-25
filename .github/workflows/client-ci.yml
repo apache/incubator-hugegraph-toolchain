@@ -9,7 +9,7 @@ on:
     paths:
       - hugegraph-client/**
       - hugegraph-dist/**
-      - .github/workflows
+      - .github/workflows/**
       - pom.xml
   pull_request:
     branches:
@@ -19,7 +19,7 @@ on:
     paths:
       - hugegraph-client/**
       - hugegraph-dist/**
-      - .github/workflows
+      - .github/workflows/**
       - pom.xml
 
 jobs:

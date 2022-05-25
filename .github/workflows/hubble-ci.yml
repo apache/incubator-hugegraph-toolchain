@@ -10,7 +10,7 @@ on:
     paths:
       - hugegraph-hubble/**
       - hugegraph-dist/**
-      - .github/workflows
+      - .github/workflows/**
       - pom.xml
   pull_request:
     branches:
@@ -21,7 +21,7 @@ on:
     paths:
       - hugegraph-hubble/**
       - hugegraph-dist/**
-      - .github/workflows
+      - .github/workflows/**
       - pom.xml
 
 env:
