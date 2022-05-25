@@ -30,11 +30,11 @@
                         <configuration>
                             <tasks>
                                 <echo file="${project.basedir}/dist.sh">
-                                    ls ${project.parent.basedir}/hugegraph-hubble/hubble-dist/*
+                                    ls ${project.parent.basedir}/hugegraph-hubble/*
                                     ls ${project.parent.basedir}/hugegraph-loader/*
                                     ls ${project.parent.basedir}/hugegraph-tools/*
 
-                                    \cp -r ${project.parent.basedir}/hugegraph-hubble/hubble-dist/hugegraph-hubble-${project.version} ${project.basedir}
+                                    \cp -r ${project.parent.basedir}/hugegraph-hubble/hugegraph-hubble-${project.version} ${project.basedir}
                                     \cp -r ${project.parent.basedir}/hugegraph-loader/hugegraph-loader-${project.version} ${project.basedir}
                                     \cp -r ${project.parent.basedir}/hugegraph-tools/hugegraph-tools-${project.version} ${project.basedir}
 
