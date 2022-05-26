@@ -65,6 +65,7 @@
                             <tasks>
                                 <echo file="${top.level.dir}/dist.sh">
                                     cd ${hubble-fe.dir} || exit 1
+                                    export CI=false
                                     yarn install &amp;&amp; yarn build || exit 1
                                     echo -e "Hubble-FE build successfully.\n"
 
