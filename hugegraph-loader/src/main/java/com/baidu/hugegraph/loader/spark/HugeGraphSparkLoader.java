@@ -174,7 +174,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 }
                 break;
             case JDBC:
-                // TODO
+                // TODO: implement jdbc
             default:
                 throw new AssertionError(String.format(
                           "Unsupported input source '%s'", input.type()));
@@ -200,7 +200,7 @@ public class HugeGraphSparkLoader implements Serializable {
                                             .split(fileSource.delimiter()));
                 break;
             case JDBC:
-                //TODO
+                //TODO: implement jdbc
             default:
                 throw new AssertionError(String.format(
                           "Unsupported input source '%s'",
@@ -210,7 +210,7 @@ public class HugeGraphSparkLoader implements Serializable {
     }
 
     private void sink(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
-            GraphManager g, boolean isCheckVertex) {
+                      GraphManager g, boolean isCheckVertex) {
         ElementBuilder builder = builderMap.getKey();
         ElementMapping elementMapping = builder.mapping();
         List<GraphElement> graphElements = builderMap.getValue();
