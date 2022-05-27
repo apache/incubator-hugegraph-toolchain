@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.mapping;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.collect.ImmutableSet;
 
 @JsonPropertyOrder({"label", "skip"})
-public abstract class ElementMapping implements Checkable {
+public abstract class ElementMapping implements Checkable, Serializable {
 
     @JsonProperty("label")
     private String label;
@@ -55,6 +56,8 @@ public abstract class ElementMapping implements Checkable {
     private Set<Object> nullValues;
     @JsonProperty("update_strategies")
     private Map<String, UpdateStrategy> updateStrategies;
+    @JsonProperty("batch_size")
+    private long batchSize;
 
     public ElementMapping() {
         this.skip = false;
@@ -64,6 +67,7 @@ public abstract class ElementMapping implements Checkable {
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
         this.updateStrategies = new HashMap<>();
+        this.batchSize = 1000;
     }
 
     public abstract ElemType type();
@@ -171,6 +175,10 @@ public abstract class ElementMapping implements Checkable {
             }
         }
         return mappingValue;
+    }
+
+    public long batchSize() {
+       return this.batchSize;
     }
 
     public Set<String> selectedFields() {

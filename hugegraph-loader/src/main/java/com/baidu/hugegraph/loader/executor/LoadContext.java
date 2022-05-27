@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.executor;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,7 +39,7 @@ import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.util.Log;
 
-public final class LoadContext {
+public final class LoadContext implements Serializable {
 
     private static final Logger LOG = Log.logger(LoadContext.class);
 

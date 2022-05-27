@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.executor;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +36,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 
-public class LoadOptions {
+public class LoadOptions implements Serializable {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 

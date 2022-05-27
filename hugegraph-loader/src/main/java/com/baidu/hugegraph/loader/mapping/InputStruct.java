@@ -19,6 +19,7 @@
 
 package com.baidu.hugegraph.loader.mapping;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.collect.ImmutableList;
 
 @JsonPropertyOrder({"id", "skip", "input", "vertices", "edges"})
-public class InputStruct implements Checkable {
+public class InputStruct implements Checkable, Serializable {
 
     public static final InputStruct EMPTY = new InputStruct(ImmutableList.of(),
                                                             ImmutableList.of());
