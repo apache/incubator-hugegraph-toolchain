@@ -85,8 +85,7 @@ public class HugeGraphSparkLoader implements Serializable {
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
 
-        SparkSession session =
-                SparkSession.builder().getOrCreate();
+        SparkSession session = SparkSession.builder().getOrCreate();
         for (InputStruct struct : structs) {
             Dataset<Row> ds = read(session, struct);
             ds.foreachPartition((Iterator<Row> p) -> {
@@ -120,8 +119,7 @@ public class HugeGraphSparkLoader implements Serializable {
                          LoadContext context) {
         for (Map.Entry<ElementBuilder, List<GraphElement>> builderMap :
                 this.builders.entrySet()) {
-            ElementMapping elementMapping =
-                    builderMap.getKey().mapping();
+            ElementMapping elementMapping = builderMap.getKey().mapping();
             // Parse
             if (elementMapping.skip()) {
                 continue;
@@ -175,7 +173,8 @@ public class HugeGraphSparkLoader implements Serializable {
                                   "Unexpected format value: " + format);
                 }
                 break;
-            case JDBC: // TODO
+            case JDBC:
+                // TODO
             default:
                 throw new AssertionError(String.format(
                           "Unsupported input source '%s'", input.type()));
@@ -188,7 +187,7 @@ public class HugeGraphSparkLoader implements Serializable {
                        InputStruct struct) {
         ElementBuilder builder = builderMap.getKey();
         List<GraphElement> graphElements = builderMap.getValue();
-        if (row.mkString().equals("")) {
+        if ("".equals(row.mkString())) {
             return;
         }
         List<GraphElement> elements;
@@ -210,15 +209,13 @@ public class HugeGraphSparkLoader implements Serializable {
         graphElements.addAll(elements);
     }
 
-    private void sink(
-            Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
+    private void sink(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
             GraphManager g, boolean isCheckVertex) {
         ElementBuilder builder = builderMap.getKey();
         ElementMapping elementMapping = builder.mapping();
         List<GraphElement> graphElements = builderMap.getValue();
         boolean isVertex = builder.mapping().type().isVertex();
-        Map<String, UpdateStrategy> updateStrategyMap =
-                elementMapping.updateStrategies();
+        Map<String, UpdateStrategy> updateStrategyMap = elementMapping.updateStrategies();
         if (updateStrategyMap.isEmpty()) {
             if (isVertex) {
                 g.addVertices((List<Vertex>) (Object) graphElements);
