@@ -1,0 +1,65 @@
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "1",
+      "input": {
+        "custom_sql": "select c_talent_uid,c_talent_name from kg_talent_entity limit 10",
+        "type": "JDBC",
+        "vendor": "mysql",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://10.22.21.25:23313",
+        "database": "graph_tmp",
+        "schema": "graph_tmp",
+        "table": "kg_talent_entity",
+        "username": "root",
+        "password": "dm**2018",
+        "batch_size": 500,
+        "header": [
+          "c_talent_uid",
+          "c_talent_name"
+        ]
+      },
+      "vertices": [
+        {
+          "label": "talent",
+          "id": "c_talent_uid",
+          "update_strategies": {
+            "c_talent_uid": "OVERRIDE",
+            "c_talent_name": "OVERRIDE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "input": {
+        "custom_sql": "select c_school_uid,c_school_name from kg_school_entity limit 10",
+        "type": "JDBC",
+        "vendor": "mysql",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://10.22.21.25:23313",
+        "database": "graph_tmp",
+        "schema": "graph_tmp",
+        "username": "root",
+        "table": "kg_school_entity",
+        "password": "dm**2018",
+        "batch_size": 500,
+        "header": [
+          "c_school_uid",
+          "c_school_name"
+        ]
+      },
+      "vertices": [
+        {
+          "label": "school",
+          "id": "c_school_uid",
+          "update_strategies": {
+            "c_school_uid": "OVERRIDE",
+            "c_school_name": "OVERRIDE"
+          }
+        }
+      ]
+    }
+  ]
+}
