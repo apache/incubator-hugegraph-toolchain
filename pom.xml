@@ -56,6 +56,10 @@
         <java.version>1.8</java.version>
         <compiler.source>1.8</compiler.source>
         <compiler.target>1.8</compiler.target>
+        <flink.version>1.13.5</flink.version>
+        <flinkcdc.version>2.2.1</flinkcdc.version>
+        <spark.version>3.1.2</spark.version>
+        <scala.version>2.12</scala.version>
     </properties>
 
     <dependencies>

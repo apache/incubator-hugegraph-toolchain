@@ -70,7 +70,6 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
     private final InputStruct struct;
     private Map<ElementBuilder, List<String>> builders;
 
-
     public HugeGraphOutputFormat(InputStruct struct, String[] args) {
         this.struct = struct;
         this.loadOptions = LoadOptions.parseOptions(args);
@@ -92,6 +91,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
 
     @Override
     public void configure(Configuration configuration) {
+
     }
 
     @Override
