@@ -28,7 +28,10 @@ import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
@@ -36,6 +39,7 @@ import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
 import io.debezium.data.Envelope;
 
 public class HugeGraphDeserialization implements DebeziumDeserializationSchema<String> {
+    private static final Logger LOG = LoggerFactory.getLogger(HugeGraphDeserialization.class);
 
     @Override
     public void deserialize(SourceRecord sourceRecord,
@@ -44,9 +48,8 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
         ObjectNode result = mapper.createObjectNode();
 
         Envelope.Operation operation = Envelope.operationFor(sourceRecord);
-        String type = operation.toString().toLowerCase();
+        String op = operation.code();
         Struct value = (Struct) sourceRecord.value();
-
         Struct data;
         switch (operation) {
             case DELETE:
@@ -58,7 +61,7 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
                 data = value.getStruct("after");
                 break;
             default:
-                throw new Error("");
+                throw new RuntimeException("The type of `op` should be 'c' 'r' 'u' 'd' only");
         }
         ObjectNode rootNode = mapper.createObjectNode();
         if (data != null) {
@@ -70,12 +73,9 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
             }
         }
 
-        String topic = sourceRecord.topic();
-        String[] fields = topic.split("\\.");
-
-        result.set("data", rootNode);
-        result.put("op", type);
-        System.out.println(result.toString());
+        result.set(Constants.CDC_DATA, rootNode);
+        result.put(Constants.CDC_OP, op);
+        LOG.debug("Loaded data: {}", result.toString());
         collector.collect(result.toString());
 
     }

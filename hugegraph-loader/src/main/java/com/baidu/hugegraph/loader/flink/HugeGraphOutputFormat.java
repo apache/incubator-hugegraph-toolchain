@@ -42,6 +42,7 @@ import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
@@ -55,8 +56,10 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 
+import io.debezium.data.Envelope;
+
 public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HugeGraphOutputFormat.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HugeGraphOutputFormat.class);
     private static final long serialVersionUID = -4514164348993670086L;
     private LoadContext loadContext;
     private transient ScheduledExecutorService scheduler;
@@ -64,47 +67,39 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
     private transient volatile boolean closed = false;
 
     private final LoadOptions loadOptions;
-    private Map<ElementBuilder, List<String>> builders;
     private final InputStruct struct;
-    private long batchSize;
-    private final long flushIntervalMs;
+    private Map<ElementBuilder, List<String>> builders;
 
-    public HugeGraphOutputFormat(
-            InputStruct struct,
-            String[] args
-    ) {
+
+    public HugeGraphOutputFormat(InputStruct struct, String[] args) {
         this.struct = struct;
         this.loadOptions = LoadOptions.parseOptions(args);
-        this.batchSize = 500;
-        this.flushIntervalMs = loadOptions.flushIntervalMs;
     }
 
     private Map<ElementBuilder, List<String>> initBuilders() {
         LoadContext loadContext = new LoadContext(loadOptions);
-        Map<ElementBuilder, List<String>> builderMap = new HashMap<>();
+        Map<ElementBuilder, List<String>> builders = new HashMap<>();
         for (VertexMapping vertexMapping : struct.vertices()) {
-            builderMap.put(
-                    new VertexBuilder(loadContext, struct, vertexMapping),
-                    new ArrayList<>());
+            builders.put(new VertexBuilder(loadContext, struct, vertexMapping),
+                         new ArrayList<>());
         }
         for (EdgeMapping edgeMapping : struct.edges()) {
-            builderMap.put(new EdgeBuilder(loadContext, struct, edgeMapping),
-                           new ArrayList<>());
+            builders.put(new EdgeBuilder(loadContext, struct, edgeMapping),
+                         new ArrayList<>());
         }
-        return builderMap;
+        return builders;
     }
 
     @Override
     public void configure(Configuration configuration) {
-
     }
 
     @Override
     public void open(int taskNumber, int numTasks) {
         this.builders = initBuilders();
-        this.loadContext = new LoadContext(loadOptions);
-
-        if (flushIntervalMs > 0 && this.batchSize != 1) {
+        this.loadContext = new LoadContext(this.loadOptions);
+        int flushIntervalMs = this.loadOptions.flushIntervalMs;
+        if (flushIntervalMs > 0) {
             this.scheduler = new ScheduledThreadPoolExecutor(1, new ExecutorThreadFactory(
                     "hugegraph-streamload-outputformat"));
             this.scheduledFuture = this.scheduler.scheduleWithFixedDelay(() -> {
@@ -113,7 +108,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                         try {
                             flushAll();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            LOG.error("Failed to flush all data.", e);
                         }
                     }
                 }
@@ -121,53 +116,48 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
         }
     }
 
-    private void flushAll() throws JsonProcessingException {
-        for (Map.Entry<ElementBuilder, List<String>> builder :
-                this.builders.entrySet()) {
-            ElementMapping elementMapping = builder.getKey().mapping();
-            this.batchSize = elementMapping.batchSize();
+    private void flushAll() {
+        for (Map.Entry<ElementBuilder, List<String>> builder : this.builders.entrySet()) {
             List<String> graphElements = builder.getValue();
             if (graphElements.size() > 0) {
-                flush(builder, this.loadOptions.checkVertex);
+                flush(builder);
             }
         }
     }
-
 
     @Override
     public synchronized void writeRecord(T row) throws IOException {
         for (Map.Entry<ElementBuilder, List<String>> builder :
                 this.builders.entrySet()) {
-
-            System.out.println(builder.getValue().size());
-
             ElementMapping elementMapping = builder.getKey().mapping();
-            // Parse
             if (elementMapping.skip()) {
                 continue;
             }
-            addBatch(row, builder);
 
-            // Insert
+            // Add batch
             List<String> graphElements = builder.getValue();
+            graphElements.add(row.toString());
             if (graphElements.size() > elementMapping.batchSize()) {
-                flush(builder, this.loadOptions.checkVertex);
+                flush(builder);
             }
-
         }
     }
 
-    private void flush(Map.Entry<ElementBuilder, List<String>> builder,
-                       boolean isCheckVertex) throws JsonProcessingException {
-
+    private void flush(Map.Entry<ElementBuilder, List<String>> builder) {
         GraphManager g = loadContext.client().graph();
         ElementBuilder elementBuilder = builder.getKey();
         ElementMapping elementMapping = elementBuilder.mapping();
-
         for (String row : builder.getValue()) {
-            JsonNode node = new ObjectMapper().readTree(row);
-            JsonNode data = node.get("data");
-            JsonNode type = node.get("op");
+            JsonNode node;
+            try {
+                node = new ObjectMapper().readTree(row);
+            } catch (JsonProcessingException e) {
+                LOG.error("Failed to parse json {}", row, e);
+                continue;
+            }
+
+            JsonNode data = node.get(Constants.CDC_DATA);
+            String op = node.get(Constants.CDC_OP).asText();
 
             String[] fields = struct.input().header();
             String[] values = new String[data.size()];
@@ -176,16 +166,16 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
             }
             List<GraphElement> graphElements = builder.getKey().build(fields, values);
             boolean isVertex = elementBuilder.mapping().type().isVertex();
-            switch (type.asText()) {
-                case "read":
-                case "create":
+            switch (Envelope.Operation.forCode(op)) {
+                case READ:
+                case CREATE:
                     if (isVertex) {
                         g.addVertices((List<Vertex>) (Object) graphElements);
                     } else {
                         g.addEdges((List<Edge>) (Object) graphElements);
                     }
                     break;
-                case "update":
+                case UPDATE:
                     Map<String, UpdateStrategy> updateStrategyMap =
                             elementMapping.updateStrategies();
                     if (isVertex) {
@@ -199,13 +189,12 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                         BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                         req.edges((List<Edge>) (Object) graphElements)
                            .updatingStrategies(updateStrategyMap)
-                           .checkVertex(isCheckVertex)
+                           .checkVertex(this.loadOptions.checkVertex)
                            .createIfNotExist(true);
                         g.updateEdges(req.build());
-
                     }
                     break;
-                case "delete":
+                case DELETE:
                     String id = graphElements.get(0).id().toString();
                     if (isVertex) {
                         g.removeVertex(id);
@@ -213,33 +202,21 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                         g.removeEdge(id);
                     }
                     break;
-
                 default:
-
+                    throw new RuntimeException("The type of `op` should be 'c' 'r' 'u' 'd' only");
             }
         }
         builder.getValue().clear();
-    }
-
-    private void addBatch(T row, Map.Entry<ElementBuilder,
-            List<String>> builderMap) throws JsonProcessingException {
-        if (row instanceof String) {
-            builderMap.getValue().add(row.toString());
-        } else {
-            throw new RuntimeException("The type of element should be 'RowData' or 'String' only.");
-        }
     }
 
     @Override
     public synchronized void close() {
         if (!closed) {
             closed = true;
-
             if (this.scheduledFuture != null) {
                 scheduledFuture.cancel(false);
                 this.scheduler.shutdown();
             }
         }
     }
-
 }
