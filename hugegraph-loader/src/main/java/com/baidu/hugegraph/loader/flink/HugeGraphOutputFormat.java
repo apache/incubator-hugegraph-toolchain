@@ -59,6 +59,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import io.debezium.data.Envelope;
 
 public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
+
     private static final Logger LOG = LoggerFactory.getLogger(HugeGraphOutputFormat.class);
     private static final long serialVersionUID = -4514164348993670086L;
     private LoadContext loadContext;
@@ -91,7 +92,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
 
     @Override
     public void configure(Configuration configuration) {
-
+        // pass
     }
 
     @Override

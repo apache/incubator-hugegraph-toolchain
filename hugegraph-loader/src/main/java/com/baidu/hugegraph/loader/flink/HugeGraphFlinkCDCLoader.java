@@ -19,29 +19,27 @@
 
 package com.baidu.hugegraph.loader.flink;
 
-import static java.util.regex.Pattern.compile;
-
+import java.net.URISyntaxException;
 import java.util.List;
-import java.util.regex.Matcher;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
-import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.Log;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 
 public class HugeGraphFlinkCDCLoader {
-    public static final Logger LOG = Log.logger(HugeGraphFlinkCDCLoader.class);
 
+    public static final Logger LOG = Log.logger(HugeGraphFlinkCDCLoader.class);
+    private static final String JDBC_PREFIX = "jdbc:";
     private final LoadOptions loadOptions;
     private final String[] options;
 
@@ -68,18 +66,20 @@ public class HugeGraphFlinkCDCLoader {
 
         for (InputStruct struct : structs) {
             JDBCSource input = (JDBCSource) struct.input();
-            String host = "";
-            int port = -1;
-            Matcher m = compile(Constants.HOST_PORT_REGEX).matcher(input.url());
-            while (m.find()) {
-                host = m.group(1);
-                port = Integer.parseInt(m.group(2));
+            String url = input.url();
+            String host;
+            int port;
+            try {
+                URIBuilder uriBuilder = new URIBuilder(url.substring(JDBC_PREFIX.length()));
+                host = uriBuilder.getHost();
+                port = uriBuilder.getPort();
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(
+                        String.format("Failed to parse Url(%s) to get hostName and port",
+                                      url), e);
             }
-            E.checkArgument(!"".equals(host) && port != -1,
-                            String.format("Failed to parse Url(%s) to get hostName and port",
-                                          input.url()));
 
-            MySqlSource<String> mySqlSource = MySqlSource.<String>builder()
+            MySqlSource<String> mysqlSource = MySqlSource.<String>builder()
                     .hostname(host)
                     .port(port)
                     .databaseList(input.database())
@@ -90,7 +90,7 @@ public class HugeGraphFlinkCDCLoader {
                     .build();
 
             DataStreamSource<String> source =
-                    env.fromSource(mySqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source");
+                    env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source");
 
             HugeGraphOutputFormat<Object> format = new HugeGraphOutputFormat<>(struct, options);
             source.addSink(new HugeGraphSinkFunction<>(format)).setParallelism(1);

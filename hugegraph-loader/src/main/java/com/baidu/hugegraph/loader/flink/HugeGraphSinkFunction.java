@@ -30,7 +30,7 @@ import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.flink.util.Preconditions;
 
 public class HugeGraphSinkFunction<T> extends RichSinkFunction<T>
-        implements CheckpointedFunction {
+                                      implements CheckpointedFunction {
 
     private static final long serialVersionUID = -2259171589402599426L;
     private final HugeGraphOutputFormat<Object> outputFormat;
@@ -54,12 +54,12 @@ public class HugeGraphSinkFunction<T> extends RichSinkFunction<T>
 
     @Override
     public void initializeState(FunctionInitializationContext context) {
-
+        // pass
     }
 
     @Override
     public void snapshotState(FunctionSnapshotContext context) {
-
+        // pass
     }
 
     @Override
@@ -67,5 +67,4 @@ public class HugeGraphSinkFunction<T> extends RichSinkFunction<T>
         outputFormat.close();
         super.close();
     }
-
 }
