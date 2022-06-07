@@ -39,6 +39,7 @@ import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
 import io.debezium.data.Envelope;
 
 public class HugeGraphDeserialization implements DebeziumDeserializationSchema<String> {
+
     private static final Logger LOG = LoggerFactory.getLogger(HugeGraphDeserialization.class);
 
     @Override
