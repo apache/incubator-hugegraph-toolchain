@@ -45,6 +45,7 @@ import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
@@ -110,21 +111,19 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
         }
     }
 
-    private void flushAll() {
-        synchronized (HugeGraphOutputFormat.this) {
-            if (!this.closed) {
-                try {
-                    for (Map.Entry<ElementBuilder, List<String>> builder :
-                         this.builders.entrySet()) {
-                        List<String> graphElements = builder.getValue();
-                        if (graphElements.size() > 0) {
-                            flush(builder.getKey(), graphElements);
-                        }
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to flush all data.", e);
+    private synchronized void flushAll() {
+        if (this.closed) {
+            return;
+        }
+        try {
+            for (Map.Entry<ElementBuilder, List<String>> builder : this.builders.entrySet()) {
+                List<String> graphElements = builder.getValue();
+                if (graphElements.size() > 0) {
+                    flush(builder.getKey(), graphElements);
                 }
             }
+        } catch (Exception e) {
+            throw new LoadException("Failed to flush all data.", e);
         }
     }
 
@@ -216,12 +215,13 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
 
     @Override
     public synchronized void close() {
-        if (!this.closed) {
-            this.closed = true;
-            if (this.scheduledFuture != null) {
-                this.scheduledFuture.cancel(false);
-                this.scheduler.shutdown();
-            }
+        if (this.closed) {
+            return;
+        }
+        this.closed = true;
+        if (this.scheduledFuture != null) {
+            this.scheduledFuture.cancel(false);
+            this.scheduler.shutdown();
         }
     }
 }

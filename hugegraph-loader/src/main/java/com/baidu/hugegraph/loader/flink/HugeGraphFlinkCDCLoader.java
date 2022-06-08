@@ -92,17 +92,17 @@ public class HugeGraphFlinkCDCLoader {
             host = uriBuilder.getHost();
             port = uriBuilder.getPort();
         } catch (URISyntaxException e) {
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     String.format("Failed to parse Url(%s) to get hostName and port", url), e);
         }
         return MySqlSource.<String>builder()
-                .hostname(host)
-                .port(port)
-                .databaseList(input.database())
-                .tableList(input.database() + "." + input.table())
-                .username(input.username())
-                .password(input.password())
-                .deserializer(new HugeGraphDeserialization())
-                .build();
+                          .hostname(host)
+                          .port(port)
+                          .databaseList(input.database())
+                          .tableList(input.database() + "." + input.table())
+                          .username(input.username())
+                          .password(input.password())
+                          .deserializer(new HugeGraphDeserialization())
+                          .build();
     }
 }
