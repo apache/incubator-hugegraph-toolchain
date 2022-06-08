@@ -62,7 +62,8 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
                 data = value.getStruct("after");
                 break;
             default:
-                throw new RuntimeException("The type of `op` should be 'c' 'r' 'u' 'd' only");
+                throw new IllegalArgumentException(
+                          "The type of `op` should be 'c' 'r' 'u' 'd' only");
         }
         ObjectNode rootNode = mapper.createObjectNode();
         if (data != null) {
@@ -78,7 +79,6 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
         result.put(Constants.CDC_OP, op);
         LOG.debug("Loaded data: {}", result.toString());
         collector.collect(result.toString());
-
     }
 
     @Override

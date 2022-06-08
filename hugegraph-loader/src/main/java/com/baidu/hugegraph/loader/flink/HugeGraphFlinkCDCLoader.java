@@ -65,30 +65,8 @@ public class HugeGraphFlinkCDCLoader {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         for (InputStruct struct : structs) {
-            JDBCSource input = (JDBCSource) struct.input();
-            String url = input.url();
-            String host;
-            int port;
-            try {
-                URIBuilder uriBuilder = new URIBuilder(url.substring(JDBC_PREFIX.length()));
-                host = uriBuilder.getHost();
-                port = uriBuilder.getPort();
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(
-                        String.format("Failed to parse Url(%s) to get hostName and port",
-                                      url), e);
-            }
 
-            MySqlSource<String> mysqlSource = MySqlSource.<String>builder()
-                    .hostname(host)
-                    .port(port)
-                    .databaseList(input.database())
-                    .tableList(input.database() + "." + input.table())
-                    .username(input.username())
-                    .password(input.password())
-                    .deserializer(new HugeGraphDeserialization())
-                    .build();
-
+            MySqlSource<String> mysqlSource = buildMysqlSource(struct);
             DataStreamSource<String> source =
                     env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source");
 
@@ -101,5 +79,29 @@ public class HugeGraphFlinkCDCLoader {
         } catch (Exception e) {
             Printer.printError("Failed to execute flink.", e);
         }
+    }
+
+    private MySqlSource<String> buildMysqlSource(InputStruct struct) {
+        JDBCSource input = (JDBCSource) struct.input();
+        String url = input.url();
+        String host;
+        int port;
+        try {
+            URIBuilder uriBuilder = new URIBuilder(url.substring(JDBC_PREFIX.length()));
+            host = uriBuilder.getHost();
+            port = uriBuilder.getPort();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(
+                    String.format("Failed to parse Url(%s) to get hostName and port", url), e);
+        }
+        return MySqlSource.<String>builder()
+                .hostname(host)
+                .port(port)
+                .databaseList(input.database())
+                .tableList(input.database() + "." + input.table())
+                .username(input.username())
+                .password(input.password())
+                .deserializer(new HugeGraphDeserialization())
+                .build();
     }
 }

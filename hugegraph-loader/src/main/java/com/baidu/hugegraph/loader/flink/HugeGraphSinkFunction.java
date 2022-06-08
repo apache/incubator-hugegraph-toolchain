@@ -43,13 +43,13 @@ public class HugeGraphSinkFunction<T> extends RichSinkFunction<T>
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
         RuntimeContext ctx = getRuntimeContext();
-        outputFormat.setRuntimeContext(ctx);
-        outputFormat.open(ctx.getIndexOfThisSubtask(), ctx.getNumberOfParallelSubtasks());
+        this.outputFormat.setRuntimeContext(ctx);
+        this.outputFormat.open(ctx.getIndexOfThisSubtask(), ctx.getNumberOfParallelSubtasks());
     }
 
     @Override
     public void invoke(T value, Context context) throws Exception {
-        outputFormat.writeRecord(value);
+        this.outputFormat.writeRecord(value);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class HugeGraphSinkFunction<T> extends RichSinkFunction<T>
 
     @Override
     public void close() throws Exception {
-        outputFormat.close();
+        this.outputFormat.close();
         super.close();
     }
 }
