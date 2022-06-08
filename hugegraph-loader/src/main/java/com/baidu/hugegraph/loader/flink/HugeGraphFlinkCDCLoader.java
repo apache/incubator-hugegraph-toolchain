@@ -28,6 +28,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
+import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
@@ -77,7 +78,7 @@ public class HugeGraphFlinkCDCLoader {
         try {
             env.execute("flink-cdc-hugegraph");
         } catch (Exception e) {
-            Printer.printError("Failed to execute flink.", e);
+            throw new LoadException("Failed to execute flink", e);
         }
     }
 
