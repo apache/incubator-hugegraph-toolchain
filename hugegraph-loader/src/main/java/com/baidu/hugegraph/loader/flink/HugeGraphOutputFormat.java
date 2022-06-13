@@ -38,7 +38,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessin
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.loader.builder.EdgeBuilder;
@@ -58,12 +57,13 @@ import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
+import com.baidu.hugegraph.util.Log;
 
 import io.debezium.data.Envelope;
 
 public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HugeGraphOutputFormat.class);
+    private static final Logger LOG = Log.logger(HugeGraphOutputFormat.class);
     private static final long serialVersionUID = -4514164348993670086L;
     private LoadContext loadContext;
     private transient ScheduledExecutorService scheduler;

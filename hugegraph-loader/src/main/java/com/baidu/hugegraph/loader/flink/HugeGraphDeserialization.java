@@ -29,9 +29,9 @@ import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.baidu.hugegraph.loader.constant.Constants;
+import com.baidu.hugegraph.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
@@ -40,7 +40,7 @@ import io.debezium.data.Envelope;
 
 public class HugeGraphDeserialization implements DebeziumDeserializationSchema<String> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HugeGraphDeserialization.class);
+    private static final Logger LOG = Log.logger(HugeGraphDeserialization.class);
 
     @Override
     public void deserialize(SourceRecord sourceRecord,
