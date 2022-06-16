@@ -21,7 +21,6 @@ package com.baidu.hugegraph.loader.flink;
 
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Properties;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
