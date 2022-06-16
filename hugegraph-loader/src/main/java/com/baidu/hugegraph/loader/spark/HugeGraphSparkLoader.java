@@ -209,7 +209,7 @@ public class HugeGraphSparkLoader implements Serializable {
     }
 
     private void flush(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
-                      GraphManager g, boolean isCheckVertex) {
+                       GraphManager g, boolean isCheckVertex) {
         ElementBuilder builder = builderMap.getKey();
         ElementMapping elementMapping = builder.mapping();
         List<GraphElement> graphElements = builderMap.getValue();

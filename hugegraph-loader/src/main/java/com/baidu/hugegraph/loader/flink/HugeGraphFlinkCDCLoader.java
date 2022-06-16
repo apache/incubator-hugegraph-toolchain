@@ -21,6 +21,7 @@ package com.baidu.hugegraph.loader.flink;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -66,13 +67,13 @@ public class HugeGraphFlinkCDCLoader {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         for (InputStruct struct : structs) {
-
             MySqlSource<String> mysqlSource = buildMysqlSource(struct);
             DataStreamSource<String> source =
                     env.fromSource(mysqlSource, WatermarkStrategy.noWatermarks(), "MySQL Source");
 
             HugeGraphOutputFormat<Object> format = new HugeGraphOutputFormat<>(struct, options);
-            source.addSink(new HugeGraphSinkFunction<>(format)).setParallelism(1);
+            source.addSink(new HugeGraphSinkFunction<>(format))
+                  .setParallelism(this.loadOptions.sinkParallelism);
         }
         env.enableCheckpointing(3000);
         try {
@@ -93,7 +94,7 @@ public class HugeGraphFlinkCDCLoader {
             port = uriBuilder.getPort();
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(
-                    String.format("Failed to parse Url(%s) to get hostName and port", url), e);
+                    String.format("Failed to parse url(%s) to get hostName and port", url), e);
         }
         return MySqlSource.<String>builder()
                           .hostname(host)

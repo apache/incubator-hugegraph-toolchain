@@ -5,7 +5,7 @@ function get_params() {
   hugegraph_params=""
   while (("$#")); do
     case "$1" in
-    -–file | --graph | --schema | --host | --port | --username | --token | --protocol | \
+      -–file | --graph | --schema | --host | --port | --username | --token | --protocol | \
       --trust-store-file | --trust-store-password | --clear-all-data | --clear-timeout | \
       --incremental-mode | --failure-mode | --batch-insert-threads | --single-insert-threads | \
       --max-conn | --max-conn-per-route | --batch-size | --max-parse-errors | --max-insert-errors | \
