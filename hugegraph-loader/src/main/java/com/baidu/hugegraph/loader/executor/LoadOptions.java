@@ -134,6 +134,14 @@ public class LoadOptions implements Serializable {
                description = "The number of lines in each submit")
     public int batchSize = 500;
 
+    @Parameter(names = {"--cdc-flush-interval"}, arity = 1,
+               description = "The flush interval for flink cdc")
+    public int flushIntervalMs = 30000;
+
+    @Parameter(names = {"--cdc-sink-parallelism"}, arity = 1,
+               description = "The sink parallelism for flink cdc")
+    public int sinkParallelism = 1;
+
     @Parameter(names = {"--shutdown-timeout"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The timeout of awaitTermination in seconds")

@@ -127,11 +127,10 @@ public class HugeGraphSparkLoader implements Serializable {
             parse(row, builderMap, struct);
 
             // Insert
-            List<GraphElement> graphElements =
-                    builderMap.getValue();
+            List<GraphElement> graphElements = builderMap.getValue();
             if (graphElements.size() > elementMapping.batchSize() ||
                 (!p.hasNext() && graphElements.size() > 0)) {
-                sink(builderMap, context.client().graph(),
+                flush(builderMap, context.client().graph(),
                      this.loadOptions.checkVertex);
             }
         }
@@ -209,8 +208,8 @@ public class HugeGraphSparkLoader implements Serializable {
         graphElements.addAll(elements);
     }
 
-    private void sink(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
-                      GraphManager g, boolean isCheckVertex) {
+    private void flush(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
+                       GraphManager g, boolean isCheckVertex) {
         ElementBuilder builder = builderMap.getKey();
         ElementMapping elementMapping = builder.mapping();
         List<GraphElement> graphElements = builderMap.getValue();
