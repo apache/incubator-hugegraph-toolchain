@@ -88,9 +88,9 @@ body:
     attributes:
       label: Schema [VertexLabel, EdgeLabel, IndexLabel] (元数据结构)
       description: >
-      If the problem is related to a specific point type/edge type/index type, please provide the
-      full `Schema returns JSON result`.
-      (如果问题与具体的点类型 / 边类型 / 索引类型相关, 请提供完整的 `Schema 返回 JSON 结果`)
+        If the problem is related to a specific point type/edge type/index type, please provide the
+        full `Schema returns JSON result`.
+        (如果问题与具体的点类型 / 边类型 / 索引类型相关, 请提供完整的 `Schema 返回 JSON 结果`)
       placeholder: |
         // Query URL
         GET http://localhost:8080/graphs/hugegraph/schema/vertexlabels
