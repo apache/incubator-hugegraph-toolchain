@@ -38,7 +38,7 @@ body:
     attributes:
       label: Environment (环境信息)
       description: >
-        server version could get from [rest-api](https://hugegraph.github.io/hugegraph-doc/clients/restful-api/other.html) (http://localhost:8080/versions)
+        server version could get from [rest-api](https://hugegraph.apache.org/docs/clients/restful-api/) (http://localhost:8080/versions)
       value: |
         - Server Version: v0.12.x
         - Loader Version: v0.12.x
