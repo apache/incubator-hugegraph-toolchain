@@ -48,7 +48,7 @@
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${top.level.dir}</outputDirectory>
                             <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>
-                            <finalName>${final.name}</finalName>
+                            <finalName>${release.name}</finalName>
                         </configuration>
                     </execution>
                 </executions>
