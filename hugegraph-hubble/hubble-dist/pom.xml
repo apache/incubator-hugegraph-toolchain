@@ -70,10 +70,10 @@
                                     echo -e "Hubble-FE build successfully.\n"
 
                                     cd ${top.level.dir} &amp;&amp; pwd
-                                    rm -rf ${final.name}/ui
-                                    cp -r ${hubble-fe.dir}/build ${final.name}/ui
+                                    rm -rf ${release.name}/ui
+                                    cp -r ${hubble-fe.dir}/build ${release.name}/ui
 
-                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${final.name} || exit 1
+                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${release.name} || exit 1
                                     echo -n "hugegraph-hubble tar.gz available at: "
                                     echo "${top.level.dir}/${final.name}.tar.gz"
                                     rm -f ${top.level.dir}/dist.sh
