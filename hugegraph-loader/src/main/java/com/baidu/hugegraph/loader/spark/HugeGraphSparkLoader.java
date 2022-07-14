@@ -19,21 +19,6 @@
 
 package com.baidu.hugegraph.loader.spark;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import org.apache.spark.sql.DataFrameReader;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.StructField;
-import org.slf4j.Logger;
-
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
@@ -60,6 +45,21 @@ import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.util.Log;
+
+import org.apache.spark.sql.DataFrameReader;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.StructField;
+import org.slf4j.Logger;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import scala.collection.JavaConverters;
 
@@ -171,7 +171,7 @@ public class HugeGraphSparkLoader implements Serializable {
                         break;
                     default:
                         throw new IllegalStateException(
-                                  "Unexpected format value: " + format);
+                                "Unexpected format value: " + format);
                 }
                 break;
             case JDBC:
@@ -187,7 +187,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 break;
             default:
                 throw new AssertionError(String.format(
-                          "Unsupported input source '%s'", input.type()));
+                        "Unsupported input source '%s'", input.type()));
         }
         return ds;
     }
@@ -223,8 +223,8 @@ public class HugeGraphSparkLoader implements Serializable {
                 break;
             default:
                 throw new AssertionError(String.format(
-                          "Unsupported input source '%s'",
-                          struct.input().type()));
+                        "Unsupported input source '%s'",
+                        struct.input().type()));
         }
         graphElements.addAll(elements);
     }
