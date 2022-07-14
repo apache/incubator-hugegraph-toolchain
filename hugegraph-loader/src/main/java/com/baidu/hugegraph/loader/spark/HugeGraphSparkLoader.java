@@ -135,8 +135,7 @@ public class HugeGraphSparkLoader implements Serializable {
             List<GraphElement> graphElements = builderMap.getValue();
             if (graphElements.size() > elementMapping.batchSize() ||
                 (!p.hasNext() && graphElements.size() > 0)) {
-                flush(builderMap, context.client().graph(),
-                      this.loadOptions.checkVertex);
+                flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
             }
         }
     }
@@ -172,7 +171,7 @@ public class HugeGraphSparkLoader implements Serializable {
                         break;
                     default:
                         throw new IllegalStateException(
-                                "Unexpected format value: " + format);
+                                  "Unexpected format value: " + format);
                 }
                 break;
             case JDBC:
