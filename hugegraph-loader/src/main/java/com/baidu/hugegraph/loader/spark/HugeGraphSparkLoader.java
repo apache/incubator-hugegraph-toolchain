@@ -171,7 +171,7 @@ public class HugeGraphSparkLoader implements Serializable {
                         break;
                     default:
                         throw new IllegalStateException(
-                                "Unexpected format value: " + format);
+                                  "Unexpected format value: " + format);
                 }
                 break;
             case JDBC:
@@ -187,7 +187,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 break;
             default:
                 throw new AssertionError(String.format(
-                        "Unsupported input source '%s'", input.type()));
+                          "Unsupported input source '%s'", input.type()));
         }
         return ds;
     }
@@ -223,8 +223,8 @@ public class HugeGraphSparkLoader implements Serializable {
                 break;
             default:
                 throw new AssertionError(String.format(
-                        "Unsupported input source '%s'",
-                        struct.input().type()));
+                          "Unsupported input source '%s'",
+                          struct.input().type()));
         }
         graphElements.addAll(elements);
     }
