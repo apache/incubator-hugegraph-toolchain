@@ -140,7 +140,6 @@ public final class HugeGraphLoader {
                      options.graph);
 
             options.timeout = requestTimeout;
-            client.close();
         } catch (Throwable t) {
             throw t;
         } finally {
