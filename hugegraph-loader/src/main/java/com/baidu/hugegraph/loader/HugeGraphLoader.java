@@ -133,18 +133,21 @@ public final class HugeGraphLoader {
         HugeClient client = HugeClientHolder.create(options);
         String message = "I'm sure to delete all data";
 
-        try {
-            LOG.info("Prepare to clear the data of graph '{}'", options.graph);
-            client.graphs().clearGraph(options.graph, message);
-            LOG.info("The graph '{}' has been cleared successfully",
-                     options.graph);
+        LOG.info("Prepare to clear the data of graph '{}'", options.graph);
 
-            options.timeout = requestTimeout;
+        try {
+            client.graphs().clearGraph(options.graph, message);
         } catch (Throwable t) {
             throw t;
         } finally {
+            // make sure close client
             client.close();
         }
+
+        LOG.info("The graph '{}' has been cleared successfully",
+                 options.graph);
+
+        options.timeout = requestTimeout;
     }
 
     private void createSchema() {
