@@ -60,6 +60,12 @@
         <flinkcdc.version>2.2.1</flinkcdc.version>
         <spark.version>3.1.2</spark.version>
         <scala.version>2.12</scala.version>
+        <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
+        <docker.build.skip>true</docker.build.skip>
+        <docker.push.skip>true</docker.push.skip>
+        <docker.hub>hugegraph</docker.hub>
+        <docker.repo>${project.name}</docker.repo>
+        <docker.tag>${project.version}</docker.tag>
     </properties>
 
     <dependencies>
@@ -195,6 +201,8 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+
+
 <!--            <plugin>-->
 <!--                <groupId>org.apache.maven.plugins</groupId>-->
 <!--                <artifactId>maven-assembly-plugin</artifactId>-->
