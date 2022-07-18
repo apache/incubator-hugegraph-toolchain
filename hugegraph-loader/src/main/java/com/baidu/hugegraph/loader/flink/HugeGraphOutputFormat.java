@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.loader.flink;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -128,7 +127,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
     }
 
     @Override
-    public synchronized void writeRecord(T row) throws IOException {
+    public synchronized void writeRecord(T row) {
         for (Map.Entry<ElementBuilder, List<String>> builder :
                 this.builders.entrySet()) {
             ElementMapping elementMapping = builder.getKey().mapping();
@@ -163,7 +162,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
         return Tuple2.of(op, elementBuilder.build(fields, values));
     }
 
-    private void flush(ElementBuilder elementBuilder, List<String> rows) {
+    private void flush(ElementBuilder<GraphElement> elementBuilder, List<String> rows) {
         GraphManager g = this.loadContext.client().graph();
         ElementMapping elementMapping = elementBuilder.mapping();
         for (String row : rows) {

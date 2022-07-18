@@ -93,4 +93,8 @@ public abstract class GraphElement extends Element implements GraphAttachable {
     protected abstract GraphElement setProperty(String key, Object value);
 
     public abstract GraphElement removeProperty(String key);
+
+    public int sizeOfProperties() {
+        return properties.size();
+    }
 }

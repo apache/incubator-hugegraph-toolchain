@@ -45,7 +45,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
     private final Collection<String> nonNullKeys;
-    // Used to optimize access performace
+    // Used to optimize access performance
     private VertexIdsIndex vertexIdsIndex;
     private String[] lastNames;
 
@@ -57,7 +57,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
         this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
         this.nonNullKeys = this.nonNullableKeys(this.edgeLabel);
-        // Ensure that the source/target id fileds are matched with id strategy
+        // Ensure that the source/target id fields are matched with id strategy
         this.checkIdFields(this.sourceLabel, this.mapping.sourceFields());
         this.checkIdFields(this.targetLabel, this.mapping.targetFields());
 

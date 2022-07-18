@@ -31,7 +31,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 public class BatchExample {
 
     public static void main(String[] args) {
-        // If connect failed will throw a exception.
+        // If connect failed will throw an exception.
         HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
                                                    "hugegraph").build();
 
