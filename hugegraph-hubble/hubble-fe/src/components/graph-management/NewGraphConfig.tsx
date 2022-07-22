@@ -148,7 +148,7 @@ const NewGraphConfig: React.FC = observer(() => {
             <span>{t('addition.newGraphConfig.port')}:</span>
             <Input
               {...isRequiredInputProps}
-              placeholder={t('addition.newGraphConfig.host-desc')}
+              placeholder={t('addition.newGraphConfig.port-desc')}
               errorMessage={
                 graphManagementStore.isValidated &&
                 graphManagementStore.validateErrorMessage.port !== ''
