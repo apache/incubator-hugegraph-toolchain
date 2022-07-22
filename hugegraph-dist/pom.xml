@@ -34,12 +34,12 @@
                                     ls ${project.parent.basedir}/hugegraph-loader/*
                                     ls ${project.parent.basedir}/hugegraph-tools/*
 
-                                    \cp -r ${project.parent.basedir}/hugegraph-hubble/hugegraph-hubble-${project.version} ${project.basedir}
+                                    \cp -r ${project.parent.basedir}/hugegraph-hubble/hugegraph-hubble ${project.basedir}
                                     \cp -r ${project.parent.basedir}/hugegraph-loader/hugegraph-loader-${project.version} ${project.basedir}
                                     \cp -r ${project.parent.basedir}/hugegraph-tools/hugegraph-tools-${project.version} ${project.basedir}
 
                                     tar -zcvf ${project.parent.basedir}/${final.name}.tar.gz \
-                                    hugegraph-hubble-* hugegraph-loader-* hugegraph-tools-* || exit 1
+                                    hugegraph-hubble hugegraph-loader-* hugegraph-tools-* || exit 1
 
                                     md5sum ${project.parent.basedir}/${final.name}.tar.gz
                                     echo -n "hugegraph-toolchain tar.gz available at: "
