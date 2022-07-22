@@ -67,7 +67,7 @@ public abstract class ElementMapping implements Checkable, Serializable {
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
         this.updateStrategies = new HashMap<>();
-        this.batchSize = 1000;
+        this.batchSize = 500;
     }
 
     public abstract ElemType type();
