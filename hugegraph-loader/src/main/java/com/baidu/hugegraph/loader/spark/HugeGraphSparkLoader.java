@@ -133,7 +133,7 @@ public class HugeGraphSparkLoader implements Serializable {
 
             // Insert
             List<GraphElement> graphElements = builderMap.getValue();
-            if (graphElements.size() > elementMapping.batchSize() ||
+            if (graphElements.size() >= elementMapping.batchSize() ||
                 (!p.hasNext() && graphElements.size() > 0)) {
                 flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
             }
