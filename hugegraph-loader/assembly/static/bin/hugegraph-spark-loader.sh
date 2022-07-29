@@ -5,7 +5,7 @@ APP_DIR=$(dirname ${BIN_DIR})
 LIB_DIR=${APP_DIR}/lib
 
 # get hugegraph_params and engine_params
-source "$BIN_DIR"/get_params.sh
+source "$BIN_DIR"/get-params.sh
 get_params $*
 echo "engine_params: $engine_params"
 echo "hugegraph_params: $hugegraph_params"
