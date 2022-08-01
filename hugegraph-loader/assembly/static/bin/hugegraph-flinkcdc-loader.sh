@@ -8,13 +8,13 @@ assemblyJarName=$(find ${LIB_DIR} -name hugegraph-loader*.jar)
 # get hugegraph_params and engine_params
 source "$BIN_DIR"/get-params.sh
 get_params $*
-echo "engine_params: $engine_params"
-echo "hugegraph_params: $hugegraph_params"
+echo "engine_params: $ENGINE_PARAMS"
+echo "hugegraph_params: $HUGEGRAPH_PARAMS"
 
 CMD=${FLINK_HOME}/bin/flink run \
-  ${engine_params} \
+  ${ENGINE_PARAMS} \
   -c com.baidu.hugegraph.loader.flink.HugeGraphFlinkCDCLoader \
-  ${assemblyJarName} ${hugegraph_params}
+  ${assemblyJarName} ${HUGEGRAPH_PARAMS}
 
 echo ${CMD}
 exec ${CMD}
