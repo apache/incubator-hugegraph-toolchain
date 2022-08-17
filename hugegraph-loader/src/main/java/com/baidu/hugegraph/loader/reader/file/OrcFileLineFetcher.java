@@ -123,11 +123,18 @@ public class OrcFileLineFetcher extends FileLineFetcher {
         if (!this.recordReader.hasNext()) {
             return null;
         }
-
+        Object[] values = null;
         this.row = this.recordReader.next(this.row);
-        Object[] values = this.inspector.getStructFieldsDataAsList(this.row)
-                                        .stream().map(Object::toString)
-                                        .toArray();
+        try {
+            values = this.inspector.getStructFieldsDataAsList(this.row)
+                    .stream()
+                    .map(o -> o != null ? o.toString() : "")
+                    .toArray();
+        } catch (NullPointerException e) {
+            LOG.error(e.getMessage());
+            LOG.warn("row -> {}", this.row);
+            throw e;
+        }
         String rawLine = StringUtils.join(values, Constants.COMMA_STR);
 
         this.increaseOffset();
