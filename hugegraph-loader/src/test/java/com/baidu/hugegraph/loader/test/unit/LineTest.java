@@ -38,6 +38,9 @@ public class LineTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             new Line("1,marko", new String[]{"id", "name"}, null);
         });
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            new Line("1,marko", new String[]{"id", "name"}, new Object[]{1});
+        });
     }
 
     @Test
