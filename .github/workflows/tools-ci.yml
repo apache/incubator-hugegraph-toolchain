@@ -22,7 +22,7 @@ on:
       - pom.xml
 
 jobs:
-  build:
+  tools-ci:
     runs-on: ubuntu-20.04
     env:
       TRAVIS_DIR: hugegraph-tools/assembly/travis

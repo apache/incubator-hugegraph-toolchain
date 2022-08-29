@@ -6,7 +6,7 @@ on:
     types: [ published ]
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-20.04
     env:
       STATIC_DIR: assembly/static
