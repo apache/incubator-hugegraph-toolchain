@@ -105,6 +105,11 @@ public class Path implements GraphAttachable {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(this.labels, this.objects, this.crosspoint);
+    }
+
+    @Override
     public String toString() {
         return String.format("{labels=%s, objects=%s, crosspoint=%s}",
                              this.labels, this.objects, this.crosspoint);

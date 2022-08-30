@@ -62,14 +62,14 @@ public class PersonalRankApiTest extends TraverserApiTest {
               .ifNotExist()
               .create();
 
-        Vertex A = graph.addVertex(T.label, "person", T.id, "A", "name", "A");
-        Vertex B = graph.addVertex(T.label, "person", T.id, "B", "name", "B");
-        Vertex C = graph.addVertex(T.label, "person", T.id, "C", "name", "C");
+        Vertex A = graph.addVertex(T.LABEL, "person", T.ID, "A", "name", "A");
+        Vertex B = graph.addVertex(T.LABEL, "person", T.ID, "B", "name", "B");
+        Vertex C = graph.addVertex(T.LABEL, "person", T.ID, "C", "name", "C");
 
-        Vertex a = graph.addVertex(T.label, "movie", T.id, "a", "name", "a");
-        Vertex b = graph.addVertex(T.label, "movie", T.id, "b", "name", "b");
-        Vertex c = graph.addVertex(T.label, "movie", T.id, "c", "name", "c");
-        Vertex d = graph.addVertex(T.label, "movie", T.id, "d", "name", "d");
+        Vertex a = graph.addVertex(T.LABEL, "movie", T.ID, "a", "name", "a");
+        Vertex b = graph.addVertex(T.LABEL, "movie", T.ID, "b", "name", "b");
+        Vertex c = graph.addVertex(T.LABEL, "movie", T.ID, "c", "name", "c");
+        Vertex d = graph.addVertex(T.LABEL, "movie", T.ID, "d", "name", "d");
 
         A.addEdge("like", a);
         A.addEdge("like", c);
@@ -239,7 +239,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
 
     @Test
     public void testPersonalRankWithIsolatedVertex() {
-        Vertex isolate = graph().addVertex(T.label, "person", T.id, "isolate",
+        Vertex isolate = graph().addVertex(T.LABEL, "person", T.ID, "isolate",
                                            "name", "isolate-vertex");
 
         PersonalRankAPI.Request.Builder builder;

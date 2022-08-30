@@ -62,14 +62,14 @@ public class GraphManager {
     }
 
     public Vertex addVertex(Object... keyValues) {
-        Object label = this.getValue(T.label, keyValues);
+        Object label = this.getValue(T.LABEL, keyValues);
         if (!(label instanceof String)) {
             throw new IllegalArgumentException(String.format(
                       "Expect a string value as the vertex label " +
                       "argument, but got: %s", label));
         }
         Vertex vertex = new Vertex(String.valueOf(label));
-        vertex.id(this.getValue(T.id, keyValues));
+        vertex.id(this.getValue(T.ID, keyValues));
         this.attachProperties(vertex, keyValues);
         return this.addVertex(vertex);
     }
@@ -467,8 +467,8 @@ public class GraphManager {
         E.checkArgument((properties.length & 0x01) == 0,
                         "The number of properties must be even");
         for (int i = 0; i < properties.length; i = i + 2) {
-            if (!properties[i].equals(T.id) &&
-                !properties[i].equals(T.label)) {
+            if (!properties[i].equals(T.ID) &&
+                !properties[i].equals(T.LABEL)) {
                 element.property((String) properties[i], properties[i + 1]);
             }
         }

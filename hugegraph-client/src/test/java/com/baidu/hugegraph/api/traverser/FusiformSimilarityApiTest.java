@@ -68,23 +68,23 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
                 .ifNotExist()
                 .create();
 
-        Vertex p1 = graph().addVertex(T.label, "person", "name", "p1",
+        Vertex p1 = graph().addVertex(T.LABEL, "person", "name", "p1",
                                       "city", "Beijing");
-        Vertex p2 = graph().addVertex(T.label, "person", "name", "p2",
+        Vertex p2 = graph().addVertex(T.LABEL, "person", "name", "p2",
                                       "city", "Shanghai");
-        Vertex p3 = graph().addVertex(T.label, "person", "name", "p3",
+        Vertex p3 = graph().addVertex(T.LABEL, "person", "name", "p3",
                                       "city", "Beijing");
 
-        Vertex b1 = graph().addVertex(T.label, "book", "name", "b1");
-        Vertex b2 = graph().addVertex(T.label, "book", "name", "b2");
-        Vertex b3 = graph().addVertex(T.label, "book", "name", "b3");
-        Vertex b4 = graph().addVertex(T.label, "book", "name", "b4");
-        Vertex b5 = graph().addVertex(T.label, "book", "name", "b5");
-        Vertex b6 = graph().addVertex(T.label, "book", "name", "b6");
-        Vertex b7 = graph().addVertex(T.label, "book", "name", "b7");
-        Vertex b8 = graph().addVertex(T.label, "book", "name", "b8");
-        Vertex b9 = graph().addVertex(T.label, "book", "name", "b9");
-        Vertex b10 = graph().addVertex(T.label, "book", "name", "b10");
+        Vertex b1 = graph().addVertex(T.LABEL, "book", "name", "b1");
+        Vertex b2 = graph().addVertex(T.LABEL, "book", "name", "b2");
+        Vertex b3 = graph().addVertex(T.LABEL, "book", "name", "b3");
+        Vertex b4 = graph().addVertex(T.LABEL, "book", "name", "b4");
+        Vertex b5 = graph().addVertex(T.LABEL, "book", "name", "b5");
+        Vertex b6 = graph().addVertex(T.LABEL, "book", "name", "b6");
+        Vertex b7 = graph().addVertex(T.LABEL, "book", "name", "b7");
+        Vertex b8 = graph().addVertex(T.LABEL, "book", "name", "b8");
+        Vertex b9 = graph().addVertex(T.LABEL, "book", "name", "b9");
+        Vertex b10 = graph().addVertex(T.LABEL, "book", "name", "b10");
 
         // p1 read b1-b9 (9 books)
         p1.addEdge("read", b1);

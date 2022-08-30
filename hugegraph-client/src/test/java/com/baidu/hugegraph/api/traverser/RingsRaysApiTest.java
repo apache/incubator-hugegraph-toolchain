@@ -54,9 +54,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
                 .ifNotExist()
                 .create();
 
-        Vertex v1 = graph().addVertex(T.label, "node", T.id, 1);
-        Vertex v2 = graph().addVertex(T.label, "node", T.id, 2);
-        Vertex v3 = graph().addVertex(T.label, "node", T.id, 3);
+        Vertex v1 = graph().addVertex(T.LABEL, "node", T.ID, 1);
+        Vertex v2 = graph().addVertex(T.LABEL, "node", T.ID, 2);
+        Vertex v3 = graph().addVertex(T.LABEL, "node", T.ID, 3);
 
         // Path length 5
         v1.addEdge("link", v2);

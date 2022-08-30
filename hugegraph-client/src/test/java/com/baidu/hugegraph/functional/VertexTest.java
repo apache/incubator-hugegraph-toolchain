@@ -57,7 +57,7 @@ public class VertexTest extends BaseFuncTest {
 
     @Test
     public void testAddVertexProperty() {
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19);
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19);
@@ -71,7 +71,7 @@ public class VertexTest extends BaseFuncTest {
 
     @Test
     public void testUpdateVertexProperty() {
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19);
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19);
@@ -94,7 +94,7 @@ public class VertexTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
@@ -123,7 +123,7 @@ public class VertexTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
@@ -152,7 +152,7 @@ public class VertexTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
@@ -181,7 +181,7 @@ public class VertexTest extends BaseFuncTest {
                 .nullableKeys("time")
                 .append();
 
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
@@ -218,7 +218,7 @@ public class VertexTest extends BaseFuncTest {
 
     @Test
     public void testRemoveVertexProperty() {
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19, "city", "Beijing");
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19,
@@ -232,7 +232,7 @@ public class VertexTest extends BaseFuncTest {
 
     @Test
     public void testRemoveVertexPropertyNotExist() {
-        Vertex vadas = graph().addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph().addVertex(T.LABEL, "person", "name", "vadas",
                                          "age", 19, "city", "Beijing");
         Map<String, Object> props = ImmutableMap.of("name", "vadas",
                                                     "age", 19,
@@ -250,18 +250,18 @@ public class VertexTest extends BaseFuncTest {
 
         List<Vertex> vertices = graph().listVertices();
         Assert.assertEquals(6, vertices.size());
-        assertContains(vertices, T.label, "person", "name", "marko",
-                                 "age", 29, "city", "Beijing");
-        assertContains(vertices, T.label, "person", "name", "vadas",
-                                 "age", 27, "city", "Hongkong");
-        assertContains(vertices, T.label, "software", "name", "lop",
-                                 "lang", "java", "price", 328);
-        assertContains(vertices, T.label, "person", "name", "josh",
-                                 "age", 32, "city", "Beijing");
-        assertContains(vertices, T.label, "software", "name", "ripple",
-                                 "lang", "java", "price", 199);
-        assertContains(vertices, T.label, "person", "name", "peter",
-                                 "age", 29, "city", "Shanghai");
+        assertContains(vertices, T.LABEL, "person", "name", "marko",
+                       "age", 29, "city", "Beijing");
+        assertContains(vertices, T.LABEL, "person", "name", "vadas",
+                       "age", 27, "city", "Hongkong");
+        assertContains(vertices, T.LABEL, "software", "name", "lop",
+                       "lang", "java", "price", 328);
+        assertContains(vertices, T.LABEL, "person", "name", "josh",
+                       "age", 32, "city", "Beijing");
+        assertContains(vertices, T.LABEL, "software", "name", "ripple",
+                       "lang", "java", "price", 199);
+        assertContains(vertices, T.LABEL, "person", "name", "peter",
+                       "age", 29, "city", "Shanghai");
     }
 
     @Test
@@ -270,18 +270,18 @@ public class VertexTest extends BaseFuncTest {
 
         List<Vertex> vertices = graph().listVertices(-1);
         Assert.assertEquals(6, vertices.size());
-        assertContains(vertices, T.label, "person", "name", "marko",
-                                 "age", 29, "city", "Beijing");
-        assertContains(vertices, T.label, "person", "name", "vadas",
-                                 "age", 27, "city", "Hongkong");
-        assertContains(vertices, T.label, "software", "name", "lop",
-                                 "lang", "java", "price", 328);
-        assertContains(vertices, T.label, "person", "name", "josh",
-                                 "age", 32, "city", "Beijing");
-        assertContains(vertices, T.label, "software", "name", "ripple",
-                                 "lang", "java", "price", 199);
-        assertContains(vertices, T.label, "person", "name", "peter",
-                                 "age", 29, "city", "Shanghai");
+        assertContains(vertices, T.LABEL, "person", "name", "marko",
+                       "age", 29, "city", "Beijing");
+        assertContains(vertices, T.LABEL, "person", "name", "vadas",
+                       "age", 27, "city", "Hongkong");
+        assertContains(vertices, T.LABEL, "software", "name", "lop",
+                       "lang", "java", "price", 328);
+        assertContains(vertices, T.LABEL, "person", "name", "josh",
+                       "age", 32, "city", "Beijing");
+        assertContains(vertices, T.LABEL, "software", "name", "ripple",
+                       "lang", "java", "price", 199);
+        assertContains(vertices, T.LABEL, "person", "name", "peter",
+                       "age", 29, "city", "Shanghai");
     }
 
     @Test
@@ -290,14 +290,14 @@ public class VertexTest extends BaseFuncTest {
 
         List<Vertex> vertices = graph().listVertices("person");
         Assert.assertEquals(4, vertices.size());
-        assertContains(vertices, T.label, "person", "name", "marko",
-                                 "age", 29, "city", "Beijing");
-        assertContains(vertices, T.label, "person", "name", "vadas",
-                                 "age", 27, "city", "Hongkong");
-        assertContains(vertices, T.label, "person", "name", "josh",
-                                 "age", 32, "city", "Beijing");
-        assertContains(vertices, T.label, "person", "name", "peter",
-                                 "age", 29, "city", "Shanghai");
+        assertContains(vertices, T.LABEL, "person", "name", "marko",
+                       "age", 29, "city", "Beijing");
+        assertContains(vertices, T.LABEL, "person", "name", "vadas",
+                       "age", 27, "city", "Hongkong");
+        assertContains(vertices, T.LABEL, "person", "name", "josh",
+                       "age", 32, "city", "Beijing");
+        assertContains(vertices, T.LABEL, "person", "name", "peter",
+                       "age", 29, "city", "Shanghai");
     }
 
     @Test
@@ -320,10 +320,10 @@ public class VertexTest extends BaseFuncTest {
         Map<String, Object> properties = ImmutableMap.of("age", 29);
         List<Vertex> vertices = graph().listVertices("person", properties);
         Assert.assertEquals(2, vertices.size());
-        assertContains(vertices, T.label, "person", "name", "marko",
-                                 "age", 29, "city", "Beijing");
-        assertContains(vertices, T.label, "person", "name", "peter",
-                                 "age", 29, "city", "Shanghai");
+        assertContains(vertices, T.LABEL, "person", "name", "marko",
+                       "age", 29, "city", "Beijing");
+        assertContains(vertices, T.LABEL, "person", "name", "peter",
+                       "age", 29, "city", "Shanghai");
     }
 
     @Test
@@ -469,7 +469,7 @@ public class VertexTest extends BaseFuncTest {
 
         Vertex vertex = new Vertex(label);
         for (String key : properties.keySet()) {
-            if (key.equals(T.label)) {
+            if (key.equals(T.LABEL)) {
                 continue;
             }
             vertex.property(key, properties.get(key));

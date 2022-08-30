@@ -212,7 +212,7 @@ public class TaskApiTest extends BaseApiTest {
         schema().vertexLabel("man").useAutomaticId().ifNotExist().create();
 
         String groovy = "for (int i = 0; i < 10; i++) {" +
-                            "hugegraph.addVertex(T.label, 'man');" +
+                            "hugegraph.addVertex(T.LABEL, 'man');" +
                             "hugegraph.tx().commit();" +
                         "}";
         // Insert 10 records in sync mode
@@ -233,7 +233,7 @@ public class TaskApiTest extends BaseApiTest {
          * otherwise they cannot be cancelled
          */
         groovy = "for (int i = 0; i < 10; i++) {" +
-                     "hugegraph.addVertex(T.label, 'man');" +
+                     "hugegraph.addVertex(T.LABEL, 'man');" +
                      "hugegraph.tx().commit();" +
                      "try {" +
                          "sleep(1000);" +

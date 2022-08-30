@@ -111,7 +111,7 @@ public class VertexApiTest extends BaseApiTest {
     @Test
     public void testCreateWithCustomizeStringId() {
         Vertex person = new Vertex("person");
-        person.property(T.id, "123456");
+        person.property(T.ID, "123456");
         person.property("name", "James");
         person.property("city", "Beijing");
         person.property("age", 19);
@@ -134,7 +134,7 @@ public class VertexApiTest extends BaseApiTest {
     @Test
     public void testCreateWithCustomizeNumberId() {
         Vertex person = new Vertex("person");
-        person.property(T.id, 123456);
+        person.property(T.ID, 123456);
         person.property("name", "James");
         person.property("city", "Beijing");
         person.property("age", 19);
@@ -244,7 +244,7 @@ public class VertexApiTest extends BaseApiTest {
               .ifNotExist()
               .create();
 
-        Vertex vertex = graph().addVertex(T.label, "fan", "name", "Baby",
+        Vertex vertex = graph().addVertex(T.LABEL, "fan", "name", "Baby",
                                           "age", 3, "city", "Beijing");
 
         Vertex result = graph().getVertex(vertex.id());
@@ -299,7 +299,7 @@ public class VertexApiTest extends BaseApiTest {
               .create();
         long date = DateUtil.now().getTime() - 1000L;
         String dateString = Utils.formatDate(new Date(date));
-        Vertex vertex = graph().addVertex(T.label, "follower", "name", "Baby",
+        Vertex vertex = graph().addVertex(T.LABEL, "follower", "name", "Baby",
                                           "age", 3, "city", "Beijing",
                                           "date", date);
 
