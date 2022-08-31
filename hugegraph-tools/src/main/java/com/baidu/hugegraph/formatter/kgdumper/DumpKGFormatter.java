@@ -102,6 +102,7 @@ public class DumpKGFormatter implements Formatter {
                     regionWeight.add(props.get("weight").toString());
                     break;
                 default:
+                    break;
             }
         }
         return String.format(ENTITY_FORMAT,

@@ -1019,7 +1019,7 @@ public class SubCommands {
     }
 
     public static class GraphModeConverter
-                  implements IStringConverter<GraphMode> {
+            implements IStringConverter<GraphMode> {
 
         @Override
         public GraphMode convert(String value) {
@@ -1030,7 +1030,7 @@ public class SubCommands {
     }
 
     public static class HugeTypeListConverter
-                  implements IStringConverter<List<HugeType>> {
+            implements IStringConverter<List<HugeType>> {
 
         public static final List<HugeType> ALL_TYPES = ImmutableList.of(
                 HugeType.PROPERTY_KEY, HugeType.VERTEX_LABEL,
@@ -1060,9 +1060,9 @@ public class SubCommands {
                     hugeTypes.add(HugeType.valueOf(type.toUpperCase()));
                 } catch (IllegalArgumentException e) {
                     throw new ParameterException(String.format(
-                            "Invalid --type '%s', valid value is 'all' or " +
-                            "combination of 'vertex,edge,vertex_label," +
-                            "edge_label,property_key,index_label'", type));
+                              "Invalid --type '%s', valid value is 'all' or " +
+                              "combination of 'vertex,edge,vertex_label," +
+                              "edge_label,property_key,index_label'", type));
                 }
             }
             return hugeTypes;
@@ -1070,7 +1070,7 @@ public class SubCommands {
     }
 
     public static class AuthHugeTypeConverter
-            implements IStringConverter<List<HugeType>> {
+                  implements IStringConverter<List<HugeType>> {
 
         public static final List<HugeType> AUTH_ALL_TYPES = ImmutableList.of(
                 HugeType.TARGET, HugeType.GROUP,
@@ -1089,12 +1089,12 @@ public class SubCommands {
             List<String> typeList = Arrays.asList(types);
             E.checkArgument(!typeList.contains(HugeType.BELONG.toString().toLowerCase()) ||
                             (typeList.contains(HugeType.USER.toString().toLowerCase()) &&
-                            typeList.contains(HugeType.GROUP.toString().toLowerCase())),
+                             typeList.contains(HugeType.GROUP.toString().toLowerCase())),
                             "Invalid --type '%s', if type contains 'belong'" +
                             " then 'user' and 'group' are required.", value);
             E.checkArgument(!typeList.contains(HugeType.ACCESS.toString().toLowerCase()) ||
                             (typeList.contains(HugeType.GROUP.toString().toLowerCase()) &&
-                            typeList.contains(HugeType.TARGET.toString().toLowerCase())),
+                             typeList.contains(HugeType.TARGET.toString().toLowerCase())),
                             "Invalid --type '%s', if type contains 'access'" +
                             " then 'group' and 'target' are required.", value);
             List<HugeType> hugeTypes = new ArrayList<>();
@@ -1103,9 +1103,9 @@ public class SubCommands {
                     hugeTypes.add(HugeType.valueOf(type.toUpperCase()));
                 } catch (IllegalArgumentException e) {
                     throw new IllegalArgumentException(String.format(
-                              "Invalid --type '%s', valid value is 'all' or " +
-                              "combination of [user,group,target," +
-                              "belong,access]", type));
+                            "Invalid --type '%s', valid value is 'all' or " +
+                            "combination of [user,group,target," +
+                            "belong,access]", type));
                 }
             }
             return hugeTypes;
@@ -1113,10 +1113,10 @@ public class SubCommands {
     }
 
     public static class AuthStrategyConverter
-                  implements IStringConverter<AuthRestoreConflictStrategy> {
+            implements IStringConverter<AuthRestoreConflictStrategy> {
 
         public static final AuthRestoreConflictStrategy STRATEGY =
-                            AuthRestoreConflictStrategy.STOP;
+                AuthRestoreConflictStrategy.STOP;
 
         @Override
         public AuthRestoreConflictStrategy convert(String value) {
@@ -1130,7 +1130,7 @@ public class SubCommands {
     }
 
     public static class MapConverter
-                  implements IStringConverter<Map<String, String>> {
+            implements IStringConverter<Map<String, String>> {
 
         @Override
         public Map<String, String> convert(String value) {
@@ -1150,21 +1150,21 @@ public class SubCommands {
     }
 
     public static class FileNameToContentConverter
-                  implements IStringConverter<String> {
+            implements IStringConverter<String> {
 
         @Override
         public String convert(String value) {
             File file = FileUtils.getFile(value);
             if (!file.exists() || !file.isFile() || !file.canRead()) {
                 throw new ParameterException(String.format(
-                          "'%s' must be existed readable file", value));
+                        "'%s' must be existed readable file", value));
             }
             String content;
             try {
                 content = FileUtils.readFileToString(file, API.CHARSET);
             } catch (IOException e) {
                 throw new ParameterException(String.format(
-                          "Read file '%s' error", value), e);
+                        "Read file '%s' error", value), e);
             }
             return content;
         }
@@ -1180,8 +1180,8 @@ public class SubCommands {
         public void validate(String name, String value) {
             if (!FORMATS.contains(value.toUpperCase())) {
                 throw new ParameterException(String.format(
-                          "Invalid --format '%s', valid value is %s",
-                          value, FORMATS));
+                        "Invalid --format '%s', valid value is %s",
+                        value, FORMATS));
             }
         }
     }
@@ -1196,8 +1196,8 @@ public class SubCommands {
         public void validate(String name, String value) {
             if (!PROTOCOLS.contains(value.toUpperCase())) {
                 throw new ParameterException(String.format(
-                          "Invalid --protocol '%s', valid value is %s",
-                          value, PROTOCOLS));
+                        "Invalid --protocol '%s', valid value is %s",
+                        value, PROTOCOLS));
             }
         }
     }
@@ -1208,8 +1208,8 @@ public class SubCommands {
         public void validate(String name, String value) {
             if (!TasksManager.TASK_STATUSES.contains(value.toUpperCase())) {
                 throw new ParameterException(String.format(
-                          "Invalid --status '%s', valid value is %s",
-                          value, TasksManager.TASK_STATUSES));
+                        "Invalid --status '%s', valid value is %s",
+                        value, TasksManager.TASK_STATUSES));
             }
         }
     }
@@ -1229,7 +1229,7 @@ public class SubCommands {
                            ":([0-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-5]{2}[0-3][0-5])$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
-                          "Invalid url value of args '%s': '%s'", name, value));
+                        "Invalid url value of args '%s': '%s'", name, value));
             }
         }
     }
@@ -1241,7 +1241,7 @@ public class SubCommands {
             File file = new File(value);
             if (!file.exists() || !file.isDirectory()) {
                 throw new ParameterException(String.format(
-                          "Invalid value of argument '%s': '%s'", name, value));
+                        "Invalid value of argument '%s': '%s'", name, value));
             }
         }
     }
@@ -1253,8 +1253,8 @@ public class SubCommands {
             int retry = Integer.parseInt(value);
             if (retry <= 0) {
                 throw new ParameterException(
-                          "Parameter " + name + " should be positive, " +
-                          "but got " + value);
+                        "Parameter " + name + " should be positive, " +
+                        "but got " + value);
             }
         }
     }

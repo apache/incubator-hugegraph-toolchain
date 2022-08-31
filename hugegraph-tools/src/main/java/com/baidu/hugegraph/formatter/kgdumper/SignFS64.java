@@ -101,7 +101,7 @@ public class SignFS64 {
     private static long getSigns24(String text,
                                    String encode,
                                    List<Integer> primes)
-            throws UnsupportedEncodingException {
+                                   throws UnsupportedEncodingException {
         long sign = 0;
         byte[] textBytes = text.getBytes(encode);
         int textLen = textBytes.length;
@@ -114,12 +114,12 @@ public class SignFS64 {
     }
 
     private static long getSigns241(String text, String encode)
-            throws UnsupportedEncodingException {
+                                    throws UnsupportedEncodingException {
         return getSigns24(text, encode, _MOD_PRIME_LIST_1);
     }
 
     private static long getSigns242(String text, String encode)
-            throws UnsupportedEncodingException {
+                                    throws UnsupportedEncodingException {
         return getSigns24(text, encode, _MOD_PRIME_LIST_2);
     }
 
@@ -137,7 +137,7 @@ public class SignFS64 {
     }
 
     public static String createSignFs64(String text, String encode)
-            throws UnsupportedEncodingException {
+                                        throws UnsupportedEncodingException {
 
         int byteLen = text.getBytes(encode).length;
 
