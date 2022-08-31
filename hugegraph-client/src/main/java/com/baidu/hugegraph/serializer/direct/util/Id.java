@@ -21,21 +21,39 @@ package com.baidu.hugegraph.serializer.direct.util;
 
 import com.baidu.hugegraph.util.E;
 
-public interface Id {
+public interface Id extends Comparable<Id> {
 
-    int UUID_LENGTH = 16;
+    public static final int UUID_LENGTH = 16;
 
-    int length();
+    public Object asObject();
 
-    byte[] asBytes();
+    public String asString();
 
-    IdType type();
+    public long asLong();
 
-    default boolean edge() {
+    public byte[] asBytes();
+
+    public int length();
+
+    public IdType type();
+
+    public default boolean number() {
+        return this.type() == IdType.LONG;
+    }
+
+    public default boolean uuid() {
+        return this.type() == IdType.UUID;
+    }
+
+    public default boolean string() {
+        return this.type() == IdType.STRING;
+    }
+
+    public default boolean edge() {
         return this.type() == IdType.EDGE;
     }
 
-    enum IdType {
+    public enum IdType {
 
         UNKNOWN,
         LONG,
@@ -52,7 +70,7 @@ public interface Id {
 
         public static IdType valueOfPrefix(String id) {
             E.checkArgument(id != null && id.length() > 0,
-                            "Invalid id '%s'", id);
+                    "Invalid id '%s'", id);
             switch (id.charAt(0)) {
                 case 'L':
                     return IdType.LONG;
