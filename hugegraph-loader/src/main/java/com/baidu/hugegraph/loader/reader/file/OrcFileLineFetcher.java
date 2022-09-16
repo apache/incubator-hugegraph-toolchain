@@ -125,9 +125,15 @@ public class OrcFileLineFetcher extends FileLineFetcher {
         }
 
         this.row = this.recordReader.next(this.row);
-        Object[] values = this.inspector.getStructFieldsDataAsList(this.row)
-                                        .stream().map(Object::toString)
-                                        .toArray();
+        List<Object> data = this.inspector.getStructFieldsDataAsList(this.row);
+        Object[] values = new Object[data.size()];
+        for (int i = 0; i < data.size(); i++) {
+            if (data.get(i) == null) {
+                values[i] = "";
+            } else {
+                values[i] = data.get(i).toString();
+            }
+        }
         String rawLine = StringUtils.join(values, Constants.COMMA_STR);
 
         this.increaseOffset();

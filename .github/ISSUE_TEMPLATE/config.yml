@@ -4,11 +4,11 @@ blank_issues_enabled: false
 contact_links:
   - name: HugeGraph toolchain Doc
     # TODO: update the url after repository rename
-    url: https://hugegraph.github.io/hugegraph-doc
+    url: https://hugegraph.apache.org/docs/
     about: Please search question here before opening a new issue
   - name: HugeGraph Client Doc
-    url: https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-client.html
+    url: https://hugegraph.apache.org/docs/quickstart/hugegraph-client/
     about: Please search question here before opening a new issue
   - name: HugeGraph API Doc
-    url: https://hugegraph.github.io/hugegraph-doc/clients/hugegraph-api.html
+    url: https://hugegraph.apache.org/docs/clients/restful-api/
     about: Please search usage here before opening a new issue

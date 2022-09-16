@@ -76,4 +76,7 @@ public final class Constants {
     public static final int VERTEX_ID_LIMIT = 128;
     public static final String[] SEARCH_LIST = new String[]{":", "!"};
     public static final String[] TARGET_LIST = new String[]{"`:", "`!"};
+
+    public static final String CDC_DATA = "data";
+    public static final String CDC_OP = "op";
 }

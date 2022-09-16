@@ -48,7 +48,7 @@
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${top.level.dir}</outputDirectory>
                             <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>
-                            <finalName>${final.name}</finalName>
+                            <finalName>${release.name}</finalName>
                         </configuration>
                     </execution>
                 </executions>
@@ -70,10 +70,11 @@
                                     echo -e "Hubble-FE build successfully.\n"
 
                                     cd ${top.level.dir} &amp;&amp; pwd
-                                    rm -rf ${final.name}/ui
-                                    cp -r ${hubble-fe.dir}/build ${final.name}/ui
+                                    rm -rf ${release.name}/ui
+                                    cp -r ${hubble-fe.dir}/build ${release.name}/ui
 
-                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${final.name} || exit 1
+                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${release.name} || exit 1
+                                    cp -r ${release.name} ./hubble-dist
                                     echo -n "hugegraph-hubble tar.gz available at: "
                                     echo "${top.level.dir}/${final.name}.tar.gz"
                                     rm -f ${top.level.dir}/dist.sh
@@ -104,6 +105,64 @@
                         </fileset>
                     </filesets>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>docker-build</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${docker.build.skip}</skip>
+                            <executable>docker</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>--no-cache</argument>
+                                <argument>-t</argument>
+                                <argument>${docker.hub}/${parent.artifactId}:${docker.tag}</argument>
+                                <argument>-t</argument>
+                                <argument>${docker.hub}/${parent.artifactId}:latest</argument>
+                                <argument>${project.basedir}</argument>
+                                <argument>--file=../Dockerfile</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>docker-push</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${docker.push.skip}</skip>
+                            <environmentVariables>
+                                <DOCKER_BUILDKIT>1</DOCKER_BUILDKIT>
+                            </environmentVariables>
+                            <executable>docker</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>buildx</argument>
+                                <argument>build</argument>
+                                <argument>--platform</argument>
+                                <argument>linux/amd64,linux/arm64</argument>
+                                <argument>--no-cache</argument>
+                                <argument>--push</argument>
+                                <argument>-t</argument>
+                                <argument>${docker.hub}/${parent.artifactId}:${docker.tag}</argument>
+                                <argument>-t</argument>
+                                <argument>${docker.hub}/${parent.artifactId}:latest</argument>
+                                <argument>${project.basedir}</argument>
+                                <argument>--file=../Dockerfile</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
