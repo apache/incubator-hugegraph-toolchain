@@ -46,7 +46,6 @@ public final class SchemaCache {
         this.propertyKeys = new HashMap<>();
         this.vertexLabels = new HashMap<>();
         this.edgeLabels = new HashMap<>();
-        updateAll();
     }
 
     @JsonCreator
@@ -91,7 +90,6 @@ public final class SchemaCache {
         if (propertyKey == null) {
             try {
                 propertyKey = this.client.schema().getPropertyKey(name);
-                updateAll();
             } catch (ServerException e) {
                 throw new LoadException("The property key '%s' doesn't exist",
                                         name);
@@ -105,7 +103,6 @@ public final class SchemaCache {
         if (vertexLabel == null) {
             try {
                 vertexLabel = this.client.schema().getVertexLabel(name);
-                updateAll();
             } catch (ServerException e) {
                 throw new LoadException("The vertex label '%s' doesn't exist",
                                         name);
@@ -119,7 +116,6 @@ public final class SchemaCache {
         if (edgeLabel == null) {
             try {
                 edgeLabel = this.client.schema().getEdgeLabel(name);
-                updateAll();
             } catch (ServerException e) {
                 throw new LoadException("The edge label '%s' doesn't exist",
                                         name);
