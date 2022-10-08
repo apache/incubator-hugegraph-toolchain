@@ -73,9 +73,9 @@ public class BackupManager extends BackupRestoreBaseManager {
                                      ImmutableSet.of("memory");
     private static final String PAGE_NONE = "";
 
-    private static final AtomicInteger nextId = new AtomicInteger(0);
-    private static final ThreadLocal<Integer> suffix =
-            ThreadLocal.withInitial(nextId::getAndIncrement);
+    private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
+    private static final ThreadLocal<Integer> SUFFIX =
+            ThreadLocal.withInitial(NEXT_ID::getAndIncrement);
 
     private long splitSize;
     private String backend;
@@ -271,7 +271,7 @@ public class BackupManager extends BackupRestoreBaseManager {
             if (vertexList == null || vertexList.isEmpty()) {
                 return;
             }
-            long count = this.backup(HugeType.VERTEX, suffix.get(), vertexList);
+            long count = this.backup(HugeType.VERTEX, SUFFIX.get(), vertexList);
 
             this.vertexCounter.getAndAdd(count);
             Printer.printInBackward(this.vertexCounter.get());
@@ -301,7 +301,7 @@ public class BackupManager extends BackupRestoreBaseManager {
             if (edgeList == null || edgeList.isEmpty()) {
                 return;
             }
-            long count = this.backup(HugeType.EDGE, suffix.get(), edgeList);
+            long count = this.backup(HugeType.EDGE, SUFFIX.get(), edgeList);
 
             this.edgeCounter.getAndAdd(count);
             Printer.printInBackward(this.edgeCounter.get());
