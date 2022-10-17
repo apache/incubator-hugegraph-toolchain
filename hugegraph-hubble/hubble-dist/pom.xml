@@ -22,14 +22,6 @@
         <hubble-fe.dir>${project.parent.basedir}/hubble-fe</hubble-fe.dir>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.hugegraph</groupId>
-            <artifactId>hubble-be</artifactId>
-            <version>${revision}</version>
-        </dependency>
-    </dependencies>
-
     <build>
         <plugins>
             <plugin>
