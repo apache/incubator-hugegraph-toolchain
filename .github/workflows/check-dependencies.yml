@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      STATIC_DIR: hugegraph-loader/assembly/static
     steps:
       - name: Checkout source
         uses: actions/checkout@v2
