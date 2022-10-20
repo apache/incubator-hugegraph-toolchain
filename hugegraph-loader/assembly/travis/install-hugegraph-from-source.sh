@@ -3,24 +3,25 @@
 set -ev
 
 if [[ $# -ne 1 ]]; then
-    echo "Must pass commit id of hugegraph repo"
-    exit 1
+    echo "Must input exist git commit id of hugegraph server" && exit 1
 fi
 
 COMMIT_ID=$1
-HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
+HUGEGRAPH_GIT_URL="https://github.com/apache/hugegraph.git"
 
 git clone --depth 100 ${HUGEGRAPH_GIT_URL} hugegraph
 cd hugegraph
 git checkout "${COMMIT_ID}"
-mvn package -DskipTests
+mvn package -DskipTests -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded\|Progress"
+# TODO: lack incubator after apache package release (update it later)
 mv hugegraph-*.tar.gz ../
 cd ../
 rm -rf hugegraph
-tar -zxvf hugegraph-*.tar.gz
+tar zxvf hugegraph-*.tar.gz
 
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
+# TODO: lack incubator after apache package release (update it later)
 cp -r hugegraph-*/. ${HTTPS_SERVER_DIR}
 cd "$(find hugegraph-* | head -1)"
 # start HugeGraphServer with http protocol
