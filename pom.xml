@@ -403,8 +403,6 @@
                         <exclude>CONFIG.ini</exclude>
                         <exclude>GROUPS</exclude>
                         <exclude>OWNERS</exclude>
-                        <!-- GitHub -->
-                        <exclude>.github/**/*</exclude>
                         <!-- Intellij -->
                         <exclude>**/*.iml</exclude>
                         <exclude>**/*.iws</exclude>
