@@ -144,7 +144,7 @@ public class HugeGraphCommand {
         this.timeout.timeout = timeout;
     }
 
-    public String trustStoreFile () {
+    public String trustStoreFile() {
         return this.trustStoreFile.trustStoreFile;
     }
 
@@ -152,7 +152,7 @@ public class HugeGraphCommand {
         this.trustStoreFile.trustStoreFile = trustStoreFile;
     }
 
-    public String trustStorePassword () {
+    public String trustStorePassword() {
         return this.trustStorePassword.trustStorePassword;
     }
 
@@ -385,7 +385,8 @@ public class HugeGraphCommand {
             case "auth-backup":
                 Printer.print("Auth backup start...");
                 SubCommands.AuthBackup authBackup = this.subCommand(subCmd);
-                AuthBackupRestoreManager authBackupManager = manager(AuthBackupRestoreManager.class);
+                AuthBackupRestoreManager authBackupManager =
+                        manager(AuthBackupRestoreManager.class);
 
                 authBackupManager.init(authBackup);
                 authBackupManager.backup(authBackup.types());
@@ -393,7 +394,8 @@ public class HugeGraphCommand {
             case "auth-restore":
                 Printer.print("Auth restore start...");
                 SubCommands.AuthRestore authRestore = this.subCommand(subCmd);
-                AuthBackupRestoreManager authRestoreManager = manager(AuthBackupRestoreManager.class);
+                AuthBackupRestoreManager authRestoreManager =
+                        manager(AuthBackupRestoreManager.class);
 
                 authRestoreManager.init(authRestore);
                 authRestoreManager.restore(authRestore.types());

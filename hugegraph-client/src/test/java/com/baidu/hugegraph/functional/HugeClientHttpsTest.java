@@ -172,7 +172,7 @@ public class HugeClientHttpsTest {
               .ifNotExist()
               .create();
         GraphManager graph = client.graph();
-        Vertex marko = graph.addVertex(T.label, "person", "name", "marko",
+        Vertex marko = graph.addVertex(T.LABEL, "person", "name", "marko",
                                        "age", 29, "city", "Beijing");
         Map<String, Object> props = ImmutableMap.of("name", "marko",
                                                     "age", 29,

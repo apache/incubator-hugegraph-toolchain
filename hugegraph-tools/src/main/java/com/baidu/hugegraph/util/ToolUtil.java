@@ -56,7 +56,7 @@ public final class ToolUtil {
             throw e;
         }
 
-        if(e.exitCode() != Constants.EXIT_CODE_NORMAL) {
+        if (e.exitCode() != Constants.EXIT_CODE_NORMAL) {
             Printer.print(e.getMessage());
         }
         Printer.print(e.details());

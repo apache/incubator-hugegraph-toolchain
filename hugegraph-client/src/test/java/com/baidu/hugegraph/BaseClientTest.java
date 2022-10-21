@@ -252,17 +252,17 @@ public class BaseClientTest {
     }
 
     protected static void initVertex() {
-        graph().addVertex(T.label, "person", "name", "marko",
+        graph().addVertex(T.LABEL, "person", "name", "marko",
                           "age", 29, "city", "Beijing");
-        graph().addVertex(T.label, "person", "name", "vadas",
+        graph().addVertex(T.LABEL, "person", "name", "vadas",
                           "age", 27, "city", "Hongkong");
-        graph().addVertex(T.label, "software", "name", "lop",
+        graph().addVertex(T.LABEL, "software", "name", "lop",
                           "lang", "java", "price", 328);
-        graph().addVertex(T.label, "person", "name", "josh",
+        graph().addVertex(T.LABEL, "person", "name", "josh",
                           "age", 32, "city", "Beijing");
-        graph().addVertex(T.label, "software", "name", "ripple",
+        graph().addVertex(T.LABEL, "software", "name", "ripple",
                           "lang", "java", "price", 199);
-        graph().addVertex(T.label, "person", "name", "peter",
+        graph().addVertex(T.LABEL, "person", "name", "peter",
                           "age", 29, "city", "Shanghai");
     }
 

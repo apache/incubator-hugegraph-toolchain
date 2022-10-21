@@ -206,11 +206,11 @@ public class PathsApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
 
 
-        Vertex tom = graph().addVertex(T.label, "person", "name", "Tom",
+        Vertex tom = graph().addVertex(T.LABEL, "person", "name", "Tom",
                                        "age", 29, "city", "Shanghai");
-        Vertex jim = graph().addVertex(T.label, "person", "name", "Jim",
+        Vertex jim = graph().addVertex(T.LABEL, "person", "name", "Jim",
                                        "age", 29, "city", "Shanghai");
-        Vertex java = graph().addVertex(T.label, "software", "name", "java",
+        Vertex java = graph().addVertex(T.LABEL, "software", "name", "java",
                                         "lang", "java", "price", 199);
         Object tomId = tom.id();
         Object jimId = jim.id();

@@ -90,6 +90,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
             builders.put(new EdgeBuilder(loadContext, this.struct, edgeMapping),
                          new ArrayList<>());
         }
+        loadContext.updateSchemaCache();
         return builders;
     }
 

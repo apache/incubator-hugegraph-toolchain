@@ -733,9 +733,9 @@ public class EdgeTest extends BaseFuncTest {
               .sortKeys("location", "callType", "duration", "calltime")
               .create();
 
-        Vertex v1 = graph().addVertex(T.label, "phone", "no", "13812345678");
-        Vertex v2 = graph().addVertex(T.label, "phone", "no", "13866668888");
-        Vertex v10086 = graph().addVertex(T.label, "phone", "no", "10086");
+        Vertex v1 = graph().addVertex(T.LABEL, "phone", "no", "13812345678");
+        Vertex v2 = graph().addVertex(T.LABEL, "phone", "no", "13866668888");
+        Vertex v10086 = graph().addVertex(T.LABEL, "phone", "no", "10086");
 
         v1.addEdge("call", v2, "location", "Beijing", "callType", "work",
                    "duration", 3, "calltime", "2017-5-1 23:00:00");

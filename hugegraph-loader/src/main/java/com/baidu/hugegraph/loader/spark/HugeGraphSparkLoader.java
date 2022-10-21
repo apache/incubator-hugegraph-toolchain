@@ -117,6 +117,7 @@ public class HugeGraphSparkLoader implements Serializable {
             this.builders.put(new EdgeBuilder(context, struct, edgeMapping),
                               new ArrayList<>());
         }
+        context.updateSchemaCache();
         return context;
     }
 

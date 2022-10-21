@@ -52,7 +52,7 @@ public class ToolManager {
         try {
             JsonNode root = mapper.readTree(content);
             JsonNode element = root.get(key);
-            if(element == null) {
+            if (element == null) {
                 throw new SerializeException(
                           "Can't find value of the key: %s in json.", key);
             } else {
