@@ -61,7 +61,8 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/job-manager/{jobId}/file-mappings")
+@RequestMapping(Constant.API_VERSION +
+                "graph-connections/{connId}/job-manager/{jobId}/file-mappings")
 public class FileMappingController extends BaseController {
 
     @Autowired

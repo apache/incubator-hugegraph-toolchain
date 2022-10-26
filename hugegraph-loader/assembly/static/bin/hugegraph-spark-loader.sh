@@ -5,20 +5,21 @@ APP_DIR=$(dirname ${BIN_DIR})
 LIB_DIR=${APP_DIR}/lib
 
 # get hugegraph_params and engine_params
-source "$BIN_DIR"/get_params.sh
+source "$BIN_DIR"/get-params.sh
 get_params $*
-echo "engine_params: $engine_params"
-echo "hugegraph_params: $hugegraph_params"
+echo "engine_params: $ENGINE_PARAMS"
+echo "hugegraph_params: $HUGEGRAPH_PARAMS"
 
-assemblyJarName=$(find ${LIB_DIR} -name hugegraph-loader*.jar)
+ASSEMBLY_JAR_NAME=$(find ${LIB_DIR} -name hugegraph-loader*.jar)
+
 
 DEFAULT_APP_NAME="hugegraph-spark-loader"
 APP_NAME=${APP_NAME:-$DEFAULT_APP_NAME}
 
 CMD="${SPARK_HOME}/bin/spark-submit
     --class com.baidu.hugegraph.loader.spark.HugeGraphSparkLoader \
-    ${engine_params}
-    --jars $(echo ${LIB_DIR}/*.jar | tr ' ' ',') ${assemblyJarName} ${hugegraph_params}"
+    ${ENGINE_PARAMS}
+    --jars $(echo ${LIB_DIR}/*.jar | tr ' ' ',') ${ASSEMBLY_JAR_NAME} ${HUGEGRAPH_PARAMS}"
 
 echo ${CMD}
 exec ${CMD}

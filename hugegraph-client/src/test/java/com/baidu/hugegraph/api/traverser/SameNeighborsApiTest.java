@@ -48,16 +48,16 @@ public class SameNeighborsApiTest extends TraverserApiTest {
                 .ifNotExist()
                 .create();
 
-        Vertex v1 = graph().addVertex(T.label, "node", T.id, 1);
-        Vertex v2 = graph().addVertex(T.label, "node", T.id, 2);
-        Vertex v3 = graph().addVertex(T.label, "node", T.id, 3);
-        Vertex v4 = graph().addVertex(T.label, "node", T.id, 4);
-        Vertex v5 = graph().addVertex(T.label, "node", T.id, 5);
-        Vertex v6 = graph().addVertex(T.label, "node", T.id, 6);
-        Vertex v7 = graph().addVertex(T.label, "node", T.id, 7);
-        Vertex v8 = graph().addVertex(T.label, "node", T.id, 8);
-        Vertex v9 = graph().addVertex(T.label, "node", T.id, 9);
-        Vertex v10 = graph().addVertex(T.label, "node", T.id, 10);
+        Vertex v1 = graph().addVertex(T.LABEL, "node", T.ID, 1);
+        Vertex v2 = graph().addVertex(T.LABEL, "node", T.ID, 2);
+        Vertex v3 = graph().addVertex(T.LABEL, "node", T.ID, 3);
+        Vertex v4 = graph().addVertex(T.LABEL, "node", T.ID, 4);
+        Vertex v5 = graph().addVertex(T.LABEL, "node", T.ID, 5);
+        Vertex v6 = graph().addVertex(T.LABEL, "node", T.ID, 6);
+        Vertex v7 = graph().addVertex(T.LABEL, "node", T.ID, 7);
+        Vertex v8 = graph().addVertex(T.LABEL, "node", T.ID, 8);
+        Vertex v9 = graph().addVertex(T.LABEL, "node", T.ID, 9);
+        Vertex v10 = graph().addVertex(T.LABEL, "node", T.ID, 10);
 
         v1.addEdge("link", v3);
         v2.addEdge("link", v3);

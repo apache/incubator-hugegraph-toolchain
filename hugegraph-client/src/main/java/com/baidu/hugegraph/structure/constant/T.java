@@ -21,6 +21,6 @@ package com.baidu.hugegraph.structure.constant;
 
 public class T {
 
-    public static final String id = "id";
-    public static final String label = "label";
+    public static final String ID = "id";
+    public static final String LABEL = "label";
 }

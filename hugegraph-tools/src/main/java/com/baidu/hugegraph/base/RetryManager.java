@@ -32,8 +32,8 @@ import com.baidu.hugegraph.exception.ToolsException;
 
 public class RetryManager extends ToolManager {
 
-    private int CPUS = Runtime.getRuntime().availableProcessors();
-    private int threadsNum = Math.min(10, Math.max(4, CPUS / 2));
+    private int cpus = Runtime.getRuntime().availableProcessors();
+    private int threadsNum = Math.min(10, Math.max(4, cpus / 2));
     private ExecutorService pool;
     private final Queue<Future<?>> futures = new ConcurrentLinkedQueue<>();
     private int retry = 0;

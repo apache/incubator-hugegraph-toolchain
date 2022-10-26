@@ -119,17 +119,17 @@ public class SingleExample {
               .create();
 
         GraphManager graph = hugeClient.graph();
-        Vertex marko = graph.addVertex(T.label, "person", "name", "marko",
+        Vertex marko = graph.addVertex(T.LABEL, "person", "name", "marko",
                                        "age", 29, "city", "Beijing");
-        Vertex vadas = graph.addVertex(T.label, "person", "name", "vadas",
+        Vertex vadas = graph.addVertex(T.LABEL, "person", "name", "vadas",
                                        "age", 27, "city", "Hongkong");
-        Vertex lop = graph.addVertex(T.label, "software", "name", "lop",
+        Vertex lop = graph.addVertex(T.LABEL, "software", "name", "lop",
                                      "lang", "java", "price", 328);
-        Vertex josh = graph.addVertex(T.label, "person", "name", "josh",
+        Vertex josh = graph.addVertex(T.LABEL, "person", "name", "josh",
                                       "age", 32, "city", "Beijing");
-        Vertex ripple = graph.addVertex(T.label, "software", "name", "ripple",
+        Vertex ripple = graph.addVertex(T.LABEL, "software", "name", "ripple",
                                         "lang", "java", "price", 199);
-        Vertex peter = graph.addVertex(T.label, "person", "name", "peter",
+        Vertex peter = graph.addVertex(T.LABEL, "person", "name", "peter",
                                        "age", 35, "city", "Shanghai");
 
         marko.addEdge("knows", vadas, "date", "2016-01-10", "weight", 0.5);

@@ -76,23 +76,23 @@ public class NeighborRankApiTest extends TraverserApiTest {
               .ifNotExist()
               .create();
 
-        Vertex O = graph.addVertex(T.label, "person", T.id, "O", "name", "O");
+        Vertex O = graph.addVertex(T.LABEL, "person", T.ID, "O", "name", "O");
 
-        Vertex A = graph.addVertex(T.label, "person", T.id, "A", "name", "A");
-        Vertex B = graph.addVertex(T.label, "person", T.id, "B", "name", "B");
-        Vertex C = graph.addVertex(T.label, "person", T.id, "C", "name", "C");
-        Vertex D = graph.addVertex(T.label, "person", T.id, "D", "name", "D");
+        Vertex A = graph.addVertex(T.LABEL, "person", T.ID, "A", "name", "A");
+        Vertex B = graph.addVertex(T.LABEL, "person", T.ID, "B", "name", "B");
+        Vertex C = graph.addVertex(T.LABEL, "person", T.ID, "C", "name", "C");
+        Vertex D = graph.addVertex(T.LABEL, "person", T.ID, "D", "name", "D");
 
-        Vertex E = graph.addVertex(T.label, "movie", T.id, "E", "name", "E");
-        Vertex F = graph.addVertex(T.label, "movie", T.id, "F", "name", "F");
-        Vertex G = graph.addVertex(T.label, "movie", T.id, "G", "name", "G");
-        Vertex H = graph.addVertex(T.label, "movie", T.id, "H", "name", "H");
-        Vertex I = graph.addVertex(T.label, "movie", T.id, "I", "name", "I");
-        Vertex J = graph.addVertex(T.label, "movie", T.id, "J", "name", "J");
+        Vertex E = graph.addVertex(T.LABEL, "movie", T.ID, "E", "name", "E");
+        Vertex F = graph.addVertex(T.LABEL, "movie", T.ID, "F", "name", "F");
+        Vertex G = graph.addVertex(T.LABEL, "movie", T.ID, "G", "name", "G");
+        Vertex H = graph.addVertex(T.LABEL, "movie", T.ID, "H", "name", "H");
+        Vertex I = graph.addVertex(T.LABEL, "movie", T.ID, "I", "name", "I");
+        Vertex J = graph.addVertex(T.LABEL, "movie", T.ID, "J", "name", "J");
 
-        Vertex K = graph.addVertex(T.label, "person", T.id, "K", "name", "K");
-        Vertex L = graph.addVertex(T.label, "person", T.id, "L", "name", "L");
-        Vertex M = graph.addVertex(T.label, "person", T.id, "M", "name", "M");
+        Vertex K = graph.addVertex(T.LABEL, "person", T.ID, "K", "name", "K");
+        Vertex L = graph.addVertex(T.LABEL, "person", T.ID, "L", "name", "L");
+        Vertex M = graph.addVertex(T.LABEL, "person", T.ID, "M", "name", "M");
 
         O.addEdge("follow", A);
         O.addEdge("follow", B);
@@ -339,7 +339,7 @@ public class NeighborRankApiTest extends TraverserApiTest {
 
     @Test
     public void testNeighborRankWithIsolatedVertex() {
-        Vertex isolate = graph().addVertex(T.label, "person", T.id, "isolate",
+        Vertex isolate = graph().addVertex(T.LABEL, "person", T.ID, "isolate",
                                            "name", "isolate-vertex");
 
         NeighborRankAPI.Request.Builder builder;
