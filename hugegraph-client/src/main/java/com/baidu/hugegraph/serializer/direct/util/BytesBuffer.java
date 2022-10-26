@@ -19,30 +19,16 @@
 
 package com.baidu.hugegraph.serializer.direct.util;
 
-import static com.baidu.hugegraph.serializer.direct.BinaryEntry.BinaryId;
-import static com.baidu.hugegraph.serializer.direct.util.Id.UUID_LENGTH;
-
+import com.baidu.hugegraph.serializer.direct.struct.HugeType;
+import com.baidu.hugegraph.util.*;
 import java.io.OutputStream;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
 
-import com.baidu.hugegraph.backend.id.EdgeId;
-import com.baidu.hugegraph.backend.id.Id.IdType;
-import com.baidu.hugegraph.backend.id.IdGenerator;
-import com.baidu.hugegraph.serializer.direct.struct.DataType;
-import com.baidu.hugegraph.serializer.direct.struct.HugeType;
-import com.baidu.hugegraph.serializer.direct.util.Id.IdType;
-import com.baidu.hugegraph.structure.constant.Cardinality;
-import com.baidu.hugegraph.structure.schema.PropertyKey;
-import com.baidu.hugegraph.util.Bytes;
-import com.baidu.hugegraph.util.E;
-
 /**
- * class BytesBuffer is an util for read/write binary
+ * class BytesBuffer is a util for read/write binary
  */
 public final class BytesBuffer extends OutputStream {
 
@@ -78,8 +64,6 @@ public final class BytesBuffer extends OutputStream {
     public static final int BUF_EDGE_ID = 128;
     public static final int BUF_PROPERTY = 64;
 
-    public static final byte[] BYTES_EMPTY = new byte[0];
-
     private ByteBuffer buffer;
     private final boolean resize;
 
@@ -89,8 +73,8 @@ public final class BytesBuffer extends OutputStream {
 
     public BytesBuffer(int capacity) {
         E.checkArgument(capacity <= MAX_BUFFER_CAPACITY,
-                        "Capacity exceeds max buffer capacity: %s",
-                        MAX_BUFFER_CAPACITY);
+                "Capacity exceeds max buffer capacity: %s",
+                MAX_BUFFER_CAPACITY);
         this.buffer = ByteBuffer.allocate(capacity);
         this.resize = true;
     }
@@ -122,7 +106,7 @@ public final class BytesBuffer extends OutputStream {
     }
 
     public BytesBuffer forReadWritten() {
-        ((Buffer) this.buffer).flip();
+        this.buffer.flip();
         return this;
     }
 
@@ -169,8 +153,8 @@ public final class BytesBuffer extends OutputStream {
         // Extra capacity as buffer
         int newcapacity = size + this.buffer.limit() + DEFAULT_CAPACITY;
         E.checkArgument(newcapacity <= MAX_BUFFER_CAPACITY,
-                        "Capacity exceeds max buffer capacity: %s",
-                        MAX_BUFFER_CAPACITY);
+                "Capacity exceeds max buffer capacity: %s",
+                MAX_BUFFER_CAPACITY);
         ByteBuffer newBuffer = ByteBuffer.allocate(newcapacity);
         this.buffer.flip();
         newBuffer.put(this.buffer);
@@ -262,7 +246,7 @@ public final class BytesBuffer extends OutputStream {
     }
 
     public boolean readBoolean() {
-        return this.buffer.get() == 0 ? false : true;
+        return this.buffer.get() != 0;
     }
 
     public char readChar() {
@@ -291,8 +275,8 @@ public final class BytesBuffer extends OutputStream {
 
     public BytesBuffer writeBytes(byte[] bytes) {
         E.checkArgument(bytes.length <= UINT16_MAX,
-                        "The max length of bytes is %s, but got %s",
-                        UINT16_MAX, bytes.length);
+                "The max length of bytes is %s, but got %s",
+                UINT16_MAX, bytes.length);
         require(SHORT_LEN + bytes.length);
         this.writeVInt(bytes.length);
         this.write(bytes);
@@ -302,13 +286,14 @@ public final class BytesBuffer extends OutputStream {
     public byte[] readBytes() {
         int length = this.readVInt();
         assert length >= 0;
-        return this.read(length);
+        byte[] bytes = this.read(length);
+        return bytes;
     }
 
     public BytesBuffer writeBigBytes(byte[] bytes) {
         E.checkArgument(bytes.length <= BLOB_LEN_MAX,
-                        "The max length of bytes is %s, but got %s",
-                        BLOB_LEN_MAX, bytes.length);
+                "The max length of bytes is %s, but got %s",
+                BLOB_LEN_MAX, bytes.length);
         require(BLOB_LEN + bytes.length);
         this.writeVInt(bytes.length);
         this.write(bytes);
@@ -318,7 +303,8 @@ public final class BytesBuffer extends OutputStream {
     public byte[] readBigBytes() {
         int length = this.readVInt();
         assert length >= 0;
-        return this.read(length);
+        byte[] bytes = this.read(length);
+        return bytes;
     }
 
     public BytesBuffer writeStringRaw(String val) {
@@ -346,11 +332,11 @@ public final class BytesBuffer extends OutputStream {
              *   0xFF is not a valid byte in UTF8 bytes
              */
             assert !Bytes.contains(bytes, STRING_ENDING_BYTE_FF) :
-                   "Invalid UTF8 bytes: " + value;
+                    "Invalid UTF8 bytes: " + value;
             if (Bytes.contains(bytes, STRING_ENDING_BYTE)) {
                 E.checkArgument(false,
-                                "Can't contains byte '0x00' in string: '%s'",
-                                value);
+                        "Can't contains byte '0x00' in string: '%s'",
+                        value);
             }
             this.write(bytes);
         }
@@ -433,10 +419,11 @@ public final class BytesBuffer extends OutputStream {
     public int readVInt() {
         byte leading = this.read();
         E.checkArgument(leading != 0x80,
-                        "Unexpected varint with leading byte '0x%s'",
-                        Bytes.toHex(leading));
+                "Unexpected varint with leading byte '0x%s'",
+                Bytes.toHex(leading));
         int value = leading & 0x7f;
         if (leading >= 0) {
+            assert (leading & 0x80) == 0;
             return value;
         }
 
@@ -452,11 +439,11 @@ public final class BytesBuffer extends OutputStream {
         }
 
         E.checkArgument(i < 5,
-                        "Unexpected varint %s with too many bytes(%s)",
-                        value, i + 1);
+                "Unexpected varint %s with too many bytes(%s)",
+                value, i + 1);
         E.checkArgument(i < 4 || (leading & 0x70) == 0,
-                        "Unexpected varint %s with leading byte '0x%s'",
-                        value, Bytes.toHex(leading));
+                "Unexpected varint %s with leading byte '0x%s'",
+                value, Bytes.toHex(leading));
         return value;
     }
 
@@ -496,8 +483,8 @@ public final class BytesBuffer extends OutputStream {
     public long readVLong() {
         byte leading = this.read();
         E.checkArgument(leading != 0x80,
-                        "Unexpected varlong with leading byte '0x%s'",
-                        Bytes.toHex(leading));
+                "Unexpected varlong with leading byte '0x%s'",
+                Bytes.toHex(leading));
         long value = leading & 0x7fL;
         if (leading >= 0) {
             assert (leading & 0x80) == 0;
@@ -516,103 +503,12 @@ public final class BytesBuffer extends OutputStream {
         }
 
         E.checkArgument(i < 10,
-                        "Unexpected varlong %s with too many bytes(%s)",
-                        value, i + 1);
+                "Unexpected varlong %s with too many bytes(%s)",
+                value, i + 1);
         E.checkArgument(i < 9 || (leading & 0x7e) == 0,
-                        "Unexpected varlong %s with leading byte '0x%s'",
-                        value, Bytes.toHex(leading));
+                "Unexpected varlong %s with leading byte '0x%s'",
+                value, Bytes.toHex(leading));
         return value;
-    }
-
-    public BytesBuffer writeProperty(PropertyKey pkey, Object value) {
-        if (pkey.cardinality() == Cardinality.SINGLE) {
-            this.writeProperty(pkey.dataType(), value);
-            return this;
-        }
-
-        assert pkey.cardinality() == Cardinality.LIST ||
-               pkey.cardinality() == Cardinality.SET;
-        Collection<?> values = (Collection<?>) value;
-        this.writeVInt(values.size());
-        for (Object o : values) {
-            this.writeProperty(pkey.dataType(), o);
-        }
-        return this;
-    }
-
-    public Object readProperty(PropertyKey pkey) {
-        if (pkey.cardinality() == Cardinality.SINGLE) {
-            return this.readProperty(pkey.dataType());
-        }
-
-        assert pkey.cardinality() == Cardinality.LIST ||
-               pkey.cardinality() == Cardinality.SET;
-        int size = this.readVInt();
-        Collection<Object> values = pkey.newValue();
-        for (int i = 0; i < size; i++) {
-            values.add(this.readProperty(pkey.dataType()));
-        }
-        return values;
-    }
-
-    public void writeProperty(DataType dataType, Object value) {
-        switch (dataType) {
-            case BOOLEAN:
-                this.writeVInt(((Boolean) value) ? 1 : 0);
-                break;
-            case BYTE:
-                this.writeVInt((Byte) value);
-                break;
-            case INT:
-                this.writeVInt((Integer) value);
-                break;
-            case FLOAT:
-                this.writeFloat((Float) value);
-                break;
-            case LONG:
-                this.writeVLong((Long) value);
-                break;
-            case DATE:
-                this.writeVLong(((Date) value).getTime());
-                break;
-            case DOUBLE:
-                this.writeDouble((Double) value);
-                break;
-            case TEXT:
-                this.writeString((String) value);
-                break;
-            case UUID:
-                UUID uuid = (UUID) value;
-                // Generally writeVLong(uuid) can't save space
-                this.writeLong(uuid.getMostSignificantBits());
-                this.writeLong(uuid.getLeastSignificantBits());
-                break;
-            default: // ignore
-        }
-    }
-
-    public Object readProperty(DataType dataType) {
-        switch (dataType) {
-            case BOOLEAN:
-                return this.readVInt() == 1;
-            case BYTE:
-                return (byte) this.readVInt();
-            case INT:
-                return this.readVInt();
-            case FLOAT:
-                return this.readFloat();
-            case LONG:
-                return this.readVLong();
-            case DATE:
-                return new Date(this.readVLong());
-            case DOUBLE:
-                return this.readDouble();
-            case TEXT:
-                return this.readString();
-            case UUID:
-                return new UUID(this.readLong(), this.readLong());
-            default: // ignore
-        }
     }
 
     public BytesBuffer writeId(Id id) {
@@ -621,10 +517,17 @@ public final class BytesBuffer extends OutputStream {
 
     public BytesBuffer writeId(Id id, boolean big) {
         switch (id.type()) {
-            case EDGE:
-                // Edge Id
-                this.writeUInt8(0x7e); // 0b01111110 means EdgeId
-                this.writeEdgeId(id);
+            case LONG:
+                // Number Id
+                long value = id.asLong();
+                this.writeNumber(value);
+                break;
+            case UUID:
+                // UUID Id
+                byte[] bytes = id.asBytes();
+                assert bytes.length == Id.UUID_LENGTH;
+                this.writeUInt8(0x7f); // 0b01111111 means UUID
+                this.write(bytes);
                 break;
             default:
                 // String Id
@@ -633,14 +536,14 @@ public final class BytesBuffer extends OutputStream {
                 E.checkArgument(len > 0, "Can't write empty id");
                 if (!big) {
                     E.checkArgument(len <= ID_LEN_MAX,
-                                    "Id max length is %s, but got %s {%s}",
-                                    ID_LEN_MAX, len, id);
+                            "Id max length is %s, but got %s {%s}",
+                            ID_LEN_MAX, len, id);
                     len -= 1; // mapping [1, 128] to [0, 127]
                     this.writeUInt8(len | 0x80);
                 } else {
                     E.checkArgument(len <= BIG_ID_LEN_MAX,
-                                    "Big id max length is %s, but got %s {%s}",
-                                    BIG_ID_LEN_MAX, len, id);
+                            "Big id max length is %s, but got %s {%s}",
+                            BIG_ID_LEN_MAX, len, id);
                     len -= 1;
                     int high = len >> 8;
                     int low = len & 0xff;
@@ -651,55 +554,6 @@ public final class BytesBuffer extends OutputStream {
                 break;
         }
         return this;
-    }
-
-    public Id readId() {
-        return this.readId(false);
-    }
-
-    public Id readId(boolean big) {
-        byte b = this.read();
-        boolean number = (b & 0x80) == 0;
-        if (number) {
-            if (b == 0x7f) {
-                // UUID
-                return IdGenerator.of(this.read(UUID_LENGTH), IdType.UUID);
-            } else if (b == 0x7e) {
-                // Edge Id
-                return this.readEdgeId();
-            } else {
-                // Number Id
-                return IdGenerator.of(this.readNumber(b));
-            }
-        } else {
-            // String Id
-            int len = b & ID_LEN_MASK;
-            if (big) {
-                int high = len << 8;
-                int low = this.readUInt8();
-                len = high + low;
-            }
-            len += 1; // restore [0, 127] to [1, 128]
-            byte[] id = this.read(len);
-            return IdGenerator.of(id, IdType.STRING);
-        }
-    }
-
-    public BytesBuffer writeEdgeId(Id id) {
-        // owner-vertex + dir + edge-label + sort-values + other-vertex
-        EdgeId edge = (EdgeId) id;
-        this.writeId(edge.ownerVertexId());
-        this.write(edge.directionCode());
-        this.writeId(edge.edgeLabelId());
-        this.writeStringWithEnding(edge.sortValues());
-        this.writeId(edge.otherVertexId());
-        return this;
-    }
-
-    public Id readEdgeId() {
-        return new EdgeId(this.readId(), EdgeId.directionFromCode(this.read()),
-                          this.readId(), this.readStringWithEnding(),
-                          this.readId());
     }
 
     public BytesBuffer writeIndexId(Id id, HugeType type) {
@@ -716,57 +570,16 @@ public final class BytesBuffer extends OutputStream {
             if (Bytes.contains(bytes, STRING_ENDING_BYTE)) {
                 // Not allow STRING_ENDING_BYTE exist in string index id
                 E.checkArgument(false,
-                                "The %s type index id can't contains " +
+                        "The %s type index id can't contains " +
                                 "byte '0x%s', but got: 0x%s", type,
-                                Bytes.toHex(STRING_ENDING_BYTE),
-                                Bytes.toHex(bytes));
+                        Bytes.toHex(STRING_ENDING_BYTE),
+                        Bytes.toHex(bytes));
             }
             if (withEnding) {
                 this.writeStringWithEnding("");
             }
         }
         return this;
-    }
-
-    public BinaryId readIndexId(HugeType type) {
-        byte[] id;
-        if (type.isRange4Index()) {
-            // IndexLabel 4 bytes + fieldValue 4 bytes
-            id = this.read(8);
-        } else if (type.isRange8Index()) {
-            // IndexLabel 4 bytes + fieldValue 8 bytes
-            id = this.read(12);
-        } else {
-            assert type.isStringIndex();
-            id = this.readBytesWithEnding();
-        }
-        return new BinaryId(id, IdGenerator.of(id, IdType.STRING));
-    }
-
-    public BinaryId asId() {
-        return new BinaryId(this.bytes(), null);
-    }
-
-    public BinaryId parseId(HugeType type, boolean enablePartition) {
-        if (type.isIndex()) {
-            return this.readIndexId(type);
-        }
-        // Parse id from bytes
-        if ((type.isVertex() || type.isEdge()) && enablePartition) {
-            this.readShort();
-        }
-        int start = this.buffer.position();
-        /*
-         * Since edge id in edges table doesn't prefix with leading 0x7e,
-         * so readId() will return the source vertex id instead of edge id,
-         * can't call: type.isEdge() ? this.readEdgeId() : this.readId();
-         */
-        Id id = this.readId();
-        int end = this.buffer.position();
-        int len = end - start;
-        byte[] bytes = new byte[len];
-        System.arraycopy(this.array(), start, bytes, 0, len);
-        return new BinaryId(bytes, id);
     }
 
     private void writeNumber(long val) {
@@ -838,8 +651,8 @@ public final class BytesBuffer extends OutputStream {
 
     private long readNumber(byte b) {
         E.checkArgument((b & 0x80) == 0,
-                        "Not a number type with prefix byte '0x%s'",
-                        Bytes.toHex(b));
+                "Not a number type with prefix byte '0x%s'",
+                Bytes.toHex(b));
         // Parse the kind from byte 0kkksxxx
         int kind = b >>> 4;
         boolean positive = (b & 0x08) > 0;
@@ -866,8 +679,8 @@ public final class BytesBuffer extends OutputStream {
                 break;
             case 6:
                 value |= (long) this.readUInt8() << 48 |
-                         (long) this.readUInt16() << 32 |
-                         this.readUInt32();
+                        (long) this.readUInt16() << 32 |
+                        this.readUInt32();
                 break;
             case 7:
                 assert high3bits == 0L;
@@ -887,8 +700,7 @@ public final class BytesBuffer extends OutputStream {
     private byte[] readBytesWithEnding() {
         int start = this.buffer.position();
         boolean foundEnding = false;
-        int remaining = this.remaining();
-        for (int i = 0; i < remaining; i++) {
+        while (this.remaining() > 0) {
             byte current = this.read();
             if (current == STRING_ENDING_BYTE) {
                 foundEnding = true;
@@ -896,14 +708,52 @@ public final class BytesBuffer extends OutputStream {
             }
         }
         E.checkArgument(foundEnding, "Not found ending '0x%s'",
-                        Bytes.toHex(STRING_ENDING_BYTE));
+                Bytes.toHex(STRING_ENDING_BYTE));
         int end = this.buffer.position() - 1;
         int len = end - start;
-        if (len <= 0) {
-            return BYTES_EMPTY;
-        }
         byte[] bytes = new byte[len];
         System.arraycopy(this.array(), start, bytes, 0, len);
         return bytes;
     }
+
+    public void writeProperty(com.baidu.hugegraph.structure.constant.DataType dataType, Object value) {
+        switch (dataType) {
+            case BOOLEAN:
+                this.writeVInt(((Boolean) value) ? 1 : 0);
+                break;
+            case BYTE:
+                this.writeVInt((Byte) value);
+                break;
+            case INT:
+                this.writeVInt((Integer) value);
+                break;
+            case FLOAT:
+                this.writeFloat((Float) value);
+                break;
+            case LONG:
+                this.writeVLong((Long) value);
+                break;
+            case DATE:
+                this.writeVLong(((Date) value).getTime());
+                break;
+            case DOUBLE:
+                this.writeDouble((Double) value);
+                break;
+            case TEXT:
+                this.writeString((String) value);
+                break;
+
+            case UUID:
+                UUID uuid = (UUID) value;
+                // Generally writeVLong(uuid) can't save space
+                this.writeLong(uuid.getMostSignificantBits());
+                this.writeLong(uuid.getLeastSignificantBits());
+                break;
+            default:
+                //this.writeBytes(KryoUtil.toKryoWithType(value));
+                break;
+        }
+
+    }
+
 }
