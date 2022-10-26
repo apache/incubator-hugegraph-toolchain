@@ -26,5 +26,5 @@ package com.baidu.hugegraph.serializer.direct;
  * And they will be transferred to bytes directly
  **/
 public class RocksDBSerializer {
-
+    //  TODO: Support write RocksDB directly
 }
