@@ -99,7 +99,7 @@ public class MappingConverterTest {
                 "\"value_mapping\":{},\"selected\":[]," +
                 "\"ignored\":[\"Occupation\",\"Zip-code\",\"Gender\"," +
                 "\"Age\"],\"null_values\":[\"\"]," +
-                "\"update_strategies\":{},\"batch_size\":1000}],\"edges\":[]},{\"id\":\"2\"," +
+                "\"update_strategies\":{},\"batch_size\":500}],\"edges\":[]},{\"id\":\"2\"," +
                 "\"skip\":false,\"input\":{\"type\":\"FILE\"," +
                 "\"path\":\"ratings.dat\"," +
                 "\"file_filter\":{\"extensions\":[\"*\"]}," +
@@ -116,7 +116,7 @@ public class MappingConverterTest {
                 "\"field_mapping\":{\"UserID\":\"id\",\"MovieID\":\"id\"," +
                 "\"Rating\":\"rate\"},\"value_mapping\":{},\"selected\":[]," +
                 "\"ignored\":[\"Timestamp\"],\"null_values\":[\"\"]," +
-                "\"update_strategies\":{},\"batch_size\":1000}]}]}";
+                "\"update_strategies\":{},\"batch_size\":500}]}]}";
         Assert.assertEquals(expectV2Json, actualV2Json);
 
         FileUtils.forceDelete(inputFile);

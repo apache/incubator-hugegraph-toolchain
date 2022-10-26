@@ -57,25 +57,25 @@ public class WeightedShortestPathApiTest extends TraverserApiTest {
                 .ifNotExist()
                 .create();
 
-        Vertex va = graph().addVertex(T.label, "node", T.id, "A");
-        Vertex vb = graph().addVertex(T.label, "node", T.id, "B");
-        Vertex vc = graph().addVertex(T.label, "node", T.id, "C");
-        Vertex vd = graph().addVertex(T.label, "node", T.id, "D");
-        Vertex ve = graph().addVertex(T.label, "node", T.id, "E");
-        Vertex vf = graph().addVertex(T.label, "node", T.id, "F");
-        Vertex vg = graph().addVertex(T.label, "node", T.id, "G");
-        Vertex vh = graph().addVertex(T.label, "node", T.id, "H");
-        Vertex vi = graph().addVertex(T.label, "node", T.id, "I");
-        Vertex vj = graph().addVertex(T.label, "node", T.id, "J");
-        Vertex vk = graph().addVertex(T.label, "node", T.id, "K");
-        Vertex vl = graph().addVertex(T.label, "node", T.id, "L");
-        Vertex vm = graph().addVertex(T.label, "node", T.id, "M");
-        Vertex vn = graph().addVertex(T.label, "node", T.id, "N");
-        Vertex vo = graph().addVertex(T.label, "node", T.id, "O");
-        Vertex vp = graph().addVertex(T.label, "node", T.id, "P");
-        Vertex vq = graph().addVertex(T.label, "node", T.id, "Q");
-        Vertex vr = graph().addVertex(T.label, "node", T.id, "R");
-        Vertex vz = graph().addVertex(T.label, "node", T.id, "Z");
+        Vertex va = graph().addVertex(T.LABEL, "node", T.ID, "A");
+        Vertex vb = graph().addVertex(T.LABEL, "node", T.ID, "B");
+        Vertex vc = graph().addVertex(T.LABEL, "node", T.ID, "C");
+        Vertex vd = graph().addVertex(T.LABEL, "node", T.ID, "D");
+        Vertex ve = graph().addVertex(T.LABEL, "node", T.ID, "E");
+        Vertex vf = graph().addVertex(T.LABEL, "node", T.ID, "F");
+        Vertex vg = graph().addVertex(T.LABEL, "node", T.ID, "G");
+        Vertex vh = graph().addVertex(T.LABEL, "node", T.ID, "H");
+        Vertex vi = graph().addVertex(T.LABEL, "node", T.ID, "I");
+        Vertex vj = graph().addVertex(T.LABEL, "node", T.ID, "J");
+        Vertex vk = graph().addVertex(T.LABEL, "node", T.ID, "K");
+        Vertex vl = graph().addVertex(T.LABEL, "node", T.ID, "L");
+        Vertex vm = graph().addVertex(T.LABEL, "node", T.ID, "M");
+        Vertex vn = graph().addVertex(T.LABEL, "node", T.ID, "N");
+        Vertex vo = graph().addVertex(T.LABEL, "node", T.ID, "O");
+        Vertex vp = graph().addVertex(T.LABEL, "node", T.ID, "P");
+        Vertex vq = graph().addVertex(T.LABEL, "node", T.ID, "Q");
+        Vertex vr = graph().addVertex(T.LABEL, "node", T.ID, "R");
+        Vertex vz = graph().addVertex(T.LABEL, "node", T.ID, "Z");
 
         /*
          *   "link":

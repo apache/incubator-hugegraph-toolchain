@@ -186,6 +186,8 @@ public class LicenseService {
             case "EB":
                 byteCount = numberPart * FileUtils.ONE_EB;
                 break;
+            default:
+                break;
         }
         return byteCount / FileUtils.ONE_MB;
     }

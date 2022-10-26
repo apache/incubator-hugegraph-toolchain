@@ -417,7 +417,8 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Get graph info")
-    public static class GraphGet {}
+    public static class GraphGet {
+    }
 
     @Parameters(commandDescription = "Clear graph schema and data")
     public static class GraphClear {
@@ -453,7 +454,8 @@ public class SubCommands {
     }
 
     @Parameters(commandDescription = "Get graph mode")
-    public static class GraphModeGet {}
+    public static class GraphModeGet {
+    }
 
     @Parameters(commandDescription = "Execute Gremlin statements")
     public static class Gremlin extends GremlinJob {
@@ -975,7 +977,7 @@ public class SubCommands {
                                  "a conflict, stop restore. 'ignore' means if " +
                                  "there a conflict, ignore and continue to " +
                                  "restore.")
-        public AuthRestoreConflictStrategy strategy = AuthStrategyConverter.strategy;
+        public AuthRestoreConflictStrategy strategy = AuthStrategyConverter.STRATEGY;
 
         @Parameter(names = {"--init-password"}, arity = 1,
                    description = "Init user password, if restore type include " +
@@ -1087,12 +1089,12 @@ public class SubCommands {
             List<String> typeList = Arrays.asList(types);
             E.checkArgument(!typeList.contains(HugeType.BELONG.toString().toLowerCase()) ||
                             (typeList.contains(HugeType.USER.toString().toLowerCase()) &&
-                            typeList.contains(HugeType.GROUP.toString().toLowerCase())),
+                             typeList.contains(HugeType.GROUP.toString().toLowerCase())),
                             "Invalid --type '%s', if type contains 'belong'" +
                             " then 'user' and 'group' are required.", value);
             E.checkArgument(!typeList.contains(HugeType.ACCESS.toString().toLowerCase()) ||
                             (typeList.contains(HugeType.GROUP.toString().toLowerCase()) &&
-                            typeList.contains(HugeType.TARGET.toString().toLowerCase())),
+                             typeList.contains(HugeType.TARGET.toString().toLowerCase())),
                             "Invalid --type '%s', if type contains 'access'" +
                             " then 'group' and 'target' are required.", value);
             List<HugeType> hugeTypes = new ArrayList<>();
@@ -1113,7 +1115,7 @@ public class SubCommands {
     public static class AuthStrategyConverter
                   implements IStringConverter<AuthRestoreConflictStrategy> {
 
-        public static final AuthRestoreConflictStrategy strategy =
+        public static final AuthRestoreConflictStrategy STRATEGY =
                             AuthRestoreConflictStrategy.STOP;
 
         @Override
@@ -1216,15 +1218,15 @@ public class SubCommands {
 
         @Override
         public void validate(String name, String value) {
-            String regex = "^((http)(s?)://)?"
-                    // IP URL, like: 10.0.0.1
-                    + "(((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)"
-                    + "(\\.((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)){3}"
-                    + "|"
-                    // Or domain name
-                    + "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)"
-                    // Port
-                    + ":([0-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-5]{2}[0-3][0-5])$";
+            String regex = "^((http)(s?)://)?" +
+                           // IP URL, like: 10.0.0.1
+                           "(((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)" +
+                           "(\\.((25[0-5])|(2[0-4]\\d)|(1\\d\\d)|([1-9]\\d)|\\d)){3}" +
+                           "|" +
+                           // Or domain name
+                           "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)" +
+                           // Port
+                           ":([0-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-5]{2}[0-3][0-5])$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
                           "Invalid url value of args '%s': '%s'", name, value));

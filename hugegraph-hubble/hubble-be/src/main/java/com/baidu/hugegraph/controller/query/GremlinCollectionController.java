@@ -103,7 +103,7 @@ public class GremlinCollectionController extends GremlinController {
         newEntity.setCreateTime(HubbleUtil.nowDate());
         this.checkEntityUnique(newEntity, true);
         // The service is an singleton object
-        synchronized(this.service) {
+        synchronized (this.service) {
             Ex.check(this.service.count() < LIMIT,
                      "gremlin-collection.reached-limit", LIMIT);
             this.service.save(newEntity);

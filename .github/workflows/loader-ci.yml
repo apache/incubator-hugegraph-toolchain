@@ -5,25 +5,21 @@ on:
     branches:
       - master
       - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-loader/**
       - hugegraph-dist/**
       - .github/workflows/**
       - pom.xml
   pull_request:
-    branches:
-      - master
-      - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-loader/**
       - hugegraph-dist/**
+      - hugegraph-client/**
       - .github/workflows/**
       - pom.xml
 
 jobs:
-  build:
+  loader-ci:
     runs-on: ubuntu-20.04
     env:
       TRAVIS_DIR: hugegraph-loader/assembly/travis
