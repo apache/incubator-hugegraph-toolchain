@@ -55,3 +55,4 @@ notifications:
   issues: issues@hugegraph.apache.org
   discussions:  issues@hugegraph.apache.org
   pullrequests_status: dev@hugegraph.apache.org
+  #pullrequests_comment: issues@foo.apache.org
