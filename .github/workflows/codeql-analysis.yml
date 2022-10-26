@@ -16,7 +16,7 @@ on:
     branches: [ master, release-* ]
   pull_request:
     # The branches below must be a subset of the branches above
-    # ranches: [ master ] # enable in all PR
+    # branches: [ master ] # enable in all PR
   schedule:
     - cron: '42 20 * * 6'
 
