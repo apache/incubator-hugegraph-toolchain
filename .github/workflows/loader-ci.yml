@@ -14,6 +14,7 @@ on:
     paths:
       - hugegraph-loader/**
       - hugegraph-dist/**
+      - hugegraph-client/**
       - .github/workflows/**
       - pom.xml
 
