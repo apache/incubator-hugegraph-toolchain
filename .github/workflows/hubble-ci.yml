@@ -21,6 +21,7 @@ on:
 
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
+  # TODO: need update it later
   SERVER_VERSION: 0.12.0
 
 jobs:
@@ -46,7 +47,7 @@ jobs:
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - name: Ceche Yarn packages
+      - name: Cache Yarn packages
         uses: actions/cache@v3
         # use id to check `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         id: yarn-cache
@@ -56,7 +57,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - name: Ceche Python packages
+      - name: Cache Python packages
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
