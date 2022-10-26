@@ -5,17 +5,12 @@ on:
     branches:
       - master
       - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-loader/**
       - hugegraph-dist/**
       - .github/workflows/**
       - pom.xml
   pull_request:
-    branches:
-      - master
-      - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-loader/**
       - hugegraph-dist/**

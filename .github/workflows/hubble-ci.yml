@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - /^release-.*$/
-      - /^test-.*$/
       - /^v[0-9]\..*$/
     paths:
       - hugegraph-hubble/**
@@ -13,11 +12,6 @@ on:
       - .github/workflows/**
       - pom.xml
   pull_request:
-    branches:
-      - master
-      - /^release-.*$/
-      - /^test-.*$/
-      - /^v[0-9]\..*$/
     paths:
       - hugegraph-hubble/**
       - hugegraph-dist/**
