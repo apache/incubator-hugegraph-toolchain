@@ -33,10 +33,7 @@ cp -rf "${TRAVIS_DIR}"/conf/. "${HTTP_SERVER_DIR}"/conf/
 # start HugeGraphServer with http protocol
 cd "${HTTP_SERVER_DIR}"
 echo -e "pa" | bin/init-store.sh || exit 1
-nohup bin/start-hugegraph.sh > out.log 2>&1 &
-sleep 10
-cat out.log
-cat /home/runner/work/incubator-hugegraph-toolchain/incubator-hugegraph-toolchain/hugegraph-0.13.0/logs/hugegraph-server.log
+bin/start-hugegraph.sh || exit 1
 
 # config options for https server
 cd ../"${HTTPS_SERVER_DIR}"
