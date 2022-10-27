@@ -4,20 +4,16 @@ on:
     branches:
       - master
       - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-tools/**
       - hugegraph-dist/**
       - .github/workflows/**
       - pom.xml
   pull_request:
-    branches:
-      - master
-      - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-tools/**
       - hugegraph-dist/**
+      - hugegraph-client/**
       - .github/workflows/**
       - pom.xml
 
