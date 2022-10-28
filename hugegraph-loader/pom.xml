@@ -86,6 +86,7 @@
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
             <version>${revision}</version>
+            <scope>compile</scope>
 <!--            <groupId>com.baidu.hugegraph</groupId>-->
 <!--            <artifactId>hugegraph-client</artifactId>-->
 <!--            <version>2.0.1</version>-->
