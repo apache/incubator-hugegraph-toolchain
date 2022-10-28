@@ -21,11 +21,7 @@ package com.baidu.hugegraph.loader.test.functional;
 
 import java.util.List;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.structure.graph.Edge;
@@ -35,6 +31,7 @@ import com.baidu.hugegraph.testutil.Assert;
 /**
  * TODO: add more test cases
  */
+@Ignore
 public class JDBCLoadTest extends LoadTest {
 
     // JDBC driver name and database URL
