@@ -21,7 +21,12 @@ package com.baidu.hugegraph.loader.test.functional;
 
 import java.util.List;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.structure.graph.Edge;
