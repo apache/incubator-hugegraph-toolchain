@@ -12,7 +12,7 @@ GIT_DIR=hugegraph
 git clone --depth 100 $HUGEGRAPH_GIT_URL $GIT_DIR
 cd "${GIT_DIR}"
 git checkout "${COMMIT_ID}"
-mvn package -DskipTests -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded\|Progress"
+mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
 
 # TODO: lack incubator after apache package release (update it later)
 TAR=$(echo hugegraph-*.tar.gz)

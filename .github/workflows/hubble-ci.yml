@@ -73,7 +73,7 @@ jobs:
       - name: Compile
         run: |
           cd hugegraph-hubble && ls *
-          mvn -e clean compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
+          mvn -e clean compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
         run: |
