@@ -19,13 +19,6 @@
         operations of graph, schema, gremlin, variables and traversals etc.
     </description>
 
-    <scm>
-        <url>https://github.com/hugegraph/hugegraph-client</url>
-        <connection>https://github.com/hugegraph/hugegraph-client</connection>
-        <developerConnection>https://github.com/hugegraph/hugegraph-client
-        </developerConnection>
-    </scm>
-
     <properties>
         <hugegraph.common.version>2.1.0</hugegraph.common.version>
         <jersey.version>3.0.3</jersey.version>
