@@ -69,7 +69,6 @@ jobs:
           mvn test -P jdbc -pl hugegraph-client,hugegraph-loader
           cd hugegraph-loader && ls
           mvn test -P unit
-          
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0
