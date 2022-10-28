@@ -30,7 +30,7 @@ import com.baidu.hugegraph.testutil.Assert;
 public class LoadProgressTest extends LoadTest {
 
     @Test
-    //@Ignore
+    @Ignore
     public void testTotalLoaded() {
         String json = "{" +
                 "\"vertex_propgress\": 16," +

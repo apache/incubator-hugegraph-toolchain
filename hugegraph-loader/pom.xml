@@ -90,9 +90,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hugegraph</groupId>
+            <groupId>com.baidu.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>${project.version}</version>
+            <version>2.0.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.guava</groupId>
