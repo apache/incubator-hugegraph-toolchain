@@ -3,7 +3,7 @@
 set -ev
 
 if [[ $# -ne 1 ]]; then
-    echo "Must input exist git commit id of hugegraph server" && exit 1
+    echo "Must input an existing commit id of hugegraph server" && exit 1
 fi
 
 VERSION=$1

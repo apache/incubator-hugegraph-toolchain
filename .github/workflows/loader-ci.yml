@@ -49,10 +49,10 @@ jobs:
 
       - name: Compile
         run: |
-          mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar | grep -v "Downloading\|Downloaded"
-          mvn install -pl hugegraph-client,hugegraph-loader -am | grep -v "Downloading\|Downloaded"
+          mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar -ntp
+          mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
           ls && cd hugegraph-loader && ls *
-          #mvn -e compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
+          #mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
         run: |
@@ -62,13 +62,11 @@ jobs:
 
       - name: Run test
         run: |
-          ls
-          mvn test -P unit -pl hugegraph-client,hugegraph-loader
-          mvn test -P file -pl hugegraph-client,hugegraph-loader
-          mvn test -P hdfs -pl hugegraph-client,hugegraph-loader
-          mvn test -P jdbc -pl hugegraph-client,hugegraph-loader
           cd hugegraph-loader && ls
-          mvn test -P unit
+          mvn test -P unit -fn
+          echo "##### Test Another ######"
+          mvn test -P unit,file,hdfs,jdbc -pl hugegraph-client,hugegraph-loader -fn
+          
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0

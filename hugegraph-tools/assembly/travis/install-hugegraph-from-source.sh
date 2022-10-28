@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ev
 if [[ $# -ne 1 ]]; then
-    echo "Must input exist git commit id of hugegraph server" && exit 1
+    echo "Must input an existing commit id of hugegraph server" && exit 1
 fi
 
 COMMIT_ID=$1
@@ -16,7 +16,7 @@ mvn package -DskipTests -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downlo
 
 # TODO: lack incubator after apache package release (update it later)
 TAR=$(echo hugegraph-*.tar.gz)
-tar zxvf "${TAR}" -C ../
+tar zxf "${TAR}" -C ../
 cd ../
 rm -rf "${GIT_DIR}"
 # TODO: lack incubator after apache package release (update it later)

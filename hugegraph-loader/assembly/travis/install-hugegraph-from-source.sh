@@ -3,7 +3,7 @@
 set -ev
 
 if [[ $# -ne 1 ]]; then
-    echo "Must input exist git commit id of hugegraph server" && exit 1
+    echo "Must input an existing commit id of hugegraph server" && exit 1
 fi
 
 COMMIT_ID=$1
@@ -17,7 +17,7 @@ mvn package -DskipTests -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downlo
 mv hugegraph-*.tar.gz ../
 cd ../
 rm -rf hugegraph
-tar zxvf hugegraph-*.tar.gz
+tar zxf hugegraph-*.tar.gz
 
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
