@@ -45,7 +45,7 @@ public class PathsAPI extends TraversersAPI {
     public List<Path> get(Object sourceId, Object targetId,
                           Direction direction, String label,
                           int maxDepth, long degree, long capacity,
-                          long limit) {
+                          int limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
 

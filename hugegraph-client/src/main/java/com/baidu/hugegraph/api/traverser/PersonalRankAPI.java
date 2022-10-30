@@ -53,7 +53,7 @@ public class PersonalRankAPI extends TraversersAPI {
         @JsonProperty("max_degree")
         public long degree = Traverser.DEFAULT_MAX_DEGREE;
         @JsonProperty("limit")
-        private long limit = Traverser.DEFAULT_LIMIT;
+        private int limit = Traverser.DEFAULT_LIMIT;
         @JsonProperty("max_depth")
         private int maxDepth = 5;
         @JsonProperty("with_label")
@@ -115,7 +115,7 @@ public class PersonalRankAPI extends TraversersAPI {
                 return this;
             }
 
-            public Builder limit(long limit) {
+            public Builder limit(int limit) {
                 TraversersAPI.checkLimit(limit);
                 this.request.limit = limit;
                 return this;

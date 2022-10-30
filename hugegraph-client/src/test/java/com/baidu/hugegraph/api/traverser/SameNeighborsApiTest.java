@@ -78,7 +78,7 @@ public class SameNeighborsApiTest extends TraverserApiTest {
     @Test
     public void testSameNeighbors() {
         List<Object> neighbors = sameNeighborsAPI.get(1, 2, Direction.BOTH,
-                                                      null, -1, -1L);
+                                                      null, -1, -1);
         Assert.assertEquals(4, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(3, 4, 5, 6)));
@@ -87,13 +87,13 @@ public class SameNeighborsApiTest extends TraverserApiTest {
     @Test
     public void testSameNeighborsWithDirection() {
         List<Object> neighbors = sameNeighborsAPI.get(1, 2, Direction.OUT,
-                                                      null, -1, -1L);
+                                                      null, -1, -1);
         Assert.assertEquals(2, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(3, 5)));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.IN,
-                                         null, -1, -1L);
+                                         null, -1, -1);
         Assert.assertEquals(2, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(4, 6)));
@@ -102,37 +102,37 @@ public class SameNeighborsApiTest extends TraverserApiTest {
     @Test
     public void testSameNeighborsWithLabel() {
         List<Object> neighbors = sameNeighborsAPI.get(1, 2, Direction.BOTH,
-                                                      "link", -1, -1L);
+                                                      "link", -1, -1);
         Assert.assertEquals(2, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(3, 4)));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.OUT,
-                                         "link", -1, -1L);
+                                         "link", -1, -1);
         Assert.assertEquals(1, neighbors.size());
 
         Assert.assertTrue(neighbors.contains(3));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.IN,
-                                         "link", -1, -1L);
+                                         "link", -1, -1);
         Assert.assertEquals(1, neighbors.size());
 
         Assert.assertTrue(neighbors.contains(4));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.BOTH,
-                                         "relateTo", -1, -1L);
+                                         "relateTo", -1, -1);
         Assert.assertEquals(2, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(5, 6)));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.OUT,
-                                         "relateTo", -1, -1L);
+                                         "relateTo", -1, -1);
         Assert.assertEquals(1, neighbors.size());
 
         Assert.assertTrue(neighbors.contains(5));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.IN,
-                                         "relateTo", -1, -1L);
+                                         "relateTo", -1, -1);
         Assert.assertEquals(1, neighbors.size());
 
         Assert.assertTrue(neighbors.contains(6));
@@ -141,13 +141,13 @@ public class SameNeighborsApiTest extends TraverserApiTest {
     @Test
     public void testSameNeighborsWithDegree() {
         List<Object> neighbors = sameNeighborsAPI.get(1, 2, Direction.OUT,
-                                                      null, 6, -1L);
+                                                      null, 6, -1);
         Assert.assertEquals(2, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(3, 5)));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.OUT,
-                                         null, 1, -1L);
+                                         null, 1, -1);
         Assert.assertEquals(1, neighbors.size());
 
         Assert.assertTrue(neighbors.contains(3));
@@ -156,19 +156,19 @@ public class SameNeighborsApiTest extends TraverserApiTest {
     @Test
     public void testSameNeighborsWithLimit() {
         List<Object> neighbors = sameNeighborsAPI.get(1, 2, Direction.BOTH,
-                                                      "link", 6, -1L);
+                                                      "link", 6, -1);
         Assert.assertEquals(2, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(3, 4)));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.BOTH,
-                                         "link", 6, 2L);
+                                         "link", 6, 2);
         Assert.assertEquals(2, neighbors.size());
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(3, 4)));
 
         neighbors = sameNeighborsAPI.get(1, 2, Direction.BOTH,
-                                         "link", 6, 1L);
+                                         "link", 6, 1);
         Assert.assertEquals(1, neighbors.size());
 
         Assert.assertTrue(neighbors.contains(3));

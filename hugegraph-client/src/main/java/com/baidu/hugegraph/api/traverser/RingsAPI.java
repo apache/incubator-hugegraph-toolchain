@@ -42,7 +42,7 @@ public class RingsAPI extends TraversersAPI {
 
     public List<Path> get(Object sourceId, Direction direction, String label,
                           int depth, boolean sourceInRing, long degree,
-                          long capacity, long limit) {
+                          long capacity, int limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
 
         checkPositive(depth, "Max depth of path");
