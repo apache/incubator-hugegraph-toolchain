@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       TRAVIS_DIR: hugegraph-client/assembly/travis
-      COMMIT_ID: 7621aa71d235374de61139915638c47eea3cdce2
+      COMMIT_ID: 8abf3d5524de3d3d5a97bbdce460a75652792b0d
     strategy:
       fail-fast: false
       matrix:
