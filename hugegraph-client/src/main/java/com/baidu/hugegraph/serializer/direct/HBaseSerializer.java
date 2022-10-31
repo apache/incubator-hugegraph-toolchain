@@ -32,6 +32,9 @@ import com.baidu.hugegraph.structure.schema.PropertyKey;
 import java.util.Arrays;
 import java.util.Map;
 
+/**
+ * TODO: review later
+ */
 public class HBaseSerializer {
 
     private int edgeLogicPartitions = 30;
@@ -60,7 +63,7 @@ public class HBaseSerializer {
             buffer.writeShort(getPartition(HugeType.EDGE, IdGenerator.of(edge.sourceId())));
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_OUT.code());
-            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id()));//出现错误
+            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
             buffer.writeStringWithEnding("");
             buffer.writeId(IdGenerator.of(edge.targetId()));
             array = buffer.bytes();
@@ -71,7 +74,7 @@ public class HBaseSerializer {
     public byte[] getValueBytes(GraphElement e) {
         byte[] array = null;
         if(e.type() == "vertex"){
-            int propsCount = e.properties().size() ;//vertex.sizeOfProperties();
+            int propsCount = e.properties().size() ; //vertex.sizeOfProperties();
             BytesBuffer buffer = BytesBuffer.allocate(8 + 16 * propsCount);
             buffer.writeId(IdGenerator.of(graphSchema.getVertexLabel(e.label()).id()));
             buffer.writeVInt(propsCount);
