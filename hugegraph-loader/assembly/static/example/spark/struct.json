@@ -1,0 +1,58 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "file",
+        "path": "/Users/alanzhao/Desktop/huge-jacky/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/spark/vertex_person.json",
+        "format": "JSON",
+        "header": ["name", "age", "city"],
+        "charset": "UTF-8",
+        "skipped_line": {
+          "regex": "(^#|^//).*"
+        }
+      },
+      "id": "name",
+      "null_values": ["NULL", "null", ""]
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "file",
+        "path": "/Users/alanzhao/Desktop/huge-jacky/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/spark/vertex_software.json",
+        "format": "JSON",
+        "header": ["id","name", "lang", "price","ISBN"],
+        "charset": "GBK"
+      },
+      "id": "name",
+      "ignored": ["ISBN"]
+    }
+  ],
+  "edges": [
+    {
+      "label": "knows",
+      "source": ["source_name"],
+      "target": ["target_name"],
+      "input": {
+        "type": "file",
+        "path": "/Users/alanzhao/Desktop/huge-jacky/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/spark/edge_knows.json",
+        "format": "JSON",
+        "date_format": "yyyyMMdd",
+        "header": ["source_name","target_name", "date", "weight"]
+      },
+      "field_mapping": {
+        "source_name": "name",
+        "target_name": "name"
+      }
+    }
+  ],
+  "backendStoreInfo":
+  {
+    "edge_tablename": "hugegraph:g_oe",
+    "vertex_tablename": "hugegraph:g_v",
+    "hbase_zookeeper_quorum":"127.0.0.1",
+    "hbase_zookeeper_property_clientPort":"2181",
+    "zookeeper_znode_parent":"/hbase"
+
+  }
+}

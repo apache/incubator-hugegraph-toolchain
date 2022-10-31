@@ -53,22 +53,30 @@ public class LoadMapping implements Checkable {
     private String version;
     @JsonProperty("structs")
     private List<InputStruct> structs;
+    @JsonProperty("backendStoreInfo")
+    private BackendStoreInfo backendStoreInfo;
+
+
+    public BackendStoreInfo getBackendStoreInfo() {
+        return backendStoreInfo;
+    }
 
     public static LoadMapping of(String filePath) {
         File file = FileUtils.getFile(filePath);
         LoadMapping mapping;
         try {
+            // 解析struct.json文件，处理输入数据相关信息
             String json = FileUtils.readFileToString(file, Constants.CHARSET);
             mapping = MappingUtil.parse(json);
         } catch (IOException e) {
             throw new LoadException("Failed to read mapping mapping file '%s'",
-                                    e, filePath);
+                    e, filePath);
         } catch (IllegalArgumentException e) {
             throw new LoadException("Failed to parse mapping mapping file '%s'",
-                                    e, filePath);
+                    e, filePath);
         }
         try {
-            mapping.check();
+//            mapping.check();
         } catch (IllegalArgumentException e) {
             throw new LoadException("Invalid mapping file '%s'", e, filePath);
         }
@@ -81,20 +89,27 @@ public class LoadMapping implements Checkable {
         this.structs = structs;
     }
 
+    @JsonCreator
+    public LoadMapping(@JsonProperty("structs") List<InputStruct> structs,@JsonProperty("backendStoreInfo") BackendStoreInfo backendStoreInfo) {
+        this.version = Constants.V2_STRUCT_VERSION;
+        this.structs = structs;
+        this.backendStoreInfo=backendStoreInfo;
+    }
+
     @Override
     public void check() throws IllegalArgumentException {
         E.checkArgument(!StringUtils.isEmpty(this.version),
-                        "The version can't be null or empty");
+                "The version can't be null or empty");
         E.checkArgument(this.version.equals(Constants.V2_STRUCT_VERSION),
-                        "The version must be '%s', but got '%s'",
-                        Constants.V2_STRUCT_VERSION, this.version);
+                "The version must be '%s', but got '%s'",
+                Constants.V2_STRUCT_VERSION, this.version);
         E.checkArgument(!CollectionUtils.isEmpty(this.structs),
-                        "The structs can't be null or empty");
+                "The structs can't be null or empty");
         this.structs.forEach(InputStruct::check);
         Set<String> uniqueIds = this.structs.stream().map(InputStruct::id)
-                                            .collect(Collectors.toSet());
+                .collect(Collectors.toSet());
         E.checkArgument(this.structs.size() == uniqueIds.size(),
-                        "The structs cannot contain the same id mapping");
+                "The structs cannot contain the same id mapping");
     }
 
     public List<InputStruct> structs() {
@@ -122,10 +137,10 @@ public class LoadMapping implements Checkable {
                 String json;
                 try {
                     json = FileUtils.readFileToString(failureFile.headerFile,
-                                                      charset);
+                            charset);
                 } catch (IOException e) {
                     throw new LoadException("Failed to read header file %s",
-                                            failureFile.headerFile);
+                            failureFile.headerFile);
                 }
                 List<String> header = JsonUtil.convertList(json, String.class);
                 source.header(header.toArray(new String[] {}));
@@ -143,7 +158,7 @@ public class LoadMapping implements Checkable {
     private Map<String, FailureFile> groupFailureFiles(File pathDir) {
         File[] subFiles = pathDir.listFiles();
         E.checkArgument(subFiles != null && subFiles.length >= 1,
-                        "Every input struct should have a failure data file, " +
+                "Every input struct should have a failure data file, " +
                         "and a header file if need it");
         Map<String, FailureFile> failureFiles = new LinkedHashMap<>();
         for (File subFile : subFiles) {
@@ -157,9 +172,9 @@ public class LoadMapping implements Checkable {
                 failureFile.dataFile = subFile;
             } else {
                 E.checkArgument(Constants.HEADER_SUFFIX.equals(suffix),
-                                "The failure data file must end with %s or %s",
-                                Constants.FAILURE_SUFFIX,
-                                Constants.HEADER_SUFFIX);
+                        "The failure data file must end with %s or %s",
+                        Constants.FAILURE_SUFFIX,
+                        Constants.HEADER_SUFFIX);
                 failureFile.headerFile = subFile;
             }
             failureFiles.put(inputId, failureFile);
@@ -174,7 +189,7 @@ public class LoadMapping implements Checkable {
             }
         }
         throw new IllegalArgumentException(String.format(
-                  "There is no input struct with id '%s'", id));
+                "There is no input struct with id '%s'", id));
     }
 
     private static class FailureFile {

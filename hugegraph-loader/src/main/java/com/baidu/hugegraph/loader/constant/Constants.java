@@ -79,4 +79,8 @@ public final class Constants {
 
     public static final String CDC_DATA = "data";
     public static final String CDC_OP = "op";
+    public static final String HBASE_COL_FAMILY="f";
+    public static final String LOAD_DATA_PARSE_SUFFIX = "parse";
+    public static final String LOAD_DATA_SER_SUFFIX = "ser";
+    public static final String LOAD_DATA_INSERT_SUFFIX = "insert";
 }

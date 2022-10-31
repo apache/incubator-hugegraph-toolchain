@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -37,6 +38,7 @@ import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.google.common.collect.ImmutableList;
+import org.apache.spark.sql.Row;
 
 public class EdgeBuilder extends ElementBuilder<Edge> {
 
@@ -68,7 +70,6 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     public EdgeMapping mapping() {
         return this.mapping;
     }
-
     @Override
     public List<Edge> build(String[] names, Object[] values) {
         if (this.vertexIdsIndex == null ||
@@ -99,6 +100,53 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                             sources.get(i) : sources.get(0);
             Vertex target = i < targets.size() ?
                             targets.get(i) : targets.get(0);
+            Edge edge = new Edge(this.mapping.label());
+            edge.source(source);
+            edge.target(target);
+            // Add properties
+            this.addProperties(edge, kvPairs.properties);
+            this.checkNonNullableKeys(edge);
+            edges.add(edge);
+        }
+        return edges;
+    }
+
+    @Override
+    public List<Edge> build( Row row) {
+        String[] names = row.schema().fieldNames();
+        Object[] values = new Object[row.size()];
+        for (int i = 0; i < row.size(); i++) {
+            values[i] = row.get(i);
+        }
+        if (this.vertexIdsIndex == null ||
+                !Arrays.equals(this.lastNames, names)) {
+            this.vertexIdsIndex = this.extractVertexIdsIndex(names);
+        }
+
+        this.lastNames = names;
+        EdgeKVPairs kvPairs = this.newEdgeKVPairs();
+        kvPairs.source.extractFromEdge(names, values,
+                this.vertexIdsIndex.sourceIndexes);
+        kvPairs.target.extractFromEdge(names, values,
+                this.vertexIdsIndex.targetIndexes);
+        kvPairs.extractProperties(names, values);
+
+        List<Vertex> sources = kvPairs.source.buildVertices(false);
+        List<Vertex> targets = kvPairs.target.buildVertices(false);
+        if (sources.isEmpty() || targets.isEmpty()) {
+            return ImmutableList.of();
+        }
+        E.checkArgument(sources.size() == 1 || targets.size() == 1 ||
+                        sources.size() == targets.size(),
+                "The elements number of source and target must be: " +
+                        "1 to n, n to 1, n to n");
+        int size = Math.max(sources.size(), targets.size());
+        List<Edge> edges = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            Vertex source = i < sources.size() ?
+                    sources.get(i) : sources.get(0);
+            Vertex target = i < targets.size() ?
+                    targets.get(i) : targets.get(0);
             Edge edge = new Edge(this.mapping.label());
             edge.source(source);
             edge.target(target);

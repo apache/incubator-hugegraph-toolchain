@@ -1,0 +1,4 @@
+{"source_name": "marko", "target_id": 1, "date": "2017-12-10", "weight": 0.4}
+{"source_name": "josh", "target_id": 1, "date": "2009-11-11", "weight": 0.4}
+{"source_name": "josh", "target_id": 2, "date": "2017-12-10", "weight": 1.0}
+{"source_name": "peter", "target_id": 1, "date": "2017-03-24", "weight": 0.2}

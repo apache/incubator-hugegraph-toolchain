@@ -54,6 +54,7 @@ import com.baidu.hugegraph.structure.schema.VertexLabel;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.LongEncoding;
 import com.google.common.collect.ImmutableList;
+import org.apache.spark.sql.Row;
 
 public abstract class ElementBuilder<GE extends GraphElement> {
 
@@ -74,6 +75,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     public abstract ElementMapping mapping();
 
     public abstract List<GE> build(String[] names, Object[] values);
+    public abstract List<GE> build( Row row);
 
     public abstract SchemaLabel schemaLabel();
 
