@@ -103,7 +103,7 @@ public class LoadTest {
                           (properties.length & 0x01) == 0);
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < properties.length; i = i + 2) {
-            if (!properties[i].equals(T.id) && !properties[i].equals(T.label)) {
+            if (!properties[i].equals(T.ID) && !properties[i].equals(T.LABEL)) {
                 map.put((String) properties[i], properties[i + 1]);
             }
         }
