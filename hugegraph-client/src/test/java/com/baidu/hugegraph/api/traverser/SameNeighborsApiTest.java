@@ -107,8 +107,7 @@ public class SameNeighborsApiTest extends TraverserApiTest {
 
         Assert.assertTrue(neighbors.containsAll(ImmutableList.of(3, 4)));
 
-        neighbors = sameNeighborsAPI.get(1, 2, Direction.OUT,
-                                         "link", -1, -1);
+        neighbors = sameNeighborsAPI.get(1, 2, Direction.OUT, "link", -1, -1);
         Assert.assertEquals(1, neighbors.size());
 
         Assert.assertTrue(neighbors.contains(3));
