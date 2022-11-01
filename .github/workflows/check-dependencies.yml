@@ -18,6 +18,7 @@ jobs:
       - name: mvn install
         run:
           mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+          mvn install -pl hugegraph-client,hubble-be -am -DskipTests=true
       - name: mvn dependency:copy-dependencies
         run:
           mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=${{ github.workspace }}/current_dependencies
