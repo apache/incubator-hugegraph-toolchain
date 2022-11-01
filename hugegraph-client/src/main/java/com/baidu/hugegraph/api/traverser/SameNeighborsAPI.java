@@ -43,7 +43,7 @@ public class SameNeighborsAPI extends TraversersAPI {
 
     public List<Object> get(Object vertexId, Object otherId,
                             Direction direction, String label,
-                            long degree, long limit) {
+                            long degree, int limit) {
         this.client.checkApiVersion("0.51", "same neighbors");
         String vertex = GraphAPI.formatVertexId(vertexId, false);
         String other = GraphAPI.formatVertexId(otherId, false);

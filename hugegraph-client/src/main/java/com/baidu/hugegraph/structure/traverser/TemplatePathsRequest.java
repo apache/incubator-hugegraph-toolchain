@@ -40,7 +40,7 @@ public class TemplatePathsRequest {
     @JsonProperty("capacity")
     public long capacity = Traverser.DEFAULT_CAPACITY;
     @JsonProperty("limit")
-    public long limit = Traverser.DEFAULT_PATHS_LIMIT;
+    public int limit = Traverser.DEFAULT_PATHS_LIMIT;
     @JsonProperty("with_vertex")
     public boolean withVertex = false;
 
@@ -106,7 +106,7 @@ public class TemplatePathsRequest {
             return this;
         }
 
-        public Builder limit(long limit) {
+        public Builder limit(int limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;

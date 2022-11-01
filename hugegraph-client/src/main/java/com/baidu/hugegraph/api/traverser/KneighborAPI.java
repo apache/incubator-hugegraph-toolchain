@@ -42,7 +42,7 @@ public class KneighborAPI extends TraversersAPI {
     }
 
     public List<Object> get(Object sourceId, Direction direction,
-                            String label, int depth, long degree, long limit) {
+                            String label, int depth, long degree, int limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
 
         checkPositive(depth, "Depth of k-neighbor");

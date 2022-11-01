@@ -22,11 +22,11 @@ package com.baidu.hugegraph.structure.constant;
 public class Traverser {
 
     public static final long DEFAULT_CAPACITY = 10_000_000L;
-    public static final long DEFAULT_LIMIT = 100L;
-    public static final long DEFAULT_ELEMENTS_LIMIT = 10_000_000L;
+    public static final int DEFAULT_LIMIT = 100;
+    public static final int DEFAULT_ELEMENTS_LIMIT = 10_000_000;
     public static final long DEFAULT_MAX_DEGREE = 10_000L;
-    public static final long DEFAULT_CROSSPOINT_LIMIT = 10_000L;
-    public static final long DEFAULT_PATHS_LIMIT = 10L;
+    public static final int DEFAULT_CROSSPOINT_LIMIT = 10_000;
+    public static final int DEFAULT_PATHS_LIMIT = 10;
     public static final long DEFAULT_DEDUP_SIZE = 1_000_000L;
     public static final long DEFAULT_SKIP_DEGREE = 100_000L;
     public static final long DEFAULT_SAMPLE = 100L;
