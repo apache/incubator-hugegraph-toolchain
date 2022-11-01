@@ -16,9 +16,9 @@
     </description>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>23</version>
     </parent>
 
     <licenses>
@@ -31,9 +31,9 @@
 
     <!-- TODO: we need update the url and all package together  -->
     <scm>
-        <url>https://github.com/hugegraph/hugegraph-toolchain</url>
-        <connection>https://github.com/hugegraph/hugegraph-toolchain</connection>
-        <developerConnection>https://github.com/hugegraph/hugegraph-toolchain</developerConnection>
+        <url>https://github.com/apache/hugegraph-toolchain</url>
+        <connection>https://github.com/apache/hugegraph-toolchain</connection>
+        <developerConnection>https://github.com/apache/hugegraph-toolchain</developerConnection>
     </scm>
 
     <modules>
@@ -58,7 +58,7 @@
         <compiler.target>1.8</compiler.target>
         <flink.version>1.13.5</flink.version>
         <flinkcdc.version>2.2.1</flinkcdc.version>
-        <spark.version>3.1.2</spark.version>
+        <spark.version>3.2.2</spark.version>
         <scala.version>2.12</scala.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <docker.build.skip>true</docker.build.skip>

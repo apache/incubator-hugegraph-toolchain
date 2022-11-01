@@ -3,18 +3,19 @@
 set -ev
 
 if [[ $# -ne 1 ]]; then
-    echo "Must pass server version of hugegraph"
-    exit 1
+    echo "Must input an existing commit id of hugegraph server" && exit 1
 fi
 
 VERSION=$1
 HUGEGRAPH_LINK="https://github.com/hugegraph/hugegraph/releases/download/v${VERSION}/hugegraph-${VERSION}.tar.gz"
 
 wget "${HUGEGRAPH_LINK}" || exit 1
-tar -zxvf hugegraph-${VERSION}.tar.gz
+# TODO: lack incubator after apache package release (update it later)
+tar zxvf hugegraph-${VERSION}.tar.gz
 
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
+# TODO: lack incubator after apache package release (update it later)
 cp -r hugegraph-${VERSION}/. ${HTTPS_SERVER_DIR}
 cd hugegraph-${VERSION}
 
