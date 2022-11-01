@@ -20,6 +20,7 @@
 package com.baidu.hugegraph.loader.reader.line;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -36,8 +37,11 @@ public final class Line {
         E.checkArgumentNotNull(rawLine, "The rawLine can't be null");
         E.checkArgumentNotNull(names, "The names can't be null");
         E.checkArgumentNotNull(values, "The values can't be null");
-        E.checkArgument(names.length == values.length,
-                        "The length of names %s should be same as values %s");
+        if (names.length != values.length) {
+            E.checkArgument(names.length == values.length,
+                            "The length of names %s should be same as values %s",
+                            Arrays.toString(names), Arrays.toString(values));
+        }
         this.rawLine = rawLine;
         this.names = names;
         this.values = values;
