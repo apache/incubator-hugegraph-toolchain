@@ -53,7 +53,7 @@ github:
 
 notifications:
   pullrequests_status: dev@hugegraph.apache.org
-  # Note: before use the config, we should ensure the "mail" address has set well (exist)
+  # Note: before use the config, we need ensure the "mail" address has set well (exist)
   #pullrequests_comment: issues@hugegraph.apache.org
   #issues: issues@hugegraph.apache.org
   #discussions:  issues@hugegraph.apache.org
