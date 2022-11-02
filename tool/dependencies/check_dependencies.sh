@@ -21,7 +21,7 @@ basepath=$(cd `dirname $0`; pwd)
 # check whether there are new third-party dependencies by diff command,
 # diff generated 'current-dependencies.txt' file with 'known-dependencies.txt' file.
 diff -w -B -U0 <(sort < ${basepath}/known-dependencies.txt) \
-<(sort < ${basepath}/current-dependencies.txt > ${basepath}/result.txt
+<(sort < ${basepath}/current-dependencies.txt) > ${basepath}/result.txt
 
 # if has new third-party,the Action will fail and print diff
 if [ -s ${basepath}/result.txt ]; then
