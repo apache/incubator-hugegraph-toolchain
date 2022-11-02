@@ -16,23 +16,9 @@ jobs:
           java-version: '8'
           distribution: 'adopt'
       - name: mvn install
-        run:
+        run: |
           mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
           mvn install -pl hugegraph-client -am -DskipTests=true
-      - name: mvn dependency:copy-dependencies
-        run:
-          mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=${{ github.workspace }}/current_dependencies
-      - name: generate current_dependencies.txt
-        run: |
-          ls ${{ github.workspace }}/current_dependencies  |egrep -v "^hugegraph" |sort > ~/current_dependencies.txt
-          cat ~/current_dependencies.txt
       - name: check third dependencies
         run: |
-          #by using commond join ,to check whether there are new third-party dependencies,compared with file(tool/dependencies/known-dependencies.txt) 
-          sort ${{ github.workspace }}/tool/dependencies/known-dependencies.txt > ~/known-dependencies.txt 
-          join -t : -o 1.1 2.1 -a2 ~/known-dependencies.txt ~/current_dependencies.txt > ~/result.txt
-          #print new third-party dependencies name if it exists 
-          awk -F ":" '{if($1=="")print $2" is not in file known-dependencies.txt!"}' ~/result.txt
-          result=`awk -F ":" '{if($1=="")print $2}'  ~/result.txt |wc -l`
-          #if has new third-party,the Action will fail
-          if [[ $result == 0 ]];then echo "All third dependencies is known!" ;else exit 1;fi
+          bash ${{ github.workspace }}/tool/dependencies/check_dependencies.sh
