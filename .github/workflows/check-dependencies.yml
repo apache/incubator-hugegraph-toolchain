@@ -19,6 +19,10 @@ jobs:
         run: |
           mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
           mvn install -pl hugegraph-client -am -DskipTests=true
+      - name: generate current dependencies
+        run: |
+          mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=${{ github.workspace }}/current_dependencies
+          ls ${{ github.workspace }}/current_dependencies  |egrep -v "^hugegraph" |sort > ${{ github.workspace }}/tool/dependencies/current-dependencies.txt
       - name: check third dependencies
         run: |
           bash ${{ github.workspace }}/tool/dependencies/check_dependencies.sh

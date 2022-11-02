@@ -16,17 +16,12 @@
 # limitations under the License.
 #
 
-# check whether there are new third-party dependencies by diff command,
-# diff generated 'known-dependencies.txt' file with 'known-dependencies-old.txt' file.
 basepath=$(cd `dirname $0`; pwd)
-mv ${basepath}/known-dependencies.txt ${basepath}/known-dependencies-old.txt
 
-# generate current dependencies file
-bash ${basepath}/regenerate_known_dependencies.sh
-
-# get new third-party dependencies name if it exists
-diff -w -B -U0 <(sort < ${basepath}/known-dependencies-old.txt) \
-<(sort < ${basepath}/known-dependencies.txt) > ${basepath}/result.txt
+# check whether there are new third-party dependencies by diff command,
+# diff generated 'current-dependencies.txt' file with 'known-dependencies.txt' file.
+diff -w -B -U0 <(sort < ${basepath}/known-dependencies.txt) \
+<(sort < ${basepath}/current-dependencies.txt > ${basepath}/result.txt
 
 # if has new third-party,the Action will fail and print diff
 if [ -s ${basepath}/result.txt ]; then
