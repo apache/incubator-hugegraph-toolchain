@@ -20,6 +20,8 @@
 package com.baidu.hugegraph.serializer.direct;
 
 /**
+ * TODO: review later
+ *
  * In this serializer, we only support normal type now:
  * - number
  * - string
