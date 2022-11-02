@@ -55,7 +55,7 @@ public class KneighborApiTest extends TraverserApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = kneighborAPI.get(markoId, Direction.OUT,
-                                                 null, 2, -1L, -1L);
+                                                 null, 2, -1L, -1);
         Assert.assertEquals(4, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));

@@ -43,7 +43,7 @@ public class KoutAPI extends TraversersAPI {
 
     public List<Object> get(Object sourceId, Direction direction,
                             String label, int depth, boolean nearest,
-                            long degree, long capacity, long limit) {
+                            long degree, long capacity, int limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
 
         checkPositive(depth, "Depth of k-out");

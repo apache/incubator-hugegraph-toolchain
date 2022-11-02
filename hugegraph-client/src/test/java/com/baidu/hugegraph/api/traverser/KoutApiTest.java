@@ -55,7 +55,7 @@ public class KoutApiTest extends TraverserApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = koutAPI.get(markoId, Direction.OUT,
-                                            null, 2, true, -1L, -1L, -1L);
+                                            null, 2, true, -1L, -1L, -1);
         Assert.assertEquals(1, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
     }
@@ -67,7 +67,7 @@ public class KoutApiTest extends TraverserApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = koutAPI.get(markoId, Direction.OUT, null,
-                                            2, false, -1L, -1L, -1L);
+                                            2, false, -1L, -1L, -1);
         Assert.assertEquals(2, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -81,7 +81,7 @@ public class KoutApiTest extends TraverserApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = koutAPI.get(markoId, Direction.BOTH,
-                                            null, 2, true, -1L, -1L, -1L);
+                                            null, 2, true, -1L, -1L, -1);
         Assert.assertEquals(2, vertices.size());
         Assert.assertTrue(vertices.contains(personId + ":peter"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -95,7 +95,7 @@ public class KoutApiTest extends TraverserApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         List<Object> vertices = koutAPI.get(markoId, Direction.BOTH, null,
-                                            2, false, -1L, -1L, -1L);
+                                            2, false, -1L, -1L, -1);
         Assert.assertEquals(4, vertices.size());
         Assert.assertTrue(vertices.contains(personId + ":josh"));
         Assert.assertTrue(vertices.contains(personId + ":peter"));
@@ -109,7 +109,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             koutAPI.get(markoId, Direction.BOTH, null,
-                        2, false, -1L, 1L, 2L);
+                        2, false, -1L, 1L, 2);
         }, e -> {
             String expect = "Capacity can't be less than limit, " +
                             "but got capacity '1' and limit '2'";
@@ -123,7 +123,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             koutAPI.get(markoId, Direction.BOTH, null,
-                    2, false, -1L, 1L, -1L);
+                    2, false, -1L, 1L, -1);
         }, e -> {
             String expect = "Capacity can't be less than limit, " +
                             "but got capacity '1' and limit '-1'";

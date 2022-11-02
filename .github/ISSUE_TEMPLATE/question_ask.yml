@@ -21,7 +21,7 @@ body:
         - gremlin (结果不合预期)
         - rest-api (结果不合预期)
         - logic (逻辑设计问题)
-        - performence (性能问题)
+        - performance (性能问题)
         - dashboard render (前端渲染问题)
         - data inconsistency (数据不一致)
         - configs (配置项 / 文档相关)

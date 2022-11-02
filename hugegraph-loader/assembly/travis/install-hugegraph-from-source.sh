@@ -1,26 +1,42 @@
 #!/bin/bash
-
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 set -ev
 
 if [[ $# -ne 1 ]]; then
-    echo "Must pass commit id of hugegraph repo"
-    exit 1
+    echo "Must input an existing commit id of hugegraph server" && exit 1
 fi
 
 COMMIT_ID=$1
-HUGEGRAPH_GIT_URL="https://github.com/hugegraph/hugegraph.git"
+HUGEGRAPH_GIT_URL="https://github.com/apache/hugegraph.git"
 
 git clone --depth 100 ${HUGEGRAPH_GIT_URL} hugegraph
 cd hugegraph
 git checkout "${COMMIT_ID}"
-mvn package -DskipTests
+mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
+# TODO: lack incubator after apache package release (update it later)
 mv hugegraph-*.tar.gz ../
 cd ../
 rm -rf hugegraph
-tar -zxvf hugegraph-*.tar.gz
+tar zxf hugegraph-*.tar.gz
 
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
+# TODO: lack incubator after apache package release (update it later)
 cp -r hugegraph-*/. ${HTTPS_SERVER_DIR}
 cd "$(find hugegraph-* | head -1)"
 # start HugeGraphServer with http protocol

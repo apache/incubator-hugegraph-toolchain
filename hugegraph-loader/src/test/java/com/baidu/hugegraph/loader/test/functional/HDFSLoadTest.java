@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.loader.HugeGraphLoader;
@@ -31,6 +32,7 @@ import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.testutil.Assert;
 
+@Ignore
 public class HDFSLoadTest extends FileLoadTest {
 
     @Override

@@ -39,7 +39,7 @@ public class KoutRequest {
     @JsonProperty("capacity")
     public long capacity = Traverser.DEFAULT_CAPACITY;
     @JsonProperty("limit")
-    public long limit = Traverser.DEFAULT_LIMIT;
+    public int limit = Traverser.DEFAULT_LIMIT;
     @JsonProperty("with_vertex")
     public boolean withVertex = false;
     @JsonProperty("with_path")
@@ -115,7 +115,7 @@ public class KoutRequest {
             return this;
         }
 
-        public Builder limit(long limit) {
+        public Builder limit(int limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;

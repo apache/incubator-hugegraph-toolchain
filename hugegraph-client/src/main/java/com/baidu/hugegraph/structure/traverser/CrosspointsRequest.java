@@ -39,7 +39,7 @@ public class CrosspointsRequest {
     @JsonProperty("capacity")
     private long capacity;
     @JsonProperty("limit")
-    private long limit;
+    private int limit;
     @JsonProperty("with_path")
     private boolean withPath;
     @JsonProperty("with_vertex")
@@ -95,7 +95,7 @@ public class CrosspointsRequest {
             return this;
         }
 
-        public Builder limit(long limit) {
+        public Builder limit(int limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
