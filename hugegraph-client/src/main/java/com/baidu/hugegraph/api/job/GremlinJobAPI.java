@@ -24,7 +24,7 @@ import java.util.Map;
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 
 public class GremlinJobAPI extends JobAPI {
 

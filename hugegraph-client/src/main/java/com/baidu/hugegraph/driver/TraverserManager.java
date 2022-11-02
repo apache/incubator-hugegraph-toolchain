@@ -72,7 +72,7 @@ import com.baidu.hugegraph.structure.traverser.Ranks;
 import com.baidu.hugegraph.structure.traverser.TemplatePathsRequest;
 import com.baidu.hugegraph.structure.traverser.WeightedPath;
 import com.baidu.hugegraph.structure.traverser.WeightedPaths;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_CAPACITY;
 import static com.baidu.hugegraph.structure.constant.Traverser.DEFAULT_MAX_DEGREE;

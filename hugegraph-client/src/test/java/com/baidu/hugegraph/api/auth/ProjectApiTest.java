@@ -33,7 +33,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.auth.Project;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableSet;
 
 public class ProjectApiTest extends AuthApiTest {

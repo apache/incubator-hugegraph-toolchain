@@ -24,7 +24,7 @@ import java.util.List;
 
 import com.baidu.hugegraph.loader.reader.Readable;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 /**
  * Maybe can be used as base class for JDBC RowFetcher

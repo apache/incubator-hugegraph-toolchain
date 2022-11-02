@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.structure.GraphElement;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public class GraphIterator<T extends GraphElement> implements Iterator<T> {
 

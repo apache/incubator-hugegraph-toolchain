@@ -48,7 +48,7 @@ import com.baidu.hugegraph.structure.auth.Group;
 import com.baidu.hugegraph.structure.auth.Target;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.constant.HugeType;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.baidu.hugegraph.util.JsonUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

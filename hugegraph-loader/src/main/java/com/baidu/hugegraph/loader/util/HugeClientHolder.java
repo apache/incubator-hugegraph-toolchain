@@ -29,8 +29,8 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.util.E;
 
 public final class HugeClientHolder {
 

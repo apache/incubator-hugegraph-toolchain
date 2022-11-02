@@ -33,7 +33,7 @@ import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 import com.google.common.collect.ImmutableList;
 
 public class SingleInsertTask extends InsertTask {

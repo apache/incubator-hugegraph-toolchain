@@ -24,7 +24,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.beust.jcommander.JCommander;
 
 public final class LoadUtil {

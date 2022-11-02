@@ -34,9 +34,9 @@ import com.baidu.hugegraph.loader.source.file.ListFormat;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.InsertionOrderUtil;
-import com.baidu.hugegraph.util.ReflectionUtil;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.InsertionOrderUtil;;
+import org.apache.hugegraph.util.ReflectionUtil;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 

@@ -45,13 +45,13 @@ import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableMap;
 
 public class BaseClientTest {
 
-    protected static final String BASE_URL = "http://127.0.0.1:8080";
+    protected static final String BASE_URL = "http://10.116.3.106:8080";
     protected static final String GRAPH = "hugegraph";
     protected static final String USERNAME = "admin";
     protected static final String PASSWORD = "pa";

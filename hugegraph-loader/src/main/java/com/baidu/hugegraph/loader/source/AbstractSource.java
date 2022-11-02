@@ -26,8 +26,8 @@ import java.util.List;
 
 import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.file.ListFormat;
-import com.baidu.hugegraph.util.CollectionUtil;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class AbstractSource implements InputSource, Serializable {

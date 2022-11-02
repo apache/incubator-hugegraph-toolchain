@@ -27,7 +27,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.reader.jdbc.JDBCUtil;
 import com.baidu.hugegraph.loader.reader.line.Line;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public enum JDBCVendor {
 

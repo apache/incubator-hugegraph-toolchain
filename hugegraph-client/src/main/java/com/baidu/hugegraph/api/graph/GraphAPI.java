@@ -27,7 +27,7 @@ import org.glassfish.jersey.uri.UriComponent.Type;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.baidu.hugegraph.util.JsonUtil;
 
 public abstract class GraphAPI extends API {

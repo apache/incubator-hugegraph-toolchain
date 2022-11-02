@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableSet;
 
 public class MetricsManagerTest extends BaseFuncTest {

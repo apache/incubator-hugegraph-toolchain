@@ -36,7 +36,7 @@ import com.baidu.hugegraph.structure.auth.Target;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.test.util.FileUtil;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

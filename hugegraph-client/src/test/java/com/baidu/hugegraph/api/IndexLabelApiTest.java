@@ -36,10 +36,10 @@ import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.IndexType;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
-import com.baidu.hugegraph.util.DateUtil;
-import com.baidu.hugegraph.util.VersionUtil;
+import org.apache.hugegraph.util.DateUtil;
+import org.apache.hugegraph.util.VersionUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 

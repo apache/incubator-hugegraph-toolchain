@@ -19,7 +19,8 @@
 
 package com.baidu.hugegraph.exception;
 
-import com.baidu.hugegraph.rest.ClientException;
+
+import org.apache.hugegraph.rest.ClientException;
 
 public class InvalidOperationException extends ClientException {
 

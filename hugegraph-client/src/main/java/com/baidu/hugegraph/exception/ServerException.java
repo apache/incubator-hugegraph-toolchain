@@ -21,7 +21,7 @@ package com.baidu.hugegraph.exception;
 
 import java.util.Map;
 
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import jakarta.ws.rs.core.Response;
 
 public class ServerException extends RuntimeException {

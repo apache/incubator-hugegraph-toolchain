@@ -27,7 +27,7 @@ import org.junit.Test;
 
 import com.baidu.hugegraph.cmd.HugeGraphCommand;
 import com.baidu.hugegraph.test.util.FileUtil;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 @Ignore
 public class AuthBackupTest extends AuthTest {

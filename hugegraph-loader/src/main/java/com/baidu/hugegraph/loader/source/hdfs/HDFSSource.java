@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class HDFSSource extends FileSource {

@@ -33,7 +33,7 @@ import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.traverser.PathsRequest;
 import com.baidu.hugegraph.structure.traverser.PathsWithVertices;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableList;
 
 public class PathsApiTest extends TraverserApiTest {

@@ -22,7 +22,7 @@ package com.baidu.hugegraph.loader.struct;
 import java.util.List;
 
 import com.baidu.hugegraph.loader.constant.ElemType;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

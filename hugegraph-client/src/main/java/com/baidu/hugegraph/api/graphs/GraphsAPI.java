@@ -30,7 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.InvalidResponseException;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.constant.GraphReadMode;
 import com.baidu.hugegraph.structure.constant.HugeType;

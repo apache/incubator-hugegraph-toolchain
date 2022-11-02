@@ -28,7 +28,7 @@ import com.baidu.hugegraph.loader.mapping.VertexMapping;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public class VertexBuilder extends ElementBuilder<Vertex> {
 

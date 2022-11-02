@@ -20,16 +20,17 @@
 package com.baidu.hugegraph.client;
 
 import com.baidu.hugegraph.exception.ServerException;
-import com.baidu.hugegraph.rest.AbstractRestClient;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.AbstractRestClient;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.structure.graph.Path;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.VersionUtil;
-import com.baidu.hugegraph.util.VersionUtil.Version;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.VersionUtil;
+import org.apache.hugegraph.util.VersionUtil.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import jakarta.ws.rs.core.Response;
+
 
 public class RestClient extends AbstractRestClient {
 

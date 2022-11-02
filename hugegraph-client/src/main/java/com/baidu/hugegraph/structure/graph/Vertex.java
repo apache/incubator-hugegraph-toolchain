@@ -23,7 +23,7 @@ import java.util.Map;
 
 import com.baidu.hugegraph.exception.InvalidOperationException;
 import com.baidu.hugegraph.structure.GraphElement;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

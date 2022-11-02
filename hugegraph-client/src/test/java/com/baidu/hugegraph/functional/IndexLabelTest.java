@@ -28,8 +28,8 @@ import org.junit.Test;
 
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.util.DateUtil;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
 public class IndexLabelTest extends BaseFuncTest {
