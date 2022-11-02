@@ -31,16 +31,17 @@
                         <configuration>
                             <tasks>
                                 <echo file="${project.basedir}/dist.sh">
-                                    ls ${top.level.dir}/hugegraph-hubble/*
-                                    ls ${top.level.dir}/hugegraph-loader/*
-                                    ls ${top.level.dir}/hugegraph-tools/*
+                                    cd  ${top.level.dir}
+                                    ls ./hugegraph-hubble/*
+                                    ls ./hugegraph-loader/*
+                                    ls ./hugegraph-tools/*
 
                                     tar -zcvf ${top.level.dir}/${final.name}.tar.gz \
-                                    ${top.level.dir}/hugegraph-hubble/hugegraph-hubble \
-                                    ${top.level.dir}/hugegraph-loader/hugegraph-loader-${project.version} \
-                                    ${top.level.dir}/hugegraph-tools/hugegraph-tools-${project.version} || exit 1
+                                    ./hugegraph-hubble/hugegraph-hubble \
+                                    ./hugegraph-loader/hugegraph-loader-${project.version} \
+                                   ./hugegraph-tools/hugegraph-tools-${project.version} || exit 1
 
-                                    md5sum ${top.level.dir}/${final.name}.tar.gz
+                                    md5sum ./${final.name}.tar.gz
                                     echo -n "hugegraph-toolchain tar.gz available at: "
                                     echo "${top.level.dir}/${final.name}.tar.gz"
                                     rm -f ${project.basedir}/dist.sh
