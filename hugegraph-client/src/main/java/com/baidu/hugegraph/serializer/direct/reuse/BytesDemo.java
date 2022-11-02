@@ -30,18 +30,10 @@ import com.baidu.hugegraph.serializer.direct.HBaseSerializer;
 import com.baidu.hugegraph.serializer.direct.RocksDBSerializer;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Table;
-import org.apache.hadoop.hbase.util.Bytes;
 
 /**
  * @author jin
- * This class is a demo for rocksdb put(rowkey, values) which use Client-Side's graph struct
+ * This class is a demo for rocksdb/HBase put(rowkey, values) which use Client-Side's graph struct
  * And we don't need to construct the graph element, just use it and transfer them to bytes array
  * instead of json format
  */
@@ -195,29 +187,7 @@ public class BytesDemo {
 
 
     boolean put (String type, byte[] rowkey, byte[] values) throws IOException {
-        Configuration config = HBaseConfiguration.create();
-        // Our json records sometimes are very big, we have
-        // disable the maxsize check on the keyvalue.
-        config.set("hbase.zookeeper.quorum", "localhost");
-        config.set("hbase.zookeeper.property.clientPort", "2181");
-
-
-        Connection conn = ConnectionFactory.createConnection(config);
-        Table htable = null ;
-        if (type.equals("vertex")) {
-            htable = conn.getTable(TableName.valueOf("hugegraph12p:g_v"));
-        } else if (type.equals("edge")) {
-            htable = conn.getTable(TableName.valueOf("hugegraph12p:g_oe"));
-        }
-
-        Put put = new Put(rowkey);
-        put.addColumn(Bytes.toBytes("f"),
-                Bytes.toBytes(""),
-                values);
-        htable.put(put);
-        htable.close();
-
-
+        // TODO: put to HBase
         return true;
     }
 
