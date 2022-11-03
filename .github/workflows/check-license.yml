@@ -37,9 +37,12 @@ on:
         - pom.xml
 
 jobs:
-  rat:
+  rat-ci:
     name: License
     runs-on: ubuntu-22.04
+    env:
+      TRAVIS_DIR: hugegraph-client/assembly/travis
+      COMMIT_ID: 8abf3d5524de3d3d5a97bbdce460a75652792b0d
     steps:
       - uses: actions/checkout@v3
       - name: Setup JDK 8
