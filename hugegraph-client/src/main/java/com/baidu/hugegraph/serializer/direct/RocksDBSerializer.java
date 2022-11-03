@@ -17,30 +17,16 @@
  * under the License.
  */
 
-package com.baidu.hugegraph.structure.constant;
+package com.baidu.hugegraph.serializer.direct;
 
-public enum Direction {
-
-    OUT(1, "out"),
-
-    IN(2, "in"),
-
-    BOTH(3, "both");
-
-    private byte code;
-    private String name;
-
-    Direction(int code, String name) {
-        assert code < 256;
-        this.code = (byte) code;
-        this.name = name;
-    }
-
-    public byte code() {
-        return this.code;
-    }
-
-    public String string() {
-        return this.name;
-    }
+/**
+ * TODO: review later
+ *
+ * In this serializer, we only support normal type now:
+ * - number
+ * - string
+ * And they will be transferred to bytes directly
+ **/
+public class RocksDBSerializer {
+    //  TODO: Support write RocksDB directly
 }
