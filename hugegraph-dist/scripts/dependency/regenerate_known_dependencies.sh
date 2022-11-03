@@ -24,9 +24,11 @@ if [[ -d $dependencies_path ]];then
   echo "rm -r -f dependencies_path"
   rm -r -f $dependencies_path
 fi
-cd ../../
+cd ../../../
 
-mvn install:install-file -Dfile=./hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+mvn install:install-file \
+-Dfile=$basepath/../../../hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar \
+-DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
 mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$dependencies_path
 
 ls $dependencies_path | egrep -v "^hugegraph|hubble" | sort -n > $basepath/$file_name
