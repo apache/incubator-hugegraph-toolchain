@@ -17,16 +17,16 @@
 #
 
 basepath=$(cd $(dirname $0); pwd)
-dependencies_path=$basepath/all_dependencies
 
-if [[ -d $dependencies_path ]];then
-  echo "rm -r -f dependencies_path"
-  rm -r -f $dependencies_path
+# check whether there are new third-party dependencies by diff command,
+# diff generated 'current-dependencies.txt' file with 'known-dependencies.txt' file.
+diff -w -B -U0 <(sort < ${basepath}/known-dependencies.txt) \
+<(sort < ${basepath}/current-dependencies.txt) > ${basepath}/result.txt
+
+# if has new third-party,the Action will fail and print diff
+if [ -s ${basepath}/result.txt ]; then
+  cat ${basepath}/result.txt
+  exit 1
+else
+  echo 'All third dependencies is known!'
 fi
-cd ../../
-
-mvn install:install-file -Dfile=./hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$dependencies_path
-
-ls $dependencies_path | egrep -v "^hugegraph|hubble" | sort -n > $basepath/known-dependencies.txt
-rm -r -f $dependencies_path

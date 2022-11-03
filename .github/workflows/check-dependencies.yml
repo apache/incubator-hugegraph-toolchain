@@ -21,9 +21,7 @@ jobs:
           mvn install -DskipTests=true
       - name: generate current dependencies
         run: |
-          mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=${{ github.workspace }}/current_dependencies
-          ls ${{ github.workspace }}/current_dependencies  |egrep -v "^hugegraph|hubble" |sort > ${{ github.workspace }}/tool/dependencies/current-dependencies.txt
-          cat ${{ github.workspace }}/tool/dependencies/current-dependencies.txt
+          bash ${{ github.workspace }}/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh current-dependencies.txt
       - name: check third dependencies
         run: |
-          bash ${{ github.workspace }}/tool/dependencies/check_dependencies.sh
+          bash ${{ github.workspace }}/hugegraph-dist/scripts/dependency/check_dependencies.sh
