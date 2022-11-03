@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.functional;
 
+import static com.baidu.hugegraph.testutil.Utils.AssertTime;
+
 import java.util.Date;
 import java.util.List;
 
@@ -59,7 +61,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(100, age.userdata().get("max"));
         String time = (String) age.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         PropertyKey id = schema.propertyKey("id")
                                .userdata("length", 15)
@@ -70,7 +72,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(18, id.userdata().get("length"));
         time = (String) id.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         PropertyKey sex = schema.propertyKey("sex")
                                 .userdata("range",
@@ -81,7 +83,7 @@ public class PropertyKeyTest extends BaseFuncTest {
                             sex.userdata().get("range"));
         time = (String) sex.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
     }
 
     @Test
@@ -94,7 +96,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(0, age.userdata().get("min"));
         String time = (String) age.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         age = schema.propertyKey("age")
                     .userdata("min", 1)
@@ -119,7 +121,7 @@ public class PropertyKeyTest extends BaseFuncTest {
         Assert.assertEquals(100, age.userdata().get("max"));
         String time = (String) age.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         age = schema.propertyKey("age")
                     .userdata("max", "")

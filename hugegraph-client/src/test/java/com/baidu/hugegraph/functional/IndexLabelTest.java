@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.functional;
 
+import static com.baidu.hugegraph.testutil.Utils.AssertTime;
+
 import java.util.Date;
 import java.util.List;
 
@@ -60,7 +62,7 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals("secondary", personByCity.userdata().get("type"));
         String time = (String) personByCity.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         IndexLabel personByAge = schema.indexLabel("personByAge")
                                        .onV("person")
@@ -74,7 +76,7 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals("range", personByAge.userdata().get("type"));
         time = (String) personByAge.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
     }
 
     @Test
@@ -91,7 +93,7 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals(1, personByCity.userdata().size());
         String time = (String) personByCity.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         personByCity = schema.indexLabel("personByCity")
                              .userdata("type", "secondary")
@@ -120,7 +122,7 @@ public class IndexLabelTest extends BaseFuncTest {
         Assert.assertEquals("picture", personByCity.userdata().get("icon"));
         String time = (String) personByCity.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         personByCity = schema.indexLabel("personByCity")
                              .userdata("type", "secondary")

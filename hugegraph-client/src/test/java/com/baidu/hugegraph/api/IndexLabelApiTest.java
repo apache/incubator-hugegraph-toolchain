@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.api;
 
+import static com.baidu.hugegraph.testutil.Utils.AssertTime;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -362,7 +364,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertEquals(100, personByAge.userdata().get("max"));
         String time = (String) personByAge.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         IndexLabel personByCity = schema().indexLabel("personByCity")
                                           .onV("person")
@@ -377,7 +379,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertEquals(18, personByCity.userdata().get("length"));
         time = (String) personByCity.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
 
         IndexLabel bookByName = schema().indexLabel("bookByName")
                                         .onV("book")
@@ -392,7 +394,7 @@ public class IndexLabelApiTest extends BaseApiTest {
                             bookByName.userdata().get("option"));
         time = (String) bookByName.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        AssertTime(createTime);
     }
 
     @Test

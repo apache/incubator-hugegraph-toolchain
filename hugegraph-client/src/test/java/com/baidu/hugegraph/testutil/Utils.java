@@ -318,4 +318,9 @@ public final class Utils {
     public static String formatDate(Date date) {
         return DATE_FORMAT.format(date);
     }
+
+    public static void AssertTime(Date createTime) {
+        Date now = DateUtil.now();
+        Assert.assertTrue(createTime.before(now) || createTime.equals(now));
+    }
 }
