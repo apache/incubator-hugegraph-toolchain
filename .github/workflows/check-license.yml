@@ -19,22 +19,7 @@ name: License check
 
 # This GitHub workflow checks Apache License v2.0 Header is added if needed
 
-on:
-  push:
-    branches:
-      - master
-      - /^release-.*$/
-    paths:
-      - hugegraph-client/**
-      - hugegraph-dist/**
-      - .github/workflows/**
-      - pom.xml
-    pull_request:
-      paths:
-        - hugegraph-client/**
-        - hugegraph-dist/**
-        - .github/workflows/**
-        - pom.xml
+on: [push, pull_request]
 
 jobs:
   rat-ci:
@@ -52,7 +37,7 @@ jobs:
           java-version: 8
           cache: 'maven'
           check-latest: false
-      - run: >-
+      - run: |
           mvn apache-rat:check
       - name: Upload rat report
         if: failure()
