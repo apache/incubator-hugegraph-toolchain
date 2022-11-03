@@ -25,8 +25,7 @@ if [[ -d $dependencies_path ]];then
   rm -r -f $dependencies_path
 fi
 
-cd ../../
-pwd
+cd $basepath/../../../
 
 mvn install:install-file \
 -Dfile=$basepath/../../../hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar \
