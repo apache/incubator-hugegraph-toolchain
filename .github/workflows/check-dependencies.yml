@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       STATIC_DIR: hugegraph-loader/assembly/static
-      SCRIPT_DEPENDENCY: hugegraph-dist/scripts/dependency/
+      SCRIPT_DEPENDENCY: hugegraph-dist/scripts/dependency
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
