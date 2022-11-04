@@ -396,6 +396,7 @@
                         <exclude>scripts/dev/reviewers</exclude>
                         <exclude>**/*.md</exclude>
                         <exclude>**/dependency-reduced-pom.xml</exclude>
+                        <exclude>**/.flattened-pom.xml</exclude>
                         <exclude>**/logs/*.log</exclude>
                         <exclude>**/target/*</exclude>
                         <exclude>style/*</exclude>
