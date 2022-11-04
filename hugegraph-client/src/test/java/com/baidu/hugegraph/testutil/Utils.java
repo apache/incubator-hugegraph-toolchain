@@ -319,7 +319,7 @@ public final class Utils {
         return DATE_FORMAT.format(date);
     }
 
-    public static void AssertTime(Date createTime) {
+    public static void assertBeforeNow(Date createTime) {
         Date now = DateUtil.now();
         Assert.assertTrue(createTime.before(now) || createTime.equals(now));
     }

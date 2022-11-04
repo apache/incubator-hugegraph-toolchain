@@ -19,8 +19,6 @@
 
 package com.baidu.hugegraph.api;
 
-import static com.baidu.hugegraph.testutil.Utils.AssertTime;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -532,7 +530,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
                             father.userdata().get("multiplicity"));
         String time = (String) father.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        AssertTime(createTime);
+        Utils.assertBeforeNow(createTime);
 
         EdgeLabel write = schema().edgeLabel("write")
                                   .link("person", "book")
@@ -547,6 +545,6 @@ public class EdgeLabelApiTest extends BaseApiTest {
                             write.userdata().get("multiplicity"));
         time = (String) write.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        AssertTime(createTime);
+        Utils.assertBeforeNow(createTime);
     }
 }
