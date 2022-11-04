@@ -17,12 +17,12 @@
 #
 
 BASE_PATH=$(cd $(dirname $0); pwd)
-dependencies_path=$BASE_PATH/all_dependencies
-file_name=${1:-known-dependencies.txt}
+DEP_PATH=$BASE_PATH/all_dependencies
+FILE_NAME=${1:-known-dependencies.txt}
 
-if [[ -d $dependencies_path ]];then
-  echo "rm -r -f dependencies_path"
-  rm -r -f $dependencies_path
+if [[ -d $DEP_PATH ]];then
+  echo "rm -r -f DEP_PATH"
+  rm -r -f $DEP_PATH
 fi
 
 cd $BASE_PATH/../../../
@@ -30,7 +30,7 @@ cd $BASE_PATH/../../../
 mvn install:install-file \
 -Dfile=$BASE_PATH/../../../hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar \
 -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
-mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$dependencies_path
+mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$DEP_PATH
 
-ls $dependencies_path | egrep -v "^hugegraph|hubble" | sort -n > $BASE_PATH/$file_name
-rm -r -f $dependencies_path
+ls $DEP_PATH | egrep -v "^hugegraph|hubble" | sort -n > $BASE_PATH/$FILE_NAME
+rm -r -f $DEP_PATH
