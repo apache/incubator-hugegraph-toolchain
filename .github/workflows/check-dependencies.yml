@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       STATIC_DIR: hugegraph-loader/assembly/static
+      SCRIPT_DEPENDENCY: hugegraph-dist/scripts/dependency/
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
@@ -21,7 +22,7 @@ jobs:
           mvn install -DskipTests=true
       - name: generate current dependencies
         run: |
-          bash ${{ github.workspace }}/hugegraph-dist/scripts/dependency/regenerate_known_dependencies.sh current-dependencies.txt
+          bash $SCRIPT_DEPENDENCY/regenerate_known_dependencies.sh current-dependencies.txt
       - name: check third dependencies
         run: |
-          bash ${{ github.workspace }}/hugegraph-dist/scripts/dependency/check_dependencies.sh
+          bash $SCRIPT_DEPENDENCY/check_dependencies.sh

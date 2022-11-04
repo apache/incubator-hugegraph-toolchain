@@ -16,8 +16,8 @@
 # limitations under the License.
 #
 
-basepath=$(cd $(dirname $0); pwd)
-dependencies_path=$basepath/all_dependencies
+BASE_PATH=$(cd $(dirname $0); pwd)
+dependencies_path=$BASE_PATH/all_dependencies
 file_name=${1:-known-dependencies.txt}
 
 if [[ -d $dependencies_path ]];then
@@ -25,12 +25,12 @@ if [[ -d $dependencies_path ]];then
   rm -r -f $dependencies_path
 fi
 
-cd $basepath/../../../
+cd $BASE_PATH/../../../
 
 mvn install:install-file \
--Dfile=$basepath/../../../hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar \
+-Dfile=$BASE_PATH/../../../hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar \
 -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
 mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$dependencies_path
 
-ls $dependencies_path | egrep -v "^hugegraph|hubble" | sort -n > $basepath/$file_name
+ls $dependencies_path | egrep -v "^hugegraph|hubble" | sort -n > $BASE_PATH/$file_name
 rm -r -f $dependencies_path
