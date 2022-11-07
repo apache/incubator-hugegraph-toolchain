@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.cmd.HugeGraphCommand;
@@ -40,6 +41,7 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+@Ignore
 public class AuthRestoreTest extends AuthTest {
 
     private HugeClient client;
