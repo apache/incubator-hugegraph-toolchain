@@ -75,7 +75,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     public abstract ElementMapping mapping();
 
     public abstract List<GE> build(String[] names, Object[] values);
-    public abstract List<GE> build( Row row);
+
+    public abstract List<GE> build(Row row);
 
     public abstract SchemaLabel schemaLabel();
 

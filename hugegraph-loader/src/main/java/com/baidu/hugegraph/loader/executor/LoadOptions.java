@@ -236,8 +236,6 @@ public class LoadOptions implements Serializable {
     @Parameter(names = {"hbaseZKParent"}, arity = 1,
             description = "hbaseZKParent")
     public String hbaseZKParent;
-    
-
 
     public String workModeString() {
         if (this.incrementalMode) {
@@ -249,7 +247,6 @@ public class LoadOptions implements Serializable {
         }
     }
 
-  
     public static LoadOptions parseOptions(String[] args) {
         LoadOptions options = new LoadOptions();
         JCommander commander = JCommander.newBuilder()
@@ -297,13 +294,13 @@ public class LoadOptions implements Serializable {
         return options;
     }
 
-    public void copyBackendStoreInfo(BackendStoreInfo backendStoreInfo){
+    public void copyBackendStoreInfo (BackendStoreInfo backendStoreInfo) {
         E.checkArgument(null != backendStoreInfo,"the backendStoreInfo is null ");
-        this.edgeTablename=backendStoreInfo.getEdgeTablename();
-        this.vertexTablename=backendStoreInfo.getVertexTablename();
-        this.hbaseZKParent=backendStoreInfo.getHbaseZKParent();
-        this.hbaseZKPort=backendStoreInfo.getHbaseZKPort();
-        this.hbaseZKQuorum=backendStoreInfo.getHbaseZKQuorum();
+        this.edgeTablename = backendStoreInfo.getEdgeTablename();
+        this.vertexTablename = backendStoreInfo.getVertexTablename();
+        this.hbaseZKParent = backendStoreInfo.getHbaseZKParent();
+        this.hbaseZKPort = backendStoreInfo.getHbaseZKPort();
+        this.hbaseZKQuorum = backendStoreInfo.getHbaseZKQuorum();
 
     }
 

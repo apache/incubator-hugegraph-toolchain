@@ -178,7 +178,7 @@ public abstract class ElementMapping implements Checkable, Serializable {
     }
 
     public long batchSize() {
-       return this.batchSize;
+        return this.batchSize;
     }
 
     public Set<String> selectedFields() {

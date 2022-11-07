@@ -25,7 +25,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.tool.BulkLoadHFilesTool;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -33,22 +36,26 @@ import org.apache.hadoop.hbase.util.Pair;
 import org.apache.spark.Partitioner;
 import org.slf4j.Logger;
 import scala.Tuple2;
-
+import org.apache.hadoop.hbase.client.HRegionLocator;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.io.IOException;
+import java.util.HashMap;
 import java.io.Serializable;
-import java.util.*;
-
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class SinkToHBase implements Serializable {
+
     private LoadOptions loadOptions;
     public static final Logger LOG = Log.logger(SinkToHBase.class);
 
     public SinkToHBase(LoadOptions loadOptions) {
-        this.loadOptions=loadOptions;
+        this.loadOptions = loadOptions;
     }
 
-
-    public Optional<Configuration> getHBaseConfiguration(){
+    public Optional<Configuration> getHBaseConfiguration() {
         Configuration baseConf = HBaseConfiguration.create();
         baseConf.set("hbase.zookeeper.quorum", this.loadOptions.hbaseZKQuorum);
         baseConf.set("hbase.zookeeper.property.clientPort", this.loadOptions.hbaseZKPort);
@@ -56,9 +63,9 @@ public class SinkToHBase implements Serializable {
         return Optional.ofNullable(baseConf);
     }
 
-    private Optional<Connection> getConnection(){
+    private Optional<Connection> getConnection() {
         Optional<Configuration> baseConf = getHBaseConfiguration();
-        Connection conn=null;
+        Connection conn = null;
         try {
             conn = ConnectionFactory.createConnection(baseConf.get());
         } catch (IOException e) {
@@ -66,15 +73,19 @@ public class SinkToHBase implements Serializable {
         }
         return Optional.ofNullable(conn);
     }
-    public Tuple2<IntPartitioner, TableDescriptor> getPartitionerByTableName (int numPartitions, String tableName) throws IOException {
+
+    public Tuple2<IntPartitioner, TableDescriptor>
+            getPartitionerByTableName (int numPartitions, String tableName) throws IOException {
         Optional<Connection> optionalConnection = getConnection();
         TableDescriptor descriptor = optionalConnection
                 .get()
                 .getTable(TableName.valueOf(tableName))
                 .getDescriptor();
-        LOG.debug("getPartitionerByTableName get TableDescriptor 》》》"+descriptor.getTableName());
+        LOG.debug("getPartitionerByTableName get TableDescriptor " +
+                descriptor.getTableName());
         optionalConnection.get().close();
-        return new Tuple2<IntPartitioner,TableDescriptor>(new IntPartitioner(numPartitions, tableName),descriptor);
+        return new Tuple2<IntPartitioner,TableDescriptor>(
+                new IntPartitioner(numPartitions, tableName),descriptor);
     }
 
     public void loadHfiles (String path, String tableName) throws Exception {
@@ -88,8 +99,6 @@ public class SinkToHBase implements Serializable {
 
     }
 
-
-
     public class IntPartitioner extends Partitioner {
         private final int numPartitions;
         public Map<List<String>, Integer> rangeMap = new HashMap<>();
@@ -101,19 +110,15 @@ public class SinkToHBase implements Serializable {
             this.tableName = tableName;
         }
 
-
         private Map<List<String>, Integer> getRangeMap(String tableName) throws IOException {
             Connection conn = getConnection().get();
-
-            HRegionLocator locator = (HRegionLocator) conn.getRegionLocator(TableName.valueOf(tableName));
-
+            HRegionLocator locator =
+                    (HRegionLocator) conn.getRegionLocator(TableName.valueOf(tableName));
             Pair<byte[][], byte[][]> startEndKeys = locator.getStartEndKeys();
-
             Map<List<String>, Integer> rangeMap = new HashMap<>();
             for (int i = 0; i < startEndKeys.getFirst().length; i++) {
                 String startKey = Bytes.toString(startEndKeys.getFirst()[i]);
                 String endKey = Bytes.toString(startEndKeys.getSecond()[i]);
-
                 rangeMap.put(new ArrayList<>(Arrays.asList(startKey, endKey)), i);
             }
             conn.close();
@@ -138,17 +143,17 @@ public class SinkToHBase implements Serializable {
 
                     String keyString = Bytes.toString(immutableBytesWritableKey.get());
                     for (List<String> range : rangeMap.keySet()) {
-                        if (keyString.compareToIgnoreCase(range.get(0)) >= 0
-                                && ((keyString.compareToIgnoreCase(range.get(1)) < 0)
-                                || range.get(1).equals(""))) {
+                        if (keyString.compareToIgnoreCase(range.get(0)) >= 0 &&
+                                ((keyString.compareToIgnoreCase(range.get(1)) < 0) ||
+                                        range.get(1).equals(""))) {
                             return rangeMap.get(range);
                         }
                     }
                     LOG.error("Didn't find proper key in rangeMap, so returning 0 ...");
                     return 0;
                 } catch (Exception e) {
-                    LOG.error("When trying to get partitionID, "
-                            + "encountered exception: " + e + "\t key = " + key);
+                    LOG.error("When trying to get partitionID, encountered exception: " + e +
+                            "\t key = " + key);
                     return 0;
                 }
             } else {

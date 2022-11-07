@@ -51,6 +51,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     public VertexMapping mapping() {
         return this.mapping;
     }
+
     @Override
     public List<Vertex> build(String[] names, Object[] values) {
         VertexKVPairs kvPairs = this.newKVPairs(this.vertexLabel,

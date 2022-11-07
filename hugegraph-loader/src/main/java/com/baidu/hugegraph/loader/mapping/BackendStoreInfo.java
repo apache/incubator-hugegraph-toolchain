@@ -22,8 +22,8 @@ package com.baidu.hugegraph.loader.mapping;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-@JsonPropertyOrder({"edge_tablename", "vertex_tablename", "hbase_zookeeper_quorum", 
-        "hbase_zookeeper_property_clientPort", "zookeeper_znode_parent"})
+@JsonPropertyOrder({"edge_tablename", "vertex_tablename", "hbase_zookeeper_quorum",
+                       "hbase_zookeeper_property_clientPort", "zookeeper_znode_parent"})
 public class BackendStoreInfo {
     @JsonProperty("edge_tablename")
     private String edgeTablename;
@@ -35,12 +35,6 @@ public class BackendStoreInfo {
     private String hbaseZKPort;
     @JsonProperty("zookeeper_znode_parent")
     private String hbaseZKParent;
-    
-
-    
-
-
-
 
     public String getEdgeTablename() {
         return edgeTablename;

@@ -112,14 +112,14 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     }
     
     @Override
-    public List<Edge> build( Row row) {
+    public List<Edge> build(Row row) {
         String[] names = row.schema().fieldNames();
         Object[] values = new Object[row.size()];
         for (int i = 0; i < row.size(); i++) {
             values[i] = row.get(i);
         }
         if (this.vertexIdsIndex == null ||
-                !Arrays.equals(this.lastNames, names)) {
+            !Arrays.equals(this.lastNames, names)) {
             this.vertexIdsIndex = this.extractVertexIdsIndex(names);
         }
 

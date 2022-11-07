@@ -65,14 +65,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
 import scala.collection.JavaConverters;
-
 
 public class HugeGraphSparkLoader implements Serializable {
 
     public static final Logger LOG = Log.logger(HugeGraphSparkLoader.class);
-
     private final LoadOptions loadOptions;
     private final Map<ElementBuilder, List<GraphElement>> builders;
 
@@ -92,35 +89,32 @@ public class HugeGraphSparkLoader implements Serializable {
         this.builders = new HashMap<>();
     }
 
-
-
-
     public void load() {
 
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         List<InputStruct> structs = mapping.structs();
         boolean sinkType = this.loadOptions.sinkType;
-
-
         SparkConf conf = new SparkConf()
                 .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")// kryo序列化
                 .set("spark.kryo.registrationRequired", "true");
-
         try {
-            conf.registerKryoClasses(
-                    new Class[]{org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
-                            org.apache.hadoop.hbase.KeyValue.class,
-                            org.apache.spark.sql.types.StructType.class,
-                            StructField[].class,
-                            StructField.class,
-                            org.apache.spark.sql.types.LongType$.class,
-                            org.apache.spark.sql.types.Metadata.class,
-                            org.apache.spark.sql.types.StringType$.class,
-                            Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
-                            Class.forName("scala.reflect.ClassTag$$anon$1"),
-                            Class.forName("scala.collection.immutable.Set$EmptySet$"),
-                            Class.forName("org.apache.spark.sql.types.DoubleType$")
+            conf.registerKryoClasses (
+                    new Class[]
+                    {
+                        org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
+                        org.apache.hadoop.hbase.KeyValue.class,
+                        org.apache.spark.sql.types.StructType.class,
+                        StructField[].class,
+                        StructField.class,
+                        org.apache.spark.sql.types.LongType$.class,
+                        org.apache.spark.sql.types.Metadata.class,
+                        org.apache.spark.sql.types.StringType$.class,
+                Class.forName(
+                    "org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
+                Class.forName("scala.reflect.ClassTag$$anon$1"),
+                Class.forName("scala.collection.immutable.Set$EmptySet$"),
+                Class.forName("org.apache.spark.sql.types.DoubleType$")
                     });
         } catch (ClassNotFoundException e) {
             LOG.error("spark kryo serialized registration failed");
@@ -133,12 +127,14 @@ public class HugeGraphSparkLoader implements Serializable {
 
         LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
         for (InputStruct struct : structs) {
-            LOG.info("\n init"+ struct.input().asFileSource().path()+" distribute metrics---- \n");
+            LOG.info("\n init" + struct.input().asFileSource().path() +
+                    " distribute metrics---- \n");
             LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
             loadDistributeMetrics.init(sc);
-            LOG.info("    \n   load dat info: \t"+struct.input().asFileSource().path() +"\n start load data ; \n" );
+            LOG.info("\n   load dat info: \t" + struct.input().asFileSource().path() +
+                    "\n start load data ; \n");
             Dataset<Row> ds = read(session, struct);
-            if(sinkType){
+            if (sinkType) {
                 LOG.info("\n ------ spark api start load data ------ \n");
                 ds.foreachPartition((Iterator<Row> p) -> {
                     LoadContext context = initPartition(this.loadOptions, struct);
@@ -148,32 +144,32 @@ public class HugeGraphSparkLoader implements Serializable {
                     context.close();
                 });
 
-            }else {
+            } else {
                 LOG.info("\n        spark bulkload gen hfile start     \n");
                 // gen-hfile
-                HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions, struct,loadDistributeMetrics);
+                HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions,
+                        struct,loadDistributeMetrics);
                 directLoader.bulkload(ds);
 
             }
             collectLoadMetrics(loadDistributeMetrics,totalInsertSuccess);
-            LOG.info("    \n   load data info : \t"+struct.input().asFileSource().path() +"\n load data finish!!!; \n" );
+            LOG.info("    \n   load data info : \t" + struct.input().asFileSource().path() +
+                    "\n load data finish!!!; \n");
         }
         Long totalInsertSuccessCnt = totalInsertSuccess.value();
         LOG.info("\n ------------The data import task is complete-------------------\n" +
-                "\n  insertSuccess cnt:\t"+totalInsertSuccess+"     \n"+
+                "\n  insertSuccess cnt:\t" + totalInsertSuccess + "     \n" +
                 "\n ---------------------------------------------\n"
         );
-
 
         sc.stop();
         session.close();
         session.stop();
 
-
     }
 
-
-    private void collectLoadMetrics(LoadDistributeMetrics loadMetrics,LongAccumulator totalInsertSuccess){
+    private void collectLoadMetrics (LoadDistributeMetrics loadMetrics,
+                                      LongAccumulator totalInsertSuccess) {
 
         Long edgeInsertSuccess = loadMetrics.readEdgeInsertSuccess();
         Long vertexInsertSuccess = loadMetrics.readVertexInsertSuccess();
@@ -227,18 +223,18 @@ public class HugeGraphSparkLoader implements Serializable {
         switch (input.type()) {
             case FILE:
             case HDFS:
-        FileSource fileSource = input.asFileSource();
+                FileSource fileSource = input.asFileSource();
 
-        String[] header = fileSource.header();
-        String delimiter = fileSource.delimiter();
-        String path = fileSource.path();
-        FileFilter filter = fileSource.filter();
-        FileFormat format = fileSource.format();
-        String dateFormat = fileSource.dateFormat();
-        String timeZone = fileSource.timeZone();
-        SkippedLine skippedLine = fileSource.skippedLine();
-        Compression compression = fileSource.compression();
-        int batchSize = fileSource.batchSize();
+                String[] header = fileSource.header();
+                String delimiter = fileSource.delimiter();
+                String path = fileSource.path();
+                FileFilter filter = fileSource.filter();
+                FileFormat format = fileSource.format();
+                String dateFormat = fileSource.dateFormat();
+                String timeZone = fileSource.timeZone();
+                SkippedLine skippedLine = fileSource.skippedLine();
+                Compression compression = fileSource.compression();
+                int batchSize = fileSource.batchSize();
                 switch (format) {
                     case TEXT:
                         ds = reader.text(path);

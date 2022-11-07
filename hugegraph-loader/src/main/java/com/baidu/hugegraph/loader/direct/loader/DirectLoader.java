@@ -35,29 +35,23 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
-
 public abstract class DirectLoader<T,R> implements Serializable {
-    LoadOptions loadOptions ;
+    LoadOptions loadOptions;
     InputStruct struct;
-
 
     public DirectLoader(LoadOptions loadOptions,
                         InputStruct struct) {
         this.loadOptions = loadOptions;
-        this.struct=struct;
+        this.struct = struct;
     }
 
-
-
-
-    public   final  void bulkload(Dataset<Row> ds){
+    public   final  void bulkload(Dataset<Row> ds) {
         JavaPairRDD<T, R> javaPairRDD = buildVertexAndEdge(ds);
         String path = generateFiles(javaPairRDD);
         loadFiles(path);
-    };
+    }
 
-
-    protected List<ElementBuilder> getElementBuilders(){
+    protected List<ElementBuilder> getElementBuilders() {
         LoadContext context = new LoadContext(loadOptions);
         context.schemaCache().updateAll();
         List<ElementBuilder> buildersForGraphElement = new LinkedList<>();
@@ -73,10 +67,7 @@ public abstract class DirectLoader<T,R> implements Serializable {
         return buildersForGraphElement;
     }
 
-
     abstract JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds);
-
-
 
     abstract String generateFiles(JavaPairRDD<T,  R> buildAndSerRdd);
 

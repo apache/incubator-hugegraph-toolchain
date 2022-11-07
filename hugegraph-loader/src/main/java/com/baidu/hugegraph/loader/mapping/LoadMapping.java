@@ -56,7 +56,6 @@ public class LoadMapping implements Checkable {
     @JsonProperty("backendStoreInfo")
     private BackendStoreInfo backendStoreInfo;
 
-
     public BackendStoreInfo getBackendStoreInfo() {
         return backendStoreInfo;
     }
@@ -89,10 +88,11 @@ public class LoadMapping implements Checkable {
     }
 
     @JsonCreator
-    public LoadMapping(@JsonProperty("structs") List<InputStruct> structs,@JsonProperty("backendStoreInfo") BackendStoreInfo backendStoreInfo) {
+    public LoadMapping(@JsonProperty("structs") List<InputStruct> structs,
+                          @JsonProperty("backendStoreInfo") BackendStoreInfo backendStoreInfo) {
         this.version = Constants.V2_STRUCT_VERSION;
         this.structs = structs;
-        this.backendStoreInfo=backendStoreInfo;
+        this.backendStoreInfo = backendStoreInfo;
     }
 
     @Override
