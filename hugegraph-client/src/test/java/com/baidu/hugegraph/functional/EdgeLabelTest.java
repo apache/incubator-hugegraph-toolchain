@@ -30,6 +30,7 @@ import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.testutil.Assert;
+import com.baidu.hugegraph.testutil.Utils;
 import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
@@ -80,7 +81,7 @@ public class EdgeLabelTest extends BaseFuncTest {
                             father.userdata().get("multiplicity"));
         String time = (String) father.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
 
         EdgeLabel write = schema.edgeLabel("write")
                                 .link("person", "book")
@@ -94,7 +95,7 @@ public class EdgeLabelTest extends BaseFuncTest {
                             write.userdata().get("multiplicity"));
         time = (String) write.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
     }
 
     @Test
@@ -114,7 +115,7 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals(1, father.userdata().size());
         String time = (String) father.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
 
         father = schema.edgeLabel("father")
                        .userdata("multiplicity", "one-to-many")
@@ -141,7 +142,7 @@ public class EdgeLabelTest extends BaseFuncTest {
         Assert.assertEquals("picture2", write.userdata().get("icon"));
         String time = (String) write.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
 
         write = schema.edgeLabel("write")
                       .userdata("icon", "")
