@@ -80,6 +80,7 @@
         <docker.hub>hugegraph</docker.hub>
         <docker.repo>${project.name}</docker.repo>
         <docker.tag>${project.version}</docker.tag>
+        <hbase.version>2.2.3</hbase.version>
     </properties>
 
     <dependencies>
