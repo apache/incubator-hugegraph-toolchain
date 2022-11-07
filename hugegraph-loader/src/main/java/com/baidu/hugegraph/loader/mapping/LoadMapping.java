@@ -65,7 +65,6 @@ public class LoadMapping implements Checkable {
         File file = FileUtils.getFile(filePath);
         LoadMapping mapping;
         try {
-            // 解析struct.json文件，处理输入数据相关信息
             String json = FileUtils.readFileToString(file, Constants.CHARSET);
             mapping = MappingUtil.parse(json);
         } catch (IOException e) {
@@ -76,7 +75,7 @@ public class LoadMapping implements Checkable {
                     e, filePath);
         }
         try {
-//            mapping.check();
+            mapping.check();
         } catch (IllegalArgumentException e) {
             throw new LoadException("Invalid mapping file '%s'", e, filePath);
         }

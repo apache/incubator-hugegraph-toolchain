@@ -46,7 +46,6 @@ public final class SchemaCache {
         this.propertyKeys = new HashMap<>();
         this.vertexLabels = new HashMap<>();
         this.edgeLabels = new HashMap<>();
-        updateAll();
     }
 
     @JsonCreator

@@ -35,17 +35,10 @@ import java.util.Map;
 public final class LoadDistributeMetrics implements Serializable {
 
     private final InputStruct struct;
-    // 分布式写入点边成功导入数量统计
 
     private   Map<String, Metrics> vertexDisMetrics;
     private   Map<String, Metrics> edgeDisMetrics;
-
-//    private   Map<String, LongAccumulator> vertexParseDisMetrics;
-//    private   Map<String, LongAccumulator> edgeParseDisMetrics;
-//    private   Map<String, LongAccumulator> vertexSerDisMetrics;
-//    private   Map<String, LongAccumulator> edgeSerDisMetrics;
-//    private   Map<String, LongAccumulator> vertexInsertDisMetrics;
-//    private   Map<String, LongAccumulator> edgeInsertDisMetrics;
+    
 
 
 
@@ -62,11 +55,7 @@ public final class LoadDistributeMetrics implements Serializable {
         }
     }
 
-
-
-
-
-    //初始化分布式metric
+    
     public void init(SparkContext sc) {
         for (VertexMapping mapping : this.struct.vertices()) {
             Metrics metrics = this.vertexDisMetrics.get(mapping.label());
@@ -148,21 +137,13 @@ public final class LoadDistributeMetrics implements Serializable {
     }
     public static class Metrics implements Serializable {
 
-//        private final LongAccumulator parseSuccess;
-//        private final LongAccumulator parseFailure;
-//        private final LongAccumulator insertSuccess;
-//        private final LongAccumulator insertFailure;
-
         private LongAccumulator parseSuccess;
         private LongAccumulator parseFailure;
         private LongAccumulator insertSuccess;
         private LongAccumulator insertFailure;
 
         public Metrics() {
-//            this.parseSuccess = new LongAdder();
-//            this.parseFailure = new LongAdder();
-//            this.insertSuccess = new LongAdder();
-//            this.insertFailure = new LongAdder();
+
         }
 
         public long parseSuccess() {

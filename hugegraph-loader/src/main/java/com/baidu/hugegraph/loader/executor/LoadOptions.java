@@ -236,9 +236,7 @@ public class LoadOptions implements Serializable {
     @Parameter(names = {"hbaseZKParent"}, arity = 1,
             description = "hbaseZKParent")
     public String hbaseZKParent;
-    @Parameter(names = {"targetHdfsHfilePath"}, arity = 1,
-            description = "target hdfs hfile path,need to execute distcp ")
-    public String targetHdfsHfilePath;
+    
 
 
     public String workModeString() {
@@ -251,19 +249,7 @@ public class LoadOptions implements Serializable {
         }
     }
 
-    /**
-     * --username admin
-     * --token admin
-     * -g hugegraph
-     * -f /home/data/wwwuser/social-graph-struct.json
-     * -s /home/data/wwwuser/hugegraph-loader/hugegraph-loader-1.0.0
-     * /example/social-graph/social-graph-schema.groovy
-     * --batch-size 500
-     * -h 172.19.124.72
-     * -p 8081
-     * @param args
-     * @return
-     */
+  
     public static LoadOptions parseOptions(String[] args) {
         LoadOptions options = new LoadOptions();
         JCommander commander = JCommander.newBuilder()
@@ -318,7 +304,6 @@ public class LoadOptions implements Serializable {
         this.hbaseZKParent=backendStoreInfo.getHbaseZKParent();
         this.hbaseZKPort=backendStoreInfo.getHbaseZKPort();
         this.hbaseZKQuorum=backendStoreInfo.getHbaseZKQuorum();
-        this.targetHdfsHfilePath=backendStoreInfo.getTargetHdfsHfilePath();
 
     }
 

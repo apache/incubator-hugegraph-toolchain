@@ -1,3 +1,22 @@
+/*
+ * Copyright 2017 HugeGraph Authors
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.baidu.hugegraph.loader.direct.loader;
 
 import com.baidu.hugegraph.loader.builder.EdgeBuilder;
@@ -16,12 +35,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * 1.build
- * 2.ser
- * 3.generateFile
- * 4.load
- */
+
 public abstract class DirectLoader<T,R> implements Serializable {
     LoadOptions loadOptions ;
     InputStruct struct;
@@ -36,7 +50,7 @@ public abstract class DirectLoader<T,R> implements Serializable {
 
 
 
-    public void bulkload(Dataset<Row> ds){
+    public   final  void bulkload(Dataset<Row> ds){
         JavaPairRDD<T, R> javaPairRDD = buildVertexAndEdge(ds);
         String path = generateFiles(javaPairRDD);
         loadFiles(path);
@@ -45,6 +59,7 @@ public abstract class DirectLoader<T,R> implements Serializable {
 
     protected List<ElementBuilder> getElementBuilders(){
         LoadContext context = new LoadContext(loadOptions);
+        context.schemaCache().updateAll();
         List<ElementBuilder> buildersForGraphElement = new LinkedList<>();
         for (VertexMapping vertexMapping : struct.vertices()) {
             buildersForGraphElement.add(

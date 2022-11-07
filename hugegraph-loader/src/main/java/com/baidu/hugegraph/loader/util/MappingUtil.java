@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.baidu.hugegraph.loader.executor.LoadOptions;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.loader.constant.Constants;
@@ -46,7 +45,6 @@ import com.baidu.hugegraph.loader.struct.VertexStructV1;
 import com.baidu.hugegraph.util.E;
 import com.baidu.hugegraph.util.InsertionOrderUtil;
 import com.google.common.collect.ImmutableSet;
-import org.apache.commons.lang.StringUtils;
 
 @SuppressWarnings("deprecation")
 public final class MappingUtil {
@@ -65,8 +63,6 @@ public final class MappingUtil {
                                     e, mapping, file);
         }
     }
-
-
 
     public static LoadMapping parse(String json) {
         Map<String, Object> map = JsonUtil.convertMap(json, String.class,

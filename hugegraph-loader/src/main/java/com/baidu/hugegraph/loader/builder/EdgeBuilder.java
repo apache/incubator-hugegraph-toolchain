@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
@@ -70,6 +69,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     public EdgeMapping mapping() {
         return this.mapping;
     }
+    
     @Override
     public List<Edge> build(String[] names, Object[] values) {
         if (this.vertexIdsIndex == null ||
@@ -110,7 +110,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         }
         return edges;
     }
-
+    
     @Override
     public List<Edge> build( Row row) {
         String[] names = row.schema().fieldNames();

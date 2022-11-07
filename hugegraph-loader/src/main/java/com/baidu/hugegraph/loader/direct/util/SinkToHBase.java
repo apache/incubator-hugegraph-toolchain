@@ -1,3 +1,22 @@
+/*
+ * Copyright 2017 HugeGraph Authors
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.baidu.hugegraph.loader.direct.util;
 
 import com.baidu.hugegraph.loader.executor.LoadOptions;
@@ -34,7 +53,6 @@ public class SinkToHBase implements Serializable {
         baseConf.set("hbase.zookeeper.quorum", this.loadOptions.hbaseZKQuorum);
         baseConf.set("hbase.zookeeper.property.clientPort", this.loadOptions.hbaseZKPort);
         baseConf.set("zookeeper.znode.parent", this.loadOptions.hbaseZKParent);
-
         return Optional.ofNullable(baseConf);
     }
 
@@ -49,7 +67,6 @@ public class SinkToHBase implements Serializable {
         return Optional.ofNullable(conn);
     }
     public Tuple2<IntPartitioner, TableDescriptor> getPartitionerByTableName (int numPartitions, String tableName) throws IOException {
-        LOG.debug("getPartitionerByTableName 接收的tablename 》》》"+tableName);
         Optional<Connection> optionalConnection = getConnection();
         TableDescriptor descriptor = optionalConnection
                 .get()
@@ -62,16 +79,9 @@ public class SinkToHBase implements Serializable {
 
     public void loadHfiles (String path, String tableName) throws Exception {
         Connection conn = getConnection().get();
-
         Table table = conn.getTable(TableName.valueOf(tableName));
         Configuration conf = conn.getConfiguration();
-        System.out.println("conf >>"+conf.get("dfs.client.failover.proxy.provider.hwyriskmgtcluster"));
-        System.out.println("conf >>"+conf.get("dfs.ha.namenodes.hwyriskmgtcluster"));
-        System.out.println("conf >>"+conf.get("dfs.namenode.http-address.hwyriskmgtcluster.nn1"));
-        System.out.println("conf >>"+conf.get("dfs.namenode.http-address.hwyriskmgtcluster.nn2"));
         BulkLoadHFilesTool bulkLoadHFilesTool = new BulkLoadHFilesTool(conf);
-
-        //TODO: load HFile to HBase
         bulkLoadHFilesTool.bulkLoad(table.getName(), new Path(path));
         table.close();
         conn.close();
@@ -79,7 +89,7 @@ public class SinkToHBase implements Serializable {
     }
 
 
-    //精髓 repartitionAndSort
+
     public class IntPartitioner extends Partitioner {
         private final int numPartitions;
         public Map<List<String>, Integer> rangeMap = new HashMap<>();
