@@ -37,6 +37,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.driver.HugeClient;
@@ -65,6 +66,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+@Ignore
 public class FileLoadTest extends LoadTest {
 
     private static final Charset GBK = Charset.forName("GBK");

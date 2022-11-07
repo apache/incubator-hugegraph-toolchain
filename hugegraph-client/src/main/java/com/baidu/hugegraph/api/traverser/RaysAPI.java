@@ -41,7 +41,7 @@ public class RaysAPI extends TraversersAPI {
     }
 
     public List<Path> get(Object sourceId, Direction direction, String label,
-                          int depth, long degree, long capacity, long limit) {
+                          int depth, long degree, long capacity, int limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
 
         checkPositive(depth, "Max depth of path");

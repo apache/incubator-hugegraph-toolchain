@@ -82,6 +82,7 @@ output/
 *.tar
 *.tar.gz
 tree.txt
+*.versionsBackup
 
 # eclipse ignore
 .settings/

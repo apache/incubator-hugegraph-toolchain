@@ -52,7 +52,8 @@ public class ServerException extends RuntimeException {
             exception.message =  (String) getByKeys(json, MESSAGE_KEYS);
             exception.cause =  (String) getByKeys(json, CAUSE_KEYS);
             exception.trace = getByKeys(json, TRACE_KEYS);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return exception;
     }

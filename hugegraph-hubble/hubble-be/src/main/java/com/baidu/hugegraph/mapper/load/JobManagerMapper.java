@@ -36,5 +36,5 @@ public interface JobManagerMapper extends BaseMapper<JobManager> {
             "ISNULL(SUM(l.duration),0) as duration " +
             "FROM `load_task` as l LEFT JOIN `file_mapping` as f " +
             "ON l.file_id=f.id WHERE l.job_id = #{job_id}")
-    JobManagerItem computeSizeDuration(@Param("job_id") int job_id);
+    JobManagerItem computeSizeDuration(@Param("job_id") int jobId);
 }

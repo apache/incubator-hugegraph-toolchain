@@ -282,7 +282,7 @@ public final class Utils {
 
     public static Optional<String> getLabelValue(final Object... keyValues) {
         for (int i = 0; i < keyValues.length; i = i + 2) {
-            if (keyValues[i].equals(T.label)) {
+            if (keyValues[i].equals(T.LABEL)) {
                 return Optional.of((String) keyValues[i + 1]);
             }
         }
@@ -317,5 +317,10 @@ public final class Utils {
 
     public static String formatDate(Date date) {
         return DATE_FORMAT.format(date);
+    }
+
+    public static void assertBeforeNow(Date createTime) {
+        Date now = DateUtil.now();
+        Assert.assertTrue(createTime.before(now) || createTime.equals(now));
     }
 }

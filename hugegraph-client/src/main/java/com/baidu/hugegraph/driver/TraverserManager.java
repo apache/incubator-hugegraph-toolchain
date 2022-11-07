@@ -178,7 +178,7 @@ public class TraverserManager {
 
     public List<Object> sameNeighbors(Object vertexId, Object otherId,
                                       Direction direction, String label,
-                                      long degree, long limit) {
+                                      long degree, int limit) {
         return this.sameNeighborsAPI.get(vertexId, otherId, direction,
                                          label, degree, limit);
     }
@@ -272,7 +272,7 @@ public class TraverserManager {
                                                   Direction direction,
                                                   String label, String weight,
                                                   long degree, long skipDegree,
-                                                  long capacity, long limit,
+                                                  long capacity, int limit,
                                                   boolean withVertex) {
         return this.singleSourceShortestPathAPI.get(sourceId, direction, label,
                                                     weight, degree, skipDegree,
@@ -317,21 +317,21 @@ public class TraverserManager {
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
-                            Direction direction, int maxDepth, long limit) {
+                            Direction direction, int maxDepth, int limit) {
         return this.paths(sourceId, targetId, direction, null,
                           maxDepth, limit);
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
                             Direction direction, String label,
-                            int maxDepth, long limit) {
+                            int maxDepth, int limit) {
         return this.paths(sourceId, targetId, direction, label, maxDepth,
                           DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY, limit);
     }
 
     public List<Path> paths(Object sourceId, Object targetId,
                             Direction direction, String label, int maxDepth,
-                            long degree, long capacity, long limit) {
+                            long degree, long capacity, int limit) {
         return this.pathsAPI.get(sourceId, targetId, direction, label,
                                  maxDepth, degree, capacity, limit);
     }
@@ -348,14 +348,14 @@ public class TraverserManager {
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  Direction direction, int maxDepth,
-                                 long limit) {
+                                 int limit) {
         return this.crosspoint(sourceId, targetId, direction, null,
                                maxDepth, limit);
     }
 
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  Direction direction, String label,
-                                 int maxDepth, long limit) {
+                                 int maxDepth, int limit) {
         return this.crosspoint(sourceId, targetId, direction, label, maxDepth,
                                DEFAULT_MAX_DEGREE, DEFAULT_CAPACITY, limit);
     }
@@ -363,7 +363,7 @@ public class TraverserManager {
     public List<Path> crosspoint(Object sourceId, Object targetId,
                                  Direction direction, String label,
                                  int maxDepth, long degree, long capacity,
-                                 long limit) {
+                                 int limit) {
         return this.crosspointsAPI.get(sourceId, targetId, direction, label,
                                        maxDepth, degree, capacity, limit);
     }
@@ -385,7 +385,7 @@ public class TraverserManager {
 
     public List<Object> kout(Object sourceId, Direction direction,
                              String label, int depth, boolean nearest,
-                             long degree, long capacity, long limit) {
+                             long degree, long capacity, int limit) {
         return this.koutAPI.get(sourceId, direction, label, depth, nearest,
                                 degree, capacity, limit);
     }
@@ -411,7 +411,7 @@ public class TraverserManager {
 
     public List<Object> kneighbor(Object sourceId, Direction direction,
                                   String label, int depth,
-                                  long degree, long limit) {
+                                  long degree, int limit) {
         return this.kneighborAPI.get(sourceId, direction, label, depth,
                                      degree, limit);
     }
@@ -432,7 +432,7 @@ public class TraverserManager {
 
     public List<Path> rings(Object sourceId, Direction direction, String label,
                             int depth, boolean sourceInRing, long degree,
-                            long capacity, long limit) {
+                            long capacity, int limit) {
         return this.ringsAPI.get(sourceId, direction, label, depth,
                                  sourceInRing, degree, capacity, limit);
     }
@@ -444,7 +444,7 @@ public class TraverserManager {
     }
 
     public List<Path> rays(Object sourceId, Direction direction, String label,
-                           int depth, long degree, long capacity, long limit) {
+                           int depth, long degree, long capacity, int limit) {
         return this.raysAPI.get(sourceId, direction, label, depth, degree,
                                 capacity, limit);
     }

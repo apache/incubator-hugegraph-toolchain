@@ -1,3 +1,22 @@
+/*
+ * Copyright 2017 HugeGraph Authors
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package com.baidu.hugegraph;
 
 import java.util.ArrayList;
@@ -252,17 +271,17 @@ public class BaseClientTest {
     }
 
     protected static void initVertex() {
-        graph().addVertex(T.label, "person", "name", "marko",
+        graph().addVertex(T.LABEL, "person", "name", "marko",
                           "age", 29, "city", "Beijing");
-        graph().addVertex(T.label, "person", "name", "vadas",
+        graph().addVertex(T.LABEL, "person", "name", "vadas",
                           "age", 27, "city", "Hongkong");
-        graph().addVertex(T.label, "software", "name", "lop",
+        graph().addVertex(T.LABEL, "software", "name", "lop",
                           "lang", "java", "price", 328);
-        graph().addVertex(T.label, "person", "name", "josh",
+        graph().addVertex(T.LABEL, "person", "name", "josh",
                           "age", 32, "city", "Beijing");
-        graph().addVertex(T.label, "software", "name", "ripple",
+        graph().addVertex(T.LABEL, "software", "name", "ripple",
                           "lang", "java", "price", 199);
-        graph().addVertex(T.label, "person", "name", "peter",
+        graph().addVertex(T.LABEL, "person", "name", "peter",
                           "age", 29, "city", "Shanghai");
     }
 

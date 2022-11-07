@@ -39,7 +39,7 @@ public class CustomApplicationRunner implements ApplicationRunner {
     private HugeConfig config;
 
     @Override
-    public void run(ApplicationArguments args) throws Exception{
+    public void run(ApplicationArguments args) throws Exception {
         String serverId = this.config.get(HubbleOptions.SERVER_ID);
         ServerInfo serverInfo = new ServerInfo(serverId);
     }

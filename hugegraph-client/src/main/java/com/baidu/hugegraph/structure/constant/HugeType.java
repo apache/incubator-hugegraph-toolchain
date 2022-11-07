@@ -65,8 +65,8 @@ public enum HugeType {
     // Metrics
     METRICS(240, "metrics");
 
-    private int code;
-    private String name = null;
+    private final int code;
+    private final String name;
 
     HugeType(int code, String name) {
         assert code < 256;

@@ -50,7 +50,7 @@ public class TraversersAPI extends API {
         checkLimit(capacity, "Capacity");
     }
 
-    public static void checkLimit(long limit) {
+    public static void checkLimit(int limit) {
         checkLimit(limit, "Limit");
     }
 

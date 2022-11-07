@@ -267,9 +267,9 @@ public class EdgeApiTest extends BaseApiTest {
               .ifNotExist()
               .create();
 
-        Vertex baby = graph().addVertex(T.label, "person", "name", "Baby",
+        Vertex baby = graph().addVertex(T.LABEL, "person", "name", "Baby",
                                         "age", 3, "city", "Beijing");
-        Vertex java = graph().addVertex(T.label, "book", T.id, "java",
+        Vertex java = graph().addVertex(T.LABEL, "book", T.ID, "java",
                                         "name", "Java in action");
         Edge edge = baby.addEdge("read", java, "place", "library of school",
                                  "date", "2019-12-23 12:00:00");
@@ -339,9 +339,9 @@ public class EdgeApiTest extends BaseApiTest {
               .ifNotExist()
               .create();
 
-        Vertex baby = graph().addVertex(T.label, "person", "name", "Baby",
+        Vertex baby = graph().addVertex(T.LABEL, "person", "name", "Baby",
                                         "age", 3, "city", "Beijing");
-        Vertex java = graph().addVertex(T.label, "book", T.id, "java",
+        Vertex java = graph().addVertex(T.LABEL, "book", T.ID, "java",
                                         "name", "Java in action");
         long date = DateUtil.now().getTime() - 1000L;
         String dateString = Utils.formatDate(new Date(date));

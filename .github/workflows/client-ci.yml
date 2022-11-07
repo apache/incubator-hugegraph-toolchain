@@ -5,17 +5,12 @@ on:
     branches:
       - master
       - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-client/**
       - hugegraph-dist/**
       - .github/workflows/**
       - pom.xml
   pull_request:
-    branches:
-      - master
-      - /^release-.*$/
-      - /^test-.*$/
     paths:
       - hugegraph-client/**
       - hugegraph-dist/**
@@ -27,7 +22,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       TRAVIS_DIR: hugegraph-client/assembly/travis
-      COMMIT_ID: 1d031c5905cbef008dd5fb468576b0e6a9445181
+      COMMIT_ID: 8abf3d5524de3d3d5a97bbdce460a75652792b0d
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +49,7 @@ jobs:
       - name: Compile
         run: |
           cd hugegraph-client && ls *
-          mvn -e compile -Dmaven.javadoc.skip=true | grep -v "Downloading\|Downloaded"
+          mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
         run: |

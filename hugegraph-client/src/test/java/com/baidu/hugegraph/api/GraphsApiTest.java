@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.driver.HugeClient;
@@ -39,6 +40,7 @@ import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.baidu.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableSet;
 
+@Ignore
 public class GraphsApiTest extends BaseApiTest {
 
     private static final String GRAPH2 = "hugegraph2";

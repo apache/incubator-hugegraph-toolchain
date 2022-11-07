@@ -27,8 +27,8 @@ public enum Direction {
 
     BOTH(3, "both");
 
-    private byte code = 0;
-    private String name = null;
+    private byte code;
+    private String name;
 
     Direction(int code, String name) {
         assert code < 256;

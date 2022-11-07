@@ -50,7 +50,7 @@ public class FusiformSimilarityRequest {
     @JsonProperty("capacity")
     public long capacity;
     @JsonProperty("limit")
-    public long limit;
+    public int limit;
     @JsonProperty("with_intermediary")
     public boolean withIntermediary;
     @JsonProperty("with_vertex")
@@ -165,7 +165,7 @@ public class FusiformSimilarityRequest {
             return this;
         }
 
-        public Builder limit(long limit) {
+        public Builder limit(int limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
