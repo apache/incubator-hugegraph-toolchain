@@ -65,11 +65,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
 import scala.collection.JavaConverters;
 
 public class HugeGraphSparkLoader implements Serializable {
 
     public static final Logger LOG = Log.logger(HugeGraphSparkLoader.class);
+
     private final LoadOptions loadOptions;
     private final Map<ElementBuilder, List<GraphElement>> builders;
 
@@ -90,7 +92,6 @@ public class HugeGraphSparkLoader implements Serializable {
     }
 
     public void load() {
-
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         List<InputStruct> structs = mapping.structs();
@@ -120,9 +121,8 @@ public class HugeGraphSparkLoader implements Serializable {
             LOG.error("spark kryo serialized registration failed");
         }
         SparkSession session = SparkSession.builder()
-                .config(conf)
-                .getOrCreate();
-
+                                           .config(conf)
+                                           .getOrCreate();
         SparkContext sc = session.sparkContext();
 
         LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
@@ -182,13 +182,12 @@ public class HugeGraphSparkLoader implements Serializable {
             LoadOptions loadOptions, InputStruct struct) {
         LoadContext context = new LoadContext(loadOptions);
         for (VertexMapping vertexMapping : struct.vertices()) {
-            this.builders.put(
-                    new VertexBuilder(context, struct, vertexMapping),
-                    new ArrayList<>());
+            this.builders.put(new VertexBuilder(context, struct, vertexMapping),
+                              new ArrayList<>());
         }
         for (EdgeMapping edgeMapping : struct.edges()) {
             this.builders.put(new EdgeBuilder(context, struct, edgeMapping),
-                    new ArrayList<>());
+                              new ArrayList<>());
         }
         context.updateSchemaCache();
         return context;
@@ -208,9 +207,8 @@ public class HugeGraphSparkLoader implements Serializable {
             // Insert
             List<GraphElement> graphElements = builderMap.getValue();
             if (graphElements.size() >= elementMapping.batchSize() ||
-                    (!p.hasNext() && graphElements.size() > 0)) {
-                flush(builderMap, context.client().graph(),
-                        this.loadOptions.checkVertex);
+                (!p.hasNext() && graphElements.size() > 0)) {
+                flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
             }
         }
     }
@@ -224,7 +222,6 @@ public class HugeGraphSparkLoader implements Serializable {
             case FILE:
             case HDFS:
                 FileSource fileSource = input.asFileSource();
-
                 String[] header = fileSource.header();
                 String delimiter = fileSource.delimiter();
                 String path = fileSource.path();
@@ -247,7 +244,7 @@ public class HugeGraphSparkLoader implements Serializable {
                         break;
                     default:
                         throw new IllegalStateException(
-                                "Unexpected format value: " + format);
+                                  "Unexpected format value: " + format);
                 }
                 break;
             case JDBC:
@@ -263,7 +260,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 break;
             default:
                 throw new AssertionError(String.format(
-                        "Unsupported input source '%s'", input.type()));
+                          "Unsupported input source '%s'", input.type()));
         }
         return ds;
     }
@@ -299,8 +296,8 @@ public class HugeGraphSparkLoader implements Serializable {
                 break;
             default:
                 throw new AssertionError(String.format(
-                        "Unsupported input source '%s'",
-                        struct.input().type()));
+                          "Unsupported input source '%s'",
+                          struct.input().type()));
         }
         graphElements.addAll(elements);
     }
@@ -324,15 +321,15 @@ public class HugeGraphSparkLoader implements Serializable {
                 BatchVertexRequest.Builder req =
                         new BatchVertexRequest.Builder();
                 req.vertices((List<Vertex>) (Object) graphElements)
-                        .updatingStrategies(updateStrategyMap)
-                        .createIfNotExist(true);
+                    .updatingStrategies(updateStrategyMap)
+                    .createIfNotExist(true);
                 g.updateVertices(req.build());
             } else {
                 BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                 req.edges((List<Edge>) (Object) graphElements)
-                        .updatingStrategies(updateStrategyMap)
-                        .checkVertex(isCheckVertex)
-                        .createIfNotExist(true);
+                   .updatingStrategies(updateStrategyMap)
+                   .checkVertex(isCheckVertex)
+                   .createIfNotExist(true);
                 g.updateEdges(req.build());
             }
         }

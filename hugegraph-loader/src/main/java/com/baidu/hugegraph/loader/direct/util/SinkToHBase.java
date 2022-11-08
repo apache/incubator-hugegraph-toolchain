@@ -164,10 +164,3 @@ public class SinkToHBase implements Serializable {
     }
 
 }
-
-
-
-
-
-
-

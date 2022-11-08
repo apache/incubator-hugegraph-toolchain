@@ -62,9 +62,8 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
     @Override
     public List<Vertex> build(Row row) {
-
         VertexKVPairs kvPairs = this.newKVPairs(this.vertexLabel,
-                this.mapping.unfold());
+                                                this.mapping.unfold());
         String[] names = row.schema().fieldNames();
         Object[] values = new Object[row.size()];
         for (int i = 0; i < row.size(); i++) {
@@ -72,7 +71,6 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
         }
         kvPairs.extractFromVertex(names, values);
         return kvPairs.buildVertices(true);
-
     }
 
     @Override

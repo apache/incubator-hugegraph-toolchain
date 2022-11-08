@@ -68,10 +68,10 @@ public class LoadMapping implements Checkable {
             mapping = MappingUtil.parse(json);
         } catch (IOException e) {
             throw new LoadException("Failed to read mapping mapping file '%s'",
-                    e, filePath);
+                                    e, filePath);
         } catch (IllegalArgumentException e) {
             throw new LoadException("Failed to parse mapping mapping file '%s'",
-                    e, filePath);
+                                    e, filePath);
         }
         try {
             mapping.check();
@@ -106,7 +106,7 @@ public class LoadMapping implements Checkable {
                 "The structs can't be null or empty");
         this.structs.forEach(InputStruct::check);
         Set<String> uniqueIds = this.structs.stream().map(InputStruct::id)
-                .collect(Collectors.toSet());
+                                            .collect(Collectors.toSet());
         E.checkArgument(this.structs.size() == uniqueIds.size(),
                 "The structs cannot contain the same id mapping");
     }
@@ -136,10 +136,10 @@ public class LoadMapping implements Checkable {
                 String json;
                 try {
                     json = FileUtils.readFileToString(failureFile.headerFile,
-                            charset);
+                                                     charset);
                 } catch (IOException e) {
                     throw new LoadException("Failed to read header file %s",
-                            failureFile.headerFile);
+                                            failureFile.headerFile);
                 }
                 List<String> header = JsonUtil.convertList(json, String.class);
                 source.header(header.toArray(new String[] {}));
@@ -172,8 +172,8 @@ public class LoadMapping implements Checkable {
             } else {
                 E.checkArgument(Constants.HEADER_SUFFIX.equals(suffix),
                         "The failure data file must end with %s or %s",
-                        Constants.FAILURE_SUFFIX,
-                        Constants.HEADER_SUFFIX);
+                                Constants.FAILURE_SUFFIX,
+                                Constants.HEADER_SUFFIX);
                 failureFile.headerFile = subFile;
             }
             failureFiles.put(inputId, failureFile);
@@ -188,7 +188,7 @@ public class LoadMapping implements Checkable {
             }
         }
         throw new IllegalArgumentException(String.format(
-                "There is no input struct with id '%s'", id));
+                  "There is no input struct with id '%s'", id));
     }
 
     private static class FailureFile {
