@@ -1,4 +1,4 @@
-# TODO: unify all modules later
+# TODO: this action can't used in apache org, try replace it
 name: release-package
 
 on:

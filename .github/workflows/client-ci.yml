@@ -48,8 +48,7 @@ jobs:
 
       - name: Compile
         run: |
-          cd hugegraph-client && ls *
-          mvn -e compile -Dmaven.javadoc.skip=true -ntp
+          mvn -e compile -pl hugegraph-client -DskipTests -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
         run: |
