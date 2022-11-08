@@ -15,7 +15,7 @@ hugegraph-hubble is a graph management and analysis platform that provides featu
 
 ## Doc
 
-[The hubble homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-hubble.html) contains more information about it.
+[The hubble homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/) contains more information about it.
 
 ## License
 
