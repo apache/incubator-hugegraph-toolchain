@@ -17,7 +17,7 @@ hugegraph-client is a Java-written client of [HugeGraph](https://github.com/huge
 
 ## Doc
 
-The [client homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-client.html) contains more information about it.
+The [client homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-client/) contains more information about it.
 
 ## Licence
 The same as HugeGraph, hugegraph-client is also licensed under Apache 2.0 License.

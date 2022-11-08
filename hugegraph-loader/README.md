@@ -36,7 +36,7 @@ mvn clean install
 
 ## Doc
 
-The [loader homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-loader.html) contains more information about it. 
+The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it. 
 
 ## License
 
