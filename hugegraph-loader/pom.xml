@@ -149,6 +149,10 @@
             <version>${hbase.version}</version>
             <exclusions>
                 <exclusion>
+                    <groupId>com.github.stephenc.findbugs</groupId>
+                    <artifactId>findbugs-annotations</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-server</artifactId>
                 </exclusion>
