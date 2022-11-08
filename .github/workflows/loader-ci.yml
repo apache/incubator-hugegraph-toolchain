@@ -49,7 +49,7 @@ jobs:
 
       - name: Compile
         run: |
-          mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
+          mvn install -pl hugegraph-client,hugegraph-loader -DskipTests -ntp
           ls && cd hugegraph-loader && ls *
           #mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
@@ -61,8 +61,7 @@ jobs:
 
       - name: Run test
         run: |
-          echo "##### Ignore Client Test Now ######"
-          mvn test -P unit,file,hdfs,jdbc -pl hugegraph-client,hugegraph-loader -fn
+          mvn test -P unit,file,hdfs,jdbc -pl hugegraph-loader
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0
