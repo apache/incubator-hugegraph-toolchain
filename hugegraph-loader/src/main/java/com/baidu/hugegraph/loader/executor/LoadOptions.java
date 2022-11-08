@@ -300,7 +300,6 @@ public class LoadOptions implements Serializable {
         this.hbaseZKParent = backendStoreInfo.getHbaseZKParent();
         this.hbaseZKPort = backendStoreInfo.getHbaseZKPort();
         this.hbaseZKQuorum = backendStoreInfo.getHbaseZKQuorum();
-
     }
 
     public static class UrlValidator implements IParameterValidator {
@@ -341,8 +340,8 @@ public class LoadOptions implements Serializable {
             File file = new File(value);
             if (!file.exists() || !file.isDirectory()) {
                 throw new ParameterException(String.format(
-                        "Ensure the directory exists and is indeed a " +
-                                "directory instead of a file: '%s'", value));
+                          "Ensure the directory exists and is indeed a " +
+                          "directory instead of a file: '%s'", value));
             }
         }
     }

@@ -129,15 +129,15 @@ public class HugeGraphSparkLoader implements Serializable {
 
         LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
         for (InputStruct struct : structs) {
-            LOG.info("\n init {} distribute metrics---- \n",
+            LOG.info("\n Initializes the accumulator corresponding to the  {} ",
                     struct.input().asFileSource().path());
             LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
             loadDistributeMetrics.init(sc);
-            LOG.info("\n   load dat info: \t {} \n start load data ; \n",
+            LOG.info("\n   Start to load data, data info is: \t {} ",
                     struct.input().asFileSource().path());
             Dataset<Row> ds = read(session, struct);
             if (sinkType) {
-                LOG.info("\n ------ spark api start load data ------ \n");
+                LOG.info("\n  Start to load data using spark apis  \n");
                 ds.foreachPartition((Iterator<Row> p) -> {
                     LoadContext context = initPartition(this.loadOptions, struct);
                     p.forEachRemaining((Row row) -> {
@@ -147,7 +147,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 });
 
             } else {
-                LOG.info("\n        spark bulkload gen hfile start     \n");
+                LOG.info("\n Start to load data using spark bulkload     \n");
                 // gen-hfile
                 HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions,
                         struct,loadDistributeMetrics);
@@ -155,27 +155,26 @@ public class HugeGraphSparkLoader implements Serializable {
 
             }
             collectLoadMetrics(loadDistributeMetrics,totalInsertSuccess);
-            LOG.info("    \n   load data info : \t" + struct.input().asFileSource().path() +
-                    "\n load data finish!!!; \n");
+            LOG.info("    \n   Finished  load {}  data ",
+                    struct.input().asFileSource().path());
         }
         Long totalInsertSuccessCnt = totalInsertSuccess.value();
-        LOG.info("\n ------------The data import task is complete-------------------\n" +
-                "\n  insertSuccess cnt:\t" + totalInsertSuccess + "     \n" +
+        LOG.info("\n ------------The data load task is complete-------------------\n" +
+                "\n  insertSuccesscnt:\t {}" +
                 "\n ---------------------------------------------\n"
-        );
+                , totalInsertSuccessCnt);
 
         sc.stop();
         session.close();
         session.stop();
     }
 
-    private void collectLoadMetrics (LoadDistributeMetrics loadMetrics,
-                                      LongAccumulator totalInsertSuccess) {
+    private void collectLoadMetrics(LoadDistributeMetrics loadMetrics,
+                                    LongAccumulator totalInsertSuccess) {
         Long edgeInsertSuccess = loadMetrics.readEdgeInsertSuccess();
         Long vertexInsertSuccess = loadMetrics.readVertexInsertSuccess();
         totalInsertSuccess.add(edgeInsertSuccess);
         totalInsertSuccess.add(vertexInsertSuccess);
-
     }
 
     private LoadContext initPartition(

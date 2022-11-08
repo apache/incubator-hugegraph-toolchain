@@ -85,13 +85,13 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
     }
 
     public Integer getTablePartitions () {
-        return   struct.edges().size() > 0 ?
-                                            loadOptions.edgePartitions :
-                                            loadOptions.vertexPartitions;
+        return struct.edges().size() > 0 ?
+               loadOptions.edgePartitions :
+               loadOptions.vertexPartitions;
     }
 
     public JavaPairRDD<ImmutableBytesWritable, KeyValue> buildVertexAndEdge(Dataset<Row> ds) {
-        LOG.info("buildAndSer start execute >>>>");
+        LOG.info("Start build vertexs and edges");
         JavaPairRDD<ImmutableBytesWritable, KeyValue> tuple2KeyValueJavaPairRDD =
                 ds.toJavaRDD().mapPartitionsToPair(
                 new PairFlatMapFunction<Iterator<Row>, ImmutableBytesWritable, KeyValue>() {
@@ -111,7 +111,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                                         buildAndSer(serializer, row,buildersForGraphElement);
                                 result.addAll(serList);
                             }
-                                serializer.close();
+                                      serializer.close();
                                 return result.iterator();
                     }
                 }
@@ -121,7 +121,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
 
     @Override
     String generateFiles(JavaPairRDD<ImmutableBytesWritable, KeyValue> buildAndSerRdd) {
-        LOG.info("bulkload start execute>>>");
+        LOG.info("Start to generate hfile");
         try {
             Tuple2<SinkToHBase.IntPartitioner, TableDescriptor> tuple =
                     sinkToHBase.getPartitionerByTableName(getTablePartitions(), getTableName());
@@ -147,11 +147,9 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
             flushPermission(conf,path);
             return path;
         } catch (IOException e) {
-            LOG.error("generateFiles failed",e);
+            LOG.error("Failed to generate files", e);
         }
-
         return Constants.EMPTY_STR;
-
     }
 
     public String   getHFilePath (Configuration conf) throws IOException {
@@ -160,7 +158,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
         String pathStr = fs.getWorkingDirectory().toString() + "/hfile-gen" + "/" + timeStr + "/";
         Path hfileGenPath = new Path(pathStr);
         if (fs.exists(hfileGenPath)) {
-            LOG.info("\n delete hfile path \n");
+            LOG.info("\n Delete the path where the hfile is generated,path {} ", pathStr);
             fs.delete(hfileGenPath,true);
         }
         return pathStr;
@@ -171,14 +169,14 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
         try {
             sinkToHBase.loadHfiles(path, getTableName());// BulkLoad HFile to HBase
         } catch (Exception e) {
-            LOG.error("hfile failed to be loaded",e);
+            LOG.error(" Failed to load hfiles", e);
         }
     }
 
     private void flushPermission (Configuration conf, String path) {
         FsShell shell = new FsShell(conf);
         try {
-            LOG.info("shell start execute");
+            LOG.info("Chmod hfile directory permission");
             shell.run(new String[]{"-chmod", "-R", "777", path});
             shell.close();
         } catch (Exception e) {
@@ -218,7 +216,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
             boolean isVertex = builder.mapping().type().isVertex();
             if (isVertex) {
                 for (Vertex vertex : (List<Vertex>) (Object) elementsElement) {
-                    LOG.debug("vertex already build done " + vertex.toString());
+                    LOG.debug("vertex already build done {} ", vertex.toString());
                     Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
                             vertexSerialize(serializer,vertex);
                     loadDistributeMetrics.increaseDisVertexInsertSuccess(builder.mapping());
@@ -226,7 +224,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                 }
             } else {
                 for (Edge edge : (List<Edge>) (Object) elementsElement) {
-                    LOG.debug("edge already build done " + edge.toString());
+                    LOG.debug("edge already build done {}", edge.toString());
                     Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
                             edgeSerialize(serializer,edge);
                     loadDistributeMetrics.increaseDisEdgeInsertSuccess(builder.mapping());
@@ -240,7 +238,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
 
     private Tuple2<ImmutableBytesWritable, KeyValue> edgeSerialize (HBaseSerializer serializer,
                                                                     Edge edge) {
-        LOG.debug("edge start serialize " + edge.toString());
+        LOG.debug("edge start serialize {}", edge.toString());
         byte[] rowkey = serializer.getKeyBytes(edge);
         byte[] values = serializer.getValueBytes(edge);
         ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
@@ -254,7 +252,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
 
     private Tuple2<ImmutableBytesWritable, KeyValue> vertexSerialize (HBaseSerializer serializer,
                                                                       Vertex vertex) {
-        LOG.debug("vertex start serialize " + vertex.toString());
+        LOG.debug("vertex start serialize {}", vertex.toString());
         byte[] rowkey = serializer.getKeyBytes(vertex);
         byte[] values = serializer.getValueBytes(vertex);
         ImmutableBytesWritable rowKey = new ImmutableBytesWritable();

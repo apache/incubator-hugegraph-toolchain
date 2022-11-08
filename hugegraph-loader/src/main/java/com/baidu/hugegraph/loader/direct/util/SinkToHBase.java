@@ -96,10 +96,10 @@ public class SinkToHBase implements Serializable {
         bulkLoadHFilesTool.bulkLoad(table.getName(), new Path(path));
         table.close();
         conn.close();
-
     }
 
     public class IntPartitioner extends Partitioner {
+
         private final int numPartitions;
         public Map<List<String>, Integer> rangeMap = new HashMap<>();
         private String tableName;
@@ -162,4 +162,5 @@ public class SinkToHBase implements Serializable {
             }
         }
     }
+
 }

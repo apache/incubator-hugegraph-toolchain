@@ -32,5 +32,3 @@ schema.edgeLabel("created")
       .properties("date", "weight")
       .ifNotExist()
       .create();
-
-

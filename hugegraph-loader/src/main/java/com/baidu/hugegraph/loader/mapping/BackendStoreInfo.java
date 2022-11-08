@@ -23,8 +23,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonPropertyOrder({"edge_tablename", "vertex_tablename", "hbase_zookeeper_quorum",
-                       "hbase_zookeeper_property_clientPort", "zookeeper_znode_parent"})
+                    "hbase_zookeeper_property_clientPort", "zookeeper_znode_parent"})
 public class BackendStoreInfo {
+
     @JsonProperty("edge_tablename")
     private String edgeTablename;
     @JsonProperty("vertex_tablename")
