@@ -27,9 +27,6 @@ fi
 
 cd $BASE_PATH/../../../
 
-mvn install:install-file \
--Dfile=$BASE_PATH/../../../hugegraph-loader/assembly/static/lib/ojdbc8-12.2.0.1.jar \
--DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
 mvn dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=$DEP_PATH
 
 ls $DEP_PATH | egrep -v "^hugegraph|hubble" | sort -n > $BASE_PATH/$FILE_NAME
