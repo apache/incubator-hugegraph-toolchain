@@ -49,7 +49,7 @@ jobs:
           $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
       - name: Run test
         run: |
-          mvn test -Dtest=FuncTestSuite -pl hugegraph-tools
+          mvn test -Dtest=FuncTestSuite -pl hugegraph-tools -ntp
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0
         with:

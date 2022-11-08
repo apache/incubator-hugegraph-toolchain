@@ -83,7 +83,7 @@ jobs:
           $TRAVIS_DIR/install-hugegraph.sh $SERVER_VERSION
 
       - name: Unit test
-        run: cd hugegraph-hubble && mvn test -P unit-test
+        run: mvn test -P unit-test -pl hugegraph-hubble -ntp
 
       - name: API test
         env:

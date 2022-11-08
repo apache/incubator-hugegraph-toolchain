@@ -60,7 +60,7 @@ jobs:
 
       - name: Run test
         run: |
-          mvn test -P unit,file,hdfs,jdbc -pl hugegraph-loader
+          mvn test -P unit,file,hdfs,jdbc -pl hugegraph-loader -ntp
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0

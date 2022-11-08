@@ -56,7 +56,7 @@ jobs:
 
       - name: Run test
         run: |
-          mvn test -Dtest=UnitTestSuite,ApiTestSuite,FuncTestSuite -pl hugegraph-client
+          mvn test -Dtest=UnitTestSuite,ApiTestSuite,FuncTestSuite -pl hugegraph-client -ntp
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0
