@@ -57,7 +57,6 @@ public final class LoadDistributeMetrics implements Serializable {
                     Constants.UNDERLINE_STR + Constants.LOAD_DATA_INSERT_SUFFIX);
             metrics.parseSuccess = sc.longAccumulator(mapping.label() +
                     Constants.UNDERLINE_STR + Constants.LOAD_DATA_PARSE_SUFFIX);
-
         }
         for (EdgeMapping mapping : this.struct.edges()) {
             Metrics metrics = this.edgeDisMetrics.get(mapping.label());
@@ -65,12 +64,10 @@ public final class LoadDistributeMetrics implements Serializable {
                     Constants.UNDERLINE_STR + Constants.LOAD_DATA_INSERT_SUFFIX);
             metrics.parseSuccess = sc.longAccumulator(mapping.label() +
                     Constants.UNDERLINE_STR + Constants.LOAD_DATA_PARSE_SUFFIX);
-
         }
     }
 
     public void increaseDisVertexParseSuccess(ElementMapping mapping) {
-
         this.disMetrics(mapping).parseSuccess.add(1);
     }
 
@@ -87,7 +84,6 @@ public final class LoadDistributeMetrics implements Serializable {
     }
 
     public void increaseDisEdgeParseSuccess(ElementMapping mapping) {
-
         this.disMetrics(mapping).parseSuccess.add(1);
     }
 
@@ -96,7 +92,6 @@ public final class LoadDistributeMetrics implements Serializable {
     }
 
     public void increaseDisEdgeInsertSuccess(ElementMapping mapping) {
-
         this.disMetrics(mapping).insertSuccess.add(1);
     }
 
@@ -138,7 +133,6 @@ public final class LoadDistributeMetrics implements Serializable {
         private LongAccumulator insertFailure;
 
         public Metrics() {
-
         }
 
         public long parseSuccess() {

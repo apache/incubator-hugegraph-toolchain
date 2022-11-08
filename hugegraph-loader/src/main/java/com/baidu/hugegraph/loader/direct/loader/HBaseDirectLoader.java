@@ -94,10 +94,10 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
         LOG.info("buildAndSer start execute >>>>");
         JavaPairRDD<ImmutableBytesWritable, KeyValue> tuple2KeyValueJavaPairRDD =
                 ds.toJavaRDD().mapPartitionsToPair(
-                    new PairFlatMapFunction<Iterator<Row>, ImmutableBytesWritable, KeyValue>() {
-                        @Override
+                new PairFlatMapFunction<Iterator<Row>, ImmutableBytesWritable, KeyValue>() {
+                    @Override
                     public Iterator<Tuple2<ImmutableBytesWritable, KeyValue>> call(
-                            Iterator<Row> rowIterator) throws Exception {
+                           Iterator<Row> rowIterator) throws Exception {
 
                             HBaseSerializer serializer = new HBaseSerializer(
                                     HugeClientHolder.create(loadOptions),
@@ -113,8 +113,8 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                             }
                                 serializer.close();
                                 return result.iterator();
-                            }
-                        }
+                    }
+                }
         );
         return tuple2KeyValueJavaPairRDD;
     }
@@ -143,11 +143,11 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                     HFileOutputFormat2.class,
                     conf
             );
-            LOG.info("Saved to HFiles to: " + path);
+            LOG.info("Saved HFiles to: '{}'", path);
             flushPermission(conf,path);
             return path;
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("generateFiles failed",e);
         }
 
         return Constants.EMPTY_STR;
@@ -171,7 +171,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
         try {
             sinkToHBase.loadHfiles(path, getTableName());// BulkLoad HFile to HBase
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("hfile failed to be loaded",e);
         }
     }
 
@@ -207,9 +207,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
             switch (struct.input().type()) {
                 case FILE:
                 case HDFS:
-
                     elementsElement = builder.build(row);
-
                     break;
                 default:
                     throw new AssertionError(String.format(

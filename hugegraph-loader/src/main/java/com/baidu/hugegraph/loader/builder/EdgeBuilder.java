@@ -69,7 +69,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     public EdgeMapping mapping() {
         return this.mapping;
     }
-    
+
     @Override
     public List<Edge> build(String[] names, Object[] values) {
         if (this.vertexIdsIndex == null ||
@@ -138,15 +138,15 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         }
         E.checkArgument(sources.size() == 1 || targets.size() == 1 ||
                         sources.size() == targets.size(),
-                "The elements number of source and target must be: " +
+                        "The elements number of source and target must be: " +
                         "1 to n, n to 1, n to n");
         int size = Math.max(sources.size(), targets.size());
         List<Edge> edges = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             Vertex source = i < sources.size() ?
-                    sources.get(i) : sources.get(0);
+                            sources.get(i) : sources.get(0);
             Vertex target = i < targets.size() ?
-                    targets.get(i) : targets.get(0);
+                            targets.get(i) : targets.get(0);
             Edge edge = new Edge(this.mapping.label());
             edge.source(source);
             edge.target(target);

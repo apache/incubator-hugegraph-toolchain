@@ -45,7 +45,6 @@ public class LoadOptions implements Serializable {
     public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
 
-
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
             validateWith = {FileValidator.class},
             description = "The path of the data mapping description file")
@@ -368,8 +367,8 @@ public class LoadOptions implements Serializable {
             int retry = Integer.parseInt(value);
             if (retry <= 0) {
                 throw new ParameterException(String.format(
-                        "Parameter '%s' should be positive, but got '%s'",
-                        name, value));
+                          "Parameter '%s' should be positive, but got '%s'",
+                          name, value));
             }
         }
     }

@@ -69,7 +69,7 @@ public class SinkToHBase implements Serializable {
         try {
             conn = ConnectionFactory.createConnection(baseConf.get());
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("get hbase connection failed",e);
         }
         return Optional.ofNullable(conn);
     }
@@ -144,8 +144,8 @@ public class SinkToHBase implements Serializable {
                     String keyString = Bytes.toString(immutableBytesWritableKey.get());
                     for (List<String> range : rangeMap.keySet()) {
                         if (keyString.compareToIgnoreCase(range.get(0)) >= 0 &&
-                                ((keyString.compareToIgnoreCase(range.get(1)) < 0) ||
-                                        range.get(1).equals(""))) {
+                           ((keyString.compareToIgnoreCase(range.get(1)) < 0) ||
+                           range.get(1).equals(""))) {
                             return rangeMap.get(range);
                         }
                     }
@@ -162,5 +162,4 @@ public class SinkToHBase implements Serializable {
             }
         }
     }
-
 }

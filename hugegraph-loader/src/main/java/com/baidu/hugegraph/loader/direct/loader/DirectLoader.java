@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public abstract class DirectLoader<T,R> implements Serializable {
+
     LoadOptions loadOptions;
     InputStruct struct;
 
@@ -45,7 +46,7 @@ public abstract class DirectLoader<T,R> implements Serializable {
         this.struct = struct;
     }
 
-    public   final  void bulkload(Dataset<Row> ds) {
+    public final void bulkload(Dataset<Row> ds) {
         JavaPairRDD<T, R> javaPairRDD = buildVertexAndEdge(ds);
         String path = generateFiles(javaPairRDD);
         loadFiles(path);

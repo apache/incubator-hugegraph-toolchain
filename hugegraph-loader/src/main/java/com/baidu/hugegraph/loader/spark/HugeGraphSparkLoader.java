@@ -102,7 +102,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")// kryo序列化
                 .set("spark.kryo.registrationRequired", "true");
         try {
-            conf.registerKryoClasses (
+            conf.registerKryoClasses(
                     new Class[]
                     {
                         org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
@@ -129,12 +129,12 @@ public class HugeGraphSparkLoader implements Serializable {
 
         LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
         for (InputStruct struct : structs) {
-            LOG.info("\n init" + struct.input().asFileSource().path() +
-                    " distribute metrics---- \n");
+            LOG.info("\n init {} distribute metrics---- \n",
+                    struct.input().asFileSource().path());
             LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
             loadDistributeMetrics.init(sc);
-            LOG.info("\n   load dat info: \t" + struct.input().asFileSource().path() +
-                    "\n start load data ; \n");
+            LOG.info("\n   load dat info: \t {} \n start load data ; \n",
+                    struct.input().asFileSource().path());
             Dataset<Row> ds = read(session, struct);
             if (sinkType) {
                 LOG.info("\n ------ spark api start load data ------ \n");
@@ -167,12 +167,10 @@ public class HugeGraphSparkLoader implements Serializable {
         sc.stop();
         session.close();
         session.stop();
-
     }
 
     private void collectLoadMetrics (LoadDistributeMetrics loadMetrics,
                                       LongAccumulator totalInsertSuccess) {
-
         Long edgeInsertSuccess = loadMetrics.readEdgeInsertSuccess();
         Long vertexInsertSuccess = loadMetrics.readVertexInsertSuccess();
         totalInsertSuccess.add(edgeInsertSuccess);

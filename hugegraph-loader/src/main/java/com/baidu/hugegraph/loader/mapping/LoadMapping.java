@@ -108,7 +108,7 @@ public class LoadMapping implements Checkable {
         Set<String> uniqueIds = this.structs.stream().map(InputStruct::id)
                                             .collect(Collectors.toSet());
         E.checkArgument(this.structs.size() == uniqueIds.size(),
-                "The structs cannot contain the same id mapping");
+                        "The structs cannot contain the same id mapping");
     }
 
     public List<InputStruct> structs() {
@@ -136,7 +136,7 @@ public class LoadMapping implements Checkable {
                 String json;
                 try {
                     json = FileUtils.readFileToString(failureFile.headerFile,
-                                                     charset);
+                                                      charset);
                 } catch (IOException e) {
                     throw new LoadException("Failed to read header file %s",
                                             failureFile.headerFile);
@@ -157,7 +157,7 @@ public class LoadMapping implements Checkable {
     private Map<String, FailureFile> groupFailureFiles(File pathDir) {
         File[] subFiles = pathDir.listFiles();
         E.checkArgument(subFiles != null && subFiles.length >= 1,
-                "Every input struct should have a failure data file, " +
+                        "Every input struct should have a failure data file, " +
                         "and a header file if need it");
         Map<String, FailureFile> failureFiles = new LinkedHashMap<>();
         for (File subFile : subFiles) {
@@ -171,7 +171,7 @@ public class LoadMapping implements Checkable {
                 failureFile.dataFile = subFile;
             } else {
                 E.checkArgument(Constants.HEADER_SUFFIX.equals(suffix),
-                        "The failure data file must end with %s or %s",
+                                "The failure data file must end with %s or %s",
                                 Constants.FAILURE_SUFFIX,
                                 Constants.HEADER_SUFFIX);
                 failureFile.headerFile = subFile;
