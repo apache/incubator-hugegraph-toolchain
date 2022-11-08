@@ -93,9 +93,11 @@ public class HugeGraphSparkLoader implements Serializable {
 
     public void load() {
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
-        this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         List<InputStruct> structs = mapping.structs();
         boolean sinkType = this.loadOptions.sinkType;
+        if(!sinkType){
+            this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
+        }
         SparkConf conf = new SparkConf()
                 .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")// kryo序列化
                 .set("spark.kryo.registrationRequired", "true");
@@ -321,8 +323,8 @@ public class HugeGraphSparkLoader implements Serializable {
                 BatchVertexRequest.Builder req =
                         new BatchVertexRequest.Builder();
                 req.vertices((List<Vertex>) (Object) graphElements)
-                    .updatingStrategies(updateStrategyMap)
-                    .createIfNotExist(true);
+                   .updatingStrategies(updateStrategyMap)
+                   .createIfNotExist(true);
                 g.updateVertices(req.build());
             } else {
                 BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();

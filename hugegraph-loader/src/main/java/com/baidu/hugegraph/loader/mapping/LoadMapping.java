@@ -98,12 +98,12 @@ public class LoadMapping implements Checkable {
     @Override
     public void check() throws IllegalArgumentException {
         E.checkArgument(!StringUtils.isEmpty(this.version),
-                "The version can't be null or empty");
+                        "The version can't be null or empty");
         E.checkArgument(this.version.equals(Constants.V2_STRUCT_VERSION),
-                "The version must be '%s', but got '%s'",
-                Constants.V2_STRUCT_VERSION, this.version);
+                        "The version must be '%s', but got '%s'",
+                        Constants.V2_STRUCT_VERSION, this.version);
         E.checkArgument(!CollectionUtils.isEmpty(this.structs),
-                "The structs can't be null or empty");
+                        "The structs can't be null or empty");
         this.structs.forEach(InputStruct::check);
         Set<String> uniqueIds = this.structs.stream().map(InputStruct::id)
                                             .collect(Collectors.toSet());
