@@ -242,7 +242,10 @@
                     <artifactId>jersey-server</artifactId>
                     <groupId>org.glassfish.jersey.core</groupId>
                 </exclusion>
-
+                <exclusion>
+                    <groupId>com.lmax</groupId>
+                    <artifactId>disruptor</artifactId>
+                </exclusion>
 
             </exclusions>
         </dependency>
@@ -382,6 +385,10 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-distcp</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-yarn-registry</artifactId>
                 </exclusion>
                 <exclusion>
@@ -399,6 +406,14 @@
                 <exclusion>
                     <groupId>org.apache.calcite</groupId>
                     <artifactId>calcite-druid</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jamon</groupId>
+                    <artifactId>jamon-runtime</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.glassfish</groupId>
+                    <artifactId>javax.el</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.codehaus.groovy</groupId>
@@ -439,6 +454,14 @@
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-hdfs</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
