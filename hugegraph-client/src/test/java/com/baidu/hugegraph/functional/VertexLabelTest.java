@@ -57,7 +57,7 @@ public class VertexLabelTest extends BaseFuncTest {
         Assert.assertEquals("person", player.userdata().get("super_vl"));
         String time = (String) player.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
 
         VertexLabel runner = schema.vertexLabel("runner")
                                    .properties("name")
@@ -69,7 +69,7 @@ public class VertexLabelTest extends BaseFuncTest {
         Assert.assertEquals("player", runner.userdata().get("super_vl"));
         time = (String) runner.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class VertexLabelTest extends BaseFuncTest {
         } catch (InterruptedException e) {
             Assert.fail(e.getMessage());
         }
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
 
         player = schema.vertexLabel("player")
                        .userdata("super_vl", "person")
@@ -112,7 +112,7 @@ public class VertexLabelTest extends BaseFuncTest {
         Assert.assertEquals("picture1", player.userdata().get("icon"));
         String time = (String) player.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
 
         player = schema.vertexLabel("player")
                        .userdata("icon", "")

@@ -481,7 +481,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", player.userdata().get("super_vl"));
         String time = (String) player.userdata().get("~create_time");
         Date createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
 
         VertexLabel runner = schema().vertexLabel("runner")
                                      .properties("name")
@@ -494,6 +494,6 @@ public class VertexLabelApiTest extends BaseApiTest {
         Assert.assertEquals("player", runner.userdata().get("super_vl"));
         time = (String) runner.userdata().get("~create_time");
         createTime = DateUtil.parse(time);
-        Assert.assertTrue(createTime.before(DateUtil.now()));
+        Utils.assertBeforeNow(createTime);
     }
 }

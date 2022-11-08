@@ -38,6 +38,7 @@ public class Vertex extends GraphElement {
         this.type = "vertex";
     }
 
+    @Override
     public Object id() {
         return this.id;
     }

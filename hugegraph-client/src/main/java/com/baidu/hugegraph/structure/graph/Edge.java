@@ -56,6 +56,7 @@ public class Edge extends GraphElement {
         this.name = null;
     }
 
+    @Override
     public String id() {
         return this.id;
     }
