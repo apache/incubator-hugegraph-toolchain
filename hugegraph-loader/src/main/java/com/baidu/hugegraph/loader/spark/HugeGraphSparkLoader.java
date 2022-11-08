@@ -44,7 +44,7 @@ import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;

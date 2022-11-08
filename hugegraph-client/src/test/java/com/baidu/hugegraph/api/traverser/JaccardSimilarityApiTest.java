@@ -31,7 +31,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
 
 
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableSet;
 
 public class JaccardSimilarityApiTest extends TraverserApiTest {

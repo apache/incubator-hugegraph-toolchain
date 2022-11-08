@@ -19,17 +19,17 @@
 
 package com.baidu.hugegraph.options;
 
-import static com.baidu.hugegraph.config.OptionChecker.allowValues;
-import static com.baidu.hugegraph.config.OptionChecker.disallowEmpty;
-import static com.baidu.hugegraph.config.OptionChecker.positiveInt;
-import static com.baidu.hugegraph.config.OptionChecker.rangeInt;
+import static org.apache.hugegraph.config.OptionChecker.allowValues;
+import static org.apache.hugegraph.config.OptionChecker.disallowEmpty;
+import static org.apache.hugegraph.config.OptionChecker.positiveInt;
+import static org.apache.hugegraph.config.OptionChecker.rangeInt;
 
 import org.springframework.util.CollectionUtils;
 
-import com.baidu.hugegraph.config.ConfigListOption;
-import com.baidu.hugegraph.config.ConfigOption;
-import com.baidu.hugegraph.config.OptionHolder;
-import com.baidu.hugegraph.util.Bytes;
+import org.apache.hugegraph.config.ConfigListOption;
+import org.apache.hugegraph.config.ConfigOption;
+import org.apache.hugegraph.config.OptionHolder;
+import org.apache.hugegraph.util.Bytes;
 import com.baidu.hugegraph.util.HubbleUtil;
 
 public class HubbleOptions extends OptionHolder {

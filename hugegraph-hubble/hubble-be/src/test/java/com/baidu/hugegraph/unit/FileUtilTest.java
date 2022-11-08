@@ -21,7 +21,7 @@ package com.baidu.hugegraph.unit;
 
 import org.junit.Test;
 
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.util.FileUtil;
 
 public class FileUtilTest {

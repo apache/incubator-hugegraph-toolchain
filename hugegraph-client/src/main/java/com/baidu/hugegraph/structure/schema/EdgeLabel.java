@@ -26,8 +26,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.Frequency;
 import com.baidu.hugegraph.structure.constant.HugeType;
-import com.baidu.hugegraph.util.CollectionUtil;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

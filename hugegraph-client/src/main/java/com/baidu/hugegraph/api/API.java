@@ -20,7 +20,7 @@
 package com.baidu.hugegraph.api;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public abstract class API {
 

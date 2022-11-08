@@ -46,7 +46,7 @@ import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.constant.GraphMode;
 import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.baidu.hugegraph.util.ToolUtil;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;

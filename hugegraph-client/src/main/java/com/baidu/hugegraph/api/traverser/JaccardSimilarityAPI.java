@@ -24,12 +24,12 @@ import java.util.Map;
 
 import com.baidu.hugegraph.api.graph.GraphAPI;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.Direction;
 import com.baidu.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
 
 
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public class JaccardSimilarityAPI extends TraversersAPI {
 

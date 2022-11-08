@@ -22,7 +22,7 @@ package com.baidu.hugegraph.base;
 import java.io.IOException;
 import java.util.List;
 
-import com.baidu.hugegraph.rest.SerializeException;
+import org.apache.hugegraph.rest.SerializeException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

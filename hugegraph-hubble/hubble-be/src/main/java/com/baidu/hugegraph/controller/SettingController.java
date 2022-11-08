@@ -34,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.baidu.hugegraph.common.Constant;
 import com.baidu.hugegraph.entity.UserInfo;
 import com.baidu.hugegraph.service.UserInfoService;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 @RestController
 @RequestMapping(Constant.API_VERSION + "setting")

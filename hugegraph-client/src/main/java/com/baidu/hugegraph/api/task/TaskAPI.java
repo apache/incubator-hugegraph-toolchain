@@ -25,11 +25,11 @@ import java.util.Map;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.constant.HugeType;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.baidu.hugegraph.util.TaskCache;
 import com.google.common.collect.ImmutableMap;
 

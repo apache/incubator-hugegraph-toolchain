@@ -52,7 +52,7 @@ import com.baidu.hugegraph.loader.task.TaskManager;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 
 public final class HugeGraphLoader {
 

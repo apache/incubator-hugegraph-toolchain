@@ -42,6 +42,7 @@ jobs:
           fetch-depth: 2
       - name: Compile
         run: |
+          mvn install -pl hugegraph-client,hugegraph-tools -am -DskipTests -ntp
           cd hugegraph-tools && ls *
           mvn -e compile -Dmaven.javadoc.skip=true -ntp
       - name: Prepare env and service

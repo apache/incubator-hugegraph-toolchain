@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.structure.Task;
+import org.apache.hugegraph.util.ExecutorUtil;
 
 public class TaskCache {
 

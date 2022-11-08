@@ -42,8 +42,8 @@ import com.baidu.hugegraph.loader.struct.EdgeStructV1;
 import com.baidu.hugegraph.loader.struct.ElementStructV1;
 import com.baidu.hugegraph.loader.struct.GraphStructV1;
 import com.baidu.hugegraph.loader.struct.VertexStructV1;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.InsertionOrderUtil;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.InsertionOrderUtil;;
 import com.google.common.collect.ImmutableSet;
 
 @SuppressWarnings("deprecation")

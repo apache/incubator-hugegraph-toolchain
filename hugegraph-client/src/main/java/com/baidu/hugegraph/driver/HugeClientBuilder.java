@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.driver;
 
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public class HugeClientBuilder {
 

@@ -40,8 +40,8 @@ import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.Log;
 
 public final class ParseTaskBuilder {
 

@@ -37,8 +37,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.baidu.hugegraph.exception.ToolsException;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.util.E;
 
 public class HdfsDirectory extends Directory {
 

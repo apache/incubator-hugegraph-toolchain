@@ -29,8 +29,8 @@ import org.junit.Test;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.auth.User.UserRole;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.testutil.Whitebox;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Whitebox;
 
 public class UserApiTest extends AuthApiTest {
 

@@ -22,8 +22,8 @@ package com.baidu.hugegraph.driver;
 import java.io.Closeable;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.util.VersionUtil;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.util.VersionUtil;
 import com.baidu.hugegraph.version.ClientVersion;
 import jakarta.ws.rs.ProcessingException;
 

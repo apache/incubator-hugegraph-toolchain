@@ -19,18 +19,16 @@
 
 package com.baidu.hugegraph.loader.test.unit;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.test.functional.LoadTest;
 import com.baidu.hugegraph.loader.util.JsonUtil;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class LoadProgressTest extends LoadTest {
 
     @Test
-    @Ignore
     public void testTotalLoaded() {
         String json = "{" +
                 "\"vertex_propgress\": 16," +
