@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.baidu.hugegraph.common.Constant;
-import com.baidu.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.entity.enums.LoadStatus;
 import com.baidu.hugegraph.entity.load.EdgeMapping;

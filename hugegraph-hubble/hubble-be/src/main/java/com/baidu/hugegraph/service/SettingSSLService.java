@@ -21,7 +21,7 @@ package com.baidu.hugegraph.service;
 
 import org.springframework.stereotype.Service;
 
-import com.baidu.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.options.HubbleOptions;
 
