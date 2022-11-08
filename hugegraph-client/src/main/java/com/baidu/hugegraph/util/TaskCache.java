@@ -37,7 +37,7 @@ public class TaskCache {
     private Map<TaskAPI, Map<Long, Task>> taskTable;
     private ScheduledExecutorService service;
 
-    private static TaskCache INSTANCE = new TaskCache();
+    private static final TaskCache INSTANCE = new TaskCache();
 
     private TaskCache() {
         this.taskTable = new ConcurrentHashMap<>();
@@ -111,5 +111,5 @@ public class TaskCache {
                 targets.put(task.id(), task);
             }
         }
-    };
+    }
 }

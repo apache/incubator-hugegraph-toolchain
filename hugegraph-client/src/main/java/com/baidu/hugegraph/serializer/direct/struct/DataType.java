@@ -195,7 +195,6 @@ public enum DataType {
         return null;
     }
 
-
     public static DataType fromClass(Class<?> clazz) {
         for (DataType type : DataType.values()) {
             if (type.clazz() == clazz) {

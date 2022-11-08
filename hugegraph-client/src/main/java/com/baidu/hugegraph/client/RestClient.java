@@ -31,7 +31,6 @@ import org.apache.hugegraph.util.VersionUtil.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import jakarta.ws.rs.core.Response;
 
-
 public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;

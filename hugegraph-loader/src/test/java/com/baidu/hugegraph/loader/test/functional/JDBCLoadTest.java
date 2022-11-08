@@ -30,6 +30,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
+
 import org.apache.hugegraph.testutil.Assert;
 
 /**

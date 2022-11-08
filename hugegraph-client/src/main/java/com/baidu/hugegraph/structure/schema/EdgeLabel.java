@@ -26,8 +26,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.constant.Frequency;
 import com.baidu.hugegraph.structure.constant.HugeType;
+
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -234,7 +236,6 @@ public class EdgeLabel extends SchemaLabel {
             this.edgeLabel.frequency = Frequency.MULTIPLE;
             return this;
         }
-
 
         @Override
         public Builder ttl(long ttl) {
