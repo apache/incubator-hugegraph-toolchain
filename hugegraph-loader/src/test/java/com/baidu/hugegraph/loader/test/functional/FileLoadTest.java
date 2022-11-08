@@ -2064,6 +2064,7 @@ public class FileLoadTest extends LoadTest {
         File failureDataDir = FileUtils.getFile(structPath(
                 "incremental_mode_and_load_failure/struct/failure-data/"));
         File[] files = failureDataDir.listFiles();
+        assert files != null;
         Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(2, files.length);
@@ -2123,6 +2124,7 @@ public class FileLoadTest extends LoadTest {
 
         Thread.sleep(1000);
         files = failureDataDir.listFiles();
+        assert files != null;
         Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(4, files.length);
@@ -2266,6 +2268,7 @@ public class FileLoadTest extends LoadTest {
         File failureDir = FileUtils.getFile(structPath(
                           "reload_json_failure_files/struct/failure-data/"));
         File[] files = failureDir.listFiles();
+        assert files != null;
         Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.length);

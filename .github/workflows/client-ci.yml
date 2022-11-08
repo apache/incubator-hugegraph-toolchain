@@ -48,7 +48,7 @@ jobs:
 
       - name: Compile
         run: |
-          mvn -e compile -pl hugegraph-client -DskipTests -Dmaven.javadoc.skip=true -ntp
+          mvn -e compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
         run: |
@@ -56,7 +56,10 @@ jobs:
 
       - name: Run test
         run: |
-          mvn test -Dtest=UnitTestSuite,ApiTestSuite,FuncTestSuite -pl hugegraph-client -ntp
+          cd hugegraph-client && ls *
+          mvn test -Dtest=UnitTestSuite -ntp
+          mvn test -Dtest=ApiTestSuite
+          mvn test -Dtest=FuncTestSuite
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0

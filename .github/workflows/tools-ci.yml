@@ -43,7 +43,6 @@ jobs:
       - name: Compile
         run: |
           mvn install -pl hugegraph-client,hugegraph-tools -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-          cd hugegraph-tools && ls *
       - name: Prepare env and service
         run: |
           $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID

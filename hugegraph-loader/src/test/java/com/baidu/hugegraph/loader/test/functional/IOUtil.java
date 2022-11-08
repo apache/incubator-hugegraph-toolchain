@@ -41,34 +41,34 @@ import com.baidu.hugegraph.loader.source.file.Compression;
 
 public interface IOUtil {
 
-    public Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+    Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    public CompressorStreamFactory FACTORY = new CompressorStreamFactory();
+    CompressorStreamFactory FACTORY = new CompressorStreamFactory();
 
-    public String storePath();
+    String storePath();
 
-    public Configuration config();
+    Configuration config();
 
-    public void mkdirs(String path);
+    void mkdirs(String path);
 
-    public default void write(String fileName, String... lines) {
+    default void write(String fileName, String... lines) {
         this.write(fileName, DEFAULT_CHARSET, Compression.NONE, lines);
     }
 
-    public default void write(String fileName, Charset charset,
+    default void write(String fileName, Charset charset,
                               String... lines) {
         this.write(fileName, charset, Compression.NONE, lines);
     }
 
-    public default void write(String fileName, Compression compression,
+    default void write(String fileName, Compression compression,
                               String... lines) {
         this.write(fileName, DEFAULT_CHARSET, compression, lines);
     }
 
-    public void write(String fileName, Charset charset,
+    void write(String fileName, Charset charset,
                       Compression compression, String... lines);
 
-    public default void writeOrc(String fileName, TypeInfo typeInfo,
+    default void writeOrc(String fileName, TypeInfo typeInfo,
                                  Object... values) {
         Path path = new Path(this.storePath(), fileName);
         ObjectInspector inspector = TypeInfoUtils
@@ -87,13 +87,13 @@ public interface IOUtil {
         }
     }
 
-    public void copy(String srcPath, String destPath);
+    void copy(String srcPath, String destPath);
 
-    public void delete();
+    void delete();
 
-    public void close();
+    void close();
 
-    public static void compress(OutputStream stream, Charset charset,
+    static void compress(OutputStream stream, Charset charset,
                                 Compression compression, String... lines)
                                 throws IOException, CompressorException {
         BufferedOutputStream bos = new BufferedOutputStream(stream);
