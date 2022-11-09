@@ -19,7 +19,6 @@ schema.vertexLabel("software")
       .ifNotExist()
       .create();
 
-
 schema.edgeLabel("knows")
       .sourceLabel("person")
       .targetLabel("person")

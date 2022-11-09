@@ -46,194 +46,193 @@ public class LoadOptions implements Serializable {
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
-            validateWith = {FileValidator.class},
-            description = "The path of the data mapping description file")
+               validateWith = {FileValidator.class},
+               description = "The path of the data mapping description file")
     public String file;
 
     @Parameter(names = {"-s", "--schema"}, arity = 1,
-            validateWith = {FileValidator.class},
-            description = "The schema file path which to create manually")
+               validateWith = {FileValidator.class},
+               description = "The schema file path which to create manually")
     public String schema;
 
     @Parameter(names = {"-g", "--graph"}, required = true, arity = 1,
-            description = "The namespace of the graph to load into")
+               description = "The namespace of the graph to load into")
     public String graph;
 
     @Parameter(names = {"-h", "--host"}, arity = 1,
-            validateWith = {UrlValidator.class},
-            description = "The host/IP of HugeGraphServer")
+               validateWith = {UrlValidator.class},
+               description = "The host/IP of HugeGraphServer")
     public String host = "localhost";
 
     @Parameter(names = {"-p", "--port"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The port of HugeGraphServer")
+               validateWith = {PositiveValidator.class},
+               description = "The port of HugeGraphServer")
     public int port = 8080;
 
     @Parameter(names = {"--username"}, arity = 1,
-            description = "The username of graph for authentication")
+               description = "The username of graph for authentication")
     public String username = null;
 
     @Parameter(names = {"--protocol"}, arity = 1,
-            validateWith = {ProtocolValidator.class},
-            description = "The protocol of HugeGraphServer, " +
+               validateWith = {ProtocolValidator.class},
+               description = "The protocol of HugeGraphServer, " +
                     "allowed values are: http or https")
     public String protocol = "http";
 
     @Parameter(names = {"--trust-store-file"}, arity = 1,
-            description = "The path of client truststore file used " +
+               description = "The path of client truststore file used " +
                     "when https protocol is enabled")
     public String trustStoreFile = null;
 
     @Parameter(names = {"--trust-store-password"}, arity = 1,
-            description = "The password of client truststore file used " +
+               description = "The password of client truststore file used " +
                     "when https protocol is enabled")
     public String trustStoreToken = null;
 
     @Parameter(names = {"--token"}, arity = 1,
-            description = "The token of graph for authentication")
+               description = "The token of graph for authentication")
     public String token = null;
 
     @Parameter(names = {"--clear-all-data"}, arity = 1,
-            description = "Whether to clear all old data before loading")
+               description = "Whether to clear all old data before loading")
     public boolean clearAllData = false;
 
     @Parameter(names = {"--clear-timeout"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The timeout waiting for clearing all data ")
+               validateWith = {PositiveValidator.class},
+               description = "The timeout waiting for clearing all data ")
     public int clearTimeout = 240;
 
     @Parameter(names = {"--incremental-mode"}, arity = 1,
-            description = "Load data from the breakpoint of last time")
+               description = "Load data from the breakpoint of last time")
     public boolean incrementalMode = false;
 
     @Parameter(names = {"--failure-mode"}, arity = 1,
-            description = "Load data from the failure records, in this " +
-                    "mode, only full load is supported, any read " +
-                    "or parsing errors will cause load task stop")
+               description = "Load data from the failure records, in this " +
+                             "mode, only full load is supported, any read " +
+                             "or parsing errors will cause load task stop")
     public boolean failureMode = false;
 
     @Parameter(names = {"--batch-insert-threads"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The number of threads to execute batch insert")
+               validateWith = {PositiveValidator.class},
+               description = "The number of threads to execute batch insert")
     public int batchInsertThreads = CPUS;
 
     @Parameter(names = {"--single-insert-threads"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The number of threads to execute single insert")
+               validateWith = {PositiveValidator.class},
+               description = "The number of threads to execute single insert")
     public int singleInsertThreads = 8;
 
     @Parameter(names = {"--max-conn"}, arity = 1,
-            description = "Max number of HTTP connections to server")
+               description = "Max number of HTTP connections to server")
     public int maxConnections = CPUS * 4;
 
     @Parameter(names = {"--max-conn-per-route"}, arity = 1,
-            description = "Max number of HTTP connections to each route")
+               description = "Max number of HTTP connections to each route")
     public int maxConnectionsPerRoute = CPUS * 2;
 
     @Parameter(names = {"--batch-size"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The number of lines in each submit")
+               validateWith = {PositiveValidator.class},
+               description = "The number of lines in each submit")
     public int batchSize = 500;
 
     @Parameter(names = {"--cdc-flush-interval"}, arity = 1,
-            description = "The flush interval for flink cdc")
+               description = "The flush interval for flink cdc")
     public int flushIntervalMs = 30000;
 
     @Parameter(names = {"--cdc-sink-parallelism"}, arity = 1,
-            description = "The sink parallelism for flink cdc")
+               description = "The sink parallelism for flink cdc")
     public int sinkParallelism = 1;
 
     @Parameter(names = {"--shutdown-timeout"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The timeout of awaitTermination in seconds")
+               validateWith = {PositiveValidator.class},
+               description = "The timeout of awaitTermination in seconds")
     public int shutdownTimeout = 10;
 
     @Parameter(names = {"--check-vertex"}, arity = 1,
-            description = "Check vertices exists while inserting edges")
+               description = "Check vertices exists while inserting edges")
     public boolean checkVertex = false;
 
     @Parameter(names = {"--max-read-errors"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The maximum number of lines that read error " +
+               validateWith = {PositiveValidator.class},
+               description = "The maximum number of lines that read error " +
                     "before exiting")
     public int maxReadErrors = 1;
 
     @Parameter(names = {"--max-parse-errors"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The maximum number of lines that parse error " +
+               validateWith = {PositiveValidator.class},
+               description = "The maximum number of lines that parse error " +
                     "before exiting")
     public int maxParseErrors = 1;
 
     @Parameter(names = {"--max-insert-errors"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The maximum number of lines that insert error " +
+               validateWith = {PositiveValidator.class},
+               description = "The maximum number of lines that insert error " +
                     "before exiting")
     public int maxInsertErrors = 500;
 
     @Parameter(names = {"--timeout"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The timeout of HugeClient request")
+               validateWith = {PositiveValidator.class},
+               description = "The timeout of HugeClient request")
     public int timeout = 60;
 
     @Parameter(names = {"--retry-times"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "Setting the max retry times when loading timeout")
+               validateWith = {PositiveValidator.class},
+               description = "Setting the max retry times when loading timeout")
     public int retryTimes = 3;
 
     @Parameter(names = {"--retry-interval"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "Setting the interval time before retrying")
+               validateWith = {PositiveValidator.class},
+               description = "Setting the interval time before retrying")
     public int retryInterval = 10;
 
     @Parameter(names = {"--max-read-lines"}, arity = 1,
-            validateWith = {PositiveValidator.class},
-            description = "The maximum number of read lines, when reached " +
+               validateWith = {PositiveValidator.class},
+               description = "The maximum number of read lines, when reached " +
                     "this number, the load task will stop")
     public long maxReadLines = -1L;
 
     @Parameter(names = {"--dry-run"}, arity = 1,
-            description = "Dry run means that only parse but doesn't load")
+               description = "Dry run means that only parse but doesn't load")
     public boolean dryRun = false;
 
     @Parameter(names = {"--print-progress"}, arity = 1,
-            description = "Whether to print real-time load progress")
+               description = "Whether to print real-time load progress")
     public boolean printProgress = true;
 
     @Parameter(names = {"--test-mode"}, arity = 1,
-            description = "Whether the hugegraph-loader work in test mode")
+               description = "Whether the hugegraph-loader work in test mode")
     public boolean testMode = false;
 
     @Parameter(names = {"--help"}, help = true,
-            description = "Print usage of HugeGraphLoader")
+               description = "Print usage of HugeGraphLoader")
     public boolean help;
 
     @Parameter(names = {"--sink-type"}, arity = 1,
-            description = "Sink to different storage")
+               description = "Sink to different storage")
     public boolean sinkType = true;
 
-
     @Parameter(names = {"--edge-partitions"}, arity = 1,
-            description = "The number of partitions of the HBase edge table")
+               description = "The number of partitions of the HBase edge table")
     public int edgePartitions = 64;
 
     @Parameter(names = {"--vertex-partitions"}, arity = 1,
-            description = "The number of partitions of the HBase vertex table")
+               description = "The number of partitions of the HBase vertex table")
     public int vertexPartitions = 64;
 
     @Parameter(names = {"edgeTablename"}, arity = 1,
-            description = "edgeTablename")
+               description = "edgeTablename")
     public String edgeTablename;
     @Parameter(names = {"vertexTablename"}, arity = 1,
-            description = "vertexTablename")
+               description = "vertexTablename")
     public String vertexTablename;
     @Parameter(names = {"hbaseZKQuorum"}, arity = 1,
-            description = "hbaseZKQuorum")
+               description = "hbaseZKQuorum")
     public String hbaseZKQuorum;
     @Parameter(names = {"hbaseZKPort"}, arity = 1,
-            description = "hbaseZKPort")
+               description = "hbaseZKPort")
     public String hbaseZKPort;
     @Parameter(names = {"hbaseZKParent"}, arity = 1,
-            description = "hbaseZKParent")
+               description = "hbaseZKParent")
     public String hbaseZKParent;
 
     public String workModeString() {
@@ -249,8 +248,8 @@ public class LoadOptions implements Serializable {
     public static LoadOptions parseOptions(String[] args) {
         LoadOptions options = new LoadOptions();
         JCommander commander = JCommander.newBuilder()
-                .addObject(options)
-                .build();
+                                         .addObject(options)
+                                         .build();
         commander.parse(args);
         // Print usage and exit
         if (options.help) {
@@ -259,10 +258,10 @@ public class LoadOptions implements Serializable {
         // Check options
         // Check option "-f"
         E.checkArgument(!StringUtils.isEmpty(options.file),
-                "The mapping file must be specified");
+                        "The mapping file must be specified");
         E.checkArgument(options.file.endsWith(Constants.JSON_SUFFIX),
-                "The mapping file name must be end with %s",
-                Constants.JSON_SUFFIX);
+                        "The mapping file name must be end with %s",
+                        Constants.JSON_SUFFIX);
         File mappingFile = new File(options.file);
         if (!mappingFile.canRead()) {
             LOG.error("The mapping file must be readable: '{}'", mappingFile);
@@ -271,7 +270,7 @@ public class LoadOptions implements Serializable {
 
         // Check option "-g"
         E.checkArgument(!StringUtils.isEmpty(options.graph),
-                "The graph must be specified");
+                        "The graph must be specified");
         // Check option "-h"
         if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
             if (options.protocol.equals(HTTP_SCHEMA)) {
@@ -282,7 +281,7 @@ public class LoadOptions implements Serializable {
         }
         // Check option --incremental-mode and --failure-mode
         E.checkArgument(!(options.incrementalMode && options.failureMode),
-                "The option --incremental-mode and --failure-mode " +
+                        "The option --incremental-mode and --failure-mode " +
                         "can't be true at same time");
         if (options.failureMode) {
             LOG.info("The failure-mode will scan the entire error file");
@@ -307,12 +306,12 @@ public class LoadOptions implements Serializable {
         @Override
         public void validate(String name, String value) {
             String regex = "^((http)(s?)://)?" +
-                    "(([0-9]{1,3}\\.){3}[0-9]{1,3}" + // IP URL
-                    "|" +                             // Or domain name
-                    "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
+                           "(([0-9]{1,3}\\.){3}[0-9]{1,3}" + // IP URL
+                           "|" +                             // Or domain name
+                           "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
-                        "Invalid url value of args '%s': '%s'", name, value));
+                          "Invalid url value of args '%s': '%s'", name, value));
             }
         }
     }
@@ -327,8 +326,8 @@ public class LoadOptions implements Serializable {
         public void validate(String name, String value) {
             if (!SSL_PROTOCOL.contains(value.toLowerCase())) {
                 throw new ParameterException(String.format(
-                        "Invalid --protocol '%s', valid value is %s",
-                        value, SSL_PROTOCOL));
+                          "Invalid --protocol '%s', valid value is %s",
+                          value, SSL_PROTOCOL));
             }
         }
     }
@@ -353,8 +352,8 @@ public class LoadOptions implements Serializable {
             File file = new File(value);
             if (!file.exists() || !file.isFile()) {
                 throw new ParameterException(String.format(
-                        "Ensure the file exists and is indeed a file " +
-                                "instead of a directory: '%s'", value));
+                          "Ensure the file exists and is indeed a file " +
+                          "instead of a directory: '%s'", value));
             }
         }
     }

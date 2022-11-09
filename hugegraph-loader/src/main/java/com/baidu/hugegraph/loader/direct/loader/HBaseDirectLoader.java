@@ -111,7 +111,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                                         buildAndSer(serializer, row,buildersForGraphElement);
                                 result.addAll(serList);
                             }
-                                      serializer.close();
+                                serializer.close();
                                 return result.iterator();
                     }
                 }
