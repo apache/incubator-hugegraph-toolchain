@@ -18,8 +18,7 @@ jobs:
           distribution: 'adopt'
       - name: mvn install
         run: |
-          mvn install:install-file -Dfile=$STATIC_DIR/lib/ojdbc8-12.2.0.1.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar -ntp
-          mvn package -DskipTests=true -ntp
+          mvn install -DskipTests=true -Dmaven.javadoc.skip=true -ntp
       - name: generate current dependencies
         run: |
           bash $SCRIPT_DEPENDENCY/regenerate_known_dependencies.sh current-dependencies.txt

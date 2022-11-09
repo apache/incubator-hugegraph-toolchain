@@ -65,12 +65,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.baidu.hugegraph</groupId>
-            <!-- TODO: replace it with inner pkg later -->
-<!--            <groupId>org.apache.hugegraph</groupId>-->
+            <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-loader</artifactId>
-            <version>0.12.0</version>
-<!--            <version>${revision}</version>-->
+            <version>${revision}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.logging.log4j</groupId>

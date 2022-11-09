@@ -19,7 +19,6 @@
 
 package com.baidu.hugegraph.serializer.direct.util;
 
-
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;

@@ -26,8 +26,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.UUID;
 
-import com.baidu.hugegraph.util.Bytes;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.Bytes;
+import org.apache.hugegraph.util.E;
+
 import com.google.common.base.CharMatcher;
 
 /**

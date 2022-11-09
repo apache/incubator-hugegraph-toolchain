@@ -33,8 +33,8 @@ import com.baidu.hugegraph.structure.auth.Group;
 import com.baidu.hugegraph.structure.auth.HugePermission;
 import com.baidu.hugegraph.structure.auth.HugeResourceType;
 import com.baidu.hugegraph.structure.auth.Target;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.testutil.Whitebox;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Whitebox;
 
 public class AccessApiTest extends AuthApiTest {
 

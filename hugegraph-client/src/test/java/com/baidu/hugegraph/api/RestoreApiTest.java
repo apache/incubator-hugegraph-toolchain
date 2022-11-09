@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.baidu.hugegraph.structure.constant.GraphMode;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class RestoreApiTest extends BaseApiTest {
 

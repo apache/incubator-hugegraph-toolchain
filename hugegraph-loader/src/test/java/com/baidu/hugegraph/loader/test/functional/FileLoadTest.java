@@ -37,7 +37,6 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.driver.HugeClient;
@@ -59,14 +58,13 @@ import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.testutil.Whitebox;
-import com.baidu.hugegraph.util.LongEncoding;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Whitebox;
+import org.apache.hugegraph.util.LongEncoding;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-@Ignore
 public class FileLoadTest extends LoadTest {
 
     private static final Charset GBK = Charset.forName("GBK");
@@ -2066,6 +2064,7 @@ public class FileLoadTest extends LoadTest {
         File failureDataDir = FileUtils.getFile(structPath(
                 "incremental_mode_and_load_failure/struct/failure-data/"));
         File[] files = failureDataDir.listFiles();
+        assert files != null;
         Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(2, files.length);
@@ -2125,6 +2124,7 @@ public class FileLoadTest extends LoadTest {
 
         Thread.sleep(1000);
         files = failureDataDir.listFiles();
+        assert files != null;
         Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(4, files.length);
@@ -2268,6 +2268,7 @@ public class FileLoadTest extends LoadTest {
         File failureDir = FileUtils.getFile(structPath(
                           "reload_json_failure_files/struct/failure-data/"));
         File[] files = failureDir.listFiles();
+        assert files != null;
         Arrays.sort(files, Comparator.comparing(File::getName));
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.length);

@@ -39,8 +39,8 @@ import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.api.variables.VariablesAPI;
 import com.baidu.hugegraph.api.version.VersionAPI;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.util.VersionUtil;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.VersionUtil;
 
 public class BaseApiTest extends BaseClientTest {
 

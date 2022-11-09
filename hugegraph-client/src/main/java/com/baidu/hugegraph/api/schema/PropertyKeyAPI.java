@@ -25,12 +25,12 @@ import java.util.Map;
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.NotSupportException;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.SchemaElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.constant.WriteType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
 public class PropertyKeyAPI extends SchemaElementAPI {

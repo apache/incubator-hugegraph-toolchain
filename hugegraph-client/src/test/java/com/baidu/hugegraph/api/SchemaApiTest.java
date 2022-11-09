@@ -25,7 +25,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.baidu.hugegraph.structure.SchemaElement;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class SchemaApiTest extends BaseApiTest {
 

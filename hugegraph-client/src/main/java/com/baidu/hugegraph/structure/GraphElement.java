@@ -28,8 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.structure.constant.GraphAttachable;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.ReflectionUtil;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.ReflectionUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class GraphElement extends Element implements GraphAttachable {

@@ -40,12 +40,12 @@ import com.baidu.hugegraph.base.Printer;
 import com.baidu.hugegraph.base.RetryManager;
 import com.baidu.hugegraph.base.ToolClient;
 import com.baidu.hugegraph.cmd.SubCommands;
-import com.baidu.hugegraph.concurrent.KeyLock;
+import org.apache.hugegraph.concurrent.KeyLock;
 import com.baidu.hugegraph.exception.ToolsException;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.Edge;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
 public class BackupRestoreBaseManager extends RetryManager {

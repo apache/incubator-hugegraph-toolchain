@@ -50,7 +50,7 @@ import com.baidu.hugegraph.service.schema.PropertyIndexService;
 import com.baidu.hugegraph.service.schema.PropertyKeyService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.structure.constant.IdStrategy;
-import com.baidu.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;

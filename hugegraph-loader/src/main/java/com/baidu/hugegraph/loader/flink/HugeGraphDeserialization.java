@@ -31,7 +31,7 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.constant.Constants;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ververica.cdc.debezium.DebeziumDeserializationSchema;

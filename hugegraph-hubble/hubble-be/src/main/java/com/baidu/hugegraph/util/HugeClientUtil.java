@@ -28,7 +28,7 @@ import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.GraphConnection;
 import com.baidu.hugegraph.exception.ExternalException;
 import com.baidu.hugegraph.exception.ServerException;
-import com.baidu.hugegraph.rest.ClientException;
+import org.apache.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.structure.gremlin.Result;
 import com.baidu.hugegraph.structure.gremlin.ResultSet;
 import com.google.common.collect.ImmutableSet;

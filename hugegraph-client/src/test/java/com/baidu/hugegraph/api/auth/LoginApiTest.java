@@ -29,7 +29,7 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.auth.Login;
 import com.baidu.hugegraph.structure.auth.LoginResult;
 import com.baidu.hugegraph.structure.auth.User;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class LoginApiTest extends AuthApiTest {
 

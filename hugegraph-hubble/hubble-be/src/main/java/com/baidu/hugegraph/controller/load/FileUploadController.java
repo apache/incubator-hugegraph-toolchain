@@ -46,7 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.baidu.hugegraph.common.Constant;
-import com.baidu.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.entity.enums.FileMappingStatus;
 import com.baidu.hugegraph.entity.enums.JobStatus;
 import com.baidu.hugegraph.entity.load.FileMapping;
@@ -56,7 +56,7 @@ import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.service.load.FileMappingService;
 import com.baidu.hugegraph.service.load.JobManagerService;
-import com.baidu.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.FileUtil;
 import com.baidu.hugegraph.util.HubbleUtil;

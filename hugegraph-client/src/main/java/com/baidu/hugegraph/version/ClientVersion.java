@@ -19,8 +19,9 @@
 
 package com.baidu.hugegraph.version;
 
-import com.baidu.hugegraph.util.VersionUtil;
-import com.baidu.hugegraph.util.VersionUtil.Version;
+import org.apache.hugegraph.util.VersionUtil;
+import org.apache.hugegraph.util.VersionUtil.Version;
+import org.apache.hugegraph.version.CommonVersion;
 
 public class ClientVersion {
 

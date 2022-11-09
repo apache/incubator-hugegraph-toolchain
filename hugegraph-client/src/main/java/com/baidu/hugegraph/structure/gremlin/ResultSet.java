@@ -26,13 +26,13 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import com.baidu.hugegraph.driver.GraphManager;
-import com.baidu.hugegraph.rest.SerializeException;
+import org.apache.hugegraph.rest.SerializeException;
 import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.structure.constant.GraphAttachable;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;

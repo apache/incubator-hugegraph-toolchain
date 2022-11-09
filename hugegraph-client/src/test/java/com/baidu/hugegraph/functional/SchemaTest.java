@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import com.baidu.hugegraph.BaseClientTest;
 import com.baidu.hugegraph.structure.SchemaElement;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class SchemaTest extends BaseFuncTest {
 

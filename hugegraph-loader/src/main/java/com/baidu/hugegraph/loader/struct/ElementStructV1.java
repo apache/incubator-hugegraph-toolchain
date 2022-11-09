@@ -31,8 +31,8 @@ import com.baidu.hugegraph.loader.constant.Unique;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.util.JsonUtil;
 import com.baidu.hugegraph.structure.graph.UpdateStrategy;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.HashUtil;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.HashUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
 

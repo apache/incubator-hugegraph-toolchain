@@ -24,9 +24,11 @@ import java.util.UUID;
 
 import com.baidu.hugegraph.serializer.direct.util.HugeException;
 import com.baidu.hugegraph.serializer.direct.util.StringEncoding;
-import com.baidu.hugegraph.util.CollectionUtil;
-import com.baidu.hugegraph.util.DateUtil;
-import com.baidu.hugegraph.util.E;
+
+import org.apache.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.DateUtil;
+import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
@@ -192,7 +194,6 @@ public enum DataType {
         }
         return null;
     }
-
 
     public static DataType fromClass(Class<?> clazz) {
         for (DataType type : DataType.values()) {

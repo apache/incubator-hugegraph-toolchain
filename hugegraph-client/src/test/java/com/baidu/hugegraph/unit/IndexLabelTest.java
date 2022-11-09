@@ -24,7 +24,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.exception.NotSupportException;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.util.JsonUtil;
 
 public class IndexLabelTest {

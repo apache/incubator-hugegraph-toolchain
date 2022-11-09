@@ -33,8 +33,8 @@ import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.util.Log;
 
 public class BatchInsertTask extends InsertTask {
 

@@ -24,7 +24,7 @@ import java.util.Map;
 import com.baidu.hugegraph.loader.exception.ReadException;
 import com.baidu.hugegraph.loader.reader.line.Line;
 import com.baidu.hugegraph.loader.util.JsonUtil;
-import com.baidu.hugegraph.rest.SerializeException;
+import org.apache.hugegraph.rest.SerializeException;
 
 public class JsonLineParser implements LineParser {
 
