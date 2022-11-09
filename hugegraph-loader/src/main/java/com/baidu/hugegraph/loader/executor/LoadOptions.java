@@ -76,17 +76,17 @@ public class LoadOptions implements Serializable {
     @Parameter(names = {"--protocol"}, arity = 1,
                validateWith = {ProtocolValidator.class},
                description = "The protocol of HugeGraphServer, " +
-                    "allowed values are: http or https")
+                             "allowed values are: http or https")
     public String protocol = "http";
 
     @Parameter(names = {"--trust-store-file"}, arity = 1,
                description = "The path of client truststore file used " +
-                    "when https protocol is enabled")
+                             "when https protocol is enabled")
     public String trustStoreFile = null;
 
     @Parameter(names = {"--trust-store-password"}, arity = 1,
                description = "The password of client truststore file used " +
-                    "when https protocol is enabled")
+                             "when https protocol is enabled")
     public String trustStoreToken = null;
 
     @Parameter(names = {"--token"}, arity = 1,
@@ -155,19 +155,19 @@ public class LoadOptions implements Serializable {
     @Parameter(names = {"--max-read-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The maximum number of lines that read error " +
-                    "before exiting")
+                             "before exiting")
     public int maxReadErrors = 1;
 
     @Parameter(names = {"--max-parse-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The maximum number of lines that parse error " +
-                    "before exiting")
+                             "before exiting")
     public int maxParseErrors = 1;
 
     @Parameter(names = {"--max-insert-errors"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The maximum number of lines that insert error " +
-                    "before exiting")
+                             "before exiting")
     public int maxInsertErrors = 500;
 
     @Parameter(names = {"--timeout"}, arity = 1,
@@ -188,7 +188,7 @@ public class LoadOptions implements Serializable {
     @Parameter(names = {"--max-read-lines"}, arity = 1,
                validateWith = {PositiveValidator.class},
                description = "The maximum number of read lines, when reached " +
-                    "this number, the load task will stop")
+                             "this number, the load task will stop")
     public long maxReadLines = -1L;
 
     @Parameter(names = {"--dry-run"}, arity = 1,
