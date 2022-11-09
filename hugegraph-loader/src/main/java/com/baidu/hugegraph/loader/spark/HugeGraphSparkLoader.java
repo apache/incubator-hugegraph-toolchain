@@ -95,30 +95,27 @@ public class HugeGraphSparkLoader implements Serializable {
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
         boolean sinkType = this.loadOptions.sinkType;
-        if(!sinkType){
+        if(!sinkType) {
             this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         }
         SparkConf conf = new SparkConf()
                 .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")// kryo序列化
                 .set("spark.kryo.registrationRequired", "true");
         try {
-            conf.registerKryoClasses(
-                    new Class[]
-                    {
-                        org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
-                        org.apache.hadoop.hbase.KeyValue.class,
-                        org.apache.spark.sql.types.StructType.class,
-                        StructField[].class,
-                        StructField.class,
-                        org.apache.spark.sql.types.LongType$.class,
-                        org.apache.spark.sql.types.Metadata.class,
-                        org.apache.spark.sql.types.StringType$.class,
-                Class.forName(
-                    "org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
-                Class.forName("scala.reflect.ClassTag$$anon$1"),
-                Class.forName("scala.collection.immutable.Set$EmptySet$"),
-                Class.forName("org.apache.spark.sql.types.DoubleType$")
-                    });
+            conf.registerKryoClasses(new Class[] {
+                    org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
+                    org.apache.hadoop.hbase.KeyValue.class,
+                    org.apache.spark.sql.types.StructType.class,
+                    StructField[].class,
+                    StructField.class,
+                    org.apache.spark.sql.types.LongType$.class,
+                    org.apache.spark.sql.types.Metadata.class,
+                    org.apache.spark.sql.types.StringType$.class,
+                    Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
+                    Class.forName("scala.reflect.ClassTag$$anon$1"),
+                    Class.forName("scala.collection.immutable.Set$EmptySet$"),
+                    Class.forName("org.apache.spark.sql.types.DoubleType$")
+                 });
         } catch (ClassNotFoundException e) {
             LOG.error("spark kryo serialized registration failed");
         }
@@ -130,11 +127,11 @@ public class HugeGraphSparkLoader implements Serializable {
         LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
         for (InputStruct struct : structs) {
             LOG.info("\n Initializes the accumulator corresponding to the  {} ",
-                    struct.input().asFileSource().path());
+                     struct.input().asFileSource().path());
             LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
             loadDistributeMetrics.init(sc);
-            LOG.info("\n   Start to load data, data info is: \t {} ",
-                    struct.input().asFileSource().path());
+            LOG.info("\n  Start to load data, data info is: \t {} ",
+                     struct.input().asFileSource().path());
             Dataset<Row> ds = read(session, struct);
             if (sinkType) {
                 LOG.info("\n  Start to load data using spark apis  \n");
@@ -155,14 +152,14 @@ public class HugeGraphSparkLoader implements Serializable {
 
             }
             collectLoadMetrics(loadDistributeMetrics,totalInsertSuccess);
-            LOG.info("    \n   Finished  load {}  data ",
-                    struct.input().asFileSource().path());
+            LOG.info("\n Finished  load {}  data ",
+                     struct.input().asFileSource().path());
         }
         Long totalInsertSuccessCnt = totalInsertSuccess.value();
         LOG.info("\n ------------The data load task is complete-------------------\n" +
-                "\n  insertSuccesscnt:\t {}" +
-                "\n ---------------------------------------------\n"
-                , totalInsertSuccessCnt);
+                 "\n  insertSuccesscnt:\t {}" +
+                 "\n ---------------------------------------------\n"
+                 , totalInsertSuccessCnt);
 
         sc.stop();
         session.close();
