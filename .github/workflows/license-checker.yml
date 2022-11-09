@@ -34,19 +34,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Check License Header
-        uses: apache/skywalking-eyes/header@main
+        uses: apache/skywalking-eyes@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           log: info
           config: .licenserc.yaml
-          mode: fix
-
-      - name: Apply Changes
-        uses: EndBug/add-and-commit@v4
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          author_name: License Bot
-          author_email: license_bot@github.com
-          message: 'Automatic application of license header'
