@@ -480,7 +480,6 @@ netty-common-4.1.39.Final.jar
 nimbus-jose-jwt-4.41.1.jar
 nimbus-jose-jwt-9.8.1.jar
 objenesis-2.5.1.jar
-ojdbc8-12.2.0.1.jar
 okhttp-2.4.0.jar
 okhttp-2.7.5.jar
 okio-1.4.0.jar
