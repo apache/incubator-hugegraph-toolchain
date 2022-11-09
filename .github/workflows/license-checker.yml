@@ -40,10 +40,6 @@ jobs:
         with:
           log: info
           config: .licenserc.yaml
-
-      - name: Fix License Header
-        uses: apache/skywalking-eyes/header@main
-        with:
           mode: fix
 
       - name: Apply Changes
