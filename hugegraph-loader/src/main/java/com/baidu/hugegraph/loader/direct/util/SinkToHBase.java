@@ -91,7 +91,7 @@ public class SinkToHBase implements Serializable {
                 new IntPartitioner(numPartitions, tableName),descriptor);
     }
 
-    public void loadHfiles (String path, String tableName) throws Exception {
+    public void loadHfiles(String path, String tableName) throws Exception {
         Connection conn = getConnection().get();
         Table table = conn.getTable(TableName.valueOf(tableName));
         Configuration conf = conn.getConfiguration();
@@ -136,14 +136,11 @@ public class SinkToHBase implements Serializable {
         @Override
         public int getPartition(Object key) {
             if (key instanceof ImmutableBytesWritable) {
-
                 try {
                     ImmutableBytesWritable immutableBytesWritableKey = (ImmutableBytesWritable) key;
-
                     if (rangeMap == null || rangeMap.isEmpty()) {
                         rangeMap = getRangeMap(this.tableName);
                     }
-
                     String keyString = Bytes.toString(immutableBytesWritableKey.get());
                     for (List<String> range : rangeMap.keySet()) {
                         if (keyString.compareToIgnoreCase(range.get(0)) >= 0 &&
@@ -155,8 +152,8 @@ public class SinkToHBase implements Serializable {
                     LOG.error("Didn't find proper key in rangeMap, so returning 0 ...");
                     return 0;
                 } catch (Exception e) {
-                    LOG.error("When trying to get partitionID, encountered exception: " + e +
-                            "\t key = " + key);
+                    LOG.error("When trying to get partitionID, " +
+                              "encountered exception: {} \t key = {}", e, key);
                     return 0;
                 }
             } else {

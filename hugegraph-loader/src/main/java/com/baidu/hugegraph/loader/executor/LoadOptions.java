@@ -293,7 +293,7 @@ public class LoadOptions implements Serializable {
     }
 
     public void copyBackendStoreInfo (BackendStoreInfo backendStoreInfo) {
-        E.checkArgument(null != backendStoreInfo,"the backendStoreInfo is null ");
+        E.checkArgument(null != backendStoreInfo, "The backendStoreInfo can't be null");
         this.edgeTablename = backendStoreInfo.getEdgeTablename();
         this.vertexTablename = backendStoreInfo.getVertexTablename();
         this.hbaseZKParent = backendStoreInfo.getHbaseZKParent();

@@ -265,5 +265,4 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                 values);
         return new Tuple2<>(rowKey,keyValue);
     }
-
 }

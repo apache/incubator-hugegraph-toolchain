@@ -89,7 +89,7 @@ public class LoadMapping implements Checkable {
 
     @JsonCreator
     public LoadMapping(@JsonProperty("structs") List<InputStruct> structs,
-                          @JsonProperty("backendStoreInfo") BackendStoreInfo backendStoreInfo) {
+                       @JsonProperty("backendStoreInfo") BackendStoreInfo backendStoreInfo) {
         this.version = Constants.V2_STRUCT_VERSION;
         this.structs = structs;
         this.backendStoreInfo = backendStoreInfo;
