@@ -22,6 +22,7 @@ package com.baidu.hugegraph.config;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import org.apache.hugegraph.config.HugeConfig;
 import org.apache.tomcat.util.http.LegacyCookieProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;

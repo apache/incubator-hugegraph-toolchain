@@ -46,7 +46,7 @@ import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
 import com.baidu.hugegraph.loader.source.hdfs.HDFSSource;
 import com.baidu.hugegraph.loader.source.hdfs.KerberosConfig;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 
 public class HDFSFileReader extends FileReader {
 

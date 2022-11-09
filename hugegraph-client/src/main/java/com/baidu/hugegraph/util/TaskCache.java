@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.baidu.hugegraph.api.task.TaskAPI;
 import com.baidu.hugegraph.structure.Task;
+import org.apache.hugegraph.util.ExecutorUtil;
 
 public class TaskCache {
 
@@ -36,7 +37,7 @@ public class TaskCache {
     private Map<TaskAPI, Map<Long, Task>> taskTable;
     private ScheduledExecutorService service;
 
-    private static TaskCache INSTANCE = new TaskCache();
+    private static final TaskCache INSTANCE = new TaskCache();
 
     private TaskCache() {
         this.taskTable = new ConcurrentHashMap<>();
@@ -110,5 +111,5 @@ public class TaskCache {
                 targets.put(task.id(), task);
             }
         }
-    };
+    }
 }

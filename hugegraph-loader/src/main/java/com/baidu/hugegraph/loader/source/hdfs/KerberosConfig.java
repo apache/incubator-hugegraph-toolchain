@@ -26,7 +26,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class KerberosConfig implements Checkable {

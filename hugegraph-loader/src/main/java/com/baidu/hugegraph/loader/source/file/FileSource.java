@@ -23,7 +23,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.source.AbstractSource;
 import com.baidu.hugegraph.loader.source.SourceType;
 import com.baidu.hugegraph.loader.util.DateUtil;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

@@ -35,7 +35,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.google.common.collect.ImmutableList;
 import org.apache.spark.sql.Row;
 

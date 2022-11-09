@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.loader.util.MappingUtil;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.Log;
 
 public final class MappingConverter {
 

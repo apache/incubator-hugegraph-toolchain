@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.auth.User.UserRole;
 import com.baidu.hugegraph.structure.constant.HugeType;

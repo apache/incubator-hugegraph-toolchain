@@ -47,6 +47,32 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.version}</artifactId>
             <version>${spark.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jersey-client</artifactId>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jersey-common</artifactId>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jersey-container-servlet</artifactId>
+                    <groupId>org.glassfish.jersey.containers</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jersey-container-servlet-core</artifactId>
+                    <groupId>org.glassfish.jersey.containers</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jersey-hk2</artifactId>
+                    <groupId>org.glassfish.jersey.inject</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jersey-server</artifactId>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -100,14 +126,19 @@
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
             <version>${revision}</version>
-            <scope>compile</scope>
-<!--            <groupId>com.baidu.hugegraph</groupId>-->
-<!--            <artifactId>hugegraph-client</artifactId>-->
-<!--            <version>2.0.1</version>-->
             <exclusions>
+                <!-- Note: jackson version should < 2.13 with scala 2.12 -->
                 <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.module</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -257,7 +288,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>3.2.4</version>
+            <version>3.3.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -302,13 +333,6 @@
             <artifactId>hadoop-hdfs-client</artifactId>
             <version>2.10.1</version>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>com.baidu.inf.hadoop</groupId>
-            <artifactId>libdfs-java</artifactId>
-            <version>2.0.5</version>
-        </dependency>
-        -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapred</artifactId>

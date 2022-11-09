@@ -28,8 +28,8 @@ import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.metrics.LoadReport;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
 import com.baidu.hugegraph.loader.progress.LoadProgress;
-import com.baidu.hugegraph.util.Log;
-import com.baidu.hugegraph.util.TimeUtil;
+import org.apache.hugegraph.util.Log;
+import org.apache.hugegraph.util.TimeUtil;
 
 public final class Printer {
 

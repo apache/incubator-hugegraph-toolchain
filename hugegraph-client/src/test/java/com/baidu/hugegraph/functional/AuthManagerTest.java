@@ -41,7 +41,7 @@ import com.baidu.hugegraph.structure.auth.Target;
 import com.baidu.hugegraph.structure.auth.TokenPayload;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.auth.User.UserRole;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableSet;
 
 public class AuthManagerTest extends BaseFuncTest {

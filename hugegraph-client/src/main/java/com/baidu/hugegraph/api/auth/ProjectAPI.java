@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.auth.Project;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.google.common.collect.ImmutableMap;

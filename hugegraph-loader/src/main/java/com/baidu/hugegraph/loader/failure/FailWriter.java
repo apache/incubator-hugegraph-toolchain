@@ -34,7 +34,7 @@ import com.baidu.hugegraph.loader.exception.InsertException;
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.exception.ParseException;
 import com.baidu.hugegraph.loader.exception.ReadException;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 
 public final class FailWriter {
 

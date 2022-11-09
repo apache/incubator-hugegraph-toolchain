@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Edges;
 import com.baidu.hugegraph.structure.graph.Shard;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.google.common.collect.ImmutableMap;
 
 public class EdgesAPI extends TraversersAPI {

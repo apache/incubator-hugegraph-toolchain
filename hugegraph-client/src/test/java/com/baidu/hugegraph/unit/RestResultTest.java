@@ -31,7 +31,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.baidu.hugegraph.driver.GraphManager;
-import com.baidu.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.serializer.PathDeserializer;
 import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
@@ -48,7 +48,7 @@ import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableList;

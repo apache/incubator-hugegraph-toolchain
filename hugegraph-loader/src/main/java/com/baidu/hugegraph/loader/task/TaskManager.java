@@ -37,8 +37,8 @@ import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.metrics.LoadSummary;
-import com.baidu.hugegraph.util.ExecutorUtil;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.ExecutorUtil;
+import org.apache.hugegraph.util.Log;
 
 public final class TaskManager {
 

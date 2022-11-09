@@ -19,14 +19,14 @@
 
 package com.baidu.hugegraph.serializer.direct.util;
 
-
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.LongEncoding;
-import com.baidu.hugegraph.util.NumericUtil;
-import com.baidu.hugegraph.serializer.direct.util.Id.IdType;
-
 import java.util.Objects;
 import java.util.UUID;
+
+import com.baidu.hugegraph.serializer.direct.util.Id.IdType;
+
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.LongEncoding;
+import org.apache.hugegraph.util.NumericUtil;
 
 public abstract class IdGenerator {
 
@@ -115,7 +115,7 @@ public abstract class IdGenerator {
         return IdType.UNKNOWN;
     }
 
-    private final static int compareType(Id id1, Id id2) {
+    private static int compareType(Id id1, Id id2) {
         return idType(id1).ordinal() - idType(id2).ordinal();
     }
 

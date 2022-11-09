@@ -52,7 +52,7 @@ import com.baidu.hugegraph.service.load.FileMappingService;
 import com.baidu.hugegraph.service.load.JobManagerService;
 import com.baidu.hugegraph.service.schema.EdgeLabelService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
-import com.baidu.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.CollectionUtil;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;

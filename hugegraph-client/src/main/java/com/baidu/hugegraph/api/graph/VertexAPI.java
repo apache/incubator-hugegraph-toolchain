@@ -26,7 +26,6 @@ import java.util.Map;
 import com.baidu.hugegraph.client.RestClient;
 import com.baidu.hugegraph.exception.InvalidResponseException;
 import com.baidu.hugegraph.exception.NotAllCreatedException;
-import com.baidu.hugegraph.rest.RestResult;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.graph.BatchOlapPropertyRequest;
 import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
@@ -34,6 +33,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Vertices;
 import com.google.common.collect.ImmutableMap;
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import org.apache.hugegraph.rest.RestResult;
 
 public class VertexAPI extends GraphAPI {
 

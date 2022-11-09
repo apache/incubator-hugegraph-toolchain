@@ -37,7 +37,7 @@ import com.baidu.hugegraph.loader.progress.LoadProgress;
 import com.baidu.hugegraph.loader.util.DateUtil;
 import com.baidu.hugegraph.loader.util.HugeClientHolder;
 import com.baidu.hugegraph.structure.constant.GraphMode;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 
 public final class LoadContext implements Serializable {
 

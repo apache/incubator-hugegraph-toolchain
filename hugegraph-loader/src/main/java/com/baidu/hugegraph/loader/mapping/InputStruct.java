@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.baidu.hugegraph.loader.constant.Checkable;
 import com.baidu.hugegraph.loader.source.InputSource;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

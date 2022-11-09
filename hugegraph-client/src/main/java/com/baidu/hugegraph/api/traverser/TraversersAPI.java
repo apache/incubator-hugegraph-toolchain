@@ -21,7 +21,7 @@ package com.baidu.hugegraph.api.traverser;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public class TraversersAPI extends API {
 

@@ -33,7 +33,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.traverser.FusiformSimilarity;
 import com.baidu.hugegraph.structure.traverser.FusiformSimilarity.Similar;
 import com.baidu.hugegraph.structure.traverser.FusiformSimilarityRequest;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 

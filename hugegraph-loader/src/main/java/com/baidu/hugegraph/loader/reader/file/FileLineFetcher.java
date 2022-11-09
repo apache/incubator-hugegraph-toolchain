@@ -19,7 +19,7 @@
 
 package com.baidu.hugegraph.loader.reader.file;
 
-import static com.baidu.hugegraph.util.Bytes.MB;
+import static org.apache.hugegraph.util.Bytes.MB;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,8 +51,8 @@ import com.baidu.hugegraph.loader.reader.line.LineFetcher;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFormat;
 import com.baidu.hugegraph.loader.source.file.FileSource;
-import com.baidu.hugegraph.util.E;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.Log;
 
 /**
  * Used to iterate all readable data files, like local files, hdfs paths

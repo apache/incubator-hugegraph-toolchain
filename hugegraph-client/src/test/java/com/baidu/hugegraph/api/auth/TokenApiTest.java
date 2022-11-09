@@ -31,8 +31,8 @@ import com.baidu.hugegraph.structure.auth.Login;
 import com.baidu.hugegraph.structure.auth.LoginResult;
 import com.baidu.hugegraph.structure.auth.TokenPayload;
 import com.baidu.hugegraph.structure.auth.User;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.testutil.Whitebox;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Whitebox;
 
 public class TokenApiTest extends AuthApiTest {
 

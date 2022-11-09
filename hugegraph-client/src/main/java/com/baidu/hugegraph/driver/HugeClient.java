@@ -22,9 +22,12 @@ package com.baidu.hugegraph.driver;
 import java.io.Closeable;
 
 import com.baidu.hugegraph.client.RestClient;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.util.VersionUtil;
+
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.util.VersionUtil;
+
 import com.baidu.hugegraph.version.ClientVersion;
+
 import jakarta.ws.rs.ProcessingException;
 
 public class HugeClient implements Closeable {
@@ -32,6 +35,7 @@ public class HugeClient implements Closeable {
     static {
         ClientVersion.check();
     }
+
     private final RestClient client;
     private final boolean borrowedClient;
 
@@ -60,8 +64,7 @@ public class HugeClient implements Closeable {
                                          builder.trustStoreFile(),
                                          builder.trustStorePassword());
         } catch (ProcessingException e) {
-            throw new ClientException("Failed to connect url '%s'",
-                                      builder.url());
+            throw new ClientException("Failed to connect url '%s'", builder.url());
         }
         try {
             this.initManagers(this.client, builder.graph());
@@ -108,10 +111,8 @@ public class HugeClient implements Closeable {
     }
 
     private void checkServerApiVersion() {
-        VersionUtil.Version apiVersion = VersionUtil.Version.of(
-                                         this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.38", "0.70",
-                          "hugegraph-api in server");
+        VersionUtil.Version apiVersion = VersionUtil.Version.of(this.version.getApiVersion());
+        VersionUtil.check(apiVersion, "0.38", "0.70", "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
     }
 

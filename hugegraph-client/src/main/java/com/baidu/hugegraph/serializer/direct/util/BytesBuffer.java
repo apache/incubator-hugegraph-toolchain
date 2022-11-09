@@ -19,16 +19,19 @@
 
 package com.baidu.hugegraph.serializer.direct.util;
 
-import com.baidu.hugegraph.serializer.direct.struct.HugeType;
-import com.baidu.hugegraph.util.*;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
 
+import org.apache.hugegraph.util.Bytes;
+import org.apache.hugegraph.util.E;
+
+import com.baidu.hugegraph.serializer.direct.struct.HugeType;
+
 /**
- * class BytesBuffer is a util for read/write binary
+ * class BytesBuffer is an util for read/write binary
  */
 public final class BytesBuffer extends OutputStream {
 
@@ -73,8 +76,8 @@ public final class BytesBuffer extends OutputStream {
 
     public BytesBuffer(int capacity) {
         E.checkArgument(capacity <= MAX_BUFFER_CAPACITY,
-                "Capacity exceeds max buffer capacity: %s",
-                MAX_BUFFER_CAPACITY);
+                        "Capacity exceeds max buffer capacity: %s",
+                        MAX_BUFFER_CAPACITY);
         this.buffer = ByteBuffer.allocate(capacity);
         this.resize = true;
     }

@@ -41,7 +41,7 @@ import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.graph.Vertices;
 import com.baidu.hugegraph.structure.traverser.CrosspointsRequest;
 import com.baidu.hugegraph.structure.traverser.CustomizedCrosspoints;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

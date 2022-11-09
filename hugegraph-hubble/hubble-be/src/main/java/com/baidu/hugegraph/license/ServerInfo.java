@@ -19,6 +19,8 @@
 
 package com.baidu.hugegraph.license;
 
+import org.apache.hugegraph.license.MachineInfo;
+
 public final class ServerInfo {
 
     private final String serverId;

@@ -28,7 +28,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 
 import com.baidu.hugegraph.driver.GraphManager;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 
 /**
  * HugeGraph is a mirror of server-side data(vertex/edge), it used to speed up
