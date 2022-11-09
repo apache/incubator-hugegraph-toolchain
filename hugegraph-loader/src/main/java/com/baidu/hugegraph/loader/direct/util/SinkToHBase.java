@@ -19,32 +19,35 @@
 
 package com.baidu.hugegraph.loader.direct.util;
 
-import com.baidu.hugegraph.loader.executor.LoadOptions;
-import com.baidu.hugegraph.util.Log;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.HRegionLocator;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.tool.BulkLoadHFilesTool;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
+import org.apache.hugegraph.util.Log;
 import org.apache.spark.Partitioner;
 import org.slf4j.Logger;
+
+import com.baidu.hugegraph.loader.executor.LoadOptions;
+
 import scala.Tuple2;
-import org.apache.hadoop.hbase.client.HRegionLocator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.io.IOException;
-import java.util.HashMap;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class SinkToHBase implements Serializable {
 

@@ -31,7 +31,8 @@ import com.baidu.hugegraph.serializer.direct.HBaseSerializer;
 import com.baidu.hugegraph.structure.GraphElement;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.util.Log;
+
+import org.apache.hugegraph.util.Log;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsShell;
@@ -48,6 +49,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.slf4j.Logger;
+
 import scala.Tuple2;
 
 import java.io.IOException;
