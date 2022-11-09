@@ -64,6 +64,18 @@ header: # `header` section is configurations for source codes license header.
     - 'VERSION'
     - '.github'
     - '.editorconfig'
+    - '**/*.versionsBackup'
+    - '**/*.log'
+    - '**/*.txt'
+    - '**/*.csv'
+    - '**/*.json'
+    - '**/*.conf'
+    - '**/*.properties'
+    - '**/*.gitattributes'
+    - '**/dependency-reduced-pom.xml'
+    - '**/logs/*.log'
+    - '**/target/*'
+    - 'style/*'
   comment: on-failure # on what condition license-eye will comment on the pull request, `on-failure`, `always`, `never`.
 
   # license-location-threshold specifies the index threshold where the license header can be located,
