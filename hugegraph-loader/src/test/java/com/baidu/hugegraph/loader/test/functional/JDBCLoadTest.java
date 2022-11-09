@@ -25,18 +25,17 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.loader.HugeGraphLoader;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.testutil.Assert;
+
+import org.apache.hugegraph.testutil.Assert;
 
 /**
  * TODO: add more test cases
  */
-@Ignore
 public class JDBCLoadTest extends LoadTest {
 
     // JDBC driver name and database URL

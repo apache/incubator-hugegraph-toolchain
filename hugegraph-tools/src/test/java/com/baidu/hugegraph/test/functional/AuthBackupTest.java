@@ -22,14 +22,12 @@ package com.baidu.hugegraph.test.functional;
 import java.util.List;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.cmd.HugeGraphCommand;
 import com.baidu.hugegraph.test.util.FileUtil;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
-@Ignore
 public class AuthBackupTest extends AuthTest {
 
     @Before

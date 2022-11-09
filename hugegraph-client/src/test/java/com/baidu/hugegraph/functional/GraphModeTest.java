@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import com.baidu.hugegraph.driver.GraphsManager;
 import com.baidu.hugegraph.structure.constant.GraphMode;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class GraphModeTest extends BaseFuncTest {
 

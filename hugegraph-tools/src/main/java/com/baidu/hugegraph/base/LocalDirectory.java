@@ -35,8 +35,8 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 
 import com.baidu.hugegraph.exception.ToolsException;
-import com.baidu.hugegraph.rest.ClientException;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.util.E;
 import com.google.common.collect.ImmutableList;
 
 public class LocalDirectory extends Directory {

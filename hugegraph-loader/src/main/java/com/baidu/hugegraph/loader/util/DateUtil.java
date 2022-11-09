@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.baidu.hugegraph.date.SafeDateFormat;
+import org.apache.hugegraph.date.SafeDateFormat;
 import com.baidu.hugegraph.loader.constant.Constants;
 
 public final class DateUtil {

@@ -57,7 +57,6 @@ public class HugeResource {
         this.properties = properties;
     }
 
-
     public HugeResourceType resourceType() {
         return this.type;
     }

@@ -22,7 +22,7 @@ package com.baidu.hugegraph.functional;
 import org.junit.Test;
 
 import com.baidu.hugegraph.driver.HugeClient;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class HugeClientTest {
 

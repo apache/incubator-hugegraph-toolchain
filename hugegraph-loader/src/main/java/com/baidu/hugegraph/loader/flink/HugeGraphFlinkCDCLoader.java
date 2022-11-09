@@ -34,7 +34,7 @@ import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.loader.source.jdbc.JDBCSource;
 import com.baidu.hugegraph.loader.util.Printer;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 
 public class HugeGraphFlinkCDCLoader {

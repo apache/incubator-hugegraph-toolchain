@@ -31,8 +31,8 @@ import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.testutil.Whitebox;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Whitebox;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 

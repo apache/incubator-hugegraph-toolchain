@@ -37,7 +37,7 @@ import com.baidu.hugegraph.structure.graph.BatchVertexRequest;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.GraphIterator;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 
 public class GraphManager {
 

@@ -29,9 +29,11 @@ import org.junit.Test;
 import com.baidu.hugegraph.driver.SchemaManager;
 import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.testutil.Assert;
+
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.DateUtil;
+
 import com.baidu.hugegraph.testutil.Utils;
-import com.baidu.hugegraph.util.DateUtil;
 import com.google.common.collect.ImmutableList;
 
 public class VertexLabelTest extends BaseFuncTest {

@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.google.common.collect.Sets;
 
 public final class Line {

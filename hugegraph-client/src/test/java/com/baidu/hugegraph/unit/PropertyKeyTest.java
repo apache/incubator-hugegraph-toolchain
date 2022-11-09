@@ -25,7 +25,7 @@ import com.baidu.hugegraph.structure.constant.Cardinality;
 import com.baidu.hugegraph.structure.constant.DataType;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.structure.schema.PropertyKey;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class PropertyKeyTest {
 

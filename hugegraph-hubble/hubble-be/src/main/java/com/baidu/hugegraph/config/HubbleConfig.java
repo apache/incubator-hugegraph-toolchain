@@ -21,6 +21,8 @@ package com.baidu.hugegraph.config;
 
 import java.io.File;
 
+import org.apache.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.OptionSpace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.context.annotation.Bean;

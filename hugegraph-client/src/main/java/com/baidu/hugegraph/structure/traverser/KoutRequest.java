@@ -21,7 +21,7 @@ package com.baidu.hugegraph.structure.traverser;
 
 import com.baidu.hugegraph.api.traverser.TraversersAPI;
 import com.baidu.hugegraph.structure.constant.Traverser;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class KoutRequest {
@@ -33,17 +33,17 @@ public class KoutRequest {
     @JsonProperty("max_depth")
     public int maxDepth;
     @JsonProperty("nearest")
-    public boolean nearest = true;
+    public boolean nearest;
     @JsonProperty("count_only")
-    public boolean countOnly = false;
+    public boolean countOnly;
     @JsonProperty("capacity")
-    public long capacity = Traverser.DEFAULT_CAPACITY;
+    public long capacity;
     @JsonProperty("limit")
-    public int limit = Traverser.DEFAULT_LIMIT;
+    public int limit;
     @JsonProperty("with_vertex")
-    public boolean withVertex = false;
+    public boolean withVertex;
     @JsonProperty("with_path")
-    public boolean withPath = false;
+    public boolean withPath;
 
     private KoutRequest() {
         this.source = null;
@@ -73,12 +73,12 @@ public class KoutRequest {
 
     public static class Builder {
 
-        private KoutRequest request;
+        private final KoutRequest request;
         private EdgeStep.Builder stepBuilder;
 
         private Builder() {
-                this.request = new KoutRequest();
-                this.stepBuilder = EdgeStep.builder();
+            this.request = new KoutRequest();
+            this.stepBuilder = EdgeStep.builder();
         }
 
         public Builder source(Object source) {

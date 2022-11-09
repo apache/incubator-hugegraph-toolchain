@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.baidu.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.enums.AsyncTaskStatus;
 import com.baidu.hugegraph.entity.enums.ExecuteType;

@@ -31,8 +31,8 @@ import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.structure.auth.HugeResource;
 import com.baidu.hugegraph.structure.auth.HugeResourceType;
 import com.baidu.hugegraph.structure.auth.Target;
-import com.baidu.hugegraph.testutil.Assert;
-import com.baidu.hugegraph.testutil.Whitebox;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Whitebox;
 
 public class TargetApiTest extends AuthApiTest {
 

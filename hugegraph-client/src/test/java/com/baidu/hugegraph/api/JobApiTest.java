@@ -27,7 +27,7 @@ import com.baidu.hugegraph.structure.Task;
 import com.baidu.hugegraph.structure.schema.EdgeLabel;
 import com.baidu.hugegraph.structure.schema.IndexLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 
 public class JobApiTest extends BaseApiTest {
 

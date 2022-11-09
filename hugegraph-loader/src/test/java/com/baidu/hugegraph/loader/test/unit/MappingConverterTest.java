@@ -22,6 +22,7 @@ package com.baidu.hugegraph.loader.test.unit;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -76,7 +77,7 @@ public class MappingConverterTest {
                 "}";
         String input = "struct.json";
         File inputFile = new File(input);
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         FileUtils.writeStringToFile(inputFile, v1Json, charset);
         MappingConverter.main(new String[]{input});
 

@@ -49,7 +49,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.baidu.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.entity.enums.FileMappingStatus;
 import com.baidu.hugegraph.entity.load.FileMapping;
 import com.baidu.hugegraph.entity.load.FileSetting;
@@ -59,7 +59,7 @@ import com.baidu.hugegraph.mapper.load.FileMappingMapper;
 import com.baidu.hugegraph.options.HubbleOptions;
 import com.baidu.hugegraph.util.Ex;
 import com.baidu.hugegraph.util.HubbleUtil;
-import com.baidu.hugegraph.util.StringUtil;
+import org.apache.hugegraph.util.StringUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;

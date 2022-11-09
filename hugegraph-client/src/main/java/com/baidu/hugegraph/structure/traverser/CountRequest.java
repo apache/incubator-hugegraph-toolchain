@@ -24,7 +24,7 @@ import java.util.List;
 
 import com.baidu.hugegraph.api.API;
 import com.baidu.hugegraph.structure.constant.Traverser;
-import com.baidu.hugegraph.util.E;
+import org.apache.hugegraph.util.E;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CountRequest {

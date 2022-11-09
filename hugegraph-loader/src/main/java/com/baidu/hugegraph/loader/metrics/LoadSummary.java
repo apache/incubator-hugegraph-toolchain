@@ -30,7 +30,7 @@ import com.baidu.hugegraph.loader.constant.Constants;
 import com.baidu.hugegraph.loader.constant.ElemType;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
-import com.baidu.hugegraph.util.InsertionOrderUtil;
+import org.apache.hugegraph.util.InsertionOrderUtil;;
 
 public final class LoadSummary {
 

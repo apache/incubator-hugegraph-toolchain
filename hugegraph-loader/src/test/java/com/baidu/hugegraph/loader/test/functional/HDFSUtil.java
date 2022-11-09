@@ -35,7 +35,7 @@ import org.slf4j.Logger;
 
 import com.baidu.hugegraph.loader.exception.LoadException;
 import com.baidu.hugegraph.loader.source.file.Compression;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 
 public class HDFSUtil implements IOUtil {
 

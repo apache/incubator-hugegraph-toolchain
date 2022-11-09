@@ -24,7 +24,7 @@ import org.junit.Test;
 import com.baidu.hugegraph.structure.graph.Edge;
 import com.baidu.hugegraph.structure.graph.Path;
 import com.baidu.hugegraph.structure.graph.Vertex;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.testutil.Utils;
 import com.google.common.collect.ImmutableList;
 

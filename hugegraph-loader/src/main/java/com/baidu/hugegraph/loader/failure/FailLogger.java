@@ -49,7 +49,7 @@ import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.util.LoadUtil;
 import com.baidu.hugegraph.util.JsonUtil;
-import com.baidu.hugegraph.util.Log;
+import org.apache.hugegraph.util.Log;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 

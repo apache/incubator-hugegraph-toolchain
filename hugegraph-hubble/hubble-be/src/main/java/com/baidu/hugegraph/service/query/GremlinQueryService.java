@@ -37,7 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import com.baidu.hugegraph.api.gremlin.GremlinRequest;
-import com.baidu.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.config.HugeConfig;
 import com.baidu.hugegraph.driver.HugeClient;
 import com.baidu.hugegraph.entity.query.AdjacentQuery;
 import com.baidu.hugegraph.entity.query.GraphView;
@@ -53,7 +53,7 @@ import com.baidu.hugegraph.exception.IllegalGremlinException;
 import com.baidu.hugegraph.exception.InternalException;
 import com.baidu.hugegraph.exception.ServerException;
 import com.baidu.hugegraph.options.HubbleOptions;
-import com.baidu.hugegraph.rest.ClientException;
+import org.apache.hugegraph.rest.ClientException;
 import com.baidu.hugegraph.service.HugeClientPoolService;
 import com.baidu.hugegraph.service.schema.VertexLabelService;
 import com.baidu.hugegraph.structure.constant.Direction;

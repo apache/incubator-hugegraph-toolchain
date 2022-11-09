@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.baidu.hugegraph.cmd.HugeGraphCommand;
@@ -36,12 +35,11 @@ import com.baidu.hugegraph.structure.auth.Target;
 import com.baidu.hugegraph.structure.auth.User;
 import com.baidu.hugegraph.structure.constant.HugeType;
 import com.baidu.hugegraph.test.util.FileUtil;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-@Ignore
 public class AuthRestoreTest extends AuthTest {
 
     private HugeClient client;

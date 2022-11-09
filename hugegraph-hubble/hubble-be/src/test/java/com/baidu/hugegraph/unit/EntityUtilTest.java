@@ -24,7 +24,7 @@ import java.util.Date;
 import org.junit.Test;
 
 import com.baidu.hugegraph.entity.GraphConnection;
-import com.baidu.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Assert;
 import com.baidu.hugegraph.util.EntityUtil;
 
 public class EntityUtilTest {
