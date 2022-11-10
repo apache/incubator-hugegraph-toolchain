@@ -75,7 +75,7 @@ fi
 
 # for collecting codecov
 agent_opts="-javaagent:${LIB_PATH}/jacocoagent.jar=includes=*,port=36320,destfile=jacoco-it.exec,output=tcpserver"
-main_class="com.baidu.hugegraph.HugeGraphHubble"
+main_class="org.apache.hugegraph.HugeGraphHubble"
 args=${CONF_PATH}/hugegraph-hubble.properties
 log=${LOG_PATH}/hugegraph-hubble.log
 

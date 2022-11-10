@@ -32,7 +32,7 @@ DEFAULT_APP_NAME="hugegraph-spark-loader"
 APP_NAME=${APP_NAME:-$DEFAULT_APP_NAME}
 
 CMD="${SPARK_HOME}/bin/spark-submit
-    --class com.baidu.hugegraph.loader.spark.HugeGraphSparkLoader \
+    --class org.apache.hugegraph.loader.spark.HugeGraphSparkLoader \
     ${ENGINE_PARAMS}
     --jars $(echo ${LIB_DIR}/*.jar | tr ' ' ',') ${ASSEMBLY_JAR_NAME} ${HUGEGRAPH_PARAMS}"
 

@@ -28,7 +28,7 @@ echo "hugegraph_params: $HUGEGRAPH_PARAMS"
 
 CMD=${FLINK_HOME}/bin/flink run \
   ${ENGINE_PARAMS} \
-  -c com.baidu.hugegraph.loader.flink.HugeGraphFlinkCDCLoader \
+  -c org.apache.hugegraph.loader.flink.HugeGraphFlinkCDCLoader \
   ${ASSEMBLY_JAR_NAME} ${HUGEGRAPH_PARAMS}
 
 echo ${CMD}

@@ -43,6 +43,6 @@ for jar in `ls ${LIB_PATH}/*.jar`; do
 done
 
 args=$1
-main_class="com.baidu.hugegraph.loader.MappingConverter"
+main_class="org.apache.hugegraph.loader.MappingConverter"
 exec java -Dlog4j.configurationFile=${CONF_PATH}/log4j2.xml \
 -cp ${class_path} ${main_class} ${args}
