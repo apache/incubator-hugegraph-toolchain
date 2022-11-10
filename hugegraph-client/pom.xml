@@ -111,7 +111,7 @@
                 <version>0.8.2</version>
                 <configuration>
                     <excludes>
-                        <exclude>org/apache/hugegraph/example/*.class</exclude>
+                        <exclude>com/baidu/hugegraph/example/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

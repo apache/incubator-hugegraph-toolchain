@@ -188,8 +188,8 @@ function update_hugegraph_version() {
     # Second digit plus 1
     BUMP_VERSION=`echo $RELEASE_VERSION | awk -F '.' '{prefix=$2}END{print $1"."prefix+1".0"}'`
     CORE_POM_XML_FILE="$PROJECT_DIR/hugegraph-core/pom.xml"
-    CORE_VERSION_JAVA_FILE="$PROJECT_DIR/hugegraph-core/src/main/java/org/apache/hugegraph/version/CoreVersion.java"
-    API_VERSION_JAVA_FILE="$PROJECT_DIR/hugegraph-api/src/main/java/org/apache/hugegraph/version/ApiVersion.java"
+    CORE_VERSION_JAVA_FILE="$PROJECT_DIR/hugegraph-core/src/main/java/com/baidu/hugegraph/version/CoreVersion.java"
+    API_VERSION_JAVA_FILE="$PROJECT_DIR/hugegraph-api/src/main/java/com/baidu/hugegraph/version/ApiVersion.java"
     # Replace Implementation-Version in core pom.xml
     replace $CORE_POM_XML_FILE "<Implementation-Version>.*</Implementation-Version>" \
             "<Implementation-Version>$BUMP_VERSION.0</Implementation-Version>" || return 1

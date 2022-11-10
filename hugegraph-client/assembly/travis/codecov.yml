@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 ignore:
-  - "src/main/java/org/apache/hugegraph/example"
+  - "src/main/java/com/baidu/hugegraph/example"
