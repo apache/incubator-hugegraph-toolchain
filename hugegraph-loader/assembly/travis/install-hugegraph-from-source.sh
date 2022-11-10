@@ -53,4 +53,6 @@ echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
 # start HugeGraphServer with https protocol
 bin/init-store.sh
 bin/start-hugegraph.sh
+pwd
+cat /home/runner/work/incubator-hugegraph-toolchain/incubator-hugegraph-toolchain/hugegraph_https/logs/hugegraph-server.log
 cd ../
