@@ -73,7 +73,7 @@ if [[ -f ${PID_FILE} ]] ; then
     fi
 fi
 
-main_class="com.baidu.hugegraph.HugeGraphHubble"
+main_class="org.apache.hugegraph.HugeGraphHubble"
 args=${CONF_PATH}/hugegraph-hubble.properties
 log=${LOG_PATH}/hugegraph-hubble.log
 
