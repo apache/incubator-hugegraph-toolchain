@@ -35,7 +35,7 @@ scriptEngines: {
       org.apache.tinkerpop.gremlin.jsr223.ImportGremlinPlugin: {
         classImports: [
           java.lang.Math,
-          org.apache.hugegraph.util.DateUtil,
+          com.baidu.hugegraph.util.DateUtil,
           com.baidu.hugegraph.traversal.optimize.Text,
           com.baidu.hugegraph.traversal.optimize.TraversalUtil
         ],

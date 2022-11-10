@@ -60,7 +60,7 @@ scriptEngines: {
           com.baidu.hugegraph.traversal.algorithm.steps.WeightedEdgeStep,
           com.baidu.hugegraph.traversal.optimize.Text,
           com.baidu.hugegraph.traversal.optimize.TraversalUtil,
-          org.apache.hugegraph.util.DateUtil
+          com.baidu.hugegraph.util.DateUtil
         ],
         methodImports: [java.lang.Math#*]
       },
