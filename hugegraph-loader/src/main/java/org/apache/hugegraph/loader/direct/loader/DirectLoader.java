@@ -19,6 +19,10 @@
 
 package org.apache.hugegraph.loader.direct.loader;
 
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.hugegraph.loader.builder.EdgeBuilder;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
 import org.apache.hugegraph.loader.builder.VertexBuilder;
@@ -31,11 +35,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
-
-public abstract class DirectLoader<T,R> implements Serializable {
+public abstract class DirectLoader<T, R> implements Serializable {
 
     LoadOptions loadOptions;
     InputStruct struct;
@@ -57,9 +57,7 @@ public abstract class DirectLoader<T,R> implements Serializable {
         context.schemaCache().updateAll();
         List<ElementBuilder> buildersForGraphElement = new LinkedList<>();
         for (VertexMapping vertexMapping : struct.vertices()) {
-            buildersForGraphElement.add(
-                    new VertexBuilder(context, struct, vertexMapping)
-            );
+            buildersForGraphElement.add(new VertexBuilder(context, struct, vertexMapping));
         }
         for (EdgeMapping edgeMapping : struct.edges()) {
             buildersForGraphElement.add(new EdgeBuilder(context, struct, edgeMapping));
@@ -70,7 +68,7 @@ public abstract class DirectLoader<T,R> implements Serializable {
 
     abstract JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds);
 
-    abstract String generateFiles(JavaPairRDD<T,  R> buildAndSerRdd);
+    abstract String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
 
     abstract void loadFiles(String path);
 }
