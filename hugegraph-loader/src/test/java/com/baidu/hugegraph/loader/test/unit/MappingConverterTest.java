@@ -73,7 +73,15 @@ public class MappingConverterTest {
                 "        \"Rating\": \"rate\"" +
                 "      }" +
                 "    }" +
-                "  ]" +
+                "  ]," +
+                "  \"backendStoreInfo\":" +
+                "  {" +
+                "    \"edge_tablename\": \"hugegraph:g_oe\"," +
+                "    \"vertex_tablename\": \"hugegraph:g_v\"," +
+                "    \"hbase_zookeeper_quorum\": \"127.0.0.1\"," +
+                "    \"hbase_zookeeper_property_clientPort\": \"2181\"," +
+                "    \"zookeeper_znode_parent\": \"/hbase\"" +
+                "  }" +
                 "}";
         String input = "struct.json";
         File inputFile = new File(input);
@@ -117,7 +125,13 @@ public class MappingConverterTest {
                 "\"field_mapping\":{\"UserID\":\"id\",\"MovieID\":\"id\"," +
                 "\"Rating\":\"rate\"},\"value_mapping\":{},\"selected\":[]," +
                 "\"ignored\":[\"Timestamp\"],\"null_values\":[\"\"]," +
-                "\"update_strategies\":{},\"batch_size\":500}]}]}";
+                "\"update_strategies\":{},\"batch_size\":500}]}]," +
+                "\"backendStoreInfo\":{" +
+                "\"edge_tablename\":\"hugegraph:g_oe\"," +
+                "\"vertex_tablename\":\"hugegraph:g_v\"," +
+                "\"hbase_zookeeper_quorum\":\"127.0.0.1\"," +
+                "\"hbase_zookeeper_property_clientPort\":\"2181\"," +
+                "\"zookeeper_znode_parent\":\"/hbase\"}}";
         Assert.assertEquals(expectV2Json, actualV2Json);
 
         FileUtils.forceDelete(inputFile);
