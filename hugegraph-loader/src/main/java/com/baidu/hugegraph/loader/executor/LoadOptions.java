@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Set;
 
+import com.baidu.hugegraph.loader.mapping.BackendStoreInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -206,6 +207,34 @@ public class LoadOptions implements Serializable {
                description = "Print usage of HugeGraphLoader")
     public boolean help;
 
+    @Parameter(names = {"--sink-type"}, arity = 1,
+               description = "Sink to different storage")
+    public boolean sinkType = true;
+
+    @Parameter(names = {"--edge-partitions"}, arity = 1,
+               description = "The number of partitions of the HBase edge table")
+    public int edgePartitions = 64;
+
+    @Parameter(names = {"--vertex-partitions"}, arity = 1,
+               description = "The number of partitions of the HBase vertex table")
+    public int vertexPartitions = 64;
+
+    @Parameter(names = {"edgeTablename"}, arity = 1,
+               description = "edgeTablename")
+    public String edgeTablename;
+    @Parameter(names = {"vertexTablename"}, arity = 1,
+               description = "vertexTablename")
+    public String vertexTablename;
+    @Parameter(names = {"hbaseZKQuorum"}, arity = 1,
+               description = "hbaseZKQuorum")
+    public String hbaseZKQuorum;
+    @Parameter(names = {"hbaseZKPort"}, arity = 1,
+               description = "hbaseZKPort")
+    public String hbaseZKPort;
+    @Parameter(names = {"hbaseZKParent"}, arity = 1,
+               description = "hbaseZKParent")
+    public String hbaseZKParent;
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";
@@ -261,6 +290,15 @@ public class LoadOptions implements Serializable {
             options.maxInsertErrors = Constants.NO_LIMIT;
         }
         return options;
+    }
+
+    public void copyBackendStoreInfo (BackendStoreInfo backendStoreInfo) {
+        E.checkArgument(null != backendStoreInfo, "The backendStoreInfo can't be null");
+        this.edgeTablename = backendStoreInfo.getEdgeTablename();
+        this.vertexTablename = backendStoreInfo.getVertexTablename();
+        this.hbaseZKParent = backendStoreInfo.getHbaseZKParent();
+        this.hbaseZKPort = backendStoreInfo.getHbaseZKPort();
+        this.hbaseZKQuorum = backendStoreInfo.getHbaseZKQuorum();
     }
 
     public static class UrlValidator implements IParameterValidator {

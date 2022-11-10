@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.baidu.hugegraph.loader.mapping.BackendStoreInfo;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -56,6 +57,9 @@ public class GraphStructV1 implements Checkable {
     @JsonProperty("edges")
     private final List<EdgeStructV1> edgeStructs;
 
+    @JsonProperty("backendStoreInfo")
+    private BackendStoreInfo backendStoreInfo;
+
     public GraphStructV1() {
         this.vertexStructs = new ArrayList<>();
         this.edgeStructs = new ArrayList<>();
@@ -74,6 +78,10 @@ public class GraphStructV1 implements Checkable {
                       "Failed to parse graph mapping description file '%s'",
                       e, options.file);
         }
+    }
+
+    public BackendStoreInfo getBackendStoreInfo() {
+        return backendStoreInfo;
     }
 
     @Override
