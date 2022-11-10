@@ -50,11 +50,8 @@ sed -i "s?http://127.0.0.1:8080?https://127.0.0.1:8443?g" "$REST_SERVER_CONFIG"
 sed -i "s/rpc.server_port=8091/rpc.server_port=8092/g" "$REST_SERVER_CONFIG"
 sed -i "s/#port: 8182/port: 8282/g" "$GREMLIN_SERVER_CONFIG"
 echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
-cat conf/rest-server.properties
-cat conf/gremlin-server.yaml
+
 # start HugeGraphServer with https protocol
 bin/init-store.sh
-nohup bin/start-hugegraph.sh > out.log 2>&1 &
-sleep 30
-cat /home/runner/work/incubator-hugegraph-toolchain/incubator-hugegraph-toolchain/hugegraph_https/logs/hugegraph-server.log
+bin/start-hugegraph.sh
 cd ../
