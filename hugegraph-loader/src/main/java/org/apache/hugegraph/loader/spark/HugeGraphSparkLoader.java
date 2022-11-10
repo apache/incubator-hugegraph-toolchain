@@ -28,7 +28,6 @@ import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.metrics.LoadDistributeMetrics;
 import org.apache.hugegraph.loader.source.InputSource;
-import org.apache.hugegraph.loader.source.SourceType;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 import org.apache.hugegraph.loader.util.Printer;
 import org.apache.hugegraph.loader.mapping.EdgeMapping;
@@ -96,14 +95,15 @@ public class HugeGraphSparkLoader implements Serializable {
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
         boolean sinkType = this.loadOptions.sinkType;
-        if(!sinkType) {
+        if (!sinkType) {
             this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         }
-        SparkConf conf = new SparkConf()
-                .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")// kryo序列化
-                .set("spark.kryo.registrationRequired", "true");
+        // kryo序列化
+        SparkConf conf = new SparkConf().set("spark.serializer",
+                                             "org.apache.spark.serializer.KryoSerializer")
+                                        .set("spark.kryo.registrationRequired", "true");
         try {
-            conf.registerKryoClasses(new Class[] {
+            conf.registerKryoClasses(new Class[]{
                     org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
                     org.apache.hadoop.hbase.KeyValue.class,
                     org.apache.spark.sql.types.StructType.class,
@@ -112,17 +112,16 @@ public class HugeGraphSparkLoader implements Serializable {
                     org.apache.spark.sql.types.LongType$.class,
                     org.apache.spark.sql.types.Metadata.class,
                     org.apache.spark.sql.types.StringType$.class,
-                    Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
+                    Class.forName(
+                            "org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
                     Class.forName("scala.reflect.ClassTag$$anon$1"),
                     Class.forName("scala.collection.immutable.Set$EmptySet$"),
                     Class.forName("org.apache.spark.sql.types.DoubleType$")
-                 });
+            });
         } catch (ClassNotFoundException e) {
             LOG.error("spark kryo serialized registration failed");
         }
-        SparkSession session = SparkSession.builder()
-                                           .config(conf)
-                                           .getOrCreate();
+        SparkSession session = SparkSession.builder().config(conf).getOrCreate();
         SparkContext sc = session.sparkContext();
 
         LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
@@ -145,22 +144,20 @@ public class HugeGraphSparkLoader implements Serializable {
                 });
 
             } else {
-                LOG.info("\n Start to load data using spark bulkload     \n");
+                LOG.info("\n Start to load data using spark bulkload \n");
                 // gen-hfile
-                HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions,
-                        struct,loadDistributeMetrics);
+                HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions, struct,
+                                                                       loadDistributeMetrics);
                 directLoader.bulkload(ds);
 
             }
-            collectLoadMetrics(loadDistributeMetrics,totalInsertSuccess);
-            LOG.info("\n Finished  load {}  data ",
-                     struct.input().asFileSource().path());
+            collectLoadMetrics(loadDistributeMetrics, totalInsertSuccess);
+            LOG.info("\n Finished  load {}  data ", struct.input().asFileSource().path());
         }
         Long totalInsertSuccessCnt = totalInsertSuccess.value();
         LOG.info("\n ------------The data load task is complete-------------------\n" +
-                 "\n  insertSuccesscnt:\t {}" +
-                 "\n ---------------------------------------------\n"
-                 , totalInsertSuccessCnt);
+                 "\n  insertSuccesscnt:\t {} \n ---------------------------------------------\n",
+                 totalInsertSuccessCnt);
 
         sc.stop();
         session.close();
@@ -240,8 +237,7 @@ public class HugeGraphSparkLoader implements Serializable {
                         ds = reader.csv(path);
                         break;
                     default:
-                        throw new IllegalStateException(
-                                  "Unexpected format value: " + format);
+                        throw new IllegalStateException("Unexpected format value: " + format);
                 }
                 break;
             case JDBC:
@@ -256,14 +252,13 @@ public class HugeGraphSparkLoader implements Serializable {
                 ds = reader.jdbc(url, table, properties);
                 break;
             default:
-                throw new AssertionError(String.format(
-                          "Unsupported input source '%s'", input.type()));
+                throw new AssertionError(String.format("Unsupported input source '%s'",
+                                                       input.type()));
         }
         return ds;
     }
 
-    private void parse(Row row,
-                       Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
+    private void parse(Row row, Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
                        InputStruct struct) {
         ElementBuilder builder = builderMap.getKey();
         List<GraphElement> graphElements = builderMap.getValue();
@@ -292,9 +287,8 @@ public class HugeGraphSparkLoader implements Serializable {
                 elements = builder.build(headers, values);
                 break;
             default:
-                throw new AssertionError(String.format(
-                          "Unsupported input source '%s'",
-                          struct.input().type()));
+                throw new AssertionError(String.format("Unsupported input source '%s'",
+                                                       struct.input().type()));
         }
         graphElements.addAll(elements);
     }
@@ -313,7 +307,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 g.addEdges((List<Edge>) (Object) graphElements);
             }
         } else {
-            // CreateIfNotExist dose not support false now
+            // CreateIfNotExist doesn't support false now
             if (isVertex) {
                 BatchVertexRequest.Builder req =
                         new BatchVertexRequest.Builder();

@@ -50,7 +50,7 @@ import scala.Tuple2;
 
 public class SinkToHBase implements Serializable {
 
-    private LoadOptions loadOptions;
+    private final LoadOptions loadOptions;
     public static final Logger LOG = Log.logger(SinkToHBase.class);
 
     public SinkToHBase(LoadOptions loadOptions) {
@@ -62,7 +62,7 @@ public class SinkToHBase implements Serializable {
         baseConf.set("hbase.zookeeper.quorum", this.loadOptions.hbaseZKQuorum);
         baseConf.set("hbase.zookeeper.property.clientPort", this.loadOptions.hbaseZKPort);
         baseConf.set("zookeeper.znode.parent", this.loadOptions.hbaseZKParent);
-        return Optional.ofNullable(baseConf);
+        return Optional.of(baseConf);
     }
 
     private Optional<Connection> getConnection() {
@@ -71,23 +71,20 @@ public class SinkToHBase implements Serializable {
         try {
             conn = ConnectionFactory.createConnection(baseConf.get());
         } catch (IOException e) {
-            LOG.error("get hbase connection failed",e);
+            LOG.error("get hbase connection failed", e);
         }
         return Optional.ofNullable(conn);
     }
 
-    public Tuple2<IntPartitioner, TableDescriptor>
-            getPartitionerByTableName (int numPartitions, String tableName) throws IOException {
+    public Tuple2<IntPartitioner, TableDescriptor> getPartitionerByTableName(
+            int numPartitions, String tableName) throws IOException {
         Optional<Connection> optionalConnection = getConnection();
-        TableDescriptor descriptor = optionalConnection
-                .get()
-                .getTable(TableName.valueOf(tableName))
-                .getDescriptor();
-        LOG.debug("getPartitionerByTableName get TableDescriptor " +
-                descriptor.getTableName());
+        TableDescriptor descriptor = optionalConnection.get()
+                                                       .getTable(TableName.valueOf(tableName))
+                                                       .getDescriptor();
+        LOG.debug("getPartitionerByTableName get TableDescriptor " + descriptor.getTableName());
         optionalConnection.get().close();
-        return new Tuple2<IntPartitioner,TableDescriptor>(
-                new IntPartitioner(numPartitions, tableName),descriptor);
+        return new Tuple2<>(new IntPartitioner(numPartitions, tableName), descriptor);
     }
 
     public void loadHfiles(String path, String tableName) throws Exception {
@@ -103,7 +100,7 @@ public class SinkToHBase implements Serializable {
     public class IntPartitioner extends Partitioner {
 
         private final int numPartitions;
-        public Map<List<String>, Integer> rangeMap = new HashMap<>();
+        public Map<List<String>, Integer> rangeMap;
         private String tableName;
 
         public IntPartitioner(int numPartitions, String tableName) throws IOException {
@@ -143,8 +140,8 @@ public class SinkToHBase implements Serializable {
                     String keyString = Bytes.toString(immutableBytesWritableKey.get());
                     for (List<String> range : rangeMap.keySet()) {
                         if (keyString.compareToIgnoreCase(range.get(0)) >= 0 &&
-                           ((keyString.compareToIgnoreCase(range.get(1)) < 0) ||
-                           range.get(1).equals(""))) {
+                            ((keyString.compareToIgnoreCase(range.get(1)) < 0) ||
+                             "".equals(range.get(1)))) {
                             return rangeMap.get(range);
                         }
                     }
