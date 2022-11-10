@@ -78,4 +78,4 @@ export JVM_OPTS="$JVM_OPTS -Xmx10g -cp $LOADER_CLASSPATH"
 
 exec ${JAVA} -Dname="HugeGraphLoader" -Dloader.home.path=${TOP} -Dlog4j.configurationFile=${CONF}/log4j2.xml \
 -Djava.library.path=${NATIVE} \
-${JVM_OPTS} com.baidu.hugegraph.loader.HugeGraphLoader ${VARS}
+${JVM_OPTS} org.apache.hugegraph.loader.HugeGraphLoader ${VARS}

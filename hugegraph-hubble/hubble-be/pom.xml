@@ -130,7 +130,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.baidu.hugegraph.HugeGraphHubble</mainClass>
+                            <mainClass>org.apache.hugegraph.HugeGraphHubble</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -145,7 +145,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.baidu.hugegraph.HugeGraphHubble</mainClass>
+                            <mainClass>org.apache.hugegraph.HugeGraphHubble</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

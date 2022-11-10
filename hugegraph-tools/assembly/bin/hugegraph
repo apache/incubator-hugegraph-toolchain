@@ -143,4 +143,4 @@ if [ "$JAVA_OPTIONS" = "" ] ; then
 fi
 
 exec $JAVA -Dtools.home.path=${TOP} $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
-com.baidu.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG "$@"
+org.apache.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG "$@"
