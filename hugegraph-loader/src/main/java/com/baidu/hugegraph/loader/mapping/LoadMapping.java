@@ -53,6 +53,12 @@ public class LoadMapping implements Checkable {
     private String version;
     @JsonProperty("structs")
     private List<InputStruct> structs;
+    @JsonProperty("backendStoreInfo")
+    private BackendStoreInfo backendStoreInfo;
+
+    public BackendStoreInfo getBackendStoreInfo() {
+        return backendStoreInfo;
+    }
 
     public static LoadMapping of(String filePath) {
         File file = FileUtils.getFile(filePath);
@@ -79,6 +85,14 @@ public class LoadMapping implements Checkable {
     public LoadMapping(@JsonProperty("structs") List<InputStruct> structs) {
         this.version = Constants.V2_STRUCT_VERSION;
         this.structs = structs;
+    }
+
+    @JsonCreator
+    public LoadMapping(@JsonProperty("structs") List<InputStruct> structs,
+                       @JsonProperty("backendStoreInfo") BackendStoreInfo backendStoreInfo) {
+        this.version = Constants.V2_STRUCT_VERSION;
+        this.structs = structs;
+        this.backendStoreInfo = backendStoreInfo;
     }
 
     @Override

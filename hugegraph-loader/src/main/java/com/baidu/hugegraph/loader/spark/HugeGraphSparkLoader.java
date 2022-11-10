@@ -23,6 +23,7 @@ import com.baidu.hugegraph.driver.GraphManager;
 import com.baidu.hugegraph.loader.builder.EdgeBuilder;
 import com.baidu.hugegraph.loader.builder.ElementBuilder;
 import com.baidu.hugegraph.loader.builder.VertexBuilder;
+import com.baidu.hugegraph.loader.direct.loader.HBaseDirectLoader;
 import com.baidu.hugegraph.loader.executor.LoadContext;
 import com.baidu.hugegraph.loader.executor.LoadOptions;
 import com.baidu.hugegraph.loader.mapping.EdgeMapping;
@@ -30,6 +31,7 @@ import com.baidu.hugegraph.loader.mapping.ElementMapping;
 import com.baidu.hugegraph.loader.mapping.InputStruct;
 import com.baidu.hugegraph.loader.mapping.LoadMapping;
 import com.baidu.hugegraph.loader.mapping.VertexMapping;
+import com.baidu.hugegraph.loader.metrics.LoadDistributeMetrics;
 import com.baidu.hugegraph.loader.source.InputSource;
 import com.baidu.hugegraph.loader.source.file.Compression;
 import com.baidu.hugegraph.loader.source.file.FileFilter;
@@ -46,11 +48,14 @@ import com.baidu.hugegraph.structure.graph.UpdateStrategy;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.util.Log;
 
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructField;
+import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 
 import java.io.Serializable;
@@ -89,29 +94,92 @@ public class HugeGraphSparkLoader implements Serializable {
     public void load() {
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
-
-        SparkSession session = SparkSession.builder().getOrCreate();
-        for (InputStruct struct : structs) {
-            Dataset<Row> ds = read(session, struct);
-            ds.foreachPartition((Iterator<Row> p) -> {
-                LoadContext context = initPartition(this.loadOptions, struct);
-                p.forEachRemaining((Row row) -> {
-                    loadRow(struct, row, p, context);
-                });
-                context.close();
-            });
+        boolean sinkType = this.loadOptions.sinkType;
+        if(!sinkType) {
+            this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         }
+        SparkConf conf = new SparkConf()
+                .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")// kryo序列化
+                .set("spark.kryo.registrationRequired", "true");
+        try {
+            conf.registerKryoClasses(new Class[] {
+                    org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
+                    org.apache.hadoop.hbase.KeyValue.class,
+                    org.apache.spark.sql.types.StructType.class,
+                    StructField[].class,
+                    StructField.class,
+                    org.apache.spark.sql.types.LongType$.class,
+                    org.apache.spark.sql.types.Metadata.class,
+                    org.apache.spark.sql.types.StringType$.class,
+                    Class.forName("org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
+                    Class.forName("scala.reflect.ClassTag$$anon$1"),
+                    Class.forName("scala.collection.immutable.Set$EmptySet$"),
+                    Class.forName("org.apache.spark.sql.types.DoubleType$")
+                 });
+        } catch (ClassNotFoundException e) {
+            LOG.error("spark kryo serialized registration failed");
+        }
+        SparkSession session = SparkSession.builder()
+                                           .config(conf)
+                                           .getOrCreate();
+        SparkContext sc = session.sparkContext();
+
+        LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
+        for (InputStruct struct : structs) {
+            LOG.info("\n Initializes the accumulator corresponding to the  {} ",
+                     struct.input().asFileSource().path());
+            LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
+            loadDistributeMetrics.init(sc);
+            LOG.info("\n  Start to load data, data info is: \t {} ",
+                     struct.input().asFileSource().path());
+            Dataset<Row> ds = read(session, struct);
+            if (sinkType) {
+                LOG.info("\n  Start to load data using spark apis  \n");
+                ds.foreachPartition((Iterator<Row> p) -> {
+                    LoadContext context = initPartition(this.loadOptions, struct);
+                    p.forEachRemaining((Row row) -> {
+                        loadRow(struct, row, p, context);
+                    });
+                    context.close();
+                });
+
+            } else {
+                LOG.info("\n Start to load data using spark bulkload     \n");
+                // gen-hfile
+                HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions,
+                        struct,loadDistributeMetrics);
+                directLoader.bulkload(ds);
+
+            }
+            collectLoadMetrics(loadDistributeMetrics,totalInsertSuccess);
+            LOG.info("\n Finished  load {}  data ",
+                     struct.input().asFileSource().path());
+        }
+        Long totalInsertSuccessCnt = totalInsertSuccess.value();
+        LOG.info("\n ------------The data load task is complete-------------------\n" +
+                 "\n  insertSuccesscnt:\t {}" +
+                 "\n ---------------------------------------------\n"
+                 , totalInsertSuccessCnt);
+
+        sc.stop();
         session.close();
         session.stop();
+    }
+
+    private void collectLoadMetrics(LoadDistributeMetrics loadMetrics,
+                                    LongAccumulator totalInsertSuccess) {
+        Long edgeInsertSuccess = loadMetrics.readEdgeInsertSuccess();
+        Long vertexInsertSuccess = loadMetrics.readVertexInsertSuccess();
+        totalInsertSuccess.add(edgeInsertSuccess);
+        totalInsertSuccess.add(vertexInsertSuccess);
     }
 
     private LoadContext initPartition(
             LoadOptions loadOptions, InputStruct struct) {
         LoadContext context = new LoadContext(loadOptions);
         for (VertexMapping vertexMapping : struct.vertices()) {
-            this.builders.put(
-                    new VertexBuilder(context, struct, vertexMapping),
-                    new ArrayList<>());
+            this.builders.put(new VertexBuilder(context, struct, vertexMapping),
+                              new ArrayList<>());
         }
         for (EdgeMapping edgeMapping : struct.edges()) {
             this.builders.put(new EdgeBuilder(context, struct, edgeMapping),

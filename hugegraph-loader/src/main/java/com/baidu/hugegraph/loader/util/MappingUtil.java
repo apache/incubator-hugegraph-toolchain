@@ -129,7 +129,7 @@ public final class MappingUtil {
             inputStruct.id(String.valueOf(++id));
             inputStructs.add(inputStruct);
         }
-        return new LoadMapping(inputStructs);
+        return new LoadMapping(inputStructs, graphStruct.getBackendStoreInfo());
     }
 
     private static ElementMapping convertV1ToV2(ElementStructV1 origin) {

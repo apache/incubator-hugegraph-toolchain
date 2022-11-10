@@ -28,6 +28,8 @@ import com.baidu.hugegraph.loader.mapping.VertexMapping;
 import com.baidu.hugegraph.structure.graph.Vertex;
 import com.baidu.hugegraph.structure.schema.SchemaLabel;
 import com.baidu.hugegraph.structure.schema.VertexLabel;
+
+import org.apache.spark.sql.Row;
 import org.apache.hugegraph.util.E;
 
 public class VertexBuilder extends ElementBuilder<Vertex> {
@@ -55,6 +57,19 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     public List<Vertex> build(String[] names, Object[] values) {
         VertexKVPairs kvPairs = this.newKVPairs(this.vertexLabel,
                                                 this.mapping.unfold());
+        kvPairs.extractFromVertex(names, values);
+        return kvPairs.buildVertices(true);
+    }
+
+    @Override
+    public List<Vertex> build(Row row) {
+        VertexKVPairs kvPairs = this.newKVPairs(this.vertexLabel,
+                                                this.mapping.unfold());
+        String[] names = row.schema().fieldNames();
+        Object[] values = new Object[row.size()];
+        for (int i = 0; i < row.size(); i++) {
+            values[i] = row.get(i);
+        }
         kvPairs.extractFromVertex(names, values);
         return kvPairs.buildVertices(true);
     }

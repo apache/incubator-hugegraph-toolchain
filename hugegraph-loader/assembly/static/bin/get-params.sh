@@ -27,7 +27,7 @@ function get_params() {
       --incremental-mode | --failure-mode | --batch-insert-threads | --single-insert-threads | \
       --max-conn | --max-conn-per-route | --batch-size | --max-parse-errors | --max-insert-errors | \
       --timeout | --shutdown-timeout | --retry-times | --retry-interval | --check-vertex | \
-      --print-progress | --dry-run | --help)
+      --print-progress | --dry-run | --sink-type | --vertex-partitions | --edge-partitions | --help )
         HUGEGRAPH_PARAMS="$HUGEGRAPH_PARAMS $1 $2"
         shift 2
         ;;
