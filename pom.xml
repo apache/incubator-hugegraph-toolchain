@@ -73,6 +73,8 @@
         <flink.version>1.13.5</flink.version>
         <flinkcdc.version>2.2.1</flinkcdc.version>
         <spark.version>3.2.2</spark.version>
+        <spark.scope>provided</spark.scope>
+        <flink.scope>provided</flink.scope>
         <scala.version>2.12</scala.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <docker.build.skip>true</docker.build.skip>
