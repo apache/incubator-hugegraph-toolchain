@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.hugegraph.structure.SchemaElement;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 

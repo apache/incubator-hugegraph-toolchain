@@ -36,8 +36,8 @@ public enum IndexType {
     // For unique properties
     UNIQUE(5, "unique");
 
-    private byte code = 0;
-    private String name = null;
+    private final byte code;
+    private final String name;
 
     IndexType(int code, String name) {
         assert code < 256;

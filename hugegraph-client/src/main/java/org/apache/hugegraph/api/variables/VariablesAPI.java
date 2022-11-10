@@ -25,6 +25,7 @@ import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
+
 import com.google.common.collect.ImmutableMap;
 
 public class VariablesAPI extends API {

@@ -31,6 +31,7 @@ import org.apache.hugegraph.exception.NotSupportException;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

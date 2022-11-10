@@ -22,7 +22,7 @@ package org.apache.hugegraph.util;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Copied from HugeGraph(https://github.com/hugegraph/hugegraph)
+ * Copied from HugeGraph(<a href="https://github.com/hugegraph/hugegraph">...</a>)
  */
 public final class IdUtil {
 
@@ -62,7 +62,7 @@ public final class IdUtil {
          * execution, we forbid the use of special characters as delimiter
          * or escape sign.
          * The `limit` param -1 in split method can ensure empty string be
-         * splited to a part.
+         * split to a part.
          */
         String[] parts = id.split("(?<!" + escape + ")" + splitor, -1);
         for (int i = 0; i < parts.length; i++) {

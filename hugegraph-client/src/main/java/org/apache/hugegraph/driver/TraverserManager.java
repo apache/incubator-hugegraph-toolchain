@@ -108,12 +108,9 @@ public class TraverserManager {
         this.sameNeighborsAPI = new SameNeighborsAPI(client, graph);
         this.shortestPathAPI = new ShortestPathAPI(client, graph);
         this.allShortestPathsAPI = new AllShortestPathsAPI(client, graph);
-        this.singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(
-                                               client, graph);
-        this.weightedShortestPathAPI = new WeightedShortestPathAPI(
-                                           client, graph);
-        this.multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(
-                                            client, graph);
+        this.singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(client, graph);
+        this.weightedShortestPathAPI = new WeightedShortestPathAPI(client, graph);
+        this.multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(client, graph);
         this.pathsAPI = new PathsAPI(client, graph);
         this.crosspointsAPI = new CrosspointsAPI(client, graph);
         this.koutAPI = new KoutAPI(client, graph);
@@ -122,8 +119,7 @@ public class TraverserManager {
         this.ringsAPI = new RingsAPI(client, graph);
         this.raysAPI = new RaysAPI(client, graph);
         this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
-        this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(
-                                            client, graph);
+        this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client, graph);
         this.templatePathsAPI = new TemplatePathsAPI(client, graph);
         this.fusiformSimilarityAPI = new FusiformSimilarityAPI(client, graph);
         this.neighborRankAPI = new NeighborRankAPI(client, graph);
@@ -149,8 +145,7 @@ public class TraverserManager {
                                              label, degree);
     }
 
-    public Map<Object, Double> jaccardSimilarity(
-                               SingleSourceJaccardSimilarityRequest request) {
+    public Map<Object, Double> jaccardSimilarity(SingleSourceJaccardSimilarityRequest request) {
         return this.jaccardSimilarityAPI.post(request);
     }
 
@@ -295,14 +290,11 @@ public class TraverserManager {
                                              String label, String weight,
                                              long degree, long skipDegree,
                                              long capacity, boolean withVertex) {
-        return this.weightedShortestPathAPI.get(sourceId, targetId,direction,
-                                                label, weight, degree,
-                                                skipDegree, capacity,
-                                                withVertex);
+        return this.weightedShortestPathAPI.get(sourceId, targetId, direction, label, weight,
+                                                degree, skipDegree, capacity, withVertex);
     }
 
-    public PathsWithVertices multiNodeShortestPath(
-                             MultiNodeShortestPathRequest request) {
+    public PathsWithVertices multiNodeShortestPath(MultiNodeShortestPathRequest request) {
         return this.multiNodeShortestPathAPI.post(request);
     }
 
@@ -448,8 +440,7 @@ public class TraverserManager {
         return this.customizedPathsAPI.post(request);
     }
 
-    public CustomizedCrosspoints customizedCrosspointss(
-                                 CrosspointsRequest request) {
+    public CustomizedCrosspoints customizedCrosspointss(CrosspointsRequest request) {
         return this.customizedCrosspointsAPI.post(request);
     }
 
@@ -457,8 +448,7 @@ public class TraverserManager {
         return this.templatePathsAPI.post(request);
     }
 
-    public FusiformSimilarity fusiformSimilarity(
-                              FusiformSimilarityRequest request) {
+    public FusiformSimilarity fusiformSimilarity(FusiformSimilarityRequest request) {
         return this.fusiformSimilarityAPI.post(request);
     }
 

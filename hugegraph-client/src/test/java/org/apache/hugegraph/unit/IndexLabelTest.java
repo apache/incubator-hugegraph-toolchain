@@ -67,9 +67,7 @@ public class IndexLabelTest {
         Assert.assertEquals(HugeType.INDEX_LABEL.string(),
                             indexLabelV49.type());
 
-        Assert.assertThrows(NotSupportException.class, () -> {
-            indexLabelV49.userdata();
-        });
+        Assert.assertThrows(NotSupportException.class, indexLabelV49::userdata);
     }
 
     @Test
@@ -84,15 +82,13 @@ public class IndexLabelTest {
         IndexLabel.IndexLabelV56 indexLabelV56 = indexLabel.switchV56();
 
         String json = "{\"id\":0,\"name\":\"personByAge\"," +
-                "\"check_exist\":true,\"user_data\":{}," +
-                "\"base_type\":\"VERTEX_LABEL\",\"base_value\":\"person\"," +
-                "\"index_type\":\"SECONDARY\",\"fields\":[\"age\"]}";
+                      "\"check_exist\":true,\"user_data\":{}," +
+                      "\"base_type\":\"VERTEX_LABEL\",\"base_value\":\"person\"," +
+                      "\"index_type\":\"SECONDARY\",\"fields\":[\"age\"]}";
         Assert.assertEquals(json, JsonUtil.toJson(indexLabelV56));
         Assert.assertEquals(HugeType.INDEX_LABEL.string(),
                             indexLabelV56.type());
 
-        Assert.assertThrows(NotSupportException.class, () -> {
-            indexLabelV56.rebuild();
-        });
+        Assert.assertThrows(NotSupportException.class, indexLabelV56::rebuild);
     }
 }

@@ -65,40 +65,40 @@ public class BytesDemo {
         schema.propertyKey("price").asText().ifNotExist().create();
 
         schema.vertexLabel("person")
-                .properties("name", "age")
-                .useCustomizeStringId()
-                .enableLabelIndex(false)
-                .ifNotExist()
-                .create();
+              .properties("name", "age")
+              .useCustomizeStringId()
+              .enableLabelIndex(false)
+              .ifNotExist()
+              .create();
 
         schema.vertexLabel("personB")
-                .properties("price")
-                .nullableKeys("price")
-                .useCustomizeNumberId()
-                .enableLabelIndex(false)
-                .ifNotExist()
-                .create();
+              .properties("price")
+              .nullableKeys("price")
+              .useCustomizeNumberId()
+              .enableLabelIndex(false)
+              .ifNotExist()
+              .create();
 
         schema.vertexLabel("software")
-                .properties("name", "lang", "price")
-                .useCustomizeStringId()
-                .enableLabelIndex(false)
-                .ifNotExist()
-                .create();
+              .properties("name", "lang", "price")
+              .useCustomizeStringId()
+              .enableLabelIndex(false)
+              .ifNotExist()
+              .create();
 
         schema.edgeLabel("knows")
-                .link("person", "person")
-                .properties("date")
-                .enableLabelIndex(false)
-                .ifNotExist()
-                .create();
+              .link("person", "person")
+              .properties("date")
+              .enableLabelIndex(false)
+              .ifNotExist()
+              .create();
 
         schema.edgeLabel("created")
-                .link("person", "software")
-                .properties("date")
-                .enableLabelIndex(false)
-                .ifNotExist()
-                .create();
+              .link("person", "software")
+              .properties("date")
+              .enableLabelIndex(false)
+              .ifNotExist()
+              .create();
 
         HBaseSer = new HBaseSerializer(client, vertexLogicPartitions, edgeLogicPartitions);
         writeGraphElements();
@@ -124,14 +124,17 @@ public class BytesDemo {
         vadasB.property("price", "120");
         vadasB.id(12345);
 
-        Edge peterCreateLop = new Edge("created").source(peter).target(lop).property("date", "2017-03-24");
+        Edge peterCreateLop = new Edge("created").source(peter).target(lop)
+                                                      .property("date", "2017-03-24");
 
-        List<Vertex> vertices = new ArrayList<Vertex>(){{
-            add(peter);add(lop);add(vadasB);
+        List<Vertex> vertices = new ArrayList<Vertex>() {{
+            add(peter);
+            add(lop);
+            add(vadasB);
         }};
 
 
-        List<Edge> edges = new ArrayList<Edge>(){{
+        List<Edge> edges = new ArrayList<Edge>() {{
             add(peterCreateLop);
         }};
 
@@ -153,7 +156,7 @@ public class BytesDemo {
             sendRpcToHBase("vertex", rowkey, values);
         }
 
-        for (Edge edge: edges) {
+        for (Edge edge : edges) {
             byte[] rowkey = HBaseSer.getKeyBytes(edge);
             byte[] values = HBaseSer.getValueBytes(edge);
             sendRpcToHBase("edge", rowkey, values);
@@ -186,7 +189,7 @@ public class BytesDemo {
     }
 
 
-    boolean put (String type, byte[] rowkey, byte[] values) throws IOException {
+    boolean put(String type, byte[] rowkey, byte[] values) throws IOException {
         // TODO: put to HBase
         return true;
     }

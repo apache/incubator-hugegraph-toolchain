@@ -41,6 +41,7 @@ import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.DateUtil;
+
 import com.google.common.collect.ImmutableMap;
 
 public class VertexApiTest extends BaseApiTest {
@@ -435,13 +436,11 @@ public class VertexApiTest extends BaseApiTest {
         }
 
         // Query vertices by olap properties
-        GremlinRequest request = new GremlinRequest(
-                                 "g.V().has(\"pagerank\", P.gte(5))");
+        GremlinRequest request = new GremlinRequest("g.V().has(\"pagerank\", P.gte(5))");
         ResultSet resultSet = gremlin().execute(request);
         Assert.assertEquals(50, resultSet.size());
 
-        request = new GremlinRequest(
-                  "g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))");
+        request = new GremlinRequest("g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))");
         resultSet = gremlin().execute(request);
         Assert.assertEquals(2, resultSet.size());
 
@@ -467,8 +466,7 @@ public class VertexApiTest extends BaseApiTest {
         resultSet = gremlin().execute(request);
         Assert.assertEquals(0, resultSet.size());
 
-        request = new GremlinRequest(
-                  "g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))");
+        request = new GremlinRequest("g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))");
         resultSet = gremlin().execute(request);
         Assert.assertEquals(0, resultSet.size());
 
@@ -488,16 +486,15 @@ public class VertexApiTest extends BaseApiTest {
 
         // Query after delete olap property key
         Assert.assertThrows(ServerException.class, () -> {
-            gremlin().execute(new GremlinRequest(
-                              "g.V().has(\"pagerank\", P.gte(5))"));
+            gremlin().execute(new GremlinRequest("g.V().has(\"pagerank\", P.gte(5))"));
         }, e -> {
             Assert.assertContains("Undefined property key: 'pagerank'",
                                   e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
-            gremlin().execute(new GremlinRequest(
-                      "g.V().has(\"wcc\", P.within(\"wcc10\", \"wcc20\"))"));
+            gremlin().execute(new GremlinRequest("g.V().has(\"wcc\", " +
+                                                 "P.within(\"wcc10\", \"wcc20\"))"));
         }, e -> {
             Assert.assertContains("Undefined property key: 'wcc'",
                                   e.getMessage());

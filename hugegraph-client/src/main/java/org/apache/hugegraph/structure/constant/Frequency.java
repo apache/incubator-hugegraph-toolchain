@@ -27,8 +27,8 @@ public enum Frequency {
 
     MULTIPLE(2, "multiple");
 
-    private byte code = 0;
-    private String name = null;
+    private final byte code;
+    private final String name;
 
     Frequency(int code, String name) {
         assert code < 256;

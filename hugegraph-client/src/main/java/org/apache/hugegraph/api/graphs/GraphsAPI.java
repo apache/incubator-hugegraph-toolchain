@@ -25,6 +25,7 @@ import java.util.Map;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
+
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.hugegraph.api.API;
@@ -34,6 +35,7 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
+
 import com.google.common.collect.ImmutableMap;
 
 public class GraphsAPI extends API {
@@ -104,14 +106,12 @@ public class GraphsAPI extends API {
         Map<String, String> mode = result.readObject(Map.class);
         String value = mode.get(MODE);
         if (value == null) {
-            throw new InvalidResponseException(
-                      "Invalid response, expect 'mode' in response");
+            throw new InvalidResponseException("Invalid response, expect 'mode' in response");
         }
         try {
             return GraphMode.valueOf(value);
         } catch (IllegalArgumentException e) {
-            throw new InvalidResponseException(
-                      "Invalid GraphMode value '%s'", value);
+            throw new InvalidResponseException("Invalid GraphMode value '%s'", value);
         }
     }
 
@@ -132,14 +132,13 @@ public class GraphsAPI extends API {
         Map<String, String> readMode = result.readObject(Map.class);
         String value = readMode.get(GRAPH_READ_MODE);
         if (value == null) {
-            throw new InvalidResponseException(
-                      "Invalid response, expect 'graph_read_mode' in response");
+            throw new InvalidResponseException("Invalid response, expect 'graph_read_mode' " +
+                                               "in response");
         }
         try {
             return GraphReadMode.valueOf(value);
         } catch (IllegalArgumentException e) {
-            throw new InvalidResponseException(
-                      "Invalid GraphReadMode value '%s'", value);
+            throw new InvalidResponseException("Invalid GraphReadMode value '%s'", value);
         }
     }
 

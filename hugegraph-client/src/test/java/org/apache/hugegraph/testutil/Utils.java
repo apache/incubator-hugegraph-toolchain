@@ -41,6 +41,7 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.testutil.Assert.ThrowableRunnable;
 import org.apache.hugegraph.util.DateUtil;
+
 import com.google.common.collect.ImmutableList;
 
 public final class Utils {
@@ -158,11 +159,8 @@ public final class Utils {
             !left.properties().containsAll(right.properties())) {
             return false;
         }
-        if (left.primaryKeys().size() != right.primaryKeys().size() ||
-            !left.primaryKeys().containsAll(right.primaryKeys())) {
-            return false;
-        }
-        return true;
+        return left.primaryKeys().size() == right.primaryKeys().size() &&
+               left.primaryKeys().containsAll(right.primaryKeys());
     }
 
     public static boolean equalEdgeLabel(EdgeLabel left, EdgeLabel right) {
@@ -185,11 +183,8 @@ public final class Utils {
             !left.properties().containsAll(right.properties())) {
             return false;
         }
-        if (left.sortKeys().size() != right.sortKeys().size() ||
-            !left.sortKeys().containsAll(right.sortKeys())) {
-            return false;
-        }
-        return true;
+        return left.sortKeys().size() == right.sortKeys().size() &&
+               left.sortKeys().containsAll(right.sortKeys());
     }
 
     private static boolean equalIndexLabel(IndexLabel left,
@@ -209,11 +204,8 @@ public final class Utils {
         if (left.indexType() != right.indexType()) {
             return false;
         }
-        if (left.indexFields().size() != right.indexFields().size() ||
-            !left.indexFields().containsAll(right.indexFields())) {
-            return false;
-        }
-        return true;
+        return left.indexFields().size() == right.indexFields().size() &&
+               left.indexFields().containsAll(right.indexFields());
     }
 
     private static boolean equalVertex(Vertex left, Vertex right) {

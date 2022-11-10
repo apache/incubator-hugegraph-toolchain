@@ -37,6 +37,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.DateUtil;
+
 import com.google.common.collect.ImmutableMap;
 
 public class EdgeApiTest extends BaseApiTest {
@@ -211,9 +212,8 @@ public class EdgeApiTest extends BaseApiTest {
         Assert.assertEquals("software", edge.targetLabel());
         Assert.assertEquals(outVId, edge.sourceId());
         Assert.assertEquals(inVId, edge.targetId());
-        Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.date("2017-03-24"),
-                                    "city", "Beijing");
+        Map<String, Object> props = ImmutableMap.of("date", Utils.date("2017-03-24"),
+                                                    "city", "Beijing");
         Assert.assertEquals(props, edge.properties());
     }
 
@@ -616,7 +616,6 @@ public class EdgeApiTest extends BaseApiTest {
 //            edgeAPI.get(ids.get(1));
 //        });
 //    }
-
     @Test
     public void testBatchCreateWithInvalidVertexLabelButNotCheck() {
         List<Edge> edges = new ArrayList<>(2);

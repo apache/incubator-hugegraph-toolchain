@@ -24,20 +24,20 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    PropertyKeyTest.class,
-    VertexLabelTest.class,
-    EdgeLabelTest.class,
-    IndexLabelTest.class,
-    SchemaTest.class,
-    VertexTest.class,
-    EdgeTest.class,
-    BatchInsertTest.class,
-    GraphManagerTest.class,
-    AuthManagerTest.class,
-    TraverserManagerTest.class,
-    MetricsManagerTest.class,
-    HugeClientHttpsTest.class,
-    HugeClientTest.class
+        PropertyKeyTest.class,
+        VertexLabelTest.class,
+        EdgeLabelTest.class,
+        IndexLabelTest.class,
+        SchemaTest.class,
+        VertexTest.class,
+        EdgeTest.class,
+        BatchInsertTest.class,
+        GraphManagerTest.class,
+        AuthManagerTest.class,
+        TraverserManagerTest.class,
+        MetricsManagerTest.class,
+        HugeClientHttpsTest.class,
+        HugeClientTest.class
 })
 public class FuncTestSuite {
 }

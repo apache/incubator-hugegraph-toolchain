@@ -31,8 +31,11 @@ import org.apache.hugegraph.structure.graph.BatchOlapPropertyRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.graph.Vertices;
+
 import com.google.common.collect.ImmutableMap;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
+
 import org.apache.hugegraph.rest.RestResult;
 
 public class VertexAPI extends GraphAPI {
@@ -58,10 +61,9 @@ public class VertexAPI extends GraphAPI {
                                              headers);
         List<Object> ids = result.readList(Object.class);
         if (vertices.size() != ids.size()) {
-            throw new NotAllCreatedException(
-                      "Not all vertices are successfully created, " +
-                      "expect '%s', the actual is '%s'",
-                      ids, vertices.size(), ids.size());
+            throw new NotAllCreatedException("Not all vertices are successfully created, " +
+                                             "expect '%s', the actual is '%s'",
+                                             ids, vertices.size(), ids.size());
         }
         return ids;
     }
@@ -83,9 +85,8 @@ public class VertexAPI extends GraphAPI {
         RestResult result = this.client.put(path, null, request, headers);
         Object size = result.readObject(Map.class).get("size");
         if (!(size instanceof Integer)) {
-            throw new InvalidResponseException(
-                      "The 'size' in response must be int, but got: %s(%s)",
-                      size, size.getClass());
+            throw new InvalidResponseException("The 'size' in response must be int, " +
+                                               "but got: %s(%s)", size, size.getClass());
         }
         return (int) size;
     }

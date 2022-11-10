@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CountRequest {
