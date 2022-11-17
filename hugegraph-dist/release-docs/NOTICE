@@ -2221,3 +2221,229 @@ Copyright 1999-2019 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
+
+========================================================================
+
+Apache Commons Crypto NOTICE
+
+========================================================================
+
+Apache Commons Crypto
+Copyright 2016-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+========================================================================
+
+HPPC NOTICE
+
+========================================================================
+ACKNOWLEDGEMENT
+===============
+
+HPPC borrowed code, ideas or both from:
+
+ * Apache Lucene, http://lucene.apache.org/
+   (Apache license)
+ * Fastutil, http://fastutil.di.unimi.it/
+   (Apache license)
+ * Koloboke, https://github.com/OpenHFT/Koloboke
+   (Apache license)
+
+
+========================================================================
+
+aopalliance-repackaged NOTICE
+
+========================================================================
+
+# Notices for Eclipse GlassFish
+
+This content is produced and maintained by the Eclipse GlassFish project.
+
+* Project home: https://projects.eclipse.org/projects/ee4j.glassfish
+
+## Trademarks
+
+Eclipse GlassFish, and GlassFish are trademarks of the Eclipse Foundation.
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Public License v. 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
+available under the following Secondary Licenses when the conditions for such
+availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
+General Public License, version 2 with the GNU Classpath Exception which is
+available at https://www.gnu.org/software/classpath/license.html.
+
+SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+* https://github.com/eclipse-ee4j/glassfish-ha-api
+* https://github.com/eclipse-ee4j/glassfish-logging-annotation-processor
+* https://github.com/eclipse-ee4j/glassfish-shoal
+* https://github.com/eclipse-ee4j/glassfish-cdi-porting-tck
+* https://github.com/eclipse-ee4j/glassfish-jsftemplating
+* https://github.com/eclipse-ee4j/glassfish-hk2-extra
+* https://github.com/eclipse-ee4j/glassfish-hk2
+* https://github.com/eclipse-ee4j/glassfish-fighterfish
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+None
+
+## Cryptography
+
+Content may contain encryption software. The country in which you are currently
+may have restrictions on the import, possession, and use, and/or re-export to
+another country, of encryption software. BEFORE using any encryption software,
+please check the country's laws, regulations and policies concerning the import,
+possession, or use, and re-export of encryption software, to see if this is
+permitted.
+
+
+========================================================================
+
+Jakarta Activation Notices
+
+========================================================================
+
+# Notices for Jakarta Activation
+
+This content is produced and maintained by Jakarta Activation project.
+
+* Project home: https://projects.eclipse.org/projects/ee4j.jaf
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Distribution License v. 1.0,
+which is available at http://www.eclipse.org/org/documents/edl-v10.php.
+
+SPDX-License-Identifier: BSD-3-Clause
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+* https://github.com/eclipse-ee4j/jaf
+
+
+
+========================================================================
+
+Jakarta Dependency Injection Notices
+
+========================================================================
+
+# Notices for Eclipse Jakarta Dependency Injection
+
+This content is produced and maintained by the Eclipse Jakarta Dependency Injection project.
+
+* Project home: https://projects.eclipse.org/projects/cdi.batch
+
+## Trademarks
+
+Jakarta Dependency Injection is a trademark of the Eclipse Foundation.
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Apache License, Version 2.0 which is available at
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+https://github.com/eclipse-ee4j/injection-api
+https://github.com/eclipse-ee4j/injection-spec
+https://github.com/eclipse-ee4j/injection-tck
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+None
+
+## Cryptography
+
+None
+
+
+========================================================================
+
+Micrometer Injection Notices
+
+========================================================================
+
+Copyright (c) 2017-Present VMware, Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-------------------------------------------------------------------------------
+
+This product contains a modified portion of 'io.netty.util.internal.logging',
+in the Netty/Common library distributed by The Netty Project:
+
+  * Copyright 2013 The Netty Project
+  * License: Apache License v2.0
+  * Homepage: https://netty.io
+
+This product contains a modified portion of 'StringUtils.isBlank()',
+in the Commons Lang library distributed by The Apache Software Foundation:
+
+  * Copyright 2001-2019 The Apache Software Foundation
+  * License: Apache License v2.0
+  * Homepage: https://commons.apache.org/proper/commons-lang/
+
+This product contains a modified portion of 'JsonUtf8Writer',
+in the Moshi library distributed by Square, Inc:
+
+  * Copyright 2010 Google Inc.
+  * License: Apache License v2.0
+  * Homepage: https://github.com/square/moshi
+
+This product contains a modified portion of the 'org.springframework.lang'
+package in the Spring Framework library, distributed by VMware, Inc:
+
+  * Copyright 2002-2019 the original author or authors.
+  * License: Apache License v2.0
+  * Homepage: https://spring.io/projects/spring-framework
