@@ -98,5 +98,6 @@ import org.apache.hugegraph.api.traverser.WeightedShortestPathApiTest;
         LogoutApiTest.class,
         TokenApiTest.class
 })
+
 public class ApiTestSuite {
 }

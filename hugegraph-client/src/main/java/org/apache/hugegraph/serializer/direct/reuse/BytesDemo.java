@@ -125,7 +125,7 @@ public class BytesDemo {
         vadasB.id(12345);
 
         Edge peterCreateLop = new Edge("created").source(peter).target(lop)
-                                                      .property("date", "2017-03-24");
+                                                 .property("date", "2017-03-24");
 
         List<Vertex> vertices = new ArrayList<Vertex>() {{
             add(peter);

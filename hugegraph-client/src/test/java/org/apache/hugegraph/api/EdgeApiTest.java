@@ -581,7 +581,7 @@ public class EdgeApiTest extends BaseApiTest {
 
     /**
      * Note: When the vertex of an edge is dirty (id), g.E() will
-     * construct the vertex, and then throw a illegal exception.
+     * construct the vertex, and then throw an illegal exception.
      * That will lead clearData error.
      * (Icafe: HugeGraph-768)
      */
@@ -616,6 +616,7 @@ public class EdgeApiTest extends BaseApiTest {
 //            edgeAPI.get(ids.get(1));
 //        });
 //    }
+
     @Test
     public void testBatchCreateWithInvalidVertexLabelButNotCheck() {
         List<Edge> edges = new ArrayList<>(2);

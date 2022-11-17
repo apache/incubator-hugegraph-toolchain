@@ -71,9 +71,8 @@ public class Edge extends GraphElement {
             this.sourceId = this.source.id();
         }
         if (this.sourceId == null) {
-            throw new InvalidOperationException(
-                    "Must set source vertex id or add vertices " +
-                    "before add edges");
+            throw new InvalidOperationException("Must set source vertex id or add vertices " +
+                                                "before add edges");
         }
         return this.sourceId;
     }
