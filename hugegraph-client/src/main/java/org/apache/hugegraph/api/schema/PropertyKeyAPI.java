@@ -31,6 +31,7 @@ import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.constant.WriteType;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableMap;
 
 public class PropertyKeyAPI extends SchemaElementAPI {
@@ -48,8 +49,7 @@ public class PropertyKeyAPI extends SchemaElementAPI {
         Object pkey = this.checkCreateOrUpdate(propertyKey);
         RestResult result = this.client.post(this.path(), pkey);
         if (this.client.apiVersionLt("0.65")) {
-            return new PropertyKey.PropertyKeyWithTask(
-                       result.readObject(PropertyKey.class), 0L);
+            return new PropertyKey.PropertyKeyWithTask(result.readObject(PropertyKey.class), 0L);
         }
         return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }

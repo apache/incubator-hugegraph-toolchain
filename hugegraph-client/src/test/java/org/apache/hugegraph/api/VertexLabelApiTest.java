@@ -33,6 +33,7 @@ import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.DateUtil;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -50,7 +51,7 @@ public class VertexLabelApiTest extends BaseApiTest {
         vertexLabelAPI.list().forEach(vl -> {
             taskIds.add(vertexLabelAPI.delete(vl.name()));
         });
-        taskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
     }
 
     @Test
@@ -64,7 +65,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person", vertexLabel.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
-        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertTrue(vertexLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("name", "age", "city");
         Assert.assertEquals(props, vertexLabel.properties());
     }
@@ -81,7 +82,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person", vertexLabel.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
-        Assert.assertEquals(false, vertexLabel.enableLabelIndex());
+        Assert.assertFalse(vertexLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("name", "age", "city");
         Assert.assertEquals(props, vertexLabel.properties());
     }
@@ -97,7 +98,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person", vertexLabel.name());
         Assert.assertEquals(IdStrategy.CUSTOMIZE_UUID, vertexLabel.idStrategy());
-        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertTrue(vertexLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("name", "age", "city");
         Assert.assertEquals(props, vertexLabel.properties());
 
@@ -110,7 +111,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person1", vertexLabel.name());
         Assert.assertEquals(IdStrategy.CUSTOMIZE_UUID, vertexLabel.idStrategy());
-        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertTrue(vertexLabel.enableLabelIndex());
         props = ImmutableSet.of("name", "age", "city");
         Assert.assertEquals(props, vertexLabel.properties());
     }
@@ -248,7 +249,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person1", vertexLabel.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
-        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertTrue(vertexLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("name", "age", "date");
         Assert.assertEquals(props, vertexLabel.properties());
         Assert.assertEquals(0L, vertexLabel.ttl());
@@ -263,7 +264,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person2", vertexLabel.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
-        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertTrue(vertexLabel.enableLabelIndex());
         Assert.assertEquals(props, vertexLabel.properties());
         Assert.assertEquals(3000L, vertexLabel.ttl());
         Assert.assertNull(vertexLabel.ttlStartTime());
@@ -278,7 +279,7 @@ public class VertexLabelApiTest extends BaseApiTest {
 
         Assert.assertEquals("person3", vertexLabel.name());
         Assert.assertEquals(IdStrategy.AUTOMATIC, vertexLabel.idStrategy());
-        Assert.assertEquals(true, vertexLabel.enableLabelIndex());
+        Assert.assertTrue(vertexLabel.enableLabelIndex());
         Assert.assertEquals(props, vertexLabel.properties());
         Assert.assertEquals(3000L, vertexLabel.ttl());
         Assert.assertEquals("date", vertexLabel.ttlStartTime());

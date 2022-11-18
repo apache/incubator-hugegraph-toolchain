@@ -22,6 +22,7 @@ package org.apache.hugegraph.structure.auth;
 import java.util.Date;
 
 import org.apache.hugegraph.structure.constant.HugeType;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

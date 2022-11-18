@@ -29,6 +29,7 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class NeighborRankAPI extends TraversersAPI {
@@ -87,8 +88,8 @@ public class NeighborRankAPI extends TraversersAPI {
             }
 
             public Builder source(Object source) {
-                E.checkArgument(source != null, "The label of request " +
-                                "for neighbor rank can't be null");
+                E.checkArgument(source != null,
+                                "The label of request for neighbor rank can't be null");
                 this.request.source = source;
                 return this;
             }

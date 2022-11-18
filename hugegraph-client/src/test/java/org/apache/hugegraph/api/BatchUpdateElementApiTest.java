@@ -41,6 +41,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -500,7 +501,7 @@ public class BatchUpdateElementApiTest extends BaseApiTest {
     @Test
     public void testEdgeBatchUpdateWithInvalidArgs() {
         BatchEdgeRequest req1 = batchEdgeRequest("list", "old", "old",
-                                                UpdateStrategy.ELIMINATE);
+                                                 UpdateStrategy.ELIMINATE);
         Assert.assertThrows(ServerException.class, () -> {
             List<Edge> edges = Whitebox.getInternalState(req1, "edges");
             edges.set(1, null);

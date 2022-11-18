@@ -31,6 +31,7 @@ import org.apache.hugegraph.structure.graph.Shard;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.graph.Vertices;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableMap;
 
 public class VerticesAPI extends TraversersAPI {

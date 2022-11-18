@@ -35,8 +35,7 @@ public class InvalidResponseException extends ClientException {
 
     public static InvalidResponseException expectField(String expectField,
                                                        Object parentField) {
-        return new InvalidResponseException(
-                   "Invalid response, expect '%s' in '%s'",
-                   expectField, parentField);
+        return new InvalidResponseException("Invalid response, expect '%s' in '%s'",
+                                            expectField, parentField);
     }
 }

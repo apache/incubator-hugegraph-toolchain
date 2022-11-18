@@ -157,8 +157,8 @@ public final class BytesBuffer extends OutputStream {
         // Extra capacity as buffer
         int newcapacity = size + this.buffer.limit() + DEFAULT_CAPACITY;
         E.checkArgument(newcapacity <= MAX_BUFFER_CAPACITY,
-                "Capacity exceeds max buffer capacity: %s",
-                MAX_BUFFER_CAPACITY);
+                        "Capacity exceeds max buffer capacity: %s",
+                        MAX_BUFFER_CAPACITY);
         ByteBuffer newBuffer = ByteBuffer.allocate(newcapacity);
         this.buffer.flip();
         newBuffer.put(this.buffer);
@@ -279,8 +279,8 @@ public final class BytesBuffer extends OutputStream {
 
     public BytesBuffer writeBytes(byte[] bytes) {
         E.checkArgument(bytes.length <= UINT16_MAX,
-                "The max length of bytes is %s, but got %s",
-                UINT16_MAX, bytes.length);
+                        "The max length of bytes is %s, but got %s",
+                        UINT16_MAX, bytes.length);
         require(SHORT_LEN + bytes.length);
         this.writeVInt(bytes.length);
         this.write(bytes);
@@ -296,8 +296,8 @@ public final class BytesBuffer extends OutputStream {
 
     public BytesBuffer writeBigBytes(byte[] bytes) {
         E.checkArgument(bytes.length <= BLOB_LEN_MAX,
-                "The max length of bytes is %s, but got %s",
-                BLOB_LEN_MAX, bytes.length);
+                        "The max length of bytes is %s, but got %s",
+                        BLOB_LEN_MAX, bytes.length);
         require(BLOB_LEN + bytes.length);
         this.writeVInt(bytes.length);
         this.write(bytes);
@@ -339,8 +339,8 @@ public final class BytesBuffer extends OutputStream {
                     "Invalid UTF8 bytes: " + value;
             if (Bytes.contains(bytes, STRING_ENDING_BYTE)) {
                 E.checkArgument(false,
-                        "Can't contains byte '0x00' in string: '%s'",
-                        value);
+                                "Can't contains byte '0x00' in string: '%s'",
+                                value);
             }
             this.write(bytes);
         }
@@ -413,7 +413,7 @@ public final class BytesBuffer extends OutputStream {
             this.write(0x80 | ((value >>> 14) & 0x7f));
         }
         if (value > 0x7f || value < 0) {
-            this.write(0x80 | ((value >>>  7) & 0x7f));
+            this.write(0x80 | ((value >>> 7) & 0x7f));
         }
         this.write(value & 0x7f);
 
@@ -423,8 +423,8 @@ public final class BytesBuffer extends OutputStream {
     public int readVInt() {
         byte leading = this.read();
         E.checkArgument(leading != 0x80,
-                "Unexpected varint with leading byte '0x%s'",
-                Bytes.toHex(leading));
+                        "Unexpected varint with leading byte '0x%s'",
+                        Bytes.toHex(leading));
         int value = leading & 0x7f;
         if (leading >= 0) {
             assert (leading & 0x80) == 0;
@@ -443,11 +443,11 @@ public final class BytesBuffer extends OutputStream {
         }
 
         E.checkArgument(i < 5,
-                "Unexpected varint %s with too many bytes(%s)",
-                value, i + 1);
+                        "Unexpected varint %s with too many bytes(%s)",
+                        value, i + 1);
         E.checkArgument(i < 4 || (leading & 0x70) == 0,
-                "Unexpected varint %s with leading byte '0x%s'",
-                value, Bytes.toHex(leading));
+                        "Unexpected varint %s with leading byte '0x%s'",
+                        value, Bytes.toHex(leading));
         return value;
     }
 
@@ -477,7 +477,7 @@ public final class BytesBuffer extends OutputStream {
             this.write(0x80 | ((int) (value >>> 14) & 0x7f));
         }
         if (value > 0x7fL || value < 0L) {
-            this.write(0x80 | ((int) (value >>>  7) & 0x7f));
+            this.write(0x80 | ((int) (value >>> 7) & 0x7f));
         }
         this.write((int) value & 0x7f);
 
@@ -487,8 +487,8 @@ public final class BytesBuffer extends OutputStream {
     public long readVLong() {
         byte leading = this.read();
         E.checkArgument(leading != 0x80,
-                "Unexpected varlong with leading byte '0x%s'",
-                Bytes.toHex(leading));
+                        "Unexpected varlong with leading byte '0x%s'",
+                        Bytes.toHex(leading));
         long value = leading & 0x7fL;
         if (leading >= 0) {
             assert (leading & 0x80) == 0;
@@ -507,11 +507,11 @@ public final class BytesBuffer extends OutputStream {
         }
 
         E.checkArgument(i < 10,
-                "Unexpected varlong %s with too many bytes(%s)",
-                value, i + 1);
+                        "Unexpected varlong %s with too many bytes(%s)",
+                        value, i + 1);
         E.checkArgument(i < 9 || (leading & 0x7e) == 0,
-                "Unexpected varlong %s with leading byte '0x%s'",
-                value, Bytes.toHex(leading));
+                        "Unexpected varlong %s with leading byte '0x%s'",
+                        value, Bytes.toHex(leading));
         return value;
     }
 
@@ -540,14 +540,14 @@ public final class BytesBuffer extends OutputStream {
                 E.checkArgument(len > 0, "Can't write empty id");
                 if (!big) {
                     E.checkArgument(len <= ID_LEN_MAX,
-                            "Id max length is %s, but got %s {%s}",
-                            ID_LEN_MAX, len, id);
+                                    "Id max length is %s, but got %s {%s}",
+                                    ID_LEN_MAX, len, id);
                     len -= 1; // mapping [1, 128] to [0, 127]
                     this.writeUInt8(len | 0x80);
                 } else {
                     E.checkArgument(len <= BIG_ID_LEN_MAX,
-                            "Big id max length is %s, but got %s {%s}",
-                            BIG_ID_LEN_MAX, len, id);
+                                    "Big id max length is %s, but got %s {%s}",
+                                    BIG_ID_LEN_MAX, len, id);
                     len -= 1;
                     int high = len >> 8;
                     int low = len & 0xff;
@@ -574,10 +574,10 @@ public final class BytesBuffer extends OutputStream {
             if (Bytes.contains(bytes, STRING_ENDING_BYTE)) {
                 // Not allow STRING_ENDING_BYTE exist in string index id
                 E.checkArgument(false,
-                        "The %s type index id can't contains " +
+                                "The %s type index id can't contains " +
                                 "byte '0x%s', but got: 0x%s", type,
-                        Bytes.toHex(STRING_ENDING_BYTE),
-                        Bytes.toHex(bytes));
+                                Bytes.toHex(STRING_ENDING_BYTE),
+                                Bytes.toHex(bytes));
             }
             if (withEnding) {
                 this.writeStringWithEnding("");
@@ -655,8 +655,8 @@ public final class BytesBuffer extends OutputStream {
 
     private long readNumber(byte b) {
         E.checkArgument((b & 0x80) == 0,
-                "Not a number type with prefix byte '0x%s'",
-                Bytes.toHex(b));
+                        "Not a number type with prefix byte '0x%s'",
+                        Bytes.toHex(b));
         // Parse the kind from byte 0kkksxxx
         int kind = b >>> 4;
         boolean positive = (b & 0x08) > 0;
@@ -683,8 +683,8 @@ public final class BytesBuffer extends OutputStream {
                 break;
             case 6:
                 value |= (long) this.readUInt8() << 48 |
-                        (long) this.readUInt16() << 32 |
-                        this.readUInt32();
+                         (long) this.readUInt16() << 32 |
+                         this.readUInt32();
                 break;
             case 7:
                 assert high3bits == 0L;
@@ -712,7 +712,7 @@ public final class BytesBuffer extends OutputStream {
             }
         }
         E.checkArgument(foundEnding, "Not found ending '0x%s'",
-                Bytes.toHex(STRING_ENDING_BYTE));
+                        Bytes.toHex(STRING_ENDING_BYTE));
         int end = this.buffer.position() - 1;
         int len = end - start;
         byte[] bytes = new byte[len];

@@ -21,7 +21,7 @@ package org.apache.hugegraph.serializer.direct;
 
 /**
  * TODO: review later
- *
+ * <p>
  * In this serializer, we only support normal type now:
  * - number
  * - string

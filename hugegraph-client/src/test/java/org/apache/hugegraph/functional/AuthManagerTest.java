@@ -42,6 +42,7 @@ import org.apache.hugegraph.structure.auth.TokenPayload;
 import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.structure.auth.User.UserRole;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableSet;
 
 public class AuthManagerTest extends BaseFuncTest {

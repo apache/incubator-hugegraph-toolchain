@@ -22,6 +22,7 @@ package org.apache.hugegraph.api.task;
 import java.util.List;
 
 import org.apache.hugegraph.structure.Task;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TasksWithPage {

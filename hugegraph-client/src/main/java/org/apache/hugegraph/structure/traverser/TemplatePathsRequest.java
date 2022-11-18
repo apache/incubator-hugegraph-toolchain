@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TemplatePathsRequest {
@@ -36,13 +37,13 @@ public class TemplatePathsRequest {
     @JsonProperty("steps")
     public List<RepeatEdgeStep> steps;
     @JsonProperty("with_ring")
-    public boolean withRing = false;
+    public boolean withRing;
     @JsonProperty("capacity")
-    public long capacity = Traverser.DEFAULT_CAPACITY;
+    public long capacity;
     @JsonProperty("limit")
-    public int limit = Traverser.DEFAULT_PATHS_LIMIT;
+    public int limit;
     @JsonProperty("with_vertex")
-    public boolean withVertex = false;
+    public boolean withVertex;
 
     private TemplatePathsRequest() {
         this.sources = null;

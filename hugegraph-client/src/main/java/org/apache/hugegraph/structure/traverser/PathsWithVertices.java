@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.hugegraph.structure.graph.Vertex;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PathsWithVertices {

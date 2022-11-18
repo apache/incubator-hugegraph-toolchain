@@ -27,6 +27,7 @@ import org.apache.hugegraph.structure.constant.DataType;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.constant.WriteType;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

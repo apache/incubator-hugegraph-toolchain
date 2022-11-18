@@ -33,6 +33,7 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -91,7 +92,7 @@ public class ResultSet {
             return new Result(object);
         } catch (Exception e) {
             throw new SerializeException(
-                      "Failed to deserialize: %s", e, object);
+                    "Failed to deserialize: %s", e, object);
         }
     }
 

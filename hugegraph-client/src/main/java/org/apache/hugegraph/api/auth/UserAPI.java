@@ -27,6 +27,7 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.structure.auth.User.UserRole;
 import org.apache.hugegraph.structure.constant.HugeType;
+
 import com.google.common.collect.ImmutableMap;
 
 public class UserAPI extends AuthAPI {

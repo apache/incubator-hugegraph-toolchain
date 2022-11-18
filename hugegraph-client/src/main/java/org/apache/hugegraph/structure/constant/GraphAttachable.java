@@ -23,5 +23,5 @@ import org.apache.hugegraph.driver.GraphManager;
 
 public interface GraphAttachable {
 
-    public void attachManager(GraphManager manager);
+    void attachManager(GraphManager manager);
 }
