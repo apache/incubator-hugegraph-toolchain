@@ -61,6 +61,7 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
 import org.apache.hugegraph.util.LongEncoding;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -91,7 +92,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     /**
-     * NOTE: Unsupport auto create schema
+     * NOTE: Unsupported auto create schema
      */
     //@Test
     public void testAutoCreateSchema() {

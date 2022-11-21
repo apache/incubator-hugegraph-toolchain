@@ -304,16 +304,16 @@ public class LoadTaskService {
             try {
                 if (task.getStatus().inRunning()) {
                     LoadContext context = task.context();
-                    long readLines = context.newProgress().totalInputReaded();
+                    long readLines = context.newProgress().totalInputRead();
                     if (readLines == 0L) {
                         /*
                          * When the Context is just constructed, newProgress
                          * is empty. Only after parsing is started will use
                          * oldProgress and incrementally update newProgress,
-                         * if get totalInputReaded value during this process,
+                         * if get totalInputRead value during this process,
                          * it will return 0, so need read it from oldProgress
                          */
-                        readLines = context.oldProgress().totalInputReaded();
+                        readLines = context.oldProgress().totalInputRead();
                     }
                     task.setFileReadLines(readLines);
                     task.setCurrDuration(context.summary().totalTime());

@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.source.SourceType;
-import org.apache.hugegraph.util.InsertionOrderUtil;;
+import org.apache.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

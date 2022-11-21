@@ -29,6 +29,7 @@ import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

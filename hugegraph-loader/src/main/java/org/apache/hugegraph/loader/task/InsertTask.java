@@ -37,6 +37,7 @@ import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
+
 import com.google.common.collect.ImmutableSet;
 
 public abstract class InsertTask implements Runnable {
@@ -124,7 +125,7 @@ public abstract class InsertTask implements Runnable {
         HugeClient client = this.context.client();
         List<GraphElement> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));
-        // CreateIfNotExist dose not support false now
+        // CreateIfNotExist does not support false now
         if (this.type().isVertex()) {
             BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
             req.vertices((List<Vertex>) (Object) elements)

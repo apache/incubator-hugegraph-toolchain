@@ -96,8 +96,8 @@ public class LoadTest {
     }
 
     private static Map<String, Object> toMap(Object... properties) {
-        Assert.assertTrue("The number of properties must be even",
-                          (properties.length & 0x01) == 0);
+        Assert.assertEquals("The number of properties must be even",
+                            0, (properties.length & 0x01));
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < properties.length; i = i + 2) {
             if (!properties[i].equals(T.ID) && !properties[i].equals(T.LABEL)) {
@@ -107,8 +107,8 @@ public class LoadTest {
         return map;
     }
 
-    public static void assertDateEquals(String expectDate, Object actualDate)
-                                        throws java.text.ParseException {
+    public static void assertDateEquals(String expectDate,
+                                        Object actualDate) throws java.text.ParseException {
         Assert.assertEquals("Date value must be String class",
                             String.class, actualDate.getClass());
         assertDateEquals(expectDate, TimeZone.getTimeZone("GMT+8"),
@@ -116,8 +116,7 @@ public class LoadTest {
     }
 
     public static void assertDateEquals(List<String> expectDates,
-                                        Object actualDates)
-                                        throws java.text.ParseException {
+                                        Object actualDates) throws java.text.ParseException {
         Assert.assertTrue("Date value must be List<String> class",
                           List.class.isAssignableFrom(actualDates.getClass()));
         List<String> actualDateList = (List<String>) actualDates;
@@ -130,9 +129,8 @@ public class LoadTest {
         }
     }
 
-    public static void assertDateEquals(String expectDate, TimeZone expectZone,
-                                        String actualDate, TimeZone actualZone)
-                                        throws java.text.ParseException {
+    public static void assertDateEquals(String expectDate, TimeZone expectZone, String actualDate,
+                                        TimeZone actualZone) throws java.text.ParseException {
         DateFormat expectDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         expectDF.setTimeZone(expectZone);
         long expectTimeStamp = expectDF.parse(expectDate).getTime();

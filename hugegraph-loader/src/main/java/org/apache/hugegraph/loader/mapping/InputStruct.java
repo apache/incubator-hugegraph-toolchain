@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

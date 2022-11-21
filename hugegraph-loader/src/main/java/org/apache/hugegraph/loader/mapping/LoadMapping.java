@@ -42,6 +42,7 @@ import org.apache.hugegraph.loader.util.LoadUtil;
 import org.apache.hugegraph.loader.util.MappingUtil;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -142,7 +143,7 @@ public class LoadMapping implements Checkable {
                                             failureFile.headerFile);
                 }
                 List<String> header = JsonUtil.convertList(json, String.class);
-                source.header(header.toArray(new String[] {}));
+                source.header(header.toArray(new String[]{}));
             }
             // Set failure data path
             source.path(failureFile.dataFile.getAbsolutePath());
@@ -187,8 +188,8 @@ public class LoadMapping implements Checkable {
                 return struct;
             }
         }
-        throw new IllegalArgumentException(String.format(
-                  "There is no input struct with id '%s'", id));
+        throw new IllegalArgumentException(String.format("There is no input struct with id '%s'",
+                                                         id));
     }
 
     private static class FailureFile {

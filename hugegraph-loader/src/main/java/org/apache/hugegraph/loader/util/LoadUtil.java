@@ -25,6 +25,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.util.E;
+
 import com.beust.jcommander.JCommander;
 
 public final class LoadUtil {

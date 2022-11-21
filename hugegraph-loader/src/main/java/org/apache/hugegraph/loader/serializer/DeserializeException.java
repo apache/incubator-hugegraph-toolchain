@@ -22,9 +22,10 @@ package org.apache.hugegraph.loader.serializer;
 import java.util.Arrays;
 
 import org.apache.hugegraph.loader.exception.LoadException;
+
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 
-public class DeserializeException extends LoadException  {
+public class DeserializeException extends LoadException {
 
     private static final long serialVersionUID = -7837901607110262081L;
 

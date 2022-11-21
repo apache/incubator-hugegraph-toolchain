@@ -22,8 +22,6 @@ package org.apache.hugegraph.loader.failure;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +30,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,12 +43,12 @@ import org.apache.hugegraph.loader.exception.ParseException;
 import org.apache.hugegraph.loader.exception.ReadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
-import org.apache.hugegraph.loader.util.LoadUtil;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.util.LoadUtil;
 import org.apache.hugegraph.util.JsonUtil;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
+
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
@@ -141,32 +140,30 @@ public final class FailLogger {
 
     private void removeDupLines() {
         Charset charset = Charset.forName(this.struct.input().charset());
-        File dedupFile = new File(this.file.getAbsolutePath() +
-                                   Constants.DEDUP_SUFFIX);
-        try (InputStream is = new FileInputStream(this.file);
+        File dedupFile = new File(this.file.getAbsolutePath() + Constants.DEDUP_SUFFIX);
+        try (InputStream is = Files.newInputStream(this.file.toPath());
              Reader ir = new InputStreamReader(is, charset);
              BufferedReader reader = new BufferedReader(ir);
              // upper is input, below is output
-             OutputStream os = new FileOutputStream(dedupFile);
+             OutputStream os = Files.newOutputStream(dedupFile.toPath());
              Writer ow = new OutputStreamWriter(os, charset);
              BufferedWriter writer = new BufferedWriter(ow)) {
-            Set<Integer> writedLines = new HashSet<>();
+            Set<Integer> wroteLines = new HashSet<>();
             HashFunction hashFunc = Hashing.murmur3_32();
-            for (String tipsLine, dataLine;
-                 (tipsLine = reader.readLine()) != null &&
-                 (dataLine = reader.readLine()) != null;) {
+            for (String tipsLine, dataLine; (tipsLine = reader.readLine()) != null &&
+                                            (dataLine = reader.readLine()) != null; ) {
                 /*
                  * Hash data line to remove duplicate lines
                  * Misjudgment may occur, but the probability is extremely low
                  */
                 int hash = hashFunc.hashString(dataLine, charset).asInt();
-                if (!writedLines.contains(hash)) {
+                if (!wroteLines.contains(hash)) {
                     writer.write(tipsLine);
                     writer.newLine();
                     writer.write(dataLine);
                     writer.newLine();
-                    // Save the hash value of writed line
-                    writedLines.add(hash);
+                    // Save the hash value of wrote line
+                    wroteLines.add(hash);
                 }
             }
         } catch (IOException e) {

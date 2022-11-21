@@ -66,8 +66,7 @@ public abstract class FileReader extends AbstractReader {
     protected abstract FileLineFetcher createLineFetcher();
 
     @Override
-    public void init(LoadContext context, InputStruct struct)
-                     throws InitException {
+    public void init(LoadContext context, InputStruct struct) throws InitException {
         this.progress(context, struct);
 
         List<Readable> readableList;
@@ -181,10 +180,10 @@ public abstract class FileReader extends AbstractReader {
     }
 
     private LoadStatus checkLastLoadStatus(Readable readable) {
-        // NOTE: calculate check sum is a bit time consuming
+        // NOTE: calculate check sum is a bit time-consuming
         InputItemProgress input = readable.inputItemProgress();
         InputItemProgress loaded = this.oldProgress.matchLoadedItem(input);
-        // The file has been loaded before and it is not changed
+        // The file has been loaded before, and it is not changed
         if (loaded != null) {
             this.newProgress.addLoadedItem(loaded);
             return LoadStatus.LOADED;
@@ -192,7 +191,7 @@ public abstract class FileReader extends AbstractReader {
 
         InputItemProgress loading = this.oldProgress.matchLoadingItem(input);
         if (loading != null) {
-            // The file has been loaded half before and it is not changed
+            // The file has been loaded half before, and it is not changed
             this.newProgress.addLoadingItem(loading);
             return LoadStatus.LOADED_HALF;
         } else {

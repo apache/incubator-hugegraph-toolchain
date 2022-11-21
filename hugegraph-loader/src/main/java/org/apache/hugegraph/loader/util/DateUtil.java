@@ -29,8 +29,7 @@ import org.apache.hugegraph.loader.constant.Constants;
 
 public final class DateUtil {
 
-    private static final Map<String, SafeDateFormat> DATE_FORMATS =
-                                                     new ConcurrentHashMap<>();
+    private static final Map<String, SafeDateFormat> DATE_FORMATS = new ConcurrentHashMap<>();
 
     public static Date parse(String source, String df) {
         return parse(source, df, Constants.TIME_ZONE);

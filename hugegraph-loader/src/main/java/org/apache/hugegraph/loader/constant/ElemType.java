@@ -25,7 +25,7 @@ public enum ElemType {
 
     EDGE("edges");
 
-    private String name;
+    private final String name;
 
     ElemType(String name) {
         this.name = name;

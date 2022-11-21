@@ -36,6 +36,7 @@ import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.rest.SerializeException;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
@@ -94,8 +95,8 @@ public final class JsonUtil {
     }
 
     public static <T> Set<T> convertSet(String json, Class<T> clazz) {
-        JavaType type = MAPPER.getTypeFactory().constructCollectionType(
-                                                LinkedHashSet.class, clazz);
+        JavaType type = MAPPER.getTypeFactory()
+                              .constructCollectionType(LinkedHashSet.class, clazz);
         try {
             return MAPPER.readValue(json, type);
         } catch (JsonProcessingException e) {
@@ -105,8 +106,8 @@ public final class JsonUtil {
     }
 
     public static <T> Set<T> convertSet(JsonNode node, Class<T> clazz) {
-        JavaType type = MAPPER.getTypeFactory().constructCollectionType(
-                                                LinkedHashSet.class, clazz);
+        JavaType type = MAPPER.getTypeFactory().
+                              constructCollectionType(LinkedHashSet.class, clazz);
         return MAPPER.convertValue(node, type);
     }
 

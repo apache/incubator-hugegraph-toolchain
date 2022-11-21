@@ -24,11 +24,11 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    LineTest.class,
-    DateUtilTest.class,
-    MappingConverterTest.class,
-    LoadProgressTest.class,
-    RangesTimerTest.class
+        LineTest.class,
+        DateUtilTest.class,
+        MappingConverterTest.class,
+        LoadProgressTest.class,
+        RangesTimerTest.class
 })
 public class UnitTestSuite {
 }

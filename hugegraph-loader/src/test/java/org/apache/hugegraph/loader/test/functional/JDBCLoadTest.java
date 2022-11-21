@@ -46,7 +46,7 @@ public class JDBCLoadTest extends LoadTest {
     private static final String USER = "root";
     private static final String PASS = "root";
 
-    private static DBUtil dbUtil = new DBUtil(DRIVER, DB_URL, USER, PASS);
+    private static final DBUtil dbUtil = new DBUtil(DRIVER, DB_URL, USER, PASS);
 
     @BeforeClass
     public static void setUp() {
