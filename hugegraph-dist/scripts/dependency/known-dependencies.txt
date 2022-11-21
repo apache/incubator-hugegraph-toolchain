@@ -160,7 +160,7 @@ jackson-annotations-2.12.3.jar
 jackson-annotations-2.14.0-rc1.jar
 jackson-annotations-2.7.0.jar
 jackson-annotations-2.9.0.jar
-jackson-core-2.12.2.jar
+jackson-core-2.12.3.jar
 jackson-core-2.14.0-rc1.jar
 jackson-core-2.7.8.jar
 jackson-core-2.9.9.jar
@@ -176,6 +176,8 @@ jackson-jaxrs-json-provider-2.14.0-rc1.jar
 jackson-jaxrs-json-provider-2.7.8.jar
 jackson-mapper-asl-1.9.13.jar
 jackson-module-jaxb-annotations-2.14.0-rc1.jar
+jackson-module-jaxb-annotations-2.12.3.jar
+jackson-module-jaxb-annotations-2.9.9.jar
 jackson-module-jaxb-annotations-2.7.8.jar
 jackson-module-parameter-names-2.9.9.jar
 jakarta.activation-2.0.1.jar
@@ -187,6 +189,7 @@ jakarta.inject-api-2.0.0.jar
 jakarta.validation-api-3.0.0.jar
 jakarta.ws.rs-api-3.0.0.jar
 jakarta.xml.bind-api-4.0.0-RC2.jar
+jakarta.xml.bind-api-2.3.2.jar
 jamon-runtime-2.4.1.jar
 javassist-3.24.0-GA.jar
 javassist-3.28.0-GA.jar
