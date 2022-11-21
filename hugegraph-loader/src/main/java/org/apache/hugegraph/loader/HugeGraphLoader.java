@@ -67,7 +67,7 @@ public final class HugeGraphLoader {
             loader = new HugeGraphLoader(args);
         } catch (Throwable e) {
             Printer.printError("Failed to start loading", e);
-            return;
+            throw e;
         }
         loader.load();
     }
