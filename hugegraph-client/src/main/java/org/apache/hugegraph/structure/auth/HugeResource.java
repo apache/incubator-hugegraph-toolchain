@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.hugegraph.util.JsonUtil;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class HugeResource {

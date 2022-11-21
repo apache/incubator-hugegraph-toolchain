@@ -37,9 +37,9 @@ public enum DataType {
     DATE(10, "date", Date.class),
     UUID(11, "uuid", UUID.class);
 
-    private byte code = 0;
-    private String name = null;
-    private Class<?> clazz = null;
+    private final byte code;
+    private final String name;
+    private final Class<?> clazz;
 
     DataType(int code, String name, Class<?> clazz) {
         assert code < 256;

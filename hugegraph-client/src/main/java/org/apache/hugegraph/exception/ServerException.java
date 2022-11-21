@@ -22,6 +22,7 @@ package org.apache.hugegraph.exception;
 import java.util.Map;
 
 import org.apache.hugegraph.rest.RestResult;
+
 import jakarta.ws.rs.core.Response;
 
 public class ServerException extends RuntimeException {
@@ -49,8 +50,8 @@ public class ServerException extends RuntimeException {
             @SuppressWarnings("unchecked")
             Map<String, Object> json = rs.readObject(Map.class);
             exception.exception = (String) getByKeys(json, EXCEPTION_KEYS);
-            exception.message =  (String) getByKeys(json, MESSAGE_KEYS);
-            exception.cause =  (String) getByKeys(json, CAUSE_KEYS);
+            exception.message = (String) getByKeys(json, MESSAGE_KEYS);
+            exception.cause = (String) getByKeys(json, CAUSE_KEYS);
             exception.trace = getByKeys(json, TRACE_KEYS);
         } catch (Exception ignored) {
         }

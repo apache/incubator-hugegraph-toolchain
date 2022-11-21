@@ -64,9 +64,9 @@ public class GraphManager {
     public Vertex addVertex(Object... keyValues) {
         Object label = this.getValue(T.LABEL, keyValues);
         if (!(label instanceof String)) {
-            throw new IllegalArgumentException(String.format(
-                      "Expect a string value as the vertex label " +
-                      "argument, but got: %s", label));
+            throw new IllegalArgumentException(String.format("Expect a string value as the " +
+                                                             "vertex label argument, but got: %s",
+                                                             label));
         }
         Vertex vertex = new Vertex(String.valueOf(label));
         vertex.id(this.getValue(T.ID, keyValues));
@@ -189,7 +189,7 @@ public class GraphManager {
 
     public List<Vertex> updateVertices(BatchVertexRequest request) {
         List<Vertex> newVertices = this.vertexAPI.update(request);
-        newVertices.forEach(vertex -> this.attachManager(vertex));
+        newVertices.forEach(this::attachManager);
         return newVertices;
     }
 
@@ -211,8 +211,7 @@ public class GraphManager {
 
     public Edge addEdge(Edge edge) {
         if (edge.id() != null) {
-            throw new InvalidOperationException(
-                      "Not allowed to custom id for edge: '%s'", edge);
+            throw new InvalidOperationException("Not allowed to custom id for edge: '%s'", edge);
         }
         edge = this.edgeAPI.create(edge);
         this.attachManager(edge);
@@ -434,7 +433,7 @@ public class GraphManager {
 
     public List<Edge> updateEdges(BatchEdgeRequest request) {
         List<Edge> newEdges = this.edgeAPI.update(request);
-        newEdges.forEach(edge -> this.attachManager(edge));
+        newEdges.forEach(this::attachManager);
         return newEdges;
     }
 

@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -65,9 +66,8 @@ public class VertexSerializerTest extends BaseUnitTest {
         Assert.assertEquals("person:marko", vertexCopy.id());
         Assert.assertEquals("person", vertexCopy.label());
         Assert.assertEquals("vertex", vertexCopy.type());
-        Map<String, Object> props = ImmutableMap.of(
-                                    "name", "marko", "age", 29,
-                                    "city", ImmutableList.of("Hefei", "Wuhan"));
+        Map<String, Object> props = ImmutableMap.of("name", "marko", "age", 29,
+                                                    "city", ImmutableList.of("Hefei", "Wuhan"));
         Assert.assertEquals(props, vertexCopy.properties());
     }
 
@@ -86,9 +86,8 @@ public class VertexSerializerTest extends BaseUnitTest {
         Assert.assertEquals("person", vertexCopy.label());
         Assert.assertEquals("vertex", vertexCopy.type());
         // TODO: Set properties should deserialize to Set instead of List
-        Map<String, Object> props = ImmutableMap.of(
-                                    "name", "marko", "age", 29,
-                                    "city", ImmutableList.of("Hefei", "Wuhan"));
+        Map<String, Object> props = ImmutableMap.of("name", "marko", "age", 29,
+                                                    "city", ImmutableList.of("Hefei", "Wuhan"));
         Assert.assertEquals(props, vertexCopy.properties());
     }
 }

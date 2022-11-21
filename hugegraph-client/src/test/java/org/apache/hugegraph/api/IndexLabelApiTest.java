@@ -40,12 +40,13 @@ import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.DateUtil;
 import org.apache.hugegraph.util.VersionUtil;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 public class IndexLabelApiTest extends BaseApiTest {
 
-    private static Function<String, IndexLabel> fillIndexLabel =
+    private static final Function<String, IndexLabel> fillIndexLabel =
             (name) -> schema().indexLabel(name)
                               .onV("person")
                               .by("age")
@@ -66,21 +67,20 @@ public class IndexLabelApiTest extends BaseApiTest {
         indexLabelAPI.list().forEach(il -> {
             taskIds.add(indexLabelAPI.delete(il.name()));
         });
-        taskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
     }
 
     @Test
     public void testCreate() {
-        IndexLabel indexLabel = indexLabelAPI.create(
-                                fillIndexLabel.apply("personByAge"))
-                                .indexLabel();
+        IndexLabel indexLabel = indexLabelAPI.create(fillIndexLabel.apply("personByAge"))
+                                             .indexLabel();
 
         Assert.assertEquals("personByAge", indexLabel.name());
         Assert.assertEquals(HugeType.VERTEX_LABEL, indexLabel.baseType());
         Assert.assertEquals("person", indexLabel.baseValue());
         Assert.assertEquals(IndexType.RANGE, indexLabel.indexType());
         List<String> fields = ImmutableList.of("age");
-        Assert.assertTrue(fields.size() == indexLabel.indexFields().size());
+        Assert.assertEquals(fields.size(), indexLabel.indexFields().size());
         Assert.assertTrue(fields.containsAll(indexLabel.indexFields()));
     }
 
@@ -97,7 +97,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", indexLabel.baseValue());
         Assert.assertEquals(IndexType.RANGE, indexLabel.indexType());
         List<String> fields = ImmutableList.of("age");
-        Assert.assertTrue(fields.size() == indexLabel.indexFields().size());
+        Assert.assertEquals(fields.size(), indexLabel.indexFields().size());
         Assert.assertTrue(fields.containsAll(indexLabel.indexFields()));
     }
 
@@ -244,7 +244,7 @@ public class IndexLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", indexLabel.baseValue());
         Assert.assertEquals(IndexType.UNIQUE, indexLabel.indexType());
         List<String> fields = ImmutableList.of("city");
-        Assert.assertTrue(fields.size() == indexLabel.indexFields().size());
+        Assert.assertEquals(fields.size(), indexLabel.indexFields().size());
         Assert.assertTrue(fields.containsAll(indexLabel.indexFields()));
     }
 
@@ -277,9 +277,8 @@ public class IndexLabelApiTest extends BaseApiTest {
 
     @Test
     public void testList() {
-        IndexLabel indexLabel1 = indexLabelAPI.create(
-                                 fillIndexLabel.apply("personByAge"))
-                                 .indexLabel();
+        IndexLabel indexLabel1 = indexLabelAPI.create(fillIndexLabel.apply("personByAge"))
+                                              .indexLabel();
 
         IndexLabel indexLabel2 = schema().indexLabel("personByCity")
                                          .onV("person")

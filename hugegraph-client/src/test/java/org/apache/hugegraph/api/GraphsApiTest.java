@@ -37,18 +37,17 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableSet;
 
 //@Ignore
 public class GraphsApiTest extends BaseApiTest {
 
     private static final String GRAPH2 = "hugegraph2";
-    private static final String CONFIG2_PATH =
-                         "src/test/resources/hugegraph-create.properties";
+    private static final String CONFIG2_PATH = "src/test/resources/hugegraph-create.properties";
 
     private static final String GRAPH3 = "hugegraph3";
-    private static final String CONFIG3_PATH =
-                         "src/test/resources/hugegraph-clone.properties";
+    private static final String CONFIG3_PATH = "src/test/resources/hugegraph-clone.properties";
 
     @Override
     @After

@@ -33,8 +33,8 @@ public enum WriteType {
     // OLAP property key with range index
     OLAP_RANGE(4, "olap_range");
 
-    private byte code = 0;
-    private String name = null;
+    private final byte code;
+    private final String name;
 
     WriteType(int code, String name) {
         assert code < 256;

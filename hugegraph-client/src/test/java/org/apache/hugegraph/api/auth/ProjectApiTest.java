@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.auth.Project;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableSet;
 
 public class ProjectApiTest extends AuthApiTest {

@@ -24,6 +24,7 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PersonalRankAPI extends TraversersAPI {
@@ -90,15 +91,15 @@ public class PersonalRankAPI extends TraversersAPI {
             }
 
             public Builder source(Object source) {
-                E.checkArgument(source != null, "The source of request " +
-                                "for personal rank can't be null");
+                E.checkArgument(source != null,
+                                "The source of request for personal rank can't be null");
                 this.request.source = source;
                 return this;
             }
 
             public Builder label(String label) {
-                E.checkArgument(label != null, "The label of request " +
-                                "for personal rank can't be null");
+                E.checkArgument(label != null,
+                                "The label of request for personal rank can't be null");
                 this.request.label = label;
                 return this;
             }
@@ -124,8 +125,7 @@ public class PersonalRankAPI extends TraversersAPI {
             public Builder maxDepth(int maxDepth) {
                 E.checkArgument(maxDepth > 0 &&
                                 maxDepth <= Traverser.DEFAULT_MAX_DEPTH,
-                                "The max depth must be in range (0, %s], " +
-                                "but got: %s",
+                                "The max depth must be in range (0, %s], but got: %s",
                                 Traverser.DEFAULT_MAX_DEPTH, maxDepth);
                 this.request.maxDepth = maxDepth;
                 return this;
@@ -151,12 +151,9 @@ public class PersonalRankAPI extends TraversersAPI {
                 TraversersAPI.checkDegree(this.request.degree);
                 TraversersAPI.checkLimit(this.request.limit);
                 E.checkArgument(this.request.maxDepth > 0 &&
-                                this.request.maxDepth <=
-                                Traverser.DEFAULT_MAX_DEPTH,
-                                "The max depth must be in range (0, %s], " +
-                                "but got: %s",
-                                Traverser.DEFAULT_MAX_DEPTH,
-                                this.request.maxDepth);
+                                this.request.maxDepth <= Traverser.DEFAULT_MAX_DEPTH,
+                                "The max depth must be in range (0, %s], but got: %s",
+                                Traverser.DEFAULT_MAX_DEPTH, this.request.maxDepth);
                 return this.request;
             }
         }

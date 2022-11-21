@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BatchVertexRequest {
@@ -89,7 +90,7 @@ public class BatchVertexRequest {
             E.checkArgument(req.updateStrategies != null &&
                             !req.updateStrategies.isEmpty(),
                             "Parameter 'update_strategies' can't be empty");
-            E.checkArgument(req.createIfNotExist == true,
+            E.checkArgument(req.createIfNotExist,
                             "Parameter 'create_if_not_exist' " +
                             "dose not support false now");
             return this.req;

@@ -31,6 +31,7 @@ import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.constant.IndexType;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableMap;
 
 public class IndexLabelAPI extends SchemaElementAPI {

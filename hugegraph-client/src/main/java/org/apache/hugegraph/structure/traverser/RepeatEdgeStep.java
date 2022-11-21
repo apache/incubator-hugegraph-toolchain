@@ -25,12 +25,13 @@ import java.util.Map;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Direction;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RepeatEdgeStep extends EdgeStep {
 
     @JsonProperty("max_times")
-    public int maxTimes = 1;
+    public int maxTimes;
 
     private RepeatEdgeStep() {
         super();

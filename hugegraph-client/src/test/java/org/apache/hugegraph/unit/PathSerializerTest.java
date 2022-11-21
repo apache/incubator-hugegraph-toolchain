@@ -26,6 +26,7 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableList;
 
 public class PathSerializerTest extends BaseUnitTest {
@@ -65,15 +66,15 @@ public class PathSerializerTest extends BaseUnitTest {
     @Test
     public void testDeserializePathWithSimpleType() {
         String json = "{"
-                + "\"labels\":["
-                + "[],"
-                + "[]"
-                + "],"
-                + "\"objects\":["
-                + "\"marko\","
-                + "\"lop\""
-                + "]"
-                + "}";
+                      + "\"labels\":["
+                      + "[],"
+                      + "[]"
+                      + "],"
+                      + "\"objects\":["
+                      + "\"marko\","
+                      + "\"lop\""
+                      + "]"
+                      + "}";
 
         Path path = deserialize(json, Path.class);
 
@@ -86,15 +87,15 @@ public class PathSerializerTest extends BaseUnitTest {
                                  path.objects().toArray());
 
         json = "{"
-                + "\"labels\":["
-                + "[],"
-                + "[]"
-                + "],"
-                + "\"objects\":["
-                + "29,"
-                + "32"
-                + "]"
-                + "}";
+               + "\"labels\":["
+               + "[],"
+               + "[]"
+               + "],"
+               + "\"objects\":["
+               + "29,"
+               + "32"
+               + "]"
+               + "}";
 
         path = deserialize(json, Path.class);
 
@@ -106,15 +107,15 @@ public class PathSerializerTest extends BaseUnitTest {
     @Test
     public void testDeserializePathWithListType() {
         String json = "{"
-                + "\"labels\":["
-                + "[],"
-                + "[]"
-                + "],"
-                + "\"objects\":["
-                + "[\"Beijing\", \"Beijing\"],"
-                + "[\"Wuhan\", \"Hongkong\"]"
-                + "]"
-                + "}";
+                      + "\"labels\":["
+                      + "[],"
+                      + "[]"
+                      + "],"
+                      + "\"objects\":["
+                      + "[\"Beijing\", \"Beijing\"],"
+                      + "[\"Wuhan\", \"Hongkong\"]"
+                      + "]"
+                      + "}";
 
         Path path = BaseUnitTest.deserialize(json, Path.class);
 
@@ -123,9 +124,8 @@ public class PathSerializerTest extends BaseUnitTest {
         Assert.assertEquals(ImmutableList.of(), path.labels().get(1));
 
         Assert.assertEquals(2, path.objects().size());
-        Assert.assertArrayEquals(new Object[]{
-                                 ImmutableList.of("Beijing", "Beijing"),
-                                 ImmutableList.of("Wuhan", "Hongkong")},
+        Assert.assertArrayEquals(new Object[]{ImmutableList.of("Beijing", "Beijing"),
+                                              ImmutableList.of("Wuhan", "Hongkong")},
                                  path.objects().toArray());
     }
 }

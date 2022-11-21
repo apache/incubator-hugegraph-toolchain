@@ -28,7 +28,9 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.util.VersionUtil.Version;
+
 import com.fasterxml.jackson.databind.module.SimpleModule;
+
 import jakarta.ws.rs.core.Response;
 
 public class RestClient extends AbstractRestClient {
@@ -66,10 +68,9 @@ public class RestClient extends AbstractRestClient {
 
     public void checkApiVersion(String minVersion, String message) {
         if (this.apiVersionLt(minVersion)) {
-            throw new ClientException(
-                      "HugeGraphServer API version must be >= %s to support " +
-                      "%s, but current HugeGraphServer API version is: %s",
-                      minVersion, message, this.apiVersion.get());
+            throw new ClientException("HugeGraphServer API version must be >= %s to support " +
+                                      "%s, but current HugeGraphServer API version is: %s",
+                                      minVersion, message, this.apiVersion.get());
         }
     }
 

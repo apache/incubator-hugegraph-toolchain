@@ -31,7 +31,9 @@ import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
+
 import com.google.common.collect.ImmutableMap;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
 
 public class EdgeAPI extends GraphAPI {
@@ -59,10 +61,9 @@ public class EdgeAPI extends GraphAPI {
                                              headers, params);
         List<String> ids = result.readList(String.class);
         if (edges.size() != ids.size()) {
-            throw new NotAllCreatedException(
-                      "Not all edges are successfully created, " +
-                      "expect '%s', the actual is '%s'",
-                      ids, edges.size(), ids.size());
+            throw new NotAllCreatedException("Not all edges are successfully created, " +
+                                             "expect '%s', the actual is '%s'",
+                                             ids, edges.size(), ids.size());
         }
         return ids;
     }

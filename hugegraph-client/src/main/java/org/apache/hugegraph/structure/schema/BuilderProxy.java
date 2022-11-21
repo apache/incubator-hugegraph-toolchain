@@ -35,10 +35,8 @@ public class BuilderProxy<T> implements InvocationHandler {
     public BuilderProxy(T builder) {
         this.finished = false;
         this.builder = builder;
-        this.proxy = (T) Proxy.newProxyInstance(
-                     builder.getClass().getClassLoader(),
-                     builder.getClass().getInterfaces(),
-                     this);
+        this.proxy = (T) Proxy.newProxyInstance(builder.getClass().getClassLoader(),
+                                                builder.getClass().getInterfaces(), this);
     }
 
     public T proxy() {

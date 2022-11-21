@@ -22,6 +22,7 @@ package org.apache.hugegraph.structure.graph;
 import java.util.List;
 
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BatchOlapPropertyRequest {

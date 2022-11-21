@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.JsonUtil;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

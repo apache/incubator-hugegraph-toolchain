@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.hugegraph.exception.InvalidOperationException;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -87,9 +88,8 @@ public class Vertex extends GraphElement {
     public Vertex removeProperty(String key) {
         E.checkNotNull(key, "The property name can not be null");
         if (!this.properties.containsKey(key)) {
-            throw new InvalidOperationException(
-                      "The vertex '%s' doesn't have the property '%s'",
-                      this.id, key);
+            throw new InvalidOperationException("The vertex '%s' doesn't have the property '%s'",
+                                                this.id, key);
         }
         Vertex vertex = new Vertex(this.label);
         vertex.id(this.id);

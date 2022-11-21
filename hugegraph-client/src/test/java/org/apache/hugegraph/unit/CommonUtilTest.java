@@ -23,6 +23,7 @@ import org.apache.hugegraph.util.CommonUtil;
 import org.junit.Test;
 
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableMap;
 
 public class CommonUtilTest {

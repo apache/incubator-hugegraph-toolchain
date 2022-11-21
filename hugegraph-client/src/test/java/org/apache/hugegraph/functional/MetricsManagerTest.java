@@ -24,6 +24,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableSet;
 
 public class MetricsManagerTest extends BaseFuncTest {
