@@ -63,6 +63,11 @@
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.hugegraph</groupId>
+            <artifactId>hugegraph-common</artifactId>
+            <version>${version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
@@ -96,6 +101,10 @@
                 <exclusion>
                     <groupId>com.oracle</groupId>
                     <artifactId>ojdbc8</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hugegraph</groupId>
+                    <artifactId>hugegraph-common</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

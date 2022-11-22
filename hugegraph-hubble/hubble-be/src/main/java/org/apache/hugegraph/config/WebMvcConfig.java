@@ -20,7 +20,6 @@
 package org.apache.hugegraph.config;
 
 import org.apache.hugegraph.handler.CustomInterceptor;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -43,7 +42,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**");
     }
 
-    @Bean
     public CustomInterceptor customInterceptor() {
         return new CustomInterceptor();
     }

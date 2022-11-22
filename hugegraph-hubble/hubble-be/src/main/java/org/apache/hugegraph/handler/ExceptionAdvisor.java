@@ -44,6 +44,7 @@ public class ExceptionAdvisor {
     @ExceptionHandler(InternalException.class)
     @ResponseStatus(HttpStatus.OK)
     public Response exceptionHandler(InternalException e) {
+        log.error("InternalException:", e);
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
                        .status(Constant.STATUS_INTERNAL_ERROR)
@@ -55,6 +56,7 @@ public class ExceptionAdvisor {
     @ExceptionHandler(ExternalException.class)
     @ResponseStatus(HttpStatus.OK)
     public Response exceptionHandler(ExternalException e) {
+        log.error("ExternalException:", e);
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
                        .status(e.status())
@@ -66,6 +68,7 @@ public class ExceptionAdvisor {
     @ExceptionHandler(ParameterizedException.class)
     @ResponseStatus(HttpStatus.OK)
     public Response exceptionHandler(ParameterizedException e) {
+        log.error("ParameterizedException", e);
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
                        .status(Constant.STATUS_BAD_REQUEST)
@@ -77,6 +80,7 @@ public class ExceptionAdvisor {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.OK)
     public Response exceptionHandler(Exception e) {
+        log.error("Exception:", e);
         String message = this.handleMessage(e.getMessage(), null);
         return Response.builder()
                        .status(Constant.STATUS_BAD_REQUEST)
@@ -88,6 +92,7 @@ public class ExceptionAdvisor {
     @ExceptionHandler(IllegalGremlinException.class)
     @ResponseStatus(HttpStatus.OK)
     public Response exceptionHandler(IllegalGremlinException e) {
+        log.error("IllegalGremlinException:", e);
         String message = this.handleMessage(e.getMessage(), e.args());
         return Response.builder()
                        .status(Constant.STATUS_ILLEGAL_GREMLIN)
