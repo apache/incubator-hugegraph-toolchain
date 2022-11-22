@@ -22,6 +22,7 @@ package org.apache.hugegraph.structure.traverser;
 import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class KoutRequest {

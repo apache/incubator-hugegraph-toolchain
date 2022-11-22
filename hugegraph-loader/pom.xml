@@ -37,12 +37,20 @@
     <properties>
         <release.name>${project.artifactId}</release.name>
         <final.name>${release.name}-${project.version}</final.name>
+        <jackson.version>2.12.3</jackson.version>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
     </properties>
 
     <dependencies>
+        <!-- use a fixed jackson for loader -->
+        <dependency>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-jaxb-annotations</artifactId>
+          <version>${jackson.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.version}</artifactId>

@@ -33,6 +33,7 @@ import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.DateUtil;
 
 import org.apache.hugegraph.testutil.Utils;
+
 import com.google.common.collect.ImmutableList;
 
 public class IndexLabelTest extends BaseFuncTest {

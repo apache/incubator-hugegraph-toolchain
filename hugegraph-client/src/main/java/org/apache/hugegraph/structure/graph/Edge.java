@@ -23,6 +23,7 @@ import org.apache.hugegraph.util.SplicingIdGenerator;
 import org.apache.hugegraph.exception.InvalidOperationException;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -70,9 +71,8 @@ public class Edge extends GraphElement {
             this.sourceId = this.source.id();
         }
         if (this.sourceId == null) {
-            throw new InvalidOperationException(
-                      "Must set source vertex id or add vertices " +
-                      "before add edges");
+            throw new InvalidOperationException("Must set source vertex id or add vertices " +
+                                                "before add edges");
         }
         return this.sourceId;
     }
@@ -96,9 +96,8 @@ public class Edge extends GraphElement {
             this.targetId = this.target.id();
         }
         if (this.targetId == null) {
-            throw new InvalidOperationException(
-                      "Must set target vertex id or add vertices " +
-                      "before add edges");
+            throw new InvalidOperationException("Must set target vertex id or add vertices " +
+                                                "before add edges");
         }
         return this.targetId;
     }
@@ -182,9 +181,8 @@ public class Edge extends GraphElement {
     public Edge removeProperty(String key) {
         E.checkNotNull(key, "The property name can not be null");
         if (!this.properties.containsKey(key)) {
-            throw new InvalidOperationException(
-                      "The edge '%s' doesn't have the property '%s'",
-                      this.id, key);
+            throw new InvalidOperationException("The edge '%s' doesn't have the property '%s'",
+                                                this.id, key);
         }
         Edge edge = new Edge(this.label);
         edge.id(this.id);
@@ -201,11 +199,9 @@ public class Edge extends GraphElement {
 
     @Override
     public String toString() {
-        return String.format("{id=%s, sourceId=%s, sourceLabel=%s, " +
-                             "targetId=%s, targetLabel=%s, " +
-                             "label=%s, properties=%s}",
-                this.id, this.sourceId, this.sourceLabel,
-                this.targetId, this.targetLabel,
-                this.label, this.properties);
+        return String.format("{id=%s, sourceId=%s, sourceLabel=%s, targetId=%s, " +
+                             "targetLabel=%s, label=%s, properties=%s}",
+                             this.id, this.sourceId, this.sourceLabel, this.targetId,
+                             this.targetLabel, this.label, this.properties);
     }
 }

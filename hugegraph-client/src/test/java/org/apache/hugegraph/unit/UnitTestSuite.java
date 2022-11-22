@@ -24,15 +24,15 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    VertexSerializerTest.class,
-    PathSerializerTest.class,
-    RestResultTest.class,
-    BatchElementRequestTest.class,
-    PropertyKeyTest.class,
-    IndexLabelTest.class,
-    CommonUtilTest.class,
-    IdUtilTest.class,
-    SplicingIdGeneratorTest.class
+        VertexSerializerTest.class,
+        PathSerializerTest.class,
+        RestResultTest.class,
+        BatchElementRequestTest.class,
+        PropertyKeyTest.class,
+        IndexLabelTest.class,
+        CommonUtilTest.class,
+        IdUtilTest.class,
+        SplicingIdGeneratorTest.class
 })
 public class UnitTestSuite {
 }

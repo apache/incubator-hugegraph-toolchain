@@ -22,6 +22,7 @@ package org.apache.hugegraph.structure.graph;
 import java.util.List;
 
 import org.apache.hugegraph.structure.GraphElement;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -34,6 +34,7 @@ import org.apache.hugegraph.structure.constant.WriteType;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.DateUtil;
+
 import com.google.common.collect.ImmutableList;
 
 public class PropertyKeyApiTest extends BaseApiTest {
@@ -44,7 +45,7 @@ public class PropertyKeyApiTest extends BaseApiTest {
         propertyKeyAPI.list().forEach(propertyKey -> {
             pkTaskIds.add(propertyKeyAPI.delete(propertyKey.name()));
         });
-        pkTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        pkTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
     }
 
     @Test

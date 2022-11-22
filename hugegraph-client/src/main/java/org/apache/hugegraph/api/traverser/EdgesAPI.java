@@ -29,6 +29,7 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
 import org.apache.hugegraph.structure.graph.Shard;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableMap;
 
 public class EdgesAPI extends TraversersAPI {

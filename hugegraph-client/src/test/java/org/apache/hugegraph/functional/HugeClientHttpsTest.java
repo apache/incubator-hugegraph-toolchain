@@ -30,6 +30,7 @@ import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableMap;
 
 public class HugeClientHttpsTest {
@@ -42,8 +43,7 @@ public class HugeClientHttpsTest {
     private static final int MAX_CONNS_PER_ROUTE = 10;
     private static final int MAX_CONNS = 10;
     private static final int IDLE_TIME = 30;
-    private static final String TRUST_STORE_FILE =
-                                "src/test/resources/hugegraph.truststore";
+    private static final String TRUST_STORE_FILE = "src/test/resources/hugegraph.truststore";
     private static final String TRUST_STORE_PASSWORD = "hugegraph";
 
     private static HugeClient client;

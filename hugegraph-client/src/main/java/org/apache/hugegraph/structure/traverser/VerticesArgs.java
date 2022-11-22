@@ -51,7 +51,7 @@ public class VerticesArgs {
 
     public static class Builder {
 
-        private VerticesArgs vertices;
+        private final VerticesArgs vertices;
 
         private Builder() {
             this.vertices = new VerticesArgs();

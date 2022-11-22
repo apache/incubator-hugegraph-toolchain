@@ -34,12 +34,13 @@ import org.apache.hugegraph.structure.constant.Frequency;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.DateUtil;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class EdgeLabelApiTest extends BaseApiTest {
 
-    private static Function<String, EdgeLabel> fillEdgeLabel =
+    private static final Function<String, EdgeLabel> fillEdgeLabel =
             (name) -> schema().edgeLabel(name)
                               .sourceLabel("person")
                               .targetLabel("software")
@@ -59,7 +60,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
         edgeLabelAPI.list().forEach(el -> {
             taskIds.add(edgeLabelAPI.delete(el.name()));
         });
-        taskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        taskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
     }
 
     @Test
@@ -71,9 +72,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", edgeLabel.sourceLabel());
         Assert.assertEquals("software", edgeLabel.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
-        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
+        Assert.assertTrue(edgeLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("date", "city");
-        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertEquals(props.size(), edgeLabel.properties().size());
         Assert.assertTrue(props.containsAll(edgeLabel.properties()));
     }
 
@@ -91,9 +92,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", edgeLabel.sourceLabel());
         Assert.assertEquals("software", edgeLabel.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
-        Assert.assertEquals(false, edgeLabel.enableLabelIndex());
+        Assert.assertFalse(edgeLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("date", "city");
-        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertEquals(props.size(), edgeLabel.properties().size());
         Assert.assertTrue(props.containsAll(edgeLabel.properties()));
     }
 
@@ -111,9 +112,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", edgeLabel.sourceLabel());
         Assert.assertEquals("software", edgeLabel.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
-        Assert.assertEquals(false, edgeLabel.enableLabelIndex());
+        Assert.assertFalse(edgeLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("date", "city");
-        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertEquals(props.size(), edgeLabel.properties().size());
         Assert.assertTrue(props.containsAll(edgeLabel.properties()));
     }
 
@@ -231,9 +232,9 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", edgeLabel.sourceLabel());
         Assert.assertEquals("software", edgeLabel.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
-        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
+        Assert.assertTrue(edgeLabel.enableLabelIndex());
         Set<String> props = ImmutableSet.of("date", "city");
-        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertEquals(props.size(), edgeLabel.properties().size());
         Assert.assertTrue(props.containsAll(edgeLabel.properties()));
         Assert.assertEquals(0L, edgeLabel.ttl());
         Assert.assertNull(edgeLabel.ttlStartTime());
@@ -251,8 +252,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", edgeLabel.sourceLabel());
         Assert.assertEquals("software", edgeLabel.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
-        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
-        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertTrue(edgeLabel.enableLabelIndex());
+        Assert.assertEquals(props.size(), edgeLabel.properties().size());
         Assert.assertTrue(props.containsAll(edgeLabel.properties()));
         Assert.assertEquals(3000L, edgeLabel.ttl());
         Assert.assertNull(edgeLabel.ttlStartTime());
@@ -271,8 +272,8 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals("person", edgeLabel.sourceLabel());
         Assert.assertEquals("software", edgeLabel.targetLabel());
         Assert.assertEquals(Frequency.SINGLE, edgeLabel.frequency());
-        Assert.assertEquals(true, edgeLabel.enableLabelIndex());
-        Assert.assertTrue(props.size() == edgeLabel.properties().size());
+        Assert.assertTrue(edgeLabel.enableLabelIndex());
+        Assert.assertEquals(props.size(), edgeLabel.properties().size());
         Assert.assertTrue(props.containsAll(edgeLabel.properties()));
         Assert.assertEquals(3000L, edgeLabel.ttl());
         Assert.assertEquals("date", edgeLabel.ttlStartTime());
@@ -356,7 +357,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals(props, edgeLabel1.properties());
 
         EdgeLabel edgeLabel2 = schema().edgeLabel("created")
-                                .nullableKeys("undefined").build();
+                                       .nullableKeys("undefined").build();
         Utils.assertResponseError(400, () -> {
             edgeLabelAPI.append(edgeLabel2);
         });
@@ -407,7 +408,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
         Assert.assertEquals(props, edgeLabel1.properties());
 
         EdgeLabel edgeLabel2 = schema().edgeLabel("created")
-                                .properties("city").build();
+                                       .properties("city").build();
         Utils.assertResponseError(400, () -> {
             edgeLabelAPI.eliminate(edgeLabel2);
         });
@@ -415,9 +416,7 @@ public class EdgeLabelApiTest extends BaseApiTest {
 
     @Test
     public void testGet() {
-        EdgeLabel edgeLabel1 = edgeLabelAPI.create(
-                               fillEdgeLabel.apply("created"));
-
+        EdgeLabel edgeLabel1 = edgeLabelAPI.create(fillEdgeLabel.apply("created"));
         EdgeLabel edgeLabel2 = edgeLabelAPI.get("created");
 
         Assert.assertEquals(edgeLabel1.name(), edgeLabel2.name());

@@ -30,7 +30,7 @@ import org.apache.hugegraph.testutil.Assert;
 public class SchemaApiTest extends BaseApiTest {
 
     @Test
-    public void testlist() {
+    public void testList() {
         BaseApiTest.initPropertyKey();
         BaseApiTest.initVertexLabel();
         BaseApiTest.initEdgeLabel();

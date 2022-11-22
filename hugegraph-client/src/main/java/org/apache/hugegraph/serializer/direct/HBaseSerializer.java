@@ -37,8 +37,8 @@ import java.util.Map;
  */
 public class HBaseSerializer {
 
-    private int edgeLogicPartitions = 30;
-    private int vertexLogicPartitions = 10;
+    private int edgeLogicPartitions;
+    private int vertexLogicPartitions;
     private HugeClient client;
     private GraphSchema graphSchema;
 

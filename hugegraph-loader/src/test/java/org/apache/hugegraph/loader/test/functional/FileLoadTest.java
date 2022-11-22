@@ -1853,6 +1853,25 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
+    public void testParserV2() {
+        ioUtil.write("vertex_person.csv",
+                "name,age,city",
+                "tom,24,Hongkong",
+                "jerry,18");
+
+        String[] args = new String[]{
+                "-f", structPath("mapping_v2/struct.json"),
+                "-s", configPath("mapping_v2/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--max-parse-errors", "1"
+        };
+        HugeGraphLoader.main(args);
+    }
+
+    @Test
     public void testBatchUpdateElement() {
         ioUtil.write("vertex_person.txt",
                      "tom\t18\t[str1,str2]",

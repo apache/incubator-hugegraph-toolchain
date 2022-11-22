@@ -28,8 +28,8 @@ public enum Cardinality {
     SET(3, "set");
 
     // HugeKeys define
-    private byte code = 0;
-    private String name = null;
+    private final byte code;
+    private final String name;
 
     Cardinality(int code, String name) {
         assert code < 256;

@@ -19,8 +19,6 @@
 
 package org.apache.hugegraph.util;
 
-import org.apache.hugegraph.util.E;
-
 import java.util.Map;
 
 public final class CommonUtil {

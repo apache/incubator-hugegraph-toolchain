@@ -22,6 +22,7 @@ package org.apache.hugegraph.structure.traverser;
 import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SingleSourceJaccardSimilarityRequest {
@@ -31,9 +32,9 @@ public class SingleSourceJaccardSimilarityRequest {
     @JsonProperty("step")
     public EdgeStep step;
     @JsonProperty("top")
-    public int top = 10;
+    public int top;
     @JsonProperty("capacity")
-    public long capacity = Traverser.DEFAULT_CAPACITY;
+    public long capacity;
 
     private SingleSourceJaccardSimilarityRequest() {
         this.vertex = null;

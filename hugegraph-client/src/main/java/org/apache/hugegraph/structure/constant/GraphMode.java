@@ -23,7 +23,7 @@ public enum GraphMode {
 
     /*
      * None mode is regular mode
-     * 1. Not allowed create schema with specified id
+     * 1. Not allowed to create schema with specified id
      * 2. Not support create vertex with id for AUTOMATIC id strategy
      */
     NONE(1, "none"),
@@ -37,7 +37,7 @@ public enum GraphMode {
 
     /*
      * MERGING mode is used to merge schema and graph data to an existing graph.
-     * 1. Not allowed create schema with specified id
+     * 1. Not allowed to create schema with specified id
      * 2. Support create vertex with id for AUTOMATIC id strategy
      */
     MERGING(3, "merging"),

@@ -47,6 +47,7 @@ import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.google.common.collect.ImmutableMap;
 
 public class BaseClientTest {

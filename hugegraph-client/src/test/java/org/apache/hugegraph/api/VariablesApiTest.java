@@ -138,12 +138,12 @@ public class VariablesApiTest extends BaseApiTest {
             Assert.assertTrue(value instanceof Collection);
             Collection<?> expect = (Collection<?>) value;
             Collection<?> actual = (Collection<?>) variables.get(key);
-            Assert.assertTrue(expect.size()== actual.size());
+            Assert.assertEquals(expect.size(), actual.size());
             actual.forEach(elem -> {
                 Assert.assertTrue((expect.contains(elem)));
             });
         } else {
-            Assert.assertTrue(variables.get(key).equals(value));
+            Assert.assertEquals(variables.get(key), value);
         }
     }
 }

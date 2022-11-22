@@ -31,6 +31,7 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableMap;
 
 public class TaskAPI extends API {
@@ -114,9 +115,8 @@ public class TaskAPI extends API {
                 if (task.success()) {
                     return task;
                 } else if (task.completed()) {
-                    throw new ClientException(
-                              "Task '%s' is %s, result is '%s'",
-                              taskId, task.status(), task.result());
+                    throw new ClientException("Task '%s' is %s, result is '%s'",
+                                              taskId, task.status(), task.result());
                 }
                 if (pass >= passes) {
                     break;
@@ -129,10 +129,8 @@ public class TaskAPI extends API {
                     // Ignore
                 }
             }
-            throw new ClientException(
-                      "Task '%s' not completed in %s seconds, " +
-                      "it can still be queried by task-get API",
-                      taskId, seconds);
+            throw new ClientException("Task '%s' not completed in %s seconds, " +
+                                      "it can still be queried by task-get API", taskId, seconds);
         } finally {
             // Stop querying this task info whatever
             this.removeFromCache(taskId);

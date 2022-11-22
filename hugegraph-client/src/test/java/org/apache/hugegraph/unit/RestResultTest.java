@@ -50,6 +50,7 @@ import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.testutil.Assert;
+
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -87,12 +88,12 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadPropertyKey() {
         String json = "{"
-                + "\"id\": 3,"
-                + "\"data_type\": \"INT\","
-                + "\"name\": \"id\","
-                + "\"cardinality\": \"SINGLE\","
-                + "\"properties\": []"
-                + "}";
+                      + "\"id\": 3,"
+                      + "\"data_type\": \"INT\","
+                      + "\"name\": \"id\","
+                      + "\"cardinality\": \"SINGLE\","
+                      + "\"properties\": []"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -113,20 +114,20 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadPropertyKeys() {
         String json = "{\"propertykeys\": ["
-                + "{"
-                + "\"id\": 3,"
-                + "\"data_type\": \"TEXT\","
-                + "\"name\": \"id\","
-                + "\"cardinality\": \"SINGLE\","
-                + "\"properties\": []"
-                + "},"
-                + "{\"id\": 4,"
-                + "\"data_type\": \"FLOAT\","
-                + "\"name\": \"date\","
-                + "\"cardinality\": \"SET\","
-                + "\"properties\": []"
-                + "}"
-                + "]}";
+                      + "{"
+                      + "\"id\": 3,"
+                      + "\"data_type\": \"TEXT\","
+                      + "\"name\": \"id\","
+                      + "\"cardinality\": \"SINGLE\","
+                      + "\"properties\": []"
+                      + "},"
+                      + "{\"id\": 4,"
+                      + "\"data_type\": \"FLOAT\","
+                      + "\"name\": \"date\","
+                      + "\"cardinality\": \"SET\","
+                      + "\"properties\": []"
+                      + "}"
+                      + "]}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -156,13 +157,13 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadVertexLabel() {
         String json = "{"
-                + "\"id\": 1,"
-                + "\"primary_keys\": [\"name\"],"
-                + "\"index_labels\": [],"
-                + "\"name\": \"software\","
-                + "\"id_strategy\": \"PRIMARY_KEY\","
-                + "\"properties\": [\"price\", \"name\", \"lang\"]"
-                + "}";
+                      + "\"id\": 1,"
+                      + "\"primary_keys\": [\"name\"],"
+                      + "\"index_labels\": [],"
+                      + "\"name\": \"software\","
+                      + "\"id_strategy\": \"PRIMARY_KEY\","
+                      + "\"properties\": [\"price\", \"name\", \"lang\"]"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -185,23 +186,23 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadVertexLabels() {
         String json = "{\"vertexlabels\": ["
-                + "{"
-                + "\"id\": 1,"
-                + "\"primary_keys\": [\"name\"],"
-                + "\"index_labels\": [],"
-                + "\"name\": \"software\","
-                + "\"id_strategy\": \"PRIMARY_KEY\","
-                + "\"properties\": [\"price\", \"name\", \"lang\"]"
-                + "},"
-                + "{"
-                + "\"id\": 2,"
-                + "\"primary_keys\": [],"
-                + "\"index_labels\": [],"
-                + "\"name\": \"person\","
-                + "\"id_strategy\": \"CUSTOMIZE_STRING\","
-                + "\"properties\": [\"city\", \"name\", \"age\"]"
-                + "}"
-                + "]}";
+                      + "{"
+                      + "\"id\": 1,"
+                      + "\"primary_keys\": [\"name\"],"
+                      + "\"index_labels\": [],"
+                      + "\"name\": \"software\","
+                      + "\"id_strategy\": \"PRIMARY_KEY\","
+                      + "\"properties\": [\"price\", \"name\", \"lang\"]"
+                      + "},"
+                      + "{"
+                      + "\"id\": 2,"
+                      + "\"primary_keys\": [],"
+                      + "\"index_labels\": [],"
+                      + "\"name\": \"person\","
+                      + "\"id_strategy\": \"CUSTOMIZE_STRING\","
+                      + "\"properties\": [\"city\", \"name\", \"age\"]"
+                      + "}"
+                      + "]}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -235,15 +236,15 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadEdgeLabel() {
         String json = "{"
-                + "\"id\": 2,"
-                + "\"source_label\": \"person\","
-                + "\"index_labels\": [\"createdByDate\"],"
-                + "\"name\": \"created\","
-                + "\"target_label\": \"software\","
-                + "\"sort_keys\": [],"
-                + "\"properties\": [\"date\"],"
-                + "\"frequency\": \"SINGLE\""
-                + "}";
+                      + "\"id\": 2,"
+                      + "\"source_label\": \"person\","
+                      + "\"index_labels\": [\"createdByDate\"],"
+                      + "\"name\": \"created\","
+                      + "\"target_label\": \"software\","
+                      + "\"sort_keys\": [],"
+                      + "\"properties\": [\"date\"],"
+                      + "\"frequency\": \"SINGLE\""
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -266,26 +267,26 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadEdgeLabels() {
         String json = "{\"edgelabels\": ["
-                + "{"
-                + "\"id\": 2,"
-                + "\"source_label\": \"person\","
-                + "\"index_labels\": [\"createdByDate\"],"
-                + "\"name\": \"created\","
-                + "\"target_label\": \"software\","
-                + "\"sort_keys\": [],"
-                + "\"properties\": [\"date\"],"
-                + "\"frequency\": \"SINGLE\""
-                + "},"
-                + "{\"id\": 3,"
-                + "\"source_label\": \"person\","
-                + "\"index_labels\": [],"
-                + "\"name\": \"knows\","
-                + "\"target_label\": \"person\","
-                + "\"sort_keys\": [],"
-                + "\"properties\": [\"date\", \"city\"],"
-                + "\"frequency\": \"SINGLE\""
-                + "}"
-                + "]}";
+                      + "{"
+                      + "\"id\": 2,"
+                      + "\"source_label\": \"person\","
+                      + "\"index_labels\": [\"createdByDate\"],"
+                      + "\"name\": \"created\","
+                      + "\"target_label\": \"software\","
+                      + "\"sort_keys\": [],"
+                      + "\"properties\": [\"date\"],"
+                      + "\"frequency\": \"SINGLE\""
+                      + "},"
+                      + "{\"id\": 3,"
+                      + "\"source_label\": \"person\","
+                      + "\"index_labels\": [],"
+                      + "\"name\": \"knows\","
+                      + "\"target_label\": \"person\","
+                      + "\"sort_keys\": [],"
+                      + "\"properties\": [\"date\", \"city\"],"
+                      + "\"frequency\": \"SINGLE\""
+                      + "}"
+                      + "]}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -320,13 +321,13 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadIndexLabel() {
         String json = "{"
-                + "\"id\": \"4\","
-                + "\"index_type\": \"SEARCH\","
-                + "\"base_value\": \"software\","
-                + "\"name\": \"softwareByPrice\","
-                + "\"fields\": [\"price\"],"
-                + "\"base_type\": \"VERTEX_LABEL\""
-                + "}";
+                      + "\"id\": \"4\","
+                      + "\"index_type\": \"SEARCH\","
+                      + "\"base_value\": \"software\","
+                      + "\"name\": \"softwareByPrice\","
+                      + "\"fields\": [\"price\"],"
+                      + "\"base_type\": \"VERTEX_LABEL\""
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -349,23 +350,23 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadIndexLabels() {
         String json = "{\"indexlabels\": ["
-                + "{"
-                + "\"id\": \"4\","
-                + "\"index_type\": \"SEARCH\","
-                + "\"base_value\": \"software\","
-                + "\"name\": \"softwareByPrice\","
-                + "\"fields\": [\"price\"],"
-                + "\"base_type\": \"VERTEX_LABEL\""
-                + "},"
-                + "{"
-                + "\"id\": \"4\","
-                + "\"index_type\": \"SECONDARY\","
-                + "\"base_value\": \"person\","
-                + "\"name\": \"personByName\","
-                + "\"fields\": [\"name\"],"
-                + "\"base_type\": \"VERTEX_LABEL\""
-                + "}"
-                + "]}";
+                      + "{"
+                      + "\"id\": \"4\","
+                      + "\"index_type\": \"SEARCH\","
+                      + "\"base_value\": \"software\","
+                      + "\"name\": \"softwareByPrice\","
+                      + "\"fields\": [\"price\"],"
+                      + "\"base_type\": \"VERTEX_LABEL\""
+                      + "},"
+                      + "{"
+                      + "\"id\": \"4\","
+                      + "\"index_type\": \"SECONDARY\","
+                      + "\"base_value\": \"person\","
+                      + "\"name\": \"personByName\","
+                      + "\"fields\": [\"name\"],"
+                      + "\"base_type\": \"VERTEX_LABEL\""
+                      + "}"
+                      + "]}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -399,13 +400,13 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadVertex() {
         String json = "{"
-                + "\"id\": \"person:marko\","
-                + "\"label\": \"person\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"name\": \"marko\""
-                + "}"
-                + "}";
+                      + "\"id\": \"person:marko\","
+                      + "\"label\": \"person\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"name\": \"marko\""
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -426,37 +427,37 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadVertices() {
         String json = "{\"vertices\": ["
-                + "{"
-                + "\"id\": \"person:marko\","
-                + "\"label\": \"person\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"city\": [\"Beijing\",\"Wuhan\",\"Beijing\"],"
-                + "\"name\": \"marko\","
-                + "\"age\": 29"
-                + "}"
-                + "},"
-                + "{"
-                + "\"id\": \"software:lop\","
-                + "\"label\": \"software\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"price\": 328,"
-                + "\"name\": \"lop\","
-                + "\"lang\": [\"java\",\"python\",\"c++\"]"
-                + "}"
-                + "},"
-                + "{"
-                + "\"id\": \"person:peter\","
-                + "\"label\": \"person\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"city\": [\"Shanghai\"],"
-                + "\"name\": \"peter\","
-                + "\"age\": 29"
-                + "}"
-                + "}"
-                + "]}";
+                      + "{"
+                      + "\"id\": \"person:marko\","
+                      + "\"label\": \"person\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"city\": [\"Beijing\",\"Wuhan\",\"Beijing\"],"
+                      + "\"name\": \"marko\","
+                      + "\"age\": 29"
+                      + "}"
+                      + "},"
+                      + "{"
+                      + "\"id\": \"software:lop\","
+                      + "\"label\": \"software\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"price\": 328,"
+                      + "\"name\": \"lop\","
+                      + "\"lang\": [\"java\",\"python\",\"c++\"]"
+                      + "}"
+                      + "},"
+                      + "{"
+                      + "\"id\": \"person:peter\","
+                      + "\"label\": \"person\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"city\": [\"Shanghai\"],"
+                      + "\"name\": \"peter\","
+                      + "\"age\": 29"
+                      + "}"
+                      + "}"
+                      + "]}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -475,45 +476,45 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals("person:marko", vertex1.id());
         Assert.assertEquals("person", vertex1.label());
         Assert.assertEquals(ImmutableMap.of(
-                            "name", "marko",
-                            "age", 29,
-                            "city", ImmutableList.of("Beijing", "Wuhan",
-                                                     "Beijing")
+                                    "name", "marko",
+                                    "age", 29,
+                                    "city", ImmutableList.of("Beijing", "Wuhan",
+                                                             "Beijing")
                             ),
                             vertex1.properties());
 
         Assert.assertEquals("software:lop", vertex2.id());
         Assert.assertEquals("software", vertex2.label());
         Assert.assertEquals(ImmutableMap.of(
-                            "name", "lop",
-                            "lang", ImmutableList.of("java", "python", "c++"),
-                            "price", 328),
+                                    "name", "lop",
+                                    "lang", ImmutableList.of("java", "python", "c++"),
+                                    "price", 328),
                             vertex2.properties());
 
         Assert.assertEquals("person:peter", vertex3.id());
         Assert.assertEquals("person", vertex3.label());
         Assert.assertEquals(ImmutableMap.of(
-                            "name", "peter",
-                            "age", 29,
-                            "city", ImmutableList.of("Shanghai")),
+                                    "name", "peter",
+                                    "age", 29,
+                                    "city", ImmutableList.of("Shanghai")),
                             vertex3.properties());
     }
 
     @Test
     public void testReadEdge() {
         String json = "{"
-                + "\"id\": \"person:peter>created>>software:lop\","
-                + "\"label\": \"created\","
-                + "\"type\": \"edge\","
-                + "\"outV\": \"person:peter\","
-                + "\"inV\": \"software:lop\","
-                + "\"outVLabel\": \"person\","
-                + "\"inVLabel\": \"software\","
-                + "\"properties\": {"
-                + "\"city\": \"Hongkong\","
-                + "\"date\": 1495036800000"
-                + "}"
-                + "}";
+                      + "\"id\": \"person:peter>created>>software:lop\","
+                      + "\"label\": \"created\","
+                      + "\"type\": \"edge\","
+                      + "\"outV\": \"person:peter\","
+                      + "\"inV\": \"software:lop\","
+                      + "\"outVLabel\": \"person\","
+                      + "\"inVLabel\": \"software\","
+                      + "\"properties\": {"
+                      + "\"city\": \"Hongkong\","
+                      + "\"date\": 1495036800000"
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -539,32 +540,32 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadEdges() {
         String json = "{\"edges\": ["
-                + "{"
-                + "\"id\": \"person:peter>created>>software:lop\","
-                + "\"label\": \"created\","
-                + "\"type\": \"edge\","
-                + "\"inVLabel\": \"software\","
-                + "\"outVLabel\": \"person\","
-                + "\"inV\": \"software:lop\","
-                + "\"outV\": \"person:peter\","
-                + "\"properties\": {"
-                + "\"date\": 1495036800000,"
-                + "\"city\": \"Hongkong\""
-                + "}"
-                + "},"
-                + "{"
-                + "\"id\": \"person:peter>knows>>person:marko\","
-                + "\"label\": \"knows\","
-                + "\"type\": \"edge\","
-                + "\"inVLabel\": \"person\","
-                + "\"outVLabel\": \"person\","
-                + "\"inV\": \"person:marko\","
-                + "\"outV\": \"person:peter\","
-                + "\"properties\": {"
-                + "\"date\": 1476720000000"
-                + "}"
-                + "}"
-                + "]}";
+                      + "{"
+                      + "\"id\": \"person:peter>created>>software:lop\","
+                      + "\"label\": \"created\","
+                      + "\"type\": \"edge\","
+                      + "\"inVLabel\": \"software\","
+                      + "\"outVLabel\": \"person\","
+                      + "\"inV\": \"software:lop\","
+                      + "\"outV\": \"person:peter\","
+                      + "\"properties\": {"
+                      + "\"date\": 1495036800000,"
+                      + "\"city\": \"Hongkong\""
+                      + "}"
+                      + "},"
+                      + "{"
+                      + "\"id\": \"person:peter>knows>>person:marko\","
+                      + "\"label\": \"knows\","
+                      + "\"type\": \"edge\","
+                      + "\"inVLabel\": \"person\","
+                      + "\"outVLabel\": \"person\","
+                      + "\"inV\": \"person:marko\","
+                      + "\"outV\": \"person:peter\","
+                      + "\"properties\": {"
+                      + "\"date\": 1476720000000"
+                      + "}"
+                      + "}"
+                      + "]}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -602,48 +603,48 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadGremlinVertices() {
         String json = "{"
-                + "\"requestId\": \"b0fd8ead-333f-43ac-97b0-4d78784726ae\","
-                + "\"status\": {"
-                + "\"message\": \"\","
-                + "\"code\": 200,"
-                + "\"attributes\": {}"
-                + "},"
-                + "\"result\": {"
-                + "\"data\": ["
-                + "{"
-                + "\"id\": \"person:marko\","
-                + "\"label\": \"person\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"city\": [\"Beijing\",\"Wuhan\",\"Beijing\"],"
-                + "\"name\": \"marko\","
-                + "\"age\": 29"
-                + "}"
-                + "},"
-                + "{"
-                + "\"id\": \"software:lop\","
-                + "\"label\": \"software\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"price\": 328,"
-                + "\"name\": \"lop\","
-                + "\"lang\": [\"java\",\"python\",\"c++\"]"
-                + "}"
-                + "},"
-                + "{"
-                + "\"id\": \"person:peter\","
-                + "\"label\": \"person\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"city\": [\"Shanghai\"],"
-                + "\"name\": \"peter\","
-                + "\"age\": 35"
-                + "}"
-                + "}"
-                + "],"
-                + "\"meta\": {}"
-                + "}"
-                + "}";
+                      + "\"requestId\": \"b0fd8ead-333f-43ac-97b0-4d78784726ae\","
+                      + "\"status\": {"
+                      + "\"message\": \"\","
+                      + "\"code\": 200,"
+                      + "\"attributes\": {}"
+                      + "},"
+                      + "\"result\": {"
+                      + "\"data\": ["
+                      + "{"
+                      + "\"id\": \"person:marko\","
+                      + "\"label\": \"person\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"city\": [\"Beijing\",\"Wuhan\",\"Beijing\"],"
+                      + "\"name\": \"marko\","
+                      + "\"age\": 29"
+                      + "}"
+                      + "},"
+                      + "{"
+                      + "\"id\": \"software:lop\","
+                      + "\"label\": \"software\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"price\": 328,"
+                      + "\"name\": \"lop\","
+                      + "\"lang\": [\"java\",\"python\",\"c++\"]"
+                      + "}"
+                      + "},"
+                      + "{"
+                      + "\"id\": \"person:peter\","
+                      + "\"label\": \"person\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"city\": [\"Shanghai\"],"
+                      + "\"name\": \"peter\","
+                      + "\"age\": 35"
+                      + "}"
+                      + "}"
+                      + "],"
+                      + "\"meta\": {}"
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -694,44 +695,44 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadGremlinEdges() {
         String json = "{"
-                + "\"requestId\": \"cd4cfc17-1ee4-4e9e-af40-cb18b115a8dc\","
-                + "\"status\": {"
-                + "\"message\": \"\","
-                + "\"code\": 200,"
-                + "\"attributes\": {}"
-                + "},"
-                + "\"result\": {"
-                + "\"data\": ["
-                + "{"
-                + "\"id\": \"person:peter>created>>software:lop\","
-                + "\"label\": \"created\","
-                + "\"type\": \"edge\","
-                + "\"inVLabel\": \"software\","
-                + "\"outVLabel\": \"person\","
-                + "\"inV\": \"software:lop\","
-                + "\"outV\": \"person:peter\","
-                + "\"properties\": {"
-                + "\"date\": 1490284800000,"
-                + "\"weight\": 0.2"
-                + "}"
-                + "},"
-                + "{"
-                + "\"id\": \"person:peter>knows>>person:marko\","
-                + "\"label\": \"knows\","
-                + "\"type\": \"edge\","
-                + "\"inVLabel\": \"person\","
-                + "\"outVLabel\": \"person\","
-                + "\"inV\": \"person:marko\","
-                + "\"outV\": \"person:peter\","
-                + "\"properties\": {"
-                + "\"date\": 1452355200000,"
-                + "\"weight\": 0.5"
-                + "}"
-                + "}"
-                + "],"
-                + "\"meta\": {}"
-                + "}"
-                + "}";
+                      + "\"requestId\": \"cd4cfc17-1ee4-4e9e-af40-cb18b115a8dc\","
+                      + "\"status\": {"
+                      + "\"message\": \"\","
+                      + "\"code\": 200,"
+                      + "\"attributes\": {}"
+                      + "},"
+                      + "\"result\": {"
+                      + "\"data\": ["
+                      + "{"
+                      + "\"id\": \"person:peter>created>>software:lop\","
+                      + "\"label\": \"created\","
+                      + "\"type\": \"edge\","
+                      + "\"inVLabel\": \"software\","
+                      + "\"outVLabel\": \"person\","
+                      + "\"inV\": \"software:lop\","
+                      + "\"outV\": \"person:peter\","
+                      + "\"properties\": {"
+                      + "\"date\": 1490284800000,"
+                      + "\"weight\": 0.2"
+                      + "}"
+                      + "},"
+                      + "{"
+                      + "\"id\": \"person:peter>knows>>person:marko\","
+                      + "\"label\": \"knows\","
+                      + "\"type\": \"edge\","
+                      + "\"inVLabel\": \"person\","
+                      + "\"outVLabel\": \"person\","
+                      + "\"inV\": \"person:marko\","
+                      + "\"outV\": \"person:peter\","
+                      + "\"properties\": {"
+                      + "\"date\": 1452355200000,"
+                      + "\"weight\": 0.5"
+                      + "}"
+                      + "}"
+                      + "],"
+                      + "\"meta\": {}"
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -779,47 +780,47 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadGremlinPathWithVertexAndEdge() {
         String json = "{"
-                + "\"requestId\": \"238c74ca-18f7-4377-b8e1-2bb3b165e5d6\","
-                + "\"status\":{"
-                + "\"message\": \"\","
-                + "\"code\": 200,"
-                + "\"attributes\":{}"
-                + "},"
-                + "\"result\":{"
-                + "\"data\":["
-                + "{"
-                + "\"labels\":[[], []],"
-                + "\"objects\":["
-                + "{"
-                + "\"id\": \"person:marko\","
-                + "\"label\": \"person\","
-                + "\"type\": \"vertex\","
-                + "\"properties\":{"
-                + "\"city\":\"Beijing\","
-                + "\"name\":\"marko\","
-                + "\"age\":29"
-                + "}"
-                + "},"
-                + "{"
-                + "\"id\": \"person:marko>knows>>person:vadas\","
-                + "\"label\": \"knows\","
-                + "\"type\": \"edge\","
-                + "\"inVLabel\": \"person\","
-                + "\"outVLabel\": \"person\","
-                + "\"inV\": \"person:vadas\","
-                + "\"outV\": \"person:marko\","
-                + "\"properties\":{"
-                + "\"date\": 1452355200000,"
-                + "\"weight\": 0.5"
-                + "}"
-                + "}"
-                + "]"
-                + "}"
-                + "],"
-                + "\"meta\":{"
-                + "}"
-                + "}"
-                + "}";
+                      + "\"requestId\": \"238c74ca-18f7-4377-b8e1-2bb3b165e5d6\","
+                      + "\"status\":{"
+                      + "\"message\": \"\","
+                      + "\"code\": 200,"
+                      + "\"attributes\":{}"
+                      + "},"
+                      + "\"result\":{"
+                      + "\"data\":["
+                      + "{"
+                      + "\"labels\":[[], []],"
+                      + "\"objects\":["
+                      + "{"
+                      + "\"id\": \"person:marko\","
+                      + "\"label\": \"person\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\":{"
+                      + "\"city\":\"Beijing\","
+                      + "\"name\":\"marko\","
+                      + "\"age\":29"
+                      + "}"
+                      + "},"
+                      + "{"
+                      + "\"id\": \"person:marko>knows>>person:vadas\","
+                      + "\"label\": \"knows\","
+                      + "\"type\": \"edge\","
+                      + "\"inVLabel\": \"person\","
+                      + "\"outVLabel\": \"person\","
+                      + "\"inV\": \"person:vadas\","
+                      + "\"outV\": \"person:marko\","
+                      + "\"properties\":{"
+                      + "\"date\": 1452355200000,"
+                      + "\"weight\": 0.5"
+                      + "}"
+                      + "}"
+                      + "]"
+                      + "}"
+                      + "],"
+                      + "\"meta\":{"
+                      + "}"
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -867,17 +868,17 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadGremlinNullData() {
         String json = "{"
-                + "\"requestId\": \"d95ac131-24b5-4140-a3ff-91b0c020764a\","
-                + "\"status\": {"
-                + "\"message\": \"\","
-                + "\"code\": 200,"
-                + "\"attributes\": {}"
-                + "},"
-                + "\"result\": {"
-                + "\"data\": [null],"
-                + "\"meta\": {}"
-                + "}"
-                + "}";
+                      + "\"requestId\": \"d95ac131-24b5-4140-a3ff-91b0c020764a\","
+                      + "\"status\": {"
+                      + "\"message\": \"\","
+                      + "\"code\": 200,"
+                      + "\"attributes\": {}"
+                      + "},"
+                      + "\"result\": {"
+                      + "\"data\": [null],"
+                      + "\"meta\": {}"
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
@@ -900,34 +901,34 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadGremlinNullAndVertex() {
         String json = "{"
-                + "\"requestId\": \"d95ac131-24b5-4140-a3ff-91b0c020764a\","
-                + "\"status\": {"
-                + "\"message\": \"\","
-                + "\"code\": 200,"
-                + "\"attributes\": {}"
-                + "},"
-                + "\"result\": {"
-                + "\"data\": ["
-                + "null,"
-                + "{"
-                + "\"id\": \"person:marko\","
-                + "\"label\": \"person\","
-                + "\"type\": \"vertex\","
-                + "\"properties\": {"
-                + "\"city\": \"Beijing\","
-                + "\"name\": \"marko\","
-                + "\"age\": 29"
-                + "}"
-                + "}"
-                + "],"
-                + "\"meta\": {}"
-                + "}"
-                + "}";
+                      + "\"requestId\": \"d95ac131-24b5-4140-a3ff-91b0c020764a\","
+                      + "\"status\": {"
+                      + "\"message\": \"\","
+                      + "\"code\": 200,"
+                      + "\"attributes\": {}"
+                      + "},"
+                      + "\"result\": {"
+                      + "\"data\": ["
+                      + "null,"
+                      + "{"
+                      + "\"id\": \"person:marko\","
+                      + "\"label\": \"person\","
+                      + "\"type\": \"vertex\","
+                      + "\"properties\": {"
+                      + "\"city\": \"Beijing\","
+                      + "\"name\": \"marko\","
+                      + "\"age\": 29"
+                      + "}"
+                      + "}"
+                      + "],"
+                      + "\"meta\": {}"
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
         Mockito.when(this.mockResponse.readEntity(String.class))
-                .thenReturn(json);
+               .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());
@@ -957,32 +958,32 @@ public class RestResultTest extends BaseUnitTest {
     @Test
     public void testReadGremlinEdgeAndNull() {
         String json = "{"
-                + "\"requestId\": \"d95ac131-24b5-4140-a3ff-91b0c020764a\","
-                + "\"status\": {"
-                + "\"message\": \"\","
-                + "\"code\": 200,"
-                + "\"attributes\": {}"
-                + "},"
-                + "\"result\": {"
-                + "\"data\": ["
-                + "{"
-                + "\"id\": \"person:peter>created>>software:lop\","
-                + "\"label\": \"created\","
-                + "\"type\": \"edge\","
-                + "\"inVLabel\": \"software\","
-                + "\"outVLabel\": \"person\","
-                + "\"inV\": \"software:lop\","
-                + "\"outV\": \"person:peter\","
-                + "\"properties\": {"
-                + "\"date\": 1490284800000,"
-                + "\"weight\": 0.2"
-                + "}"
-                + "},"
-                + "null"
-                + "],"
-                + "\"meta\": {}"
-                + "}"
-                + "}";
+                      + "\"requestId\": \"d95ac131-24b5-4140-a3ff-91b0c020764a\","
+                      + "\"status\": {"
+                      + "\"message\": \"\","
+                      + "\"code\": 200,"
+                      + "\"attributes\": {}"
+                      + "},"
+                      + "\"result\": {"
+                      + "\"data\": ["
+                      + "{"
+                      + "\"id\": \"person:peter>created>>software:lop\","
+                      + "\"label\": \"created\","
+                      + "\"type\": \"edge\","
+                      + "\"inVLabel\": \"software\","
+                      + "\"outVLabel\": \"person\","
+                      + "\"inV\": \"software:lop\","
+                      + "\"outV\": \"person:peter\","
+                      + "\"properties\": {"
+                      + "\"date\": 1490284800000,"
+                      + "\"weight\": 0.2"
+                      + "}"
+                      + "},"
+                      + "null"
+                      + "],"
+                      + "\"meta\": {}"
+                      + "}"
+                      + "}";
 
         Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
         Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);

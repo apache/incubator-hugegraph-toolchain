@@ -29,6 +29,7 @@ import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableMap;
 
 public class EdgeLabelAPI extends SchemaElementAPI {
