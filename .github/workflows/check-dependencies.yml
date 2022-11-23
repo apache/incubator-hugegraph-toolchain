@@ -1,6 +1,12 @@
 name: third-party dependencies check
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - /^release-.*$/
+      - /^v[0-9]\..*$/
+  pull_request:
 
 jobs:
   build:
