@@ -57,6 +57,7 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
 import org.apache.hugegraph.util.LongEncoding;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
