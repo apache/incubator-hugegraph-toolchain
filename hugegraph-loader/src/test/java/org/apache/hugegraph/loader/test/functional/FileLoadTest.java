@@ -2019,11 +2019,9 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
-
-        // Invalid param value in response from server
+        // Invalid Enum value when parse json
         Assert.assertThrows(Exception.class, () -> {
-            CLIENT.graph().listVertices();
+            HugeGraphLoader.main(args);
         });
     }
 
