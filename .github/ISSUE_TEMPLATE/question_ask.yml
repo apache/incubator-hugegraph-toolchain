@@ -32,7 +32,7 @@ body:
     attributes:
       label: Before submit
       options:
-        - label: I had searched in the [issues](https://github.com/hugegraph/hugegraph-loader/issues) and found no similar issues.
+        - label: I had searched in the [issues](https://github.com/apache/hugegraph-toolchain/issues) and found no similar issues.
           required: true
 
   - type: textarea
@@ -41,8 +41,8 @@ body:
       description: |
          server version could get from [rest-api](https://hugegraph.apache.org/docs/clients/restful-api/) (http://localhost:8080/versions)
       value: |
-        - Server Version: v0.12.x
-        - Loader Version: v0.12.x
+        - Server Version: 1.x.x
+        - Toolchain Version: 1.x.x
         - Data Size:  xx vertices, xx edges <!-- (like 1000W 点, 9000W 边) -->
     validations:
       required: true

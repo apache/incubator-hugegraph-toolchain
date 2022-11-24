@@ -530,7 +530,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         // Invalid mapping file
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -731,7 +731,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         // Invalid mapping file
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
@@ -1051,7 +1051,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         // Invalid mapping file
-        Assert.assertThrows(IllegalArgumentException.class, () -> {
+        Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader.main(args);
         });
     }
