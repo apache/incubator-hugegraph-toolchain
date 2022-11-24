@@ -19,6 +19,8 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
+import static java.lang.String.format;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -59,8 +61,7 @@ public class FileUtil implements IOUtil {
         try {
             FileUtils.forceMkdir(FileUtils.getFile(path));
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to make directory on path '%s'", path), e);
+            throw new RuntimeException(format("Failed to make directory on path '%s'", path), e);
         }
     }
 
@@ -73,21 +74,18 @@ public class FileUtil implements IOUtil {
 
         if (compression == Compression.NONE) {
             try {
-                FileUtils.writeLines(file, charset.name(),
-                                     Arrays.asList(lines), true);
+                FileUtils.writeLines(file, charset.name(), Arrays.asList(lines), true);
             } catch (IOException e) {
-                throw new RuntimeException(String.format(
-                          "Failed to write lines '%s' to file '%s'",
-                          Arrays.asList(lines), path), e);
+                throw new RuntimeException(format("Failed to write lines '%s' to file '%s'",
+                                                  Arrays.asList(lines), path), e);
             }
         } else {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 IOUtil.compress(fos, charset, compression, lines);
             } catch (IOException | CompressorException e) {
-                throw new RuntimeException(String.format(
-                          "Failed to write lines '%s' to file '%s' in '%s' " +
-                          "compression format",
-                          Arrays.asList(lines), path, compression), e);
+                throw new RuntimeException(format("Failed to write lines '%s' to file '%s' in " +
+                                                  "'%s' compression format",
+                                                  Arrays.asList(lines), path, compression), e);
             }
         }
     }
@@ -97,8 +95,8 @@ public class FileUtil implements IOUtil {
         try {
             FileUtils.copyFile(new File(srcPath), new File(destPath));
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to copy file '%s' to '%s'", srcPath, destPath));
+            throw new RuntimeException(format("Failed to copy file '%s' to '%s'",
+                                              srcPath, destPath));
         }
     }
 
@@ -109,8 +107,7 @@ public class FileUtil implements IOUtil {
         } catch (FileNotFoundException ignored) {
             // pass
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to delete file '%s'", this.storePath), e);
+            throw new RuntimeException(format("Failed to delete file '%s'", this.storePath), e);
         }
     }
 
@@ -124,20 +121,18 @@ public class FileUtil implements IOUtil {
             try {
                 FileUtils.forceMkdirParent(file);
             } catch (IOException e) {
-                throw new RuntimeException(String.format(
-                          "Failed to make parent directory '%s'", file), e);
+                throw new RuntimeException(format("Failed to make parent directory '%s'",
+                                                  file), e);
             }
             try {
                 file.createNewFile();
             } catch (IOException e) {
-                throw new RuntimeException(String.format(
-                          "Failed to create new file '%s'", file), e);
+                throw new RuntimeException(format("Failed to create new file '%s'", file), e);
             }
         } else {
             if (!file.isFile() || !file.canWrite()) {
-                throw new RuntimeException(String.format(
-                          "Please ensure the file '%s' is writable",
-                          file.getName()));
+                throw new RuntimeException(format("Please ensure the file '%s' is writable",
+                                                  file.getName()));
             }
         }
     }

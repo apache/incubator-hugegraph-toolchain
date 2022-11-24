@@ -63,8 +63,7 @@ public interface IOUtil {
         this.write(fileName, DEFAULT_CHARSET, compression, lines);
     }
 
-    void write(String fileName, Charset charset,
-               Compression compression, String... lines);
+    void write(String fileName, Charset charset, Compression compression, String... lines);
 
     default void writeOrc(String fileName, TypeInfo typeInfo, Object... values) {
         Path path = new Path(this.storePath(), fileName);
