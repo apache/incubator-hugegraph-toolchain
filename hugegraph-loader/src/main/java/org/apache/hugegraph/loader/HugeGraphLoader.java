@@ -112,7 +112,9 @@ public final class HugeGraphLoader {
         } catch (Throwable t) {
             RuntimeException e = LoadUtil.targetRuntimeException(t);
             Printer.printError("Failed to load", e);
-            throw e;
+            if (this.context.options().testMode) {
+                throw e;
+            }
         } finally {
             this.stopThenShutdown();
         }
