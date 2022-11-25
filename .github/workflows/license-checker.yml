@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
+      # A full-featured license tool to check and fix license headers and resolve dependencies' licenses: https://github.com/apache/skywalking-eyes
       - name: Check License Header
         uses: apache/skywalking-eyes@main
         env:
