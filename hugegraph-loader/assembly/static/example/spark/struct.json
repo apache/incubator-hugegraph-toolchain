@@ -4,7 +4,7 @@
       "label": "person",
       "input": {
         "type": "file",
-        "path": "example/spark/vertex_person.json",
+        "path": "/Users/yangjiaqi/Documents/sourceCode/TB/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/spark/vertex_person.json",
         "format": "JSON",
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
@@ -19,7 +19,7 @@
       "label": "software",
       "input": {
         "type": "file",
-        "path": "example/spark/vertex_software.json",
+        "path": "/Users/yangjiaqi/Documents/sourceCode/TB/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/spark/vertex_software.json",
         "format": "JSON",
         "header": ["id","name", "lang", "price","ISBN"],
         "charset": "GBK"
@@ -35,7 +35,7 @@
       "target": ["target_name"],
       "input": {
         "type": "file",
-        "path": "example/spark/edge_knows.json",
+        "path": "/Users/yangjiaqi/Documents/sourceCode/TB/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/spark/edge_knows.json",
         "format": "JSON",
         "date_format": "yyyyMMdd",
         "header": ["source_name","target_name", "date", "weight"]

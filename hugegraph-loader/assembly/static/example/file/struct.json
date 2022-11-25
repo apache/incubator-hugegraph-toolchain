@@ -4,7 +4,7 @@
       "label": "person",
       "input": {
         "type": "file",
-        "path": "example/file/vertex_person.csv",
+        "path": "/Users/yangjiaqi/Documents/sourceCode/TB/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/file/vertex_person.csv",
         "format": "CSV",
         "header": ["name", "age", "city"],
         "charset": "UTF-8",
@@ -18,7 +18,7 @@
       "label": "software",
       "input": {
         "type": "file",
-        "path": "example/file/vertex_software.txt",
+        "path": "/Users/yangjiaqi/Documents/sourceCode/TB/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/file/vertex_software.txt",
         "format": "TEXT",
         "delimiter": "|",
         "charset": "GBK"
@@ -34,7 +34,7 @@
       "target": ["target_name"],
       "input": {
         "type": "file",
-        "path": "example/file/edge_knows.json",
+        "path": "/Users/yangjiaqi/Documents/sourceCode/TB/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/file/edge_knows.json",
         "format": "JSON",
         "date_format": "yyyyMMdd"
       },
@@ -49,7 +49,7 @@
       "target": ["target_id"],
       "input": {
         "type": "file",
-        "path": "example/file/edge_created.json",
+        "path": "/Users/yangjiaqi/Documents/sourceCode/TB/incubator-hugegraph-toolchain/hugegraph-loader/assembly/static/example/file/edge_created.json",
         "format": "JSON",
         "date_format": "yyyy-MM-dd"
       },
