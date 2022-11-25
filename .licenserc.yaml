@@ -55,15 +55,8 @@ header: # `header` section is configurations for source codes license header.
     - 'dist'
     - 'licenses'
     - '**/*.md'
-    - 'LICENSE'
-    - 'NOTICE'
-    - '.travis.yml'
     - '.gitignore'
-    - 'Dockerfile'
-    - 'docker-compose.yaml'
-    - 'VERSION'
     - '.github'
-    - '.editorconfig'
     - '**/*.versionsBackup'
     - '**/*.log'
     - '**/*.txt'
@@ -75,8 +68,7 @@ header: # `header` section is configurations for source codes license header.
     - '**/dependency-reduced-pom.xml'
     - '**/logs/*.log'
     - '**/target/*'
-    - 'style/*'
-    - 'hugegraph-hubble/hubble-fe/*'
+    - 'hugegraph-hubble/*'
   comment: on-failure # on what condition license-eye will comment on the pull request, `on-failure`, `always`, `never`.
 
   # license-location-threshold specifies the index threshold where the license header can be located,
