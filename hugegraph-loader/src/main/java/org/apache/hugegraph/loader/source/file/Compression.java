@@ -47,9 +47,9 @@ public enum Compression {
 
     PARQUET("parquet");
 
-    private String name;
+    private final String name;
 
-    private Compression(String name) {
+    Compression(String name) {
         this.name = name;
     }
 

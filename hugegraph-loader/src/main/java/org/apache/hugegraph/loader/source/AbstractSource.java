@@ -28,6 +28,7 @@ import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.source.file.ListFormat;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class AbstractSource implements InputSource, Serializable {
@@ -51,8 +52,7 @@ public abstract class AbstractSource implements InputSource, Serializable {
             E.checkArgument(this.header.length > 0,
                             "The header can't be empty if " +
                             "it has been customized");
-            E.checkArgument(CollectionUtil.allUnique(
-                            Arrays.asList(this.header)),
+            E.checkArgument(CollectionUtil.allUnique(Arrays.asList(this.header)),
                             "The header can't contain duplicate columns, " +
                             "but got %s", Arrays.toString(this.header));
         }

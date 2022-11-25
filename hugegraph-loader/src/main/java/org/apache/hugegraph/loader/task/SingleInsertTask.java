@@ -67,7 +67,7 @@ public class SingleInsertTask extends InsertTask {
 
     private void handleInsertFailure(InsertException e) {
         LOG.error("Single insert {} error", this.type(), e);
-        this.context.occuredError();
+        this.context.occurredError();
         if (this.options().testMode) {
             throw e;
         }

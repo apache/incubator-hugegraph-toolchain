@@ -39,6 +39,7 @@ import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -46,13 +47,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * continue loading when the last work was dropped out halfway.
  * The LoadProgress will only be operated by a single thread.
  */
-public final class LoadProgress  {
+public final class LoadProgress {
 
-    @JsonProperty("vertex_propgress")
+    @JsonProperty("vertex_progress")
     private long vertexLoaded;
-    @JsonProperty("edge_propgress")
+    @JsonProperty("edge_progress")
     private long edgeLoaded;
-    @JsonProperty("input_propgress")
+    @JsonProperty("input_progress")
     private final Map<String, InputProgress> inputProgress;
 
     public LoadProgress() {
@@ -81,7 +82,7 @@ public final class LoadProgress  {
         return this.inputProgress;
     }
 
-    public long totalInputReaded() {
+    public long totalInputRead() {
         long count = 0L;
         for (InputProgress inputProgress : this.inputProgress.values()) {
             Set<InputItemProgress> itemProgresses = inputProgress.loadedItems();

@@ -56,8 +56,7 @@ public class JDBCReader extends AbstractReader {
     }
 
     @Override
-    public void init(LoadContext context, InputStruct struct)
-                     throws InitException {
+    public void init(LoadContext context, InputStruct struct) throws InitException {
         this.progress(context, struct);
         if (!this.source.existsCustomSQL()) {
             try {

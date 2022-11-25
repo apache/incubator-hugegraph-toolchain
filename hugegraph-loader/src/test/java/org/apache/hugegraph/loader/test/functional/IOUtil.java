@@ -55,25 +55,20 @@ public interface IOUtil {
         this.write(fileName, DEFAULT_CHARSET, Compression.NONE, lines);
     }
 
-    default void write(String fileName, Charset charset,
-                              String... lines) {
+    default void write(String fileName, Charset charset, String... lines) {
         this.write(fileName, charset, Compression.NONE, lines);
     }
 
-    default void write(String fileName, Compression compression,
-                              String... lines) {
+    default void write(String fileName, Compression compression, String... lines) {
         this.write(fileName, DEFAULT_CHARSET, compression, lines);
     }
 
-    void write(String fileName, Charset charset,
-                      Compression compression, String... lines);
+    void write(String fileName, Charset charset, Compression compression, String... lines);
 
-    default void writeOrc(String fileName, TypeInfo typeInfo,
-                                 Object... values) {
+    default void writeOrc(String fileName, TypeInfo typeInfo, Object... values) {
         Path path = new Path(this.storePath(), fileName);
-        ObjectInspector inspector = TypeInfoUtils
-                                    .getStandardJavaObjectInspectorFromTypeInfo(
-                                    typeInfo);
+        ObjectInspector inspector =
+                TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo);
         OrcFile.WriterOptions options = OrcFile.writerOptions(this.config())
                                                .inspector(inspector);
 
@@ -81,9 +76,8 @@ public interface IOUtil {
         try (Writer writer = OrcFile.createWriter(path, options)) {
             writer.addRow(row);
         } catch (IOException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to write values '%s' to file '%s' in ORC " +
-                      "compression format", row, path), e);
+            throw new RuntimeException(String.format("Failed to write values '%s' to file '%s' " +
+                                                     "in ORC compression format", row, path), e);
         }
     }
 
@@ -93,12 +87,11 @@ public interface IOUtil {
 
     void close();
 
-    static void compress(OutputStream stream, Charset charset,
-                                Compression compression, String... lines)
-                                throws IOException, CompressorException {
+    static void compress(OutputStream stream, Charset charset, Compression compression,
+                         String... lines) throws IOException, CompressorException {
         BufferedOutputStream bos = new BufferedOutputStream(stream);
-        CompressorOutputStream cos = FACTORY.createCompressorOutputStream(
-                                             compression.string(), bos);
+        CompressorOutputStream cos = FACTORY.createCompressorOutputStream(compression.string(),
+                                                                          bos);
         for (String line : lines) {
             cos.write(line.getBytes(charset));
             cos.write("\n".getBytes(charset));

@@ -88,8 +88,7 @@ public class OrcFileLineFetcher extends FileLineFetcher {
         this.openReader(readable);
         StructObjectInspector inspector;
         try {
-            inspector = (StructObjectInspector)
-                        this.reader.getObjectInspector();
+            inspector = (StructObjectInspector) this.reader.getObjectInspector();
             return this.parseHeader(inspector);
         } finally {
             try {
@@ -107,8 +106,7 @@ public class OrcFileLineFetcher extends FileLineFetcher {
             OrcFile.ReaderOptions options = OrcFile.readerOptions(this.conf);
             this.reader = OrcFile.createReader(path, options);
             this.recordReader = this.reader.rows();
-            this.inspector = (StructObjectInspector) this.reader
-                                                         .getObjectInspector();
+            this.inspector = (StructObjectInspector) this.reader.getObjectInspector();
             this.row = null;
         } catch (IOException e) {
             throw new LoadException("Failed to open orc reader for '%s'",

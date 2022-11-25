@@ -42,14 +42,14 @@ public final class MappingConverter {
         File file = FileUtils.getFile(input);
         if (!file.exists() || !file.isFile()) {
             LOG.error("The file '{}' doesn't exists or not a file", input);
-            throw new IllegalArgumentException(String.format(
-                      "The file '%s' doesn't exists or not a file", input));
+            throw new IllegalArgumentException(String.format("The file '%s' doesn't exists or " +
+                                                             "not a file", input));
         }
 
         LoadMapping mapping = LoadMapping.of(input);
         String outputPath = getOutputPath(file);
         MappingUtil.write(mapping, outputPath);
-        LOG.info("Convert mapping file successfuly, stored at {}", outputPath);
+        LOG.info("Convert mapping file successfully, stored at {}", outputPath);
     }
 
     public static String getOutputPath(File file) {

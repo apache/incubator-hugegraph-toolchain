@@ -48,7 +48,7 @@ public class HugeGraphSinkFunction<T> extends RichSinkFunction<T>
     }
 
     @Override
-    public void invoke(T value, Context context) throws Exception {
+    public void invoke(T value, Context context) {
         this.outputFormat.writeRecord(value);
     }
 

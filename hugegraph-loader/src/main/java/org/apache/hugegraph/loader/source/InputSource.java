@@ -21,6 +21,7 @@ package org.apache.hugegraph.loader.source;
 
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.loader.source.file.FileSource;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public interface InputSource extends Checkable {

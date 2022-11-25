@@ -27,6 +27,7 @@ import org.apache.hugegraph.loader.progress.InputItemProgress;
 import org.apache.hugegraph.loader.progress.InputProgress;
 import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.source.SourceType;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -42,8 +43,7 @@ public class InputProgressDeser extends JsonDeserializer<InputProgress> {
 
     @Override
     public InputProgress deserialize(JsonParser parser,
-                                     DeserializationContext context)
-                                     throws IOException {
+                                     DeserializationContext context) throws IOException {
         JsonNode node = parser.getCodec().readTree(parser);
         return readInputProgress(node);
     }
@@ -64,15 +64,12 @@ public class InputProgressDeser extends JsonDeserializer<InputProgress> {
             case FILE:
             case HDFS:
                 loadedItems = (Set<InputItemProgress>) (Object)
-                              JsonUtil.convertSet(loadedItemsNode,
-                                                  FileItemProgress.class);
-                loadingItem = JsonUtil.convert(loadingItemNode,
-                                               FileItemProgress.class);
+                              JsonUtil.convertSet(loadedItemsNode, FileItemProgress.class);
+                loadingItem = JsonUtil.convert(loadingItemNode, FileItemProgress.class);
                 break;
             case JDBC:
             default:
-                throw new AssertionError(String.format(
-                          "Unsupported input source '%s'", type));
+                throw new AssertionError(String.format("Unsupported input source '%s'", type));
         }
         return new InputProgress(sourceType, loadedItems, loadingItem);
     }

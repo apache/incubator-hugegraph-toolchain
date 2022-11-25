@@ -36,7 +36,9 @@ import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableList;
+
 import org.apache.spark.sql.Row;
 
 public class EdgeBuilder extends ElementBuilder<Edge> {
@@ -110,7 +112,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         }
         return edges;
     }
-    
+
     @Override
     public List<Edge> build(Row row) {
         String[] names = row.schema().fieldNames();
@@ -125,10 +127,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
 
         this.lastNames = names;
         EdgeKVPairs kvPairs = this.newEdgeKVPairs();
-        kvPairs.source.extractFromEdge(names, values,
-                this.vertexIdsIndex.sourceIndexes);
-        kvPairs.target.extractFromEdge(names, values,
-                this.vertexIdsIndex.targetIndexes);
+        kvPairs.source.extractFromEdge(names, values, this.vertexIdsIndex.sourceIndexes);
+        kvPairs.target.extractFromEdge(names, values, this.vertexIdsIndex.targetIndexes);
         kvPairs.extractProperties(names, values);
 
         List<Vertex> sources = kvPairs.source.buildVertices(false);
@@ -193,8 +193,8 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
                             "The source/target field must contains some " +
                             "columns when id strategy is CUSTOMIZE");
         } else {
-            throw new IllegalArgumentException(
-                      "Unsupported AUTOMATIC id strategy for hugegraph-loader");
+            throw new IllegalArgumentException("Unsupported AUTOMATIC id strategy " +
+                                               "for hugegraph-loader");
         }
     }
 

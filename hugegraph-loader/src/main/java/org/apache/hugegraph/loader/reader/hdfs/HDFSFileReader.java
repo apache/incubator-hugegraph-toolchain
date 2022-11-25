@@ -70,9 +70,8 @@ public class HDFSFileReader extends FileReader {
 
     private void enableKerberos(HDFSSource source) throws IOException {
         KerberosConfig kerberosConfig = source.kerberosConfig();
-        if (kerberosConfig != null && kerberosConfig.enable() ) {
-            System.setProperty("java.security.krb5.conf",
-                               kerberosConfig.krb5Conf());
+        if (kerberosConfig != null && kerberosConfig.enable()) {
+            System.setProperty("java.security.krb5.conf", kerberosConfig.krb5Conf());
             UserGroupInformation.setConfiguration(this.conf);
             UserGroupInformation.loginUserFromKeytab(kerberosConfig.principal(),
                                                      kerberosConfig.keyTab());
@@ -106,9 +105,8 @@ public class HDFSFileReader extends FileReader {
         List<Readable> paths = new ArrayList<>();
         if (this.hdfs.isFile(path)) {
             if (!filter.reserved(path.getName())) {
-                throw new LoadException(
-                          "Please check path name and extensions, ensure " +
-                          "that at least one path is available for reading");
+                throw new LoadException("Please check path name and extensions, ensure that " +
+                                        "at least one path is available for reading");
             }
             paths.add(new HDFSFile(this.hdfs, path));
         } else {

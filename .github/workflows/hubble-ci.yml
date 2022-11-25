@@ -5,16 +5,17 @@ on:
     branches:
       - master
       - /^release-.*$/
-      - /^v[0-9]\..*$/
     paths:
       - hugegraph-hubble/**
       - hugegraph-dist/**
+      - hugegraph-loader/**
       - .github/workflows/**
       - pom.xml
   pull_request:
     paths:
       - hugegraph-hubble/**
       - hugegraph-dist/**
+      - hugegraph-loader/**
       - hugegraph-client/**
       - .github/workflows/**
       - pom.xml

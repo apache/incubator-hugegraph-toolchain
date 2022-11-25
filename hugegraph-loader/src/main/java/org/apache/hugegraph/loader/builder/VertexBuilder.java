@@ -103,8 +103,8 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
                          this.vertexLabel.idStrategy(), name);
         } else {
             // The id strategy is automatic
-            throw new IllegalArgumentException(
-                      "Unsupported AUTOMATIC id strategy for hugegraph-loader");
+            throw new IllegalArgumentException("Unsupported AUTOMATIC id strategy for " +
+                                               "hugegraph-loader");
         }
     }
 }

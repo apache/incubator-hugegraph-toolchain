@@ -79,7 +79,7 @@ public class BatchInsertTask extends InsertTask {
             }
         } while (retryCount > 0 && retryCount <= this.options().retryTimes);
 
-        // TODO：need to write to error log when when insertBatch fails
+        // TODO：need to write to error log when insertBatch fails
         int count = this.batch.size();
         // This metrics just for current element mapping
         this.plusLoadSuccess(count);
