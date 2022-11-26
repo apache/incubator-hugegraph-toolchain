@@ -15,6 +15,10 @@ import { Button, Tooltip, Alert, Dropdown } from 'hubble-ui';
 import 'codemirror/lib/codemirror.css';
 import 'react-popper-tooltip/dist/styles.css';
 import 'codemirror/addon/display/placeholder';
+import 'codemirror/mode/sql/sql';
+import 'codemirror/addon/hint/show-hint.css';
+import 'codemirror/addon/hint/show-hint.js';
+import 'codemirror/addon/hint/sql-hint.js';
 
 import { Tooltip as CustomTooltip } from '../../common';
 import Favorite from './common/Favorite';
@@ -197,6 +201,8 @@ export const GremlinQuery: React.FC = observer(() => {
       {
         lineNumbers: true,
         lineWrapping: true,
+        mode: { name: 'text/x-mysql' },
+        extraKeys: { Ctrl: 'autocomplete' },
         placeholder: t('addition.operate.input-query-statement')
       }
     );
@@ -269,7 +275,7 @@ export const GremlinQuery: React.FC = observer(() => {
         <Tooltip placement="bottomLeft" title="" type="dark">
           <div className={codeEditWrapperClassName}>
             <textarea
-              className="query-tab-code-editor"
+              className="query-tab-code-editor1"
               ref={codeContainer}
             ></textarea>
           </div>
