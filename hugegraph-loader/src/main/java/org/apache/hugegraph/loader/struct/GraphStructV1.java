@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -74,9 +75,8 @@ public class GraphStructV1 implements Checkable {
             struct.check();
             return struct;
         } catch (IOException | IllegalArgumentException e) {
-            throw new LoadException(
-                      "Failed to parse graph mapping description file '%s'",
-                      e, options.file);
+            throw new LoadException("Failed to parse graph mapping description file '%s'",
+                                    e, options.file);
         }
     }
 
@@ -110,8 +110,7 @@ public class GraphStructV1 implements Checkable {
         return (List<ES>) ListUtils.union(this.vertexStructs, this.edgeStructs);
     }
 
-    private <ES extends ElementStructV1> void checkNoSameStruct(
-                                              List<ES> structs) {
+    private <ES extends ElementStructV1> void checkNoSameStruct(List<ES> structs) {
         Set<String> uniqueKeys = structs.stream()
                                         .map(ElementStructV1::uniqueKey)
                                         .collect(Collectors.toSet());

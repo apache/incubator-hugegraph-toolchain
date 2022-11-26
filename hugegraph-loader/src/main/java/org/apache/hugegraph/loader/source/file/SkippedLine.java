@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.hugegraph.loader.constant.Constants;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SkippedLine implements Serializable {

@@ -53,7 +53,9 @@ import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.LongEncoding;
+
 import com.google.common.collect.ImmutableList;
+
 import org.apache.spark.sql.Row;
 
 public abstract class ElementBuilder<GE extends GraphElement> {
@@ -166,7 +168,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             Collection<String> missed = CollectionUtils.subtract(requiredKeys,
                                                                  keys);
             E.checkArgument(false, "All non-null property keys %s of '%s' " +
-                            "must be setted, but missed keys %s",
+                            "must be set, but missed keys %s",
                             requiredKeys, this.schemaLabel().name(), missed);
         }
     }
@@ -258,8 +260,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                                   Object... primaryValues) {
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
-        for (int i = 0; i < primaryValues.length; i++) {
-            Object value = primaryValues[i];
+        for (Object value : primaryValues) {
             String pkValue;
             if (value instanceof Number || value instanceof Date) {
                 pkValue = LongEncoding.encodeNumber(value);
@@ -391,7 +392,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         // The idField(raw field), like: id
         private String idField;
         /*
-         * The multiple idValues(spilted and mapped)
+         * The multiple idValues(split and mapped)
          * like: A|B|C -> [1,2,3]
          */
         private List<Object> idValues;
@@ -494,7 +495,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 }
                 String key = mapping().mappingField(fieldName);
                 if (primaryKeys.contains(key)) {
-                    // Don't put priamry key/values into general properties
+                    // Don't put primary key/values into general properties
                     int index = primaryKeys.indexOf(key);
                     Object pkValue = mappingValue(fieldName, fieldValue);
                     this.pkValues[index] = pkValue;
@@ -566,7 +567,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
          */
         private String pkName;
         /*
-         * The primary values(splited and mapped)
+         * The primary values(split and mapped)
          * like: m|v -> [marko,vadas]
          */
         private List<Object> pkValues;
@@ -593,7 +594,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 }
                 String key = mapping().mappingField(fieldName);
                 if (!handledPk && primaryKeys.contains(key)) {
-                    // Don't put priamry key/values into general properties
+                    // Don't put primary key/values into general properties
                     List<Object> rawPkValues = splitField(fieldName,
                                                           fieldValue);
                     this.pkValues = rawPkValues.stream().map(rawPkValue -> {

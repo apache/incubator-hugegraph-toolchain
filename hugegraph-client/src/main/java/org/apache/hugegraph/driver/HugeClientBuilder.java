@@ -42,11 +42,10 @@ public class HugeClientBuilder {
 
     public HugeClientBuilder(String url, String graph) {
         E.checkArgument(url != null && !url.isEmpty(),
-                        "Expect a string value as the url " +
-                        "parameter argument, but got: %s", url);
+                        "Expect a string value as the url parameter argument, but got: %s", url);
         E.checkArgument(graph != null && !graph.isEmpty(),
-                        "Expect a string value as the graph name " +
-                        "parameter argument, but got: %s", graph);
+                        "Expect a string value as the graph name parameter argument, but got: %s",
+                        graph);
         this.url = url;
         this.graph = graph;
         this.username = "";
@@ -60,10 +59,8 @@ public class HugeClientBuilder {
     }
 
     public HugeClient build() {
-        E.checkArgument(this.url != null,
-                        "The url parameter can't be null");
-        E.checkArgument(this.graph != null,
-                        "The graph parameter can't be null");
+        E.checkArgument(this.url != null, "The url parameter can't be null");
+        E.checkArgument(this.graph != null, "The graph parameter can't be null");
         return new HugeClient(this);
     }
 
@@ -74,8 +71,7 @@ public class HugeClientBuilder {
 
     public HugeClientBuilder configIdleTime(int idleTime) {
         E.checkArgument(idleTime > 0,
-                        "The idleTime parameter must be > 0, " +
-                        "but got %s", idleTime);
+                        "The idleTime parameter must be > 0, but got %s", idleTime);
         this.idleTime = idleTime;
         return this;
     }
@@ -92,8 +88,7 @@ public class HugeClientBuilder {
         return this;
     }
 
-    public HugeClientBuilder configSSL(String trustStoreFile,
-                                       String trustStorePassword) {
+    public HugeClientBuilder configSSL(String trustStoreFile, String trustStorePassword) {
         this.trustStoreFile = trustStoreFile;
         this.trustStorePassword = trustStorePassword;
         return this;

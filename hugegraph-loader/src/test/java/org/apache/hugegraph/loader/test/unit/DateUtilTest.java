@@ -67,7 +67,7 @@ public class DateUtilTest {
         Assert.assertFalse(DateUtil.checkTimeZone("-08:00"));
         Assert.assertFalse(DateUtil.checkTimeZone("-1"));
         Assert.assertFalse(DateUtil.checkTimeZone("GMT+10:-30"));
-        // hours is 0-23 only
+        // hours 0-23 only
         Assert.assertFalse(DateUtil.checkTimeZone("GMT+24:00"));
         // minutes 00-59 only
         Assert.assertFalse(DateUtil.checkTimeZone("GMT+13:60"));

@@ -325,9 +325,8 @@ public class LoadOptions implements Serializable {
         @Override
         public void validate(String name, String value) {
             if (!SSL_PROTOCOL.contains(value.toLowerCase())) {
-                throw new ParameterException(String.format(
-                          "Invalid --protocol '%s', valid value is %s",
-                          value, SSL_PROTOCOL));
+                throw new ParameterException(String.format("Invalid --protocol '%s', valid " +
+                                                           "value is %s", value, SSL_PROTOCOL));
             }
         }
     }
@@ -338,9 +337,9 @@ public class LoadOptions implements Serializable {
         public void validate(String name, String value) {
             File file = new File(value);
             if (!file.exists() || !file.isDirectory()) {
-                throw new ParameterException(String.format(
-                          "Ensure the directory exists and is indeed a " +
-                          "directory instead of a file: '%s'", value));
+                throw new ParameterException(String.format("Ensure the directory exists and is " +
+                                                           "indeed a directory instead of a " +
+                                                           "file: '%s'", value));
             }
         }
     }
@@ -351,9 +350,9 @@ public class LoadOptions implements Serializable {
         public void validate(String name, String value) {
             File file = new File(value);
             if (!file.exists() || !file.isFile()) {
-                throw new ParameterException(String.format(
-                          "Ensure the file exists and is indeed a file " +
-                          "instead of a directory: '%s'", value));
+                throw new ParameterException(String.format("Ensure the file exists and is " +
+                                                           "indeed a file instead of a " +
+                                                           "directory: '%s'", value));
             }
         }
     }
@@ -364,9 +363,8 @@ public class LoadOptions implements Serializable {
         public void validate(String name, String value) {
             int retry = Integer.parseInt(value);
             if (retry <= 0) {
-                throw new ParameterException(String.format(
-                          "Parameter '%s' should be positive, but got '%s'",
-                          name, value));
+                throw new ParameterException(String.format("Parameter '%s' should be positive, " +
+                                                           "but got '%s'", name, value));
             }
         }
     }

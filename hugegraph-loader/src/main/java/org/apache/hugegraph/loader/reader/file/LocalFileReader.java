@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,9 +53,8 @@ public class LocalFileReader extends FileReader {
         List<Readable> files = new ArrayList<>();
         if (file.isFile()) {
             if (!filter.reserved(file.getName())) {
-                throw new LoadException(
-                          "Please check file name and extensions, ensure " +
-                          "that at least one file is available for reading");
+                throw new LoadException("Please check file name and extensions, ensure that " +
+                                        "at least one file is available for reading");
             }
             files.add(new LocalFile(file));
         } else {
@@ -119,7 +119,7 @@ public class LocalFileReader extends FileReader {
 
         @Override
         public InputStream open() throws IOException {
-            return new FileInputStream(this.file);
+            return Files.newInputStream(this.file.toPath());
         }
 
         @Override

@@ -20,6 +20,7 @@
 package org.apache.hugegraph.loader.mapping;
 
 import org.apache.hugegraph.loader.constant.ElemType;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -32,7 +32,6 @@ import org.apache.hugegraph.util.E;
 public enum JDBCVendor {
 
     MYSQL {
-
         @Override
         public String defaultDriver() {
             return "com.mysql.cj.jdbc.Driver";
@@ -85,7 +84,6 @@ public enum JDBCVendor {
     },
 
     POSTGRESQL {
-
         @Override
         public String defaultDriver() {
             return "org.postgresql.Driver";
@@ -129,7 +127,6 @@ public enum JDBCVendor {
     },
 
     ORACLE {
-
         @Override
         public String defaultDriver() {
             return "oracle.jdbc.driver.OracleDriver";
@@ -152,7 +149,7 @@ public enum JDBCVendor {
         }
 
         /**
-         * NOTE: don't add an semicolon(;) at the end of oracle sql
+         * NOTE: don't add a semicolon(;) at the end of oracle sql
          */
         @Override
         public String buildGetHeaderSql(JDBCSource source) {
@@ -200,7 +197,6 @@ public enum JDBCVendor {
     },
 
     SQLSERVER {
-
         @Override
         public String defaultDriver() {
             return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
@@ -312,7 +308,7 @@ public enum JDBCVendor {
                   .setParameter("rewriteBatchedStatements", "true")
                   .setParameter("useServerPrepStmts", "false")
                   .setParameter("autoReconnect", "true");
-        return JDBC_PREFIX + uriBuilder.toString();
+        return JDBC_PREFIX + uriBuilder;
     }
 
     public abstract String buildGetHeaderSql(JDBCSource source);
@@ -360,8 +356,8 @@ public enum JDBCVendor {
     }
 
     /**
-     * For database which unsupport to select by where (a, b, c) >= (va, vb, vc)
-     * (a, b, c) >= (va, vb, vc) will be convert as follow:
+     * For database which unsupported to select by where (a, b, c) >= (va, vb, vc)
+     * (a, b, c) >= (va, vb, vc) will be convert as follows:
      * ("a" = va AND "b" = vb AND "c" >= vc)
      * OR
      * ("a" = va AND "b" > vb)

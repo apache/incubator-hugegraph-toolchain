@@ -54,8 +54,8 @@ public interface InputReader extends AutoCloseableIterator<Line> {
             case JDBC:
                 return new JDBCReader((JDBCSource) source);
             default:
-                throw new AssertionError(String.format(
-                          "Unsupported input source '%s'", source.type()));
+                throw new AssertionError(String.format("Unsupported input source '%s'",
+                                                       source.type()));
         }
     }
 }

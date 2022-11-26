@@ -91,7 +91,7 @@ public class RowFetcher {
             throw e;
         }
         E.checkArgument(ArrayUtils.isNotEmpty(this.columns),
-                        "The colmuns of the table '%s' shouldn't be empty",
+                        "The columns of the table '%s' shouldn't be empty",
                         this.source.table());
         return this.columns;
     }

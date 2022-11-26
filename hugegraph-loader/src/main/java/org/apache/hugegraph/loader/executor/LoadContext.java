@@ -108,7 +108,7 @@ public final class LoadContext implements Serializable {
         return this.noError;
     }
 
-    public void occuredError() {
+    public void occurredError() {
         this.noError = false;
     }
 

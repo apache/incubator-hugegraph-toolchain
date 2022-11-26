@@ -93,8 +93,7 @@ public class DBUtil {
         try (Statement stmt = this.conn.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            throw new RuntimeException(String.format(
-                      "Failed to execute sql '%s'", sql), e);
+            throw new RuntimeException(String.format("Failed to execute sql '%s'", sql), e);
         }
     }
 }

@@ -132,7 +132,7 @@ public final class ParseTaskBuilder {
 
     private void handleParseFailure(ElementMapping mapping, ParseException e) {
         LOG.error("Parse {} error", mapping.type(), e);
-        this.context.occuredError();
+        this.context.occurredError();
         if (this.context.options().testMode) {
             throw e;
         }

@@ -35,16 +35,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.common.type.Date;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
-import org.apache.hugegraph.loader.HugeGraphLoader;
-import org.apache.hugegraph.loader.util.DateUtil;
-import org.apache.hugegraph.loader.util.HugeClientHolder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.exception.ParseException;
@@ -54,6 +48,8 @@ import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.progress.InputItemProgress;
 import org.apache.hugegraph.loader.progress.InputProgress;
 import org.apache.hugegraph.loader.source.file.Compression;
+import org.apache.hugegraph.loader.util.DateUtil;
+import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.apache.hugegraph.structure.constant.DataType;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
@@ -61,6 +57,10 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
 import org.apache.hugegraph.util.LongEncoding;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -91,7 +91,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     /**
-     * NOTE: Unsupport auto create schema
+     * NOTE: Unsupported auto create schema
      */
     //@Test
     public void testAutoCreateSchema() {
@@ -529,10 +529,10 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(0, vertices.size());
+        // Invalid mapping file
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     @Test
@@ -700,6 +700,7 @@ public class FileLoadTest extends LoadTest {
                 "value_list_property_in_text_file_with_symbols/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
+                "-p", String.valueOf(PORT),
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -730,10 +731,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         // Invalid mapping file
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(0, vertices.size());
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     @Test
@@ -1050,15 +1050,15 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(0, vertices.size());
+        // Invalid mapping file
+        Assert.assertThrows(LoadException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     @Test
     public void testIgnoreTailRedundantEmptyColumn() {
-        // Has many redundant seperator at the tail of line
+        // Has many redundant separator at the tail of line
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
                      "marko,29,Beijing,,,,");
@@ -1895,12 +1895,11 @@ public class FileLoadTest extends LoadTest {
 
         Assert.assertEquals(1, vertices.size());
         Assert.assertEquals(18, vertices.get(0).property("age"));
-        Assert.assertEquals(3, ((List) vertices.get(0).property("set")).size());
+        Assert.assertEquals(3, ((List<?>) vertices.get(0).property("set")).size());
 
         Assert.assertEquals(1, edges.size());
         Assert.assertEquals(3, edges.get(0).property("age"));
-        Assert.assertEquals(ImmutableList.of(3, 4, 1, 2, 3),
-                            edges.get(0).property("list"));
+        Assert.assertEquals(ImmutableList.of(3, 4, 1, 2, 3), edges.get(0).property("list"));
     }
 
     @Test
@@ -1934,7 +1933,7 @@ public class FileLoadTest extends LoadTest {
 
         Assert.assertEquals(1, vertices.size());
         Assert.assertEquals(18, vertices.get(0).property("age"));
-        Assert.assertEquals(3, ((List) vertices.get(0).property("set")).size());
+        Assert.assertEquals(3, ((List<?>) vertices.get(0).property("set")).size());
 
         Assert.assertEquals(1, edges.size());
         Assert.assertEquals(8, edges.get(0).property("age"));
@@ -2020,10 +2019,10 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
-
-        List<Vertex> vertices = CLIENT.graph().listVertices();
-        Assert.assertEquals(0, vertices.size());
+        // Invalid Enum value when parse json
+        Assert.assertThrows(Exception.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     @Test
