@@ -28,7 +28,7 @@ graphs: {
 }
 
 authentication: {
-  authenticator: com.baidu.hugegraph.auth.StandardAuthenticator,
+  authenticator: org.apache.hugegraph.auth.StandardAuthenticator,
   config: {
     tokens: conf/rest-server.properties
   }
@@ -36,14 +36,14 @@ authentication: {
 scriptEngines: {
   gremlin-groovy: {
     plugins: {
-      com.baidu.hugegraph.plugin.HugeGraphGremlinPlugin: {},
+      org.apache.hugegraph.plugin.HugeGraphGremlinPlugin: {},
       org.apache.tinkerpop.gremlin.server.jsr223.GremlinServerGremlinPlugin: {},
       org.apache.tinkerpop.gremlin.jsr223.ImportGremlinPlugin: {
         classImports: [
           java.lang.Math,
-          com.baidu.hugegraph.util.DateUtil,
-          com.baidu.hugegraph.traversal.optimize.Text,
-          com.baidu.hugegraph.traversal.optimize.TraversalUtil
+          org.apache.hugegraph.util.DateUtil,
+          org.apache.hugegraph.traversal.optimize.Text,
+          org.apache.hugegraph.traversal.optimize.TraversalUtil
         ],
         methodImports: [java.lang.Math#*]
       },
@@ -57,31 +57,31 @@ serializers:
   - { className: org.apache.tinkerpop.gremlin.driver.ser.GryoLiteMessageSerializerV1d0,
       config: {
         serializeResultToString: false,
-        ioRegistries: [com.baidu.hugegraph.io.HugeGraphIoRegistry]
+        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
       }
   }
   - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphBinaryMessageSerializerV1,
       config: {
         serializeResultToString: false,
-        ioRegistries: [com.baidu.hugegraph.io.HugeGraphIoRegistry]
+        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
       }
   }
   - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV1d0,
       config: {
         serializeResultToString: false,
-        ioRegistries: [com.baidu.hugegraph.io.HugeGraphIoRegistry]
+        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
       }
   }
   - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV2d0,
       config: {
         serializeResultToString: false,
-        ioRegistries: [com.baidu.hugegraph.io.HugeGraphIoRegistry]
+        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
       }
   }
   - { className: org.apache.tinkerpop.gremlin.driver.ser.GraphSONMessageSerializerV3d0,
       config: {
         serializeResultToString: false,
-        ioRegistries: [com.baidu.hugegraph.io.HugeGraphIoRegistry]
+        ioRegistries: [org.apache.hugegraph.io.HugeGraphIoRegistry]
       }
   }
 metrics: {
