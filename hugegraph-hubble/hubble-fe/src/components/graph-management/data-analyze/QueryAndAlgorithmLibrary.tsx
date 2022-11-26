@@ -275,7 +275,7 @@ export const GremlinQuery: React.FC = observer(() => {
         <Tooltip placement="bottomLeft" title="" type="dark">
           <div className={codeEditWrapperClassName}>
             <textarea
-              className="query-tab-code-editor1"
+              className="query-tab-code-editor"
               ref={codeContainer}
             ></textarea>
           </div>
