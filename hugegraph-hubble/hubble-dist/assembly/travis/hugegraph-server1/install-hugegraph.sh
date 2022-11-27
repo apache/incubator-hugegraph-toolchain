@@ -18,9 +18,9 @@
 set -ev
 
 SERVER_CONFIG_DIR=$(dirname "$0")
-SERVER_VERSION=$1
+COMMIT_ID=$1
 SERVER_PARENT_DIR="hugegraph-server1"
-SERVER_DIR="${SERVER_PARENT_DIR}"/hugegraph-$SERVER_VERSION
+SERVER_DIR="${SERVER_PARENT_DIR}"/hugegraph-$COMMIT_ID
 
 mkdir ${SERVER_PARENT_DIR}
 TAR=$(echo hugegraph-*.tar.gz)
