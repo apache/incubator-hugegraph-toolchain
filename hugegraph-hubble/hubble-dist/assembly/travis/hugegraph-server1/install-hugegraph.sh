@@ -24,7 +24,7 @@ mkdir ${SERVER_PARENT_DIR}
 TAR=$(echo hugegraph-*.tar.gz)
 tar -zxvf "$TAR" -C "${SERVER_PARENT_DIR}" >/dev/null 2>&1
 
-HUGEGRAPH_NAME=${TAR%%.*}
+HUGEGRAPH_NAME=${TAR%%.tar*}
 SERVER_DIR="${SERVER_PARENT_DIR}"/$HUGEGRAPH_NAME
 echo $SERVER_DIR
 
