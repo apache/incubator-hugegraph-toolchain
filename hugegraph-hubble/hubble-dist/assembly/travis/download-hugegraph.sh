@@ -18,11 +18,21 @@
 set -ev
 
 if [[ $# -ne 1 ]]; then
-    echo "Must pass server version of hugegraph"
-    exit 1
+    echo "Must input an existing commit id of hugegraph server" && exit 1
 fi
 
-VERSION=$1
-HUGEGRAPH_LINK="https://github.com/hugegraph/hugegraph/releases/download/v${VERSION}/hugegraph-${VERSION}.tar.gz"
+COMMIT_ID=$1
+HUGEGRAPH_GIT_URL="https://github.com/apache/hugegraph.git"
+GIT_DIR=hugegraph
 
-wget "${HUGEGRAPH_LINK}" || exit 1
+# download code and compile
+git clone --depth 100 $HUGEGRAPH_GIT_URL $GIT_DIR
+cd "${GIT_DIR}"
+git checkout "${COMMIT_ID}"
+mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
+
+# TODO: lack incubator after apache package release (update it later)
+TAR=$(echo hugegraph-*.tar.gz)
+cp hugegraph-*.tar.gz ../
+cd ../
+rm -rf "${GIT_DIR}"

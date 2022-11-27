@@ -23,7 +23,7 @@ on:
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
   # TODO: need update it later
-  SERVER_VERSION: 0.12.0
+  COMMIT_ID: 3b44568e8bdf5ac6873ef29d402633f7f62bbb4c
 
 jobs:
   hubble-ci:
@@ -82,7 +82,7 @@ jobs:
       - name: Prepare env and service
         run: |
           sudo pip install -r ${TRAVIS_DIR}/requirements.txt
-          $TRAVIS_DIR/install-hugegraph.sh $SERVER_VERSION
+          $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID
 
       - name: Unit test
         run: mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
