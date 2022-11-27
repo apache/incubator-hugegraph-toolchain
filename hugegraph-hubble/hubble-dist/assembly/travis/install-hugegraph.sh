@@ -20,5 +20,5 @@ set -ev
 COMMIT_ID=$1
 
 "$TRAVIS_DIR"/download-hugegraph.sh "$COMMIT_ID"
-"$TRAVIS_DIR"/hugegraph-server1/install-hugegraph.sh "$COMMIT_ID"
-"$TRAVIS_DIR"/hugegraph-server2/install-hugegraph.sh "$COMMIT_ID"
+"$TRAVIS_DIR"/hugegraph-server1/install-hugegraph.sh
+"$TRAVIS_DIR"/hugegraph-server2/install-hugegraph.sh
