@@ -58,7 +58,7 @@ public class ServerException extends RuntimeException {
             exception.cause = (String) getByKeys(json, CAUSE_KEYS);
             exception.trace = getByKeys(json, TRACE_KEYS);
         } catch (Exception ignored) {
-            LOG.error(" ServerException excepiton ");
+            LOG.error("ServerException fromResponse excepiton");
         }
 
         return exception;
