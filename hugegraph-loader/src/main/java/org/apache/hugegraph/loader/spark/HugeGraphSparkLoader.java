@@ -156,7 +156,7 @@ public class HugeGraphSparkLoader implements Serializable {
         }
         Long totalInsertSuccessCnt = totalInsertSuccess.value();
         LOG.info("\n ------------The data load task is complete-------------------\n" +
-                 "\n  insertSuccesscnt:\t {} \n ---------------------------------------------\n",
+                 "\n insertSuccessCnt:\t {} \n ---------------------------------------------\n",
                  totalInsertSuccessCnt);
 
         sc.stop();

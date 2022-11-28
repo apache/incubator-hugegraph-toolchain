@@ -35,8 +35,9 @@ import org.apache.hugegraph.structure.constant.Cardinality;
 import org.apache.hugegraph.structure.constant.DataType;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.InsertionOrderUtil;;
+import org.apache.hugegraph.util.InsertionOrderUtil;
 import org.apache.hugegraph.util.ReflectionUtil;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 
@@ -72,8 +73,8 @@ public final class DataTypeUtil {
                 return parseMultiValues(key, value, dataType,
                                         cardinality, source);
             default:
-                throw new AssertionError(String.format(
-                          "Unsupported cardinality: '%s'", cardinality));
+                throw new AssertionError(String.format("Unsupported cardinality: '%s'",
+                                                       cardinality));
         }
     }
 
@@ -81,7 +82,7 @@ public final class DataTypeUtil {
     public static List<Object> splitField(String key, Object rawColumnValue,
                                           InputSource source) {
         E.checkArgument(rawColumnValue != null,
-                        "The value to be splitted can't be null");
+                        "The value to be split can't be null");
         if (rawColumnValue instanceof Collection) {
             return (List<Object>) rawColumnValue;
         }
@@ -97,10 +98,9 @@ public final class DataTypeUtil {
             // trim() is a little time-consuming
             return parseLong(((String) rawValue).trim());
         }
-        throw new IllegalArgumentException(String.format(
-                  "The value(key='%s') must can be casted to Long, " +
-                  "but got '%s'(%s)",
-                  key, rawValue, rawValue.getClass().getName()));
+        throw new IllegalArgumentException(String.format("The value(key='%s') must can be casted" +
+                                                         " to Long, but got '%s'(%s)", key,
+                                                         rawValue, rawValue.getClass().getName()));
     }
 
     public static UUID parseUUID(String key, Object rawValue) {
@@ -119,9 +119,9 @@ public final class DataTypeUtil {
             return new UUID(Long.parseUnsignedLong(high, 16),
                             Long.parseUnsignedLong(low, 16));
         }
-        throw new IllegalArgumentException(String.format(
-                  "Failed to convert value(key='%s') '%s'(%s) to UUID",
-                  key, rawValue, rawValue.getClass()));
+        throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
+                                                         "'%s'(%s) to UUID", key, rawValue,
+                                                         rawValue.getClass()));
     }
 
     private static Object parseSingleValue(String key, Object rawValue,
@@ -202,9 +202,9 @@ public final class DataTypeUtil {
                           key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
             }
         }
-        throw new IllegalArgumentException(String.format(
-                  "Failed to convert value(key='%s') '%s'(%s) to Boolean",
-                  key, rawValue, rawValue.getClass()));
+        throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
+                                                         "'%s'(%s) to Boolean", key, rawValue,
+                                                         rawValue.getClass()));
     }
 
     private static Number parseNumber(String key, Object value,
@@ -228,15 +228,14 @@ public final class DataTypeUtil {
                 case DOUBLE:
                     return Double.valueOf(value.toString());
                 default:
-                    throw new AssertionError(String.format(
-                              "Number type only contains Byte, Integer, " +
-                              "Long, Float, Double, but got %s",
-                              dataType.clazz()));
+                    throw new AssertionError(String.format("Number type only contains Byte, " +
+                                                           "Integer, Long, Float, Double, " +
+                                                           "but got %s", dataType.clazz()));
             }
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(String.format(
-                      "Failed to convert value(key=%s) '%s'(%s) to Number",
-                      key, value, value.getClass()), e);
+            throw new IllegalArgumentException(String.format("Failed to convert value(key=%s) " +
+                                                             "'%s'(%s) to Number", key, value,
+                                                             value.getClass()), e);
         }
     }
 
@@ -261,16 +260,16 @@ public final class DataTypeUtil {
                     long timestamp = Long.parseLong((String) value);
                     return new Date(timestamp);
                 } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException(String.format(
-                              "Invalid timestamp value '%s'", value));
+                    throw new IllegalArgumentException(String.format("Invalid timestamp value " +
+                                                                     "'%s'", value));
                 }
             } else {
                 return DateUtil.parse((String) value, dateFormat, timeZone);
             }
         }
-        throw new IllegalArgumentException(String.format(
-                  "Failed to convert value(key='%s') '%s'(%s) to Date",
-                  key, value, value.getClass()));
+        throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
+                                                         "'%s'(%s) to Date", key, value,
+                                                         value.getClass()));
     }
 
     private static List<Object> split(String key, String rawValue,
@@ -322,7 +321,7 @@ public final class DataTypeUtil {
     }
 
     /**
-     * Check type of all the values(may be some of list properties) valid
+     * Check type of all the values(maybe some list properties) valid
      */
     private static boolean checkCollectionDataType(String key,
                                                    Collection<?> values,

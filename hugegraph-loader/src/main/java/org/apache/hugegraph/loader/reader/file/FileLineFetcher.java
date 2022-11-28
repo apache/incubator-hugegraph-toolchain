@@ -234,7 +234,7 @@ public class FileLineFetcher extends LineFetcher {
 
     private static BufferedReader createBufferedReader(InputStream stream,
                                                        FileSource source)
-                                                       throws Exception {
+            throws Exception {
         E.checkNotNull(stream, "stream");
         try {
             Reader csr = createCompressReader(stream, source);
@@ -251,7 +251,7 @@ public class FileLineFetcher extends LineFetcher {
 
     private static Reader createCompressReader(InputStream stream,
                                                FileSource source)
-                                               throws Exception {
+            throws Exception {
         Compression compression = source.compression();
         String charset = source.charset();
         switch (compression) {
@@ -259,10 +259,9 @@ public class FileLineFetcher extends LineFetcher {
                 return new InputStreamReader(stream, charset);
             case SNAPPY_RAW:
                 Configuration config = new Configuration();
-                CompressionCodec codec = ReflectionUtils.newInstance(
-                                         SnappyCodec.class, config);
+                CompressionCodec codec = ReflectionUtils.newInstance(SnappyCodec.class, config);
                 CompressionInputStream sis = codec.createInputStream(stream,
-                                             codec.createDecompressor());
+                                                                     codec.createDecompressor());
                 return new InputStreamReader(sis, charset);
             case GZIP:
             case BZ2:
@@ -274,8 +273,8 @@ public class FileLineFetcher extends LineFetcher {
             case LZ4_BLOCK:
             case LZ4_FRAMED:
                 CompressorStreamFactory factory = new CompressorStreamFactory();
-                CompressorInputStream cis = factory.createCompressorInputStream(
-                                            compression.string(), stream);
+                CompressorInputStream cis =
+                        factory.createCompressorInputStream(compression.string(), stream);
                 return new InputStreamReader(cis, charset);
             default:
                 throw new LoadException("Unsupported compression format '%s'",
@@ -293,9 +292,8 @@ public class FileLineFetcher extends LineFetcher {
             case JSON:
                 return new JsonLineParser();
             default:
-                throw new AssertionError(String.format(
-                          "Unsupported file format '%s' of source '%s'",
-                          format, source));
+                throw new AssertionError(String.format("Unsupported file format '%s' of " +
+                                                       "source '%s'", format, source));
         }
     }
 }

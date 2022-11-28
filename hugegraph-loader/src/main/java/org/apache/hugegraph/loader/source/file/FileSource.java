@@ -24,6 +24,7 @@ import org.apache.hugegraph.loader.util.DateUtil;
 import org.apache.hugegraph.loader.source.AbstractSource;
 import org.apache.hugegraph.loader.source.SourceType;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

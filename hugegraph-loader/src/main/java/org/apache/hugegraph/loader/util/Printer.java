@@ -168,10 +168,10 @@ public final class Printer {
     }
 
     private static void printInBackward(long vertexLoaded, long edgeLoaded) {
-        int vlength = String.valueOf(vertexLoaded).length();
-        int elength = String.valueOf(edgeLoaded).length();
+        int vLength = String.valueOf(vertexLoaded).length();
+        int eLength = String.valueOf(edgeLoaded).length();
         System.out.print(vertexLoaded + SLASH + edgeLoaded +
-                         backward(vlength + 1 + elength));
+                         backward(vLength + 1 + eLength));
     }
 
     private static void log(String message) {

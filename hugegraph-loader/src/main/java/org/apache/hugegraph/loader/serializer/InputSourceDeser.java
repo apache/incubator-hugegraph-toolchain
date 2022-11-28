@@ -27,6 +27,7 @@ import org.apache.hugegraph.loader.source.SourceType;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -42,8 +43,7 @@ public class InputSourceDeser extends JsonDeserializer<InputSource> {
 
     @Override
     public InputSource deserialize(JsonParser parser,
-                                   DeserializationContext context)
-                                   throws IOException {
+                                   DeserializationContext context) throws IOException {
         JsonNode node = parser.getCodec().readTree(parser);
         return readInputSource(node);
     }
@@ -69,8 +69,7 @@ public class InputSourceDeser extends JsonDeserializer<InputSource> {
                 objectNode.replace(FIELD_VENDOR, vendorNode);
                 return JsonUtil.convert(node, JDBCSource.class);
             default:
-                throw new AssertionError(String.format(
-                          "Unsupported input source '%s'", type));
+                throw new AssertionError(String.format("Unsupported input source '%s'", type));
         }
     }
 

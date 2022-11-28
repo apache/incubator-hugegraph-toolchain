@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

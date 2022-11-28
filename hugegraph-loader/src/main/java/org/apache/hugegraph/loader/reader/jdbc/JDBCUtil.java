@@ -106,22 +106,12 @@ public final class JDBCUtil {
         for (int i = 0; i < length; ++i) {
             char c = sql.charAt(i);
             switch (c) {
-                case '\u0000':
-                    needsEscape = true;
-                    break;
                 case '\n':
-                    needsEscape = true;
-                    break;
                 case '\r':
-                    needsEscape = true;
-                    break;
-                case '\u001a':
-                    needsEscape = true;
-                    break;
                 case '\'':
-                    needsEscape = true;
-                    break;
                 case '\\':
+                case '\u001a':
+                case '\u0000':
                     needsEscape = true;
                     break;
                 default:

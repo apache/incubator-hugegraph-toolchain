@@ -39,7 +39,7 @@ import java.util.List;
  * occupancy   |========|  |=====|
  *                 3     +    2
  * </pre>
- *
+ * <p>
  * It's thread safe
  */
 public class RangesTimer {
@@ -58,7 +58,7 @@ public class RangesTimer {
 
     public synchronized long totalTime() {
         if (!this.ranges.isEmpty()) {
-            long incrTime = this.caculate();
+            long incrTime = this.calculate();
             this.totalTime += incrTime;
             this.ranges.clear();
         }
@@ -67,14 +67,14 @@ public class RangesTimer {
 
     public synchronized void addTimeRange(long start, long end) {
         if (this.ranges.size() >= this.capacity) {
-            long incrTime = this.caculate();
+            long incrTime = this.calculate();
             this.totalTime += incrTime;
             this.ranges.clear();
         }
         this.ranges.add(new TimeRange(start, end));
     }
 
-    private long caculate() {
+    private long calculate() {
         assert !this.ranges.isEmpty();
         this.ranges.sort((o1, o2) -> (int) (o1.start() - o2.start()));
         long time = 0L;

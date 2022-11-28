@@ -29,7 +29,7 @@ public enum FileFormat {
 
     JSON(null);
 
-    private String delimiter;
+    private final String delimiter;
 
     FileFormat(String delimiter) {
         this.delimiter = delimiter;

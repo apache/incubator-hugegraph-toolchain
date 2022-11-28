@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.loader.source.SourceType;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class HDFSSource extends FileSource {

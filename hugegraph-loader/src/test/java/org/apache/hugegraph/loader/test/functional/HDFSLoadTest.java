@@ -154,4 +154,9 @@ public class HDFSLoadTest extends FileLoadTest {
             Assert.assertTrue(msg.endsWith("is not an existing file"));
         });
     }
+
+    @Override
+    public void testParserV2() {
+        // TODO: ensure file exist in V2 schema
+    }
 }

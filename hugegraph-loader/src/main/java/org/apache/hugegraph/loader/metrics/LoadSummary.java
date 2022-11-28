@@ -31,7 +31,6 @@ import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.LoadMapping;
 import org.apache.hugegraph.util.InsertionOrderUtil;
-;
 
 public final class LoadSummary {
 
@@ -126,14 +125,14 @@ public final class LoadSummary {
 
     public void addTimeRange(ElemType type, long start, long end) {
         RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
-                                              this.edgeRangesTimer;
+                            this.edgeRangesTimer;
         timer.addTimeRange(start, end);
         this.loadRangesTimer.addTimeRange(start, end);
     }
 
     public void calculateTotalTime(ElemType type) {
         RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
-                                              this.edgeRangesTimer;
+                            this.edgeRangesTimer;
         AtomicLong elemTime = type.isVertex() ? this.vertexTime : this.edgeTime;
         elemTime.set(timer.totalTime());
         loadTime.set(this.loadRangesTimer.totalTime());
@@ -168,7 +167,7 @@ public final class LoadSummary {
     }
 
     public long loadRate(ElemType type) {
-        // Ensure vetex time and edge time has been set
+        // Ensure vertex time and edge time has been set
         this.calculateTotalTime(type);
 
         boolean isVertex = type.isVertex();

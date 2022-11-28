@@ -35,8 +35,8 @@ import java.util.Map;
 public final class LoadDistributeMetrics implements Serializable {
 
     private final InputStruct struct;
-    private   Map<String, Metrics> vertexDisMetrics;
-    private   Map<String, Metrics> edgeDisMetrics;
+    private final Map<String, Metrics> vertexDisMetrics;
+    private final Map<String, Metrics> edgeDisMetrics;
 
     public LoadDistributeMetrics(InputStruct struct) {
         this.struct = struct;
@@ -54,16 +54,20 @@ public final class LoadDistributeMetrics implements Serializable {
         for (VertexMapping mapping : this.struct.vertices()) {
             Metrics metrics = this.vertexDisMetrics.get(mapping.label());
             metrics.insertSuccess = sc.longAccumulator(mapping.label() +
-                    Constants.UNDERLINE_STR + Constants.LOAD_DATA_INSERT_SUFFIX);
+                                                       Constants.UNDERLINE_STR +
+                                                       Constants.LOAD_DATA_INSERT_SUFFIX);
             metrics.parseSuccess = sc.longAccumulator(mapping.label() +
-                    Constants.UNDERLINE_STR + Constants.LOAD_DATA_PARSE_SUFFIX);
+                                                      Constants.UNDERLINE_STR +
+                                                      Constants.LOAD_DATA_PARSE_SUFFIX);
         }
         for (EdgeMapping mapping : this.struct.edges()) {
             Metrics metrics = this.edgeDisMetrics.get(mapping.label());
             metrics.insertSuccess = sc.longAccumulator(mapping.label() +
-                    Constants.UNDERLINE_STR + Constants.LOAD_DATA_INSERT_SUFFIX);
+                                                       Constants.UNDERLINE_STR +
+                                                       Constants.LOAD_DATA_INSERT_SUFFIX);
             metrics.parseSuccess = sc.longAccumulator(mapping.label() +
-                    Constants.UNDERLINE_STR + Constants.LOAD_DATA_PARSE_SUFFIX);
+                                                      Constants.UNDERLINE_STR +
+                                                      Constants.LOAD_DATA_PARSE_SUFFIX);
         }
     }
 
@@ -100,7 +104,7 @@ public final class LoadDistributeMetrics implements Serializable {
     }
 
     public Long readVertexInsertSuccess() {
-        Long totalCnt = 0L;
+        long totalCnt = 0L;
         Collection<Metrics> values = vertexDisMetrics.values();
         for (Metrics metrics : values) {
             totalCnt += metrics.insertSuccess();
@@ -109,7 +113,7 @@ public final class LoadDistributeMetrics implements Serializable {
     }
 
     public Long readEdgeInsertSuccess() {
-        Long totalCnt = 0L;
+        long totalCnt = 0L;
         Collection<Metrics> values = edgeDisMetrics.values();
         for (Metrics metrics : values) {
             totalCnt += metrics.insertSuccess();

@@ -43,8 +43,7 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
     private static final Logger LOG = Log.logger(HugeGraphDeserialization.class);
 
     @Override
-    public void deserialize(SourceRecord sourceRecord,
-                            Collector<String> collector) throws Exception {
+    public void deserialize(SourceRecord sourceRecord, Collector<String> collector) {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode result = mapper.createObjectNode();
 
@@ -77,7 +76,7 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
 
         result.set(Constants.CDC_DATA, rootNode);
         result.put(Constants.CDC_OP, op);
-        LOG.debug("Loaded data: {}", result.toString());
+        LOG.debug("Loaded data: {}", result);
         collector.collect(result.toString());
     }
 

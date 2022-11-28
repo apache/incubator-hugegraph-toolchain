@@ -43,7 +43,8 @@ import org.apache.hugegraph.loader.struct.ElementStructV1;
 import org.apache.hugegraph.loader.struct.GraphStructV1;
 import org.apache.hugegraph.loader.struct.VertexStructV1;
 import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.InsertionOrderUtil;;
+import org.apache.hugegraph.util.InsertionOrderUtil;
+
 import com.google.common.collect.ImmutableSet;
 
 @SuppressWarnings("deprecation")
@@ -91,8 +92,7 @@ public final class MappingUtil {
     private static LoadMapping parseV1(String json) {
         GraphStructV1 graphStruct = JsonUtil.fromJson(json,
                                                       GraphStructV1.class);
-        Map<FileSourceKey, InputStruct> fileSourceInputStructs =
-                                        InsertionOrderUtil.newMap();
+        Map<FileSourceKey, InputStruct> fileSourceInputStructs = InsertionOrderUtil.newMap();
         List<InputStruct> jdbcSourceInputStructs = new ArrayList<>();
         for (ElementStructV1 originStruct : graphStruct.structs()) {
             InputSource inputSource = originStruct.input();

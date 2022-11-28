@@ -33,6 +33,7 @@ import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.structure.graph.UpdateStrategy;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.collect.ImmutableSet;
@@ -99,23 +100,23 @@ public abstract class ElementMapping implements Checkable, Serializable {
         }
         List<String> header = Arrays.asList(source.header());
         if (!this.selectedFields.isEmpty()) {
-            E.checkArgument(header.containsAll(this.selectedFields),
+            E.checkArgument(new HashSet<>(header).containsAll(this.selectedFields),
                             "The all keys %s of selected must be existed " +
                             "in header %s", this.selectedFields, header);
         }
         if (!this.ignoredFields.isEmpty()) {
-            E.checkArgument(header.containsAll(this.ignoredFields),
+            E.checkArgument(new HashSet<>(header).containsAll(this.ignoredFields),
                             "The all keys %s of ignored must be existed " +
                             "in header %s", this.ignoredFields, header);
         }
         if (!this.mappingFields.isEmpty()) {
-            E.checkArgument(header.containsAll(this.mappingFields.keySet()),
+            E.checkArgument(new HashSet<>(header).containsAll(this.mappingFields.keySet()),
                             "The all keys %s of field_mapping must be " +
                             "existed in header",
                             this.mappingFields.keySet(), header);
         }
         if (!this.mappingValues.isEmpty()) {
-            E.checkArgument(header.containsAll(this.mappingValues.keySet()),
+            E.checkArgument(new HashSet<>(header).containsAll(this.mappingValues.keySet()),
                             "The all keys %s of value_mapping must be " +
                             "existed in header",
                             this.mappingValues.keySet(), header);
@@ -178,7 +179,7 @@ public abstract class ElementMapping implements Checkable, Serializable {
     }
 
     public long batchSize() {
-       return this.batchSize;
+        return this.batchSize;
     }
 
     public Set<String> selectedFields() {

@@ -47,9 +47,9 @@ public class TextLineParser implements LineParser {
             int extra = columns.length - header.length;
             if (!this.tailColumnEmpty(columns, extra)) {
                 throw new ReadException(rawLine,
-                          "The column length '%s' doesn't match with " +
-                          "header length '%s' on: %s",
-                          columns.length, header.length, rawLine);
+                                        "The column length '%s' doesn't match with " +
+                                        "header length '%s' on: %s",
+                                        columns.length, header.length, rawLine);
             }
             String[] subColumns = new String[header.length];
             System.arraycopy(columns, 0, subColumns, 0, header.length);
