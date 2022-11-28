@@ -48,9 +48,9 @@ public abstract class InsertTask implements Runnable {
 
     public static final String[] UNACCEPTABLE_MESSAGES = {
             // org.apache.http.conn.HttpHostConnectException
-            "Connection refused",
-            "The server is being shutting down",
-            "not allowed to insert, because already exist a vertex " +
+        "Connection refused",
+        "The server is being shutting down",
+        "not allowed to insert, because already exist a vertex " +
             "with same id and different label"
     };
 
@@ -127,20 +127,20 @@ public abstract class InsertTask implements Runnable {
         batch.forEach(r -> elements.add(r.element()));
         // CreateIfNotExist does not support false now
         if (this.type().isVertex()) {
-            BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
-            req.vertices((List<Vertex>) (Object) elements)
-               .updatingStrategies(this.mapping.updateStrategies())
-               .createIfNotExist(true);
+            BatchVertexRequest.Builder request = new BatchVertexRequest.Builder();
+            request.vertices((List<Vertex>) (Object) elements)
+                    .updatingStrategies(this.mapping.updateStrategies())
+                    .createIfNotExist(true);
 
-            client.graph().updateVertices(req.build());
+            client.graph().updateVertices(request.build());
         } else {
-            BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
-            req.edges((List<Edge>) (Object) elements)
-               .updatingStrategies(this.mapping.updateStrategies())
-               .checkVertex(checkVertex)
-               .createIfNotExist(true);
+            BatchEdgeRequest.Builder request = new BatchEdgeRequest.Builder();
+            request.edges((List<Edge>) (Object) elements)
+                    .updatingStrategies(this.mapping.updateStrategies())
+                    .checkVertex(checkVertex)
+                    .createIfNotExist(true);
 
-            client.graph().updateEdges(req.build());
+            client.graph().updateEdges(request.build());
         }
     }
 }

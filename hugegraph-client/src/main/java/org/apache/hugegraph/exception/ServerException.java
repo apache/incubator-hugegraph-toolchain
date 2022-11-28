@@ -24,10 +24,14 @@ import java.util.Map;
 import org.apache.hugegraph.rest.RestResult;
 
 import jakarta.ws.rs.core.Response;
+import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public class ServerException extends RuntimeException {
 
     private static final long serialVersionUID = 6335623004322652358L;
+
+    protected static final Logger LOG = Log.logger(ServerException.class);
 
     private static final String[] EXCEPTION_KEYS = {"exception",
                                                     "Exception-Class"};
@@ -54,6 +58,7 @@ public class ServerException extends RuntimeException {
             exception.cause = (String) getByKeys(json, CAUSE_KEYS);
             exception.trace = getByKeys(json, TRACE_KEYS);
         } catch (Exception ignored) {
+            LOG.error(" ServerException excepiton ");
         }
 
         return exception;

@@ -57,7 +57,6 @@ public class BytesDemo {
 
         SchemaManager schema = client.schema();
 
-
         schema.propertyKey("name").asText().ifNotExist().create();
         schema.propertyKey("age").asInt().ifNotExist().create();
         schema.propertyKey("lang").asText().ifNotExist().create();
@@ -128,15 +127,14 @@ public class BytesDemo {
                                                  .property("date", "2017-03-24");
 
         List<Vertex> vertices = new ArrayList<Vertex>() {{
-            add(peter);
-            add(lop);
-            add(vadasB);
-        }};
-
+                add(peter);
+                add(lop);
+                add(vadasB);
+            }};
 
         List<Edge> edges = new ArrayList<Edge>() {{
-            add(peterCreateLop);
-        }};
+                add(peterCreateLop);
+            }};
 
         // Old way: encode to json then send to server
         if (bypassServer) {
@@ -187,7 +185,6 @@ public class BytesDemo {
         }
         return flag;
     }
-
 
     boolean put(String type, byte[] rowkey, byte[] values) throws IOException {
         // TODO: put to HBase

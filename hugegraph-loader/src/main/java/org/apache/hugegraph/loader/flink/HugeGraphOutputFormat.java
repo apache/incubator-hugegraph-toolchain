@@ -183,18 +183,18 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                     Map<String, UpdateStrategy> updateStrategyMap =
                             elementMapping.updateStrategies();
                     if (isVertex) {
-                        BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
-                        req.vertices((List<Vertex>) (Object) graphElements)
-                           .updatingStrategies(updateStrategyMap)
-                           .createIfNotExist(true);
-                        g.updateVertices(req.build());
+                        BatchVertexRequest.Builder request = new BatchVertexRequest.Builder();
+                        request.vertices((List<Vertex>) (Object) graphElements)
+                                .updatingStrategies(updateStrategyMap)
+                                .createIfNotExist(true);
+                        g.updateVertices(request.build());
                     } else {
-                        BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
-                        req.edges((List<Edge>) (Object) graphElements)
-                           .updatingStrategies(updateStrategyMap)
-                           .checkVertex(this.loadOptions.checkVertex)
-                           .createIfNotExist(true);
-                        g.updateEdges(req.build());
+                        BatchEdgeRequest.Builder request = new BatchEdgeRequest.Builder();
+                        request.edges((List<Edge>) (Object) graphElements)
+                               .updatingStrategies(updateStrategyMap)
+                               .checkVertex(this.loadOptions.checkVertex)
+                                .createIfNotExist(true);
+                        g.updateEdges(request.build());
                     }
                     break;
                 case DELETE:

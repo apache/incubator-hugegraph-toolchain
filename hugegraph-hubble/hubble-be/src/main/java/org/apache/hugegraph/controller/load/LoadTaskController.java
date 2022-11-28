@@ -245,7 +245,7 @@ public class LoadTaskController extends BaseController {
             return this.service.retry(taskId);
         } finally {
             jobEntity.setJobStatus(JobStatus.LOADING);
-            jobEntity.setUpdateTime( HubbleUtil.nowDate());
+            jobEntity.setUpdateTime(HubbleUtil.nowDate());
             this.jobService.update(jobEntity);
         }
     }

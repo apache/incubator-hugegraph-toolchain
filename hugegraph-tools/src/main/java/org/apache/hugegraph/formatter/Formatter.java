@@ -24,11 +24,11 @@ import org.apache.hugegraph.structure.JsonGraph;
 public interface Formatter {
 
     // Serialize a vertex(with edge and property) to string
-    public String dump(JsonGraph.JsonVertex vertex) throws Exception;
+    String dump(JsonGraph.JsonVertex vertex) throws Exception;
 
-    public static final String PACKAGE = Formatter.class.getPackage().getName();
+    String PACKAGE = Formatter.class.getPackage().getName();
 
-    public static Formatter loadFormatter(String formatter) {
+    static Formatter loadFormatter(String formatter) {
         String classPath = String.format("%s.%s", PACKAGE, formatter);
         ClassLoader loader = Formatter.class.getClassLoader();
         try {

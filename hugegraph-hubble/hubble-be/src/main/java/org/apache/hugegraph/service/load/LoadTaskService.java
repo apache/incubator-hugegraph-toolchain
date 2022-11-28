@@ -436,7 +436,8 @@ public class LoadTaskService {
                 Ex.check(idFields.size() == 1,
                          "When the ID strategy is CUSTOMIZED, you must " +
                          "select a column in the file as the id");
-                vMapping = new org.apache.hugegraph.loader.mapping.VertexMapping(idFields.get(0), true);
+                vMapping = new org.apache.hugegraph.loader.mapping.VertexMapping(
+                        idFields.get(0), true);
             } else {
                 assert vl.getIdStrategy().isPrimaryKey();
                 List<String> primaryKeys = vl.getPrimaryKeys();

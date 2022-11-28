@@ -19,7 +19,6 @@
 
 package org.apache.hugegraph.exception;
 
-
 import org.apache.hugegraph.rest.ClientException;
 
 public class InvalidOperationException extends ClientException {

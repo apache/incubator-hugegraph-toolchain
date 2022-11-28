@@ -17,7 +17,11 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>23</version>
+    </parent>
     <groupId>org.apache.hugegraph</groupId>
     <artifactId>hugegraph-toolchain</artifactId>
     <version>${revision}</version>
@@ -28,12 +32,6 @@
     <description>
         hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it includes 4 main modules (loader/hubble/tools/client)
     </description>
-
-    <parent>
-        <groupId>org.apache</groupId>
-        <artifactId>apache</artifactId>
-        <version>23</version>
-    </parent>
 
     <licenses>
         <license>
@@ -83,6 +81,8 @@
         <docker.repo>${project.name}</docker.repo>
         <docker.tag>${project.version}</docker.tag>
         <hbase.version>2.2.3</hbase.version>
+        <checkstyle.plugin.version>3.1.2</checkstyle.plugin.version>
+        <checkstyle.version>8.45</checkstyle.version>
     </properties>
 
     <dependencies>
@@ -348,20 +348,19 @@
 <!--                    </includes>-->
 <!--                </configuration>-->
 <!--            </plugin>-->
-<!-- TODO: after all modules fix checkstyle, enable it in root again -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>${checkstyle.plugin.version}</version>
                 <dependencies>
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.45</version>
+                        <version>${checkstyle.version}</version>
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <configLocation>checkstyle.xml</configLocation>
+                    <configLocation>style/checkstyle.xml</configLocation>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>

@@ -104,14 +104,14 @@ public class HugeGraphSparkLoader implements Serializable {
                                         .set("spark.kryo.registrationRequired", "true");
         try {
             conf.registerKryoClasses(new Class[]{
-                    org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
-                    org.apache.hadoop.hbase.KeyValue.class,
-                    org.apache.spark.sql.types.StructType.class,
-                    StructField[].class,
-                    StructField.class,
-                    org.apache.spark.sql.types.LongType$.class,
-                    org.apache.spark.sql.types.Metadata.class,
-                    org.apache.spark.sql.types.StringType$.class,
+                org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
+                org.apache.hadoop.hbase.KeyValue.class,
+                org.apache.spark.sql.types.StructType.class,
+                StructField[].class,
+                StructField.class,
+                org.apache.spark.sql.types.LongType$.class,
+                org.apache.spark.sql.types.Metadata.class,
+                org.apache.spark.sql.types.StringType$.class,
                     Class.forName(
                             "org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
                     Class.forName("scala.reflect.ClassTag$$anon$1"),
@@ -309,19 +309,19 @@ public class HugeGraphSparkLoader implements Serializable {
         } else {
             // CreateIfNotExist doesn't support false now
             if (isVertex) {
-                BatchVertexRequest.Builder req =
+                BatchVertexRequest.Builder request =
                         new BatchVertexRequest.Builder();
-                req.vertices((List<Vertex>) (Object) graphElements)
-                   .updatingStrategies(updateStrategyMap)
-                   .createIfNotExist(true);
-                g.updateVertices(req.build());
+                request.vertices((List<Vertex>) (Object) graphElements)
+                        .updatingStrategies(updateStrategyMap)
+                        .createIfNotExist(true);
+                g.updateVertices(request.build());
             } else {
-                BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
-                req.edges((List<Edge>) (Object) graphElements)
-                   .updatingStrategies(updateStrategyMap)
-                   .checkVertex(isCheckVertex)
-                   .createIfNotExist(true);
-                g.updateEdges(req.build());
+                BatchEdgeRequest.Builder request = new BatchEdgeRequest.Builder();
+                request.edges((List<Edge>) (Object) graphElements)
+                        .updatingStrategies(updateStrategyMap)
+                        .checkVertex(isCheckVertex)
+                        .createIfNotExist(true);
+                g.updateEdges(request.build());
             }
         }
         graphElements.clear();

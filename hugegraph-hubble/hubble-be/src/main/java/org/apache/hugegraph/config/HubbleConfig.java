@@ -23,6 +23,8 @@ import java.io.File;
 
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
+import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +34,8 @@ import org.apache.hugegraph.common.Constant;
 
 @Configuration
 public class HubbleConfig {
+
+    protected static final Logger LOG = Log.logger(HubbleConfig.class);
 
     @Autowired
     private ApplicationArguments arguments;
@@ -57,6 +61,7 @@ public class HubbleConfig {
                 conf = path;
             }
         } catch (Exception ignored) {
+            LOG.error("hugeConfig exception");
         }
         return new HugeConfig(conf);
     }
