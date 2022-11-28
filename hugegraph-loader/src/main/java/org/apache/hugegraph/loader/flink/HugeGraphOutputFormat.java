@@ -193,7 +193,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                         request.edges((List<Edge>) (Object) graphElements)
                                .updatingStrategies(updateStrategyMap)
                                .checkVertex(this.loadOptions.checkVertex)
-                                .createIfNotExist(true);
+                               .createIfNotExist(true);
                         g.updateEdges(request.build());
                     }
                     break;
