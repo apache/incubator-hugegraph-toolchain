@@ -37,8 +37,8 @@ tar zxf apache-hugegraph-*.tar.gz
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
 # TODO: lack incubator after apache package release (update it later)
-cp -r hugegraph-*/. ${HTTPS_SERVER_DIR}
-cd "$(find hugegraph-* | head -1)"
+cp -r apache-hugegraph-*/. ${HTTPS_SERVER_DIR}
+cd "$(find apache-hugegraph-* | head -1)"
 # start HugeGraphServer with http protocol
 bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
