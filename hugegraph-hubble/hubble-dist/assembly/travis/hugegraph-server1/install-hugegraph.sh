@@ -21,7 +21,7 @@ SERVER_CONFIG_DIR=$(dirname "$0")
 SERVER_PARENT_DIR="hugegraph-server1"
 
 mkdir ${SERVER_PARENT_DIR}
-TAR=$(echo hugegraph-*.tar.gz)
+TAR=$(echo apache-hugegraph-*.tar.gz)
 tar -zxvf "$TAR" -C "${SERVER_PARENT_DIR}" >/dev/null 2>&1
 
 HUGEGRAPH_NAME=${TAR%%.tar*}

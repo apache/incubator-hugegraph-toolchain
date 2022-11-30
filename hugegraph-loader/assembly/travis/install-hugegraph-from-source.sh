@@ -29,10 +29,10 @@ cd hugegraph
 git checkout "${COMMIT_ID}"
 mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
 # TODO: lack incubator after apache package release (update it later)
-mv hugegraph-*.tar.gz ../
+mv apache-hugegraph-*.tar.gz ../
 cd ../
 rm -rf hugegraph
-tar zxf hugegraph-*.tar.gz
+tar zxf apache-hugegraph-*.tar.gz
 
 HTTPS_SERVER_DIR="hugegraph_https"
 mkdir ${HTTPS_SERVER_DIR}
