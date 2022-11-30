@@ -36,7 +36,7 @@ tar zxf "${TAR}" -C ../
 cd ../
 rm -rf "${GIT_DIR}"
 # TODO: lack incubator after apache package release (update it later)
-HTTP_SERVER_DIR=$(echo hugegraph-*.*)
+HTTP_SERVER_DIR=$(echo apache-hugegraph-*.*)
 HTTPS_SERVER_DIR="hugegraph_https"
 
 cp -r "${HTTP_SERVER_DIR}" "${HTTPS_SERVER_DIR}"
