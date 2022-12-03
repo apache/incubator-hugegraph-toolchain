@@ -61,7 +61,7 @@
     <properties>
         <revision>1.0.0</revision>
         <release.name>${project.artifactId}</release.name>
-        <final.name>${release.name}-${project.version}</final.name>
+        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
