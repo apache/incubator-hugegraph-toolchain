@@ -10,7 +10,6 @@ node_modules
 upload-files/
 demo*
 gen-java
-build
 
 ### STS ###
 .apt_generated
@@ -32,9 +31,9 @@ build
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
+dist/
 build/
 
 ### VS Code ###
@@ -80,7 +79,7 @@ output/
 *.war
 *.zip
 *.tar
-*.tar.gz
+*.tar.gz*
 tree.txt
 *.versionsBackup
 .flattened-pom.xml
