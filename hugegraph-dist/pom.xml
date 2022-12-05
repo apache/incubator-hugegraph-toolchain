@@ -29,6 +29,7 @@
                         </goals>
                         <configuration>
                             <tasks>
+                                <!-- TODO: change to assembly plugin in future  -->
                                 <echo file="${project.basedir}/dist.sh">
                                     root_path=$(cd $(dirname $0)/..; pwd)
                                     cd $root_path
