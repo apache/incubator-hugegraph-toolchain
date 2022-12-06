@@ -36,8 +36,8 @@
 
                                     mkdir -p ${final.name}
                                     mv $root_path/hugegraph-hubble/hugegraph-hubble ${final.name}/hugegraph-hubble-${project.version}
-                                    mv $root_path/hugegraph-loader/hugegraph-loader-${project.version} ${final.name}/hugegraph-loader-${project.version}
-                                    mv $root_path/hugegraph-tools/hugegraph-tools-${project.version} ${final.name}/hugegraph-tools-${project.version}
+                                    mv $root_path/hugegraph-loader/apache-hugegraph-loader-incubating-${project.version} ${final.name}/apache-hugegraph-loader-incubating-${project.version}
+                                    mv $root_path/hugegraph-tools/apache-hugegraph-tools-incubating-${project.version} ${final.name}/apache-hugegraph-tools-incubating-${project.version}
 
                                     tar -zcvf $root_path/${final.name}.tar.gz ./${final.name} || exit 1
 
