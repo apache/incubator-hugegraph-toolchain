@@ -75,6 +75,7 @@ yarn-error.log*
 *.pyc
 
 # maven ignore
+apache-hugegraph-*-incubating-*/
 output/
 *.war
 *.zip
