@@ -16,37 +16,37 @@
 # limitations under the License.
 #
 
-group="hugegraph"
+GROUP="hugegraph"
 # current repository name
-repo="${group}-toolchain"
+REPO="${GROUP}-toolchain"
 # release version (input by committer)
-release_version=$1
+RELEASE_VERSION=$1
 # git release branch (check it carefully)
-git_branch="release-${release_version}"
+GIT_BRANCH="release-${RELEASE_VERSION}"
 
-release_version=${release_version:?"Please input the release version behind script"}
+RELEASE_VERSION=${RELEASE_VERSION:?"Please input the release version behind script"}
 
-work_dir=$(cd "$(dirname "$0")" || exit; pwd)
-cd "${work_dir}" || exit
+WORK_DIR=$(cd "$(dirname "$0")" || exit; pwd)
+cd "${WORK_DIR}" || exit
 echo "In the work dir: $(pwd)"
 
 # clean old dir then build a new one
-rm -rfv dist && mkdir -p dist/apache-${repo}
+rm -rfv dist && mkdir -p dist/apache-${REPO}
 
 # step1: package the source code
 git archive --format=tar.gz \
-  --output="dist/apache-${repo}/apache-${repo}-${release_version}-incubating-src.tar.gz" \
-  --prefix=apache-${repo}-"${release_version}"-incubating-src/ "${git_branch}" || exit
+  --output="dist/apache-${REPO}/apache-${REPO}-${RELEASE_VERSION}-incubating-src.tar.gz" \
+  --prefix=apache-${REPO}-"${RELEASE_VERSION}"-incubating-src/ "${GIT_BRANCH}" || exit
 
 # step2: copy the binary file (Optional)
 # Note: it's optional for project to generate binary package (skip this step if not need)
-cp -v ${group}-dist/target/apache-${repo}-"${release_version}"-incubating-bin.tar.gz \
-  dist/apache-${repo} || exit
+cp -v ../../target/apache-${REPO}-incubating-"${RELEASE_VERSION}".tar.gz \
+  dist/apache-${REPO} || exit
 
 # step3: sign + hash
 ##### 3.1 sign in source & binary package
 gpg --version 1>/dev/null || exit
-cd ./dist/apache-${repo} || exit
+cd ./dist/apache-${REPO} || exit
 for i in *.tar.gz; do
   echo "$i" && gpg --armor --output "$i".asc --detach-sig "$i"
 done
@@ -69,21 +69,21 @@ for i in *.tar.gz; do
 done
 
 # step4: upload to Apache-SVN
-svn_dir="${group}-svn-dev"
+SVN_DIR="${GROUP}-svn-dev"
 cd ../
-rm -rfv ${svn_dir}
+rm -rfv ${SVN_DIR}
 
-svn co "https://dist.apache.org/repos/dist/dev/incubator/${group}" ${svn_dir}
-mkdir -p ${svn_dir}/"${release_version}"
-cp -v apache-${repo}/*tar.gz* "${svn_dir}/${release_version}"
-cd ${svn_dir} || exit
+svn co "https://dist.apache.org/repos/dist/dev/incubator/${GROUP}" ${SVN_DIR}
+mkdir -p ${SVN_DIR}/"${RELEASE_VERSION}"
+cp -v apache-${REPO}/*tar.gz* "${SVN_DIR}/${RELEASE_VERSION}"
+cd ${SVN_DIR} || exit
 
 # check status first
 svn status
-svn add "${release_version}"
+svn add "${RELEASE_VERSION}"
 # check status again
 svn status
 # commit & push files
-svn commit -m "submit files for ${repo} ${release_version}"
+svn commit -m "submit files for ${REPO} ${RELEASE_VERSION}"
 
 echo "Finished all, please check all steps in script manually again! "
