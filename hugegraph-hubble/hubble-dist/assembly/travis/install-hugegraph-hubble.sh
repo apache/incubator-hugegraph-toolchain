@@ -18,7 +18,7 @@
 set -ev
 
 TRAVIS_DIR=$(dirname "$0")
-HUBBLE_DIR="hugegraph-hubble"
+HUBBLE_DIR="apache-hugegraph-hubble-incubating-1.0.0"
 
 echo "$TRAVIS_DIR"
 pwd && mvn -e -X clean package -DskipTests
