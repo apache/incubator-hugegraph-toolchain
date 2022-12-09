@@ -62,7 +62,7 @@
                             <appendAssemblyId>false</appendAssemblyId>
                             <outputDirectory>${top.level.dir}</outputDirectory>
                             <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>
-                            <finalName>${release.name}</finalName>
+                            <finalName>${final.name}</finalName>
                         </configuration>
                     </execution>
                 </executions>
@@ -85,12 +85,12 @@
                                     echo -e "Hubble-FE build successfully.\n"
 
                                     cd ${top.level.dir} &amp;&amp; pwd
-                                    rm -rf ${release.name}/ui
-                                    cp -r ${hubble-fe.dir}/build ${release.name}/ui
+                                    rm -rf ${final.name}/ui
+                                    cp -r ${hubble-fe.dir}/build ${final.name}/ui
 
-                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${release.name} || exit 1
-                                    cp -r ${release.name} ./hubble-dist
-                                    echo -n "hugegraph-hubble tar.gz available at: "
+                                    tar -zcvf ${top.level.dir}/${final.name}.tar.gz ${final.name} || exit 1
+                                    cp -r ${final.name} ./hubble-dist
+                                    echo -n "${final.name} tar.gz available at: "
                                     echo "${top.level.dir}/${final.name}.tar.gz"
                                     rm -f ${top.level.dir}/dist.sh
                                 </echo>
