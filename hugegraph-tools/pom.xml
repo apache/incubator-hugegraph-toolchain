@@ -187,11 +187,6 @@
     </dependencies>
 
     <build>
-        <directory>output</directory>
-        <sourceDirectory>src/main/java</sourceDirectory>
-        <!--<testSourceDirectory>src/test/java</testSourceDirectory>-->
-        <outputDirectory>output/classes</outputDirectory>
-        <!--<testOutputDirectory>output/test-classes</testOutputDirectory>-->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -234,10 +229,12 @@
                         </goals>
                         <configuration>
                             <target>
-                                <tar destfile="${project.basedir}/${final.name}.tar.gz"
-                                     basedir="${project.basedir}"
-                                     includes="${final.name}/**"
-                                     compression="gzip"/>
+                                <tar destfile="${project.basedir}/target/${final.name}.tar.gz"
+                                     compression="gzip">
+                                    <tarfileset dir="${project.basedir}" filemode="755">
+                                        <include name="${final.name}/**"/>
+                                    </tarfileset>
+                                </tar>
                             </target>
                         </configuration>
                     </execution>
