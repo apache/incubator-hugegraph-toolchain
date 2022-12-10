@@ -53,7 +53,7 @@
 
     <mailingLists>
       <mailingList>
-        <name>Development List</name>
+        <name>Developer List</name>
         <subscribe>dev-subscribe@hugegraph.apache.org</subscribe>
         <unsubscribe>dev-unsubscribe@hugegraph.apache.org</unsubscribe>
         <post>dev@hugegraph.incubator.apache.org</post>

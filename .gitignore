@@ -6,7 +6,7 @@ target/
 **.db
 logs/
 ui
-node_modules
+node_modules/
 upload-files/
 demo*
 gen-java
@@ -22,7 +22,6 @@ gen-java
 .svn
 
 ### IntelliJ IDEA ###
-.idea
 .idea/
 *.iws
 *.iml
