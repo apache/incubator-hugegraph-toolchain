@@ -11,4 +11,5 @@ apache-release.sh export-ignore
 # ignored directory
 .github/ export-ignore
 hugegraph-dist/scripts/ export-ignore
-assembly/ export-ignore
+# only exclude the root
+/assembly/ export-ignore
