@@ -39,11 +39,11 @@
                                     mv -v $root_path/hugegraph-loader/apache-hugegraph-loader-incubating-${project.version} ${final.name}/
                                     mv -v $root_path/hugegraph-tools/apache-hugegraph-tools-incubating-${project.version} ${final.name}/
 
-                                    tar -zcvf $root_path/${final.name}.tar.gz ./${final.name} || exit 1
+                                    tar -zcvf $root_path/target/${final.name}.tar.gz ./${final.name} || exit 1
 
-                                    md5sum $root_path/${final.name}.tar.gz
+                                    md5sum $root_path/target/${final.name}.tar.gz
                                     echo -n "hugegraph-toolchain tar.gz available at: "
-                                    echo "$root_path/${final.name}.tar.gz"
+                                    echo "$root_path/target/${final.name}.tar.gz"
                                     rm -f ${project.basedir}/dist.sh
 
                                 </echo>
