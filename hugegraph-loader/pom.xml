@@ -649,10 +649,12 @@
                         </goals>
                         <configuration>
                             <target>
-                                <tar destfile="${project.basedir}/${final.name}.tar.gz"
-                                     basedir="${project.basedir}"
-                                     includes="${final.name}/**"
-                                     compression="gzip"/>
+                                <tar destfile="${project.basedir}/target/${final.name}.tar.gz"
+                                     compression="gzip">
+                                    <tarfileset dir="${project.basedir}" filemode="755">
+                                        <include name="${final.name}/**"/>
+                                    </tarfileset>
+                                </tar>
                             </target>
                         </configuration>
                     </execution>
