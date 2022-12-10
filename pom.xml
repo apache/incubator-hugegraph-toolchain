@@ -116,93 +116,106 @@
         <docker.repo>${project.name}</docker.repo>
         <docker.tag>${project.version}</docker.tag>
         <hbase.version>2.2.3</hbase.version>
+        <hugegraph.common.version>1.0.0</hugegraph.common.version>
     </properties>
 
-    <dependencies>
-        <!--TODO: enhance it later to avoid conflicts now -->
-<!--        <dependency>-->
-<!--            <groupId>commons-io</groupId>-->
-<!--            <artifactId>commons-io</artifactId>-->
-<!--            <version>2.7</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.commons</groupId>-->
-<!--            <artifactId>commons-lang3</artifactId>-->
-<!--            <version>3.9</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.google.guava</groupId>-->
-<!--            <artifactId>guava</artifactId>-->
-<!--            <version>29.0-jre</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.commons</groupId>-->
-<!--            <artifactId>commons-compress</artifactId>-->
-<!--            <version>1.21</version>-->
-<!--        </dependency>-->
-    </dependencies>
+    <!-- Note: dependencies won't be imported in root & won't be inherited by default,
+         just defined for submodules (more flexible) -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.hugegraph</groupId>
+                <artifactId>hugegraph-common</artifactId>
+                <version>${hugegraph.common.version}</version>
+            </dependency>
 
-<!--    <profiles>-->
-<!--        <profile>-->
-<!--            <id>release</id>-->
-<!--            <build>-->
-<!--                <plugins>-->
-<!--                    <plugin>-->
-<!--                        <groupId>org.apache.maven.plugins</groupId>-->
-<!--                        <artifactId>maven-source-plugin</artifactId>-->
-<!--                        <version>2.2.1</version>-->
-<!--                        <executions>-->
-<!--                            <execution>-->
-<!--                                <id>attach-sources</id>-->
-<!--                                <goals>-->
-<!--                                    <goal>jar-no-fork</goal>-->
-<!--                                </goals>-->
-<!--                            </execution>-->
-<!--                        </executions>-->
-<!--                    </plugin>-->
-<!--                    <plugin>-->
-<!--                        <groupId>org.apache.maven.plugins</groupId>-->
-<!--                        <artifactId>maven-javadoc-plugin</artifactId>-->
-<!--                        <version>2.9.1</version>-->
-<!--                        <executions>-->
-<!--                            <execution>-->
-<!--                                <id>attach-javadocs</id>-->
-<!--                                <goals>-->
-<!--                                    <goal>jar</goal>-->
-<!--                                </goals>-->
-<!--                            </execution>-->
-<!--                        </executions>-->
-<!--                        <configuration>-->
-<!--                            <additionalJOptions>-->
-<!--                                <additionalJOption>-Xdoclint:none</additionalJOption>-->
-<!--                            </additionalJOptions>-->
-<!--                        </configuration>-->
-<!--                    </plugin>-->
-<!--                    <plugin>-->
-<!--                        <groupId>org.apache.maven.plugins</groupId>-->
-<!--                        <artifactId>maven-gpg-plugin</artifactId>-->
-<!--                        <version>1.5</version>-->
-<!--                        <executions>-->
-<!--                            <execution>-->
-<!--                                <id>sign-artifacts</id>-->
-<!--                                <phase>verify</phase>-->
-<!--                                <goals>-->
-<!--                                    <goal>sign</goal>-->
-<!--                                </goals>-->
-<!--                            </execution>-->
-<!--                        </executions>-->
-<!--                        <configuration>-->
-<!--                            &lt;!&ndash; Prevent `gpg` from using pinentry programs &ndash;&gt;-->
-<!--                            <gpgArguments>-->
-<!--                                <arg>&#45;&#45;pinentry-mode</arg>-->
-<!--                                <arg>loopback</arg>-->
-<!--                            </gpgArguments>-->
-<!--                        </configuration>-->
-<!--                    </plugin>-->
-<!--                </plugins>-->
-<!--            </build>-->
-<!--        </profile>-->
-<!--    </profiles>-->
+            <!--TODO: enhance it later to avoid conflicts now -->
+            <!--        <dependency>-->
+            <!--            <groupId>commons-io</groupId>-->
+            <!--            <artifactId>commons-io</artifactId>-->
+            <!--            <version>2.7</version>-->
+            <!--        </dependency>-->
+            <!--        <dependency>-->
+            <!--            <groupId>org.apache.commons</groupId>-->
+            <!--            <artifactId>commons-lang3</artifactId>-->
+            <!--            <version>3.9</version>-->
+            <!--        </dependency>-->
+            <!--        <dependency>-->
+            <!--            <groupId>com.google.guava</groupId>-->
+            <!--            <artifactId>guava</artifactId>-->
+            <!--            <version>29.0-jre</version>-->
+            <!--        </dependency>-->
+            <!--        <dependency>-->
+            <!--            <groupId>org.apache.commons</groupId>-->
+            <!--            <artifactId>commons-compress</artifactId>-->
+            <!--            <version>1.21</version>-->
+            <!--        </dependency>-->
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies> <!-- dependencies will be inherited by default here --></dependencies>
+
+    <profiles>
+        <profile>
+            <id>apache-release</id>
+            <build>
+                <!-- plugins under management won't be executed in root & won't be inherited
+                     by default, just defined for submodules (more flexible)
+                     refer: https://maven.apache.org/pom.html#Plugin_Management -->
+                <!--<pluginManagement></pluginManagement>-->
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <doclint>none</doclint>
+                            <failOnError>false</failOnError>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- Prevent `gpg` from using pinentry programs -->
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>
@@ -239,10 +252,10 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
                 <configuration>
                     <source>${compiler.source}</source>
                     <target>${compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                     <compilerArguments>
                         <Xmaxerrs>500</Xmaxerrs>
                     </compilerArguments>
@@ -298,25 +311,25 @@
 <!--                    </execution>-->
 <!--                </executions>-->
 <!--            </plugin>-->
-<!--            <plugin>-->
-<!--                <artifactId>maven-clean-plugin</artifactId>-->
-<!--                <version>3.0.0</version>-->
-<!--                <configuration>-->
-<!--                    <filesets>-->
-<!--                        <fileset>-->
-<!--                            <directory>${project.basedir}</directory>-->
-<!--                            <includes>-->
-<!--                                <include>*.tar.gz</include>-->
-<!--                                <include>${final.name}/**</include>-->
-<!--                            </includes>-->
-<!--                            <followSymlinks>false</followSymlinks>-->
-<!--                        </fileset>-->
-<!--                        <fileset>-->
-<!--                            <directory>${final.name}</directory>-->
-<!--                        </fileset>-->
-<!--                    </filesets>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.basedir}</directory>
+                            <includes>
+                                <include>*.tar.gz</include>
+                                <include>${final.name}/**</include>
+                                <include>.flattened-pom.xml</include>
+                            </includes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                        <fileset>
+                            <directory>${final.name}</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
 <!--            <plugin>-->
 <!--                <groupId>org.jacoco</groupId>-->
 <!--                <artifactId>jacoco-maven-plugin</artifactId>-->
@@ -416,7 +429,6 @@
             <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
-                <version>0.15</version>
                 <configuration>
                     <excludes>
                         <exclude>**/*.versionsBackup</exclude>

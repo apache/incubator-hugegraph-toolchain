@@ -90,7 +90,6 @@
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
