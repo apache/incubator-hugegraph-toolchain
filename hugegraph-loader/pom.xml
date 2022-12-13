@@ -36,7 +36,7 @@
 
     <properties>
         <release.name>${project.artifactId}</release.name>
-        <final.name>${release.name}-${project.version}</final.name>
+        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
         <jackson.version>2.12.3</jackson.version>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
@@ -648,19 +648,14 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
-                            <tasks>
-                                <echo file="${project.basedir}/dist.sh">
-                                    tar -zcvf \
-                                    ${project.basedir}/${final.name}.tar.gz ${final.name} || exit 1
-                                    rm -f ${project.basedir}/dist.sh
-                                    echo -n "hugegraph-loader tar.gz available at: "
-                                    echo "${project.basedir}/${final.name}.tar.gz"
-                                </echo>
-                                <exec executable="${shell-executable}"
-                                      dir="${project.basedir}" failonerror="true">
-                                    <arg line="./dist.sh"/>
-                                </exec>
-                            </tasks>
+                            <target>
+                                <tar destfile="${project.basedir}/target/${final.name}.tar.gz"
+                                     compression="gzip">
+                                    <tarfileset dir="${project.basedir}" filemode="755">
+                                        <include name="${final.name}/**"/>
+                                    </tarfileset>
+                                </tar>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>

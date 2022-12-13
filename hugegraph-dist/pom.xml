@@ -14,7 +14,7 @@
 
     <properties>
         <release.name>${project.parent.artifactId}</release.name>
-        <final.name>${release.name}-${project.version}</final.name>
+        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
     </properties>
 
     <build>
@@ -29,20 +29,21 @@
                         </goals>
                         <configuration>
                             <tasks>
+                                <!-- TODO: change to assembly plugin in future  -->
                                 <echo file="${project.basedir}/dist.sh">
                                     root_path=$(cd $(dirname $0)/..; pwd)
                                     cd $root_path
 
                                     mkdir -p ${final.name}
-                                    mv $root_path/hugegraph-hubble/hugegraph-hubble ${final.name}/hugegraph-hubble-${project.version}
-                                    mv $root_path/hugegraph-loader/hugegraph-loader-${project.version} ${final.name}/hugegraph-loader-${project.version}
-                                    mv $root_path/hugegraph-tools/hugegraph-tools-${project.version} ${final.name}/hugegraph-tools-${project.version}
+                                    mv -v $root_path/hugegraph-hubble/apache-hugegraph-hubble-incubating-${project.version} ${final.name}/
+                                    mv -v $root_path/hugegraph-loader/apache-hugegraph-loader-incubating-${project.version} ${final.name}/
+                                    mv -v $root_path/hugegraph-tools/apache-hugegraph-tools-incubating-${project.version} ${final.name}/
 
-                                    tar -zcvf $root_path/${final.name}.tar.gz ./${final.name} || exit 1
+                                    tar -zcvf $root_path/target/${final.name}.tar.gz ./${final.name} || exit 1
 
-                                    md5sum $root_path/${final.name}.tar.gz
+                                    md5sum $root_path/target/${final.name}.tar.gz
                                     echo -n "hugegraph-toolchain tar.gz available at: "
-                                    echo "$root_path/${final.name}.tar.gz"
+                                    echo "$root_path/target/${final.name}.tar.gz"
                                     rm -f ${project.basedir}/dist.sh
 
                                 </echo>
