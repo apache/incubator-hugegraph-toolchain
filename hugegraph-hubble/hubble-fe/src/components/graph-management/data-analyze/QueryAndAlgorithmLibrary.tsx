@@ -45,6 +45,7 @@ import PersonalRank from './algorithm/PersonalRank';
 import ArrowIcon from '../../../assets/imgs/ic_arrow_16.svg';
 import QuestionMarkIcon from '../../../assets/imgs/ic_question_mark.svg';
 import { Algorithm } from '../../../stores/factory/dataAnalyzeStore/algorithmStore';
+import { baseData } from './GremlinKeyWords';
 
 export const styles = {
   primaryButton: {
@@ -55,7 +56,6 @@ export const styles = {
     margin: '16px 0'
   }
 };
-
 const codeRegexp = /[A-Za-z0-9]+/;
 
 const QueryAndAlgorithmLibrary: React.FC = observer(() => {
@@ -195,6 +195,23 @@ export const GremlinQuery: React.FC = observer(() => {
     isLoading: dataAnalyzeStore.requestStatus.fetchGraphs === 'pending'
   });
 
+  const handleShowHint = (cm: any) => {
+    var cursor = cm.getCursor(),
+      line = cm.getLine(cursor.line);
+    var start = cursor.ch,
+      end = cursor.ch;
+    while (start && /\w/.test(line.charAt(start - 1))) --start;
+    while (end < line.length && /\w/.test(line.charAt(end))) ++end;
+    var word = line.slice(start, end).toLowerCase();
+    const list = baseData.filter(function (el) {
+      return el.toLowerCase().indexOf(word) > -1;
+    });
+    return {
+      list: list,
+      from: { ch: start, line: cursor.line },
+      to: { ch: end, line: cursor.line }
+    };
+  };
   useEffect(() => {
     codeEditor.current = CodeMirror.fromTextArea(
       codeContainer.current as HTMLTextAreaElement,
@@ -203,7 +220,11 @@ export const GremlinQuery: React.FC = observer(() => {
         lineWrapping: true,
         mode: { name: 'text/x-mysql' },
         extraKeys: { Ctrl: 'autocomplete' },
-        placeholder: t('addition.operate.input-query-statement')
+        placeholder: t('addition.operate.input-query-statement'),
+        hintOptions: {
+          completeSingle: false,
+          hint: handleShowHint
+        }
       }
     );
 
