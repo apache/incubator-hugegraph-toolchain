@@ -19,6 +19,8 @@
 
 package org.apache.hugegraph.unit;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import org.apache.hugegraph.exception.NotSupportException;
@@ -30,7 +32,7 @@ import org.apache.hugegraph.util.JsonUtil;
 public class IndexLabelTest {
 
     @Test
-    public void testIndexLabel() {
+    public void testIndexLabel() throws JsonProcessingException {
         IndexLabel.Builder builder = new IndexLabel.BuilderImpl("personByAge",
                                                                 null);
         IndexLabel indexLabel = builder.onV("person")
@@ -44,12 +46,13 @@ public class IndexLabelTest {
                       "\"base_value\":\"person\"," +
                       "\"index_type\":\"SECONDARY\",\"fields\":[\"age\"]," +
                       "\"rebuild\":true}";
-        Assert.assertEquals(json, JsonUtil.toJson(indexLabel));
+        ObjectMapper mapper = new ObjectMapper();
+        Assert.assertEquals(mapper.readTree(json), mapper.readTree(JsonUtil.toJson(indexLabel)));
         Assert.assertEquals(HugeType.INDEX_LABEL.string(), indexLabel.type());
     }
 
     @Test
-    public void testIndexLabelV49() {
+    public void testIndexLabelV49() throws JsonProcessingException {
         IndexLabel.Builder builder = new IndexLabel.BuilderImpl("personByAge",
                                                                 null);
         IndexLabel indexLabel = builder.onV("person")
@@ -63,7 +66,8 @@ public class IndexLabelTest {
                       "\"check_exist\":true,\"base_type\":\"VERTEX_LABEL\"," +
                       "\"base_value\":\"person\"," +
                       "\"index_type\":\"SECONDARY\",\"fields\":[\"age\"]}";
-        Assert.assertEquals(json, JsonUtil.toJson(indexLabelV49));
+        ObjectMapper mapper = new ObjectMapper();
+        Assert.assertEquals(mapper.readTree(json), mapper.readTree(JsonUtil.toJson(indexLabelV49)));
         Assert.assertEquals(HugeType.INDEX_LABEL.string(),
                             indexLabelV49.type());
 
@@ -71,7 +75,7 @@ public class IndexLabelTest {
     }
 
     @Test
-    public void testIndexLabelV56() {
+    public void testIndexLabelV56() throws JsonProcessingException {
         IndexLabel.Builder builder = new IndexLabel.BuilderImpl("personByAge",
                                                                 null);
         IndexLabel indexLabel = builder.onV("person")
@@ -85,7 +89,8 @@ public class IndexLabelTest {
                       "\"check_exist\":true,\"user_data\":{}," +
                       "\"base_type\":\"VERTEX_LABEL\",\"base_value\":\"person\"," +
                       "\"index_type\":\"SECONDARY\",\"fields\":[\"age\"]}";
-        Assert.assertEquals(json, JsonUtil.toJson(indexLabelV56));
+        ObjectMapper mapper = new ObjectMapper();
+        Assert.assertEquals(mapper.readTree(json), mapper.readTree(JsonUtil.toJson(indexLabelV56)));
         Assert.assertEquals(HugeType.INDEX_LABEL.string(),
                             indexLabelV56.type());
 
