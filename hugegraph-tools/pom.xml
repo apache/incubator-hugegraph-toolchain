@@ -27,7 +27,7 @@
     <artifactId>hugegraph-tools</artifactId>
     <packaging>jar</packaging>
 
-    <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-tools</url>
+    <url>https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-tools</url>
     <name>${project.artifactId}</name>
 
     <properties>
@@ -38,33 +38,22 @@
         <shell-executable>bash</shell-executable>
         <junit.version>4.12</junit.version>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ssZ</maven.build.timestamp.format>
-        <hugegraph-client-version>1.0.0</hugegraph-client-version>
         <jcommand-version>1.72</jcommand-version>
         <hadoop-version>3.1.1</hadoop-version>
         <guava.version>25.1-jre</guava.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>${hugegraph-client-version}</version>
+            <version>${revision}</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
@@ -188,16 +177,15 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <source>${java.version}</source>-->
+<!--                    <target>${java.version}</target>-->
+<!--                    <encoding>${project.build.sourceEncoding}</encoding>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -240,32 +228,31 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${project.basedir}</directory>
-                            <includes>
-                                <include>*.tar.gz</include>
-                                <include>${final.name}/**</include>
-                            </includes>
-                            <followSymlinks>false</followSymlinks>
-                        </fileset>
-                        <fileset>
-                            <directory>${final.name}</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <artifactId>maven-clean-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <filesets>-->
+<!--                        <fileset>-->
+<!--                            <directory>${project.basedir}</directory>-->
+<!--                            <includes>-->
+<!--                                <include>*.tar.gz</include>-->
+<!--                                <include>${final.name}/**</include>-->
+<!--                            </includes>-->
+<!--                            <followSymlinks>false</followSymlinks>-->
+<!--                        </fileset>-->
+<!--                        <fileset>-->
+<!--                            <directory>${final.name}</directory>-->
+<!--                        </fileset>-->
+<!--                    </filesets>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
     <profiles>
         <!-- mvn clean install -Prelease -->
         <profile>
-            <id>release</id>
+            <id>apache-release</id>
             <build>
                 <plugins>
                     <plugin>
@@ -294,13 +281,13 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <artifactId>maven-release-plugin</artifactId>
-                        <configuration>
-                            <!--  Pass these arguments to the deploy plugin.  -->
-                            <arguments>-Prelease</arguments>
-                        </configuration>
-                    </plugin>
+<!--                    <plugin>-->
+<!--                        <artifactId>maven-release-plugin</artifactId>-->
+<!--                        <configuration>-->
+<!--                            &lt;!&ndash;  Pass these arguments to the deployment plugin.  &ndash;&gt;-->
+<!--                            <arguments>-Prelease</arguments>-->
+<!--                        </configuration>-->
+<!--                    </plugin>-->
                     <plugin>
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>

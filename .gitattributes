@@ -1,1 +1,15 @@
 * text=auto !eol
+
+# ignored file when package to source.tgz
+.gitattributes export-ignore
+.gitignore export-ignore
+.asf.yaml export-ignore
+checkstyle.xml export-ignore
+apache-release.sh export-ignore
+.licenserc.yaml export-ignore
+
+# ignored directory
+.github/ export-ignore
+hugegraph-dist/scripts/ export-ignore
+# only exclude the root
+/assembly/ export-ignore

@@ -112,6 +112,7 @@
                             <includes>
                                 <include>*.tar.gz</include>
                                 <include>${final.name}/**</include>
+                                <include>.flattened-pom.xml</include>
                             </includes>
                             <followSymlinks>false</followSymlinks>
                         </fileset>
