@@ -5,12 +5,12 @@ HugeGraph-Tools is a customizable command line utility for deploying, managing a
 ## Main Functions
 
 - Deploy and clear HugeGraph-Server and HugeGraph-Studio automatically.
-- Manage graphs and query with Gremlin from multiple HugeGraph databases essily.
+- Manage graphs and query with Gremlin from multiple HugeGraph databases easily.
 - Backup/restore graph schema and graph data from/to HugeGraph databases conveniently, also support backup periodically
 
 ## Learn More
 
-The [tools homepage](https://hugegraph.github.io/hugegraph-doc/quickstart/hugegraph-tools.html) contains more information about it. 
+The [tools homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-tools/) contains more information about it. 
 
 ## License
 

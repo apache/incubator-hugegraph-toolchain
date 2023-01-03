@@ -32,11 +32,11 @@ github:
     - graph
     - client
     - tool
-    
+  # enable rebase for co-working pr
   enabled_merge_buttons:
     merge:  false
-    rebase: false
     squash: true
+    rebase: true
   protected_branches:
     master:
       required_status_checks:

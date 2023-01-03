@@ -35,14 +35,14 @@
     </description>
 
     <properties>
-        <hugegraph.common.version>2.1.0</hugegraph.common.version>
+        <hugegraph.common.version>1.0.0</hugegraph.common.version>
         <jersey.version>3.0.3</jersey.version>
         <mockito.version>2.8.47</mockito.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.baidu.hugegraph</groupId>
+            <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
             <version>${hugegraph.common.version}</version>
         </dependency>
@@ -111,7 +111,7 @@
                 <version>0.8.2</version>
                 <configuration>
                     <excludes>
-                        <exclude>com/baidu/hugegraph/example/*.class</exclude>
+                        <exclude>org/apache/hugegraph/example/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

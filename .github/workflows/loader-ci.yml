@@ -24,7 +24,7 @@ jobs:
     env:
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
-      COMMIT_ID: 7621aa71d235374de61139915638c47eea3cdce2
+      COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test
@@ -49,9 +49,7 @@ jobs:
 
       - name: Compile
         run: |
-          mvn install -pl hugegraph-client,hugegraph-loader -am -DskipTests -ntp
-          ls && cd hugegraph-loader && ls *
-          #mvn -e compile -Dmaven.javadoc.skip=true -ntp
+          mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
       - name: Prepare env and service
         run: |
@@ -61,8 +59,11 @@ jobs:
 
       - name: Run test
         run: |
-          echo "##### Ignore Client Test Now ######"
-          mvn test -P unit,file,hdfs,jdbc -pl hugegraph-client,hugegraph-loader -fn
+          cd hugegraph-loader && ls
+          mvn test -P unit -ntp
+          mvn test -P file
+          mvn test -P hdfs
+          mvn test -P jdbc
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0

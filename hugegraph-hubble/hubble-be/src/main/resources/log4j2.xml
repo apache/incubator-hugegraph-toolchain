@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+      http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<configuration status="error">
+    <Properties>
+        <property name="log-charset">UTF-8</property>
+    </Properties>
+    <appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout charset="${log-charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} [%t] [%-5p] %c{1.} %x - %m%n" />
+        </Console>
+
+        <RollingRandomAccessFile name="file" fileName="logs/hugegraph-hubble.log"
+                     filePattern="logs/hugegraph-hubble-%d{yyyy-MM-dd}-%i.log">
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout charset="${log-charset}" pattern="%-d{yyyy-MM-dd HH:mm:ss} [%t] [%-5p] %c{1.} %x - %m%n" />
+            <!-- Trigger after exceeding 1day or 100MB -->
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+            </Policies>
+            <!-- Keep max 5 files per day & auto delete after over 1GB or 100 files -->
+            <DefaultRolloverStrategy max="5">
+                <Delete basePath="logs" maxDepth="2">
+                    <IfFileName glob="*/*.log"/>
+                    <!-- Limit log amount & size -->
+                    <IfAny>
+                        <IfAccumulatedFileSize exceeds="1GB" />
+                        <IfAccumulatedFileCount exceeds="100" />
+                    </IfAny>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingRandomAccessFile>
+    </appenders>
+    <loggers>
+        <root level="INFO">
+            <appender-ref ref="file"/>
+            <appender-ref ref="console"/>
+        </root>
+        <logger name="org.apache.cassandra" level="WARN" additivity="false">
+            <appender-ref ref="file"/>
+            <appender-ref ref="console"/>
+        </logger>
+        <logger name="org.apache.hadoop" level="WARN" additivity="false">
+            <appender-ref ref="file"/>
+            <appender-ref ref="console"/>
+        </logger>
+        <logger name="io.netty" level="WARN" additivity="false">
+            <appender-ref ref="file"/>
+            <appender-ref ref="console"/>
+        </logger>
+        <logger name="org.apache.commons" level="WARN" additivity="false">
+            <appender-ref ref="file"/>
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="org.apache.hugegraph" level="INFO" additivity="false">
+            <appender-ref ref="file"/>
+            <appender-ref ref="console"/>
+        </logger>
+    </loggers>
+</configuration>

@@ -1,0 +1,24 @@
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": 1,
+      "input": {
+        "type": "${source_type}",
+        "path": "${store_path}/vertex_person.csv",
+        "format": "CSV",
+        "charset": "UTF-8"
+      },
+      "vertices": [
+        {
+          "label": "person",
+          "field_mapping": {
+            "name": "name",
+            "age": "age",
+            "city": "city"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -3,9 +3,10 @@ const {
   addLessLoader,
   addWebpackAlias,
   overrideDevServer,
-  watchAll
+  watchAll,
+  addWebpackPlugin
 } = require('customize-cra');
-
+const { ProgressPlugin } = require("webpack")
 const addProxy = () => (configFunction) => {
   configFunction.proxy = {
     '/about': {
@@ -28,7 +29,8 @@ module.exports = {
     }),
     addWebpackAlias({
       'hubble-ui': require('path').resolve(__dirname, './src/components/hubble-ui')
-    })
+    }),
+    addWebpackPlugin(new ProgressPlugin()),
   ),
   devServer: overrideDevServer(addProxy(), watchAll())
 };

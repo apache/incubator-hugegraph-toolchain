@@ -6,11 +6,10 @@ target/
 **.db
 logs/
 ui
-node_modules
+node_modules/
 upload-files/
 demo*
 gen-java
-build
 
 ### STS ###
 .apt_generated
@@ -23,7 +22,6 @@ build
 .svn
 
 ### IntelliJ IDEA ###
-.idea
 .idea/
 *.iws
 *.iml
@@ -32,9 +30,9 @@ build
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
+dist/
 build/
 
 ### VS Code ###
@@ -76,13 +74,15 @@ yarn-error.log*
 *.pyc
 
 # maven ignore
+apache-hugegraph-*-incubating-*/
 output/
 *.war
 *.zip
 *.tar
-*.tar.gz
+*.tar.gz*
 tree.txt
 *.versionsBackup
+.flattened-pom.xml
 
 # eclipse ignore
 .settings/

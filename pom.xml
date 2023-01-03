@@ -26,7 +26,8 @@
     <name>${project.artifactId}</name>
     <url>https://github.com/apache/incubator-hugegraph-toolchain</url>
     <description>
-        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it includes 4 main modules (loader/hubble/tools/client)
+        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it
+        includes 4 main modules (loader/hubble/tools/client)
     </description>
 
     <parent>
@@ -38,30 +39,63 @@
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
 
-    <!-- TODO: we need update the url and all package together  -->
+    <developers>
+      <developer>
+        <id>Apache Hugegraph(Incubating)</id>
+        <email>dev-subscribe@hugegraph.apache.org</email>
+        <url>https://hugegraph.apache.org/</url>
+      </developer>
+    </developers>
+
+    <mailingLists>
+      <mailingList>
+        <name>Developer List</name>
+        <subscribe>dev-subscribe@hugegraph.apache.org</subscribe>
+        <unsubscribe>dev-unsubscribe@hugegraph.apache.org</unsubscribe>
+        <post>dev@hugegraph.incubator.apache.org</post>
+      </mailingList>
+      <mailingList>
+        <name>Commits List</name>
+        <subscribe>commits-subscribe@hugegraph.apache.org</subscribe>
+        <unsubscribe>commits-unsubscribe@hugegraph.apache.org</unsubscribe>
+        <post>commits@hugegraph.apache.org</post>
+      </mailingList>
+      <mailingList>
+        <name>Issues List</name>
+        <subscribe>issues-subscribe@hugegraph.apache.org</subscribe>
+        <unsubscribe>issues-unsubscribe@hugegraph.apache.org</unsubscribe>
+        <post>issues@hugegraph.apache.org</post>
+      </mailingList>
+    </mailingLists>
+
     <scm>
         <url>https://github.com/apache/hugegraph-toolchain</url>
-        <connection>https://github.com/apache/hugegraph-toolchain</connection>
-        <developerConnection>https://github.com/apache/hugegraph-toolchain</developerConnection>
+        <connection>scm:git:https://github.com/apache/hugegraph-toolchain.git</connection>
+        <developerConnection>scm:git:https://github.com/apache/hugegraph-toolchain.git</developerConnection>
     </scm>
+
+    <issueManagement>
+      <system>Github Issues</system>
+      <url>https://github.com/apache/hugegraph-toolchain/issues</url>
+    </issueManagement>
 
     <modules>
         <module>hugegraph-client</module>
-        <module>hugegraph-hubble</module>
         <module>hugegraph-loader</module>
         <module>hugegraph-tools</module>
+        <module>hugegraph-hubble</module>
         <module>hugegraph-dist</module>
     </modules>
 
     <properties>
         <revision>1.0.0</revision>
         <release.name>${project.artifactId}</release.name>
-        <final.name>${release.name}-${project.version}</final.name>
+        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
@@ -73,6 +107,8 @@
         <flink.version>1.13.5</flink.version>
         <flinkcdc.version>2.2.1</flinkcdc.version>
         <spark.version>3.2.2</spark.version>
+        <spark.scope>provided</spark.scope>
+        <flink.scope>provided</flink.scope>
         <scala.version>2.12</scala.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <docker.build.skip>true</docker.build.skip>
@@ -80,6 +116,7 @@
         <docker.hub>hugegraph</docker.hub>
         <docker.repo>${project.name}</docker.repo>
         <docker.tag>${project.version}</docker.tag>
+        <hbase.version>2.2.3</hbase.version>
     </properties>
 
     <dependencies>
@@ -396,6 +433,7 @@
                         <exclude>scripts/dev/reviewers</exclude>
                         <exclude>**/*.md</exclude>
                         <exclude>**/dependency-reduced-pom.xml</exclude>
+                        <exclude>**/.flattened-pom.xml</exclude>
                         <exclude>**/logs/*.log</exclude>
                         <exclude>**/target/*</exclude>
                         <exclude>style/*</exclude>
@@ -412,9 +450,35 @@
                         <exclude>**/META-INF/MANIFEST.MF</exclude>
                         <!-- Maven -->
                         <exclude>.repository/**</exclude>
+                        <exclude>**/.flattened-pom.xml</exclude>
                     </excludes>
                     <consoleOutput>true</consoleOutput>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.3.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 
@@ -425,4 +489,19 @@
 <!--            </testResource>-->
 <!--        </testResources>-->
     </build>
+
+    <repositories>
+        <repository>
+            <id>staged-releases</id>
+            <name>staged-releases</name>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+            <layout>default</layout>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>

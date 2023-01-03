@@ -5,16 +5,17 @@ on:
     branches:
       - master
       - /^release-.*$/
-      - /^v[0-9]\..*$/
     paths:
       - hugegraph-hubble/**
       - hugegraph-dist/**
+      - hugegraph-loader/**
       - .github/workflows/**
       - pom.xml
   pull_request:
     paths:
       - hugegraph-hubble/**
       - hugegraph-dist/**
+      - hugegraph-loader/**
       - hugegraph-client/**
       - .github/workflows/**
       - pom.xml
@@ -22,11 +23,13 @@ on:
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
   # TODO: need update it later
-  SERVER_VERSION: 0.12.0
+  COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
 
 jobs:
   hubble-ci:
     runs-on: ubuntu-20.04
+    env:
+      STATIC_DIR: hugegraph-hubble/hubble-dist/assembly/static
     steps:
       - name: Install JDK 8
         uses: actions/setup-java@v3
@@ -72,16 +75,17 @@ jobs:
 
       - name: Compile
         run: |
+          mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
           cd hugegraph-hubble && ls *
-          mvn -e clean compile -Dmaven.javadoc.skip=true -ntp
+          mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
         run: |
           sudo pip install -r ${TRAVIS_DIR}/requirements.txt
-          $TRAVIS_DIR/install-hugegraph.sh $SERVER_VERSION
+          $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID
 
       - name: Unit test
-        run: cd hugegraph-hubble && mvn test -P unit-test
+        run: mvn test -P unit-test -pl hugegraph-hubble/hubble-be -ntp
 
       - name: API test
         env:

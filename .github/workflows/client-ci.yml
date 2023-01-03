@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       TRAVIS_DIR: hugegraph-client/assembly/travis
-      COMMIT_ID: 8abf3d5524de3d3d5a97bbdce460a75652792b0d
+      COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
     strategy:
       fail-fast: false
       matrix:
@@ -48,8 +48,7 @@ jobs:
 
       - name: Compile
         run: |
-          cd hugegraph-client && ls *
-          mvn -e compile -Dmaven.javadoc.skip=true -ntp
+          mvn -e compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
         run: |
@@ -58,7 +57,7 @@ jobs:
       - name: Run test
         run: |
           cd hugegraph-client && ls *
-          mvn test -Dtest=UnitTestSuite
+          mvn test -Dtest=UnitTestSuite -ntp
           mvn test -Dtest=ApiTestSuite
           mvn test -Dtest=FuncTestSuite
 

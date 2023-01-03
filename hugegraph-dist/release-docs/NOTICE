@@ -1,0 +1,2471 @@
+Apache HugeGraph
+Copyright 2021-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+========================================================================
+
+arrow-format NOTICE
+
+========================================================================
+
+
+Arrow Format
+Copyright 2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+arrow-format NOTICE
+
+========================================================================
+
+
+Arrow Format
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+arrow-memory NOTICE
+
+========================================================================
+
+
+Arrow Memory
+Copyright 2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+arrow-memory-core NOTICE
+
+========================================================================
+
+
+Arrow Memory - Core
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+arrow-vector NOTICE
+
+========================================================================
+
+
+Arrow Vectors
+Copyright 2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+arrow-vector NOTICE
+
+========================================================================
+
+
+Arrow Vectors
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+audience-annotations NOTICE
+
+========================================================================
+
+
+Apache Yetus - Audience Annotations
+Copyright 2015-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+avro NOTICE
+
+========================================================================
+
+
+Apache Avro
+Copyright 2009-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+avro NOTICE
+
+========================================================================
+
+
+Apache Avro
+Copyright 2009-2014 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+classmate NOTICE
+
+========================================================================
+
+Java ClassMate library was originally written by Tatu Saloranta (tatu.saloranta@iki.fi)
+
+Other developers who have contributed code are:
+
+* Brian Langel
+
+
+========================================================================
+
+curator-client NOTICE
+
+========================================================================
+
+
+Curator Client
+Copyright 2011-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+curator-client NOTICE
+
+========================================================================
+
+
+Curator Client
+Copyright 2011-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+curator-framework NOTICE
+
+========================================================================
+
+
+Curator Framework
+Copyright 2011-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+curator-recipes NOTICE
+
+========================================================================
+
+
+Curator Recipes
+Copyright 2011-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+curator-recipes NOTICE
+
+========================================================================
+
+
+Curator Recipes
+Copyright 2011-2018 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+curator-recipes NOTICE
+
+========================================================================
+
+
+Curator Recipes
+Copyright 2011-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+dropwizard-metrics-hadoop-metrics2-reporter NOTICE
+
+========================================================================
+
+Copyright 2016 Josh Elser
+
+========================================================================
+
+groovy-all NOTICE
+
+========================================================================
+
+Apache Groovy
+Copyright 2003-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This product includes/uses ANTLR (http://www.antlr2.org/)
+developed by Terence Parr 1989-2006
+
+This product bundles icons from the famfamfam.com silk icons set
+http://www.famfamfam.com/lab/icons/silk/
+Licensed under the Creative Commons Attribution Licence v2.5
+http://creativecommons.org/licenses/by/2.5/
+========================================================================
+
+hbase-client NOTICE
+
+========================================================================
+
+
+Apache HBase - Client
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-common NOTICE
+
+========================================================================
+
+
+Apache HBase - Common
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-hadoop-compat NOTICE
+
+========================================================================
+
+
+Apache HBase - Hadoop Compatibility
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-hadoop2-compat NOTICE
+
+========================================================================
+
+
+Apache HBase - Hadoop Two Compatibility
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-http NOTICE
+
+========================================================================
+
+
+Apache HBase - HTTP
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-mapreduce NOTICE
+
+========================================================================
+
+
+Apache HBase - MapReduce
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-metrics NOTICE
+
+========================================================================
+
+
+Apache HBase - Metrics Implementation
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-metrics-api NOTICE
+
+========================================================================
+
+
+Apache HBase - Metrics API
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-procedure NOTICE
+
+========================================================================
+
+
+Apache HBase - Procedure
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-protocol NOTICE
+
+========================================================================
+
+
+Apache HBase - Protocol
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-protocol-shaded NOTICE
+
+========================================================================
+
+
+Apache HBase - Shaded Protocol
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-replication NOTICE
+
+========================================================================
+
+
+Apache HBase - Replication
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+========================================================================
+
+typeScript NOTICE
+
+========================================================================
+
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+
+
+========================================================================
+
+hbase-server NOTICE
+
+========================================================================
+
+
+Apache HBase - Server
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-shaded-client-byo-hadoop NOTICE
+
+========================================================================
+
+
+Apache HBase - Shaded - Client
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+====
+Apache HBase - Shaded - Client contained works
+
+This product contains additional works that are distributed under licenses
+other than ASL v2. See LICENSE for full details
+
+--
+This product includes portions of the Bootstrap project v3.0.0
+
+Copyright 2013 Twitter, Inc.
+
+Licensed under the Apache License v2.0
+
+This product uses the Glyphicons Halflings icon set.
+
+http://glyphicons.com/
+
+Copyright Jan Kovařík
+
+Licensed under the Apache License v2.0 as a part of the Bootstrap project.
+
+--
+This product includes the 'Findbugs Annotations under Apache License' project
+(https://github.com/stephenc/findbugs-annotations), version 1.3.9-1
+licensed under the Apache Software License, version 2.0.
+--
+This product includes findbugs-annotations
+
+Licensed under Apache License, Version 2.0, see LICENSE for details.
+
+incorporated from com.github.stephenc.findbugs:findbugs-annotations:jar:1.3.9-1
+
+For source see 'http://stephenc.github.com/findbugs-annotations/findbugs-annotations'.
+--
+This product includes error_prone_annotations
+
+incorporated from com.google.errorprone:error_prone_annotations:jar:2.3.3
+
+For source see 'http://nexus.sonatype.org/oss-repository-hosting.html/error_prone_parent/error_prone_annotations/error_prone_annotations'.
+--
+This product includes commons-codec
+
+incorporated from commons-codec:commons-codec:jar:1.10
+
+For source see 'http://commons.apache.org/proper/commons-codec/commons-codec'.
+--
+This product includes commons-io
+
+incorporated from commons-io:commons-io:jar:2.5
+
+For source see 'http://commons.apache.org/proper/commons-io/commons-io'.
+--
+This product includes metrics-core
+
+incorporated from io.dropwizard.metrics:metrics-core:jar:3.2.6
+
+For source see 'http://metrics.dropwizard.io/metrics-core/metrics-core'.
+--
+This product includes 'Apache log4j'
+Copyright 2010 The Apache Software Foundation
+
+--
+This product includes log4j
+
+incorporated from log4j:log4j:jar:1.2.17
+
+For source see 'http://logging.apache.org/log4j/1.2/log4j'.
+--
+This product includes Apache Commons Crypto
+
+incorporated from org.apache.commons:commons-crypto:jar:1.0.0
+
+For source see 'http://commons.apache.org/proper/commons-crypto/'.
+--
+This product includes software from the Spring Framework,
+under the Apache License 2.0 (see: StringUtils.containsWhitespace())
+
+--
+This product includes Apache Commons Lang
+
+incorporated from org.apache.commons:commons-lang3:jar:3.6
+
+For source see 'http://commons.apache.org/proper/commons-lang/'.
+--
+This product includes Apache HBase - Client
+
+incorporated from org.apache.hbase:hbase-client:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-client'.
+--
+This product includes Apache HBase - Common
+
+incorporated from org.apache.hbase:hbase-common:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-common'.
+--
+This product includes Apache HBase - Hadoop Compatibility
+
+incorporated from org.apache.hbase:hbase-hadoop-compat:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-hadoop-compat'.
+--
+This product includes Apache HBase - Hadoop Two Compatibility
+
+incorporated from org.apache.hbase:hbase-hadoop2-compat:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-hadoop2-compat'.
+--
+This product includes Apache HBase - Metrics Implementation
+
+incorporated from org.apache.hbase:hbase-metrics:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-metrics'.
+--
+This product includes Apache HBase - Metrics API
+
+incorporated from org.apache.hbase:hbase-metrics-api:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-metrics-api'.
+--
+This product includes Apache HBase - Protocol
+
+incorporated from org.apache.hbase:hbase-protocol:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-protocol'.
+--
+This product includes Apache HBase - Shaded Protocol
+
+incorporated from org.apache.hbase:hbase-protocol-shaded:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-protocol-shaded'.
+--
+This product includes Apache HBase - Resource Bundle
+
+incorporated from org.apache.hbase:hbase-resource-bundle:jar:2.2.3
+
+For source see 'https://hbase.apache.org/hbase-build-configuration/hbase-resource-bundle'.
+--
+This product includes Apache HBase Relocated (Shaded) Third-party Miscellaneous Libs
+
+incorporated from org.apache.hbase.thirdparty:hbase-shaded-miscellaneous:jar:2.2.1
+
+For source see 'http://hbase.apache.org/hbase-shaded-miscellaneous'.
+--
+This product includes Apache HBase Relocated (Shaded) Netty Libs
+
+incorporated from org.apache.hbase.thirdparty:hbase-shaded-netty:jar:2.2.1
+
+For source see 'http://hbase.apache.org/hbase-shaded-netty'.
+--
+This product includes Apache HBase Patched & Relocated (Shaded) Protobuf
+
+incorporated from org.apache.hbase.thirdparty:hbase-shaded-protobuf:jar:2.2.1
+
+For source see 'http://hbase.apache.org/hbase-shaded-protobuf'.
+--
+This product includes htrace-core4
+
+incorporated from org.apache.htrace:htrace-core4:jar:4.2.0-incubating
+
+For source see 'http://incubator.apache.org/projects/htrace.html/htrace-core4'.
+--
+This product includes Apache Yetus - Audience Annotations
+
+incorporated from org.apache.yetus:audience-annotations:jar:0.5.0
+
+For source see 'https://yetus.apache.org/audience-annotations'.
+--
+This product includes 'Apache ZooKeeper'
+Copyright 2009-2012 The Apache Software Foundation
+
+--
+This product includes zookeeper
+
+incorporated from org.apache.zookeeper:zookeeper:jar:3.4.10
+
+For source see '${dep.url}'.
+
+----
+----
+Incorporated NOTICE files from bundled works below.
+----
+
+Apache HBase - Client
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache HBase Patched & Relocated (Shaded) Protobuf
+Copyright 2017-2019 The Apache Software Foundation
+
+---
+
+Apache HBase - Common
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache HBase - Hadoop Compatibility
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache HBase - Metrics API
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache HBase - Hadoop Two Compatibility
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache HBase - Metrics Implementation
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache HBase - Shaded Protocol
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache HBase - Protocol
+Copyright 2007-2020 The Apache Software Foundation
+
+Apache Commons Codec
+Copyright 2002-2014 The Apache Software Foundation
+
+src/test/org/apache/commons/codec/language/DoubleMetaphoneTest.java
+contains test data from http://aspell.net/test/orig/batch0.tab.
+Copyright (C) 2002 Kevin Atkinson (kevina@gnu.org)
+
+===============================================================================
+
+The content of package org.apache.commons.codec.language.bm has been translated
+from the original php source code available at http://stevemorse.org/phoneticinfo.htm
+with permission from the original authors.
+Original source copyright:
+Copyright (c) 2008 Alexander Beider & Stephen P. Morse.
+
+Apache Commons IO
+Copyright 2002-2016 The Apache Software Foundation
+
+Apache Commons Lang
+Copyright 2001-2017 The Apache Software Foundation
+
+This product includes software from the Spring Framework,
+under the Apache License 2.0 (see: StringUtils.containsWhitespace())
+
+Apache Commons Collections
+Copyright 2001-2018 The Apache Software Foundation
+
+Apache HBase Relocated (Shaded) Third-party Miscellaneous Libs
+Copyright 2017-2019 The Apache Software Foundation
+
+Apache Commons CLI
+Copyright 2001-2017 The Apache Software Foundation
+
+Apache HBase Relocated (Shaded) Netty Libs
+Copyright 2017-2019 The Apache Software Foundation
+
+
+========================================================================
+
+hbase-shaded-miscellaneous NOTICE
+
+========================================================================
+
+
+Apache Commons Collections
+Copyright 2001-2018 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+Apache HBase Relocated (Shaded) Third-party Miscellaneous Libs
+Copyright 2017-2019 The Apache Software Foundation
+
+Apache Commons CLI
+Copyright 2001-2017 The Apache Software Foundation
+
+
+========================================================================
+
+hbase-shaded-netty NOTICE
+
+========================================================================
+
+
+Apache HBase Relocated (Shaded) Netty Libs
+Copyright 2017-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hbase-shaded-protobuf NOTICE
+
+========================================================================
+
+
+Apache HBase Patched & Relocated (Shaded) Protobuf
+Copyright 2017-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+---
+
+// Protocol Buffers - Google's data interchange format
+// Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+========================================================================
+
+hbase-zookeeper NOTICE
+
+========================================================================
+
+
+Apache HBase - Zookeeper
+Copyright 2007-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-classification NOTICE
+
+========================================================================
+
+
+Hive Classifications
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-common NOTICE
+
+========================================================================
+
+
+Hive Common
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-exec NOTICE
+
+========================================================================
+
+
+Hive Query Language
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-llap-client NOTICE
+
+========================================================================
+
+
+Hive Llap Client
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-llap-common NOTICE
+
+========================================================================
+
+
+Hive Llap Common
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-llap-tez NOTICE
+
+========================================================================
+
+
+Hive Llap Tez
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-serde NOTICE
+
+========================================================================
+
+
+Hive Serde
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-service-rpc NOTICE
+
+========================================================================
+
+
+Hive Service RPC
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-shims-0.23 NOTICE
+
+========================================================================
+
+
+Hive Shims 0.23
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-shims NOTICE
+
+========================================================================
+
+
+Hive Shims
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-shims-common NOTICE
+
+========================================================================
+
+
+Hive Shims Common
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-shims-scheduler NOTICE
+
+========================================================================
+
+
+Hive Shims Scheduler
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-storage-api NOTICE
+
+========================================================================
+
+
+Hive Storage API
+Copyright 2018 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-storage-api NOTICE
+
+========================================================================
+
+
+Hive Storage API
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-upgrade-acid NOTICE
+
+========================================================================
+
+
+Hive Upgrade Acid
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hive-vector-code-gen NOTICE
+
+========================================================================
+
+
+Hive Vector-Code-Gen Utilities
+Copyright 2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+htrace-core4-4.1.0 NOTICE
+
+========================================================================
+
+
+htrace-core4
+Copyright 2016 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+htrace-core4-4.2.0 NOTICE
+
+========================================================================
+
+
+htrace-core4
+Copyright 2016 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+httpclient NOTICE
+
+========================================================================
+
+
+Apache HttpClient
+Copyright 1999-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+httpclient NOTICE
+
+========================================================================
+
+
+Apache HttpClient
+Copyright 1999-2016 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+httpclient NOTICE
+
+========================================================================
+
+
+Apache HttpClient
+Copyright 1999-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+httpcore NOTICE
+
+========================================================================
+
+
+Apache HttpCore
+Copyright 2005-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+httpcore NOTICE
+
+========================================================================
+
+
+Apache HttpCore
+Copyright 2005-2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+httpcore NOTICE
+
+========================================================================
+
+
+Apache HttpCore
+Copyright 2005-2015 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+This project contains annotations derived from JCIP-ANNOTATIONS
+Copyright (c) 2005 Brian Goetz and Tim Peierls. See http://www.jcip.net
+
+========================================================================
+
+hubble-be NOTICE
+
+========================================================================
+
+
+hubble-be
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hubble-dist-1.0.0 NOTICE
+
+========================================================================
+
+
+hubble-dist
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hubble-dist NOTICE
+
+========================================================================
+
+
+hubble-dist
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hugegraph-client NOTICE
+
+========================================================================
+
+
+hugegraph-client
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hugegraph-common NOTICE
+
+========================================================================
+
+
+hugegraph-common
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hugegraph-loader-1.0.0 NOTICE
+
+========================================================================
+
+
+hugegraph-loader
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hugegraph-loader NOTICE
+
+========================================================================
+
+
+hugegraph-loader
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hugegraph-tools-1.0.0 NOTICE
+
+========================================================================
+
+
+hugegraph-tools
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+hugegraph-tools NOTICE
+
+========================================================================
+
+
+hugegraph-tools
+Copyright 2020 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+ivy NOTICE
+
+========================================================================
+
+Apache Ivy (TM)
+Copyright 2007-2014 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+Portions of Ivy were originally developed at
+Jayasoft SARL (http://www.jayasoft.fr/)
+and are licensed to the Apache Software Foundation under the
+"Software Grant License Agreement"
+
+SSH and SFTP support is provided by the JCraft JSch package, 
+which is open source software, available under
+the terms of a BSD style license.  
+The original software and related information is available
+at http://www.jcraft.com/jsch/.
+
+========================================================================
+
+ivy NOTICE
+
+========================================================================
+
+Apache Ivy (TM)
+Copyright 2007-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+Portions of Ivy were originally developed at
+Jayasoft SARL (http://www.jayasoft.fr/)
+and are licensed to the Apache Software Foundation under the
+"Software Grant License Agreement"
+
+SSH and SFTP support is provided by the JCraft JSch package, 
+which is open source software, available under
+the terms of a BSD style license.  
+The original software and related information is available
+at http://www.jcraft.com/jsch/.
+
+The Scp class is based on the SCPClient from the ganymed ssh
+library. Which has been distributed under the BSD style license
+included in the LICENSE file.
+
+========================================================================
+
+jackson-core NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-core NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers.
+
+## Licensing
+
+Jackson 2.x core and extension components are licensed under Apache License 2.0
+To find the details that apply to this artifact see the accompanying LICENSE file.
+
+## Credits
+
+A list of contributors may be found from CREDITS(-2.x) file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-core NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-core NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-core-asl NOTICE
+
+========================================================================
+
+This product currently only contains code developed by authors
+of specific components, as identified by the source code files;
+if such notes are missing files have been created by
+Tatu Saloranta.
+
+For additional credits (generally to people who reported problems)
+see CREDITS file.
+
+========================================================================
+
+jackson-databind NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers.
+
+## Licensing
+
+Jackson 2.x core and extension components are licensed under Apache License 2.0
+To find the details that apply to this artifact see the accompanying LICENSE file.
+
+## Credits
+
+A list of contributors may be found from CREDITS(-2.x) file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-databind NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may be licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-databind NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may be licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-jaxrs-json-provider NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may be licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+jackson-mapper-asl NOTICE
+
+========================================================================
+
+This product currently only contains code developed by authors
+of specific components, as identified by the source code files;
+if such notes are missing files have been created by
+Tatu Saloranta.
+
+For additional credits (generally to people who reported problems)
+see CREDITS file.
+
+========================================================================
+
+jackson-module-jaxb-annotations NOTICE
+
+========================================================================
+
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers, as well as supported
+commercially by FasterXML.com.
+
+## Licensing
+
+Jackson core and extension components may be licensed under different licenses.
+To find the details that apply to this artifact see the accompanying LICENSE file.
+For more information, including possible other licensing options, contact
+FasterXML.com (http://fasterxml.com).
+
+## Credits
+
+A list of contributors may be found from CREDITS file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+========================================================================
+
+kerb-admin NOTICE
+
+========================================================================
+
+
+Kerby-kerb Admin
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-client NOTICE
+
+========================================================================
+
+
+Kerby-kerb Client
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-common NOTICE
+
+========================================================================
+
+
+Kerby-kerb Common
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-core NOTICE
+
+========================================================================
+
+
+Kerby-kerb core
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-crypto NOTICE
+
+========================================================================
+
+
+Kerby-kerb Crypto
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-identity NOTICE
+
+========================================================================
+
+
+Kerby-kerb Identity
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-server NOTICE
+
+========================================================================
+
+
+Kerby-kerb Server
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-simplekdc NOTICE
+
+========================================================================
+
+
+Kerb Simple Kdc
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerb-util NOTICE
+
+========================================================================
+
+
+Kerby-kerb Util
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerby-asn1 NOTICE
+
+========================================================================
+
+
+Kerby ASN1 Project
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerby-config NOTICE
+
+========================================================================
+
+
+Kerby Config
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerby-pkix NOTICE
+
+========================================================================
+
+
+Kerby PKIX Project
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerby-util NOTICE
+
+========================================================================
+
+
+Kerby Util
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+kerby-xdr NOTICE
+
+========================================================================
+
+
+Kerby XDR Project
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+log4j-1.2-api NOTICE
+
+========================================================================
+
+
+Apache Log4j 1.x Compatibility API
+Copyright 1999-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+log4j-1.2-api NOTICE
+
+========================================================================
+
+
+Apache Log4j 1.x Compatibility API
+Copyright 1999-1969 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+log4j NOTICE
+
+========================================================================
+
+Apache log4j
+Copyright 2007 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+========================================================================
+
+log4j-api NOTICE
+
+========================================================================
+
+
+Apache Log4j API
+Copyright 1999-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+log4j-api NOTICE
+
+========================================================================
+
+
+Apache Log4j API
+Copyright 1999-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+log4j-core NOTICE
+
+========================================================================
+
+Apache Log4j Core
+Copyright 1999-2012 Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+ResolverUtil.java
+Copyright 2005-2006 Tim Fennell
+========================================================================
+
+log4j-slf4j-impl NOTICE
+
+========================================================================
+
+
+Apache Log4j SLF4J Binding
+Copyright 1999-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+log4j-to-slf4j NOTICE
+
+========================================================================
+
+
+Apache Log4j to SLF4J Adapter
+Copyright 1999-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+mybatis NOTICE
+
+========================================================================
+
+iBATIS
+   This product includes software developed by
+   The Apache Software Foundation (http://www.apache.org/).
+
+   Copyright 2010 The Apache Software Foundation
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+OGNL
+//--------------------------------------------------------------------------
+//  Copyright (c) 2004, Drew Davidson and Luke Blanshard
+//  All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are
+//  met:
+//
+//  Redistributions of source code must retain the above copyright notice,
+//  this list of conditions and the following disclaimer.
+//  Redistributions in binary form must reproduce the above copyright
+//  notice, this list of conditions and the following disclaimer in the
+//  documentation and/or other materials provided with the distribution.
+//  Neither the name of the Drew Davidson nor the names of its contributors
+//  may be used to endorse or promote products derived from this software
+//  without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+//  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+//  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+//  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+//  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+//  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+//  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+//  OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+//  AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+//  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
+//  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+//  DAMAGE.
+//--------------------------------------------------------------------------
+
+Refactored SqlBuilder class (SQL, AbstractSQL)
+
+   This product includes software developed by
+   Adam Gent (https://gist.github.com/3650165)
+
+   Copyright 2010 Adam Gent
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+========================================================================
+
+mybatis-spring NOTICE
+
+========================================================================
+
+MyBatis Spring
+Copyright 2010-2013
+
+This product includes software developed by
+The MyBatis Team (http://www.mybatis.org/).
+
+iBATIS
+   This product includes software developed by
+   The Apache Software Foundation (http://www.apache.org/).
+
+   Copyright 2010 The Apache Software Foundation
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+Spring Framework
+    All Spring projects are licensed under the terms of the Apache License, Version 2.0
+
+   Copyright 2002-2010 the original author or authors
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+========================================================================
+
+orc-core NOTICE
+
+========================================================================
+
+
+ORC Core
+Copyright 2013-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+orc-core NOTICE
+
+========================================================================
+
+
+ORC Core
+Copyright 2013-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+orc-shims NOTICE
+
+========================================================================
+
+
+ORC Shims
+Copyright 2013-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+orc-shims NOTICE
+
+========================================================================
+
+
+ORC Shims
+Copyright 2013-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+token-provider NOTICE
+
+========================================================================
+
+
+Token provider
+Copyright 2014-2017 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+
+
+========================================================================
+
+tomcat-embed-core NOTICE
+
+========================================================================
+
+Apache Tomcat
+Copyright 1999-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+The original XML Schemas for Java EE Deployment Descriptors:
+ - javaee_5.xsd
+ - javaee_web_services_1_2.xsd
+ - javaee_web_services_client_1_2.xsd
+ - javaee_6.xsd
+ - javaee_web_services_1_3.xsd
+ - javaee_web_services_client_1_3.xsd
+ - jsp_2_2.xsd
+ - web-app_3_0.xsd
+ - web-common_3_0.xsd
+ - web-fragment_3_0.xsd
+ - javaee_7.xsd
+ - javaee_web_services_1_4.xsd
+ - javaee_web_services_client_1_4.xsd
+ - jsp_2_3.xsd
+ - web-app_3_1.xsd
+ - web-common_3_1.xsd
+ - web-fragment_3_1.xsd
+ - javaee_8.xsd
+ - web-app_4_0.xsd
+ - web-common_4_0.xsd
+ - web-fragment_4_0.xsd
+
+may be obtained from:
+http://www.oracle.com/webfolder/technetwork/jsc/xml/ns/javaee/index.html
+
+========================================================================
+
+tomcat-embed-el NOTICE
+
+========================================================================
+
+Apache Tomcat
+Copyright 1999-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+========================================================================
+
+tomcat-embed-websocket NOTICE
+
+========================================================================
+
+Apache Tomcat
+Copyright 1999-2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+========================================================================
+
+Apache Commons Crypto NOTICE
+
+========================================================================
+
+Apache Commons Crypto
+Copyright 2016-2022 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
+
+========================================================================
+
+HPPC NOTICE
+
+========================================================================
+ACKNOWLEDGEMENT
+===============
+
+HPPC borrowed code, ideas or both from:
+
+ * Apache Lucene, http://lucene.apache.org/
+   (Apache license)
+ * Fastutil, http://fastutil.di.unimi.it/
+   (Apache license)
+ * Koloboke, https://github.com/OpenHFT/Koloboke
+   (Apache license)
+
+
+========================================================================
+
+aopalliance-repackaged NOTICE
+
+========================================================================
+
+# Notices for Eclipse GlassFish
+
+This content is produced and maintained by the Eclipse GlassFish project.
+
+* Project home: https://projects.eclipse.org/projects/ee4j.glassfish
+
+## Trademarks
+
+Eclipse GlassFish, and GlassFish are trademarks of the Eclipse Foundation.
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Public License v. 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
+available under the following Secondary Licenses when the conditions for such
+availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
+General Public License, version 2 with the GNU Classpath Exception which is
+available at https://www.gnu.org/software/classpath/license.html.
+
+SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+* https://github.com/eclipse-ee4j/glassfish-ha-api
+* https://github.com/eclipse-ee4j/glassfish-logging-annotation-processor
+* https://github.com/eclipse-ee4j/glassfish-shoal
+* https://github.com/eclipse-ee4j/glassfish-cdi-porting-tck
+* https://github.com/eclipse-ee4j/glassfish-jsftemplating
+* https://github.com/eclipse-ee4j/glassfish-hk2-extra
+* https://github.com/eclipse-ee4j/glassfish-hk2
+* https://github.com/eclipse-ee4j/glassfish-fighterfish
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+None
+
+## Cryptography
+
+Content may contain encryption software. The country in which you are currently
+may have restrictions on the import, possession, and use, and/or re-export to
+another country, of encryption software. BEFORE using any encryption software,
+please check the country's laws, regulations and policies concerning the import,
+possession, or use, and re-export of encryption software, to see if this is
+permitted.
+
+
+========================================================================
+
+Jakarta Activation Notices
+
+========================================================================
+
+# Notices for Jakarta Activation
+
+This content is produced and maintained by Jakarta Activation project.
+
+* Project home: https://projects.eclipse.org/projects/ee4j.jaf
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Distribution License v. 1.0,
+which is available at http://www.eclipse.org/org/documents/edl-v10.php.
+
+SPDX-License-Identifier: BSD-3-Clause
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+* https://github.com/eclipse-ee4j/jaf
+
+
+
+========================================================================
+
+Jakarta Dependency Injection Notices
+
+========================================================================
+
+# Notices for Eclipse Jakarta Dependency Injection
+
+This content is produced and maintained by the Eclipse Jakarta Dependency Injection project.
+
+* Project home: https://projects.eclipse.org/projects/cdi.batch
+
+## Trademarks
+
+Jakarta Dependency Injection is a trademark of the Eclipse Foundation.
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Apache License, Version 2.0 which is available at
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+https://github.com/eclipse-ee4j/injection-api
+https://github.com/eclipse-ee4j/injection-spec
+https://github.com/eclipse-ee4j/injection-tck
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+None
+
+## Cryptography
+
+None
+
+
+========================================================================
+
+Micrometer Injection Notices
+
+========================================================================
+
+Copyright (c) 2017-Present VMware, Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-------------------------------------------------------------------------------
+
+This product contains a modified portion of 'io.netty.util.internal.logging',
+in the Netty/Common library distributed by The Netty Project:
+
+  * Copyright 2013 The Netty Project
+  * License: Apache License v2.0
+  * Homepage: https://netty.io
+
+This product contains a modified portion of 'StringUtils.isBlank()',
+in the Commons Lang library distributed by The Apache Software Foundation:
+
+  * Copyright 2001-2019 The Apache Software Foundation
+  * License: Apache License v2.0
+  * Homepage: https://commons.apache.org/proper/commons-lang/
+
+This product contains a modified portion of 'JsonUtf8Writer',
+in the Moshi library distributed by Square, Inc:
+
+  * Copyright 2010 Google Inc.
+  * License: Apache License v2.0
+  * Homepage: https://github.com/square/moshi
+
+This product contains a modified portion of the 'org.springframework.lang'
+package in the Spring Framework library, distributed by VMware, Inc:
+
+  * Copyright 2002-2019 the original author or authors.
+  * License: Apache License v2.0
+  * Homepage: https://spring.io/projects/spring-framework
