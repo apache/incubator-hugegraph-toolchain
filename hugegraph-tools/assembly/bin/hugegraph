@@ -142,7 +142,7 @@ if [ "$JAVA_OPTIONS" = "" ] ; then
     JAVA_OPTIONS="-Xms${MIN_MEM}m -Xmx${XMX}m"
 fi
 
-tools_ext_jar_path=$LIB/hugegraph-tools-1.0.0.jar
+tools_ext_jar_path=$LIB/hugegraph-tools-*.jar
 for i in $LIB/*.jar; do tools_ext_jar_path=$tools_ext_jar_path:$i;  export tools_ext_jar_path; done
 exec $JAVA -Dtools.home.path=${TOP} $JAVA_OPTIONS -cp $tools_ext_jar_path \
 org.apache.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG "$@"
