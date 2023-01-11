@@ -85,7 +85,7 @@ jobs:
           echo "pwd"
           pwd
           echo "ls -a"
-          ls -a
+          ls -a hugegraph-hubble
           $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID
 
       - name: Unit test
