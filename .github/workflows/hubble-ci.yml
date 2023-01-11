@@ -75,7 +75,7 @@ jobs:
 
       - name: Compile
         run: |
-          mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
+          mvn install -pl hugegraph-client,hugegraph-loader,hugegraph-hubble -am -Dmaven.javadoc.skip=true -DskipTests -ntp
           cd hugegraph-hubble && ls *
           mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
