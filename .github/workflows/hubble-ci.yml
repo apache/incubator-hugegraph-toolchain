@@ -94,7 +94,6 @@ jobs:
           cd bin
           echo "start-hubble begin"
           ./start-hubble.sh -d
-          sleep 5
           echo "stop-hubble begin"
           ./stop-hubble.sh
           echo "cd root dir"
