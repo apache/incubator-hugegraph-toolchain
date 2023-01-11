@@ -85,10 +85,18 @@ jobs:
           cd hugegraph-hubble
           mvn package -Dmaven.test.skip=true
           cd apache-hugegraph-hubble-incubating*
+          echo "cd apache-hugegraph-hubble-incubating*, exec pwd"
+          pwd
+          echo "ls -a"
+          ls -a
           cd bin
+          echo "start-hubble begin"
           ./start-hubble.sh -d
           sleep 5
+          echo "stop-hubble begin"
           ./stop-hubble.sh
+          echo "cd root dir"
+          cd ../../
           $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID
 
       - name: Unit test
