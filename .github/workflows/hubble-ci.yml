@@ -84,8 +84,8 @@ jobs:
           sudo pip install -r ${TRAVIS_DIR}/requirements.txt
           echo "pwd"
           pwd
-          echo "pwd"
-          ls
+          echo "ls -a"
+          ls -a
           $TRAVIS_DIR/install-hugegraph.sh $COMMIT_ID
 
       - name: Unit test
