@@ -47,7 +47,7 @@ function get_params() {
     esac
   done
 
-  if [ $mode = 'cluster' ];then
+  if [ "$mode" = 'cluster' ];then
     HUGEGRAPH_PARAMS="$HUGEGRAPH_PARAMS --file ${file##*/}"
     ENGINE_PARAMS="$ENGINE_PARAMS --files ${file}"
   else

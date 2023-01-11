@@ -22,5 +22,5 @@ if [[ -z "$1" ]]; then
 fi
 
 path=$1
-find ${path} -type f -name "*" -print | xargs -i sed -i '1 s/^\xef\xbb\xbf//' {}
+find "${path}" -type f -name "*" -print | xargs -i sed -i '1 s/^\xef\xbb\xbf//' {}
 echo "Conversion completed"

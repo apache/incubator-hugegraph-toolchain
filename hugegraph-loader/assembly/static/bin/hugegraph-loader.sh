@@ -25,7 +25,7 @@ abs_path() {
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
-BIN=`abs_path`
+BIN=$(abs_path)
 TOP="$(cd ${BIN}/../ && pwd)"
 CONF="$TOP/conf"
 LIB="$TOP/lib"
