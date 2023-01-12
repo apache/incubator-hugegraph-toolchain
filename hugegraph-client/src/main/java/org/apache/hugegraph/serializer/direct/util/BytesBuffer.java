@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -25,10 +24,9 @@ import java.util.Date;
 import java.util.UUID;
 
 import org.apache.hugegraph.serializer.direct.struct.HugeType;
+import org.apache.hugegraph.structure.constant.DataType;
 import org.apache.hugegraph.util.Bytes;
 import org.apache.hugegraph.util.E;
-
-import org.apache.hugegraph.structure.constant.DataType;
 
 /**
  * class BytesBuffer is an util for read/write binary
