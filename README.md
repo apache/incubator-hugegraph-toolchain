@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Build Status](https://github.com/apache/hugegraph-toolchain/actions/workflows/ci.yml/badge.svg)](https://github.com/apache/hugegraph-toolchain/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/apache/hugegraph-toolchain/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/hugegraph-toolchain)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.baidu.hugegraph/hugegraph-loader/badge.svg)](https://mvnrepository.com/artifact/com.baidu.hugegraph/hugegraph-loader)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.apache.hugegraph/hugegraph-loader/badge.svg)](https://mvnrepository.com/artifact/org.apache.hugegraph/hugegraph-loader)
 
 `hugegraph-toolchain` is the integration project of a series of utilities for [HugeGraph](https://github.com/apache/hugegraph), it includes 4 main modules.
 
