@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-HOME_PATH=$(dirname $0)
+HOME_PATH=$(dirname "$0")
 HOME_PATH=$(cd "${HOME_PATH}"/.. && pwd)
 BIN_PATH=${HOME_PATH}/bin
 PID_FILE=${BIN_PATH}/pid
