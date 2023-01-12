@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -30,9 +29,9 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.collections.ListUtils;
-
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.exception.ToolsException;
+
 import com.google.common.collect.Lists;
 
 public class FileUtil {
