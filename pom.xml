@@ -441,6 +441,7 @@
                         <exclude>CONFIG.ini</exclude>
                         <exclude>GROUPS</exclude>
                         <exclude>OWNERS</exclude>
+                        <exclude>DISCLAIMER</exclude>
                         <!-- GitHub -->
                         <exclude>.github/**/*</exclude>
                         <!-- Intellij -->
