@@ -50,6 +50,7 @@ for jar in "${LIB_PATH}"/*.jar; do
 done
 
 java_opts="-Xms512m"
+java_debug_opts=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --help|-help|-h)
@@ -57,7 +58,7 @@ while [[ $# -gt 0 ]]; do
         exit 0
         ;;
         --debug|-d)
-        java_opts="$java_opts -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y"
+        java_debug_opts=" -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
         ;;
     esac
     shift
@@ -78,7 +79,8 @@ args=${CONF_PATH}/hugegraph-hubble.properties
 log=${LOG_PATH}/hugegraph-hubble.log
 
 echo -n "starting HugeGraphHubble "
-nohup nice -n 0 java -server "${java_opts}" -Dhubble.home.path="${HOME_PATH}" -cp "${class_path}" ${main_class} "${args}" > "${log}" 2>&1 < /dev/null &
+nohup nice -n 0 java -server ${java_opts} ${java_debug_opts} -Dhubble.home.path="${HOME_PATH}" \
+  -cp ${class_path} ${main_class} ${args} > ${log} 2>&1 < /dev/null &
 pid=$!
 echo ${pid} > "${PID_FILE}"
 

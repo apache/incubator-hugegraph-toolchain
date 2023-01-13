@@ -39,37 +39,37 @@ fi
 function abs_path() {
     SOURCE="${BASH_SOURCE[0]}"
     while [ -h "$SOURCE" ]; do
-        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
         SOURCE="$(readlink "$SOURCE")"
         [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
     done
-    echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    echo "$(cd -P "$(dirname "$SOURCE")" && pwd)"
 }
 
-BIN=`abs_path`
-. ${BIN}/util.sh
+BIN=$(abs_path)
+. "${BIN}"/util.sh
 
-`ensure_path_writable ${INSTALL_PATH}`
+ensure_path_writable "${INSTALL_PATH}"
 
 # Convert to absolute path
 INSTALL_PATH="$(cd ${INSTALL_PATH} && pwd)"
 
-cd ${BIN}
+cd ${BIN} || exit
 
 # Check input version can be found in version-map.yaml
-OPTIONAL_VERSIONS=`cat version-map.yaml | grep 'version' | awk -F ':' '{print $1}' | xargs`
-if [[ ! "$OPTIONAL_VERSIONS" =~ "$VERSION" ]]; then
+OPTIONAL_VERSIONS=$(cat version-map.yaml | grep 'version' | awk -F ':' '{print $1}' | xargs)
+if [[ ! "$OPTIONAL_VERSIONS" =~ $VERSION ]]; then
     echo "Invalid version '${VERSION}' for hugegraph, the optional values are [$OPTIONAL_VERSIONS]"
     exit 1
 fi
 
 # Parse module version from 'version-map.yaml'
-SERVER_VERSION=`parse_yaml version-map.yaml "${VERSION}" "server"`
+SERVER_VERSION=$(parse_yaml version-map.yaml "${VERSION}" "server")
 if [ "$SERVER_VERSION" = "" ]; then
     echo "Please check the format and content of file 'version-map.yaml' is normal"
     exit 1
 fi
-STUDIO_VERSION=`parse_yaml version-map.yaml "${VERSION}" "studio"`
+STUDIO_VERSION=$(parse_yaml version-map.yaml "${VERSION}" "studio")
 if [ "$STUDIO_VERSION" = "" ]; then
     echo "Please check the format and content of file 'version-map.yaml' is normal"
     exit 1
@@ -89,7 +89,7 @@ if [ ! -d "${STUDIO_DIR}" ]; then
 fi
 
 function start_hugegraph_server() {
-    $SERVER_DIR/bin/start-hugegraph.sh
+    "$SERVER_DIR"/bin/start-hugegraph.sh
     if [ $? -ne 0 ]; then
         echo "Failed to start HugeGraphServer, please check the logs under '$SERVER_DIR/logs' for details"
         exit 1
@@ -98,10 +98,10 @@ function start_hugegraph_server() {
 
 function start_hugegraph_studio() {
     # TODO: Let hugegraph-studio.sh can execute in any directory instead of $STUDIO_DIR
-    cd $STUDIO_DIR
+    cd $STUDIO_DIR || exit
 
-    local server_host=`read_property "conf/hugegraph-studio.properties" "studio.server.host"`
-    local server_port=`read_property "conf/hugegraph-studio.properties" "studio.server.port"`
+    local server_host=$(read_property "conf/hugegraph-studio.properties" "studio.server.host")
+    local server_port=$(read_property "conf/hugegraph-studio.properties" "studio.server.port")
     local server_url="http://${server_host}:${server_port}"
     local start_timeout_s=20
 
