@@ -47,7 +47,8 @@ public class ToolClient {
             info.username = "";
             info.password = "";
         }
-        String trustStoreFile, trustStorePassword;
+        String trustStoreFile;
+        String trustStorePassword;
         if (info.url.startsWith("https")) {
             if (info.trustStoreFile == null || info.trustStoreFile.isEmpty()) {
                 trustStoreFile = Paths.get(homePath(), DEFAULT_TRUST_STORE_FILE)

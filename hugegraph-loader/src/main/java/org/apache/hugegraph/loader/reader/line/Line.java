@@ -54,7 +54,7 @@ public final class Line {
         this.rawLine = rawLine;
     }
 
-    public final String[] names() {
+    public String[] names() {
         return this.names;
     }
 
@@ -62,7 +62,7 @@ public final class Line {
         this.names = names;
     }
 
-    public final Object[] values() {
+    public Object[] values() {
         return this.values;
     }
 

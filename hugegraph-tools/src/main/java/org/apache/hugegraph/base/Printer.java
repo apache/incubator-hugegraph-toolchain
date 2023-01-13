@@ -28,7 +28,7 @@ public class Printer {
         System.out.println(content);
     }
 
-    public static void print(String content, Object ... objects) {
+    public static void print(String content, Object... objects) {
         System.out.println(String.format(content, objects));
     }
 
