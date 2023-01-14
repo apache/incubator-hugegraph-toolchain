@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -20,12 +19,6 @@ package org.apache.hugegraph.api.auth;
 
 import java.util.List;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.auth.Group;
@@ -34,6 +27,11 @@ import org.apache.hugegraph.structure.auth.HugeResourceType;
 import org.apache.hugegraph.structure.auth.Target;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class AccessApiTest extends AuthApiTest {
 

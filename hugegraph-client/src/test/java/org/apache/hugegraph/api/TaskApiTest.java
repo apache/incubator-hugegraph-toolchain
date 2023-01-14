@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -26,15 +25,14 @@ import java.util.Set;
 
 import org.apache.hugegraph.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.api.task.TasksWithPage;
-import org.apache.hugegraph.testutil.Utils;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Utils;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class TaskApiTest extends BaseApiTest {
 
