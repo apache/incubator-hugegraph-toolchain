@@ -747,7 +747,7 @@ const VertexTypeList: React.FC = observer(() => {
                     dropdownMatchSelectWidth={false}
                     showSearch={false}
                     disabled={!isEditVertex}
-                    value={vertexTypeStore.editedSelectedVertexType.style.color}
+                    value={vertexTypeStore.editedSelectedVertexType.style.color?.toLowerCase()}
                     onChange={(value: string) => {
                       vertexTypeStore.mutateEditedSelectedVertexType({
                         ...vertexTypeStore.editedSelectedVertexType,
