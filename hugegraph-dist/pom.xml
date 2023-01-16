@@ -49,14 +49,15 @@
                                 <!-- TODO: change to assembly plugin in future  -->
                                 <echo file="${project.basedir}/dist.sh">
                                     root_path=$(cd $(dirname $0)/..; pwd)
-                                    cd $root_path
+                                    cd $root_path || exit
 
                                     mkdir -p ${final.name}
                                     mv -v $root_path/hugegraph-hubble/apache-hugegraph-hubble-incubating-${project.version} ${final.name}/
                                     mv -v $root_path/hugegraph-loader/apache-hugegraph-loader-incubating-${project.version} ${final.name}/
                                     mv -v $root_path/hugegraph-tools/apache-hugegraph-tools-incubating-${project.version} ${final.name}/
+                                    cp -v $root_path/LICENSE $root_path/NOTICE $root_path/DISCLAIMER ${final.name}/
 
-                                    tar -zcvf $root_path/target/${final.name}.tar.gz ./${final.name} || exit 1
+                                    tar zcvf $root_path/target/${final.name}.tar.gz ./${final.name} || exit 1
 
                                     md5sum $root_path/target/${final.name}.tar.gz
                                     echo -n "hugegraph-toolchain tar.gz available at: "
