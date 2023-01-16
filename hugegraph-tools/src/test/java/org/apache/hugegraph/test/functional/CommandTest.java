@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -18,11 +17,10 @@
 
 package org.apache.hugegraph.test.functional;
 
-import org.junit.Test;
-
 import org.apache.hugegraph.cmd.HugeGraphCommand;
 import org.apache.hugegraph.exception.ExitException;
 import org.apache.hugegraph.testutil.Assert;
+import org.junit.Test;
 
 public class CommandTest extends AuthTest {
 

@@ -114,6 +114,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
     {
       title: t('data-analyze.exec-logs.table-title.content'),
       dataIndex: 'content',
+      className: 'sql-content-clazz',
       width: '30%',
       render(text: string, rowData: ExecutionLogs) {
         return (
@@ -292,6 +293,7 @@ const ExecLogAndQueryCollections: React.FC = observer(() => {
       title: t('addition.operate.favorite-statement'),
       dataIndex: 'content',
       width: '40%',
+      className: 'sql-content-clazz',
       render(text: string, rowData: FavoriteQuery) {
         return (
           <ExecutionContent

@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -24,6 +23,7 @@ import java.util.Scanner;
 import org.apache.hugegraph.base.Printer;
 import org.apache.hugegraph.constant.Constants;
 import org.apache.hugegraph.exception.ExitException;
+
 import com.beust.jcommander.JCommander;
 
 public final class ToolUtil {
