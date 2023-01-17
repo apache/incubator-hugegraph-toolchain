@@ -23,7 +23,7 @@ HUBBLE_DIR=apache-hugegraph-hubble-*
 echo "$TRAVIS_DIR"
 pwd && mvn -e -X clean package -DskipTests -ntp
 
-wget https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/0.8.4/org.jacoco.agent-0.8.4.jar -o jacocoagent.jar
+wget https://github.com/apache/incubator-hugegraph-doc/raw/master/dist/server/jacocoagent.jar
 cp -v ./jacocoagent.jar $HUBBLE_DIR/lib || exit 1
 cp -v "${TRAVIS_DIR}"/start-hubble.sh $HUBBLE_DIR/bin || exit 1
 

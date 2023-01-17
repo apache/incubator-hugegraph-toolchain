@@ -23,6 +23,6 @@ cd hubble-be
 mvn jacoco:dump@pull-test-data -Dapp.host=localhost -Dapp.port=36320 -Dskip.dump=false
 cd ../
 
-wget https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.4/org.jacoco.cli-0.8.4.jar -o jacococli.jar
+wget https://github.com/apache/incubator-hugegraph-doc/raw/master/dist/server/jacococli.jar
 java -jar ./jacococli.jar report hubble-be/target/jacoco-it.exec \
      --classfiles hubble-be/target/classes/org/apache/hugegraph --xml report.xml
