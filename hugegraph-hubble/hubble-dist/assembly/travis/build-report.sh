@@ -22,5 +22,7 @@ TRAVIS_DIR=$(dirname "$0")
 cd hubble-be
 mvn jacoco:dump@pull-test-data -Dapp.host=localhost -Dapp.port=36320 -Dskip.dump=false
 cd ../
-java -jar "${TRAVIS_DIR}"/jacococli.jar report hubble-be/target/jacoco-it.exec \
+
+wget https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.4/org.jacoco.cli-0.8.4.jar -o jacococli.jar
+java -jar ./jacococli.jar report hubble-be/target/jacoco-it.exec \
      --classfiles hubble-be/target/classes/org/apache/hugegraph --xml report.xml
