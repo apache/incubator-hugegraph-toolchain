@@ -545,6 +545,7 @@ See licenses/ for text of these licenses.
 	(Apache License, Version 2.0, LGPL 2.1, MPL 1.1) * Javassist (org.javassist:javassist:3.28.0-GA - http://www.javassist.org/)
 	(Apache License, Version 2.0) * less (less:3.13.1 - https://github.com/less/less.js)
 	(Apache License, Version 2.0) * typescript (typescript:3.9.10 - https://github.com/Microsoft/TypeScript)
+	hugegraph-hubble/ui/favicon.ico
 	
 
 ========================================================================
