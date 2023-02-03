@@ -314,6 +314,11 @@
                         <exclude>**/*.lock</exclude>
                         <exclude>**/.prettierrc</exclude>
                         <exclude>**/.stylelintrc</exclude>
+                        <exclude>**/check_server_status.feature</exclude>
+                        <exclude>**/file_with_empty_line</exclude>
+                        <exclude>**/file_without_empty_line</exclude>
+                        <exclude>node_modules/**/*</exclude>
+                        <exclude>**/*.svg</exclude>
                         <!-- GitHub -->
                         <exclude>.github/**/*</exclude>
                         <!-- Intellij -->
