@@ -313,6 +313,7 @@
                         <exclude>**/*.json</exclude>
                         <exclude>**/*.lock</exclude>
                         <exclude>**/.prettierrc</exclude>
+                        <exclude>**/.stylelintrc</exclude>
                         <!-- GitHub -->
                         <exclude>.github/**/*</exclude>
                         <!-- Intellij -->
