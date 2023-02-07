@@ -30,7 +30,6 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 
 /**
- * @author jin
  * This class is a demo for rocksdb/HBase put(rowkey, values) which use Client-Side's graph struct
  * And we don't need to construct the graph element, just use it and transfer them to bytes array
  * instead of json format
