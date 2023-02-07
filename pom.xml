@@ -329,14 +329,6 @@
                         <!-- Maven -->
                         <exclude>.repository/**</exclude>
                         <exclude>**/.flattened-pom.xml</exclude>
-                        <!-- Hubble -->
-                        <exclude>.prettierrc</exclude>
-                        <exclude>.stylelintrc</exclude>
-                        <exclude>*.ts</exclude>
-                        <exclude>*.tsx</exclude>
-                        <exclude>*.less</exclude>
-                        <exclude>*.svg</exclude>
-                        <exclude>yarn.lock</exclude>
                     </excludes>
                     <consoleOutput>true</consoleOutput>
                 </configuration>
