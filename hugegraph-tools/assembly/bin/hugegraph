@@ -37,7 +37,7 @@ abs_path() {
 
 BIN=$(abs_path)
 TOP="$(cd $BIN/../ && pwd)"
-LIB=$TOP/lib:$JAVA_HOME/lib/ext:$JAVA_HOME/jre/lib/ext
+LIB=$TOP/lib
 
 . "$BIN"/util.sh
 

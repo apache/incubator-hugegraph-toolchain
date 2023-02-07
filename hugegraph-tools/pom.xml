@@ -193,12 +193,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -243,31 +237,16 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.0.0</version>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${project.basedir}</directory>
-                            <includes>
-                                <include>*.tar.gz</include>
-                                <include>${final.name}/**</include>
-                            </includes>
-                            <followSymlinks>false</followSymlinks>
-                        </fileset>
-                        <fileset>
-                            <directory>${final.name}</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
             </plugin>
         </plugins>
     </build>
 
     <profiles>
-        <!-- mvn clean install -Prelease -->
+        <!-- mvn clean install -Papache-release -->
         <profile>
-            <id>release</id>
+            <id>apache-release</id>
             <build>
                 <plugins>
                     <plugin>
@@ -299,8 +278,8 @@
                     <plugin>
                         <artifactId>maven-release-plugin</artifactId>
                         <configuration>
-                            <!--  Pass these arguments to the deploy plugin.  -->
-                            <arguments>-Prelease</arguments>
+                            <!--  Pass these arguments to the deployment plugin.  -->
+                            <arguments>-Papache-release</arguments>
                         </configuration>
                     </plugin>
                     <plugin>

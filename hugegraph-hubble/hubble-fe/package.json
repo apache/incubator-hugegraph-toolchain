@@ -49,8 +49,9 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
-    "test": "react-app-rewired test"
+    "build": "react-app-rewired build && npm run license",
+    "test": "react-app-rewired test",
+    "license": "node add-license.js"
   },
   "browserslist": {
     "production": [

@@ -200,3 +200,18 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+============================================================================
+   APACHE HUGEGRAPH (Incubating) SUBCOMPONENTS:
+
+   The Apache HugeGraph(Incubating) project contains subcomponents with separate copyright
+   notices and license terms. Your use of the source code for the these
+   subcomponents is subject to the terms and conditions of the following
+   licenses.
+
+========================================================================
+Apache 2.0 licenses
+========================================================================
+
+The following file are provided under the Apache 2.0 License.
+    hugegraph-hubble/hubble-fe/public/favicon.ico
+    hugegraph-hubble/hubble-fe/src/assets/imgs/logo.png
