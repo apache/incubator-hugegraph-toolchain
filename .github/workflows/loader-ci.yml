@@ -1,4 +1,4 @@
-name: hugegraph-loader-ci
+name: "hugegraph-loader-ci"
 
 on:
   push:
@@ -20,7 +20,7 @@ on:
 
 jobs:
   loader-ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
@@ -29,11 +29,11 @@ jobs:
       DB_PASS: root
       DB_DATABASE: load_test
     steps:
-      - name: Install JDK 8
+      - name: Install JDK 11
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
-          distribution: 'zulu'
+          java-version: '11'
+          distribution: 'adopt'
 
       - name: Cache Maven packages
         uses: actions/cache@v3
