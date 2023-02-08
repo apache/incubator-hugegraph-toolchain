@@ -1,19 +1,19 @@
 #!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
+# contributor license agreements. See the NOTICE file distributed with this
+# work for additional information regarding copyright ownership. The ASF
+# licenses this file to You under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 function abs_path() {
     SOURCE="${BASH_SOURCE[0]}"
@@ -25,10 +25,11 @@ function abs_path() {
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
-BIN=`abs_path`
-TOP=`dirname $BIN`
-cd $BIN
+BIN=$(abs_path)
+TOP=$(dirname "$BIN")
+cd "$BIN" || exit
 
+# TODO: $JAVA is unused now
 if [ -n "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME"/bin/java
 else
@@ -41,43 +42,43 @@ function parse_interval() {
 
 for((i=1;i<=$#;i+=2));
 do
-    current=`eval echo '${'$i'}'`
+    current=$(eval echo '${'"$i"'}')
     case "$current" in
         "--url")
-            URL=`eval echo '${'$(($i+1))'}'`
+            URL=$(eval echo '${'$((i+1))'}')
             URL_ARG="--url "$URL
             ;;
         "--graph")
-            GRAPH=`eval echo '${'$(($i+1))'}'`
+            GRAPH=$(eval echo '${'$((i+1))'}')
             GRAPH_ARG="--graph "$GRAPH
             ;;
         "--user")
-            USERNAME=`eval echo '${'$(($i+1))'}'`
+            USERNAME=$(eval echo '${'$((i+1))'}')
             USERNAME_ARG="--user "$USERNAME
             ;;
         "--password")
-            PASSWORD=`eval echo '${'$(($i+1))'}'`
+            PASSWORD=$(eval echo '${'$((i+1))'}')
             PASSWORD_ARG="--password "$PASSWORD
             ;;
         "--timeout")
-            TIMEOUT=`eval echo '${'$(($i+1))'}'`
+            TIMEOUT=$(eval echo '${'$((i+1))'}')
             TIMEOUT_ARG="--timeout "$TIMEOUT
             ;;
         "--interval")
-            position=$(($i+1))
+            position=$((i+1))
             INTERVAL=${@:$position:5}
             INTERVAL=${INTERVAL//\\/}
-            let i+=4
+            (( i+=4 ))
             ;;
         "--backup-num")
-            NUM=`eval echo '${'$(($i+1))'}'`
+            NUM=$(eval echo '${'$((i+1))'}')
             ;;
         "--directory"|"-d")
-            DIR=`eval echo '${'$(($i+1))'}'`
+            DIR=$(eval echo '${'$((i+1))'}')
             ;;
         *)
             echo "Invalid argument: $current"
-            bash $BIN/hugegraph
+            bash "$BIN"/hugegraph
             exit 1
     esac
 done
@@ -86,12 +87,12 @@ if [ -z "$DIR" ]; then
     echo "Must provide backup directory"
     exit 1
 else
-    if [ ${DIR:0:1} != "/" ]; then
+    if [ "${DIR:0:1}" != "/" ]; then
         DIR=$TOP"/"$DIR
     fi
 fi
 
-DIR=`dirname $DIR`/`basename $DIR`
+DIR=$(dirname $DIR)/$(basename $DIR)
 
 if [ -z "$GRAPH" ]; then
     GRAPH="hugegraph"

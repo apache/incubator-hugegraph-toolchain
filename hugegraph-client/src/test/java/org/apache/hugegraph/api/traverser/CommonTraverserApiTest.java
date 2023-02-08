@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -27,10 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.hugegraph.testutil.Utils;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.apache.hugegraph.api.BaseApiTest;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.constant.Direction;
@@ -43,6 +37,10 @@ import org.apache.hugegraph.structure.graph.Vertices;
 import org.apache.hugegraph.structure.traverser.CrosspointsRequest;
 import org.apache.hugegraph.structure.traverser.CustomizedCrosspoints;
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Utils;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 

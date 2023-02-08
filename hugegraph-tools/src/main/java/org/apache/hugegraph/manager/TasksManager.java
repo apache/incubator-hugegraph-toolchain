@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -25,6 +23,7 @@ import java.util.Set;
 import org.apache.hugegraph.base.ToolClient;
 import org.apache.hugegraph.base.ToolManager;
 import org.apache.hugegraph.structure.Task;
+
 import com.google.common.collect.ImmutableSet;
 
 public class TasksManager extends ToolManager {

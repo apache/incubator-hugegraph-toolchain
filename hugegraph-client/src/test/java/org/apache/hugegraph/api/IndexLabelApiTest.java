@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -25,11 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.apache.hugegraph.testutil.Utils;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.apache.hugegraph.exception.NotSupportException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.Task;
@@ -38,8 +31,12 @@ import org.apache.hugegraph.structure.constant.IndexType;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Utils;
 import org.apache.hugegraph.util.DateUtil;
 import org.apache.hugegraph.util.VersionUtil;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

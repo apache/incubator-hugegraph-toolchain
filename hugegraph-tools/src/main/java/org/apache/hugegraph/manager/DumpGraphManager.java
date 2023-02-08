@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -25,12 +23,12 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.formatter.Formatter;
-import org.apache.hugegraph.structure.JsonGraph;
 import org.apache.hugegraph.base.LocalDirectory;
 import org.apache.hugegraph.base.Printer;
 import org.apache.hugegraph.base.ToolClient;
 import org.apache.hugegraph.cmd.SubCommands;
+import org.apache.hugegraph.formatter.Formatter;
+import org.apache.hugegraph.structure.JsonGraph;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;

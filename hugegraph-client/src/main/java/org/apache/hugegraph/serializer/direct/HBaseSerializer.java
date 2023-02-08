@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -19,18 +17,18 @@
 
 package org.apache.hugegraph.serializer.direct;
 
+import java.util.Arrays;
+import java.util.Map;
+
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.serializer.direct.struct.HugeType;
 import org.apache.hugegraph.serializer.direct.util.BytesBuffer;
 import org.apache.hugegraph.serializer.direct.util.GraphSchema;
 import org.apache.hugegraph.serializer.direct.util.Id;
 import org.apache.hugegraph.serializer.direct.util.IdGenerator;
-import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.schema.PropertyKey;
-
-import java.util.Arrays;
-import java.util.Map;
 
 /**
  * TODO: review later

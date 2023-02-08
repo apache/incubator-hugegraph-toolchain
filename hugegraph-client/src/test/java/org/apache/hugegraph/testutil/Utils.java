@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -28,7 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
-
 import org.apache.hugegraph.date.SafeDateFormat;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.GraphElement;

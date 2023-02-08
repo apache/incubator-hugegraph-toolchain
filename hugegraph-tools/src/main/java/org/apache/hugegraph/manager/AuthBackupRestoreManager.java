@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -32,16 +30,14 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.constant.AuthRestoreConflictStrategy;
-import org.apache.hugegraph.exception.ToolsException;
-import org.apache.logging.log4j.util.Strings;
-
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.base.HdfsDirectory;
 import org.apache.hugegraph.base.LocalDirectory;
 import org.apache.hugegraph.base.Printer;
 import org.apache.hugegraph.base.ToolClient;
 import org.apache.hugegraph.cmd.SubCommands;
+import org.apache.hugegraph.constant.AuthRestoreConflictStrategy;
+import org.apache.hugegraph.exception.ToolsException;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.auth.Belong;
 import org.apache.hugegraph.structure.auth.Group;
@@ -50,6 +46,8 @@ import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.JsonUtil;
+import org.apache.logging.log4j.util.Strings;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 

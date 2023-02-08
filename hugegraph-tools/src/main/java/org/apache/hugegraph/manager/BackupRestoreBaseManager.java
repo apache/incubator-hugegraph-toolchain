@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -33,7 +31,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.exception.ToolsException;
 import org.apache.hugegraph.base.Directory;
 import org.apache.hugegraph.base.HdfsDirectory;
 import org.apache.hugegraph.base.LocalDirectory;
@@ -42,10 +39,12 @@ import org.apache.hugegraph.base.RetryManager;
 import org.apache.hugegraph.base.ToolClient;
 import org.apache.hugegraph.cmd.SubCommands;
 import org.apache.hugegraph.concurrent.KeyLock;
+import org.apache.hugegraph.exception.ToolsException;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableMap;
 
 public class BackupRestoreBaseManager extends RetryManager {

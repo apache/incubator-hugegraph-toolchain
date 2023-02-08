@@ -1,19 +1,19 @@
 #!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
+# contributor license agreements. See the NOTICE file distributed with this
+# work for additional information regarding copyright ownership. The ASF
+# licenses this file to You under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
 BASE_BRANCH="master"
 
@@ -40,18 +40,18 @@ fi
 function abs_path() {
     SOURCE="${BASH_SOURCE[0]}"
     while [ -h "$SOURCE" ]; do
-        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
         SOURCE="$(readlink "$SOURCE")"
         [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
     done
-    echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    echo "$(cd -P "$(dirname "$SOURCE")" && pwd)"
 }
 
 function ensure_path_writable() {
     local path=$1
     # Ensure input path exist
     if [ ! -d "${path}" ]; then
-        mkdir -p ${path}
+        mkdir -p "${path}"
         if [ $? -ne 0 ]; then
             echo "Failed to mkdir $path"
             exit 1
@@ -69,7 +69,7 @@ function replace() {
     from=$2
     to=$3
 
-    local os=`uname`
+    local os=$(uname)
     case $os in
         Darwin) sed -i '' "s!$from!$to!g" "$file" >/dev/null 2>&1 ;;
         *) sed -i "s!$from!$to!g" "$file" >/dev/null 2>&1 ;;
@@ -79,7 +79,7 @@ function replace() {
 # Ensure the project dir is valid
 ensure_path_writable $PROJECT_DIR
 
-cd $PROJECT_DIR
+cd $PROJECT_DIR || exit
 
 ################################################################################
 # Checkout release branch
@@ -92,7 +92,7 @@ fi
 
 git diff --quiet HEAD
 if [ $? -ne 0 ]; then
-    echo "There are uncommited changes in branch $BASE_BRANCH"
+    echo "There are uncommitted changes in branch $BASE_BRANCH"
     exit 1
 fi
 
@@ -113,14 +113,14 @@ fi
 # Modify README.md
 ################################################################################
 README="README.md"
-RELEASE_VERSION=`cat "pom.xml" | grep "<version>" | head -1 | awk -F '<|>' '{print $3}'`
+RELEASE_VERSION=$(cat "pom.xml" | grep "<version>" | head -1 | awk -F '<|>' '{print $3}')
 
 function update_readme_maven_version() {
     # Append version to maven repository link
     # Extract the Maven Central line, then split the badge and dependency link
-    MAVEN_LINK_LINE=`cat $README | grep 'Maven Central'`
-    OLD_MAVEN_BADGE_LINK=`echo $MAVEN_LINK_LINE | awk -F '[\\(|\\)]' '{print $2}'`
-    OLD_MAVEN_DEPEN_LINK=`echo $MAVEN_LINK_LINE | awk -F '[\\(|\\)]' '{print $4}'`
+    MAVEN_LINK_LINE=$(cat $README | grep 'Maven Central')
+    OLD_MAVEN_BADGE_LINK=$(echo $MAVEN_LINK_LINE | awk -F '[\\(|\\)]' '{print $2}')
+    OLD_MAVEN_DEPEN_LINK=$(echo $MAVEN_LINK_LINE | awk -F '[\\(|\\)]' '{print $4}')
 
     # Replace or append the branch name in maven badge link
     if [[ "$OLD_MAVEN_BADGE_LINK" =~ .*\?version=.* ]]; then
@@ -156,17 +156,17 @@ if [ ! -f "$README" ]; then
     echo "Skipping modify $README"
 else
     echo "Checkout to branch $RELEASE_BRANCH, ready to modify $README"
-    if [ `grep -c "Build Status" "$README"` -eq 1 ]; then
+    if [ $(grep -c "Build Status" "$README") -eq 1 ]; then
         # Replace old branch with new
         replace $README "branch=$BASE_BRANCH" "branch=$RELEASE_BRANCH"
         check_update_readme_status "Build Status" $?
     fi
-    if [ `grep -c "codecov" "$README"` -eq 1 ]; then
+    if [ $(grep -c "codecov" "$README") -eq 1 ]; then
         # Replace old branch with new
         replace $README "branch/$BASE_BRANCH" "branch/$RELEASE_BRANCH"
         check_update_readme_status "codecov" $?
     fi
-    if [ `grep -c "Maven Central" "$README"` -eq 1 ]; then
+    if [ $(grep -c "Maven Central" "$README") -eq 1 ]; then
         update_readme_maven_version
         check_update_readme_status "Maven Central" $?
     fi
@@ -186,32 +186,32 @@ fi
 ################################################################################
 function update_hugegraph_version() {
     # Second digit plus 1
-    BUMP_VERSION=`echo $RELEASE_VERSION | awk -F '.' '{prefix=$2}END{print $1"."prefix+1".0"}'`
+    BUMP_VERSION=$(echo $RELEASE_VERSION | awk -F '.' '{prefix=$2}END{print $1"."prefix+1".0"}')
     CORE_POM_XML_FILE="$PROJECT_DIR/hugegraph-core/pom.xml"
     CORE_VERSION_JAVA_FILE="$PROJECT_DIR/hugegraph-core/src/main/java/org/apache/hugegraph/version/CoreVersion.java"
     API_VERSION_JAVA_FILE="$PROJECT_DIR/hugegraph-api/src/main/java/org/apache/hugegraph/version/ApiVersion.java"
     # Replace Implementation-Version in core pom.xml
     replace $CORE_POM_XML_FILE "<Implementation-Version>.*</Implementation-Version>" \
-            "<Implementation-Version>$BUMP_VERSION.0</Implementation-Version>" || return 1
+        "<Implementation-Version>$BUMP_VERSION.0</Implementation-Version>" || return 1
     # Replace version in CoreVersion.java
     replace $CORE_VERSION_JAVA_FILE "Version.of(CoreVersion.class, \".*\")" \
-            "Version.of(CoreVersion.class, \"$BUMP_VERSION\")" || return 1
+        "Version.of(CoreVersion.class, \"$BUMP_VERSION\")" || return 1
     # Replace version in ApiVersion.java
     # Extract the first two digits of the version number
-    MIN_VERSION=`echo $BUMP_VERSION | awk -F '.' '{print $1"."$2}'`
+    MIN_VERSION=$(echo $BUMP_VERSION | awk -F '.' '{print $1"."$2}')
     # Second digit plus 1
-    MAX_VERSION=`echo $BUMP_VERSION | awk -F '.' '{prefix=$2}END{print $1"."prefix+1}'`
+    MAX_VERSION=$(echo $BUMP_VERSION | awk -F '.' '{prefix=$2}END{print $1"."prefix+1}')
     replace $API_VERSION_JAVA_FILE "VersionUtil.check(CoreVersion.VERSION, \".*\", \".*\", CoreVersion.NAME);" \
-            "VersionUtil.check(CoreVersion.VERSION, \"$MIN_VERSION\", \"$MAX_VERSION\", CoreVersion.NAME);" || return 1
+        "VersionUtil.check(CoreVersion.VERSION, \"$MIN_VERSION\", \"$MAX_VERSION\", CoreVersion.NAME);" || return 1
 }
 
 function update_general_component_version() {
     # Third digit plus 1
-    BUMP_VERSION=`echo $RELEASE_VERSION | awk -F '.' '{prefix=$3}END{print $1"."$2"."prefix+1}'`
+    BUMP_VERSION=$(echo $RELEASE_VERSION | awk -F '.' '{prefix=$3}END{print $1"."$2"."prefix+1}')
     POM_XML_FILE="$PROJECT_DIR/pom.xml"
     # Replace Implementation-Version in pom.xml
     replace $POM_XML_FILE "<Implementation-Version>.*</Implementation-Version>" \
-            "<Implementation-Version>$BUMP_VERSION.0</Implementation-Version>" || return 1
+        "<Implementation-Version>$BUMP_VERSION.0</Implementation-Version>" || return 1
 }
 
 function check_update_version_status() {
@@ -230,7 +230,7 @@ git checkout $BASE_BRANCH >/dev/null 2>&1 || exit 1
 echo "Checkout to branch $BASE_BRANCH, ready to bump pom version"
 
 if [ -f "pom.xml" ]; then
-    ARTIFACT=`cat "pom.xml" | grep "<artifactId>" | head -1 | awk -F '<|>' '{print $3}'`
+    ARTIFACT=$(cat "pom.xml" | grep "<artifactId>" | head -1 | awk -F '<|>' '{print $3}')
     # Bump up maven implementation version
     if [ "$ARTIFACT" = "hugegraph" ]; then
         update_hugegraph_version

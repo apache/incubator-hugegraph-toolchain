@@ -1,20 +1,21 @@
 #!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
+# contributor license agreements. See the NOTICE file distributed with this
+# work for additional information regarding copyright ownership. The ASF
+# licenses this file to You under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 #
+
 # Set environment here if needed
 #export HUGEGRAPH_URL=
 #export HUGEGRAPH_GRAPH=
@@ -27,20 +28,20 @@
 abs_path() {
     SOURCE="${BASH_SOURCE[0]}"
     while [ -h "$SOURCE" ]; do
-        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
         SOURCE="$(readlink "$SOURCE")"
         [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
     done
-    echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    echo "$(cd -P "$(dirname "$SOURCE")" && pwd)"
 }
 
-BIN=`abs_path`
+BIN=$(abs_path)
 TOP="$(cd $BIN/../ && pwd)"
-LIB=$TOP/lib:$JAVA_HOME/lib/ext:$JAVA_HOME/jre/lib/ext
+LIB=$TOP/lib
 
-. $BIN/util.sh
+. "$BIN"/util.sh
 
-MAX_MEM=$[96*1024]
+MAX_MEM=$((96 * 1024))
 MIN_MEM=512
 
 if [ -n "$JAVA_HOME" ]; then
@@ -52,19 +53,19 @@ fi
 
 if [ "$1" == "deploy" ]; then
     shift
-    bash $BIN/deploy.sh $@
+    bash $BIN/deploy.sh "$@"
     exit $?
 fi
 
 if [ "$1" == "start-all" ]; then
     shift
-    bash $BIN/start-all.sh $@
+    bash $BIN/start-all.sh "$@"
     exit $?
 fi
 
 if [ "$1" == "clear" ]; then
     shift
-    bash $BIN/clear.sh $@
+    bash $BIN/clear.sh "$@"
     exit $?
 fi
 
@@ -74,58 +75,57 @@ if [ "$1" == "stop-all" ]; then
 fi
 
 # Set default environment variables if not exist
-echo $* | grep "\--url" > /dev/null 2>&1
-if [ $? -ne 0 -a -n "$HUGEGRAPH_URL" ]; then
+echo "$@" | grep "\--url" >/dev/null 2>&1
+if [ $? -ne 0 ] && [ -n "$HUGEGRAPH_URL" ]; then
     URL_ARG="--url $HUGEGRAPH_URL"
 else
     URL_ARG=""
 fi
 
-echo $* | grep "\--graph " > /dev/null 2>&1
-if [ $? -ne 0 -a -n "$HUGEGRAPH_GRAPH" ]; then
+echo "$@" | grep "\--graph " >/dev/null 2>&1
+if [ $? -ne 0 ] && [ -n "$HUGEGRAPH_GRAPH" ]; then
     GRAPH_ARG="--graph $HUGEGRAPH_GRAPH"
 else
     GRAPH_ARG=""
 fi
 
-echo $* | grep "\--user" > /dev/null 2>&1
-if [ $? -ne 0 -a -n "$HUGEGRAPH_USERNAME" ]; then
+echo "$@" | grep "\--user" >/dev/null 2>&1
+if [ $? -ne 0 ] && [ -n "$HUGEGRAPH_USERNAME" ]; then
     USER_ARG="--user $HUGEGRAPH_USERNAME"
 else
     USER_ARG=""
 fi
 
-echo $* | grep "\--password" > /dev/null 2>&1
-if [ $? -ne 0 -a -n "$HUGEGRAPH_PASSWORD" ]; then
+echo "$@" | grep "\--password" >/dev/null 2>&1
+if [ $? -ne 0 ] && [ -n "$HUGEGRAPH_PASSWORD" ]; then
     PASSWORD_ARG="--password $HUGEGRAPH_PASSWORD"
 else
     PASSWORD_ARG=""
 fi
 
-echo $* | grep "\--timeout" > /dev/null 2>&1
+echo $* | grep "\--timeout" >/dev/null 2>&1
 if [ $? -ne 0 -a -n "$HUGEGRAPH_TIMEOUT" ]; then
     TIMEOUT_ARG="--timeout $HUGEGRAPH_TIMEOUT"
 else
     TIMEOUT_ARG=""
 fi
 
-echo $* | grep "\--trust-store-file" > /dev/null 2>&1
+echo $* | grep "\--trust-store-file" >/dev/null 2>&1
 if [ $? -ne 0 -a -n "$HUGEGRAPH_TRUST_STORE_FILE" ]; then
     TRUST_STORE_FILE_ARG="--trust-store-file $HUGEGRAPH_TRUST_STORE_FILE"
 else
     TRUST_STORE_FILE_ARG=""
 fi
 
-echo $* | grep "\--trust-store-password" > /dev/null 2>&1
+echo $* | grep "\--trust-store-password" >/dev/null 2>&1
 if [ $? -ne 0 -a -n "$HUGEGRAPH_TRUST_STORE_PASSWORD" ]; then
     TRUST_STORE_PASSWORD_ARG="--trust-store-password $HUGEGRAPH_TRUST_STORE_PASSWORD"
 else
     TRUST_STORE_PASSWORD_ARG=""
 fi
 
-for ((i=1;i<=$#;i++));
-do
-    if [ "`eval echo '$'"$i"`" == "schedule-backup" ]; then
+for ((i = 1; i <= $#; i++)); do
+    if [ "$(eval echo '$'"$i")" == "schedule-backup" ]; then
         ARGS=${*//schedule-backup/}
         bash $BIN/schedule-backup.sh $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG ${ARGS//'*'/'\*'}
         exit $?
@@ -133,8 +133,8 @@ do
 done
 
 # Set Java options
-if [ "$JAVA_OPTIONS" = "" ] ; then
-    XMX=`calc_xmx $MIN_MEM $MAX_MEM`
+if [ "$JAVA_OPTIONS" = "" ]; then
+    XMX=$(calc_xmx $MIN_MEM $MAX_MEM)
     if [ $? -ne 0 ]; then
         echo "Failed to run bin/hugegraph, requires at least ${MIN_MEM}m free memory"
         exit 1
@@ -142,5 +142,13 @@ if [ "$JAVA_OPTIONS" = "" ] ; then
     JAVA_OPTIONS="-Xms${MIN_MEM}m -Xmx${XMX}m"
 fi
 
-exec $JAVA -Dtools.home.path=${TOP} $JAVA_OPTIONS -cp $LIB/hugegraph-tools-*.jar -Djava.ext.dirs=$LIB/ \
-org.apache.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG "$@"
+# TODO: use xx=(/path/to/*.jar) instead
+tools_ext_jar_path=$LIB/hugegraph-tools-*.jar
+for i in "$LIB"/*.jar; do
+    tools_ext_jar_path=$tools_ext_jar_path:$i
+    export tools_ext_jar_path
+done
+
+exec $JAVA -Dtools.home.path=${TOP} $JAVA_OPTIONS -cp $tools_ext_jar_path \
+    org.apache.hugegraph.cmd.HugeGraphCommand $URL_ARG $GRAPH_ARG $USER_ARG $PASSWORD_ARG \
+    $TIMEOUT_ARG $TRUST_STORE_FILE_ARG $TRUST_STORE_PASSWORD_ARG "$@"

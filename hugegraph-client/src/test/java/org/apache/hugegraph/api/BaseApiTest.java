@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -22,25 +20,24 @@ package org.apache.hugegraph.api;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.hugegraph.BaseClientTest;
 import org.apache.hugegraph.api.graph.EdgeAPI;
 import org.apache.hugegraph.api.graph.VertexAPI;
 import org.apache.hugegraph.api.graphs.GraphsAPI;
 import org.apache.hugegraph.api.job.RebuildAPI;
-import org.apache.hugegraph.api.task.TaskAPI;
-import org.apache.hugegraph.api.variables.VariablesAPI;
-import org.apache.hugegraph.api.version.VersionAPI;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import org.apache.hugegraph.BaseClientTest;
 import org.apache.hugegraph.api.schema.EdgeLabelAPI;
 import org.apache.hugegraph.api.schema.IndexLabelAPI;
 import org.apache.hugegraph.api.schema.PropertyKeyAPI;
 import org.apache.hugegraph.api.schema.SchemaAPI;
 import org.apache.hugegraph.api.schema.VertexLabelAPI;
+import org.apache.hugegraph.api.task.TaskAPI;
+import org.apache.hugegraph.api.variables.VariablesAPI;
+import org.apache.hugegraph.api.version.VersionAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.VersionUtil;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public class BaseApiTest extends BaseClientTest {
 

@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -32,9 +30,6 @@ import org.apache.hugegraph.base.ToolClient;
 import org.apache.hugegraph.base.ToolManager;
 import org.apache.hugegraph.constant.Constants;
 import org.apache.hugegraph.exception.ExitException;
-import org.apache.hugegraph.util.ToolUtil;
-import org.apache.logging.log4j.util.Strings;
-
 import org.apache.hugegraph.manager.AuthBackupRestoreManager;
 import org.apache.hugegraph.manager.BackupManager;
 import org.apache.hugegraph.manager.DumpGraphManager;
@@ -47,6 +42,9 @@ import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.ToolUtil;
+import org.apache.logging.log4j.util.Strings;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.ParametersDelegate;

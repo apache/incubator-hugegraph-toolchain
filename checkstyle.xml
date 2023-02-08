@@ -39,10 +39,8 @@
             <message key="name.invalidPattern"  value="Package name ''{0}'' must match pattern ''{1}''."/>
         </module>
         <!--        <module name="ImportOrder">-->
-        <!--            <property name="staticGroups"-->
-        <!--                      value="org.apache,java,javax,org,com,com.baidu.hugegraph"/>-->
+        <!--            <property name="staticGroups" value="org.apache,java,javax,org"/>-->
         <!--            <property name="separatedStaticGroups" value="true"/>-->
-        <!--            <property name="groups" value="org.apache,java,javax,org,com,com.baidu.hugegraph"/>-->
         <!--            <property name="ordered" value="true"/>-->
         <!--            <property name="separated" value="true"/>-->
         <!--            <property name="option" value="top"/>-->

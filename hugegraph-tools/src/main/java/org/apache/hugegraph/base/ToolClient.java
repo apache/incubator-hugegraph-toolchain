@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -22,17 +20,17 @@ package org.apache.hugegraph.base;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.hugegraph.driver.AuthManager;
 import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.driver.GraphsManager;
 import org.apache.hugegraph.driver.GremlinManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.driver.TaskManager;
 import org.apache.hugegraph.driver.TraverserManager;
 import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.hugegraph.driver.GraphsManager;
 
 public class ToolClient {
 

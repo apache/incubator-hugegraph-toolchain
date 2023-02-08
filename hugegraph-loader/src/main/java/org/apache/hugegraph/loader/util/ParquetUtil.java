@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -26,19 +24,17 @@ import java.time.ZoneId;
 import java.time.temporal.JulianFields;
 import java.util.Date;
 
+import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.parquet.example.data.Group;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.Type;
-
-import org.apache.hugegraph.loader.exception.LoadException;
 
 public class ParquetUtil {
 
     public static Object convertObject(Group group, int fieldIndex) {
         Type fieldType = group.getType().getType(fieldIndex);
         if (!fieldType.isPrimitive()) {
-            throw new LoadException("Unsupported rich object type %s",
-                                    fieldType);
+            throw new LoadException("Unsupported rich object type %s", fieldType);
         }
         String fieldName = fieldType.getName();
         // Field is no value
@@ -72,7 +68,8 @@ public class ParquetUtil {
         return object;
     }
 
-    /*
+    /**
+     * TODO: ensure the refer is valid or rewrite it by ourselves
      * Reference:https://stackoverflow.com/questions/53690299/int96value-to-date-string
      */
     private static Date dateFromInt96(Binary value) {

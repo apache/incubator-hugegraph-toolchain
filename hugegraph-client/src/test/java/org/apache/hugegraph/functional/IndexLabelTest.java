@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -22,17 +20,14 @@ package org.apache.hugegraph.functional;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.schema.IndexLabel;
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.testutil.Utils;
+import org.apache.hugegraph.util.DateUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.apache.hugegraph.driver.SchemaManager;
-import org.apache.hugegraph.structure.schema.IndexLabel;
-
-import org.apache.hugegraph.testutil.Assert;
-import org.apache.hugegraph.util.DateUtil;
-
-import org.apache.hugegraph.testutil.Utils;
 
 import com.google.common.collect.ImmutableList;
 

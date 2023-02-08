@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -19,15 +17,15 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.WeightedPath;
 import org.apache.hugegraph.structure.traverser.WeightedPaths;
 import org.apache.hugegraph.testutil.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 
 public class SingleSourceShortestPathApiTest extends TraverserApiTest {

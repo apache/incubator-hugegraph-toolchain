@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -26,14 +24,13 @@ import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hugegraph.api.API;
+import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.structure.auth.Project;
+import org.apache.hugegraph.testutil.Assert;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import org.apache.hugegraph.exception.ServerException;
-import org.apache.hugegraph.structure.auth.Project;
-import org.apache.hugegraph.testutil.Assert;
 
 import com.google.common.collect.ImmutableSet;
 

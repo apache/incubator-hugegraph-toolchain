@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -26,10 +24,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.hugegraph.BaseClientTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import org.apache.hugegraph.BaseClientTest;
 
 public class BaseFuncTest extends BaseClientTest {
 

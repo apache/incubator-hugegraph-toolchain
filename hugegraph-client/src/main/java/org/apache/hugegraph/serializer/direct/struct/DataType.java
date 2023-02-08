@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -24,7 +22,6 @@ import java.util.UUID;
 
 import org.apache.hugegraph.serializer.direct.util.HugeException;
 import org.apache.hugegraph.serializer.direct.util.StringEncoding;
-
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.DateUtil;
 import org.apache.hugegraph.util.E;

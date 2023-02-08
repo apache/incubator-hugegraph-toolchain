@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -18,9 +16,6 @@
  */
 
 package org.apache.hugegraph.api;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 import org.apache.hugegraph.api.auth.AccessApiTest;
 import org.apache.hugegraph.api.auth.BelongApiTest;
@@ -49,6 +44,8 @@ import org.apache.hugegraph.api.traverser.ShortestPathApiTest;
 import org.apache.hugegraph.api.traverser.SingleSourceShortestPathApiTest;
 import org.apache.hugegraph.api.traverser.TemplatePathsApiTest;
 import org.apache.hugegraph.api.traverser.WeightedShortestPathApiTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({

@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -26,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hugegraph.structure.JsonGraph;
 import org.apache.hugegraph.formatter.Formatter;
+import org.apache.hugegraph.structure.JsonGraph;
 
 public class DumpKGFormatter implements Formatter {
 

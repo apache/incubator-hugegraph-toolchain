@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -33,10 +31,10 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
-
 import org.apache.hugegraph.exception.ToolsException;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableList;
 
 public class LocalDirectory extends Directory {

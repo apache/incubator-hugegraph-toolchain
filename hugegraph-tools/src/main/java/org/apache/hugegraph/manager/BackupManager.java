@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -37,13 +35,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.io.FileUtils;
-
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.exception.ToolsException;
 import org.apache.hugegraph.base.Printer;
 import org.apache.hugegraph.base.ToolClient;
 import org.apache.hugegraph.cmd.SubCommands;
 import org.apache.hugegraph.driver.TraverserManager;
+import org.apache.hugegraph.exception.ToolsException;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
@@ -55,6 +52,7 @@ import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 

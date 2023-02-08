@@ -1,5 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -31,6 +30,7 @@ import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.stereotype.Component;
 
 /**
+ * TODO: 404 not found & ensure if we need this class?
  * Reference http://www.zizhixiaoshe.com/article/invalidcookie.html
  */
 @Component
