@@ -68,10 +68,6 @@ public class ParquetUtil {
         return object;
     }
 
-    /**
-     * TODO: ensure the refer is valid or rewrite it by ourselves
-     * Reference:https://stackoverflow.com/questions/53690299/int96value-to-date-string
-     */
     private static Date dateFromInt96(Binary value) {
         byte[] int96Bytes = value.getBytes();
         // Find Julian day

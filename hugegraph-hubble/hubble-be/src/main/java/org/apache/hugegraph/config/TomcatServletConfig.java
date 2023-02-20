@@ -29,13 +29,10 @@ import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactor
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.stereotype.Component;
 
-/**
- * TODO: 404 not found & ensure if we need this class?
- * Reference http://www.zizhixiaoshe.com/article/invalidcookie.html
- */
+// TODO: remove this class if we don't need it anymore
 @Component
-public class TomcatServletConfig
-       implements WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
+public class TomcatServletConfig implements
+                                 WebServerFactoryCustomizer<TomcatServletWebServerFactory> {
 
     @Autowired
     private HugeConfig config;
