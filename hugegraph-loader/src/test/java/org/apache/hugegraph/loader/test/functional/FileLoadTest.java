@@ -2427,6 +2427,10 @@ public class FileLoadTest extends LoadTest {
         };
         if (this.ioUtil instanceof HDFSUtil) {
             HDFSUtil hdfsUtil = (HDFSUtil) this.ioUtil;
+            String url = "https://github.com/apache/incubator-hugegraph-doc/" +
+                         "raw/binary/dist/toolchain/vertex_person.parquet";
+            CommonUtil.downloadFileByUrl(url,
+                                         configPath("parquet_compress_file/vertex_person.parquet"));
             hdfsUtil.copy(configPath(
                           "parquet_compress_file/vertex_person.parquet"),
                           "hdfs://localhost:8020/files/vertex_person.parquet");
@@ -2438,8 +2442,7 @@ public class FileLoadTest extends LoadTest {
     }
 
     @Test
-    public void testNumberAndDatePrimaryKeysEncoded()
-           throws java.text.ParseException {
+    public void testNumberAndDatePrimaryKeysEncoded() {
         ioUtil.write("vertex_person.csv",
                      "id,name,age,city",
                      "100,marko,29,Beijing");
