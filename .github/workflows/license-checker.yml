@@ -52,7 +52,7 @@ jobs:
           grep "Binaries" merged-rat.txt -C 3 && cat merged-rat.txt
 
   check-dependency-license:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       SCRIPT_DEPENDENCY: hugegraph-dist/scripts/dependency
     steps:
