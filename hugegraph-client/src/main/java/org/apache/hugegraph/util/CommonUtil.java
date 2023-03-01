@@ -17,7 +17,12 @@
 
 package org.apache.hugegraph.util;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
 
 public final class CommonUtil {
 
@@ -39,6 +44,16 @@ public final class CommonUtil {
             E.checkState(vClass.isAssignableFrom(value.getClass()),
                          "The map value must be instance of %s, " +
                          "but got '%s'(%s)", vClass, value, value.getClass());
+        }
+    }
+
+    public static void downloadFileByUrl(String url, String destPath) {
+        int connectTimeout = 5000;
+        int readTimeout = 5000;
+        try {
+            FileUtils.copyURLToFile(new URL(url), new File(destPath), connectTimeout, readTimeout);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

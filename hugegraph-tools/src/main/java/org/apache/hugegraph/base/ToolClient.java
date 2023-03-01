@@ -34,12 +34,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ToolClient {
 
-    private static final String DEFAULT_TRUST_STORE_FILE =
-                                "conf/hugegraph.truststore";
+    private static final String DEFAULT_TRUST_STORE_FILE = "conf/hugegraph.truststore";
     private static final String DEFAULT_TRUST_STORE_PASSWORD = "hugegraph";
 
-    private HugeClient client;
-    private ObjectMapper mapper;
+    private final HugeClient client;
+    private final ObjectMapper mapper;
 
     public ToolClient(ConnectionInfo info) {
         if (info.username == null) {
@@ -125,13 +124,13 @@ public class ToolClient {
 
     public static class ConnectionInfo {
 
-        private String url;
-        private String graph;
+        private final String url;
+        private final String graph;
         private String username;
         private String password;
-        private Integer timeout;
-        private String trustStoreFile;
-        private String trustStorePassword;
+        private final Integer timeout;
+        private final String trustStoreFile;
+        private final String trustStorePassword;
 
         public ConnectionInfo(String url, String graph,
                               String username, String password,

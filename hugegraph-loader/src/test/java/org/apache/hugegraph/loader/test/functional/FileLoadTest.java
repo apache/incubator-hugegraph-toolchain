@@ -54,6 +54,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
+import org.apache.hugegraph.util.CommonUtil;
 import org.apache.hugegraph.util.LongEncoding;
 import org.junit.After;
 import org.junit.Before;
@@ -3043,6 +3044,8 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_person.csv",
                      "tiny,1,1,1",
                      "mary,2,2,2");
+
+        CommonUtil.downloadFileByUrl(FILE_URL, TRUST_STORE_PATH);
         String[] args = new String[]{
                 "-f", structPath("value_mapping/struct.json"),
                 "-s", configPath("value_mapping/schema.groovy"),
@@ -3050,7 +3053,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "-p", String.valueOf(HTTPS_PORT),
                 "--protocol", HTTPS_PROTOCOL,
-                "--trust-store-file", TRUST_STORE_FILE,
+                "--trust-store-file", TRUST_STORE_PATH,
                 "--trust-store-password", "hugegraph",
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
@@ -3060,7 +3063,7 @@ public class FileLoadTest extends LoadTest {
         HugeClient httpsClient = null;
         try {
             httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
-                                    .configSSL(TRUST_STORE_FILE, "hugegraph")
+                                    .configSSL(TRUST_STORE_PATH, "hugegraph")
                                     .build();
             List<Vertex> vertices = httpsClient.graph().listVertices();
             Assert.assertEquals(2, vertices.size());
@@ -3074,6 +3077,8 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_person.csv",
                      "marko,1,1,1",
                      "vadas,2,2,2");
+
+        CommonUtil.downloadFileByUrl(FILE_URL, TRUST_STORE_PATH);
         String[] args = new String[]{
                 "-f", structPath("value_mapping/struct.json"),
                 "-s", configPath("value_mapping/schema.groovy"),
@@ -3081,7 +3086,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "-p", String.valueOf(HTTPS_PORT),
                 "--protocol", HTTPS_PROTOCOL,
-                "--trust-store-file", TRUST_STORE_FILE,
+                "--trust-store-file", TRUST_STORE_PATH,
                 "--trust-store-password", "hugegraph",
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
@@ -3093,7 +3098,7 @@ public class FileLoadTest extends LoadTest {
         options.port = HTTPS_PORT;
         options.graph = GRAPH;
         options.protocol = HTTPS_PROTOCOL;
-        options.trustStoreFile = TRUST_STORE_FILE;
+        options.trustStoreFile = TRUST_STORE_PATH;
         options.trustStoreToken = "hugegraph";
 
         HugeClient httpsClient = null;

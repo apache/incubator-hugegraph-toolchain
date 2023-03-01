@@ -25,7 +25,9 @@ import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.CommonUtil;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -40,10 +42,17 @@ public class HugeClientHttpsTest {
     private static final int MAX_CONNS_PER_ROUTE = 10;
     private static final int MAX_CONNS = 10;
     private static final int IDLE_TIME = 30;
-    private static final String TRUST_STORE_FILE = "src/test/resources/hugegraph.truststore";
+    private static final String TRUST_STORE_PATH = "src/test/resources/hugegraph.truststore";
     private static final String TRUST_STORE_PASSWORD = "hugegraph";
 
     private static HugeClient client;
+
+    @Before
+    public void init() {
+        String url = "https://github.com/apache/incubator-hugegraph-doc/" +
+                     "raw/binary/dist/toolchain/hugegraph.truststore";
+        CommonUtil.downloadFileByUrl(url, TRUST_STORE_PATH);
+    }
 
     @After
     public void teardown() throws Exception {
@@ -55,7 +64,7 @@ public class HugeClientHttpsTest {
     public void testHttpsClientBuilderWithConnection() {
         client = HugeClient.builder(BASE_URL, GRAPH)
                            .configUser(USERNAME, PASSWORD)
-                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -66,7 +75,7 @@ public class HugeClientHttpsTest {
         client = HugeClient.builder(BASE_URL, GRAPH)
                            .configTimeout(TIMEOUT)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
-                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -77,7 +86,7 @@ public class HugeClientHttpsTest {
         client = HugeClient.builder(BASE_URL, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
-                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -88,7 +97,7 @@ public class HugeClientHttpsTest {
         client = HugeClient.builder(BASE_URL, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
-                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
@@ -100,7 +109,7 @@ public class HugeClientHttpsTest {
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
-                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .configIdleTime(IDLE_TIME)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
@@ -113,7 +122,7 @@ public class HugeClientHttpsTest {
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(0, 0)
-                           .configSSL(TRUST_STORE_FILE, TRUST_STORE_PASSWORD)
+                           .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
         Assert.assertTrue(client.graphs().listGraph().contains("hugegraph"));
         this.addVertexAndCheckPropertyValue();
