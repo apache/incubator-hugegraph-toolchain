@@ -36,7 +36,10 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
-
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
       # we also should cache python & yarn & downloads to avoid useless work
       - name: Cache Maven packages
         uses: actions/cache@v3
