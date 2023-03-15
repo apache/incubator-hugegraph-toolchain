@@ -5,7 +5,9 @@
 # The ASF licenses this file to You under the Apache License, Version 2.0
 # (the "License"); you may not use this file except in compliance with
 # the License.  You may obtain a copy of the License at
-#     http://www.apache.org/licenses/LICENSE-2.0
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,22 +15,37 @@
 # limitations under the License.
 #
 
-FROM ubuntu:xenial
+FROM maven:3.9.0-eclipse-temurin-11 AS build
+    
+RUN set -x \
+    && apt-get -q update \
+    && apt-get install -y nodejs npm \
+    && npm install --global yarn \
+    && apt-get clean
+
+COPY . /pkg
+WORKDIR /pkg
+
+RUN set -x \
+    && cd /pkg/hugegraph-hubble/ \
+    && mvn package -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
+    
+
+FROM openjdk:11-slim
 
 RUN set -x \
     && apt-get -q update \
-    && apt-get -q install -y --no-install-recommends --no-install-suggests \
-       curl \
-       lsof \
-       g++ \
-       gcc \
-       openjdk-8-jdk \
-    && apt-get clean
+    && apt-get -q install -y --no-install-recommends --no-install-suggests curl lsof g++ gcc \
+    && apt-get clean 
+    
+COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /hubble
 
-ENV HUBBLE_HOME /opt/hugegraph-hubble
-WORKDIR ${HUBBLE_HOME}
+RUN set -e \
+    && sed -i 82{s/nohup//g} /hubble/bin/start-hubble.sh \
+    && sed -i 83{s/\>.*//g} /hubble/bin/start-hubble.sh \
+    && sed -i '84,97d' /hubble/bin/start-hubble.sh
 
-COPY ./hugegraph-hubble $HUBBLE_HOME
+WORKDIR /hubble/
+
 EXPOSE 8088
-
 ENTRYPOINT ["./bin/start-hubble.sh"]
