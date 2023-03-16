@@ -27,7 +27,7 @@ env:
 
 jobs:
   hubble-ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       STATIC_DIR: hugegraph-hubble/hubble-dist/assembly/static
     steps:
