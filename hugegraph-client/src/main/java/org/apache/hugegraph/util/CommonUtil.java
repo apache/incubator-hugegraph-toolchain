@@ -26,6 +26,9 @@ import org.apache.commons.io.FileUtils;
 
 public final class CommonUtil {
 
+    public static final String PREFIX = "https://github.com/apache/incubator-hugegraph-doc/" +
+                                        "raw/binary/dist/toolchain/";
+
     public static void checkMapClass(Object object, Class<?> kClass,
                                      Class<?> vClass) {
         E.checkArgumentNotNull(object, "The object can't be null");
@@ -53,7 +56,7 @@ public final class CommonUtil {
         try {
             FileUtils.copyURLToFile(new URL(url), new File(destPath), connectTimeout, readTimeout);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to download file, please check the network", e);
         }
     }
 }

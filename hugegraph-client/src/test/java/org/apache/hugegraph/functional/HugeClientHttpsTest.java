@@ -49,9 +49,7 @@ public class HugeClientHttpsTest {
 
     @Before
     public void init() {
-        String url = "https://github.com/apache/incubator-hugegraph-doc/" +
-                     "raw/binary/dist/toolchain/hugegraph.truststore";
-        CommonUtil.downloadFileByUrl(url, TRUST_STORE_PATH);
+        CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "hugegraph.truststore", TRUST_STORE_PATH);
     }
 
     @After

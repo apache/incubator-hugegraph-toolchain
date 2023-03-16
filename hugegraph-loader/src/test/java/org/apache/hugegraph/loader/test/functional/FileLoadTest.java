@@ -2427,9 +2427,7 @@ public class FileLoadTest extends LoadTest {
         };
         if (this.ioUtil instanceof HDFSUtil) {
             HDFSUtil hdfsUtil = (HDFSUtil) this.ioUtil;
-            String url = "https://github.com/apache/incubator-hugegraph-doc/" +
-                         "raw/binary/dist/toolchain/vertex_person.parquet";
-            CommonUtil.downloadFileByUrl(url,
+            CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "vertex_person.parquet",
                                          configPath("parquet_compress_file/vertex_person.parquet"));
             hdfsUtil.copy(configPath(
                           "parquet_compress_file/vertex_person.parquet"),
