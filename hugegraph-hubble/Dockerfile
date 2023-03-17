@@ -16,7 +16,7 @@
 #
 
 FROM maven:3.9.0-eclipse-temurin-11 AS build
-    
+
 RUN set -x \
     && apt-get -q update \
     && apt-get install -y nodejs npm \
@@ -29,23 +29,12 @@ WORKDIR /pkg
 RUN set -x \
     && cd /pkg/hugegraph-hubble/ \
     && mvn package -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
-    
+
 
 FROM openjdk:11-slim
 
-RUN set -x \
-    && apt-get -q update \
-    && apt-get -q install -y --no-install-recommends --no-install-suggests curl lsof g++ gcc \
-    && apt-get clean 
-    
 COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /hubble
-
-RUN set -e \
-    && sed -i 82{s/nohup//g} /hubble/bin/start-hubble.sh \
-    && sed -i 83{s/\>.*//g} /hubble/bin/start-hubble.sh \
-    && sed -i '84,97d' /hubble/bin/start-hubble.sh
-
 WORKDIR /hubble/
 
 EXPOSE 8088
-ENTRYPOINT ["./bin/start-hubble.sh"]
+ENTRYPOINT ["./bin/start-hubble.sh", "-d false"]
