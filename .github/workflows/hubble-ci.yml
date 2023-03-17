@@ -89,7 +89,7 @@ jobs:
           mvn package -Dmaven.test.skip=true
           cd apache-hugegraph-hubble-incubating*
           cd bin
-          ./start-hubble.sh -d
+          ./start-hubble.sh -e
           ./stop-hubble.sh
           cd ../../../
           pwd
