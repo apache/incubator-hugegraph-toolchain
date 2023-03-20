@@ -44,11 +44,11 @@ done
 
 JAVA_OPTS="-Xms512m"
 JAVA_DEBUG_OPTS=""
-DAEMON="true"
+FOREGROUND="false"
 
 while getopts "f:d" arg; do
     case ${arg} in
-        f) DAEMON="$OPTARG" ;;
+        f) FOREGROUND="$OPTARG" ;;
         d) JAVA_DEBUG_OPTS=" -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n" ;;
         ?) echo "USAGE: $0 [-f true|false] [-d] " && exit 1 ;;
     esac
@@ -68,7 +68,7 @@ MAIN_CLASS="org.apache.hugegraph.HugeGraphHubble"
 ARGS=${CONF_PATH}/hugegraph-hubble.properties
 LOG=${LOG_PATH}/hugegraph-hubble.log
 
-if [[ $DAEMON == "true" ]]; then
+if [[ $FOREGROUND == "false" ]]; then
     echo "Starting Hubble in daemon mode..."
     nice -n 0 java -server ${JAVA_OPTS} ${JAVA_DEBUG_OPTS} -Dhubble.home.path="${HOME_PATH}" \
   -cp ${class_path} ${MAIN_CLASS} ${ARGS} > ${LOG} 2>&1 < /dev/null &
