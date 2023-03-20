@@ -37,4 +37,4 @@ COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /h
 WORKDIR /hubble/
 
 EXPOSE 8088
-ENTRYPOINT ["./bin/start-hubble.sh", "-d false"]
+ENTRYPOINT ["./bin/start-hubble.sh", "-f true"]
