@@ -46,11 +46,11 @@ JAVA_OPTS="-Xms512m"
 JAVA_DEBUG_OPTS=""
 DAEMON="true"
 
-while getopts "d:e" arg; do
+while getopts "f:d" arg; do
     case ${arg} in
-        d) DAEMON="$OPTARG" ;;
-        e) JAVA_DEBUG_OPTS=" -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n" ;;
-        ?) echo "USAGE: $0 [-d true|false] [-e] " && exit 1 ;;
+        f) DAEMON="$OPTARG" ;;
+        d) JAVA_DEBUG_OPTS=" -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n" ;;
+        ?) echo "USAGE: $0 [-f true|false] [-d] " && exit 1 ;;
     esac
 done
 
