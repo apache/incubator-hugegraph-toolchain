@@ -13,13 +13,13 @@
 ## Modules
 
 - [hugegraph-loader](./hugegraph-loader): Loading datasets into the HugeGraph from multiple data sources.
-- [hugegraph-hubble](./hugegraph-hubble): Online HugeGraph management and analysis dashboard (Include: data loading, schema management, graph traverser and display). We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start hubble.
+- [hugegraph-hubble](./hugegraph-hubble): Online HugeGraph management and analysis dashboard (Include: data loading, schema management, graph traverser and display). We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start [hubble](https://hub.docker.com/r/hugegraph/hubble).
 - [hugegraph-tools](./hugegraph-tools): Command line tool for deploying, managing and backing-up/restoring graphs from HugeGraph.
 - [hugegraph-client](./hugegraph-client): A Java-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc.
 
 ## Maven Dependencies
 
-You could use import the dependencies in maven like this
+You could use import the dependencies in `maven` like this:
 
 ```xml
   <dependency>
