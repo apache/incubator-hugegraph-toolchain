@@ -1,4 +1,4 @@
-# hugegraph-hubble
+# Apache HugeGraph-Hubble
 
 [![License](https://img.shields.io/badge/license-Apache%202-0E78BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![hugegraph-hubble-ci](https://github.com/apache/incubator-hugegraph-toolchain/actions/workflows/hubble-ci.yml/badge.svg?branch=master)](https://github.com/apache/incubator-hugegraph-toolchain/actions/workflows/hubble-ci.yml)
