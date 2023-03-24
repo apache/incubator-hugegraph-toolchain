@@ -2427,11 +2427,11 @@ public class FileLoadTest extends LoadTest {
         };
         if (this.ioUtil instanceof HDFSUtil) {
             HDFSUtil hdfsUtil = (HDFSUtil) this.ioUtil;
+            String path = configPath("parquet_compress_file/vertex_person.parquet");
+            CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "vertex_person.parquet", path);
             CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "vertex_person.parquet",
-                                         configPath("parquet_compress_file/vertex_person.parquet"));
-            hdfsUtil.copy(configPath(
-                          "parquet_compress_file/vertex_person.parquet"),
-                          "hdfs://localhost:8020/files/vertex_person.parquet");
+                                         "src/test/resources/parquet_compress_file/vertex_person.parquet");
+            hdfsUtil.copy(path, "hdfs://localhost:8020/files/vertex_person.parquet");
         }
         HugeGraphLoader.main(args);
 
