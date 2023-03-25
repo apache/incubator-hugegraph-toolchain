@@ -29,8 +29,8 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
-
 import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.CommonUtil;
 
 public class LoadTest {
 
@@ -43,7 +43,8 @@ public class LoadTest {
     protected static final String URL = String.format("http://%s:%s", SERVER, PORT);
     protected static final String HTTPS_URL = String.format("https://%s:%s", SERVER, HTTPS_PORT);
     protected static final String HTTPS_PROTOCOL = "https";
-    protected static final String TRUST_STORE_FILE = "assembly/travis/conf/hugegraph.truststore";
+    protected static final String TRUST_STORE_PATH = "assembly/travis/conf/hugegraph.truststore";
+    protected static final String FILE_URL = CommonUtil.PREFIX + "hugegraph.truststore";
     protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH).build();
 
     public static String configPath(String fileName) {
