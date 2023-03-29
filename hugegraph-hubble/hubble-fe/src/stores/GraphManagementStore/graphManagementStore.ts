@@ -221,6 +221,14 @@ export class GraphManagementStore {
   }
 
   @action
+  fillInGraphDataDefaultConfig() {
+    this.newGraphData.name = 'test';
+    this.newGraphData.graph = 'hugegraph';
+    this.newGraphData.host = '0.0.0.0';
+    this.newGraphData.port = '18080';
+  }
+
+  @action
   resetGraphDataConfig(type: 'new' | 'edit') {
     if (type === 'new') {
       Object.keys(this.newGraphData).forEach((key) => {
