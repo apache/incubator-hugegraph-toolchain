@@ -225,7 +225,7 @@ export class GraphManagementStore {
     this.newGraphData.name = 'test';
     this.newGraphData.graph = 'hugegraph';
     this.newGraphData.host = '0.0.0.0';
-    this.newGraphData.port = '18080';
+    this.newGraphData.port = '8080';
   }
 
   @action
