@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -145,7 +146,8 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
     public String getHFilePath(Configuration conf) throws IOException {
         FileSystem fs = FileSystem.get(conf);
         long timeStr = System.currentTimeMillis();
-        String pathStr = fs.getWorkingDirectory().toString() + "/hfile-gen" + "/" + timeStr + "/";
+        String uuid = UUID.randomUUID().toString();
+        String pathStr = fs.getWorkingDirectory().toString() + "/hfile-gen" + "/" + timeStr + "_" + uuid + "/";
         Path hfileGenPath = new Path(pathStr);
         if (fs.exists(hfileGenPath)) {
             LOG.info("\n Delete the path where the hfile is generated,path {} ", pathStr);
