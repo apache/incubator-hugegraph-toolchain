@@ -20,7 +20,6 @@ package org.apache.hugegraph.loader.util;
 import java.nio.file.Paths;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.HugeClientBuilder;
 import org.apache.hugegraph.exception.ServerException;
@@ -61,8 +60,7 @@ public final class HugeClientHolder {
                                     "The system property 'loader.home.path' " +
                                     "can't be null or empty when enable " +
                                     "https protocol");
-                    trustFile = Paths.get(homePath, Constants.TRUST_STORE_FILE)
-                                     .toString();
+                    trustFile = Paths.get(homePath, Constants.TRUST_STORE_PATH).toString();
                 } else {
                     trustFile = options.trustStoreFile;
                 }

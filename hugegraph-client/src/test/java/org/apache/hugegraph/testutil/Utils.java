@@ -135,10 +135,7 @@ public final class Utils {
         if (left.dataType() != right.dataType()) {
             return false;
         }
-        if (left.cardinality() != right.cardinality()) {
-            return false;
-        }
-        return true;
+        return left.cardinality() == right.cardinality();
     }
 
     public static boolean equalVertexLabel(VertexLabel left,
