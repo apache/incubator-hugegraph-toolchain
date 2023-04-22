@@ -37,7 +37,7 @@
     </description>
 
     <properties>
-        <hugegraph.common.version>1.0.0</hugegraph.common.version>
+        <hugegraph.common.version>1.0.1</hugegraph.common.version>
         <jersey.version>3.0.3</jersey.version>
         <mockito.version>2.8.47</mockito.version>
     </properties>
