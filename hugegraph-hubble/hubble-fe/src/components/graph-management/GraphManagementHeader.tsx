@@ -31,6 +31,9 @@ const GraphManagementHeader: React.FC = observer(() => {
   const { t } = useTranslation();
   const handleLayoutSwitch = useCallback(
     (flag: boolean) => () => {
+      if (flag) {
+        graphManagementStore.fillInGraphDataDefaultConfig();
+      }
       graphManagementStore.switchCreateNewGraph(flag);
     },
     [graphManagementStore]
