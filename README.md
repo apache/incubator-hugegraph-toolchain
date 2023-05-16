@@ -41,3 +41,11 @@ The [project homepage](https://hugegraph.apache.org/docs/quickstart/) contains m
 ## License
 
 hugegraph-toolchain is licensed under `Apache 2.0` License.
+
+## Contact Us
+
+- [Github Issues](https://github.com/apache/incubator-hugegraph-toolchain/issues): Feedback on usage issues and functional requirements (priority)
+- Feedback Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org)
+- WeChat public account: Apache HugeGraph, welcome to scan this QR code to follow us.
+
+<img src="https://raw.githubusercontent.com/apache/incubator-hugegraph-doc/master/assets/images/weixin.png" alt="WeChat">
