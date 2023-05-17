@@ -1,0 +1,37 @@
+{
+  "vertices": [
+    {
+      "label": "person",
+      "input": {
+        "type": "jdbc",
+        "vendor": "mysql",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://127.0.0.1:3306",
+        "database": "load_test",
+        "table": "person",
+        "username": "root",
+        "password": "root",
+        "batch_size": 2
+      },
+      "id": "id",
+      "null_values": ["NULL"],
+      "ignored": ["name","city"]
+    },
+    {
+      "label": "software",
+      "input": {
+        "type": "jdbc",
+        "vendor": "mysql",
+        "driver": "com.mysql.cj.jdbc.Driver",
+        "url": "jdbc:mysql://127.0.0.1:3306",
+        "database": "load_test",
+        "table": "software",
+        "username": "root",
+        "password": "root",
+        "batch_size": 2
+      },
+      "id": "id",
+      "ignored": ["name","lang"]
+    }
+  ]
+}

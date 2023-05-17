@@ -143,6 +143,10 @@ public final class DataTypeUtil {
             return parseDate(key, value, dateFormat, timeZone);
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
+        } else if (DataType.TEXT == dataType) {
+            if (!(rawValue instanceof String)) {
+                value = rawValue.toString();
+            }
         }
         E.checkArgument(checkDataType(key, value, dataType),
                         "The value(key='%s') '%s'(%s) is not match with " +
@@ -312,7 +316,7 @@ public final class DataTypeUtil {
      */
     private static boolean checkDataType(String key, Object value,
                                          DataType dataType) {
-        if (value instanceof Number) {
+        if (value instanceof Number && dataType.isNumber()) {
             return parseNumber(key, value, dataType) != null;
         }
         return dataType.clazz().isInstance(value);
