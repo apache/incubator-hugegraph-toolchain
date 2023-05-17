@@ -30,6 +30,9 @@ const GraphManagementEmptyList: React.FC = observer(() => {
 
   const handleLayoutSwitch = useCallback(
     (flag: boolean) => () => {
+      if (flag) {
+        graphManagementStore.fillInGraphDataDefaultConfig();
+      }
       graphManagementStore.switchCreateNewGraph(flag);
     },
     [graphManagementStore]
