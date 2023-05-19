@@ -334,15 +334,15 @@ public class HugeGraphSparkLoader implements Serializable {
                 BatchVertexRequest.Builder req =
                         new BatchVertexRequest.Builder();
                 req.vertices((List<Vertex>) (Object) graphElements)
-                    .updatingStrategies(updateStrategyMap)
-                    .createIfNotExist(true);
+                   .updatingStrategies(updateStrategyMap)
+                   .createIfNotExist(true);
                 g.updateVertices(req.build());
             } else {
                 BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                 req.edges((List<Edge>) (Object) graphElements)
-                    .updatingStrategies(updateStrategyMap)
-                    .checkVertex(isCheckVertex)
-                    .createIfNotExist(true);
+                   .updatingStrategies(updateStrategyMap)
+                   .checkVertex(isCheckVertex)
+                   .createIfNotExist(true);
                 g.updateEdges(req.build());
             }
         }
