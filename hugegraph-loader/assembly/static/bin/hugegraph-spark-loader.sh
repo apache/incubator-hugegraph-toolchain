@@ -35,4 +35,4 @@ CMD="${SPARK_HOME}/bin/spark-submit
     --jars $(echo "${LIB_DIR}"/*.jar | tr ' ' ',') ${ASSEMBLY_JAR_NAME} ${HUGEGRAPH_PARAMS}"
 
 echo "${CMD}"
-exec "${CMD}"
+exec ${CMD}
