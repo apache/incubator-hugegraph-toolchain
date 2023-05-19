@@ -143,7 +143,7 @@ public final class DataTypeUtil {
             return parseDate(key, value, dateFormat, timeZone);
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
-        } else if (DataType.TEXT == dataType) {
+        } else if (dataType.isText()) {
             if (!(rawValue instanceof String)) {
                 value = rawValue.toString();
             }
