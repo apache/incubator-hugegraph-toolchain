@@ -43,17 +43,20 @@ github:
         # strict means "Require branches to be up-to-date before merging".
         strict: true
         # contexts are the names of checks that must pass
-        contexts: []
-         # - build
-         # - Analyze (java)
+        contexts:
+          - check-license-header
+          - Analyze (java)
       required_pull_request_reviews:
         dismiss_stale_reviews: true
         require_code_owner_reviews: false
         required_approving_review_count: 2
 
 notifications:
+  # use https://selfserve.apache.org to manage it
   pullrequests_status: dev@hugegraph.apache.org
-  # Note: before use the config, we need ensure the "mail" address has set well (exist)
-  #pullrequests_comment: issues@hugegraph.apache.org
-  #issues: issues@hugegraph.apache.org
-  #discussions:  issues@hugegraph.apache.org
+  pullrequests_comment: issues@hugegraph.apache.org
+  pullrequests_bot_dependabot: issues@hugegraph.apache.org
+  issues: issues@hugegraph.apache.org
+  issues_status: dev@hugegraph.apache.org
+  issues_comment: issues@hugegraph.apache.org
+  discussions: dev@hugegraph.apache.org

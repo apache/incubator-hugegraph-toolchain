@@ -30,13 +30,6 @@ PID_FILE=${BIN_PATH}/pid
 
 . "${BIN_PATH}"/common_functions
 
-print_usage() {
-    echo "  usage: start-hubble.sh [options]"
-    echo "  options: "
-    echo "  -d,--debug      Start program in debug mode"
-    echo "  -h,--help       Display help information"
-}
-
 java_env_check
 
 if [[ ! -d ${LOG_PATH} ]]; then
@@ -49,49 +42,53 @@ for jar in "${LIB_PATH}"/*.jar; do
     class_path=${class_path}:${jar}
 done
 
-java_opts="-Xms512m"
-java_debug_opts=""
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --help|-help|-h)
-        print_usage
-        exit 0
-        ;;
-        --debug|-d)
-        java_debug_opts=" -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n"
-        ;;
+JAVA_OPTS="-Xms512m"
+JAVA_DEBUG_OPTS=""
+FOREGROUND="false"
+
+while getopts "f:d" arg; do
+    case ${arg} in
+        f) FOREGROUND="$OPTARG" ;;
+        d) JAVA_DEBUG_OPTS=" -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n" ;;
+        ?) echo "USAGE: $0 [-f true|false] [-d] " && exit 1 ;;
     esac
-    shift
 done
 
 if [[ -f ${PID_FILE} ]] ; then
-    pid=$(cat "${PID_FILE}")
-    if kill -0 "${pid}" > /dev/null 2>&1; then
-        echo "HugeGraphHubble is running as process ${pid}, please stop it first!"
+    PID=$(cat "${PID_FILE}")
+    if kill -0 "${PID}" > /dev/null 2>&1; then
+        echo "HugeGraphHubble is running as process ${PID}, please stop it first!"
         exit 1
     else
         rm "${PID_FILE}"
     fi
 fi
 
-main_class="org.apache.hugegraph.HugeGraphHubble"
-args=${CONF_PATH}/hugegraph-hubble.properties
-log=${LOG_PATH}/hugegraph-hubble.log
+MAIN_CLASS="org.apache.hugegraph.HugeGraphHubble"
+ARGS=${CONF_PATH}/hugegraph-hubble.properties
+LOG=${LOG_PATH}/hugegraph-hubble.log
 
-echo -n "starting HugeGraphHubble "
-nohup nice -n 0 java -server ${java_opts} ${java_debug_opts} -Dhubble.home.path="${HOME_PATH}" \
-  -cp ${class_path} ${main_class} ${args} > ${log} 2>&1 < /dev/null &
-pid=$!
-echo ${pid} > "${PID_FILE}"
+if [[ $FOREGROUND == "false" ]]; then
+    echo "Starting Hubble in daemon mode..."
+    nice -n 0 java -server ${JAVA_OPTS} ${JAVA_DEBUG_OPTS} -Dhubble.home.path="${HOME_PATH}" \
+  -cp ${class_path} ${MAIN_CLASS} ${ARGS} > ${LOG} 2>&1 < /dev/null &
+else
+    echo "Starting Hubble in foreground mode..."
+    nice -n 0 java -server ${JAVA_OPTS} ${JAVA_DEBUG_OPTS} -Dhubble.home.path="${HOME_PATH}" \
+  -cp ${class_path} ${MAIN_CLASS} ${ARGS} > ${LOG} 2>&1 < /dev/null
+fi
+
+PID=$!
+echo ${PID} > "${PID_FILE}"
 
 # wait hubble start
-timeout_s=30
-server_host=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.host)
-server_port=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.port)
-server_url="http://${server_host}:${server_port}/actuator/health"
+TIMEOUT_S=30
+SERVER_HOST=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.host)
+SERVER_PORT=$(read_property "${CONF_PATH}"/hugegraph-hubble.properties hubble.port)
+SERVER_URL="http://${SERVER_HOST}:${SERVER_PORT}/actuator/health"
 
-wait_for_startup "${server_url}" ${timeout_s} || {
-    cat "${log}"
+wait_for_startup "${SERVER_URL}" ${TIMEOUT_S} || {
+    cat "${LOG}"
     exit 1
 }
-echo "logging to ${log}, please check it"
+echo "logging to ${LOG}, please check it"
