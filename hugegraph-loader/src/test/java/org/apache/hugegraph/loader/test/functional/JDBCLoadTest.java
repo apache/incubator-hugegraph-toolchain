@@ -146,6 +146,7 @@ public class JDBCLoadTest extends LoadTest {
                 "-s", configPath("jdbc_customized_schema/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
+                "-p", String.valueOf(PORT),
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -173,6 +174,7 @@ public class JDBCLoadTest extends LoadTest {
                 "-s", configPath("jdbc_customized_schema/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
+                "-p", String.valueOf(PORT),
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -196,6 +198,7 @@ public class JDBCLoadTest extends LoadTest {
                 "-s", configPath("jdbc_value_mapping/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
+                "-p", String.valueOf(PORT),
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
@@ -207,5 +210,37 @@ public class JDBCLoadTest extends LoadTest {
                        "age", 29, "city", "Beijing");
         assertContains(vertices, "person", "name", "vadas",
                        "age", 27, "city", "Shanghai");
+    }
+
+    @Test
+    public void testNumberToStringInJDBCSource() {
+        dbUtil.insert("INSERT INTO `person` VALUES " +
+                "(1,'marko',29,'Beijing')," +
+                "(2,'vadas',27,'HongKong')," +
+                "(3,'josh',32,'Beijing')," +
+                "(4,'peter',35,'Shanghai')," +
+                "(5,'li,nary',26,'Wu,han')," +
+                "(6,'tom',NULL,NULL);");
+
+        dbUtil.insert("INSERT INTO `software` VALUES " +
+                "(100,'lop','java',328.08)," +
+                "(200,'ripple','java',199.67);");
+
+        String[] args = new String[]{
+                "-f", configPath("jdbc_number_to_string/struct.json"),
+                "-s", configPath("jdbc_number_to_string/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+
+        Assert.assertEquals(8, vertices.size());
+        assertContains(vertices, "person", "age", "29");
+        assertContains(vertices, "software", "price", "199.67");
     }
 }
