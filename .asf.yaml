@@ -53,7 +53,7 @@ github:
 
 notifications:
   # use https://selfserve.apache.org to manage it
-  pullrequests_status: dev@hugegraph.apache.org
+  pullrequests_status: issues@hugegraph.apache.org
   pullrequests_comment: issues@hugegraph.apache.org
   pullrequests_bot_dependabot: issues@hugegraph.apache.org
   issues: issues@hugegraph.apache.org
