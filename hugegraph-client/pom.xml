@@ -37,31 +37,24 @@
     </description>
 
     <properties>
-        <hugegraph.common.version>1.0.0</hugegraph.common.version>
-        <jersey.version>3.0.3</jersey.version>
-        <mockito.version>2.8.47</mockito.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
-            <version>${hugegraph.common.version}</version>
         </dependency>
         <dependency>
             <groupId>org.lz4</groupId>
             <artifactId>lz4-java</artifactId>
-            <version>1.4.0</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet</artifactId>
-            <version>${jersey.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
