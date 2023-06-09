@@ -57,6 +57,6 @@ notifications:
   pullrequests_comment: issues@hugegraph.apache.org
   pullrequests_bot_dependabot: issues@hugegraph.apache.org
   issues: issues@hugegraph.apache.org
-  issues_status: dev@hugegraph.apache.org
+  issues_status: issues@hugegraph.apache.org
   issues_comment: issues@hugegraph.apache.org
   discussions: dev@hugegraph.apache.org
