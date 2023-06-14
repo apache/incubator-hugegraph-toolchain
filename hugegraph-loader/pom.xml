@@ -84,6 +84,10 @@
                     <artifactId>jersey-server</artifactId>
                     <groupId>org.glassfish.jersey.core</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>gson</artifactId>
+                    <groupId>com.google.code.gson</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -346,10 +350,6 @@
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-compress</artifactId>
                 </exclusion>
-                <exclusion>
-                    <artifactId>gson</artifactId>
-                    <groupId>com.google.code.gson</groupId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -505,10 +505,6 @@
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-mapreduce-client-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>gson</artifactId>
-                    <groupId>com.google.code.gson</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
