@@ -17,11 +17,14 @@
 
 package org.apache.hugegraph.loader.spark;
 
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.loader.builder.EdgeBuilder;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
 import org.apache.hugegraph.loader.builder.VertexBuilder;
 import org.apache.hugegraph.loader.direct.loader.HBaseDirectLoader;
+import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.metrics.LoadDistributeMetrics;
@@ -77,7 +80,7 @@ public class HugeGraphSparkLoader implements Serializable {
     private final LoadOptions loadOptions;
     private final Map<ElementBuilder, List<GraphElement>> builders;
 
-    private final ExecutorService executor;
+    private final transient ExecutorService executor;
 
     public static void main(String[] args) {
         HugeGraphSparkLoader loader;
@@ -95,6 +98,32 @@ public class HugeGraphSparkLoader implements Serializable {
         this.executor = Executors.newCachedThreadPool();
     }
 
+    private void  registerKryoClasses (SparkConf conf) {
+        try {
+            conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+                .set("spark.kryo.registrationRequired", "true")
+                .registerKryoClasses(new Class[] {
+                    ImmutableBytesWritable.class,
+                    KeyValue.class,
+                    org.apache.spark.sql.types.StructType.class,
+                    StructField[].class,
+                    StructField.class,
+                    org.apache.spark.sql.types.LongType$.class,
+                    org.apache.spark.sql.types.Metadata.class,
+                    org.apache.spark.sql.types.StringType$.class,
+                    org.apache.spark.sql.catalyst.InternalRow.class,
+                    org.apache.spark.sql.catalyst.InternalRow[].class,
+                    Class.forName("org.apache.spark.internal.io." +
+                            "FileCommitProtocol$TaskCommitMessage"),
+                    Class.forName("scala.collection.immutable.Set$EmptySet$"),
+                    Class.forName("org.apache.spark.sql.types.DoubleType$")
+                    });
+        } catch (ClassNotFoundException e) {
+            LOG.error("spark kryo serialized registration failed");
+            throw new LoadException("spark kryo serialized registration failed", e);
+        }
+    }
+
     public void load() throws ExecutionException, InterruptedException {
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
@@ -102,29 +131,9 @@ public class HugeGraphSparkLoader implements Serializable {
         if (!sinkType) {
             this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         }
-        // kryo序列化
-        SparkConf conf = new SparkConf().set("spark.serializer",
-                                             "org.apache.spark.serializer.KryoSerializer")
-                                        .set("spark.kryo.registrationRequired", "true");
-        try {
-            conf.registerKryoClasses(new Class[]{
-                    org.apache.hadoop.hbase.io.ImmutableBytesWritable.class,
-                    org.apache.hadoop.hbase.KeyValue.class,
-                    org.apache.spark.sql.types.StructType.class,
-                    StructField[].class,
-                    StructField.class,
-                    org.apache.spark.sql.types.LongType$.class,
-                    org.apache.spark.sql.types.Metadata.class,
-                    org.apache.spark.sql.types.StringType$.class,
-                    Class.forName(
-                            "org.apache.spark.internal.io.FileCommitProtocol$TaskCommitMessage"),
-                    Class.forName("scala.reflect.ClassTag$$anon$1"),
-                    Class.forName("scala.collection.immutable.Set$EmptySet$"),
-                    Class.forName("org.apache.spark.sql.types.DoubleType$")
-            });
-        } catch (ClassNotFoundException e) {
-            LOG.error("spark kryo serialized registration failed");
-        }
+
+        SparkConf conf = new SparkConf();
+        registerKryoClasses(conf);
         SparkSession session = SparkSession.builder().config(conf).getOrCreate();
         SparkContext sc = session.sparkContext();
 
