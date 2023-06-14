@@ -293,8 +293,8 @@ public class HugeGraphSparkLoader implements Serializable {
             case HDFS:
                 FileSource fileSource = struct.input().asFileSource();
                 String delimiter = fileSource.delimiter();
-                elements = builder.build(fileSource.header(),
-                                         row.mkString(delimiter).split(delimiter));
+
+                elements = builder.build(row);
                 break;
             case JDBC:
                 Object[] structFields = JavaConverters.asJavaCollection(row.schema().toList())
