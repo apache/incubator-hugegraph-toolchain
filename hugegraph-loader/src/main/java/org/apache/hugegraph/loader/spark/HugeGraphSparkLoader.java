@@ -80,7 +80,7 @@ public class HugeGraphSparkLoader implements Serializable {
     private final LoadOptions loadOptions;
     private final Map<ElementBuilder, List<GraphElement>> builders;
 
-    private final ExecutorService executor;
+    private final transient ExecutorService executor;
 
     public static void main(String[] args) {
         HugeGraphSparkLoader loader;
