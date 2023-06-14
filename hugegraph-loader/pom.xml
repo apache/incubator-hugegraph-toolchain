@@ -614,6 +614,55 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.glassfish.jersey</pattern>
+                                    <shadedPattern>shaded.org.glassfish.jersey</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>jakarta.ws.rs</pattern>
+                                    <shadedPattern>shaded.jakarta.ws.rs</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google.common.base</pattern>
+                                    <shadedPattern>shaded.com.google.common.base</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.glassfish.hk2</pattern>
+                                    <shadedPattern>shaded.org.glassfish.hk2</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jvnet.hk2</pattern>
+                                    <shadedPattern>shaded.org.jvnet.hk2</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer">
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>
                 <executions>
