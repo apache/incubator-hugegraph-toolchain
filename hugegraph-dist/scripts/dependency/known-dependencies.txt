@@ -77,6 +77,7 @@ flatbuffers-1.2.0-3f79e055.jar
 flatbuffers-java-1.9.0.jar
 groovy-all-2.4.21.jar
 gson-2.2.4.jar
+gson-2.8.5.jar
 gson-2.8.9.jar
 guava-25.1-jre.jar
 guava-30.0-jre.jar
