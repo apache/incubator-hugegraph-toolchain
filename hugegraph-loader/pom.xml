@@ -48,11 +48,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <artifactId>gson</artifactId>
-            <groupId>com.google.code.gson</groupId>
-            <version>${gson.version}</version>
-        </dependency>
         <!-- use a fixed jackson for loader -->
         <dependency>
           <groupId>com.fasterxml.jackson.module</groupId>
@@ -95,6 +90,11 @@
                     <groupId>com.google.code.gson</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <artifactId>gson</artifactId>
+            <groupId>com.google.code.gson</groupId>
+            <version>${gson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -633,6 +633,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <finalName>${final.name}-shaded</finalName>
                             <relocations>
                                 <relocation>
                                     <pattern>org.glassfish.jersey</pattern>
