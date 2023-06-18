@@ -28,8 +28,7 @@
     <name>${project.artifactId}</name>
     <url>https://github.com/apache/incubator-hugegraph-toolchain</url>
     <description>
-        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it
-        includes 4 main modules (loader/hubble/tools/client)
+        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it includes 4 main modules (loader/hubble/tools/client)
     </description>
 
     <parent>
@@ -47,43 +46,45 @@
     </licenses>
 
     <developers>
-      <developer>
-        <id>Apache Hugegraph(Incubating)</id>
-        <email>dev-subscribe@hugegraph.apache.org</email>
-        <url>https://hugegraph.apache.org/</url>
-      </developer>
+        <developer>
+            <id>Apache Hugegraph(Incubating)</id>
+            <email>dev-subscribe@hugegraph.apache.org</email>
+            <url>https://hugegraph.apache.org/</url>
+        </developer>
     </developers>
 
     <mailingLists>
-      <mailingList>
-        <name>Developer List</name>
-        <subscribe>dev-subscribe@hugegraph.apache.org</subscribe>
-        <unsubscribe>dev-unsubscribe@hugegraph.apache.org</unsubscribe>
-        <post>dev@hugegraph.incubator.apache.org</post>
-      </mailingList>
-      <mailingList>
-        <name>Commits List</name>
-        <subscribe>commits-subscribe@hugegraph.apache.org</subscribe>
-        <unsubscribe>commits-unsubscribe@hugegraph.apache.org</unsubscribe>
-        <post>commits@hugegraph.apache.org</post>
-      </mailingList>
-      <mailingList>
-        <name>Issues List</name>
-        <subscribe>issues-subscribe@hugegraph.apache.org</subscribe>
-        <unsubscribe>issues-unsubscribe@hugegraph.apache.org</unsubscribe>
-        <post>issues@hugegraph.apache.org</post>
-      </mailingList>
+        <mailingList>
+            <name>Developer List</name>
+            <subscribe>dev-subscribe@hugegraph.apache.org</subscribe>
+            <unsubscribe>dev-unsubscribe@hugegraph.apache.org</unsubscribe>
+            <post>dev@hugegraph.incubator.apache.org</post>
+        </mailingList>
+        <mailingList>
+            <name>Commits List</name>
+            <subscribe>commits-subscribe@hugegraph.apache.org</subscribe>
+            <unsubscribe>commits-unsubscribe@hugegraph.apache.org</unsubscribe>
+            <post>commits@hugegraph.apache.org</post>
+        </mailingList>
+        <mailingList>
+            <name>Issues List</name>
+            <subscribe>issues-subscribe@hugegraph.apache.org</subscribe>
+            <unsubscribe>issues-unsubscribe@hugegraph.apache.org</unsubscribe>
+            <post>issues@hugegraph.apache.org</post>
+        </mailingList>
     </mailingLists>
 
     <scm>
         <url>https://github.com/apache/hugegraph-toolchain</url>
         <connection>scm:git:https://github.com/apache/hugegraph-toolchain.git</connection>
-        <developerConnection>scm:git:https://github.com/apache/hugegraph-toolchain.git</developerConnection>
+        <developerConnection>
+            scm:git:https://github.com/apache/hugegraph-toolchain.git
+        </developerConnection>
     </scm>
 
     <issueManagement>
-      <system>Github Issues</system>
-      <url>https://github.com/apache/hugegraph-toolchain/issues</url>
+        <system>Github Issues</system>
+        <url>https://github.com/apache/hugegraph-toolchain/issues</url>
     </issueManagement>
 
     <modules>
@@ -118,32 +119,202 @@
         <docker.hub>hugegraph</docker.hub>
         <docker.repo>${project.name}</docker.repo>
         <docker.tag>${project.version}</docker.tag>
+        <hugegraph.common.version>1.0.0</hugegraph.common.version>
+        <hive.version>3.1.3</hive.version>
         <hbase.version>2.2.3</hbase.version>
+        <hadoop.version>3.3.1</hadoop.version>
+        <zookeeper.version>3.6.2</zookeeper.version>
+        <jersey.version>3.0.3</jersey.version>
+        <junit.version>4.12</junit.version>
+        <mockito.version>2.8.47</mockito.version>
+        <lombok.version>1.18.8</lombok.version>
+        <commons.io.version>2.8.0</commons.io.version>
+        <commons.lang3.version>3.9</commons.lang3.version>
+        <commons.compress.version>1.21</commons.compress.version>
+        <commons.fileupload.version>1.5</commons.fileupload.version>
+        <commons.codec.version>1.15</commons.codec.version>
+        <commons.cli.version>1.3.1</commons.cli.version>
+        <commons.text.version>1.10.0</commons.text.version>
+        <commons.net.version>3.9.0</commons.net.version>
+        <commons.math3.version>3.4.1</commons.math3.version>
+        <commons.logging.version>1.1.3</commons.logging.version>
+        <guava.version>32.0.1-jre</guava.version>
+        <lz4.version>1.4.0</lz4.version>
+        <jcommand-version>1.72</jcommand-version>
+        <jackson.version>2.12.3</jackson.version>
+        <log4j2.version>2.18.0</log4j2.version>
+        <dropwizard.metics.version>4.2.0</dropwizard.metics.version>
+        <netty.version>4.1.65.Final</netty.version>
+        <gson.version>2.8.9</gson.version>
     </properties>
 
-    <dependencies>
-        <!--TODO: enhance it later to avoid conflicts now -->
-<!--        <dependency>-->
-<!--            <groupId>commons-io</groupId>-->
-<!--            <artifactId>commons-io</artifactId>-->
-<!--            <version>2.7</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.commons</groupId>-->
-<!--            <artifactId>commons-lang3</artifactId>-->
-<!--            <version>3.9</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.google.guava</groupId>-->
-<!--            <artifactId>guava</artifactId>-->
-<!--            <version>29.0-jre</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.commons</groupId>-->
-<!--            <artifactId>commons-compress</artifactId>-->
-<!--            <version>1.21</version>-->
-<!--        </dependency>-->
-    </dependencies>
+    <!-- submodules will not inherit the dependencies unless they address it -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.glassfish.jersey</groupId>
+                <artifactId>jersey-bom</artifactId>
+                <version>${jersey.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hugegraph</groupId>
+                <artifactId>hugegraph-common</artifactId>
+                <version>${hugegraph.common.version}</version>
+            </dependency>
+            <!-- test -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons.io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons.lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons.compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons.codec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-cli</groupId>
+                <artifactId>commons-cli</artifactId>
+                <version>${commons.cli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons.text.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-net</groupId>
+                <artifactId>commons-net</artifactId>
+                <version>${commons.net.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>${commons.math3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-logging</groupId>
+                <artifactId>commons-logging</artifactId>
+                <version>${commons.logging.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>logkit</groupId>
+                        <artifactId>logkit</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>avalon-framework</groupId>
+                        <artifactId>avalon-framework</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-fileupload</groupId>
+                <artifactId>commons-fileupload</artifactId>
+                <version>${commons.fileupload.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${lz4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.beust</groupId>
+                <artifactId>jcommander</artifactId>
+                <version>${jcommand-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <artifactId>metrics-core</artifactId>
+                <groupId>io.dropwizard.metrics</groupId>
+                <version>${dropwizard.metics.version}</version>
+            </dependency>
+            <dependency>
+                <artifactId>metrics-json</artifactId>
+                <groupId>io.dropwizard.metrics</groupId>
+                <version>${dropwizard.metics.version}</version>
+            </dependency>
+            <dependency>
+                <artifactId>metrics-jvm</artifactId>
+                <groupId>io.dropwizard.metrics</groupId>
+                <version>${dropwizard.metics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies><!-- dependencies will be inherited by default here --></dependencies>
 
     <profiles>
         <profile>
