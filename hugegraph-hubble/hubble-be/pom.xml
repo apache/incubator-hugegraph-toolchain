@@ -29,6 +29,8 @@
         <skip.dump>true</skip.dump>
         <app.host>localhost</app.host>
         <app.port>36320</app.port>
+        <mybatis.starter.version>2.1.0</mybatis.starter.version>
+        <mybatis.plus.starter.version>3.3.0</mybatis.plus.starter.version>
     </properties>
 
     <dependencies>
@@ -66,12 +68,12 @@
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>2.1.0</version>
+            <version>${mybatis.starter.version}</version>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.3.0</version>
+            <version>${mybatis.plus.starter.version}</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
@@ -90,7 +92,6 @@
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -144,7 +145,6 @@
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-            <version>1.4</version>
         </dependency>
     </dependencies>
 
