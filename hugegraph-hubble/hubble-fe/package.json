@@ -69,7 +69,7 @@
     "customize-cra": "^0.9.1",
     "less-loader": "^5.0.0",
     "react-app-rewired": "^2.1.6",
-    "stylelint": "^13.6.1",
+    "stylelint": "^15.10.1",
     "stylelint-config-standard": "^20.0.0"
   },
   "keywords": [
