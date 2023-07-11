@@ -201,29 +201,30 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                                                            struct.input().type()));
             }
 
-            if (elementsElement != null) {
-                for (GraphElement graphElement : elementsElement) {
-                    final byte[] rowkey = serializer.getKeyBytes(graphElement);
-                    final byte[] values = serializer.getValueBytes(graphElement);
-                    ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
-                    rowKey.set(rowkey);
-                    if (loadOptions.actionType.equals(Constants.DELETE_ACTION)) {
-                        KeyValue  keyValue = new KeyValue(
-                                rowkey,Bytes.toBytes(Constants.HBASE_COL_FAMILY),
-                                Bytes.toBytes(Constants.EMPTY_STR),HConstants.LATEST_TIMESTAMP,
-                                KeyValue.Type.DeleteFamily);
-                        Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
-                                new Tuple2<>(rowKey,keyValue);
-                        result.add(tuple2);
-                    } else {
-                        KeyValue  keyValue = new KeyValue(rowkey,
-                                Bytes.toBytes(Constants.HBASE_COL_FAMILY),
-                                Bytes.toBytes(Constants.EMPTY_STR),
-                                values);
-                        Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
-                                new Tuple2<>(rowKey,keyValue);
-                        result.add(tuple2);
-                    }
+            if (elementsElement == null) {
+               continue;
+            }
+            for (GraphElement graphElement : elementsElement) {
+                final byte[] rowkey = serializer.getKeyBytes(graphElement);
+                final byte[] values = serializer.getValueBytes(graphElement);
+                ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
+                rowKey.set(rowkey);
+                if (loadOptions.actionType.equals(Constants.ACTION_DELETE)) {
+                    KeyValue keyValue = new KeyValue(
+                            rowkey,Bytes.toBytes(Constants.HBASE_COL_FAMILY),
+                            Bytes.toBytes(Constants.EMPTY_STR),HConstants.LATEST_TIMESTAMP,
+                            KeyValue.Type.DeleteFamily);
+                    Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
+                            new Tuple2<>(rowKey, keyValue);
+                    result.add(tuple2);
+                } else {
+                    KeyValue keyValue = new KeyValue(rowkey,
+                            Bytes.toBytes(Constants.HBASE_COL_FAMILY),
+                            Bytes.toBytes(Constants.EMPTY_STR),
+                            values);
+                    Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
+                            new Tuple2<>(rowKey, keyValue);
+                    result.add(tuple2);
                 }
             }
         }
