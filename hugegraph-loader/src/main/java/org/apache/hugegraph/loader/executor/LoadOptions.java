@@ -234,7 +234,7 @@ public class LoadOptions implements Serializable {
     public String hbaseZKParent;
 
     @Parameter(names = {"--action-type"},  arity = 1,
-               description = "The type of operation performed on the graph,update or delete")
+               description = "The type of operation performed on the graph, update or delete")
     public String actionType="update";
 
     public String workModeString() {
