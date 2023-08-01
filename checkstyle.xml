@@ -22,7 +22,7 @@
     <property name="fileExtensions" value="java, properties, xml"/>
     <module name="SuppressWarningsFilter" />
     <module name="SuppressionFilter">
-        <property name="file" value="suppression.xml"/>
+        <property name="file" value="suppressions.xml"/>
     </module>
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
