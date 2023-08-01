@@ -20,9 +20,6 @@
     <property name="charset" value="UTF-8"/>
     <property name="severity" value="info"/>
     <property name="fileExtensions" value="java, properties, xml"/>
-<!--    <module name="SuppressionFilter">-->
-<!--        <property name="file" value="suppressions.xml"/>-->
-<!--    </module>-->
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
     </module>
