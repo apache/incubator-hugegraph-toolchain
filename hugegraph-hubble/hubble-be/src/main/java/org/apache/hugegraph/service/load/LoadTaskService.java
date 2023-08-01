@@ -64,6 +64,7 @@ import org.apache.hugegraph.loader.util.MappingUtil;
 import org.apache.hugegraph.mapper.load.LoadTaskMapper;
 import org.apache.hugegraph.service.SettingSSLService;
 import org.apache.hugegraph.util.Ex;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -421,8 +422,8 @@ public class LoadTaskService {
     }
 
     private List<org.apache.hugegraph.loader.mapping.VertexMapping>
-            buildVertexMappings(GraphConnection connection,
-                                FileMapping fileMapping) {
+        buildVertexMappings(GraphConnection connection,
+                        FileMapping fileMapping) {
         int connId = connection.getId();
         List<org.apache.hugegraph.loader.mapping.VertexMapping> vMappings =
                 new ArrayList<>();
@@ -435,7 +436,8 @@ public class LoadTaskService {
                 Ex.check(idFields.size() == 1,
                          "When the ID strategy is CUSTOMIZED, you must " +
                          "select a column in the file as the id");
-                vMapping = new org.apache.hugegraph.loader.mapping.VertexMapping(idFields.get(0), true);
+                vMapping = new org.apache.hugegraph.loader.mapping.VertexMapping(idFields.get(0),
+                                                                                 true);
             } else {
                 assert vl.getIdStrategy().isPrimaryKey();
                 List<String> primaryKeys = vl.getPrimaryKeys();
@@ -475,8 +477,8 @@ public class LoadTaskService {
     }
 
     private List<org.apache.hugegraph.loader.mapping.EdgeMapping>
-            buildEdgeMappings(GraphConnection connection,
-                              FileMapping fileMapping) {
+        buildEdgeMappings(GraphConnection connection,
+                      FileMapping fileMapping) {
         int connId = connection.getId();
         List<org.apache.hugegraph.loader.mapping.EdgeMapping> eMappings =
                 new ArrayList<>();
@@ -526,7 +528,7 @@ public class LoadTaskService {
 
             org.apache.hugegraph.loader.mapping.EdgeMapping eMapping;
             eMapping = new org.apache.hugegraph.loader.mapping.EdgeMapping(
-                       sourceFields, unfoldSource, targetFields, unfoldTarget);
+                    sourceFields, unfoldSource, targetFields, unfoldTarget);
             // set label
             eMapping.label(mapping.getLabel());
             // set field_mapping

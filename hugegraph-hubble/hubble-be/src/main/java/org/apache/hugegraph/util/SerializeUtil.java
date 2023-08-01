@@ -25,7 +25,6 @@ import org.apache.commons.io.FileUtils;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import org.apache.hugegraph.util.TimeUtil;
 
 public final class SerializeUtil {
 
