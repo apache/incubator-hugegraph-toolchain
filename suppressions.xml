@@ -22,4 +22,5 @@
     <suppress files="(Batch|Single)Example.java" checks="RegexpSingleline"/>
     <suppress files="(Printer|ToolUtil).java" checks="RegexpSingleline"/>
     <suppress files="Constant.java" checks="AvoidEscapedUnicodeCharacters"/>
+    <suppress files="BytesDemo.java" checks="Indentation"/>
 </suppressions>
