@@ -233,10 +233,6 @@ public class LoadOptions implements Serializable {
                description = "hbaseZKParent")
     public String hbaseZKParent;
 
-    @Parameter(names = {"--action-type"},  arity = 1,
-            description = "add/update or delete")
-    public String actionType="add";
-
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";

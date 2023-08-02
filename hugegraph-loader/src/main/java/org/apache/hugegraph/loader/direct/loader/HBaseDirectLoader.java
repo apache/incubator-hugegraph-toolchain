@@ -26,7 +26,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsShell;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.TableDescriptor;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -201,29 +200,23 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                                                            struct.input().type()));
             }
 
-            if (elementsElement != null) {
-                for (GraphElement graphElement : elementsElement) {
-                    final byte[] rowkey = serializer.getKeyBytes(graphElement);
-                    final byte[] values = serializer.getValueBytes(graphElement);
-                    ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
-                    rowKey.set(rowkey);
-                    if (loadOptions.actionType.equals(Constants.DELETE_ACTION)) {
-                        KeyValue  keyValue = new KeyValue(
-                                rowkey,Bytes.toBytes(Constants.HBASE_COL_FAMILY),
-                                Bytes.toBytes(Constants.EMPTY_STR),HConstants.LATEST_TIMESTAMP,
-                                KeyValue.Type.DeleteFamily);
-                        Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
-                                new Tuple2<>(rowKey,keyValue);
-                        result.add(tuple2);
-                    } else {
-                        KeyValue  keyValue = new KeyValue(rowkey,
-                                Bytes.toBytes(Constants.HBASE_COL_FAMILY),
-                                Bytes.toBytes(Constants.EMPTY_STR),
-                                values);
-                        Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
-                                new Tuple2<>(rowKey,keyValue);
-                        result.add(tuple2);
-                    }
+            boolean isVertex = builder.mapping().type().isVertex();
+            if (isVertex) {
+                for (Vertex vertex : (List<Vertex>) (Object) elementsElement) {
+                    LOG.debug("vertex already build done {} ", vertex.toString());
+                    Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
+                            vertexSerialize(serializer, vertex);
+                    loadDistributeMetrics.increaseDisVertexInsertSuccess(builder.mapping());
+                    result.add(tuple2);
+                }
+            } else {
+                for (Edge edge : (List<Edge>) (Object) elementsElement) {
+                    LOG.debug("edge already build done {}", edge.toString());
+                    Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
+                            edgeSerialize(serializer, edge);
+                    loadDistributeMetrics.increaseDisEdgeInsertSuccess(builder.mapping());
+                    result.add(tuple2);
+
                 }
             }
         }

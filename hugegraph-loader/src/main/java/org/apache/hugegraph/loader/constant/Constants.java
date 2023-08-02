@@ -81,5 +81,4 @@ public final class Constants {
     public static final String LOAD_DATA_PARSE_SUFFIX = "parse";
     public static final String LOAD_DATA_SER_SUFFIX = "ser";
     public static final String LOAD_DATA_INSERT_SUFFIX = "insert";
-    public static final String DELETE_ACTION = "delete";
 }
