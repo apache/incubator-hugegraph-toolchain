@@ -217,25 +217,25 @@ public class LoadOptions implements Serializable {
                description = "The number of partitions of the HBase vertex table")
     public int vertexPartitions = 64;
 
-    @Parameter(names = {"--edge-table-name"}, arity = 1,
-               description = "The name of the the HBase edge table")
+    @Parameter(names = {"edgeTablename"}, arity = 1,
+               description = "edgeTablename")
     public String edgeTablename;
-    @Parameter(names = {"--vertex-table-name"}, arity = 1,
-               description = "The name of the the HBase vertex table")
+    @Parameter(names = {"vertexTablename"}, arity = 1,
+               description = "vertexTablename")
     public String vertexTablename;
-    @Parameter(names = {"--zk-quorum"}, arity = 1,
-               description = "Address of the zookeeper on which hbase depends")
+    @Parameter(names = {"hbaseZKQuorum"}, arity = 1,
+               description = "hbaseZKQuorum")
     public String hbaseZKQuorum;
-    @Parameter(names = {"--zk-port"}, arity = 1,
-               description = "port of the zookeeper on which hbase depends")
+    @Parameter(names = {"hbaseZKPort"}, arity = 1,
+               description = "hbaseZKPort")
     public String hbaseZKPort;
-    @Parameter(names = {"--zk-parent"}, arity = 1,
-               description = "hbase root node on the zookeeper")
+    @Parameter(names = {"hbaseZKParent"}, arity = 1,
+               description = "hbaseZKParent")
     public String hbaseZKParent;
 
     @Parameter(names = {"--action-type"},  arity = 1,
-               description = "The type of operation performed on the graph, update or delete")
-    public String actionType="update";
+            description = "add/update or delete")
+    public String actionType="add";
 
     public String workModeString() {
         if (this.incrementalMode) {
