@@ -60,6 +60,7 @@ import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -292,9 +293,13 @@ public class HugeGraphSparkLoader implements Serializable {
             case FILE:
             case HDFS:
                 FileSource fileSource = struct.input().asFileSource();
-                String delimiter = fileSource.delimiter();
-                elements = builder.build(fileSource.header(),
-                                         row.mkString(delimiter).split(delimiter));
+                String delimiter = fileSource.delimiter() ;
+                if (Optional.ofNullable(delimiter).isPresent()) {
+                    elements = builder.build(fileSource.header(),
+                               row.mkString(delimiter).split(delimiter));
+                }else {
+                    elements = builder.build(row);
+                }
                 break;
             case JDBC:
                 Object[] structFields = JavaConverters.asJavaCollection(row.schema().toList())
