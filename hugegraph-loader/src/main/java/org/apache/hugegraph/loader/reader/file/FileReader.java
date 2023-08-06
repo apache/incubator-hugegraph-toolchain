@@ -83,6 +83,11 @@ public abstract class FileReader extends AbstractReader {
     }
 
     @Override
+    public boolean multiReaders() {
+        return true;
+    }
+
+    @Override
     public void confirmOffset() {
         this.newProgress.confirmOffset();
     }
