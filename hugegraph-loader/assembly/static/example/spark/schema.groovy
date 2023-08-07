@@ -26,13 +26,13 @@ schema.propertyKey("price").asDouble().ifNotExist().create();
 
 schema.vertexLabel("person")
       .properties("name", "age", "city")
-      .primaryKeys("name")
+      .useCustomizeStringId()
       .nullableKeys("age", "city")
       .ifNotExist()
       .create();
 schema.vertexLabel("software")
-        .properties("name", "lang", "price")
-        .primaryKeys("name")
+      .properties("name", "lang", "price")
+      .useCustomizeStringId()
       .ifNotExist()
       .create();
 
