@@ -75,7 +75,7 @@ public class RestResultTest extends BaseUnitTest {
     @Before
     public void setup() {
         // Mock caches
-        this.mockResponse = Mockito.mock(okhttp3.Response.class);
+        this.mockResponse = Mockito.mock(okhttp3.Response.class, Mockito.RETURNS_DEEP_STUBS);
     }
 
     @After
