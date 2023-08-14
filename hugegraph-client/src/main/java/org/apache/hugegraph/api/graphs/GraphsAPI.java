@@ -17,15 +17,9 @@
 
 package org.apache.hugegraph.api.graphs;
 
-import java.util.List;
-import java.util.Map;
-
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedHashMap;
-
+import com.google.common.collect.ImmutableMap;
+import okhttp3.Headers;
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.InvalidResponseException;
@@ -34,7 +28,8 @@ import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.List;
+import java.util.Map;
 
 public class GraphsAPI extends API {
 
@@ -59,8 +54,9 @@ public class GraphsAPI extends API {
     public Map<String, String> create(String name, String cloneGraphName,
                                       String configText) {
         this.client.checkApiVersion("0.67", "dynamic graph add");
-        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
+//        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+//        headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN);
+        Headers headers = new Headers.Builder().add("Content-Type", "text/plain").build();
         Map<String, Object> params = null;
         if (StringUtils.isNotEmpty(cloneGraphName)) {
             params = ImmutableMap.of("clone_graph_name", cloneGraphName);

@@ -19,14 +19,14 @@ package org.apache.hugegraph.driver;
 
 import java.io.Closeable;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hugegraph.version.ClientVersion;
 import org.apache.hugegraph.client.RestClient;
 
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.util.VersionUtil;
 
-import jakarta.ws.rs.ProcessingException;
-
+@Slf4j
 public class HugeClient implements Closeable {
 
     static {
@@ -60,7 +60,8 @@ public class HugeClient implements Closeable {
                                          builder.maxConnsPerRoute(),
                                          builder.trustStoreFile(),
                                          builder.trustStorePassword());
-        } catch (ProcessingException e) {
+        } catch (Exception e) {
+            log.error("", e);
             throw new ClientException("Failed to connect url '%s'", builder.url());
         }
         try {

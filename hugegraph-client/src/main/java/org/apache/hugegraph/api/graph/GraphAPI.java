@@ -20,9 +20,6 @@ package org.apache.hugegraph.api.graph;
 import java.util.Map;
 import java.util.UUID;
 
-import org.glassfish.jersey.uri.UriComponent;
-import org.glassfish.jersey.uri.UriComponent.Type;
-
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.util.E;
@@ -76,10 +73,11 @@ public abstract class GraphAPI extends API {
          * which will invalidate the jersey's automatic decoding
          * because it considers the space to be encoded as `%2F`
          */
-        return encode(json);
+//        return encode(json);
+        return json;
     }
 
-    public static String encode(String raw) {
-        return UriComponent.encode(raw, Type.QUERY_PARAM_SPACE_ENCODED);
-    }
+//    public static String encode(String raw) {
+//        return UriComponent.encode(raw, Type.QUERY_PARAM_SPACE_ENCODED);
+//    }
 }

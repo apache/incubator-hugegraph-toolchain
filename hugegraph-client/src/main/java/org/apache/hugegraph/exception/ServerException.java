@@ -19,9 +19,8 @@ package org.apache.hugegraph.exception;
 
 import java.util.Map;
 
+import okhttp3.Response;
 import org.apache.hugegraph.rest.RestResult;
-
-import jakarta.ws.rs.core.Response;
 
 public class ServerException extends RuntimeException {
 
@@ -43,7 +42,7 @@ public class ServerException extends RuntimeException {
     public static ServerException fromResponse(Response response) {
         RestResult rs = new RestResult(response);
         ServerException exception = new ServerException(rs.content());
-        exception.status(response.getStatus());
+        exception.status(response.code());
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> json = rs.readObject(Map.class);

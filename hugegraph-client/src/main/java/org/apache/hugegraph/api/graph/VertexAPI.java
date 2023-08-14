@@ -17,24 +17,21 @@
 
 package org.apache.hugegraph.api.graph;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.ImmutableMap;
+import okhttp3.Headers;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.InvalidResponseException;
 import org.apache.hugegraph.exception.NotAllCreatedException;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.graph.BatchOlapPropertyRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.graph.Vertices;
 
-import com.google.common.collect.ImmutableMap;
-
-import jakarta.ws.rs.core.MultivaluedHashMap;
-
-import org.apache.hugegraph.rest.RestResult;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class VertexAPI extends GraphAPI {
 
@@ -53,8 +50,9 @@ public class VertexAPI extends GraphAPI {
     }
 
     public List<Object> create(List<Vertex> vertices) {
-        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+//        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+//        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+        Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
         RestResult result = this.client.post(this.batchPath(), vertices,
                                              headers);
         List<Object> ids = result.readList(Object.class);
@@ -68,8 +66,9 @@ public class VertexAPI extends GraphAPI {
 
     public List<Vertex> update(BatchVertexRequest request) {
         this.client.checkApiVersion("0.45", "batch property update");
-        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+//        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+//        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+        Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
         RestResult result = this.client.put(this.batchPath(), null,
                                             request, headers);
         return result.readList(this.type(), Vertex.class);
@@ -77,8 +76,9 @@ public class VertexAPI extends GraphAPI {
 
     public int update(BatchOlapPropertyRequest request) {
         this.client.checkApiVersion("0.59", "olap property batch update");
-        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+//        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+//        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+        Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
         String path = String.join("/", this.path(), "olap/batch");
         RestResult result = this.client.put(path, null, request, headers);
         Object size = result.readObject(Map.class).get("size");

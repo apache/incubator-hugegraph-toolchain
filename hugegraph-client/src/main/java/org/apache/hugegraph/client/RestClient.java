@@ -17,6 +17,7 @@
 
 package org.apache.hugegraph.client;
 
+import okhttp3.Response;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.serializer.PathDeserializer;
 import org.apache.hugegraph.structure.graph.Path;
@@ -28,8 +29,6 @@ import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
-
-import jakarta.ws.rs.core.Response;
 
 public class RestClient extends AbstractRestClient {
 
@@ -79,10 +78,10 @@ public class RestClient extends AbstractRestClient {
     }
 
     @Override
-    protected void checkStatus(Response response, Response.Status... statuses) {
+    protected void checkStatus(Response response, int... statuses) {
         boolean match = false;
-        for (Response.Status status : statuses) {
-            if (status.getStatusCode() == response.getStatus()) {
+        for (int status : statuses) {
+            if (status == response.code()) {
                 match = true;
                 break;
             }

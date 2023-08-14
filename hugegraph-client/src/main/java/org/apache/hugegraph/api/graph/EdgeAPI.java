@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.Headers;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotAllCreatedException;
 import org.apache.hugegraph.rest.RestResult;
@@ -31,8 +32,6 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
 
 import com.google.common.collect.ImmutableMap;
-
-import jakarta.ws.rs.core.MultivaluedHashMap;
 
 public class EdgeAPI extends GraphAPI {
 
@@ -51,8 +50,9 @@ public class EdgeAPI extends GraphAPI {
     }
 
     public List<String> create(List<Edge> edges, boolean checkVertex) {
-        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+//        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+//        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+        Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
         Map<String, Object> params = ImmutableMap.of("check_vertex",
                                                      checkVertex);
         RestResult result = this.client.post(this.batchPath(), edges,
@@ -68,8 +68,9 @@ public class EdgeAPI extends GraphAPI {
 
     public List<Edge> update(BatchEdgeRequest request) {
         this.client.checkApiVersion("0.45", "batch property update");
-        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+//        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+//        headers.putSingle("Content-Encoding", BATCH_ENCODING);
+        Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
         RestResult result = this.client.put(this.batchPath(), null,
                                             request, headers);
         return result.readList(this.type(), Edge.class);
