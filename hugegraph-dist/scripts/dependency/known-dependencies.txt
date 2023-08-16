@@ -7,6 +7,7 @@ accessors-smart-2.4.2.jar
 aircompressor-0.10.jar
 aircompressor-0.21.jar
 annotations-17.0.0.jar
+annotations-13.0.jar
 ant-1.9.1.jar
 ant-launcher-1.9.1.jar
 antlr-runtime-3.5.2.jar
@@ -140,7 +141,6 @@ jakarta.activation-2.0.1.jar
 jakarta.activation-api-1.2.1.jar
 jakarta.annotation-api-2.0.0.jar
 jakarta.inject-api-2.0.0.jar
-jakarta.validation-api-3.0.0.jar
 jakarta.ws.rs-api-3.0.0.jar
 jakarta.xml.bind-api-2.3.2.jar
 jakarta.xml.bind-api-4.0.0-RC2.jar
@@ -174,7 +174,6 @@ jersey-container-servlet-core-3.0.3.jar
 jersey-entity-filtering-3.0.3.jar
 jersey-hk2-3.0.3.jar
 jersey-media-json-jackson-3.0.3.jar
-jersey-server-3.0.3.jar
 jetty-client-9.4.33.v20201020.jar
 jetty-client-9.4.40.v20210413.jar
 jetty-http-9.4.19.v20190610.jar
@@ -267,7 +266,17 @@ netty-transport-native-epoll-4.1.65.Final.jar
 netty-transport-native-unix-common-4.1.65.Final.jar
 nimbus-jose-jwt-9.8.1.jar
 okhttp-2.7.5.jar
+okhttp-4.10.0.jar
+logging-interceptor-4.10.0.jar
+kotlin-stdlib-1.2.71.jar
+kotlin-stdlib-1.6.20.jar
+kotlin-stdlib-common-1.5.31.jar
+kotlin-stdlib-jdk7-1.2.71.jar
+kotlin-stdlib-jdk7-1.6.10.jar
+kotlin-stdlib-jdk8-1.2.71.jar
+kotlin-stdlib-jdk8-1.6.10.jar
 okio-1.6.0.jar
+okio-jvm-3.0.0.jar
 opencsv-2.3.jar
 orc-core-1.5.8.jar
 orc-core-1.6.14.jar
