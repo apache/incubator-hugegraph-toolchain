@@ -169,7 +169,6 @@ jcommander-1.78.jar
 jersey-apache-connector-3.0.3.jar
 jersey-client-3.0.3.jar
 jersey-common-3.0.3.jar
-jersey-container-servlet-3.0.3.jar
 jersey-container-servlet-core-3.0.3.jar
 jersey-entity-filtering-3.0.3.jar
 jersey-hk2-3.0.3.jar
