@@ -75,6 +75,7 @@ header: # `header` section is configurations for source codes license header.
     - 'assembly/**'
     - '.github/**/*'
     - '**/target/*'
+    - 'hugegraph-client/src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker'
     # - 'hugegraph-hubble/hubble-fe/**'
   comment: on-failure # on what condition license-eye will comment on the pull request, `on-failure`, `always`, `never`.
 
