@@ -27,22 +27,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.util.JsonUtil;
 
 import javax.net.ssl.*;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.KeyStore;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractRestClient implements RestClient {
 
-//    private static final CloseableHttpClient httpclient = HttpClients.createMinimal();
-
     private OkHttpClient client;
-
-//    Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 8888));
-//    OkHttpClient client = new OkHttpClient.Builder().proxy(proxy).build();
 
     private String baseUrl;
 
@@ -157,6 +153,9 @@ public abstract class AbstractRestClient implements RestClient {
             builder.addInterceptor(new TokenInterceptor(okhttpConfig.getToken()));
         }
 
+        //ssl
+        configSsl(builder, baseUrl, okhttpConfig.getTrustStoreFile(), okhttpConfig.getTrustStorePassword());
+
         OkHttpClient okHttpClient = builder.build();
 
         if(okhttpConfig.getMaxTotal()!=null) {
@@ -168,6 +167,21 @@ public abstract class AbstractRestClient implements RestClient {
         }
 
         return okHttpClient;
+    }
+
+    @SneakyThrows
+    private void configSsl(OkHttpClient.Builder builder, String url, String trustStoreFile, String trustStorePass) {
+        if(StringUtils.isBlank(trustStoreFile) || StringUtils.isBlank(trustStorePass)) {
+            return;
+        }
+
+        X509TrustManager trustManager = trustManagerForCertificates(trustStoreFile, trustStorePass);
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, new TrustManager[]{trustManager}, null);
+        SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+        builder.sslSocketFactory(sslSocketFactory, trustManager)
+                .hostnameVerifier(new CustomHostnameVerifier(url));
     }
 
     @Override
@@ -352,7 +366,6 @@ public abstract class AbstractRestClient implements RestClient {
         }
     }
 
-//    protected abstract void checkStatus(HttpResponse response, int... statuses);
     protected abstract void checkStatus(Response response, int... statuses);
 
     @SneakyThrows
@@ -390,11 +403,31 @@ public abstract class AbstractRestClient implements RestClient {
         }
     }
 
-    public static class HostNameVerifier implements HostnameVerifier {
+    @SneakyThrows
+    private X509TrustManager trustManagerForCertificates(String trustStoreFile, String trustStorePass){
+        char[] password = trustStorePass.toCharArray();
 
+        //load keyStore
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        try(FileInputStream in = new FileInputStream(trustStoreFile)) {
+            keyStore.load(in, password);
+        }
+
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(keyStore);
+
+        TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+        if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
+            throw new IllegalStateException("Unexpected default trust managers:"
+                    + Arrays.toString(trustManagers));
+        }
+        return (X509TrustManager) trustManagers[0];
+    }
+
+    private class CustomHostnameVerifier implements HostnameVerifier {
         private final String url;
 
-        public HostNameVerifier(String url) {
+        public CustomHostnameVerifier(String url) {
             if (!url.startsWith("http://") && !url.startsWith("https://")) {
                 url = "http://" + url;
             }
@@ -407,36 +440,10 @@ public abstract class AbstractRestClient implements RestClient {
             if (!this.url.isEmpty() && this.url.endsWith(hostname)) {
                 return true;
             } else {
-                HostnameVerifier verifier = HttpsURLConnection
-                                            .getDefaultHostnameVerifier();
+                HostnameVerifier verifier = HttpsURLConnection.getDefaultHostnameVerifier();
                 return verifier.verify(hostname, session);
             }
         }
     }
-
-    private static class NoCheckTrustManager implements X509TrustManager {
-
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType)
-                                       throws CertificateException {
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType)
-                                       throws CertificateException {
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
-
-        public static TrustManager[] create() {
-            return new TrustManager[]{new NoCheckTrustManager()};
-        }
-    }
-
-
-
 
 }
