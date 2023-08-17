@@ -61,8 +61,8 @@ public abstract class AbstractRestClient implements RestClient {
         this(url, null, null, timeout, maxTotal, maxPerRoute);
     }
 
-    public AbstractRestClient(String url, Integer timeout, Integer idleTime,
-                              Integer maxTotal, Integer maxPerRoute) {
+    public AbstractRestClient(String url, int timeout, int idleTime,
+                              int maxTotal, int maxPerRoute) {
         this(url, OkhttpConfig.builder()
                 .idleTime(idleTime)
                 .timeout(timeout)
@@ -72,7 +72,7 @@ public abstract class AbstractRestClient implements RestClient {
     }
 
     public AbstractRestClient(String url, String user, String password,
-                              Integer timeout, Integer maxTotal, Integer maxPerRoute) {
+                              int timeout, int maxTotal, int maxPerRoute) {
         this(url, OkhttpConfig.builder()
                 .user(user).password(password)
                 .timeout(timeout)
@@ -82,7 +82,7 @@ public abstract class AbstractRestClient implements RestClient {
     }
 
     public AbstractRestClient(String url, String user, String password,
-                              Integer timeout, Integer maxTotal, Integer maxPerRoute,
+                              int timeout, int maxTotal, int maxPerRoute,
                               String trustStoreFile,
                               String trustStorePassword) {
         this(url, OkhttpConfig.builder()
