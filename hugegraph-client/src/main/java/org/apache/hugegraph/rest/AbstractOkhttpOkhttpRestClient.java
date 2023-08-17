@@ -36,33 +36,33 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractRestClient implements RestClient {
+public abstract class AbstractOkhttpOkhttpRestClient implements OkhttpRestClient {
 
     private OkHttpClient client;
 
     private String baseUrl;
 
-    public AbstractRestClient(String url, int timeout) {
+    public AbstractOkhttpOkhttpRestClient(String url, int timeout) {
         this(url, OkhttpConfig.builder()
                 .timeout(timeout)
                 .build());
     }
 
-    public AbstractRestClient(String url, String user, String password,
-                              Integer timeout) {
+    public AbstractOkhttpOkhttpRestClient(String url, String user, String password,
+                                          Integer timeout) {
         this(url, OkhttpConfig.builder()
                 .user(user).password(password)
                 .timeout(timeout)
                 .build());
     }
 
-    public AbstractRestClient(String url, int timeout,
-                              int maxTotal, int maxPerRoute) {
+    public AbstractOkhttpOkhttpRestClient(String url, int timeout,
+                                          int maxTotal, int maxPerRoute) {
         this(url, null, null, timeout, maxTotal, maxPerRoute);
     }
 
-    public AbstractRestClient(String url, int timeout, int idleTime,
-                              int maxTotal, int maxPerRoute) {
+    public AbstractOkhttpOkhttpRestClient(String url, int timeout, int idleTime,
+                                          int maxTotal, int maxPerRoute) {
         this(url, OkhttpConfig.builder()
                 .idleTime(idleTime)
                 .timeout(timeout)
@@ -71,8 +71,8 @@ public abstract class AbstractRestClient implements RestClient {
                 .build());
     }
 
-    public AbstractRestClient(String url, String user, String password,
-                              int timeout, int maxTotal, int maxPerRoute) {
+    public AbstractOkhttpOkhttpRestClient(String url, String user, String password,
+                                          int timeout, int maxTotal, int maxPerRoute) {
         this(url, OkhttpConfig.builder()
                 .user(user).password(password)
                 .timeout(timeout)
@@ -81,10 +81,10 @@ public abstract class AbstractRestClient implements RestClient {
                 .build());
     }
 
-    public AbstractRestClient(String url, String user, String password,
-                              int timeout, int maxTotal, int maxPerRoute,
-                              String trustStoreFile,
-                              String trustStorePassword) {
+    public AbstractOkhttpOkhttpRestClient(String url, String user, String password,
+                                          int timeout, int maxTotal, int maxPerRoute,
+                                          String trustStoreFile,
+                                          String trustStorePassword) {
         this(url, OkhttpConfig.builder()
                 .user(user).password(password)
                 .timeout(timeout)
@@ -95,15 +95,15 @@ public abstract class AbstractRestClient implements RestClient {
                 .build());
     }
 
-    public AbstractRestClient(String url, String token, Integer timeout) {
+    public AbstractOkhttpOkhttpRestClient(String url, String token, Integer timeout) {
         this(url, OkhttpConfig.builder()
                 .token(token)
                 .timeout(timeout)
                 .build());
     }
 
-    public AbstractRestClient(String url, String token, Integer timeout,
-                              Integer maxTotal, Integer maxPerRoute) {
+    public AbstractOkhttpOkhttpRestClient(String url, String token, Integer timeout,
+                                          Integer maxTotal, Integer maxPerRoute) {
         this(url,OkhttpConfig.builder()
                 .token(token)
                 .timeout(timeout)
@@ -112,10 +112,10 @@ public abstract class AbstractRestClient implements RestClient {
                 .build());
     }
 
-    public AbstractRestClient(String url, String token, Integer timeout,
-                              Integer maxTotal, Integer maxPerRoute,
-                              String trustStoreFile,
-                              String trustStorePassword) {
+    public AbstractOkhttpOkhttpRestClient(String url, String token, Integer timeout,
+                                          Integer maxTotal, Integer maxPerRoute,
+                                          String trustStoreFile,
+                                          String trustStorePassword) {
         this(url,OkhttpConfig.builder()
                 .token(token)
                 .timeout(timeout)
@@ -126,7 +126,7 @@ public abstract class AbstractRestClient implements RestClient {
                 .build());
     }
 
-    public AbstractRestClient(String url, OkhttpConfig okhttpConfig) {
+    public AbstractOkhttpOkhttpRestClient(String url, OkhttpConfig okhttpConfig) {
         this.baseUrl = url;
         this.client = getOkhttpClient(okhttpConfig);
     }
@@ -147,10 +147,10 @@ public abstract class AbstractRestClient implements RestClient {
 
         //auth
         if(StringUtils.isNotBlank(okhttpConfig.getUser()) && StringUtils.isNotBlank(okhttpConfig.getPassword())) {
-            builder.addInterceptor(new BasicAuthInterceptor(okhttpConfig.getUser(), okhttpConfig.getPassword()));
+            builder.addInterceptor(new OkhttpBasicAuthInterceptor(okhttpConfig.getUser(), okhttpConfig.getPassword()));
         }
         if(StringUtils.isNotBlank(okhttpConfig.getToken())) {
-            builder.addInterceptor(new TokenInterceptor(okhttpConfig.getToken()));
+            builder.addInterceptor(new OkhttpTokenInterceptor(okhttpConfig.getToken()));
         }
 
         //ssl
@@ -185,17 +185,17 @@ public abstract class AbstractRestClient implements RestClient {
     }
 
     @Override
-    public RestResult post(String path, Object object) {
+    public OkhttpRestResult post(String path, Object object) {
         return this.post(path, object, null, null);
     }
 
     @Override
-    public RestResult post(String path, Object object, Headers headers) {
+    public OkhttpRestResult post(String path, Object object, Headers headers) {
         return this.post(path, object, headers, null);
     }
 
     @Override
-    public RestResult post(String path, Object object, Map<String, Object> params) {
+    public OkhttpRestResult post(String path, Object object, Map<String, Object> params) {
         return this.post(path, object, null, params);
     }
 
@@ -265,46 +265,46 @@ public abstract class AbstractRestClient implements RestClient {
 
     @SneakyThrows
     @Override
-    public RestResult post(String path, Object object,
-                           Headers headers,
-                           Map<String, Object> params) {
+    public OkhttpRestResult post(String path, Object object,
+                                 Headers headers,
+                                 Map<String, Object> params) {
         Request.Builder requestBuilder = getRequestBuilder(path, null, headers, params);
         requestBuilder.post(getRequestBody(object, headers));
 
         try (Response response = client.newCall(requestBuilder.build()).execute()) {
             checkStatus(response, 200, 201, 202);
-            return new RestResult(response);
+            return new OkhttpRestResult(response);
         }
     }
 
     @Override
-    public RestResult put(String path, String id, Object object) {
+    public OkhttpRestResult put(String path, String id, Object object) {
         return this.put(path, id, object, ImmutableMap.of());
     }
 
     @Override
-    public RestResult put(String path, String id, Object object,
-                          Headers headers) {
+    public OkhttpRestResult put(String path, String id, Object object,
+                                Headers headers) {
         return this.put(path, id, object, headers, null);
     }
 
     @Override
-    public RestResult put(String path, String id, Object object,
-                          Map<String, Object> params) {
+    public OkhttpRestResult put(String path, String id, Object object,
+                                Map<String, Object> params) {
         return this.put(path, id, object, null, params);
     }
 
     @SneakyThrows
     @Override
-    public RestResult put(String path, String id, Object object,
-                          Headers headers,
-                          Map<String, Object> params) {
+    public OkhttpRestResult put(String path, String id, Object object,
+                                Headers headers,
+                                Map<String, Object> params) {
         Request.Builder requestBuilder = getRequestBuilder(path, id, headers, params);
         requestBuilder.put(getRequestBody(object, headers));
 
         try (Response response = client.newCall(requestBuilder.build()).execute()) {
             checkStatus(response, 200, 202);
-            return new RestResult(response);
+            return new OkhttpRestResult(response);
         }
     }
 
@@ -319,50 +319,50 @@ public abstract class AbstractRestClient implements RestClient {
     }
 
     @Override
-    public RestResult get(String path) {
+    public OkhttpRestResult get(String path) {
         return this.get(path, null, ImmutableMap.of());
     }
 
     @Override
-    public RestResult get(String path, Map<String, Object> params) {
+    public OkhttpRestResult get(String path, Map<String, Object> params) {
         return this.get(path, null, params);
     }
 
     @Override
-    public RestResult get(String path, String id) {
+    public OkhttpRestResult get(String path, String id) {
         return this.get(path, id, ImmutableMap.of());
     }
 
     @SneakyThrows
-    private RestResult get(String path, String id, Map<String, Object> params) {
+    private OkhttpRestResult get(String path, String id, Map<String, Object> params) {
         Request.Builder requestBuilder = getRequestBuilder(path, id, null, params);
 
         try (Response response = client.newCall(requestBuilder.build()).execute()) {
             checkStatus(response, 200);
-            return new RestResult(response);
+            return new OkhttpRestResult(response);
         }
     }
 
 
     @Override
-    public RestResult delete(String path, Map<String, Object> params) {
+    public OkhttpRestResult delete(String path, Map<String, Object> params) {
         return this.delete(path, null, params);
     }
 
     @Override
-    public RestResult delete(String path, String id) {
+    public OkhttpRestResult delete(String path, String id) {
         return this.delete(path, id, ImmutableMap.of());
     }
 
     @SneakyThrows
-    private RestResult delete(String path, String id,
-                              Map<String, Object> params) {
+    private OkhttpRestResult delete(String path, String id,
+                                    Map<String, Object> params) {
         Request.Builder requestBuilder = getRequestBuilder(path, id, null, params);
         requestBuilder.delete();
 
         try (Response response = client.newCall(requestBuilder.build()).execute()) {
             checkStatus(response, 204, 202);
-            return new RestResult(response);
+            return new OkhttpRestResult(response);
         }
     }
 

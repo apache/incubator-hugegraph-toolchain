@@ -23,13 +23,13 @@ import java.util.Map;
 import org.apache.hugegraph.api.graphs.GraphsAPI;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 
 public class GraphsManager {
 
     private GraphsAPI graphsAPI;
 
-    public GraphsManager(RestClient client) {
+    public GraphsManager(OkhttpOkhttpRestClient client) {
         this.graphsAPI = new GraphsAPI(client);
     }
 

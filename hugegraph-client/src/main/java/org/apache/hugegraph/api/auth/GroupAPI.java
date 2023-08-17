@@ -20,8 +20,8 @@ package org.apache.hugegraph.api.auth;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.Group;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class GroupAPI extends AuthAPI {
 
-    public GroupAPI(RestClient client, String graph) {
+    public GroupAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -39,25 +39,25 @@ public class GroupAPI extends AuthAPI {
     }
 
     public Group create(Group group) {
-        RestResult result = this.client.post(this.path(), group);
+        OkhttpRestResult result = this.client.post(this.path(), group);
         return result.readObject(Group.class);
     }
 
     public Group get(Object id) {
-        RestResult result = this.client.get(this.path(), formatEntityId(id));
+        OkhttpRestResult result = this.client.get(this.path(), formatEntityId(id));
         return result.readObject(Group.class);
     }
 
     public List<Group> list(int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = ImmutableMap.of("limit", limit);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Group.class);
     }
 
     public Group update(Group group) {
         String id = formatEntityId(group.id());
-        RestResult result = this.client.put(this.path(), id, group);
+        OkhttpRestResult result = this.client.put(this.path(), id, group);
         return result.readObject(Group.class);
     }
 

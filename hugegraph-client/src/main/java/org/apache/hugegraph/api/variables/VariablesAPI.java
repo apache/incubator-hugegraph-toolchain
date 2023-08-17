@@ -20,8 +20,8 @@ package org.apache.hugegraph.api.variables;
 import java.util.Map;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.google.common.collect.ImmutableMap;
@@ -30,7 +30,7 @@ public class VariablesAPI extends API {
 
     private static final String PATH = "graphs/%s/%s";
 
-    public VariablesAPI(RestClient client, String graph) {
+    public VariablesAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client);
         this.path(PATH, graph, this.type());
     }
@@ -42,14 +42,14 @@ public class VariablesAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> get(String key) {
-        RestResult result = this.client.get(path(), key);
+        OkhttpRestResult result = this.client.get(path(), key);
         return result.readObject(Map.class);
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> set(String key, Object value) {
         value = ImmutableMap.of("data", value);
-        RestResult result = this.client.put(this.path(), key, value);
+        OkhttpRestResult result = this.client.put(this.path(), key, value);
         return result.readObject(Map.class);
     }
 
@@ -59,7 +59,7 @@ public class VariablesAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> all() {
-        RestResult result = this.client.get(path());
+        OkhttpRestResult result = this.client.get(path());
         return result.readObject(Map.class);
     }
 }

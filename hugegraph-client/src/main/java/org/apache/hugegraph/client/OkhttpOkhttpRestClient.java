@@ -21,16 +21,16 @@ import okhttp3.Response;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.serializer.PathDeserializer;
 import org.apache.hugegraph.structure.graph.Path;
-import org.apache.hugegraph.rest.AbstractRestClient;
+import org.apache.hugegraph.rest.AbstractOkhttpOkhttpRestClient;
 import org.apache.hugegraph.rest.ClientException;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-public class RestClient extends AbstractRestClient {
+public class OkhttpOkhttpRestClient extends AbstractOkhttpOkhttpRestClient {
 
     private static final int SECOND = 1000;
 
@@ -39,17 +39,17 @@ public class RestClient extends AbstractRestClient {
     static {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
-        RestResult.registerModule(module);
+        OkhttpRestResult.registerModule(module);
     }
 
-    public RestClient(String url, String username, String password,
-                      int timeout) {
+    public OkhttpOkhttpRestClient(String url, String username, String password,
+                                  int timeout) {
         super(url, username, password, timeout * SECOND);
     }
 
-    public RestClient(String url, String username, String password, int timeout,
-                      int maxConns, int maxConnsPerRoute,
-                      String trustStoreFile, String trustStorePassword) {
+    public OkhttpOkhttpRestClient(String url, String username, String password, int timeout,
+                                  int maxConns, int maxConnsPerRoute,
+                                  String trustStoreFile, String trustStorePassword) {
         super(url, username, password, timeout * SECOND, maxConns,
               maxConnsPerRoute, trustStoreFile, trustStorePassword);
     }

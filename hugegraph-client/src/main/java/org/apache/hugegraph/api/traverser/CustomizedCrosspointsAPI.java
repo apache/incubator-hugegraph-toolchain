@@ -17,14 +17,14 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.traverser.CrosspointsRequest;
 import org.apache.hugegraph.structure.traverser.CustomizedCrosspoints;
 
 public class CustomizedCrosspointsAPI extends TraversersAPI {
 
-    public CustomizedCrosspointsAPI(RestClient client, String graph) {
+    public CustomizedCrosspointsAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -34,7 +34,7 @@ public class CustomizedCrosspointsAPI extends TraversersAPI {
     }
 
     public CustomizedCrosspoints post(CrosspointsRequest request) {
-        RestResult result = this.client.post(this.path(), request);
+        OkhttpRestResult result = this.client.post(this.path(), request);
         return result.readObject(CustomizedCrosspoints.class);
     }
 }

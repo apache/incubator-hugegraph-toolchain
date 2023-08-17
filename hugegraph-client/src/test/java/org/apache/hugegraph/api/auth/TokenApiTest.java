@@ -19,7 +19,7 @@ package org.apache.hugegraph.api.auth;
 
 import java.util.List;
 
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
@@ -80,7 +80,7 @@ public class TokenApiTest extends AuthApiTest {
         });
 
         String token = result.token();
-        RestClient client = Whitebox.getInternalState(tokenAPI, "client");
+        OkhttpOkhttpRestClient client = Whitebox.getInternalState(tokenAPI, "client");
         client.setAuthContext("Bearer " + token);
 
         TokenPayload payload = tokenAPI.verifyToken();
@@ -94,7 +94,7 @@ public class TokenApiTest extends AuthApiTest {
             Assert.assertContains("Invalid token", e.getMessage());
         });
 
-        RestClient client2 = Whitebox.getInternalState(logoutAPI, "client");
+        OkhttpOkhttpRestClient client2 = Whitebox.getInternalState(logoutAPI, "client");
         Assert.assertThrows(ServerException.class, () -> {
             logoutAPI.logout();
         }, e -> {

@@ -17,14 +17,14 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.TemplatePathsRequest;
 
 public class TemplatePathsAPI extends TraversersAPI {
 
-    public TemplatePathsAPI(RestClient client, String graph) {
+    public TemplatePathsAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -35,7 +35,7 @@ public class TemplatePathsAPI extends TraversersAPI {
 
     public PathsWithVertices post(TemplatePathsRequest request) {
         this.client.checkApiVersion("0.58", "template paths");
-        RestResult result = this.client.post(this.path(), request);
+        OkhttpRestResult result = this.client.post(this.path(), request);
         return result.readObject(PathsWithVertices.class);
     }
 }

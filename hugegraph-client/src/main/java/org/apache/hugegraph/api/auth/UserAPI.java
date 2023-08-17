@@ -20,8 +20,8 @@ package org.apache.hugegraph.api.auth;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.structure.auth.User.UserRole;
 import org.apache.hugegraph.structure.constant.HugeType;
@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class UserAPI extends AuthAPI {
 
-    public UserAPI(RestClient client, String graph) {
+    public UserAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -40,12 +40,12 @@ public class UserAPI extends AuthAPI {
     }
 
     public User create(User user) {
-        RestResult result = this.client.post(this.path(), user);
+        OkhttpRestResult result = this.client.post(this.path(), user);
         return result.readObject(User.class);
     }
 
     public User get(Object id) {
-        RestResult result = this.client.get(this.path(), formatEntityId(id));
+        OkhttpRestResult result = this.client.get(this.path(), formatEntityId(id));
         return result.readObject(User.class);
     }
 
@@ -53,20 +53,20 @@ public class UserAPI extends AuthAPI {
 //        String idEncoded = RestClient.encode(formatEntityId(id));
         String idEncoded = formatEntityId(id);
         String path = String.join("/", this.path(), idEncoded, "role");
-        RestResult result = this.client.get(path);
+        OkhttpRestResult result = this.client.get(path);
         return result.readObject(UserRole.class);
     }
 
     public List<User> list(int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = ImmutableMap.of("limit", limit);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), User.class);
     }
 
     public User update(User user) {
         String id = formatEntityId(user.id());
-        RestResult result = this.client.put(this.path(), id, user);
+        OkhttpRestResult result = this.client.put(this.path(), id, user);
         return result.readObject(User.class);
     }
 

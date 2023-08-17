@@ -19,7 +19,7 @@ package org.apache.hugegraph.api.auth;
 
 import java.util.List;
 
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
@@ -77,7 +77,7 @@ public class LogoutApiTest extends AuthApiTest {
         });
 
         String token = result.token();
-        RestClient client = Whitebox.getInternalState(logoutAPI, "client");
+        OkhttpOkhttpRestClient client = Whitebox.getInternalState(logoutAPI, "client");
         client.setAuthContext("Bearer " + token);
         logoutAPI.logout();
     }

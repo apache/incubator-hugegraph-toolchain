@@ -22,15 +22,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.Kneighbor;
 import org.apache.hugegraph.structure.traverser.KneighborRequest;
 
 public class KneighborAPI extends TraversersAPI {
 
-    public KneighborAPI(RestClient client, String graph) {
+    public KneighborAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -54,13 +54,13 @@ public class KneighborAPI extends TraversersAPI {
         params.put("max_depth", depth);
         params.put("max_degree", degree);
         params.put("limit", limit);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList("vertices", Object.class);
     }
 
     public Kneighbor post(KneighborRequest request) {
         this.client.checkApiVersion("0.58", "customized kneighbor");
-        RestResult result = this.client.post(this.path(), request);
+        OkhttpRestResult result = this.client.post(this.path(), request);
         return result.readObject(Kneighbor.class);
     }
 }

@@ -23,11 +23,11 @@ import okhttp3.Response;
 
 import java.io.IOException;
 
-public class TokenInterceptor implements Interceptor {
+public class OkhttpTokenInterceptor implements Interceptor {
 
     private String token;
 
-    public TokenInterceptor(String token) {
+    public OkhttpTokenInterceptor(String token) {
         this.token = token;
     }
 

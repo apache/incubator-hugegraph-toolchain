@@ -21,8 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
 import org.apache.hugegraph.structure.graph.Shard;
@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class EdgesAPI extends TraversersAPI {
 
-    public EdgesAPI(RestClient client, String graph) {
+    public EdgesAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -47,14 +47,14 @@ public class EdgesAPI extends TraversersAPI {
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("ids", ids);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Edge.class);
     }
 
     public List<Shard> shards(long splitSize) {
         String path = String.join(PATH_SPLITOR, this.path(), "shards");
         Map<String, Object> params = ImmutableMap.of("split_size", splitSize);
-        RestResult result = this.client.get(path, params);
+        OkhttpRestResult result = this.client.get(path, params);
         return result.readList("shards", Shard.class);
     }
 
@@ -66,7 +66,7 @@ public class EdgesAPI extends TraversersAPI {
         params.put("end", shard.end());
         params.put("page", page);
         params.put("page_limit", pageLimit);
-        RestResult result = this.client.get(path, params);
+        OkhttpRestResult result = this.client.get(path, params);
         return result.readObject(Edges.class);
     }
 }

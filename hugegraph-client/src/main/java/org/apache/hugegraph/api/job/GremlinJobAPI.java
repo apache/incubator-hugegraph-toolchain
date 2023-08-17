@@ -21,14 +21,14 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.api.task.TaskAPI;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 
 public class GremlinJobAPI extends JobAPI {
 
     private static final String JOB_TYPE = "gremlin";
 
-    public GremlinJobAPI(RestClient client, String graph) {
+    public GremlinJobAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -38,7 +38,7 @@ public class GremlinJobAPI extends JobAPI {
     }
 
     public long execute(GremlinRequest request) {
-        RestResult result = this.client.post(this.path(), request);
+        OkhttpRestResult result = this.client.post(this.path(), request);
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);

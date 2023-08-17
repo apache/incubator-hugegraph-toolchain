@@ -19,10 +19,10 @@ package org.apache.hugegraph.api.graph;
 
 import com.google.common.collect.ImmutableMap;
 import okhttp3.Headers;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.exception.InvalidResponseException;
 import org.apache.hugegraph.exception.NotAllCreatedException;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.graph.BatchOlapPropertyRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
@@ -35,7 +35,7 @@ import java.util.Map;
 
 public class VertexAPI extends GraphAPI {
 
-    public VertexAPI(RestClient client, String graph) {
+    public VertexAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -45,7 +45,7 @@ public class VertexAPI extends GraphAPI {
     }
 
     public Vertex create(Vertex vertex) {
-        RestResult result = this.client.post(this.path(), vertex);
+        OkhttpRestResult result = this.client.post(this.path(), vertex);
         return result.readObject(Vertex.class);
     }
 
@@ -53,7 +53,7 @@ public class VertexAPI extends GraphAPI {
 //        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
 //        headers.putSingle("Content-Encoding", BATCH_ENCODING);
         Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
-        RestResult result = this.client.post(this.batchPath(), vertices,
+        OkhttpRestResult result = this.client.post(this.batchPath(), vertices,
                                              headers);
         List<Object> ids = result.readList(Object.class);
         if (vertices.size() != ids.size()) {
@@ -69,7 +69,7 @@ public class VertexAPI extends GraphAPI {
 //        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
 //        headers.putSingle("Content-Encoding", BATCH_ENCODING);
         Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
-        RestResult result = this.client.put(this.batchPath(), null,
+        OkhttpRestResult result = this.client.put(this.batchPath(), null,
                                             request, headers);
         return result.readList(this.type(), Vertex.class);
     }
@@ -80,7 +80,7 @@ public class VertexAPI extends GraphAPI {
 //        headers.putSingle("Content-Encoding", BATCH_ENCODING);
         Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
         String path = String.join("/", this.path(), "olap/batch");
-        RestResult result = this.client.put(path, null, request, headers);
+        OkhttpRestResult result = this.client.put(path, null, request, headers);
         Object size = result.readObject(Map.class).get("size");
         if (!(size instanceof Integer)) {
             throw new InvalidResponseException("The 'size' in response must be int, " +
@@ -92,20 +92,20 @@ public class VertexAPI extends GraphAPI {
     public Vertex append(Vertex vertex) {
         String id = formatVertexId(vertex.id());
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), id, vertex, params);
+        OkhttpRestResult result = this.client.put(this.path(), id, vertex, params);
         return result.readObject(Vertex.class);
     }
 
     public Vertex eliminate(Vertex vertex) {
         String id = formatVertexId(vertex.id());
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), id, vertex, params);
+        OkhttpRestResult result = this.client.put(this.path(), id, vertex, params);
         return result.readObject(Vertex.class);
     }
 
     public Vertex get(Object id) {
         String vertexId = formatVertexId(id);
-        RestResult result = this.client.get(this.path(), vertexId);
+        OkhttpRestResult result = this.client.get(this.path(), vertexId);
         return result.readObject(Vertex.class);
     }
 
@@ -130,7 +130,7 @@ public class VertexAPI extends GraphAPI {
         params.put("offset", offset);
         params.put("limit", limit);
         params.put("page", page);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readObject(Vertices.class);
     }
 

@@ -24,11 +24,11 @@ import okhttp3.Response;
 
 import java.io.IOException;
 
-public class BasicAuthInterceptor implements Interceptor {
+public class OkhttpBasicAuthInterceptor implements Interceptor {
 
     private String credentials;
 
-    public BasicAuthInterceptor(String user, String password) {
+    public OkhttpBasicAuthInterceptor(String user, String password) {
         this.credentials = Credentials.basic(user, password);
     }
 

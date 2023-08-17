@@ -22,14 +22,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.graph.Path;
 
 public class CrosspointsAPI extends TraversersAPI {
 
-    public CrosspointsAPI(RestClient client, String graph) {
+    public CrosspointsAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -59,7 +59,7 @@ public class CrosspointsAPI extends TraversersAPI {
         params.put("max_degree", degree);
         params.put("capacity", capacity);
         params.put("limit", limit);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList("crosspoints", Path.class);
     }
 }

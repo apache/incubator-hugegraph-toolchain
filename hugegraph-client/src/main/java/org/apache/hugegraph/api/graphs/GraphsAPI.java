@@ -21,9 +21,9 @@ import com.google.common.collect.ImmutableMap;
 import okhttp3.Headers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.exception.InvalidResponseException;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
@@ -40,7 +40,7 @@ public class GraphsAPI extends API {
 
     private static final String CONFIRM_MESSAGE = "confirm_message";
 
-    public GraphsAPI(RestClient client) {
+    public GraphsAPI(OkhttpOkhttpRestClient client) {
         super(client);
         this.path(this.type());
     }
@@ -61,19 +61,19 @@ public class GraphsAPI extends API {
         if (StringUtils.isNotEmpty(cloneGraphName)) {
             params = ImmutableMap.of("clone_graph_name", cloneGraphName);
         }
-        RestResult result = this.client.post(joinPath(this.path(), name),
+        OkhttpRestResult result = this.client.post(joinPath(this.path(), name),
                                              configText, headers, params);
         return result.readObject(Map.class);
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, String> get(String name) {
-        RestResult result = this.client.get(this.path(), name);
+        OkhttpRestResult result = this.client.get(this.path(), name);
         return result.readObject(Map.class);
     }
 
     public List<String> list() {
-        RestResult result = this.client.get(this.path());
+        OkhttpRestResult result = this.client.get(this.path());
         return result.readList(this.type(), String.class);
     }
 
@@ -95,7 +95,7 @@ public class GraphsAPI extends API {
     }
 
     public GraphMode mode(String graph) {
-        RestResult result = this.client.get(joinPath(this.path(), graph), MODE);
+        OkhttpRestResult result = this.client.get(joinPath(this.path(), graph), MODE);
         @SuppressWarnings("unchecked")
         Map<String, String> mode = result.readObject(Map.class);
         String value = mode.get(MODE);
@@ -120,7 +120,7 @@ public class GraphsAPI extends API {
 
     public GraphReadMode readMode(String graph) {
         this.client.checkApiVersion("0.59", "graph read mode");
-        RestResult result = this.client.get(joinPath(this.path(), graph),
+        OkhttpRestResult result = this.client.get(joinPath(this.path(), graph),
                                             GRAPH_READ_MODE);
         @SuppressWarnings("unchecked")
         Map<String, String> readMode = result.readObject(Map.class);

@@ -20,7 +20,7 @@ package org.apache.hugegraph.exception;
 import java.util.Map;
 
 import okhttp3.Response;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 
 public class ServerException extends RuntimeException {
 
@@ -40,7 +40,7 @@ public class ServerException extends RuntimeException {
     private Object trace;
 
     public static ServerException fromResponse(Response response) {
-        RestResult rs = new RestResult(response);
+        OkhttpRestResult rs = new OkhttpRestResult(response);
         ServerException exception = new ServerException(rs.content());
         exception.status(response.code());
         try {

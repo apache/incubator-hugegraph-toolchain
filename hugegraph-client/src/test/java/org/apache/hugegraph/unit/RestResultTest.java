@@ -24,7 +24,7 @@ import java.util.List;
 
 import lombok.SneakyThrows;
 import org.apache.hugegraph.driver.GraphManager;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.serializer.PathDeserializer;
 import org.apache.hugegraph.structure.constant.Cardinality;
 import org.apache.hugegraph.structure.constant.DataType;
@@ -65,7 +65,7 @@ public class RestResultTest extends BaseUnitTest {
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
-        RestResult.registerModule(module);
+        OkhttpRestResult.registerModule(module);
     }
 
     public static GraphManager graph() {
@@ -98,7 +98,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -133,7 +133,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -170,7 +170,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -210,7 +210,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -253,7 +253,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -296,7 +296,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -338,7 +338,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -378,7 +378,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -419,7 +419,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -471,7 +471,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -529,7 +529,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -581,7 +581,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult result = new RestResult(this.mockResponse);
+        OkhttpRestResult result = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertNull(result.headers());
 
@@ -661,7 +661,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult restResult = new RestResult(this.mockResponse);
+        OkhttpRestResult restResult = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());
 
@@ -750,7 +750,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult restResult = new RestResult(this.mockResponse);
+        OkhttpRestResult restResult = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());
 
@@ -839,7 +839,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult restResult = new RestResult(this.mockResponse);
+        OkhttpRestResult restResult = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());
 
@@ -898,7 +898,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult restResult = new RestResult(this.mockResponse);
+        OkhttpRestResult restResult = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());
 
@@ -944,7 +944,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult restResult = new RestResult(this.mockResponse);
+        OkhttpRestResult restResult = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());
 
@@ -1005,7 +1005,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
         Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
-        RestResult restResult = new RestResult(this.mockResponse);
+        OkhttpRestResult restResult = new OkhttpRestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
         Assert.assertNull(restResult.headers());
 

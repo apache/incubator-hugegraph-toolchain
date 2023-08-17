@@ -21,14 +21,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class AccessAPI extends AuthAPI {
 
-    public AccessAPI(RestClient client, String graph) {
+    public AccessAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -38,12 +38,12 @@ public class AccessAPI extends AuthAPI {
     }
 
     public Access create(Access access) {
-        RestResult result = this.client.post(this.path(), access);
+        OkhttpRestResult result = this.client.post(this.path(), access);
         return result.readObject(Access.class);
     }
 
     public Access get(Object id) {
-        RestResult result = this.client.get(this.path(), formatRelationId(id));
+        OkhttpRestResult result = this.client.get(this.path(), formatRelationId(id));
         return result.readObject(Access.class);
     }
 
@@ -53,13 +53,13 @@ public class AccessAPI extends AuthAPI {
         params.put("limit", limit);
         params.put("group", formatEntityId(group));
         params.put("target", formatEntityId(target));
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Access.class);
     }
 
     public Access update(Access access) {
         String id = formatRelationId(access.id());
-        RestResult result = this.client.put(this.path(), id, access);
+        OkhttpRestResult result = this.client.put(this.path(), id, access);
         return result.readObject(Access.class);
     }
 

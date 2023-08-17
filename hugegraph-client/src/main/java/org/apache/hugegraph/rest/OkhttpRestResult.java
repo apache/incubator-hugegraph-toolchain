@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RestResult {
+public class OkhttpRestResult {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -37,7 +37,7 @@ public class RestResult {
     private final Headers headers;
     private final String content;
 
-    public RestResult(Response response) {
+    public OkhttpRestResult(Response response) {
         this(response.code(), getResponseContent(response), response.headers());
     }
 
@@ -46,8 +46,8 @@ public class RestResult {
         return response.body().string();
     }
 
-    public RestResult(int status, String content,
-                      Headers headers) {
+    public OkhttpRestResult(int status, String content,
+                            Headers headers) {
         this.status = status;
         this.headers = headers;
         this.content = content;

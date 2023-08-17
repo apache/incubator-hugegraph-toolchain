@@ -21,44 +21,44 @@ import okhttp3.Headers;
 
 import java.util.Map;
 
-public interface RestClient {
+public interface OkhttpRestClient {
     /**
      * Post method
      */
-    RestResult post(String path, Object object);
+    OkhttpRestResult post(String path, Object object);
 
-    RestResult post(String path, Object object, Headers headers);
-    RestResult post(String path, Object object, Map<String, Object> params);
+    OkhttpRestResult post(String path, Object object, Headers headers);
+    OkhttpRestResult post(String path, Object object, Map<String, Object> params);
 
-    RestResult post(String path, Object object, Headers headers,
-                    Map<String, Object> params);
+    OkhttpRestResult post(String path, Object object, Headers headers,
+                          Map<String, Object> params);
 
     /**
      * Put method
      */
-    RestResult put(String path, String id, Object object);
-    RestResult put(String path, String id, Object object, Headers headers);
+    OkhttpRestResult put(String path, String id, Object object);
+    OkhttpRestResult put(String path, String id, Object object, Headers headers);
 
-    RestResult put(String path, String id, Object object, Map<String, Object> params);
+    OkhttpRestResult put(String path, String id, Object object, Map<String, Object> params);
 
-    RestResult put(String path, String id, Object object, Headers headers,
-                   Map<String, Object> params);
+    OkhttpRestResult put(String path, String id, Object object, Headers headers,
+                         Map<String, Object> params);
 
     /**
      * Get method
      */
-    RestResult get(String path);
+    OkhttpRestResult get(String path);
 
-    RestResult get(String path, Map<String, Object> params);
+    OkhttpRestResult get(String path, Map<String, Object> params);
 
-    RestResult get(String path, String id);
+    OkhttpRestResult get(String path, String id);
 
     /**
      * Delete method
      */
-    RestResult delete(String path, Map<String, Object> params);
+    OkhttpRestResult delete(String path, Map<String, Object> params);
 
-    RestResult delete(String path, String id);
+    OkhttpRestResult delete(String path, String id);
 
     void close();
 }

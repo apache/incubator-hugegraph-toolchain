@@ -18,14 +18,14 @@
 package org.apache.hugegraph.api.auth;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.structure.auth.AuthElement;
 
 public abstract class AuthAPI extends API {
 
     private static final String PATH = "graphs/%s/auth/%s";
 
-    public AuthAPI(RestClient client, String graph) {
+    public AuthAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client);
         this.path(PATH, graph, this.type());
     }

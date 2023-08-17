@@ -21,9 +21,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
@@ -35,7 +35,7 @@ public class JaccardSimilarityAPI extends TraversersAPI {
 
     private static final String JACCARD_SIMILARITY = "jaccard_similarity";
 
-    public JaccardSimilarityAPI(RestClient client, String graph) {
+    public JaccardSimilarityAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -56,7 +56,7 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("max_degree", degree);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         @SuppressWarnings("unchecked")
         Map<String, Double> jaccard = result.readObject(Map.class);
         E.checkState(jaccard.containsKey(JACCARD_SIMILARITY),
@@ -67,7 +67,7 @@ public class JaccardSimilarityAPI extends TraversersAPI {
     @SuppressWarnings("unchecked")
     public Map<Object, Double> post(SingleSourceJaccardSimilarityRequest request) {
         this.client.checkApiVersion("0.58", "jaccard similar");
-        RestResult result = this.client.post(this.path(), request);
+        OkhttpRestResult result = this.client.post(this.path(), request);
         return result.readObject(Map.class);
     }
 }

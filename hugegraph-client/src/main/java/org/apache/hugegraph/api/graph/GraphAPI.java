@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.JsonUtil;
 
@@ -31,7 +31,7 @@ public abstract class GraphAPI extends API {
 
     private final String batchPath;
 
-    public GraphAPI(RestClient client, String graph) {
+    public GraphAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client);
         this.path(PATH, graph, this.type());
         this.batchPath = String.join("/", this.path(), "batch");

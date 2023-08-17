@@ -21,14 +21,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.Belong;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class BelongAPI extends AuthAPI {
 
-    public BelongAPI(RestClient client, String graph) {
+    public BelongAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -38,12 +38,12 @@ public class BelongAPI extends AuthAPI {
     }
 
     public Belong create(Belong belong) {
-        RestResult result = this.client.post(this.path(), belong);
+        OkhttpRestResult result = this.client.post(this.path(), belong);
         return result.readObject(Belong.class);
     }
 
     public Belong get(Object id) {
-        RestResult result = this.client.get(this.path(), formatRelationId(id));
+        OkhttpRestResult result = this.client.get(this.path(), formatRelationId(id));
         return result.readObject(Belong.class);
     }
 
@@ -53,13 +53,13 @@ public class BelongAPI extends AuthAPI {
         params.put("limit", limit);
         params.put("user", formatEntityId(user));
         params.put("group", formatEntityId(group));
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Belong.class);
     }
 
     public Belong update(Belong belong) {
         String id = formatRelationId(belong.id());
-        RestResult result = this.client.put(this.path(), id, belong);
+        OkhttpRestResult result = this.client.put(this.path(), id, belong);
         return result.readObject(Belong.class);
     }
 

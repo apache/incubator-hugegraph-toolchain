@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 import okhttp3.Headers;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.exception.NotAllCreatedException;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class EdgeAPI extends GraphAPI {
 
-    public EdgeAPI(RestClient client, String graph) {
+    public EdgeAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -45,7 +45,7 @@ public class EdgeAPI extends GraphAPI {
     }
 
     public Edge create(Edge edge) {
-        RestResult result = this.client.post(this.path(), edge);
+        OkhttpRestResult result = this.client.post(this.path(), edge);
         return result.readObject(Edge.class);
     }
 
@@ -55,7 +55,7 @@ public class EdgeAPI extends GraphAPI {
         Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
         Map<String, Object> params = ImmutableMap.of("check_vertex",
                                                      checkVertex);
-        RestResult result = this.client.post(this.batchPath(), edges,
+        OkhttpRestResult result = this.client.post(this.batchPath(), edges,
                                              headers, params);
         List<String> ids = result.readList(String.class);
         if (edges.size() != ids.size()) {
@@ -71,7 +71,7 @@ public class EdgeAPI extends GraphAPI {
 //        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
 //        headers.putSingle("Content-Encoding", BATCH_ENCODING);
         Headers headers = new Headers.Builder().add("Content-Encoding", BATCH_ENCODING).build();
-        RestResult result = this.client.put(this.batchPath(), null,
+        OkhttpRestResult result = this.client.put(this.batchPath(), null,
                                             request, headers);
         return result.readList(this.type(), Edge.class);
     }
@@ -79,19 +79,19 @@ public class EdgeAPI extends GraphAPI {
     public Edge append(Edge edge) {
         String id = edge.id();
         Map<String, Object> params = ImmutableMap.of("action", "append");
-        RestResult result = this.client.put(this.path(), id, edge, params);
+        OkhttpRestResult result = this.client.put(this.path(), id, edge, params);
         return result.readObject(Edge.class);
     }
 
     public Edge eliminate(Edge edge) {
         String id = edge.id();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
-        RestResult result = this.client.put(this.path(), id, edge, params);
+        OkhttpRestResult result = this.client.put(this.path(), id, edge, params);
         return result.readObject(Edge.class);
     }
 
     public Edge get(String id) {
-        RestResult result = this.client.get(this.path(), id);
+        OkhttpRestResult result = this.client.get(this.path(), id);
         return result.readObject(Edge.class);
     }
 
@@ -122,7 +122,7 @@ public class EdgeAPI extends GraphAPI {
         params.put("offset", offset);
         params.put("limit", limit);
         params.put("page", page);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readObject(Edges.class);
     }
 

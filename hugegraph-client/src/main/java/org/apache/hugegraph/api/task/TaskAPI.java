@@ -23,9 +23,9 @@ import java.util.Map;
 
 import org.apache.hugegraph.util.TaskCache;
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.rest.ClientException;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.E;
@@ -41,7 +41,7 @@ public class TaskAPI extends API {
     public static final long TASK_TIMEOUT = 60L;
     private static final long QUERY_INTERVAL = 500L;
 
-    public TaskAPI(RestClient client, String graph) {
+    public TaskAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client);
         this.path(String.format(PATH, graph));
         this.graph = graph;
@@ -62,7 +62,7 @@ public class TaskAPI extends API {
         if (status != null) {
             params.put("status", status);
         }
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(TASKS, Task.class);
     }
 
@@ -75,19 +75,19 @@ public class TaskAPI extends API {
         if (status != null) {
             params.put("status", status);
         }
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readObject(TasksWithPage.class);
     }
 
     public List<Task> list(List<Long> ids) {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("ids", ids);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(TASKS, Task.class);
     }
 
     public Task get(long id) {
-        RestResult result = this.client.get(this.path(), String.valueOf(id));
+        OkhttpRestResult result = this.client.get(this.path(), String.valueOf(id));
         return result.readObject(Task.class);
     }
 
@@ -97,7 +97,7 @@ public class TaskAPI extends API {
 
     public Task cancel(long id) {
         Map<String, Object> params = ImmutableMap.of("action", "cancel");
-        RestResult result = this.client.put(path(), String.valueOf(id),
+        OkhttpRestResult result = this.client.put(path(), String.valueOf(id),
                                             ImmutableMap.of(), params);
         return result.readObject(Task.class);
     }

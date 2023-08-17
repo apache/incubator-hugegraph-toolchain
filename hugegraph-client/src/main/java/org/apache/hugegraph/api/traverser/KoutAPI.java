@@ -22,15 +22,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.Kout;
 import org.apache.hugegraph.structure.traverser.KoutRequest;
 
 public class KoutAPI extends TraversersAPI {
 
-    public KoutAPI(RestClient client, String graph) {
+    public KoutAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -58,13 +58,13 @@ public class KoutAPI extends TraversersAPI {
         params.put("max_degree", degree);
         params.put("capacity", capacity);
         params.put("limit", limit);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList("vertices", Object.class);
     }
 
     public Kout post(KoutRequest request) {
         this.client.checkApiVersion("0.58", "customized kout");
-        RestResult result = this.client.post(this.path(), request);
+        OkhttpRestResult result = this.client.post(this.path(), request);
         return result.readObject(Kout.class);
     }
 }

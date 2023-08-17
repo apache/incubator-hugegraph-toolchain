@@ -18,14 +18,14 @@
 package org.apache.hugegraph.api.schema;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 import org.apache.hugegraph.structure.SchemaElement;
 
 public abstract class SchemaElementAPI extends API {
 
     private static final String PATH = "graphs/%s/schema/%s";
 
-    public SchemaElementAPI(RestClient client, String graph) {
+    public SchemaElementAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client);
         this.path(PATH, graph, this.type());
     }

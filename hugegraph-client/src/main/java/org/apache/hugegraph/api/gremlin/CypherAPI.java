@@ -18,8 +18,8 @@
 package org.apache.hugegraph.api.gremlin;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.gremlin.Response;
 
@@ -27,7 +27,7 @@ public class CypherAPI extends API {
 
     private static final String PATH = "graphs/%s/cypher";
 
-    public CypherAPI(RestClient client, String graph) {
+    public CypherAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client);
         this.path(PATH, graph);
     }
@@ -38,7 +38,7 @@ public class CypherAPI extends API {
     }
 
     public Response post(String cypher) {
-        RestResult result = this.client.post(this.path(), cypher);
+        OkhttpRestResult result = this.client.post(this.path(), cypher);
         return result.readObject(Response.class);
     }
 }

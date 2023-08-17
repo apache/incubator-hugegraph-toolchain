@@ -22,15 +22,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 
 public class SameNeighborsAPI extends TraversersAPI {
 
     private static final String SAME_NEIGHBORS = "same_neighbors";
 
-    public SameNeighborsAPI(RestClient client, String graph) {
+    public SameNeighborsAPI(OkhttpOkhttpRestClient client, String graph) {
         super(client, graph);
     }
 
@@ -53,7 +53,7 @@ public class SameNeighborsAPI extends TraversersAPI {
         params.put("label", label);
         params.put("max_degree", degree);
         params.put("limit", limit);
-        RestResult result = this.client.get(this.path(), params);
+        OkhttpRestResult result = this.client.get(this.path(), params);
         return result.readList(SAME_NEIGHBORS, Object.class);
     }
 }

@@ -22,14 +22,14 @@ import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
-import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
 
 public class JobManager {
 
     private RebuildAPI rebuildAPI;
     private TaskAPI taskAPI;
 
-    public JobManager(RestClient client, String graph) {
+    public JobManager(OkhttpOkhttpRestClient client, String graph) {
         this.rebuildAPI = new RebuildAPI(client, graph);
         this.taskAPI = new TaskAPI(client, graph);
     }
