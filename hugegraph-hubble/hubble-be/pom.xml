@@ -31,6 +31,7 @@
         <app.port>36320</app.port>
         <mybatis.starter.version>2.1.0</mybatis.starter.version>
         <mybatis.plus.starter.version>3.3.0</mybatis.plus.starter.version>
+        <okhttp.version>4.10.0</okhttp.version>
     </properties>
 
     <dependencies>
@@ -158,10 +159,28 @@
                     <groupId>log4j</groupId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>com.squareup.okhttp</groupId>
                     <artifactId>okhttp</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>1.6.20</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-common</artifactId>
+            <version>1.5.31</version>
         </dependency>
 
         <dependency>
@@ -169,6 +188,18 @@
             <artifactId>commons-fileupload</artifactId>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp-bom</artifactId>
+                <version>${okhttp.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <profiles>
         <profile>
