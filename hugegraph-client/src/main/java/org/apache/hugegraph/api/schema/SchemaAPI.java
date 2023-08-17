@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotSupportException;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.SchemaElement;
@@ -30,7 +30,7 @@ public class SchemaAPI extends API {
 
     private static final String PATH = "graphs/%s/%s";
 
-    public SchemaAPI(OkhttpOkhttpRestClient client, String graph) {
+    public SchemaAPI(RestClient client, String graph) {
         super(client);
         this.path(PATH, graph, this.type());
     }

@@ -21,7 +21,7 @@ import okhttp3.Response;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.serializer.PathDeserializer;
 import org.apache.hugegraph.structure.graph.Path;
-import org.apache.hugegraph.rest.AbstractOkhttpOkhttpRestClient;
+import org.apache.hugegraph.rest.OkhttpAbstractRestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.util.E;
@@ -30,7 +30,7 @@ import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-public class OkhttpOkhttpRestClient extends AbstractOkhttpOkhttpRestClient {
+public class RestClient extends OkhttpAbstractRestClient {
 
     private static final int SECOND = 1000;
 
@@ -42,14 +42,14 @@ public class OkhttpOkhttpRestClient extends AbstractOkhttpOkhttpRestClient {
         OkhttpRestResult.registerModule(module);
     }
 
-    public OkhttpOkhttpRestClient(String url, String username, String password,
-                                  int timeout) {
+    public RestClient(String url, String username, String password,
+                      int timeout) {
         super(url, username, password, timeout * SECOND);
     }
 
-    public OkhttpOkhttpRestClient(String url, String username, String password, int timeout,
-                                  int maxConns, int maxConnsPerRoute,
-                                  String trustStoreFile, String trustStorePassword) {
+    public RestClient(String url, String username, String password, int timeout,
+                      int maxConns, int maxConnsPerRoute,
+                      String trustStoreFile, String trustStorePassword) {
         super(url, username, password, timeout * SECOND, maxConns,
               maxConnsPerRoute, trustStoreFile, trustStorePassword);
     }

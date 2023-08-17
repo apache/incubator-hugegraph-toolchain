@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.util.TaskCache;
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.Task;
@@ -41,7 +41,7 @@ public class TaskAPI extends API {
     public static final long TASK_TIMEOUT = 60L;
     private static final long QUERY_INTERVAL = 500L;
 
-    public TaskAPI(OkhttpOkhttpRestClient client, String graph) {
+    public TaskAPI(RestClient client, String graph) {
         super(client);
         this.path(String.format(PATH, graph));
         this.graph = graph;

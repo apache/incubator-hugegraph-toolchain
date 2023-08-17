@@ -20,14 +20,14 @@ package org.apache.hugegraph.driver;
 import org.apache.hugegraph.api.gremlin.CypherAPI;
 import org.apache.hugegraph.structure.gremlin.Response;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 public class CypherManager {
 
     private final GraphManager graphManager;
     private final CypherAPI cypherAPI;
 
-    public CypherManager(OkhttpOkhttpRestClient client, String graph,
+    public CypherManager(RestClient client, String graph,
                          GraphManager graphManager) {
         this.graphManager = graphManager;
         this.cypherAPI = new CypherAPI(client, graph);

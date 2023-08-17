@@ -33,7 +33,7 @@ import org.apache.hugegraph.api.schema.VertexLabelAPI;
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.api.variables.VariablesAPI;
 import org.apache.hugegraph.api.version.VersionAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.VersionUtil;
 import org.junit.AfterClass;
@@ -41,7 +41,7 @@ import org.junit.BeforeClass;
 
 public class BaseApiTest extends BaseClientTest {
 
-    protected static OkhttpOkhttpRestClient client;
+    protected static RestClient client;
 
     protected static VersionAPI versionAPI;
     protected static GraphsAPI graphsAPI;
@@ -59,8 +59,8 @@ public class BaseApiTest extends BaseClientTest {
     protected static TaskAPI taskAPI;
     protected static RebuildAPI rebuildAPI;
 
-    protected static OkhttpOkhttpRestClient initClient() {
-        client = new OkhttpOkhttpRestClient(BASE_URL, USERNAME, PASSWORD, TIMEOUT);
+    protected static RestClient initClient() {
+        client = new RestClient(BASE_URL, USERNAME, PASSWORD, TIMEOUT);
         return client;
     }
 
@@ -101,7 +101,7 @@ public class BaseApiTest extends BaseClientTest {
         BaseClientTest.clear();
     }
 
-    protected OkhttpOkhttpRestClient client() {
+    protected RestClient client() {
         return client;
     }
 

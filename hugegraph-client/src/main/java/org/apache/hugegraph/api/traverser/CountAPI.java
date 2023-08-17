@@ -19,7 +19,7 @@ package org.apache.hugegraph.api.traverser;
 
 import java.util.Map;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.traverser.CountRequest;
 import org.apache.hugegraph.util.E;
@@ -28,7 +28,7 @@ public class CountAPI extends TraversersAPI {
 
     private static final String COUNT = "count";
 
-    public CountAPI(OkhttpOkhttpRestClient client, String graph) {
+    public CountAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

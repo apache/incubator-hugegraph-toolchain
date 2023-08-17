@@ -17,14 +17,14 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.CustomizedPathsRequest;
 
 public class CustomizedPathsAPI extends TraversersAPI {
 
-    public CustomizedPathsAPI(OkhttpOkhttpRestClient client, String graph) {
+    public CustomizedPathsAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

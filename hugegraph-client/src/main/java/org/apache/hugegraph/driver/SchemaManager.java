@@ -27,7 +27,7 @@ import org.apache.hugegraph.api.schema.IndexLabelAPI;
 import org.apache.hugegraph.api.schema.PropertyKeyAPI;
 import org.apache.hugegraph.api.schema.SchemaAPI;
 import org.apache.hugegraph.api.schema.VertexLabelAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.schema.BuilderProxy;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.IndexLabel;
@@ -43,7 +43,7 @@ public class SchemaManager {
     private SchemaAPI schemaAPI;
     private TaskAPI taskAPI;
 
-    public SchemaManager(OkhttpOkhttpRestClient client, String graph) {
+    public SchemaManager(RestClient client, String graph) {
         this.propertyKeyAPI = new PropertyKeyAPI(client, graph);
         this.vertexLabelAPI = new VertexLabelAPI(client, graph);
         this.edgeLabelAPI = new EdgeLabelAPI(client, graph);

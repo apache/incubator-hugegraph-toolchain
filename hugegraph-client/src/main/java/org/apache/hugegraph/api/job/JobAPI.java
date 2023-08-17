@@ -18,7 +18,7 @@
 package org.apache.hugegraph.api.job;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public abstract class JobAPI extends API {
@@ -26,7 +26,7 @@ public abstract class JobAPI extends API {
     // For example: graphs/hugegraph/jobs/gremlin
     private static final String PATH = "graphs/%s/%s/%s";
 
-    public JobAPI(OkhttpOkhttpRestClient client, String graph) {
+    public JobAPI(RestClient client, String graph) {
         super(client);
         this.path(String.format(PATH, graph, this.type(), this.jobType()));
     }

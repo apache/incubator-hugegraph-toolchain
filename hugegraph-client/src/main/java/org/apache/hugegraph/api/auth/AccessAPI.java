@@ -21,14 +21,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class AccessAPI extends AuthAPI {
 
-    public AccessAPI(OkhttpOkhttpRestClient client, String graph) {
+    public AccessAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

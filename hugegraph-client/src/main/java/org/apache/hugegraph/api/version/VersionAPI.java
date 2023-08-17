@@ -18,14 +18,14 @@
 package org.apache.hugegraph.api.version;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.version.Versions;
 
 public class VersionAPI extends API {
 
-    public VersionAPI(OkhttpOkhttpRestClient client) {
+    public VersionAPI(RestClient client) {
         super(client);
         this.path(this.type());
     }

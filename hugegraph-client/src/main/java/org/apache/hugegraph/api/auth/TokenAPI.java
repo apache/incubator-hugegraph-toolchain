@@ -17,14 +17,14 @@
 
 package org.apache.hugegraph.api.auth;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.TokenPayload;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class TokenAPI extends AuthAPI {
 
-    public TokenAPI(OkhttpOkhttpRestClient client, String graph) {
+    public TokenAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import okhttp3.Headers;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotAllCreatedException;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class EdgeAPI extends GraphAPI {
 
-    public EdgeAPI(OkhttpOkhttpRestClient client, String graph) {
+    public EdgeAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

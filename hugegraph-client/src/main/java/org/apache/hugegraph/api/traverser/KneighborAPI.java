@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.Kneighbor;
@@ -30,7 +30,7 @@ import org.apache.hugegraph.structure.traverser.KneighborRequest;
 
 public class KneighborAPI extends TraversersAPI {
 
-    public KneighborAPI(OkhttpOkhttpRestClient client, String graph) {
+    public KneighborAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

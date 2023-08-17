@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class EdgesAPI extends TraversersAPI {
 
-    public EdgesAPI(OkhttpOkhttpRestClient client, String graph) {
+    public EdgesAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

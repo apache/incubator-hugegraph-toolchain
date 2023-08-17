@@ -18,14 +18,14 @@
 package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.util.E;
 
 public class TraversersAPI extends API {
 
     private static final String PATH = "graphs/%s/traversers/%s";
 
-    public TraversersAPI(OkhttpOkhttpRestClient client, String graph) {
+    public TraversersAPI(RestClient client, String graph) {
         super(client);
         this.path(PATH, graph, this.type());
     }

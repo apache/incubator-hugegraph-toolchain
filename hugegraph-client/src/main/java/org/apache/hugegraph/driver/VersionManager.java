@@ -19,13 +19,13 @@ package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.api.version.VersionAPI;
 import org.apache.hugegraph.structure.version.Versions;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 public class VersionManager {
 
     private VersionAPI versionAPI;
 
-    public VersionManager(OkhttpOkhttpRestClient client) {
+    public VersionManager(RestClient client) {
         this.versionAPI = new VersionAPI(client);
     }
 

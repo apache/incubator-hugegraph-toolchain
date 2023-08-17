@@ -20,7 +20,7 @@ package org.apache.hugegraph.api.job;
 import java.util.Map;
 
 import org.apache.hugegraph.api.task.TaskAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
@@ -32,7 +32,7 @@ public class RebuildAPI extends JobAPI {
 
     private static final String JOB_TYPE = "rebuild";
 
-    public RebuildAPI(OkhttpOkhttpRestClient client, String graph) {
+    public RebuildAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

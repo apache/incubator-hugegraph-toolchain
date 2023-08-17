@@ -18,7 +18,7 @@
 package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.api.variables.VariablesAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 import java.util.Map;
 
@@ -26,7 +26,7 @@ public class VariablesManager {
 
     private VariablesAPI variablesAPI;
 
-    public VariablesManager(OkhttpOkhttpRestClient client, String graph) {
+    public VariablesManager(RestClient client, String graph) {
         this.variablesAPI = new VariablesAPI(client, graph);
     }
 

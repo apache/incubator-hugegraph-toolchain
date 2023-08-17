@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.Kout;
@@ -30,7 +30,7 @@ import org.apache.hugegraph.structure.traverser.KoutRequest;
 
 public class KoutAPI extends TraversersAPI {
 
-    public KoutAPI(OkhttpOkhttpRestClient client, String graph) {
+    public KoutAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

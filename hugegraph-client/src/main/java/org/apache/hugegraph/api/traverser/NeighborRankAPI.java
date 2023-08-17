@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class NeighborRankAPI extends TraversersAPI {
 
-    public NeighborRankAPI(OkhttpOkhttpRestClient client, String graph) {
+    public NeighborRankAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

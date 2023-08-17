@@ -20,13 +20,13 @@ package org.apache.hugegraph.driver;
 import java.util.Map;
 
 import org.apache.hugegraph.api.metrics.MetricsAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 public class MetricsManager {
 
     private MetricsAPI metricsAPI;
 
-    public MetricsManager(OkhttpOkhttpRestClient client) {
+    public MetricsManager(RestClient client) {
         this.metricsAPI = new MetricsAPI(client);
     }
 

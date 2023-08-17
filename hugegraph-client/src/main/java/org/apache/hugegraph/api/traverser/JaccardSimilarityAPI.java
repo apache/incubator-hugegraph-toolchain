@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 import org.apache.hugegraph.rest.OkhttpRestResult;
 
@@ -35,7 +35,7 @@ public class JaccardSimilarityAPI extends TraversersAPI {
 
     private static final String JACCARD_SIMILARITY = "jaccard_similarity";
 
-    public JaccardSimilarityAPI(OkhttpOkhttpRestClient client, String graph) {
+    public JaccardSimilarityAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

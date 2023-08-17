@@ -45,7 +45,7 @@ import org.apache.hugegraph.api.traverser.SingleSourceShortestPathAPI;
 import org.apache.hugegraph.api.traverser.TemplatePathsAPI;
 import org.apache.hugegraph.api.traverser.VerticesAPI;
 import org.apache.hugegraph.api.traverser.WeightedShortestPathAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
 import org.apache.hugegraph.structure.graph.GraphIterator;
@@ -99,7 +99,7 @@ public class TraverserManager {
     private VerticesAPI verticesAPI;
     private EdgesAPI edgesAPI;
 
-    public TraverserManager(OkhttpOkhttpRestClient client, GraphManager graphManager) {
+    public TraverserManager(RestClient client, GraphManager graphManager) {
         this.graphManager = graphManager;
         String graph = graphManager.graph();
         this.jaccardSimilarityAPI = new JaccardSimilarityAPI(client, graph);

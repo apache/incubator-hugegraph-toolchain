@@ -21,7 +21,7 @@ import java.io.Closeable;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hugegraph.version.ClientVersion;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.util.VersionUtil;
@@ -33,7 +33,7 @@ public class HugeClient implements Closeable {
         ClientVersion.check();
     }
 
-    private final OkhttpOkhttpRestClient client;
+    private final RestClient client;
     private final boolean borrowedClient;
 
     private VersionManager version;
@@ -52,7 +52,7 @@ public class HugeClient implements Closeable {
     public HugeClient(HugeClientBuilder builder) {
         this.borrowedClient = false;
         try {
-            this.client = new OkhttpOkhttpRestClient(builder.url(),
+            this.client = new RestClient(builder.url(),
                                          builder.username(),
                                          builder.password(),
                                          builder.timeout(),
@@ -89,7 +89,7 @@ public class HugeClient implements Closeable {
         }
     }
 
-    private void initManagers(OkhttpOkhttpRestClient client, String graph) {
+    private void initManagers(RestClient client, String graph) {
         assert client != null;
         // Check hugegraph-server api version
         this.version = new VersionManager(client);

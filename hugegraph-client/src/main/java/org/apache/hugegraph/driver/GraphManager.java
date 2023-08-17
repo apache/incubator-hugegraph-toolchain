@@ -28,7 +28,7 @@ import org.apache.hugegraph.exception.InvalidOperationException;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.BatchOlapPropertyRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
@@ -43,7 +43,7 @@ public class GraphManager {
     private final VertexAPI vertexAPI;
     private final EdgeAPI edgeAPI;
 
-    public GraphManager(OkhttpOkhttpRestClient client, String graph) {
+    public GraphManager(RestClient client, String graph) {
         this.graph = graph;
         this.vertexAPI = new VertexAPI(client, graph);
         this.edgeAPI = new EdgeAPI(client, graph);

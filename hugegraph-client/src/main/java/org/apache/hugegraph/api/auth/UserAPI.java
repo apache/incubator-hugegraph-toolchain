@@ -20,7 +20,7 @@ package org.apache.hugegraph.api.auth;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.structure.auth.User.UserRole;
@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class UserAPI extends AuthAPI {
 
-    public UserAPI(OkhttpOkhttpRestClient client, String graph) {
+    public UserAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

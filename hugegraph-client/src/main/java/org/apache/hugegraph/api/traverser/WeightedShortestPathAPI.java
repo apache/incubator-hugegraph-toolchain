@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.WeightedPath;
@@ -29,7 +29,7 @@ import org.apache.hugegraph.util.E;
 
 public class WeightedShortestPathAPI extends TraversersAPI {
 
-    public WeightedShortestPathAPI(OkhttpOkhttpRestClient client, String graph) {
+    public WeightedShortestPathAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

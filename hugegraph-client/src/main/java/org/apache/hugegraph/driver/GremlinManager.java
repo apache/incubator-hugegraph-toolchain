@@ -22,7 +22,7 @@ import org.apache.hugegraph.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.api.job.GremlinJobAPI;
 import org.apache.hugegraph.structure.gremlin.Response;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 public class GremlinManager {
 
@@ -32,7 +32,7 @@ public class GremlinManager {
     private GremlinJobAPI gremlinJobAPI;
     private String graph;
 
-    public GremlinManager(OkhttpOkhttpRestClient client, String graph,
+    public GremlinManager(RestClient client, String graph,
                           GraphManager graphManager) {
         this.graphManager = graphManager;
         this.gremlinAPI = new GremlinAPI(client);

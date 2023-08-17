@@ -22,13 +22,13 @@ import java.util.List;
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.api.task.TasksWithPage;
 import org.apache.hugegraph.structure.Task;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 
 public class TaskManager {
 
     private TaskAPI taskAPI;
 
-    public TaskManager(OkhttpOkhttpRestClient client, String graph) {
+    public TaskManager(RestClient client, String graph) {
         this.taskAPI = new TaskAPI(client, graph);
     }
 

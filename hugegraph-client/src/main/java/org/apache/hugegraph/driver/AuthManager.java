@@ -31,7 +31,7 @@ import org.apache.hugegraph.api.auth.ProjectAPI;
 import org.apache.hugegraph.api.auth.TargetAPI;
 import org.apache.hugegraph.api.auth.TokenAPI;
 import org.apache.hugegraph.api.auth.UserAPI;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.auth.Belong;
 import org.apache.hugegraph.structure.auth.Group;
@@ -54,7 +54,7 @@ public class AuthManager {
     private final LogoutAPI logoutAPI;
     private final TokenAPI tokenAPI;
 
-    public AuthManager(OkhttpOkhttpRestClient client, String graph) {
+    public AuthManager(RestClient client, String graph) {
         this.targetAPI = new TargetAPI(client, graph);
         this.groupAPI = new GroupAPI(client, graph);
         this.userAPI = new UserAPI(client, graph);

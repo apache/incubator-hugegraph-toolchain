@@ -17,7 +17,7 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.Ranks;
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PersonalRankAPI extends TraversersAPI {
 
-    public PersonalRankAPI(OkhttpOkhttpRestClient client, String graph) {
+    public PersonalRankAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

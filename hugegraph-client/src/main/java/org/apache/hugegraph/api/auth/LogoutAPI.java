@@ -17,14 +17,14 @@
 
 package org.apache.hugegraph.api.auth;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.google.common.collect.ImmutableMap;
 
 public class LogoutAPI extends AuthAPI {
 
-    public LogoutAPI(OkhttpOkhttpRestClient client, String graph) {
+    public LogoutAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

@@ -21,13 +21,13 @@ import java.util.Map;
 
 import org.apache.hugegraph.util.CommonUtil;
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class MetricsAPI extends API {
 
-    public MetricsAPI(OkhttpOkhttpRestClient client) {
+    public MetricsAPI(RestClient client) {
         super(client);
         this.path(this.type());
     }

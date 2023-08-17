@@ -17,7 +17,7 @@
 
 package org.apache.hugegraph.api;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.util.E;
 
 public abstract class API {
@@ -27,11 +27,11 @@ public abstract class API {
     public static final long NO_LIMIT = -1L;
     public static final String PATH_SPLITOR = "/";
 
-    protected final OkhttpOkhttpRestClient client;
+    protected final RestClient client;
 
     private String path;
 
-    public API(OkhttpOkhttpRestClient client) {
+    public API(RestClient client) {
         E.checkNotNull(client, "client");
         this.client = client;
         this.path = null;

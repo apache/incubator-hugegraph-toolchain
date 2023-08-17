@@ -36,33 +36,33 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractOkhttpOkhttpRestClient implements OkhttpRestClient {
+public abstract class OkhttpAbstractRestClient implements OkhttpRestClient {
 
     private OkHttpClient client;
 
     private String baseUrl;
 
-    public AbstractOkhttpOkhttpRestClient(String url, int timeout) {
+    public OkhttpAbstractRestClient(String url, int timeout) {
         this(url, OkhttpConfig.builder()
                 .timeout(timeout)
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, String user, String password,
-                                          Integer timeout) {
+    public OkhttpAbstractRestClient(String url, String user, String password,
+                                    Integer timeout) {
         this(url, OkhttpConfig.builder()
                 .user(user).password(password)
                 .timeout(timeout)
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, int timeout,
-                                          int maxTotal, int maxPerRoute) {
+    public OkhttpAbstractRestClient(String url, int timeout,
+                                    int maxTotal, int maxPerRoute) {
         this(url, null, null, timeout, maxTotal, maxPerRoute);
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, int timeout, int idleTime,
-                                          int maxTotal, int maxPerRoute) {
+    public OkhttpAbstractRestClient(String url, int timeout, int idleTime,
+                                    int maxTotal, int maxPerRoute) {
         this(url, OkhttpConfig.builder()
                 .idleTime(idleTime)
                 .timeout(timeout)
@@ -71,8 +71,8 @@ public abstract class AbstractOkhttpOkhttpRestClient implements OkhttpRestClient
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, String user, String password,
-                                          int timeout, int maxTotal, int maxPerRoute) {
+    public OkhttpAbstractRestClient(String url, String user, String password,
+                                    int timeout, int maxTotal, int maxPerRoute) {
         this(url, OkhttpConfig.builder()
                 .user(user).password(password)
                 .timeout(timeout)
@@ -81,10 +81,10 @@ public abstract class AbstractOkhttpOkhttpRestClient implements OkhttpRestClient
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, String user, String password,
-                                          int timeout, int maxTotal, int maxPerRoute,
-                                          String trustStoreFile,
-                                          String trustStorePassword) {
+    public OkhttpAbstractRestClient(String url, String user, String password,
+                                    int timeout, int maxTotal, int maxPerRoute,
+                                    String trustStoreFile,
+                                    String trustStorePassword) {
         this(url, OkhttpConfig.builder()
                 .user(user).password(password)
                 .timeout(timeout)
@@ -95,15 +95,15 @@ public abstract class AbstractOkhttpOkhttpRestClient implements OkhttpRestClient
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, String token, Integer timeout) {
+    public OkhttpAbstractRestClient(String url, String token, Integer timeout) {
         this(url, OkhttpConfig.builder()
                 .token(token)
                 .timeout(timeout)
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, String token, Integer timeout,
-                                          Integer maxTotal, Integer maxPerRoute) {
+    public OkhttpAbstractRestClient(String url, String token, Integer timeout,
+                                    Integer maxTotal, Integer maxPerRoute) {
         this(url,OkhttpConfig.builder()
                 .token(token)
                 .timeout(timeout)
@@ -112,10 +112,10 @@ public abstract class AbstractOkhttpOkhttpRestClient implements OkhttpRestClient
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, String token, Integer timeout,
-                                          Integer maxTotal, Integer maxPerRoute,
-                                          String trustStoreFile,
-                                          String trustStorePassword) {
+    public OkhttpAbstractRestClient(String url, String token, Integer timeout,
+                                    Integer maxTotal, Integer maxPerRoute,
+                                    String trustStoreFile,
+                                    String trustStorePassword) {
         this(url,OkhttpConfig.builder()
                 .token(token)
                 .timeout(timeout)
@@ -126,7 +126,7 @@ public abstract class AbstractOkhttpOkhttpRestClient implements OkhttpRestClient
                 .build());
     }
 
-    public AbstractOkhttpOkhttpRestClient(String url, OkhttpConfig okhttpConfig) {
+    public OkhttpAbstractRestClient(String url, OkhttpConfig okhttpConfig) {
         this.baseUrl = url;
         this.client = getOkhttpClient(okhttpConfig);
     }

@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import okhttp3.Headers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.InvalidResponseException;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.GraphMode;
@@ -40,7 +40,7 @@ public class GraphsAPI extends API {
 
     private static final String CONFIRM_MESSAGE = "confirm_message";
 
-    public GraphsAPI(OkhttpOkhttpRestClient client) {
+    public GraphsAPI(RestClient client) {
         super(client);
         this.path(this.type());
     }

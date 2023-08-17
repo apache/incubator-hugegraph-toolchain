@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.auth.Project;
 import org.apache.hugegraph.structure.constant.HugeType;
@@ -33,7 +33,7 @@ public class ProjectAPI extends AuthAPI {
     private static final String ACTION_ADD_GRAPH = "add_graph";
     private static final String ACTION_REMOVE_GRAPH = "remove_graph";
 
-    public ProjectAPI(OkhttpOkhttpRestClient client, String graph) {
+    public ProjectAPI(RestClient client, String graph) {
         super(client, graph);
     }
 

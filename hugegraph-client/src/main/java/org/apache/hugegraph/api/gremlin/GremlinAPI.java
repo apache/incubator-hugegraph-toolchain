@@ -18,14 +18,14 @@
 package org.apache.hugegraph.api.gremlin;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.gremlin.Response;
 
 public class GremlinAPI extends API {
 
-    public GremlinAPI(OkhttpOkhttpRestClient client) {
+    public GremlinAPI(RestClient client) {
         super(client);
         this.path(type());
     }

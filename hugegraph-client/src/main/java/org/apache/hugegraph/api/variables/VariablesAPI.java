@@ -20,7 +20,7 @@ package org.apache.hugegraph.api.variables;
 import java.util.Map;
 
 import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.OkhttpOkhttpRestClient;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.OkhttpRestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -30,7 +30,7 @@ public class VariablesAPI extends API {
 
     private static final String PATH = "graphs/%s/%s";
 
-    public VariablesAPI(OkhttpOkhttpRestClient client, String graph) {
+    public VariablesAPI(RestClient client, String graph) {
         super(client);
         this.path(PATH, graph, this.type());
     }
