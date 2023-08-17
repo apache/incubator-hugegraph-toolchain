@@ -11,7 +11,6 @@ annotations-13.0.jar
 ant-1.9.1.jar
 ant-launcher-1.9.1.jar
 antlr-runtime-3.5.2.jar
-aopalliance-repackaged-3.0.1.jar
 apache-curator-2.12.0.pom
 arrow-format-0.8.0.jar
 arrow-format-2.0.0.jar
@@ -113,9 +112,6 @@ hive-storage-api-2.7.0.jar
 hive-storage-api-2.7.2.jar
 hive-upgrade-acid-3.1.3.jar
 hive-vector-code-gen-3.1.3.jar
-hk2-api-3.0.1.jar
-hk2-locator-3.0.1.jar
-hk2-utils-3.0.1.jar
 hppc-0.7.2.jar
 htrace-core4-4.1.0-incubating.jar
 htrace-core4-4.2.0-incubating.jar
@@ -139,9 +135,10 @@ jackson-module-jaxb-annotations-2.12.3.jar
 jackson-module-parameter-names-2.12.3.jar
 jakarta.activation-2.0.1.jar
 jakarta.activation-api-1.2.1.jar
-jakarta.annotation-api-2.0.0.jar
-jakarta.inject-api-2.0.0.jar
-jakarta.ws.rs-api-3.0.0.jar
+jersey-container-servlet-core-2.25.1.jar
+jersey-container-servlet-core-2.27.jar
+javax.inject-2.5.0-b32.jar
+javax.inject-2.5.0-b42.jar
 jakarta.xml.bind-api-2.3.2.jar
 jakarta.xml.bind-api-4.0.0-RC2.jar
 jamon-runtime-2.4.1.jar
@@ -166,13 +163,6 @@ jcip-annotations-1.0-1.jar
 jcodings-1.0.18.jar
 jcommander-1.72.jar
 jcommander-1.78.jar
-jersey-apache-connector-3.0.3.jar
-jersey-client-3.0.3.jar
-jersey-common-3.0.3.jar
-jersey-container-servlet-core-3.0.3.jar
-jersey-entity-filtering-3.0.3.jar
-jersey-hk2-3.0.3.jar
-jersey-media-json-jackson-3.0.3.jar
 jetty-client-9.4.33.v20201020.jar
 jetty-client-9.4.40.v20210413.jar
 jetty-http-9.4.19.v20190610.jar
@@ -281,7 +271,6 @@ orc-core-1.5.8.jar
 orc-core-1.6.14.jar
 orc-shims-1.5.8.jar
 orc-shims-1.6.14.jar
-osgi-resource-locator-1.0.3.jar
 ow2-asm-6.2.jar
 paranamer-2.3.jar
 postgresql-42.2.6.jar
