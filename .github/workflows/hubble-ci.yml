@@ -1,6 +1,7 @@
 name: "hugegraph-hubble-ci"
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
