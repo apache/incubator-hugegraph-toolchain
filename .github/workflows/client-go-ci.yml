@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - feature-add-go-client
+      - feature-go-client
       - /^release-.*$/
       - /^feature-.*$/
     paths:
