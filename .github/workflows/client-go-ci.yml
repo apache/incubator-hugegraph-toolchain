@@ -23,7 +23,7 @@ jobs:
   client-go-ci:
     runs-on: ubuntu-20.04
     env:
-      TRAVIS_DIR: hugegraph-client/java/assembly/travis
+      TRAVIS_DIR: hugegraph-client/assembly/travis
       COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
     strategy:
       fail-fast: false
