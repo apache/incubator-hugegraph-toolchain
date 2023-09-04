@@ -55,16 +55,16 @@ public class SplicingIdGenerator {
     /**
      * Generate a string id of HugeVertex from Vertex name
      */
-//    public Id generate(HugeVertex vertex) {
-//        /*
-//         * Hash for row-key which will be evenly distributed.
-//         * We can also use LongEncoding.encode() to encode the int/long hash
-//         * if needed.
-//         * id = String.format("%s%s%s", HashUtil.hash(id), ID_SPLITOR, id);
-//         */
-//        // TODO: use binary Id with binary fields instead of string id
-//        return splicing(vertex.schemaLabel().id().asString(), vertex.name());
-//    }
+    //    public Id generate(HugeVertex vertex) {
+    //        /*
+    //         * Hash for row-key which will be evenly distributed.
+    //         * We can also use LongEncoding.encode() to encode the int/long hash
+    //         * if needed.
+    //         * id = String.format("%s%s%s", HashUtil.hash(id), ID_SPLITOR, id);
+    //         */
+    //        // TODO: use binary Id with binary fields instead of string id
+    //        return splicing(vertex.schemaLabel().id().asString(), vertex.name());
+    //    }
 
     /**
      * Concat multiple ids into one composite id with IDS_SPLITOR

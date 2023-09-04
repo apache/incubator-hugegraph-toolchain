@@ -45,11 +45,11 @@ public abstract class InsertTask implements Runnable {
     );
 
     public static final String[] UNACCEPTABLE_MESSAGES = {
-            // org.apache.http.conn.HttpHostConnectException
-            "Connection refused",
-            "The server is being shutting down",
-            "not allowed to insert, because already exist a vertex " +
-            "with same id and different label"
+        // org.apache.http.conn.HttpHostConnectException
+        "Connection refused",
+        "The server is being shutting down",
+        "not allowed to insert, because already exist a vertex " +
+        "with same id and different label"
     };
 
     protected final LoadContext context;
@@ -127,16 +127,16 @@ public abstract class InsertTask implements Runnable {
         if (this.type().isVertex()) {
             BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
             req.vertices((List<Vertex>) (Object) elements)
-               .updatingStrategies(this.mapping.updateStrategies())
-               .createIfNotExist(true);
+                .updatingStrategies(this.mapping.updateStrategies())
+                .createIfNotExist(true);
 
             client.graph().updateVertices(req.build());
         } else {
             BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
             req.edges((List<Edge>) (Object) elements)
-               .updatingStrategies(this.mapping.updateStrategies())
-               .checkVertex(checkVertex)
-               .createIfNotExist(true);
+                .updatingStrategies(this.mapping.updateStrategies())
+                .checkVertex(checkVertex)
+                .createIfNotExist(true);
 
             client.graph().updateEdges(req.build());
         }

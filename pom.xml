@@ -439,12 +439,13 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <configLocation>checkstyle.xml</configLocation>
+                    <configLocation>tools/checkstyle.xml</configLocation>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
                     <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                    <suppressionsLocation>tools/suppressions.xml</suppressionsLocation>
                 </configuration>
                 <executions>
                     <execution>

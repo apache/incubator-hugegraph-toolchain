@@ -183,15 +183,15 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                     if (isVertex) {
                         BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
                         req.vertices((List<Vertex>) (Object) graphElements)
-                           .updatingStrategies(updateStrategyMap)
-                           .createIfNotExist(true);
+                            .updatingStrategies(updateStrategyMap)
+                            .createIfNotExist(true);
                         g.updateVertices(req.build());
                     } else {
                         BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                         req.edges((List<Edge>) (Object) graphElements)
-                           .updatingStrategies(updateStrategyMap)
-                           .checkVertex(this.loadOptions.checkVertex)
-                           .createIfNotExist(true);
+                            .updatingStrategies(updateStrategyMap)
+                            .checkVertex(this.loadOptions.checkVertex)
+                            .createIfNotExist(true);
                         g.updateEdges(req.build());
                     }
                     break;
