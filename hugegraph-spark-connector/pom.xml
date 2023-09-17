@@ -135,6 +135,13 @@
             <version>${jersey.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet-core</artifactId>
+            <version>2.34</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- jackson version override -->
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -174,44 +181,6 @@
             <version>2.18.0</version>
         </dependency>
 
-
-        <!--        <dependency>-->
-        <!--            <groupId>javax.activation</groupId>-->
-        <!--            <artifactId>javax.activation-api</artifactId>-->
-        <!--            <version>1.2.0</version>-->
-        <!--        </dependency>-->
-
-        <!--        <dependency>-->
-        <!--            <groupId>javax.ws.rs</groupId>-->
-        <!--            <artifactId>javax.ws.rs-api</artifactId>-->
-        <!--            <version>2.1.1</version>-->
-        <!--        </dependency>-->
-
-        <!--        <dependency>-->
-        <!--            <groupId>javax.xml.bind</groupId>-->
-        <!--            <artifactId>jaxb-api</artifactId>-->
-        <!--            <version>2.2.11</version>-->
-        <!--        </dependency>-->
-
-        <!--        <dependency>-->
-        <!--            <groupId>jakarta.xml.bind</groupId>-->
-        <!--            <artifactId>jakarta.xml.bind-api</artifactId>-->
-        <!--            <version>2.3.2</version>-->
-        <!--        </dependency>-->
-
-        <!--        <dependency>-->
-        <!--            <groupId>org.glassfish.hk2.external</groupId>-->
-        <!--            <artifactId>jakarta.inject</artifactId>-->
-        <!--            <version>2.6.1</version>-->
-        <!--        </dependency>-->
-
-        <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-servlet-core</artifactId>
-            <version>2.34</version>
-            <scope>provided</scope>
-        </dependency>
-
         <dependency>
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
@@ -225,163 +194,6 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
-
-    <!--    <properties>-->
-    <!--        <maven.compiler.source>11</maven.compiler.source>-->
-    <!--        <maven.compiler.target>11</maven.compiler.target>-->
-    <!--        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>-->
-    <!--        <jcommander.version>1.78</jcommander.version>-->
-    <!--    </properties>-->
-
-    <!--    <dependencies>-->
-    <!--        &lt;!&ndash;        <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <groupId>javax.servlet</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <artifactId>javax.servlet-api</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <version>4.0.1</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        </dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <groupId>jakarta.servlet</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <artifactId>jakarta.servlet-api</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <version>6.0.0</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                </dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <groupId>org.glassfish.jersey.containers</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <artifactId>jersey-container-servlet</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <version>2.xx</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        </dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        &lt;!&ndash; if you are using Jersey client specific features without the server side &ndash;&gt;&ndash;&gt;-->
-    <!--        &lt;!&ndash;        <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <groupId>org.glassfish.jersey.core</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <artifactId>jersey-client</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <version>2.xx</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        </dependency>&ndash;&gt;-->
-
-    <!--        &lt;!&ndash;        <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <groupId>jakarta.ws.rs</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <artifactId>jakarta.ws.rs-api</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <version>2.1.6</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        </dependency>&ndash;&gt;-->
-
-    <!--        &lt;!&ndash;                <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <groupId>jakarta.ws.rs</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <artifactId>jakarta.ws.rs-api</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <version>3.0.0</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                </dependency>&ndash;&gt;-->
-
-    <!--        &lt;!&ndash;        <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <groupId>javax.ws.rs</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <artifactId>javax.ws.rs-api</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <version>2.1.1</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        </dependency>&ndash;&gt;-->
-
-    <!--        <dependency>-->
-    <!--            <groupId>org.apache.spark</groupId>-->
-    <!--            <artifactId>spark-core_2.12</artifactId>-->
-    <!--            <version>3.2.2</version>-->
-    <!--            <scope>provided</scope>-->
-    <!--            <exclusions>-->
-    <!--            </exclusions>-->
-    <!--        </dependency>-->
-    <!--        <dependency>-->
-    <!--            <groupId>org.apache.spark</groupId>-->
-    <!--            <artifactId>spark-sql_2.12</artifactId>-->
-    <!--            <version>3.2.2</version>-->
-    <!--            <scope>provided</scope>-->
-    <!--&lt;!&ndash;            <exclusions>&ndash;&gt;-->
-    <!--&lt;!&ndash;                <exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <artifactId>antlr4-runtime</artifactId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <groupId>org.antlr</groupId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                </exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;            </exclusions>&ndash;&gt;-->
-    <!--        </dependency>-->
-
-    <!--        <dependency>-->
-    <!--            <groupId>org.apache.hugegraph</groupId>-->
-    <!--            <artifactId>hugegraph-client</artifactId>-->
-    <!--            <version>1.0.1</version>-->
-    <!--            &lt;!&ndash;            <scope>provided</scope>&ndash;&gt;-->
-    <!--            <exclusions>-->
-    <!--                &lt;!&ndash; Note: jackson version should < 2.13 with scala 2.12 &ndash;&gt;-->
-    <!--&lt;!&ndash;                <exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <groupId>com.fasterxml.jackson.core</groupId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <artifactId>*</artifactId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                </exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                <exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <groupId>com.fasterxml.jackson.module</groupId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <artifactId>*</artifactId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                </exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                <exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <groupId>com.fasterxml.jackson.jaxrs</groupId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <artifactId>*</artifactId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                </exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                <exclusion>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <groupId>org.apache.hugegraph</groupId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                    <artifactId>hugegraph-common</artifactId>&ndash;&gt;-->
-    <!--&lt;!&ndash;                </exclusion>&ndash;&gt;-->
-    <!--            </exclusions>-->
-
-    <!--        </dependency>-->
-    <!--&lt;!&ndash;        <dependency>&ndash;&gt;-->
-    <!--&lt;!&ndash;            <groupId>org.apache.hugegraph</groupId>&ndash;&gt;-->
-    <!--&lt;!&ndash;            <artifactId>hugegraph-common</artifactId>&ndash;&gt;-->
-    <!--&lt;!&ndash;            <version>1.0.1</version>&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;            <exclusions>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                <exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <artifactId>jersey-client</artifactId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <groupId>org.glassfish.jersey.core</groupId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                </exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                <exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <groupId>org.glassfish.jersey.media</groupId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <artifactId>jersey-media-json-jackson</artifactId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                </exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                <exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <artifactId>jersey-common</artifactId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <groupId>org.glassfish.jersey.core</groupId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                </exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                <exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <artifactId>jersey-container-servlet</artifactId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <groupId>org.glassfish.jersey.containers</groupId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                </exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                <exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <artifactId>jersey-container-servlet-core</artifactId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <groupId>org.glassfish.jersey.containers</groupId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                </exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                <exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <artifactId>jersey-hk2</artifactId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <groupId>org.glassfish.jersey.inject</groupId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                </exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                <exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <artifactId>jersey-server</artifactId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                    <groupId>org.glassfish.jersey.core</groupId>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;                </exclusion>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;&lt;!&ndash;            </exclusions>&ndash;&gt;&ndash;&gt;-->
-    <!--&lt;!&ndash;        </dependency>&ndash;&gt;-->
-
-    <!--        &lt;!&ndash;        <dependency>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <groupId>org.apache.hugegraph</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <artifactId>hugegraph-client</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <version>1.0.0</version>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            <exclusions>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                <exclusion>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <artifactId>hugegraph-common</artifactId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                    <groupId>org.apache.hugegraph</groupId>&ndash;&gt;-->
-    <!--        &lt;!&ndash;                </exclusion>&ndash;&gt;-->
-    <!--        &lt;!&ndash;            </exclusions>&ndash;&gt;-->
-    <!--        &lt;!&ndash;        </dependency>&ndash;&gt;-->
-
-    <!--        <dependency>-->
-    <!--            <groupId>com.beust</groupId>-->
-    <!--            <artifactId>jcommander</artifactId>-->
-    <!--            <version>${jcommander.version}</version>-->
-    <!--        </dependency>-->
-
-    <!--        <dependency>-->
-    <!--            <groupId>org.postgresql</groupId>-->
-    <!--            <artifactId>postgresql</artifactId>-->
-    <!--            <version>42.4.1</version>-->
-    <!--            <scope>compile</scope>-->
-    <!--        </dependency>-->
-    <!--    </dependencies>-->
 
     <!--    <build>-->
     <!--        <plugins>-->
