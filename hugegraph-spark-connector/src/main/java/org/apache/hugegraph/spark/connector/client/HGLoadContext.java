@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.spark.connector.exception.LoadException;
 import org.apache.hugegraph.spark.connector.options.HGOptions;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.slf4j.Logger;
@@ -80,8 +81,8 @@ public final class HGLoadContext implements Serializable {
                 this.client.graphs().mode(graph, GraphMode.NONE);
             }
         } catch (Exception e) {
-            throw new RuntimeException(String.format("Failed to unset mode %s for server",
-                                                     GraphMode.LOADING), e);
+            throw new LoadException(String.format("Failed to unset mode %s for server",
+                                                  GraphMode.LOADING), e);
         }
     }
 

@@ -17,16 +17,16 @@
 
 package org.apache.hugegraph.spark.connector.client;
 
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.exception.ServerException;
-import org.apache.hugegraph.structure.schema.EdgeLabel;
-import org.apache.hugegraph.structure.schema.PropertyKey;
-import org.apache.hugegraph.structure.schema.VertexLabel;
-
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.spark.connector.exception.LoadException;
+import org.apache.hugegraph.structure.schema.EdgeLabel;
+import org.apache.hugegraph.structure.schema.PropertyKey;
+import org.apache.hugegraph.structure.schema.VertexLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -76,8 +76,7 @@ public final class SchemaCache {
             try {
                 propertyKey = this.client.schema().getPropertyKey(name);
             } catch (ServerException e) {
-                throw new RuntimeException(String.format("The property key '%s' doesn't exist",
-                                                         name));
+                throw new LoadException(String.format("The property key '%s' doesn't exist", name));
             }
         }
         return propertyKey;
@@ -89,8 +88,7 @@ public final class SchemaCache {
             try {
                 vertexLabel = this.client.schema().getVertexLabel(name);
             } catch (ServerException e) {
-                throw new RuntimeException(String.format("The vertex label '%s' doesn't exist",
-                                                         name));
+                throw new LoadException(String.format("The vertex label '%s' doesn't exist", name));
             }
         }
         return vertexLabel;
@@ -102,8 +100,7 @@ public final class SchemaCache {
             try {
                 edgeLabel = this.client.schema().getEdgeLabel(name);
             } catch (ServerException e) {
-                throw new RuntimeException(String.format("The edge label '%s' doesn't exist",
-                                                         name));
+                throw new LoadException(String.format("The edge label '%s' doesn't exist", name));
             }
         }
         return edgeLabel;

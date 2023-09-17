@@ -27,6 +27,7 @@ import org.apache.hugegraph.driver.HugeClientBuilder;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.spark.connector.constant.Constants;
+import org.apache.hugegraph.spark.connector.exception.LoadException;
 import org.apache.hugegraph.spark.connector.options.HGOptions;
 import org.apache.hugegraph.util.E;
 
@@ -75,15 +76,15 @@ public final class HGClientHolder implements Serializable {
         } catch (IllegalStateException e) {
             String message = e.getMessage();
             if (Objects.nonNull(message) && message.startsWith("The version")) {
-                throw new RuntimeException("The version of hugegraph-client and " +
-                                           "hugegraph-server don't match", e);
+                throw new LoadException("The version of hugegraph-client and " +
+                                        "hugegraph-server don't match", e);
             }
             throw e;
         } catch (ServerException e) {
             String message = e.getMessage();
             if (Constants.STATUS_UNAUTHORIZED == e.status() ||
                 (Objects.nonNull(message) && message.startsWith("Authentication"))) {
-                throw new RuntimeException("Incorrect username or password", e);
+                throw new LoadException("Incorrect username or password", e);
             }
             throw e;
         } catch (ClientException e) {
@@ -93,16 +94,16 @@ public final class HGClientHolder implements Serializable {
             }
             String message = cause.getMessage();
             if (message.contains("Connection refused")) {
-                throw new RuntimeException(
+                throw new LoadException(
                         String.format("The service %s:%s is unavailable", host, port), e);
             } else if (message.contains("java.net.UnknownHostException") ||
                        message.contains("Host name may not be null")) {
-                throw new RuntimeException(String.format("The host %s is unknown", host), e);
+                throw new LoadException(String.format("The host %s is unknown", host), e);
             } else if (message.contains("connect timed out")) {
-                throw new RuntimeException(String.format("Connect service %s:%s timeout, " +
-                                                         "please check service is available " +
-                                                         "and network is unobstructed", host, port),
-                                           e);
+                throw new LoadException(String.format("Connect service %s:%s timeout, " +
+                                                      "please check service is available " +
+                                                      "and network is unobstructed", host, port),
+                                        e);
             }
             throw e;
         }
