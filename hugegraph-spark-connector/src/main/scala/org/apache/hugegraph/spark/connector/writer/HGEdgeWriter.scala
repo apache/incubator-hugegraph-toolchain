@@ -21,7 +21,8 @@ import org.apache.hugegraph.spark.connector.builder.EdgeBuilder
 import org.apache.hugegraph.spark.connector.client.HGLoadContext
 import org.apache.hugegraph.spark.connector.mapping.EdgeMapping
 import org.apache.hugegraph.spark.connector.options.HGOptions
-import org.apache.hugegraph.spark.connector.utils.{HugeGraphBuildUtils, HugeGraphUtils}
+import org.apache.hugegraph.spark.connector.util.HGUtils
+import org.apache.hugegraph.spark.connector.utils.HugeGraphBuildUtils
 import org.apache.hugegraph.structure.graph.Edge
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, WriterCommitMessage}
@@ -38,7 +39,7 @@ class HGEdgeWriter(schema: StructType, hgOptions: HGOptions) extends DataWriter[
   context.updateSchemaCache()
   context.setLoadingMode()
 
-  val mapping: EdgeMapping = HugeGraphUtils.edgeMappingFromConf(hgOptions)
+  val mapping: EdgeMapping = HGUtils.edgeMappingFromConf(hgOptions)
   val builder = new EdgeBuilder(context, mapping)
 
   private var edgesBuffer: ListBuffer[Edge] = new ListBuffer()

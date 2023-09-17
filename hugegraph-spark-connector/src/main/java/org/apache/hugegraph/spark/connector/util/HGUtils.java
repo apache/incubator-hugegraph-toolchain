@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.apache.hugegraph.spark.connector.utils;
+package org.apache.hugegraph.spark.connector.util;
 
 import java.util.List;
 
@@ -25,9 +25,9 @@ import org.apache.hugegraph.spark.connector.options.HGOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HugeGraphUtils {
+public class HGUtils {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HugeGraphUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HGUtils.class);
 
     public static VertexMapping vertexMappingFromConf(HGOptions hgOptions) {
         String idField = hgOptions.idField();

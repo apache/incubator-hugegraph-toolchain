@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.apache.hugegraph.spark.connector.utils;
+package org.apache.hugegraph.spark.connector.util;
 
 import java.util.Date;
 import java.util.Map;
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.hugegraph.date.SafeDateFormat;
 import org.apache.hugegraph.spark.connector.constant.Constants;
 
-public final class DateUtil {
+public final class DateUtils {
 
     private static final Map<String, SafeDateFormat> DATE_FORMATS = new ConcurrentHashMap<>();
 

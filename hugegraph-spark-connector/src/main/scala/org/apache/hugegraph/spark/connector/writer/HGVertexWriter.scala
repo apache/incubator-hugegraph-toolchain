@@ -21,7 +21,8 @@ import org.apache.hugegraph.spark.connector.builder.VertexBuilder
 import org.apache.hugegraph.spark.connector.client.HGLoadContext
 import org.apache.hugegraph.spark.connector.mapping.VertexMapping
 import org.apache.hugegraph.spark.connector.options.HGOptions
-import org.apache.hugegraph.spark.connector.utils.{HugeGraphBuildUtils, HugeGraphUtils}
+import org.apache.hugegraph.spark.connector.util.HGUtils
+import org.apache.hugegraph.spark.connector.utils.HugeGraphBuildUtils
 import org.apache.hugegraph.structure.graph.Vertex
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, WriterCommitMessage}
@@ -38,7 +39,7 @@ class HGVertexWriter(schema: StructType, hgOptions: HGOptions) extends DataWrite
   context.updateSchemaCache()
   context.setLoadingMode()
 
-  val mapping: VertexMapping = HugeGraphUtils.vertexMappingFromConf(hgOptions)
+  val mapping: VertexMapping = HGUtils.vertexMappingFromConf(hgOptions)
   val builder = new VertexBuilder(context, mapping)
 
   private var verticesBuffer: ListBuffer[Vertex] = new ListBuffer()

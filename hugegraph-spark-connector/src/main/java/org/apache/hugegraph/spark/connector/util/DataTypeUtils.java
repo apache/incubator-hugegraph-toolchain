@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.apache.hugegraph.spark.connector.utils;
+package org.apache.hugegraph.spark.connector.util;
 
 import java.util.Collection;
 import java.util.Date;
@@ -203,7 +203,7 @@ public final class DataTypeUtils {
                                                                      "'%s'", value));
                 }
             } else {
-                return DateUtil.parse((String) value, dateFormat, timeZone);
+                return DateUtils.parse((String) value, dateFormat, timeZone);
             }
         }
         throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +

@@ -36,7 +36,7 @@ import org.apache.hugegraph.spark.connector.client.HGLoadContext;
 import org.apache.hugegraph.spark.connector.client.SchemaCache;
 import org.apache.hugegraph.spark.connector.constant.Constants;
 import org.apache.hugegraph.spark.connector.mapping.ElementMapping;
-import org.apache.hugegraph.spark.connector.utils.DataTypeUtils;
+import org.apache.hugegraph.spark.connector.util.DataTypeUtils;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.graph.Vertex;
