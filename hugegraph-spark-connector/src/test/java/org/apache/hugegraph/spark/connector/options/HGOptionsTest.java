@@ -124,6 +124,20 @@ public class HGOptionsTest {
     }
 
     @Test
+    public void testSelectedAndIgnoredFields() {
+        Map<String, String> configs = new HashMap<>();
+        configs.put("data-type", "vertex");
+        configs.put("label", "person");
+        configs.put("id", "name");
+        configs.put("selected-fields", "id,name,age");
+        configs.put("ignored-fields", "price,ISBN");
+
+        Assert.assertThrows(IllegalArgumentException.class, () -> {
+            new HGOptions(configs);
+        });
+    }
+
+    @Test
     public void testEdgeSourceAndTargetNames() {
         Map<String, String> configs = new HashMap<>();
         configs.put("data-type", "edge");
