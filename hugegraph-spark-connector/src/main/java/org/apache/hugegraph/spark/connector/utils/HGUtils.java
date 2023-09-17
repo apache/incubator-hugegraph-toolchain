@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.apache.hugegraph.spark.connector.util;
+package org.apache.hugegraph.spark.connector.utils;
 
 import java.util.List;
 

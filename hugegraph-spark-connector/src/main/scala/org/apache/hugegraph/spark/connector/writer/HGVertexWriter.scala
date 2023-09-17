@@ -21,7 +21,7 @@ import org.apache.hugegraph.spark.connector.builder.VertexBuilder
 import org.apache.hugegraph.spark.connector.client.HGLoadContext
 import org.apache.hugegraph.spark.connector.mapping.VertexMapping
 import org.apache.hugegraph.spark.connector.options.HGOptions
-import org.apache.hugegraph.spark.connector.util.HGUtils
+import org.apache.hugegraph.spark.connector.utils.HGUtils
 import org.apache.hugegraph.spark.connector.utils.HugeGraphBuildUtils
 import org.apache.hugegraph.structure.graph.Vertex
 import org.apache.spark.sql.catalyst.InternalRow
