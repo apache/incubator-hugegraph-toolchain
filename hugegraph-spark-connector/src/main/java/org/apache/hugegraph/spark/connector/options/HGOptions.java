@@ -48,31 +48,22 @@ public class HGOptions implements Serializable {
     public static final String TOKEN = "token";
     public static final String TIMEOUT = "timeout";
     public static final String MAX_CONNECTIONS = "max-conn";
-
     public static final String MAX_CONNECTIONS_PER_ROUTE = "max-conn-per-route";
-
     public static final String TRUST_STORE_FILE = "trust-store-file";
     public static final String TRUST_STORE_TOKEN = "trust-store-token";
 
     /* Graph Data Configs */
-    public static final String DATA_TYPE = "date-type";
-
+    public static final String DATA_TYPE = "data-type";
     public static final String LABEL = "label";
-
     public static final String ID_FIELD = "id";
-
     public static final String SOURCE_NAME = "source-name";
-
     public static final String TARGET_NAME = "target-name";
-
     public static final String SELECTED_FIELDS = "selected-fields";
     public static final String IGNORED_FIELDS = "ignored-fields";
-
     public static final String BATCH_SIZE = "batch-size";
 
-    /* Common Config */
+    /* Common Configs */
     public static final String DELIMITER = "delimiter";
-
 
     public Map<String, String> parameters;
 
@@ -91,27 +82,32 @@ public class HGOptions implements Serializable {
         String dataType = parameters.getOrDefault(DATA_TYPE, null);
         E.checkArgument(DataTypeEnum.validDataType(dataType),
                         "DataType must be set, either vertex " +
-                        "or edge, but got %s.",
-                        dataType);
+                        "or edge, but got %s.", dataType);
 
         String label = parameters.getOrDefault(LABEL, null);
-        E.checkArgument(!StringUtils.isEmpty(label), "Label must be set, but got %s.", label);
+        E.checkArgument(!StringUtils.isEmpty(label),
+                        "Label must be set, but got %s.", label);
 
         if (DataTypeEnum.isEdge(dataType)) {
             String sourceNames = parameters.getOrDefault(SOURCE_NAME, null);
-            E.checkArgument(!StringUtils.isEmpty(sourceNames), "source-names must be set when " +
-                                                               "datatype is edge, but got " +
+            E.checkArgument(!StringUtils.isEmpty(sourceNames), "source-names must be set " +
+                                                               "when datatype is edge, but got " +
                                                                "%s.", sourceNames);
             String targetNames = parameters.getOrDefault(TARGET_NAME, null);
-            E.checkArgument(!StringUtils.isEmpty(targetNames), "target-names must be set when " +
-                                                               "datatype is edge, but got " +
-                                                               "%s.", sourceNames);
+            E.checkArgument(!StringUtils.isEmpty(targetNames), "target-names must be set " +
+                                                               "when datatype is edge, but got " +
+                                                               "%s.", targetNames);
+            LOG.info("Edge, Label is {}, source is {}, target is {}.",
+                     label, sourceNames, targetNames);
         } else {
             String idField = parameters.getOrDefault(ID_FIELD, null);
             if (Objects.nonNull(idField)) {
                 LOG.info("Vertex, Label is {}, id is {}, id strategy is {}", label, idField,
                          "customer");
             }
+            //E.checkArgument(!StringUtils.isEmpty(idField), "id-field must be set " +
+            //                                               "when datatype is vertex, but got " +
+            //                                               "%s.", idField);
         }
     }
 
@@ -125,23 +121,17 @@ public class HGOptions implements Serializable {
     }
 
     private void setDefaultConf() {
-        setDefaultValueWithMsg(HOST, Constants.DEFAULT_HOST, String.format("Host not set, use " +
-                                                                           "default " +
-                                                                           "host:" +
-                                                                           " %s instead.",
-                                                                           Constants.DEFAULT_HOST));
+        setDefaultValueWithMsg(HOST, Constants.DEFAULT_HOST,
+                               String.format("Host not set, use default host: %s instead.",
+                                             Constants.DEFAULT_HOST));
         setDefaultValueWithMsg(PORT, String.valueOf(Constants.DEFAULT_PORT),
-                               String.format("Port not set, " +
-                                             "use default " +
-                                             "port:" +
-                                             " %s instead.",
+                               String.format("Port not set, use default port: %s instead.",
                                              Constants.DEFAULT_PORT));
         setDefaultValueWithMsg(GRAPH, Constants.DEFAULT_GRAPH,
-                               String.format("Graph not set, use default graph:" +
-                                             " %s instead.", Constants.DEFAULT_GRAPH));
+                               String.format("Graph not set, use default graph: %s instead.",
+                                             Constants.DEFAULT_GRAPH));
 
         setDefaultValue(PROTOCOL, Constants.DEFAULT_PROTOCOL);
-        setDefaultValue(PROTOCOL, null);
         setDefaultValue(USERNAME, null);
         setDefaultValue(TOKEN, null);
         setDefaultValue(TIMEOUT, String.valueOf(Constants.DEFAULT_TIMEOUT));
@@ -244,13 +234,17 @@ public class HGOptions implements Serializable {
 
     public Set<String> selectedFields() {
         String selectStr = getConfValue(SELECTED_FIELDS);
-        if (StringUtils.isEmpty(selectStr)) return new HashSet<>();
+        if (StringUtils.isEmpty(selectStr)) {
+            return new HashSet<>();
+        }
         return new HashSet<>(splitStr(selectStr, delimiter()));
     }
 
     public Set<String> ignoredFields() {
         String ignoreStr = getConfValue(IGNORED_FIELDS);
-        if (StringUtils.isEmpty(ignoreStr)) return new HashSet<>();
+        if (StringUtils.isEmpty(ignoreStr)) {
+            return new HashSet<>();
+        }
         return new HashSet<>(splitStr(ignoreStr, delimiter()));
     }
 

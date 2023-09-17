@@ -32,7 +32,6 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
 
     private final VertexLabel vertexLabel;
 
-
     public VertexBuilder(HGLoadContext context, VertexMapping mapping) {
         super(context);
         this.mapping = mapping;
