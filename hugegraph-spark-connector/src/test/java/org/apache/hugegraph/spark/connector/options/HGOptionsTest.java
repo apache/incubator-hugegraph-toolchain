@@ -19,6 +19,7 @@ package org.apache.hugegraph.spark.connector.options;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.Test;
@@ -90,5 +91,52 @@ public class HGOptionsTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             new HGOptions(configs);
         });
+    }
+
+    @Test
+    public void testSelectedFields() {
+        Map<String, String> configs = new HashMap<>();
+        configs.put("data-type", "vertex");
+        configs.put("label", "person");
+        configs.put("id", "name");
+        configs.put("selected-fields", "id,name,age");
+
+        HGOptions hgOptions = new HGOptions(configs);
+        Set<String> selectedFieldSet = hgOptions.selectedFields();
+        String[] selectFields = selectedFieldSet.toArray(new String[0]);
+
+        Assert.assertArrayEquals(new String[]{"name", "id", "age"}, selectFields);
+    }
+
+    @Test
+    public void testIgnoredFields() {
+        Map<String, String> configs = new HashMap<>();
+        configs.put("data-type", "vertex");
+        configs.put("label", "person");
+        configs.put("id", "name");
+        configs.put("ignored-fields", "id,name,age");
+
+        HGOptions hgOptions = new HGOptions(configs);
+        Set<String> ignoreFieldSet = hgOptions.ignoredFields();
+        String[] ignoreFields = ignoreFieldSet.toArray(new String[0]);
+
+        Assert.assertArrayEquals(new String[]{"name", "id", "age"}, ignoreFields);
+    }
+
+    @Test
+    public void testEdgeSourceAndTargetNames() {
+        Map<String, String> configs = new HashMap<>();
+        configs.put("data-type", "edge");
+        configs.put("label", "actIn");
+        configs.put("source-name", "person,book");
+        configs.put("target-name", "movie,competition");
+
+        HGOptions hgOptions = new HGOptions(configs);
+
+        String[] sourceNames = hgOptions.sourceName().toArray(new String[0]);
+        Assert.assertArrayEquals(new String[]{"person", "book"}, sourceNames);
+
+        String[] targetNames = hgOptions.targetName().toArray(new String[0]);
+        Assert.assertArrayEquals(new String[]{"movie", "competition"}, targetNames);
     }
 }
