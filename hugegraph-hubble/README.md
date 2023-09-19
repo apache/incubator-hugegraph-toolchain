@@ -15,26 +15,31 @@ hugegraph-hubble is a graph management and analysis platform that provides featu
 
 ## Quick Start
 
+We can quickly start `hubble` in two ways:
+
 1. We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start [hubble](https://hub.docker.com/r/hugegraph/hubble).
-2. We can use the `docker-compose.yml` to start `hubble` with `hugegraph-server`:
+2. Or we can use the `docker-compose.yml` to start `hubble` with `hugegraph-server`. If we set `PRELOAD=true`, we can preload the example graph when starting `hugegraph-server`:
+    
 
     ```
     version: '3'
     services:
-    graph_hubble:
-        image: hugegraph/hugegraph
-        container_name: graph
-        ports:
-        - 18080:8080
+        server:
+            image: hugegraph/hugegraph
+            container_name: graph
+            #environment:
+            #  - PRELOAD=true
+            ports:
+              - 18080:8080
 
-    hubble:
-        image: hugegraph/hubble
-        container_name: hubble
-        ports:
-        - 8088:8088
+        hubble:
+            image: hugegraph/hubble
+            container_name: hubble
+            ports:
+              - 8088:8088
     ```
 
-Then we should follow the [hubble doc](https://hugegraph.apache.org/cn/docs/quickstart/hugegraph-hubble/#3%E5%B9%B3%E5%8F%B0%E4%BD%BF%E7%94%A8%E6%B5%81%E7%A8%8B) to create the graph.
+Then we should follow the [hubble doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/#3platform-workflow) to create the graph.
 
 ## Doc
 
