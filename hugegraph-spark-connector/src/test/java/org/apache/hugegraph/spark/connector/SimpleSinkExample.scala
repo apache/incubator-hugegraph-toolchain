@@ -59,21 +59,21 @@ schema.edgeLabel("created")
         .create();
 
  */
-object TestSink {
+object SimpleSinkExample {
 
   // TODO transfer to test
   def main(args: Array[String]): Unit = {
     val sparkSession = SparkSession.builder()
-      .master("local[1]")
+      .master("local[2]")
       .appName(this.getClass.getSimpleName)
       .config("spark.ui.port", "19099")
       .getOrCreate()
 
     insertVertices1(sparkSession)
-//    insertVertices2(sparkSession)
-//
-//    testInsertEdge1(sparkSession)
-//    testInsertEdge2(sparkSession)
+    insertVertices2(sparkSession)
+
+    testInsertEdge1(sparkSession)
+    testInsertEdge2(sparkSession)
 
     sparkSession.stop()
   }
