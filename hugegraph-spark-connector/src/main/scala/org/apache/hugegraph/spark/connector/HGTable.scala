@@ -18,7 +18,7 @@
 package org.apache.hugegraph.spark.connector
 
 import org.apache.hugegraph.spark.connector.options.HGOptions
-import org.apache.hugegraph.spark.connector.writer.HugeGraphWriterBuilder
+import org.apache.hugegraph.spark.connector.writer.HGWriterBuilder
 import org.apache.spark.sql.connector.catalog.{SupportsWrite, TableCapability}
 import org.apache.spark.sql.connector.write.{LogicalWriteInfo, WriteBuilder}
 import org.apache.spark.sql.types.StructType
@@ -27,18 +27,17 @@ import org.slf4j.LoggerFactory
 import java.util
 import scala.collection.JavaConverters.setAsJavaSetConverter
 
-class HugeGraphTable(schema: StructType, hugeGraphOptions: HGOptions) extends SupportsWrite {
+class HGTable(schema: StructType, hgOptions: HGOptions) extends SupportsWrite {
 
   private val LOG = LoggerFactory.getLogger(this.getClass)
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = {
-    LOG.info(s"--------------> Options ${info.options().asCaseSensitiveMap()}")
-    LOG.info(s"------------------> Logical Write schema: ${info.schema()}")
-    new HugeGraphWriterBuilder(info.schema(), hugeGraphOptions)
+    LOG.info(s"User Config Options ${info.options().asCaseSensitiveMap()}")
+    LOG.info(s"Logical Write schema: ${info.schema()}")
+    new HGWriterBuilder(info.schema(), hgOptions)
   }
 
-  /* TODO use label name as table name */
-  override def name(): String = this.getClass.toString
+  override def name(): String = hgOptions.label()
 
   override def schema(): StructType = schema
 

@@ -19,4 +19,4 @@ package org.apache.hugegraph.spark.connector.writer
 
 import org.apache.spark.sql.connector.write.WriterCommitMessage
 
-case class HugeGraphCommitMessage(successfulMsg: List[String]) extends WriterCommitMessage
+case class HGCommitMessage(successfulMsg: List[String]) extends WriterCommitMessage

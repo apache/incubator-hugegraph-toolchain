@@ -17,21 +17,27 @@
 
 package org.apache.hugegraph.spark.connector.writer
 
-import org.apache.hugegraph.spark.connector.constant.DataTypeEnum
 import org.apache.hugegraph.spark.connector.options.HGOptions
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory}
+import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, PhysicalWriteInfo, WriterCommitMessage}
 import org.apache.spark.sql.types.StructType
 import org.slf4j.LoggerFactory
 
-class HugeGraphBatchWriterFactory(schema: StructType, hugeGraphOptions: HGOptions) extends DataWriterFactory {
+class HGBatchWriter(schema: StructType, hgOptions: HGOptions) extends BatchWrite {
 
   private val LOG = LoggerFactory.getLogger(this.getClass)
 
-  override def createWriter(partitionId: Int, taskId: Long): DataWriter[InternalRow] = {
-    val dataType = hugeGraphOptions.dataType()
-    LOG.info(s"Create a ${dataType} to write.")
-    if (dataType == "vertex") new HGVertexWriter(schema, hugeGraphOptions)
-    else new HGEdgeWriter(schema, hugeGraphOptions)
+  override def createBatchWriterFactory(info: PhysicalWriteInfo): DataWriterFactory = {
+    new HGBatchWriterFactory(schema, hgOptions)
+  }
+
+  override def commit(messages: Array[WriterCommitMessage]): Unit = {
+    for (elem <- messages) {
+      val msg = elem.asInstanceOf[HGCommitMessage]
+      LOG.info(s"Commit Message ${msg}")
+    }
+  }
+
+  override def abort(messages: Array[WriterCommitMessage]): Unit = {
+    LOG.error("HugeGraph BatchWriter abort.")
   }
 }

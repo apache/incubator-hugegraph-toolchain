@@ -26,11 +26,10 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters.{collectionAsScalaIterableConverter, seqAsJavaListConverter}
 
-object HugeGraphBuildUtils {
+object HGBuildUtils {
 
   private val LOG = LoggerFactory.getLogger(this.getClass)
 
-  // TODO refactor
   def buildVertices(row: InternalRow, schema: StructType, builder: VertexBuilder): List[Vertex] = {
     val fields = schema.names
     val dataTypes = schema.fields.map(field => field.dataType)

@@ -33,20 +33,20 @@ class DataSource extends TableProvider with DataSourceRegister {
 
   private var schema: StructType = _
 
-  private var hugeGraphOptions: HGOptions = _
+  private var hgOptions: HGOptions = _
 
   override def inferSchema(options: CaseInsensitiveStringMap): StructType = {
-    // TODO add schema and id-strategy check
-    hugeGraphOptions = new HGOptions(options.asCaseSensitiveMap())
-    LOG.info(s"---------------- HugeGraph Options: ${hugeGraphOptions.getAllParameters}")
+    hgOptions = new HGOptions(options.asCaseSensitiveMap())
+    LOG.info(s"HugeGraph Options: ${hgOptions.getAllParameters}")
     schema = new StructType()
-    LOG.info(s"--------------------- Writer infer schema: ${schema}")
+    LOG.info(s"Writer infer schema: ${schema}")
     schema
   }
 
-  override def getTable(schema: StructType, partitioning: Array[Transform], properties: util.Map[String, String]): Table = {
-    LOG.info(s"--------------------- Get table schema = ${schema}")
-    new HugeGraphTable(schema, hugeGraphOptions)
+  override def getTable(schema: StructType, partitioning: Array[Transform],
+                        properties: util.Map[String, String]): Table = {
+    LOG.info(s"Get table schema: ${schema}")
+    new HGTable(schema, hgOptions)
   }
 
   //  override def supportsExternalMetadata(): Boolean = true

@@ -22,7 +22,7 @@ import org.apache.hugegraph.spark.connector.client.HGLoadContext
 import org.apache.hugegraph.spark.connector.mapping.VertexMapping
 import org.apache.hugegraph.spark.connector.options.HGOptions
 import org.apache.hugegraph.spark.connector.utils.HGUtils
-import org.apache.hugegraph.spark.connector.utils.HugeGraphBuildUtils
+import org.apache.hugegraph.spark.connector.utils.HGBuildUtils
 import org.apache.hugegraph.structure.graph.Vertex
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, WriterCommitMessage}
@@ -47,23 +47,24 @@ class HGVertexWriter(schema: StructType, hgOptions: HGOptions) extends DataWrite
   var cnt = 0
 
   override def write(record: InternalRow): Unit = {
-    val vertices = HugeGraphBuildUtils.buildVertices(record, schema, builder)
+    val vertices = HGBuildUtils.buildVertices(record, schema, builder)
 
     for (vertex <- vertices) {
       verticesBuffer.+=(vertex)
     }
 
-    if (verticesBuffer.size >= 5) {
+    if (verticesBuffer.size >= hgOptions.batchSize()) {
       sinkOnce()
     }
   }
 
   private def sinkOnce(): Unit = {
-    LOG.info(s"Writer once, ${verticesBuffer.toList}")
-    val successfulVertices = HugeGraphBuildUtils.saveVertices(context, verticesBuffer.toList)
-    val successIds = successfulVertices.map(v => v.id())
-    LOG.info(s"successful ids: ${successIds}")
-    cnt += successIds.length
+    verticesBuffer.foreach(e => e.id())
+    LOG.info(s"Writer once: ${verticesBuffer.toList}")
+    val successfulVertices = HGBuildUtils.saveVertices(context, verticesBuffer.toList)
+    val successIds = successfulVertices.map(_.id()).mkString(",")
+    LOG.info(s"Successful ids: ${successIds}")
+    cnt += successfulVertices.length
     verticesBuffer.clear()
   }
 
@@ -72,7 +73,7 @@ class HGVertexWriter(schema: StructType, hgOptions: HGOptions) extends DataWrite
       sinkOnce()
     }
     context.unsetLoadingMode()
-    HugeGraphCommitMessage(List("Success cnt: " + cnt))
+    HGCommitMessage(List("Success cnt: " + cnt))
   }
 
   override def abort(): Unit = {

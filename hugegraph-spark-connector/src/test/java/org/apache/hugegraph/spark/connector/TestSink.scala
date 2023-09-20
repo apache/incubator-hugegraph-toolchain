@@ -64,16 +64,16 @@ object TestSink {
   // TODO transfer to test
   def main(args: Array[String]): Unit = {
     val sparkSession = SparkSession.builder()
-      .master("local[*]")
+      .master("local[1]")
       .appName(this.getClass.getSimpleName)
       .config("spark.ui.port", "19099")
       .getOrCreate()
 
     insertVertices1(sparkSession)
-    insertVertices2(sparkSession)
-
-    testInsertEdge1(sparkSession)
-    testInsertEdge2(sparkSession)
+//    insertVertices2(sparkSession)
+//
+//    testInsertEdge1(sparkSession)
+//    testInsertEdge2(sparkSession)
 
     sparkSession.stop()
   }
@@ -84,8 +84,9 @@ object TestSink {
       Tuple3("vadas", 27, "HongKong"),
       Tuple3("Josh", 32, "Beijing"),
       Tuple3("peter", 35, "ShangHai"),
-      Tuple3("li,nary", 26, "Wu,han")
-    )) toDF("name", "age", "city")
+      Tuple3("li,nary", 26, "Wu,han"),
+      Tuple3("Bob", 18, "HangZhou"),
+    )) toDF("name", "age", "city") repartition(2)
 
     df.show()
 

@@ -22,7 +22,7 @@ import org.apache.hugegraph.spark.connector.client.HGLoadContext
 import org.apache.hugegraph.spark.connector.mapping.EdgeMapping
 import org.apache.hugegraph.spark.connector.options.HGOptions
 import org.apache.hugegraph.spark.connector.utils.HGUtils
-import org.apache.hugegraph.spark.connector.utils.HugeGraphBuildUtils
+import org.apache.hugegraph.spark.connector.utils.HGBuildUtils
 import org.apache.hugegraph.structure.graph.Edge
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, WriterCommitMessage}
@@ -47,22 +47,22 @@ class HGEdgeWriter(schema: StructType, hgOptions: HGOptions) extends DataWriter[
   var cnt = 0
 
   override def write(record: InternalRow): Unit = {
-    val edges = HugeGraphBuildUtils.buildEdges(record, schema, builder)
+    val edges = HGBuildUtils.buildEdges(record, schema, builder)
 
     for (edge <- edges) {
       edgesBuffer.+=(edge)
     }
 
-    if (edgesBuffer.size >= 5) {
+    if (edgesBuffer.size >= hgOptions.batchSize()) {
       sinkOnce()
     }
   }
 
   private def sinkOnce(): Unit = {
-    LOG.info(s"Writer once, ${edgesBuffer.toList}")
-    val successfulVertices = HugeGraphBuildUtils.saveEdges(context, edgesBuffer.toList)
+    LOG.info(s"Writer once: ${edgesBuffer.toList}")
+    val successfulVertices = HGBuildUtils.saveEdges(context, edgesBuffer.toList)
     val successIds = successfulVertices.map(v => v.id())
-    LOG.info(s"successful ids: ${successIds}")
+    LOG.info(s"Successful ids: ${successIds}")
     cnt += successIds.length
     edgesBuffer.clear()
   }
@@ -72,7 +72,7 @@ class HGEdgeWriter(schema: StructType, hgOptions: HGOptions) extends DataWriter[
       sinkOnce()
     }
     context.unsetLoadingMode()
-    HugeGraphCommitMessage(List("Success cnt: " + cnt))
+    HGCommitMessage(List("Success cnt: " + cnt))
   }
 
   override def abort(): Unit = {

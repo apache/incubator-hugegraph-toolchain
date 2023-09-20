@@ -23,24 +23,16 @@ import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types.StructType
 import org.slf4j.LoggerFactory
 
-class HugeGraphWriterBuilder(schema: StructType, hugeGraphOptions: HGOptions)
+class HGWriterBuilder(schema: StructType, hgOptions: HGOptions)
   extends WriteBuilder with SupportsOverwrite with SupportsTruncate {
 
   private val LOG = LoggerFactory.getLogger(this.getClass)
 
-  //  override def build(): Write = {
-  //    LOG.info(s"Writer Builder schema: ${schema}")
-  //    val fields = schema.fields: Array[StructField]
-  //    LOG.info(s"fields: ${fields}")
-  //    new HugeGraphBatchWriter(schema)
-  //  }
-
-  // TODO replace
   override def buildForBatch(): BatchWrite = {
-    new HugeGraphBatchWriter(schema, hugeGraphOptions)
+    new HGBatchWriter(schema, hgOptions)
   }
 
   override def overwrite(filters: Array[Filter]): WriteBuilder = {
-    new HugeGraphWriterBuilder(schema, hugeGraphOptions)
+    new HGWriterBuilder(schema, hgOptions)
   }
 }
