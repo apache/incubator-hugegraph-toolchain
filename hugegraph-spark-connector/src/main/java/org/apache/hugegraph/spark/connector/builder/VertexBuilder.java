@@ -77,7 +77,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
         } else {
             // The id strategy is automatic
             throw new IllegalArgumentException("Unsupported AUTOMATIC id strategy for " +
-                                               "hugegraph spark connector");
+                                               "hugegraph Spark Connector.");
         }
     }
 }
