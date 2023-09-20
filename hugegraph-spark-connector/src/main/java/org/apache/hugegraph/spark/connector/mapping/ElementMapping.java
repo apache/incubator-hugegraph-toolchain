@@ -66,8 +66,8 @@ public abstract class ElementMapping implements Serializable {
                                                                      "can't be null"));
         this.mappingValues.values()
                           .forEach(m -> m.values().forEach(value -> E.checkArgument(value != null,
-                                                                                    "The value in" +
-                                                                                    " value_mapping can't be null")));
+                                                           "The value in " +
+                                                           "value_mapping can't be null")));
     }
 
     public String label() {
@@ -124,7 +124,6 @@ public abstract class ElementMapping implements Serializable {
     public void batchSize(int batchSize) {
         this.batchSize = batchSize;
     }
-
 
     public Set<String> selectedFields() {
         return this.selectedFields;

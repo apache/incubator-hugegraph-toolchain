@@ -17,7 +17,6 @@
 
 package org.apache.hugegraph.spark.connector.mapping;
 
-
 import org.apache.hugegraph.spark.connector.constant.DataTypeEnum;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -398,8 +398,12 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 }
                 addProperties(vertex, this.properties);
             }
-            if (withId) vertex.id(id);
-            else vertex.id(null);
+            if (withId) {
+                vertex.id(id);
+            }
+            else {
+                vertex.id(null);
+            }
             return ImmutableList.of(vertex);
         }
     }
