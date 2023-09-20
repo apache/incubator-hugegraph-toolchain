@@ -105,7 +105,6 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
             Edge edge = new Edge(this.mapping.label());
             edge.source(source);
             edge.target(target);
-            // Add properties
             this.addProperties(edge, kvPairs.properties);
             edges.add(edge);
         }
@@ -127,10 +126,10 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         } else if (vertexLabel.idStrategy().isPrimaryKey()) {
             E.checkArgument(fields.size() >= 1,
                             "The source/target field must contains some " +
-                            "columns when id strategy is CUSTOMIZE");
+                            "columns when id strategy is PrimaryKey");
         } else {
             throw new IllegalArgumentException("Unsupported AUTOMATIC id strategy " +
-                                               "for hugegraph-loader");
+                                               "for hugegraph Spark Connector.");
         }
     }
 
@@ -144,7 +143,6 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         // General properties
         private Map<String, Object> properties;
 
-        // 抽取属性值
         public void extractProperties(String[] names, Object[] values) {
             // General properties
             this.properties = new HashMap<>();
@@ -167,7 +165,6 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         }
     }
 
-    // TODO not exists
     private VertexIdsIndex extractVertexIdsIndex(String[] names) {
         VertexIdsIndex index = new VertexIdsIndex();
         index.sourceIndexes = new int[this.mapping.sourceFields().size()];

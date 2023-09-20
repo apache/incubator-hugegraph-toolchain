@@ -110,9 +110,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
     }
 
-    /**
-     * ================ get metadata ================
-     **/
     protected PropertyKey getPropertyKey(String name) {
         return this.schema.getPropertyKey(name);
     }
@@ -125,7 +122,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         return this.schema.getEdgeLabel(name);
     }
 
-    /* ================ get actual value after mapping ================ */
     protected Object mappingValue(String fieldName, Object fieldValue) {
         if (this.mapping().mappingValues().isEmpty()) {
             return fieldValue;
@@ -134,7 +130,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         return this.mapping().mappingValue(fieldName, fieldStrValue);
     }
 
-    /* set id */
     private void customizeId(VertexLabel vertexLabel, Vertex vertex,
                              String idField, Object idValue) {
         E.checkArgumentNotNull(idField, "The vertex id field can't be null");
@@ -184,7 +179,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         }
     }
 
-    /* 拼接顶点 id */
     private String spliceVertexId(VertexLabel vertexLabel, Object... primaryValues) {
         StringBuilder vertexId = new StringBuilder();
         StringBuilder vertexKeysId = new StringBuilder();
@@ -283,7 +277,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
         @Override
         public void extractFromEdge(String[] names, Object[] values, int[] fieldIndexes) {
-            // id 的长度只能为 1
             assert fieldIndexes.length == 1;
             String fieldName = names[fieldIndexes[0]];
             Object fieldValue = values[fieldIndexes[0]];
@@ -295,6 +288,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         public List<Vertex> buildVertices(boolean withProperty, boolean withId) {
             Vertex vertex = new Vertex(vertexLabel.name());
             customizeId(vertexLabel, vertex, this.idField, this.idValue);
+            // empty string id ("")
             if (vertexIdEmpty(vertexLabel, vertex)) {
                 return ImmutableList.of();
             }
@@ -400,8 +394,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             }
             if (withId) {
                 vertex.id(id);
-            }
-            else {
+            } else {
                 vertex.id(null);
             }
             return ImmutableList.of(vertex);
