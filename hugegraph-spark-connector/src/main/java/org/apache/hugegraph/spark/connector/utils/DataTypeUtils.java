@@ -17,17 +17,16 @@
 
 package org.apache.hugegraph.spark.connector.utils;
 
-import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
 import org.apache.hugegraph.spark.connector.constant.Constants;
+import org.apache.hugegraph.spark.connector.exception.LoadException;
 import org.apache.hugegraph.structure.constant.Cardinality;
 import org.apache.hugegraph.structure.constant.DataType;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.ReflectionUtil;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -41,13 +40,6 @@ public final class DataTypeUtils {
             "false", "0", "no", "n"
     );
 
-    public static boolean isSimpleValue(Object value) {
-        if (value == null) {
-            return false;
-        }
-        return ReflectionUtil.isSimpleType(value.getClass());
-    }
-
     public static Object convert(Object value, PropertyKey propertyKey) {
         E.checkArgumentNotNull(value, "The value to be converted can't be null");
 
@@ -59,7 +51,7 @@ public final class DataTypeUtils {
                 return parseSingleValue(key, value, dataType);
             case SET:
             case LIST:
-                //return parseMultiValues(key, value, dataType, cardinality);
+                throw new LoadException("Not support yet.");
             default:
                 throw new AssertionError(String.format("Unsupported cardinality: '%s'",
                                                        cardinality));
@@ -219,18 +211,5 @@ public final class DataTypeUtils {
             return parseNumber(key, value, dataType) != null;
         }
         return dataType.clazz().isInstance(value);
-    }
-
-    /**
-     * Check type of all the values(maybe some list properties) valid
-     */
-    private static boolean checkCollectionDataType(String key, Collection<?> values,
-                                                   DataType dataType) {
-        for (Object value : values) {
-            if (!checkDataType(key, value, dataType)) {
-                return false;
-            }
-        }
-        return true;
     }
 }

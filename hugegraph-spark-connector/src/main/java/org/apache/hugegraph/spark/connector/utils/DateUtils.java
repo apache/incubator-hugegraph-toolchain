@@ -19,19 +19,13 @@ package org.apache.hugegraph.spark.connector.utils;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.hugegraph.date.SafeDateFormat;
-import org.apache.hugegraph.spark.connector.constant.Constants;
 
 public final class DateUtils {
 
     private static final Map<String, SafeDateFormat> DATE_FORMATS = new ConcurrentHashMap<>();
-
-    public static Date parse(String source, String df) {
-        return parse(source, df, Constants.TIME_ZONE);
-    }
 
     public static Date parse(String source, String df, String timeZone) {
         SafeDateFormat dateFormat = getDateFormat(df);
@@ -50,28 +44,5 @@ public final class DateUtils {
             }
         }
         return dateFormat;
-    }
-
-    public static Object toPattern(String df) {
-        SafeDateFormat dateFormat = getDateFormat(df);
-        return dateFormat.toPattern();
-    }
-
-    public static String now(String df) {
-        return getDateFormat(df).format(new Date());
-    }
-
-    public static boolean checkTimeZone(String timeZone) {
-        final String DEFAULT_GMT_TIMEZONE = "GMT";
-        if (timeZone.equals(DEFAULT_GMT_TIMEZONE)) {
-            return true;
-        } else {
-            /*
-             * Time zone id returned is always "GMT" by default
-             * if custom time zone is invalid
-             */
-            String id = TimeZone.getTimeZone(timeZone).getID();
-            return !id.equals(DEFAULT_GMT_TIMEZONE);
-        }
     }
 }
