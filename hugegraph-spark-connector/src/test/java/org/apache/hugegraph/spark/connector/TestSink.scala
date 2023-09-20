@@ -69,25 +69,6 @@ object TestSink {
       .config("spark.ui.port", "19099")
       .getOrCreate()
 
-    //    val ds = (1 to total)
-    //      .map(i => {
-    //        Person("user-" + i, rand.nextInt(100), "Wuhan-" + i)
-    //      })
-
-    //    val ds = (1 to total)
-    //      .map(i => {
-    //        Person(name = "Andrea " + i, rand.nextInt(100), "Santurbano " + i)
-    //      }).toDS()
-
-    //    val df = sparkSession.createDataFrame(Seq(
-    //      Tuple3("user1", "29", "Wuhan"),
-    //      Tuple3("user2", "30", "Shenzhen"),
-    //      Tuple3("user3", "31", "Beijing")
-    //    )).toDF("name", "age", "city")
-
-    //    testInsertVertex(sparkSession)
-//    testInsertEdge(sparkSession)
-
     insertVertices1(sparkSession)
     insertVertices2(sparkSession)
 
@@ -95,7 +76,6 @@ object TestSink {
     testInsertEdge2(sparkSession)
 
     sparkSession.stop()
-
   }
 
   def insertVertices1(sparkSession: SparkSession): Unit = {
@@ -129,7 +109,6 @@ object TestSink {
     )) toDF("name", "lang", "price", "ISBN")
 
     df.show()
-
 
     df.write
       .format("org.apache.hugegraph.spark.connector.DataSource")
@@ -185,7 +164,7 @@ object TestSink {
       .option("graph", "hugegraph")
       .option("data-type", "edge")
       .option("label", "created")
-      .option("source-name", "source")  // customer
+      .option("source-name", "source")  // customize
       .option("target-name", "name")  // pk
       .option("batch-size", 2)
       .mode(SaveMode.Overwrite)
