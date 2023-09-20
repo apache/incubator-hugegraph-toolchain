@@ -40,6 +40,10 @@
         <jersey.version>3.0.3</jersey.version>
         <jackson.version>2.12.3</jackson.version>
         <jcommander.version>1.78</jcommander.version>
+        <assembly.dir>${project.basedir}/assembly</assembly.dir>
+        <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
+        <release.name>${project.artifactId}</release.name>
+        <final.name>apache-${release.name}-incubating-${project.version}</final.name>
     </properties>
 
     <dependencies>
@@ -180,76 +184,36 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>2.18.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.beust</groupId>
-            <artifactId>jcommander</artifactId>
-            <version>${jcommander.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.4.1</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
-    <!--    <build>-->
-    <!--        <plugins>-->
-    <!--            <plugin>-->
-    <!--                <groupId>org.apache.maven.plugins</groupId>-->
-    <!--                <artifactId>maven-shade-plugin</artifactId>-->
-    <!--                <version>3.4.1</version>-->
-    <!--                <executions>-->
-    <!--                    <execution>-->
-    <!--                        <phase>package</phase>-->
-    <!--                        <goals>-->
-    <!--                            <goal>shade</goal>-->
-    <!--                        </goals>-->
-    <!--                        <configuration>-->
-    <!--                            <createDependencyReducedPom>false</createDependencyReducedPom>-->
-    <!--                            <finalName>${final.name}-shaded</finalName>-->
-    <!--                            <relocations>-->
-    <!--                                <relocation>-->
-    <!--                                    <pattern>org.glassfish.jersey</pattern>-->
-    <!--                                    <shadedPattern>shaded.org.glassfish.jersey</shadedPattern>-->
-    <!--                                </relocation>-->
-    <!--                                <relocation>-->
-    <!--                                    <pattern>jakarta.ws.rs</pattern>-->
-    <!--                                    <shadedPattern>shaded.jakarta.ws.rs</shadedPattern>-->
-    <!--                                </relocation>-->
-    <!--                                <relocation>-->
-    <!--                                    <pattern>com.google.common.base</pattern>-->
-    <!--                                    <shadedPattern>shaded.com.google.common.base</shadedPattern>-->
-    <!--                                </relocation>-->
-    <!--                                <relocation>-->
-    <!--                                    <pattern>org.glassfish.hk2</pattern>-->
-    <!--                                    <shadedPattern>shaded.org.glassfish.hk2</shadedPattern>-->
-    <!--                                </relocation>-->
-    <!--                                <relocation>-->
-    <!--                                    <pattern>org.jvnet.hk2</pattern>-->
-    <!--                                    <shadedPattern>shaded.org.jvnet.hk2</shadedPattern>-->
-    <!--                                </relocation>-->
-    <!--                            </relocations>-->
-    <!--                            <transformers>-->
-    <!--                                <transformer-->
-    <!--                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer">-->
-    <!--                                </transformer>-->
-    <!--                            </transformers>-->
-    <!--                            <filters>-->
-    <!--                                <filter>-->
-    <!--                                    <artifact>*:*</artifact>-->
-    <!--                                    <excludes>-->
-    <!--                                        <exclude>module-info.class</exclude>-->
-    <!--                                    </excludes>-->
-    <!--                                </filter>-->
-    <!--                            </filters>-->
-    <!--                        </configuration>-->
-    <!--                    </execution>-->
-    <!--                </executions>-->
-    <!--            </plugin>-->
-    <!--        </plugins>-->
-    <!--    </build>-->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <id>assembly-hugegraph-spark-connector</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <outputDirectory>${project.basedir}</outputDirectory>
+                            <descriptor>${assembly.descriptor.dir}/assembly.xml</descriptor>
+                            <finalName>${final.name}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
