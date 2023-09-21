@@ -17,3 +17,37 @@ under the License.
 
 # HugeGraph Spark Connector
 
+## Client Configs
+
+| Params               | Description | Default Value |
+|----------------------|-------------|---------------|
+| `host`               |             |               |
+| `port`               |             |               |
+| `graph`              |             |               |
+| `protocol`           |             |               |
+| `username`           |             |               |
+| `token`              |             |               |
+| `timeout`            |             |               |
+| `max-conn`           |             |               |
+| `max-conn-per-route` |             |               |
+| `trust-store-file`   |             |               |
+| `trust-store-token`  |             |               |
+
+## Graph Data Configs
+
+| Params            | Description | Default Value |
+|-------------------|-------------|---------------|
+| `date-type`       |             |               |
+| `label`           |             |               |
+| `id`              |             |               |
+| `source-name`     |             |               |
+| `target-name`     |             |               |
+| `selected-fields` |             |               |
+| `ignored-fields`  |             |               |
+| `batch-size`      |             |               |
+
+## Common Configs
+
+| Params      | Description | Default Value |
+|-------------|-------------|---------------|
+| `delimiter` |             |               |
