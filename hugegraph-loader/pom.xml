@@ -626,6 +626,17 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>kafka</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <source_type>kafka</source_type>
+                <store_path>/files</store_path>
+                <test-classes>**/KafkaLoadTest.java</test-classes>
+            </properties>
+        </profile>
     </profiles>
 
     <build>
