@@ -5,7 +5,7 @@
       "id": "1",
       "input": {
         "type": "kafka",
-        "bootstrap-server": "192.168.34.164:9093",
+        "bootstrap-server": "localhost:9093",
         "topic": "test_topic",
         "from-beginning": true,
         "group": "consumers",
