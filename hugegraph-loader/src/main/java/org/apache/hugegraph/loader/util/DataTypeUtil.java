@@ -142,6 +142,31 @@ public final class DataTypeUtil {
                          "to Date, but got '%s'", source.getClass().getName());
             String dateFormat = ((FileSource) source).dateFormat();
             String timeZone = ((FileSource) source).timeZone();
+
+            if (source instanceof KafkaSource) {
+                List<String> extraDateFormats =
+                        ((KafkaSource) source).getExtraDateFormats();
+                dateFormat = ((KafkaSource) source).getDateFormat();
+                timeZone = ((KafkaSource) source).getTimeZone();
+                if (extraDateFormats == null || extraDateFormats.isEmpty()) {
+                    return parseDate(key, value, dateFormat, timeZone);
+                } else {
+                    HashSet<String> allDateFormats = new HashSet<>();
+                    allDateFormats.add(dateFormat);
+                    allDateFormats.addAll(extraDateFormats);
+                    int size = allDateFormats.size();
+                    for (String df : allDateFormats) {
+                        try {
+                            return parseDate(key, value, df, timeZone);
+                        } catch (Exception e) {
+                            if (--size <= 0) {
+                                throw e;
+                            }
+                        }
+                    }
+                }
+            }
+
             return parseDate(key, value, dateFormat, timeZone);
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
@@ -155,29 +180,6 @@ public final class DataTypeUtil {
                         "data type %s and can't convert to it",
                         key, value, value.getClass(), dataType);
 
-        if (source instanceof KafkaSource) {
-            List<String> extraDateFormats =
-                    ((KafkaSource) source).getExtraDateFormats();
-            String dateFormat = ((KafkaSource) source).getDateFormat();
-            String timeZone = ((KafkaSource) source).getTimeZone();
-            if (extraDateFormats == null || extraDateFormats.isEmpty()) {
-                return parseDate(key, value, dateFormat, timeZone);
-            } else {
-                HashSet<String> allDateFormats = new HashSet<>();
-                allDateFormats.add(dateFormat);
-                allDateFormats.addAll(extraDateFormats);
-                int size = allDateFormats.size();
-                for (String df : allDateFormats) {
-                    try {
-                        return parseDate(key, value, df, timeZone);
-                    } catch (Exception e) {
-                        if (--size <= 0) {
-                            throw e;
-                        }
-                    }
-                }
-            }
-        }
         return value;
     }
 
