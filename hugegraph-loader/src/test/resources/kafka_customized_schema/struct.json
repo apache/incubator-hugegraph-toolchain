@@ -1,0 +1,26 @@
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "1",
+      "input": {
+        "type": "kafka",
+        "bootstrap-server": "192.168.34.164:9093",
+        "topic": "test_topic",
+        "from-beginning": true,
+        "group": "consumers",
+        "format": "JSON",
+        "early-stop": true
+      },
+      "vertices": [
+        {
+          "label": "person",
+          "id": "id",
+          "null_values": [
+            "NULL"
+          ]
+        }
+      ]
+    }
+  ]
+}
