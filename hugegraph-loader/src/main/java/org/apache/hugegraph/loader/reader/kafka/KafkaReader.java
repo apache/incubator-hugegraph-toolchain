@@ -104,7 +104,6 @@ public class KafkaReader extends AbstractReader {
     }
 
     private int getKafkaTopicPartitionCount() {
-        // 获取 kafka 上 topic 的 partition 数
         Properties props = new Properties();
         props.put("bootstrap.servers", this.source.getBootstrapServer());
         props.put("group.id", baseConsumerGroup);
@@ -112,8 +111,6 @@ public class KafkaReader extends AbstractReader {
         KafkaConsumer consumer = new KafkaConsumer(props);
 
         int count = consumer.partitionsFor(this.source.getTopic()).size();
-
-        // 关闭 base consumer
         consumer.close();
 
         return count;
