@@ -53,14 +53,17 @@ public class KafkaReader extends AbstractReader {
     private final LineParser parser;
     private Queue<String> batch;
 
-    private static String baseConsumerGroup = "kafka-reader-base";
-    private KafkaConsumer dataConsumer;
+    private static final String BASE_CONSUMER_GROUP = "kafka-reader-base";
+    private final KafkaConsumer dataConsumer;
+    private boolean earlyStop = false;
+    private boolean emptyPoll = false;
 
     public KafkaReader(KafkaSource source) {
         this.source = source;
 
         this.dataConsumer = createKafkaConsumer();
         this.parser = createLineParser();
+        this.earlyStop = source.isEarlyStop();
     }
 
     @Override
@@ -86,7 +89,7 @@ public class KafkaReader extends AbstractReader {
 
     @Override
     public boolean hasNext() {
-        return true;
+        return !earlyStop || !emptyPoll;
     }
 
     @Override
@@ -98,6 +101,8 @@ public class KafkaReader extends AbstractReader {
         String rawValue = batch.poll();
         if (rawValue != null) {
             return this.parser.parse(this.source.header(), rawValue);
+        } else {
+            emptyPoll = true;
         }
 
         return null;
@@ -106,17 +111,16 @@ public class KafkaReader extends AbstractReader {
     private int getKafkaTopicPartitionCount() {
         Properties props = new Properties();
         props.put("bootstrap.servers", this.source.getBootstrapServer());
-        props.put("group.id", baseConsumerGroup);
+        props.put("group.id", BASE_CONSUMER_GROUP);
 
-        KafkaConsumer consumer = new KafkaConsumer(props);
-
+        KafkaConsumer<?, ?> consumer = new KafkaConsumer<>(props);
         int count = consumer.partitionsFor(this.source.getTopic()).size();
         consumer.close();
 
         return count;
     }
 
-    private KafkaConsumer createKafkaConsumer() {
+    private KafkaConsumer<String, String> createKafkaConsumer() {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", this.source.getBootstrapServer());
@@ -133,10 +137,8 @@ public class KafkaReader extends AbstractReader {
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
 
-        KafkaConsumer<String, String> consumer = new KafkaConsumer(props);
-
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(ImmutableList.of(this.source.getTopic()));
-
         return consumer;
     }
 
@@ -144,10 +146,7 @@ public class KafkaReader extends AbstractReader {
     private Queue<String> nextBatch() {
 
         Queue<String> queue = new LinkedList<String>();
-
-        ConsumerRecords<String,String> records =
-                dataConsumer.poll(Duration.ofMillis(1000));
-
+        ConsumerRecords<String,String> records = dataConsumer.poll(Duration.ofMillis(1000));
         for (ConsumerRecord<String, String> record : records) {
             queue.add(record.value());
         }

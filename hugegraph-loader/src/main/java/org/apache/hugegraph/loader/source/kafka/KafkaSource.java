@@ -28,7 +28,9 @@ import org.apache.hugegraph.loader.source.file.SkippedLine;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class KafkaSource extends AbstractSource {
 
@@ -63,6 +65,9 @@ public class KafkaSource extends AbstractSource {
 
     @JsonProperty("batch_size")
     private int batchSize = 500;
+
+    @JsonProperty("early-stop")
+    private boolean earlyStop = false;
 
     @Override
     public SourceType type() {
