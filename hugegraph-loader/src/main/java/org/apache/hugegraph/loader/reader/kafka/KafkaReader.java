@@ -145,15 +145,15 @@ public class KafkaReader extends AbstractReader {
 
     @SneakyThrows
     private Queue<String> nextBatch() {
-
         Queue<String> queue = new LinkedList<>();
-        ConsumerRecords<String, String> records = dataConsumer.poll(Duration.ofMillis(1000));
+        ConsumerRecords<String, String> records =
+                dataConsumer.poll(Duration.ofMillis(Constants.KAFKA_POLL_DURATION));
         for (ConsumerRecord<String, String> record : records) {
             queue.add(record.value());
         }
 
         if (queue.size() == 0) {
-            Thread.sleep(1000);
+            Thread.sleep(Constants.KAFKA_POLL_GAP_INTERVAL);
         }
 
         return queue;
