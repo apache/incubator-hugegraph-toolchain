@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Queue;
 
+import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.InitException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.mapping.InputStruct;
@@ -55,7 +56,7 @@ public class KafkaReader extends AbstractReader {
 
     private static final String BASE_CONSUMER_GROUP = "kafka-reader-base";
     private final KafkaConsumer dataConsumer;
-    private boolean earlyStop = false;
+    private final boolean earlyStop;
     private boolean emptyPoll = false;
 
     public KafkaReader(KafkaSource source) {
@@ -126,13 +127,13 @@ public class KafkaReader extends AbstractReader {
         props.put("bootstrap.servers", this.source.getBootstrapServer());
         props.put("max.poll.records", this.source.getBatchSize());
         props.put("group.id", this.source.getGroup());
-        props.put("enable.auto.commit", "true");
-        props.put("auto.commit.interval.ms", "1000");
-        props.put("session.timeout.ms", "30000");
+        props.put("enable.auto.commit", Constants.KAFKA_AUTO_COMMIT);
+        props.put("auto.commit.interval.ms", String.valueOf(Constants.KAFKA_AUTO_COMMIT_INTERVAL));
+        props.put("session.timeout.ms", String.valueOf(Constants.KAFKA_SESSION_TIMEOUT));
         if (this.source.isFromBeginning()) {
-            props.put("auto.offset.reset", "earliest");
+            props.put("auto.offset.reset", Constants.KAFKA_EARLIEST_OFFSET);
         } else {
-            props.put("auto.offset.reset", "latest");
+            props.put("auto.offset.reset", Constants.KAFKA_LATEST_OFFSET);
         }
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
@@ -145,8 +146,8 @@ public class KafkaReader extends AbstractReader {
     @SneakyThrows
     private Queue<String> nextBatch() {
 
-        Queue<String> queue = new LinkedList<String>();
-        ConsumerRecords<String,String> records = dataConsumer.poll(Duration.ofMillis(1000));
+        Queue<String> queue = new LinkedList<>();
+        ConsumerRecords<String, String> records = dataConsumer.poll(Duration.ofMillis(1000));
         for (ConsumerRecord<String, String> record : records) {
             queue.add(record.value());
         }
