@@ -34,7 +34,7 @@ import lombok.EqualsAndHashCode;
 @Data
 public class KafkaSource extends AbstractSource {
 
-    @JsonProperty("bootstrap-server")
+    @JsonProperty("bootstrap_server")
     private String bootstrapServer;
 
     @JsonProperty("topic")
@@ -43,7 +43,7 @@ public class KafkaSource extends AbstractSource {
     @JsonProperty("group")
     private String group;
 
-    @JsonProperty("from-beginning")
+    @JsonProperty("from_beginning")
     private boolean fromBeginning = false;
 
     private FileFormat format;
@@ -66,7 +66,7 @@ public class KafkaSource extends AbstractSource {
     @JsonProperty("batch_size")
     private int batchSize = 500;
 
-    @JsonProperty("early-stop")
+    @JsonProperty("early_stop")
     private boolean earlyStop = false;
 
     @Override

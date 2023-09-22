@@ -29,7 +29,7 @@ import org.apache.hugegraph.testutil.Assert;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -50,6 +50,7 @@ public class KafkaLoadTest extends LoadTest {
         clearServerData();
         KafkaUtil.prepare();
         mockVertexPersonData();
+        mockVertexSoftwareData();
     }
 
     @AfterClass
@@ -84,7 +85,7 @@ public class KafkaLoadTest extends LoadTest {
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
 
-        Assert.assertEquals(5, vertices.size());
+        Assert.assertEquals(7, vertices.size());
         Assert.assertEquals(0, edges.size());
 
         for (Vertex vertex : vertices) {
@@ -110,13 +111,24 @@ public class KafkaLoadTest extends LoadTest {
         commonMockData(keys, objects, topicName);
     }
 
+    private static void mockVertexSoftwareData() throws JsonProcessingException {
+        String topicName = "vertex-software";
+        String[] keys = {"id", "name", "lang", "price"};
+        Object[][] objects = {
+                {100, "lop", "java", 328.00},
+                {200, "ripple", "java", 199.00}
+        };
+        KafkaUtil.createTopic(topicName);
+        commonMockData(keys, objects, topicName);
+    }
+
     private static void commonMockData(String[] keys, Object[][] objects, String topic)
             throws JsonProcessingException {
 
         Properties props = new Properties();
         props.put("bootstrap.servers", KafkaUtil.getBootStrapServers());
-        props.put("key.serializer", StringDeserializer.class.getName());
-        props.put("value.serializer", StringDeserializer.class.getName());
+        props.put("key.serializer", StringSerializer.class.getName());
+        props.put("value.serializer", StringSerializer.class.getName());
         Producer<String, String> producer = new KafkaProducer<>(props);
 
         for (Object[] object : objects) {
