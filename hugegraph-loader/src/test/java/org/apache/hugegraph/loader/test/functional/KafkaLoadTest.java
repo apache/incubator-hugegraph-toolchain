@@ -51,6 +51,7 @@ public class KafkaLoadTest extends LoadTest {
         KafkaUtil.prepare();
         mockVertexPersonData();
         mockVertexSoftwareData();
+        mockEdgeKnowsData();
     }
 
     @AfterClass
@@ -86,7 +87,7 @@ public class KafkaLoadTest extends LoadTest {
         List<Edge> edges = CLIENT.graph().listEdges();
 
         Assert.assertEquals(7, vertices.size());
-        Assert.assertEquals(0, edges.size());
+        Assert.assertEquals(2, edges.size());
 
         for (Vertex vertex : vertices) {
             Assert.assertEquals(Integer.class, vertex.id().getClass());
@@ -117,6 +118,17 @@ public class KafkaLoadTest extends LoadTest {
         Object[][] objects = {
                 {100, "lop", "java", 328.00},
                 {200, "ripple", "java", 199.00}
+        };
+        KafkaUtil.createTopic(topicName);
+        commonMockData(keys, objects, topicName);
+    }
+
+    private static void mockEdgeKnowsData() throws JsonProcessingException {
+        String topicName = "edge-knows";
+        String[] keys = {"id", "source_id", "target_id", "date", "weight"};
+        Object[][] objects = {
+                {1, 1, 2, "2016-01-10", 0.50},
+                {2, 1, 3, "2013-02-20", 1.00}
         };
         KafkaUtil.createTopic(topicName);
         commonMockData(keys, objects, topicName);

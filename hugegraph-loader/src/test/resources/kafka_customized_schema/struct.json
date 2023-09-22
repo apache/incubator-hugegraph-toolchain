@@ -40,6 +40,28 @@
         }
       ],
       "edges": []
+    },
+    {
+      "id": "3",
+      "input": {
+        "type": "kafka",
+        "bootstrap_server": "localhost:9093",
+        "topic": "edge-knows",
+        "from_beginning": true,
+        "group": "consumers",
+        "format": "JSON",
+        "early_stop": true,
+        "batch_size": 2
+      },
+      "vertices": [],
+      "edges": [
+        {
+          "label": "knows",
+          "source": ["source_id"],
+          "target": ["target_id"],
+          "ignored": ["id"]
+        }
+      ]
     }
   ]
 }
