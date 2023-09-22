@@ -62,6 +62,28 @@
           "ignored": ["id"]
         }
       ]
+    },
+    {
+      "id": "4",
+      "input": {
+        "type": "kafka",
+        "bootstrap_server": "localhost:9093",
+        "topic": "edge-created",
+        "from_beginning": true,
+        "group": "consumers",
+        "format": "JSON",
+        "early_stop": true,
+        "batch_size": 2
+      },
+      "vertices": [],
+      "edges": [
+        {
+          "label": "created",
+          "source": ["source_id"],
+          "target": ["target_id"],
+          "ignored": ["id"]
+        }
+      ]
     }
   ]
 }

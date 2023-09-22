@@ -48,10 +48,11 @@ public class KafkaLoadTest extends LoadTest {
     @BeforeClass
     public static void setUp() throws JsonProcessingException {
         clearServerData();
-        KafkaUtil.prepare();
+        KafkaUtil.prepareEnv();
         mockVertexPersonData();
         mockVertexSoftwareData();
         mockEdgeKnowsData();
+        mockEdgeCreatedData();
     }
 
     @AfterClass
@@ -87,15 +88,15 @@ public class KafkaLoadTest extends LoadTest {
         List<Edge> edges = CLIENT.graph().listEdges();
 
         Assert.assertEquals(7, vertices.size());
-        Assert.assertEquals(2, edges.size());
+        Assert.assertEquals(6, edges.size());
 
         for (Vertex vertex : vertices) {
             Assert.assertEquals(Integer.class, vertex.id().getClass());
         }
-        //for (Edge edge : edges) {
-        //    Assert.assertEquals(Integer.class, edge.sourceId().getClass());
-        //    Assert.assertEquals(Integer.class, edge.targetId().getClass());
-        //}
+        for (Edge edge : edges) {
+            Assert.assertEquals(Integer.class, edge.sourceId().getClass());
+            Assert.assertEquals(Integer.class, edge.targetId().getClass());
+        }
     }
 
     private static void mockVertexPersonData() throws JsonProcessingException {
@@ -129,6 +130,19 @@ public class KafkaLoadTest extends LoadTest {
         Object[][] objects = {
                 {1, 1, 2, "2016-01-10", 0.50},
                 {2, 1, 3, "2013-02-20", 1.00}
+        };
+        KafkaUtil.createTopic(topicName);
+        commonMockData(keys, objects, topicName);
+    }
+
+    private static void mockEdgeCreatedData() throws JsonProcessingException {
+        String topicName = "edge-created";
+        String[] keys = {"id", "source_id", "target_id", "date", "weight"};
+        Object[][] objects = {
+                {1, 1, 100, "2017-12-10", 0.40},
+                {2, 3, 100, "2009-11-11", 0.40},
+                {3, 3, 200, "2017-12-10", 1.00},
+                {4, 4, 100, "2017-03-24", 0.20}
         };
         KafkaUtil.createTopic(topicName);
         commonMockData(keys, objects, topicName);

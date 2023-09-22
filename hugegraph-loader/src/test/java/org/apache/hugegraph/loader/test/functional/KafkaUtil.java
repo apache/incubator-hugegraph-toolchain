@@ -43,7 +43,7 @@ public class KafkaUtil {
 
     private static AdminClient adminClient;
 
-    public static void prepare() {
+    public static void prepareEnv() {
         startService();
         createAdminClient();
     }
