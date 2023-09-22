@@ -66,7 +66,7 @@ public class KafkaLoadTest extends LoadTest {
 
     @After
     public void clear() {
-        //clearServerData();
+        clearServerData();
     }
 
     @Test

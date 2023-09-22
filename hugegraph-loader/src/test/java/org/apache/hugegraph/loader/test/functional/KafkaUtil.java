@@ -60,7 +60,6 @@ public class KafkaUtil {
         kafkaContainer.waitingFor(Wait.defaultWaitStrategy());
         bootStrapServers = kafkaContainer.getBootstrapServers();
         LOG.info("Kafka Container run successfully, bootstrapServer: {}.", bootStrapServers);
-        System.out.println(bootStrapServers);
     }
 
     private static void createAdminClient() {
