@@ -87,7 +87,6 @@ public final class Constants {
     public static final String KAFKA_AUTO_COMMIT = "true";
     public static final String KAFKA_EARLIEST_OFFSET = "earliest";
     public static final String KAFKA_LATEST_OFFSET = "latest";
-
     public static final long KAFKA_POLL_DURATION = 1000;
     public static final long KAFKA_POLL_GAP_INTERVAL = 1000;
 
