@@ -51,6 +51,7 @@
         <mysql.connector.version>8.0.28</mysql.connector.version>
         <postgres.version>42.4.1</postgres.version>
         <mssql.jdbc.version>7.2.0.jre8</mssql.jdbc.version>
+        <kafka.testcontainer.version>1.19.0</kafka.testcontainer.version>
     </properties>
 
     <dependencies>
@@ -523,7 +524,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>
-            <version>1.19.0</version>
+            <version>${kafka.testcontainer.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
