@@ -6,7 +6,7 @@
       "input": {
         "type": "kafka",
         "bootstrap-server": "localhost:9093",
-        "topic": "test_topic",
+        "topic": "vertex-person",
         "from-beginning": true,
         "group": "consumers",
         "format": "JSON",
