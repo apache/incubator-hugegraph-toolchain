@@ -20,7 +20,7 @@ package org.apache.hugegraph.spark.connector
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /*
-// Define schema
+// Define graph schema for test
 schema.propertyKey("name").asText().ifNotExist().create();
 schema.propertyKey("age").asInt().ifNotExist().create();
 schema.propertyKey("city").asText().ifNotExist().create();
@@ -31,7 +31,6 @@ schema.propertyKey("price").asDouble().ifNotExist().create();
 
 schema.vertexLabel("person")
         .properties("name", "age", "city")
-//            .primaryKeys("name")
         .useCustomizeStringId()
         .nullableKeys("age", "city")
         .ifNotExist()
@@ -40,7 +39,6 @@ schema.vertexLabel("person")
 schema.vertexLabel("software")
         .properties("name", "lang", "price")
         .primaryKeys("name")
-//            .useCustomizeStringId()
         .ifNotExist()
         .create();
 
@@ -92,7 +90,7 @@ object SimpleSinkExample {
 
     df.write
       .format("org.apache.hugegraph.spark.connector.DataSource")
-      .option("host", "192.168.34.164")
+      .option("host", "localhost")
       .option("port", "18080")
       .option("graph", "hugegraph")
       .option("data-type", "vertex")
@@ -113,7 +111,7 @@ object SimpleSinkExample {
 
     df.write
       .format("org.apache.hugegraph.spark.connector.DataSource")
-      .option("host", "192.168.34.164")
+      .option("host", "localhost")
       .option("port", "18080")
       .option("graph", "hugegraph")
       .option("data-type", "vertex")
@@ -136,7 +134,7 @@ object SimpleSinkExample {
 
     df.write
       .format("org.apache.hugegraph.spark.connector.DataSource")
-      .option("host", "192.168.34.164")
+      .option("host", "localhost")
       .option("port", "18080")
       .option("graph", "hugegraph")
       .option("data-type", "edge")
@@ -160,7 +158,7 @@ object SimpleSinkExample {
 
     df.write
       .format("org.apache.hugegraph.spark.connector.DataSource")
-      .option("host", "192.168.34.164")
+      .option("host", "localhost")
       .option("port", "18080")
       .option("graph", "hugegraph")
       .option("data-type", "edge")
