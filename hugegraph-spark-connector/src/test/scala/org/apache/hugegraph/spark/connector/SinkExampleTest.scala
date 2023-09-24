@@ -70,7 +70,7 @@ class SinkExampleTest {
       Tuple3("peter", 35, "ShangHai"),
       Tuple3("li,nary", 26, "Wu,han"),
       Tuple3("Bob", 18, "HangZhou"),
-    )) toDF("name", "age", "city")
+    )).toDF("name", "age", "city")
 
     df.show()
 
@@ -95,7 +95,7 @@ class SinkExampleTest {
     val df = sparkSession.createDataFrame(Seq(
       Tuple4("lop", "java", 328L, "ISBN978-7-107-18618-5"),
       Tuple4("ripple", "python", 199L, "ISBN978-7-100-13678-5"),
-    )) toDF("name", "lang", "price", "ISBN")
+    )).toDF("name", "lang", "price", "ISBN")
 
     df.show()
 
