@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.hugegraph.loader.HugeGraphLoader;
+import org.apache.hugegraph.rest.SerializeException;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.testutil.Assert;
@@ -139,6 +140,23 @@ public class KafkaLoadTest extends LoadTest {
         Assert.assertEquals(2, vertices.size());
         assertContains(vertices, "person", "name", "marko", "age", 29, "city", "Beijing");
         assertContains(vertices, "person", "name", "vadas", "age", 27, "city", "Shanghai");
+    }
+
+    @Test
+    public void testKafkaFormatNotSupport() {
+        String[] args = new String[]{
+                "-f", configPath("kafka_format_not_support/struct.json"),
+                "-s", configPath("kafka_format_not_support/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+
+        Assert.assertThrows(SerializeException.class, () -> {
+            HugeGraphLoader.main(args);
+        });
     }
 
     private static void mockVertexPersonValueMapping() throws JsonProcessingException {
