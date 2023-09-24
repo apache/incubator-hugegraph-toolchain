@@ -23,27 +23,35 @@ fi
 
 COMMIT_ID=$1
 HUGEGRAPH_GIT_URL="https://github.com/apache/hugegraph.git"
+GIT_DIR=hugegraph
 
-git clone --depth 100 ${HUGEGRAPH_GIT_URL} hugegraph
-cd hugegraph
+# download code and compile
+git clone --depth 100 ${HUGEGRAPH_GIT_URL} $GIT_DIR
+cd "${GIT_DIR}"
 git checkout "${COMMIT_ID}"
 mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
-# TODO: lack incubator after apache package release (update it later)
-mv apache-hugegraph-*.tar.gz ../
-cd ../
-rm -rf hugegraph
-tar zxf apache-hugegraph-*.tar.gz
 
-HTTPS_SERVER_DIR="hugegraph_https"
-mkdir ${HTTPS_SERVER_DIR}
 # TODO: lack incubator after apache package release (update it later)
-cp -r apache-hugegraph-*/. ${HTTPS_SERVER_DIR}
-cd "$(find apache-hugegraph-* | head -1)"
+TAR=$(echo apache-hugegraph-*.tar.gz)
+tar zxf "${TAR}" -C ../
+cd ../
+rm -rf "${GIT_DIR}"
+# TODO: lack incubator after apache package release (update it later)
+HTTP_SERVER_DIR=$(echo apache-hugegraph-*.*)
+HTTPS_SERVER_DIR="hugegraph_https"
+
+cp -r "${HTTP_SERVER_DIR}" "${HTTPS_SERVER_DIR}"
+
+# config auth options just for http server (must keep '/.')
+cp -rf "${TRAVIS_DIR}"/conf/. "${HTTP_SERVER_DIR}"/conf/
+
 # start HugeGraphServer with http protocol
-bin/init-store.sh || exit 1
+cd "${HTTP_SERVER_DIR}"
+echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
 
-cd ../${HTTPS_SERVER_DIR}
+# config options for https server
+cd ../"${HTTPS_SERVER_DIR}"
 REST_SERVER_CONFIG="conf/rest-server.properties"
 GREMLIN_SERVER_CONFIG="conf/gremlin-server.yaml"
 sed -i "s?http://127.0.0.1:8080?https://127.0.0.1:8443?g" "$REST_SERVER_CONFIG"
