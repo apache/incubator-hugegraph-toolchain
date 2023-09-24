@@ -85,7 +85,7 @@ public class KafkaReader extends AbstractReader {
 
     @Override
     public boolean hasNext() {
-        return !earlyStop || !emptyPoll;
+        return !this.earlyStop || !this.emptyPoll;
     }
 
     @Override
@@ -98,7 +98,7 @@ public class KafkaReader extends AbstractReader {
         if (rawValue != null) {
             return this.parser.parse(this.source.header(), rawValue);
         } else {
-            emptyPoll = true;
+            this.emptyPoll = true;
         }
 
         return null;
