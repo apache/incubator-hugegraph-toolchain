@@ -23,7 +23,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
-      COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
       VERSION_ID: 1.0.0
     steps:
       - name: Install JDK 11
