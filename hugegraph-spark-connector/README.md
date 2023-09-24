@@ -56,4 +56,68 @@ under the License.
 
 ## Example
 
+### Schema
 
+```groovy
+schema.propertyKey("name").asText().ifNotExist().create()
+schema.propertyKey("age").asInt().ifNotExist().create()
+schema.propertyKey("city").asText().ifNotExist().create()
+schema.propertyKey("weight").asDouble().ifNotExist().create()
+schema.propertyKey("lang").asText().ifNotExist().create()
+schema.propertyKey("date").asText().ifNotExist().create()
+schema.propertyKey("price").asDouble().ifNotExist().create()
+
+schema.vertexLabel("person")
+      .properties("name", "age", "city")
+      .useCustomizeStringId()
+      .nullableKeys("age", "city")
+      .ifNotExist()
+      .create()
+
+schema.vertexLabel("software")
+      .properties("name", "lang", "price")
+      .primaryKeys("name")
+      .ifNotExist()
+      .create()
+
+schema.edgeLabel("knows")
+      .sourceLabel("person")
+      .targetLabel("person")
+      .properties("date", "weight")
+      .ifNotExist()
+      .create()
+
+schema.edgeLabel("created")
+      .sourceLabel("person")
+      .targetLabel("software")
+      .properties("date", "weight")
+      .ifNotExist()
+      .create()
+```
+
+### Vertex Sink
+
+```scala
+val df = sparkSession.createDataFrame(Seq(
+  Tuple3("marko", 29, "Beijing"),
+  Tuple3("vadas", 27, "HongKong"),
+  Tuple3("Josh", 32, "Beijing"),
+  Tuple3("peter", 35, "ShangHai"),
+  Tuple3("li,nary", 26, "Wu,han"),
+  Tuple3("Bob", 18, "HangZhou"),
+)) toDF("name", "age", "city")
+
+df.show()
+
+df.write
+  .format("org.apache.hugegraph.spark.connector.DataSource")
+  .option("host", "127.0.0.1")
+  .option("port", "8080")
+  .option("graph", "hugegraph")
+  .option("data-type", "vertex")
+  .option("label", "person")
+  .option("id", "name")
+  .option("batch-size", 2)
+  .mode(SaveMode.Overwrite)
+  .save()
+```
