@@ -26,6 +26,7 @@ HUGEGRAPH_LINK="https://downloads.apache.org/incubator/hugegraph/${VERSION}/apac
 
 wget "${HUGEGRAPH_LINK}" || exit 1
 # TODO: lack incubator after apache package release (update it later)
+mv apache-hugegraph-incubating-${VERSION}.tar.gz hugegraph-${VERSION}.tar.gz
 tar zxvf hugegraph-${VERSION}.tar.gz
 
 HTTPS_SERVER_DIR="hugegraph_https"
