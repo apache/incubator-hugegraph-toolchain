@@ -53,6 +53,7 @@ public class KafkaLoadTest extends LoadTest {
         mockVertexSoftwareData();
         mockEdgeKnowsData();
         mockEdgeCreatedData();
+        mockVertexPersonValueMapping();
     }
 
     @AfterClass
@@ -111,7 +112,6 @@ public class KafkaLoadTest extends LoadTest {
         };
 
         HugeGraphLoader.main(args);
-
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
         Assert.assertEquals(7, vertices.size());
@@ -119,6 +119,37 @@ public class KafkaLoadTest extends LoadTest {
                        "name", "marko", "age", "29", "city", "Beijing");
         assertContains(vertices, "software",
                        "name", "ripple", "lang", "java", "price", "199.67");
+    }
+
+    @Test
+    public void testValueMappingInKafkaSource() {
+        String[] args = new String[]{
+                "-f", configPath("kafka_value_mapping/struct.json"),
+                "-s", configPath("kafka_value_mapping/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+        assertContains(vertices, "person", "name", "marko", "age", 29, "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas", "age", 27, "city", "Shanghai");
+    }
+
+    private static void mockVertexPersonValueMapping() throws JsonProcessingException {
+        String topicName = "vertex-person-value-mapping";
+        String[] keys = {"id", "name", "age", "city"};
+        Object[][] objects = {
+                {1, "marko", 29, "1"},
+                {2, "vadas", 27, "2"}
+        };
+        KafkaUtil.createTopic(topicName);
+        commonMockData(keys, objects, topicName);
     }
 
     private static void mockVertexPersonData() throws JsonProcessingException {
