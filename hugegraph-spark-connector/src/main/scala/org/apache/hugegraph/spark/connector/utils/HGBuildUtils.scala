@@ -37,8 +37,12 @@ object HGBuildUtils {
       idx <- schema.fields.indices
     } yield {
       val value = row.get(idx, dataTypes(idx))
-      if (value.getClass.getSimpleName.equalsIgnoreCase("UTF8String")) value.toString
-      else value
+      if (value.getClass.getSimpleName.equalsIgnoreCase("UTF8String")) {
+        value.toString
+      }
+      else {
+        value
+      }
     }
     LOG.info(s"Fields: ${fields.mkString(", ")}, values: ${values.mkString(", ")}")
     builder.build(fields, values.toArray).asScala.toList
@@ -51,8 +55,12 @@ object HGBuildUtils {
       idx <- schema.fields.indices
     } yield {
       val value = row.get(idx, dataTypes(idx))
-      if (value.getClass.getSimpleName.equalsIgnoreCase("UTF8String")) value.toString
-      else value
+      if (value.getClass.getSimpleName.equalsIgnoreCase("UTF8String")) {
+        value.toString
+      }
+      else {
+        value
+      }
     }
     LOG.info(s"Fields: ${fields.mkString(", ")}, values: ${values.mkString(", ")}")
     builder.build(fields, values.toArray).asScala.toList
