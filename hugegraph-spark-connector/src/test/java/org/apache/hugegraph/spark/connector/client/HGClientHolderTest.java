@@ -22,8 +22,8 @@ import java.util.Map;
 
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.spark.connector.options.HGOptions;
+import org.apache.hugegraph.spark.connector.utils.HGEnvUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class HGClientHolderTest {
@@ -31,8 +31,8 @@ public class HGClientHolderTest {
     @Test
     public void testHGClientHolder() {
         Map<String, String> configs = new HashMap<>();
-        configs.put("host", "127.0.0.1");
-        configs.put("port", "8080");
+        configs.put("host", HGEnvUtils.DEFAULT_HOST);
+        configs.put("port", HGEnvUtils.DEFAULT_PORT);
 
         configs.put("data-type", "vertex");
         configs.put("label", "person");

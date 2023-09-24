@@ -22,10 +22,9 @@ import org.apache.hugegraph.driver.SchemaManager;
 
 public class HGEnvUtils {
 
-    private static final String DEFAULT_GRAPH = "hugegraph";
-
     public static final String DEFAULT_HOST = "127.0.0.1";
     public static final String DEFAULT_PORT = "8080";
+    public static final String DEFAULT_GRAPH = "hugegraph";
 
     private static HugeClient hugeClient;
 
