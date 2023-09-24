@@ -31,6 +31,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -55,6 +56,7 @@ public class KafkaLoadTest extends LoadTest {
         mockEdgeKnowsData();
         mockEdgeCreatedData();
         mockVertexPersonValueMapping();
+        mockVertexPersonFormatText();
     }
 
     @AfterClass
@@ -159,6 +161,37 @@ public class KafkaLoadTest extends LoadTest {
         });
     }
 
+    @Test
+    public void testKafkaTextFormat() {
+        String[] args = new String[]{
+                "-f", configPath("kafka_format_text/struct.json"),
+                "-s", configPath("kafka_format_text/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        assertContains(vertices, "person", "name", "marko", "age", 29, "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas", "age", 27, "city", "Shanghai");
+    }
+
+    private static void mockVertexPersonFormatText() {
+        String topicName = "vertex-format-text";
+        Object[] objects = {
+                "1\tmarko\t29\tBeijing",
+                "2\tvadas\t27\tShanghai"
+        };
+        KafkaUtil.createTopic(topicName);
+        commonMockTextData(objects, topicName);
+    }
+
     private static void mockVertexPersonValueMapping() throws JsonProcessingException {
         String topicName = "vertex-person-value-mapping";
         String[] keys = {"id", "name", "age", "city"};
@@ -219,14 +252,20 @@ public class KafkaLoadTest extends LoadTest {
         commonMockData(keys, objects, topicName);
     }
 
-    private static void commonMockData(String[] keys, Object[][] objects, String topic)
-            throws JsonProcessingException {
-
+    @NotNull
+    private static Producer<String, String> createKafkaProducer() {
         Properties props = new Properties();
         props.put("bootstrap.servers", KafkaUtil.getBootStrapServers());
         props.put("key.serializer", StringSerializer.class.getName());
         props.put("value.serializer", StringSerializer.class.getName());
         Producer<String, String> producer = new KafkaProducer<>(props);
+        return producer;
+    }
+
+    private static void commonMockData(String[] keys, Object[][] objects, String topic)
+            throws JsonProcessingException {
+
+        Producer<String, String> producer = createKafkaProducer();
 
         for (Object[] object : objects) {
             Map<String, Object> map = new HashMap<>();
@@ -236,6 +275,19 @@ public class KafkaLoadTest extends LoadTest {
             ObjectMapper objectMapper = new ObjectMapper();
             String value = objectMapper.writeValueAsString(map);
             ProducerRecord<String, String> record = new ProducerRecord<>(topic, value);
+            producer.send(record);
+        }
+
+        producer.flush();
+        producer.close();
+    }
+
+    private static void commonMockTextData(Object[] objects, String topicName) {
+        Producer<String, String> producer = createKafkaProducer();
+
+        for (Object object : objects) {
+            ProducerRecord<String, String> record =
+                    new ProducerRecord<>(topicName, object.toString());
             producer.send(record);
         }
 
