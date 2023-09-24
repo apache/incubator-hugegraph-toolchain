@@ -57,6 +57,7 @@ public class KafkaLoadTest extends LoadTest {
         mockEdgeCreatedData();
         mockVertexPersonValueMapping();
         mockVertexPersonFormatText();
+        mockVertexPersonFormatCsv();
     }
 
     @AfterClass
@@ -180,6 +181,37 @@ public class KafkaLoadTest extends LoadTest {
 
         assertContains(vertices, "person", "name", "marko", "age", 29, "city", "Beijing");
         assertContains(vertices, "person", "name", "vadas", "age", 27, "city", "Shanghai");
+    }
+
+    @Test
+    public void testKafkaCsvFormat() {
+        String[] args = new String[]{
+                "-f", configPath("kafka_format_csv/struct.json"),
+                "-s", configPath("kafka_format_csv/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(2, vertices.size());
+
+        assertContains(vertices, "person", "name", "marko", "age", 29, "city", "Beijing");
+        assertContains(vertices, "person", "name", "vadas", "age", 27, "city", "Shanghai");
+    }
+
+    private static void mockVertexPersonFormatCsv() {
+        String topicName = "vertex-format-csv";
+        Object[] objects = {
+                "1,marko,29,Beijing",
+                "2,vadas,27,Shanghai"
+        };
+        KafkaUtil.createTopic(topicName);
+        commonMockTextData(objects, topicName);
     }
 
     private static void mockVertexPersonFormatText() {
