@@ -26,7 +26,7 @@ public class HGEnvUtils {
 
     // TODO: use docker env instead
     public static final String DEFAULT_HOST = "127.0.0.1";
-    public static final String DEFAULT_PORT = "8080";
+    public static final String DEFAULT_PORT = "18080";
 
     private static HugeClient hugeClient;
 

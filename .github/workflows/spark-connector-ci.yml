@@ -24,6 +24,7 @@ jobs:
     env:
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
       COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
+      VERSION_ID: 1.0.0
     steps:
       - name: Install JDK 11
         uses: actions/setup-java@v3
@@ -49,7 +50,7 @@ jobs:
 
       - name: Prepare env and service
         run: |
-          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
+          $TRAVIS_DIR/install-hugegraph-from-tar.sh $VERSION_ID
 
       - name: Run test
         run: |
