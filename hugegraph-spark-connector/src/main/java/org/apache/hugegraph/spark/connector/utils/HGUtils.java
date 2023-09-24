@@ -61,18 +61,4 @@ public class HGUtils {
         LOG.info("Update EdgeMapping: {}", edgeMapping);
         return edgeMapping;
     }
-
-    //public static List<Vertex> buildVertices(InternalRow row, StructType schema,
-    //                                         VertexBuilder builder) {
-    //    int len = schema.length();
-    //    String[] fields = schema.names();
-    //    Object[] values = new String[len];
-    //    List<DataType> dataTypes = Arrays.stream(schema.fields()).map(StructField::dataType)
-    //                                   .collect(Collectors.toList());
-    //    for (int i = 0; i < len; i++) {
-    //        values[i] = row.get(i, dataTypes.get(i));
-    //    }
-    //    LOG.info("Fields: {}, values: {}", Arrays.toString(fields), Arrays.toString(values));
-    //    return builder.build(fields, values);
-    //}
 }
