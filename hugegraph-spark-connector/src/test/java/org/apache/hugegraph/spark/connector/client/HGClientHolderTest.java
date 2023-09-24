@@ -32,7 +32,7 @@ public class HGClientHolderTest {
     @Test
     public void testHGClientHolder() {
         Map<String, String> configs = new HashMap<>();
-        configs.put("host", "192.168.34.164");
+        configs.put("host", "127.0.0.1");
         configs.put("port", "18080");
 
         configs.put("data-type", "vertex");
