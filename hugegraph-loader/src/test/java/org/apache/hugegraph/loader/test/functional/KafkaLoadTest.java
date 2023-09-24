@@ -71,7 +71,6 @@ public class KafkaLoadTest extends LoadTest {
 
     @Test
     public void testCustomizedSchema() {
-
         String[] args = new String[]{
                 "-f", configPath("kafka_customized_schema/struct.json"),
                 "-s", configPath("kafka_customized_schema/schema.groovy"),
@@ -99,6 +98,29 @@ public class KafkaLoadTest extends LoadTest {
         }
     }
 
+    @Test
+    public void testNumberToStringInKafkaSource() {
+        String[] args = new String[]{
+                "-f", configPath("kafka_number_to_string/struct.json"),
+                "-s", configPath("kafka_number_to_string/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+
+        Assert.assertEquals(7, vertices.size());
+        assertContains(vertices, "person",
+                       "name", "marko", "age", "29", "city", "Beijing");
+        assertContains(vertices, "software",
+                       "name", "ripple", "lang", "java", "price", "199.67");
+    }
+
     private static void mockVertexPersonData() throws JsonProcessingException {
         String topicName = "vertex-person";
         String[] keys = {"id", "name", "age", "city"};
@@ -118,7 +140,7 @@ public class KafkaLoadTest extends LoadTest {
         String[] keys = {"id", "name", "lang", "price"};
         Object[][] objects = {
                 {100, "lop", "java", 328.00},
-                {200, "ripple", "java", 199.00}
+                {200, "ripple", "java", 199.67}
         };
         KafkaUtil.createTopic(topicName);
         commonMockData(keys, objects, topicName);

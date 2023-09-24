@@ -8,7 +8,7 @@
         "bootstrap_server": "localhost:9093",
         "topic": "vertex-person",
         "from_beginning": true,
-        "group": "consumers",
+        "group": "consumer_customize_schema",
         "format": "JSON",
         "early_stop": true
       },
@@ -28,7 +28,7 @@
         "bootstrap_server": "localhost:9093",
         "topic": "vertex-software",
         "from_beginning": true,
-        "group": "consumers",
+        "group": "consumer_customize_schema",
         "format": "JSON",
         "early_stop": true,
         "batch_size": 2
@@ -48,7 +48,7 @@
         "bootstrap_server": "localhost:9093",
         "topic": "edge-knows",
         "from_beginning": true,
-        "group": "consumers",
+        "group": "consumer_customize_schema",
         "format": "JSON",
         "early_stop": true,
         "batch_size": 2
@@ -70,7 +70,7 @@
         "bootstrap_server": "localhost:9093",
         "topic": "edge-created",
         "from_beginning": true,
-        "group": "consumers",
+        "group": "consumer_customize_schema",
         "format": "JSON",
         "early_stop": true,
         "batch_size": 2

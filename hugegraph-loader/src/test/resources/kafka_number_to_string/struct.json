@@ -1,0 +1,45 @@
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "1",
+      "input": {
+        "type": "kafka",
+        "bootstrap_server": "localhost:9093",
+        "topic": "vertex-person",
+        "from_beginning": true,
+        "group": "consumer_num_to_str",
+        "format": "JSON",
+        "early_stop": true
+      },
+      "vertices": [
+        {
+          "label": "person",
+          "id": "id",
+          "null_values": ["NULL"]
+        }
+      ],
+      "edges": []
+    },
+    {
+      "id": "2",
+      "input": {
+        "type": "KAFKA",
+        "bootstrap_server": "localhost:9093",
+        "topic": "vertex-software",
+        "from_beginning": true,
+        "group": "consumer_num_to_str",
+        "format": "JSON",
+        "early_stop": true,
+        "batch_size": 2
+      },
+      "vertices": [
+        {
+          "label": "software",
+          "id": "id"
+        }
+      ],
+      "edges": []
+    }
+  ]
+}
