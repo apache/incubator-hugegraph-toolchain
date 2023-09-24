@@ -19,15 +19,11 @@ on:
       - pom.xml
 
 jobs:
-  loader-ci:
+  spark-connector-ci:
     runs-on: ubuntu-latest
     env:
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
-      STATIC_DIR: hugegraph-spark-connector/assembly/static
       COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
-      DB_USER: root
-      DB_PASS: root
-      DB_DATABASE: load_test
     steps:
       - name: Install JDK 11
         uses: actions/setup-java@v3
