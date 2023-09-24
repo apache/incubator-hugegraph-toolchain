@@ -37,9 +37,11 @@
         <spark.scope>provided</spark.scope>
         <hugegraph.client.version>1.0.0</hugegraph.client.version>
         <hugegraph.common.version>1.0.0</hugegraph.common.version>
-        <jersey.version>3.0.3</jersey.version>
         <jackson.version>2.12.3</jackson.version>
-        <jcommander.version>1.78</jcommander.version>
+        <jersey.version>3.0.3</jersey.version>
+        <jersey.container.servlet.core.version>2.34</jersey.container.servlet.core.version>
+        <log4j.version>2.18.0</log4j.version>
+        <slf4j.api.version>1.7.25</slf4j.api.version>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <release.name>${project.artifactId}</release.name>
@@ -142,7 +144,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet-core</artifactId>
-            <version>2.34</version>
+            <version>${jersey.container.servlet.core.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -167,22 +169,22 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
+            <version>${slf4j.api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.18.0</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.18.0</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.18.0</version>
+            <version>${log4j.version}</version>
         </dependency>
     </dependencies>
 
