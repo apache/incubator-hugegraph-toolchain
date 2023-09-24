@@ -64,8 +64,6 @@ public interface InputReader extends AutoCloseableIterator<Line> {
         }
     }
 
-    boolean multiReaders();
-
     default List<InputReader> split() {
         throw new NotImplementedException("Not support multiple readers");
     }
