@@ -25,8 +25,8 @@ public class HGEnvUtils {
     private static final String DEFAULT_GRAPH = "hugegraph";
 
     // TODO: use docker env instead
-    public static final String DEFAULT_HOST = "192.168.34.164";
-    public static final String DEFAULT_PORT = "18080";
+    public static final String DEFAULT_HOST = "127.0.0.1";
+    public static final String DEFAULT_PORT = "8080";
 
     private static HugeClient hugeClient;
 
