@@ -117,7 +117,6 @@ public class KafkaReader extends AbstractReader {
     }
 
     private KafkaConsumer<String, String> createKafkaConsumer() {
-
         Properties props = new Properties();
         props.put("bootstrap.servers", this.source.getBootstrapServer());
         props.put("max.poll.records", this.source.getBatchSize());
