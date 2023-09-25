@@ -18,6 +18,8 @@
 package org.apache.hugegraph.loader.reader.kafka;
 
 import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Queue;
@@ -138,10 +140,10 @@ public class KafkaReader extends AbstractReader {
     }
 
     @SneakyThrows
-    private Queue<String> nextBatch() {
-        Queue<String> queue = new LinkedList<>();
+    private Deque<String> nextBatch() {
         ConsumerRecords<String, String> records =
                 dataConsumer.poll(Duration.ofMillis(Constants.KAFKA_POLL_DURATION));
+        Deque<String> queue = new ArrayDeque<>(records.count());
         for (ConsumerRecord<String, String> record : records) {
             queue.add(record.value());
         }
