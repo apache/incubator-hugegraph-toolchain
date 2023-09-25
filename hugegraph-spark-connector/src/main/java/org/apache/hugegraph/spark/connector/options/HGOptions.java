@@ -103,12 +103,11 @@ public class HGOptions implements Serializable {
             String idField = parameters.getOrDefault(ID_FIELD, null);
             if (Objects.nonNull(idField)) {
                 LOG.info("Vertex, Label is {}, id is {}, id strategy is {}", label, idField,
-                         "customer");
+                         "customize");
+            } else {
+                LOG.info("Vertex, Label is {}, id is {}, id strategy is {}", label, null,
+                         "PrimaryKey");
             }
-            // TODO id must be custom when use loader?
-            //E.checkArgument(!StringUtils.isEmpty(idField), "id-field must be set " +
-            //                                               "when datatype is vertex, but got " +
-            //                                               "%s.", idField);
         }
     }
 
