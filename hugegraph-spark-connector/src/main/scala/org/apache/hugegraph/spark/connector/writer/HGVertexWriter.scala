@@ -63,7 +63,6 @@ class HGVertexWriter(schema: StructType, hgOptions: HGOptions) extends DataWrite
     LOG.info(s"Writer once: ${verticesBuffer.toList}")
     val successfulVertices = HGBuildUtils.saveVertices(context, verticesBuffer.toList)
     val successIds = successfulVertices.map(_.id()).mkString(",")
-    LOG.info(s"Successful ids: ${successIds}")
     cnt += successfulVertices.length
     verticesBuffer.clear()
   }

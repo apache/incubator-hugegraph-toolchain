@@ -62,7 +62,6 @@ class HGEdgeWriter(schema: StructType, hgOptions: HGOptions) extends DataWriter[
     LOG.info(s"Writer once: ${edgesBuffer.toList}")
     val successfulVertices = HGBuildUtils.saveEdges(context, edgesBuffer.toList)
     val successIds = successfulVertices.map(v => v.id())
-    LOG.info(s"Successful ids: ${successIds}")
     cnt += successIds.length
     edgesBuffer.clear()
   }
