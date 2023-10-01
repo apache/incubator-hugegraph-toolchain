@@ -20,7 +20,6 @@ package org.apache.hugegraph.loader.reader.kafka;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Queue;
 
