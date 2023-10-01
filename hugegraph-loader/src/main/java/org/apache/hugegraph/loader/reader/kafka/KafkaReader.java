@@ -58,7 +58,7 @@ public class KafkaReader extends AbstractReader {
     private static final String BASE_CONSUMER_GROUP = "kafka-reader-base";
     private final KafkaConsumer dataConsumer;
     private final boolean earlyStop;
-    private boolean emptyPoll = false;
+    private boolean emptyPoll;
 
     public KafkaReader(KafkaSource source) {
         this.source = source;
