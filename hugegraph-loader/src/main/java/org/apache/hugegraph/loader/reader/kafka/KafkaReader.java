@@ -143,12 +143,12 @@ public class KafkaReader extends AbstractReader {
         ConsumerRecords<String, String> records =
                 dataConsumer.poll(Duration.ofMillis(Constants.KAFKA_POLL_DURATION));
         Deque<String> queue = new ArrayDeque<>(records.count());
-        for (ConsumerRecord<String, String> record : records) {
-            queue.add(record.value());
-        }
-
-        if (queue.size() == 0) {
+        if (records.isEmpty()) {
             Thread.sleep(Constants.KAFKA_POLL_GAP_INTERVAL);
+        } else {
+            for (ConsumerRecord<String, String> record : records) {
+                queue.add(record.value());
+            }
         }
 
         return queue;
