@@ -23,17 +23,17 @@ under the License.
 
 | Params               | Default Value | Description                                                                                  |
 |----------------------|---------------|----------------------------------------------------------------------------------------------|
-| `host`               |               | Address of HugeGraphServer                                                                   |
-| `port`               |               | Port of HugeGraphServer                                                                      |
-| `graph`              |               | Graph space name                                                                             |
-| `protocol`           |               | Protocol for sending requests to the server, optional `http` or `https`                      |
-| `username`           |               | Username of the current graph when HugeGraphServer enables permission authentication         |
-| `token`              |               | Token of the current graph when HugeGraphServer has enabled authorization authentication     |
-| `timeout`            |               | Timeout (seconds) for inserting results to return                                            |
-| `max-conn`           |               | The maximum number of HTTP connections between HugeClient and HugeGraphServer                |
-| `max-conn-per-route` |               | The maximum number of HTTP connections for each route between HugeClient and HugeGraphServer |
-| `trust-store-file`   |               | The client’s certificate file path when the request protocol is https                        |
-| `trust-store-token`  |               | The client's certificate password when the request protocol is https                         |
+| `host`               | `localhost`   | Address of HugeGraphServer                                                                   |
+| `port`               | `8080`        | Port of HugeGraphServer                                                                      |
+| `graph`              | `hugegraph`   | Graph space name                                                                             |
+| `protocol`           | `http`        | Protocol for sending requests to the server, optional `http` or `https`                      |
+| `username`           | `null`        | Username of the current graph when HugeGraphServer enables permission authentication         |
+| `token`              | `null`        | Token of the current graph when HugeGraphServer has enabled authorization authentication     |
+| `timeout`            | `60`          | Timeout (seconds) for inserting results to return                                            |
+| `max-conn`           | `CPUS * 4`    | The maximum number of HTTP connections between HugeClient and HugeGraphServer                |
+| `max-conn-per-route` | `CPUS * 2`    | The maximum number of HTTP connections for each route between HugeClient and HugeGraphServer |
+| `trust-store-file`   | `null`        | The client’s certificate file path when the request protocol is https                        |
+| `trust-store-token`  | `null`        | The client's certificate password when the request protocol is https                         |
 
 ### Graph Data Configs
 
@@ -46,7 +46,7 @@ under the License.
 | `target-name`     |               | Specify certain columns as the id columns of target vertex, similar to source                                                                                                                                                                                                                                                                                                                                              |
 | `selected-fields` |               | Select some columns to insert, other unselected ones are not inserted, cannot exist at the same time as ignored                                                                                                                                                                                                                                                                                                            |
 | `ignored-fields`  |               | Ignore some columns so that they do not participate in insertion, cannot exist at the same time as selected                                                                                                                                                                                                                                                                                                                |
-| `batch-size`      |               | The number of data items in each batch when importing data                                                                                                                                                                                                                                                                                                                                                                 |
+| `batch-size`      | `500`         | The number of data items in each batch when importing data                                                                                                                                                                                                                                                                                                                                                                 |
 
 ### Common Configs
 
@@ -68,31 +68,31 @@ schema.propertyKey("date").asText().ifNotExist().create()
 schema.propertyKey("price").asDouble().ifNotExist().create()
 
 schema.vertexLabel("person")
-      .properties("name", "age", "city")
-      .useCustomizeStringId()
-      .nullableKeys("age", "city")
-      .ifNotExist()
-      .create()
+        .properties("name", "age", "city")
+        .useCustomizeStringId()
+        .nullableKeys("age", "city")
+        .ifNotExist()
+        .create()
 
 schema.vertexLabel("software")
-      .properties("name", "lang", "price")
-      .primaryKeys("name")
-      .ifNotExist()
-      .create()
+        .properties("name", "lang", "price")
+        .primaryKeys("name")
+        .ifNotExist()
+        .create()
 
 schema.edgeLabel("knows")
-      .sourceLabel("person")
-      .targetLabel("person")
-      .properties("date", "weight")
-      .ifNotExist()
-      .create()
+        .sourceLabel("person")
+        .targetLabel("person")
+        .properties("date", "weight")
+        .ifNotExist()
+        .create()
 
 schema.edgeLabel("created")
-      .sourceLabel("person")
-      .targetLabel("software")
-      .properties("date", "weight")
-      .ifNotExist()
-      .create()
+        .sourceLabel("person")
+        .targetLabel("software")
+        .properties("date", "weight")
+        .ifNotExist()
+        .create()
 ```
 
 ### Vertex Sink
