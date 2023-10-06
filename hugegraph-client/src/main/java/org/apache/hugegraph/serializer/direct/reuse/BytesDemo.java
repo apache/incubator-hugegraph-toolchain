@@ -39,7 +39,7 @@ public class BytesDemo {
     static HugeClient client;
     boolean bypassServer = true;
     RocksDBSerializer ser;
-    HBaseSerializer HBaseSer;
+    HBaseSerializer hBaseSer;
 
     public static void main(String[] args) {
         BytesDemo ins = new BytesDemo();
@@ -53,7 +53,6 @@ public class BytesDemo {
         client = HugeClient.builder("http://localhost:8081", "hugegraph").build();
 
         SchemaManager schema = client.schema();
-
 
         schema.propertyKey("name").asText().ifNotExist().create();
         schema.propertyKey("age").asInt().ifNotExist().create();
@@ -97,7 +96,7 @@ public class BytesDemo {
               .ifNotExist()
               .create();
 
-        HBaseSer = new HBaseSerializer(client, vertexLogicPartitions, edgeLogicPartitions);
+        hBaseSer = new HBaseSerializer(client, vertexLogicPartitions, edgeLogicPartitions);
         writeGraphElements();
 
         client.close();
@@ -130,7 +129,6 @@ public class BytesDemo {
             add(vadasB);
         }};
 
-
         List<Edge> edges = new ArrayList<Edge>() {{
             add(peterCreateLop);
         }};
@@ -148,14 +146,14 @@ public class BytesDemo {
      * */
     void writeDirectly(List<Vertex> vertices, List<Edge> edges) {
         for (Vertex vertex : vertices) {
-            byte[] rowkey = HBaseSer.getKeyBytes(vertex);
-            byte[] values = HBaseSer.getValueBytes(vertex);
+            byte[] rowkey = hBaseSer.getKeyBytes(vertex);
+            byte[] values = hBaseSer.getValueBytes(vertex);
             sendRpcToHBase("vertex", rowkey, values);
         }
 
         for (Edge edge : edges) {
-            byte[] rowkey = HBaseSer.getKeyBytes(edge);
-            byte[] values = HBaseSer.getValueBytes(edge);
+            byte[] rowkey = hBaseSer.getKeyBytes(edge);
+            byte[] values = hBaseSer.getValueBytes(edge);
             sendRpcToHBase("edge", rowkey, values);
         }
     }
@@ -185,10 +183,8 @@ public class BytesDemo {
         return flag;
     }
 
-
     boolean put(String type, byte[] rowkey, byte[] values) throws IOException {
         // TODO: put to HBase
         return true;
     }
-
 }
