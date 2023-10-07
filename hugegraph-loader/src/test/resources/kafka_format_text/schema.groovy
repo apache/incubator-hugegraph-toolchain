@@ -14,16 +14,9 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+// Define schema
+schema.propertyKey("name").asText().ifNotExist().create();
+schema.propertyKey("age").asInt().ifNotExist().create();
+schema.propertyKey("city").asText().ifNotExist().create();
 
-package org.apache.hugegraph.loader.source;
-
-public enum SourceType {
-
-    FILE,
-
-    HDFS,
-
-    JDBC,
-
-    KAFKA
-}
+schema.vertexLabel("person").useCustomizeNumberId().properties("name", "age", "city").nullableKeys("age", "city").ifNotExist().create();

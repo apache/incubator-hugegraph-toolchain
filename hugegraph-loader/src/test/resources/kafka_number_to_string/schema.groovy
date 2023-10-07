@@ -14,16 +14,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+// Define schema
+schema.propertyKey("name").asText().ifNotExist().create();
+schema.propertyKey("age").asText().ifNotExist().create();
+schema.propertyKey("city").asText().ifNotExist().create();
+schema.propertyKey("lang").asText().ifNotExist().create();
+schema.propertyKey("price").asText().ifNotExist().create();
 
-package org.apache.hugegraph.loader.source;
-
-public enum SourceType {
-
-    FILE,
-
-    HDFS,
-
-    JDBC,
-
-    KAFKA
-}
+schema.vertexLabel("person").useCustomizeNumberId().properties("name", "age", "city").nullableKeys("name", "age", "city").ifNotExist().create();
+schema.vertexLabel("software").useCustomizeNumberId().properties("name", "lang", "price").nullableKeys("name", "lang", "price").ifNotExist().create();

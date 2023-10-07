@@ -1,0 +1,31 @@
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "1",
+      "input": {
+        "type": "kafka",
+        "bootstrap_server": "localhost:9093",
+        "topic": "vertex-person-value-mapping",
+        "from_beginning": true,
+        "group": "consumer_value_mapping",
+        "format": "JSON",
+        "early_stop": true
+      },
+      "vertices": [
+        {
+          "label": "person",
+          "id": "id",
+          "null_values": ["NULL"],
+          "value_mapping": {
+            "city": {
+              "1": "Beijing",
+              "2": "Shanghai"
+            }
+          }
+        }
+      ],
+      "edges": []
+    }
+  ]
+}

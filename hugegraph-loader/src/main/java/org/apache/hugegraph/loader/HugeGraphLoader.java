@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -239,8 +240,11 @@ public final class HugeGraphLoader {
             try {
                 // Read next line from data source
                 if (reader.hasNext()) {
-                    lines.add(reader.next());
-                    metrics.increaseReadSuccess();
+                    Line next = reader.next();
+                    if (Objects.nonNull(next)) {
+                        lines.add(next);
+                        metrics.increaseReadSuccess();
+                    }
                 } else {
                     finished = true;
                 }

@@ -1,0 +1,27 @@
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "1",
+      "input": {
+        "type": "kafka",
+        "bootstrap_server": "localhost:9093",
+        "topic": "vertex-format-text",
+        "from_beginning": true,
+        "group": "consumer_format_text",
+        "format": "TEXT",
+        "header": ["id", "name", "age", "city"],
+        "delimiter": "\t",
+        "early_stop": true
+      },
+      "vertices": [
+        {
+          "label": "person",
+          "id": "id",
+          "null_values": ["NULL"]
+        }
+      ],
+      "edges": []
+    }
+  ]
+}
