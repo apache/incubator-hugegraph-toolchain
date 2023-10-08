@@ -38,7 +38,6 @@
         <spark.verion>3.2.2</spark.verion>
         <spark.scope>provided</spark.scope>
         <hugegraph.client.version>1.0.0</hugegraph.client.version>
-        <hugegraph.common.version>1.0.0</hugegraph.common.version>
         <jackson.version>2.12.3</jackson.version>
         <jersey.version>3.0.3</jersey.version>
         <jersey.container.servlet.core.version>2.34</jersey.container.servlet.core.version>
@@ -94,32 +93,6 @@
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
             <version>${hugegraph.client.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.hugegraph</groupId>
-                    <artifactId>hugegraph-common</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hugegraph</groupId>
-            <artifactId>hugegraph-common</artifactId>
-            <version>${hugegraph.common.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-slf4j-impl</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- jersey version override -->
@@ -189,18 +162,32 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>${log4j.version}</version>
         </dependency>
-
     </dependencies>
 
-    <!-- https://davidb.github.io/scala-maven-plugin/example_java.html-->
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.scala-tools</groupId>
                 <artifactId>maven-scala-plugin</artifactId>
                 <version>2.15.2</version>
                 <configuration>
-                    <scalaVersion>2.12.11</scalaVersion>
+                    <scalaVersion>${scala.minor.version}</scalaVersion>
                     <args>
                         <arg>-target:jvm-1.8</arg>
                     </args>
@@ -232,16 +219,35 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.3</version>
                 <executions>
                     <execution>
-                        <phase>compile</phase>
+                        <phase>package</phase>
                         <goals>
-                            <goal>compile</goal>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <finalName>
+                        ${project.artifactId}-${project.version}-jar-with-dependencies
+                    </finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
