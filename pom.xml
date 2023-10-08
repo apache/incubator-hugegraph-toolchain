@@ -90,10 +90,10 @@
     <modules>
         <module>hugegraph-client</module>
         <module>hugegraph-loader</module>
+        <module>hugegraph-spark-connector</module>
         <module>hugegraph-tools</module>
         <module>hugegraph-hubble</module>
         <module>hugegraph-dist</module>
-        <module>hugegraph-spark-connector</module>
     </modules>
 
     <properties>
