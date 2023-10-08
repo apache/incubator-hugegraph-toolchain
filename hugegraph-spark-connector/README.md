@@ -83,7 +83,15 @@ schema.edgeLabel("created")
         .create()
 ```
 
-Then we can insert graph data through Spark:
+Then we can insert graph data through Spark, first add dependency in your pom.
+
+```xml
+<dependency>
+    <groupId>org.apache.hugegraph</groupId>
+    <artifactId>hugegraph-spark-connector</artifactId>
+    <version>${revision}</version>
+</dependency>
+```
 
 ### Vertex Sink
 
