@@ -1,3 +1,18 @@
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements. See the NOTICE file distributed with this
+// work for additional information regarding copyright ownership. The ASF
+// licenses this file to You under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
 package hgtransport
 
 import (
@@ -15,7 +30,6 @@ import (
 )
 
 // Logger defines an interface for logging request and response.
-//
 type Logger interface {
 	// LogRoundTrip should not modify the request or response, except for consuming and closing the body.
 	// Implementations have to check for nil values in request and response.
@@ -27,7 +41,6 @@ type Logger interface {
 }
 
 // TextLogger prints the log message in plain text.
-//
 type TextLogger struct {
 	Output             io.Writer
 	EnableRequestBody  bool
@@ -35,7 +48,6 @@ type TextLogger struct {
 }
 
 // ColorLogger prints the log message in a terminal-optimized plain text.
-//
 type ColorLogger struct {
 	Output             io.Writer
 	EnableRequestBody  bool
@@ -43,7 +55,6 @@ type ColorLogger struct {
 }
 
 // CurlLogger prints the log message as a runnable curl command.
-//
 type CurlLogger struct {
 	Output             io.Writer
 	EnableRequestBody  bool
@@ -51,7 +62,6 @@ type CurlLogger struct {
 }
 
 // JSONLogger prints the log message as JSON.
-//
 type JSONLogger struct {
 	Output             io.Writer
 	EnableRequestBody  bool
@@ -59,7 +69,6 @@ type JSONLogger struct {
 }
 
 // LogRoundTrip prints the information about request and response.
-//
 func (l *TextLogger) LogRoundTrip(req *http.Request, res *http.Response, err error, start time.Time, dur time.Duration) error {
 	fmt.Fprintf(l.Output, "%s %s %s [status:%d request:%s]\n",
 		start.Format(time.RFC3339),
@@ -92,7 +101,6 @@ func (l *TextLogger) RequestBodyEnabled() bool { return l.EnableRequestBody }
 func (l *TextLogger) ResponseBodyEnabled() bool { return l.EnableResponseBody }
 
 // LogRoundTrip prints the information about request and response.
-//
 func (l *ColorLogger) LogRoundTrip(req *http.Request, res *http.Response, err error, start time.Time, dur time.Duration) error {
 	query, _ := url.QueryUnescape(req.URL.RawQuery)
 	if query != "" {
@@ -162,7 +170,6 @@ func (l *ColorLogger) RequestBodyEnabled() bool { return l.EnableRequestBody }
 func (l *ColorLogger) ResponseBodyEnabled() bool { return l.EnableResponseBody }
 
 // LogRoundTrip prints the information about request and response.
-//
 func (l *CurlLogger) LogRoundTrip(req *http.Request, res *http.Response, err error, start time.Time, dur time.Duration) error {
 	var b bytes.Buffer
 
@@ -247,7 +254,6 @@ func (l *CurlLogger) RequestBodyEnabled() bool { return l.EnableRequestBody }
 func (l *CurlLogger) ResponseBodyEnabled() bool { return l.EnableResponseBody }
 
 // LogRoundTrip prints the information about request and response.
-//
 func (l *JSONLogger) LogRoundTrip(req *http.Request, res *http.Response, err error, start time.Time, dur time.Duration) error {
 	// https://github.com/elastic/ecs/blob/master/schemas/http.yml
 	//
