@@ -22,7 +22,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"hugegraph.apache.org/client-go/hgapi"
+	"hugegraph.apache.org/client-go/api"
 )
 
 // ----- API Definition -------------------------------------------------------
@@ -30,7 +30,7 @@ import (
 // 查看HugeGraph的版本信息
 //
 // See full documentation at https://hugegraph.apache.org/cn/docs/clients/restful-api/other/#1011-%E6%9F%A5%E7%9C%8Bhugegraph%E7%9A%84%E7%89%88%E6%9C%AC%E4%BF%A1%E6%81%AF
-func newVersionFunc(t hgapi.Transport) Version {
+func newVersionFunc(t api.Transport) Version {
 	return func(o ...func(*VersionRequest)) (*VersionResponse, error) {
 		var r = VersionRequest{}
 		for _, f := range o {
@@ -61,9 +61,9 @@ type VersionResponseData struct {
 	API     string `json:"api"`
 }
 
-func (r VersionRequest) Do(ctx context.Context, transport hgapi.Transport) (*VersionResponse, error) {
+func (r VersionRequest) Do(ctx context.Context, transport api.Transport) (*VersionResponse, error) {
 
-	req, _ := hgapi.NewRequest("GET", "/versions", r.Body)
+	req, _ := api.NewRequest("GET", "/versions", r.Body)
 
 	if ctx != nil {
 		req = req.WithContext(ctx)

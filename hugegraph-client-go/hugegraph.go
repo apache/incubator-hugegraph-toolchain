@@ -23,7 +23,7 @@ import (
 	"net/url"
 	"os"
 
-	v1 "hugegraph.apache.org/client-go/hgapi/v1"
+	v1 "hugegraph.apache.org/client-go/api/v1"
 	"hugegraph.apache.org/client-go/hgtransport"
 )
 

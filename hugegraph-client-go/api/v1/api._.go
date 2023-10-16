@@ -13,29 +13,20 @@
 // License for the specific language governing permissions and limitations
 // under the License.
 
-package hgapi
+package v1
 
-import (
-	"net/http"
-	"strconv"
-	"time"
+import "hugegraph.apache.org/client-go/api"
 
-	"hugegraph.apache.org/client-go/internal/version"
-)
+// Code generated from specification version 5.6.15 (fe7575a32e2): DO NOT EDIT
 
-// VERSION returns the package version as a string.
-const VERSION = version.Client
-
-// Transport defines the interface for an API client.
-type Transport interface {
-	Perform(*http.Request) (*http.Response, error)
+// API contains the Elasticsearch APIs
+type APIV1 struct {
+	Version Version
 }
 
-// formatDuration converts duration to a string in the format
-// accepted by Hugegraph.
-func formatDuration(d time.Duration) string {
-	if d < time.Millisecond {
-		return strconv.FormatInt(int64(d), 10) + "nanos"
+// New creates new API
+func New(t api.Transport) *APIV1 {
+	return &APIV1{
+		Version: newVersionFunc(t),
 	}
-	return strconv.FormatInt(int64(d)/int64(time.Millisecond), 10) + "ms"
 }

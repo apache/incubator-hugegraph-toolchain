@@ -18,8 +18,8 @@ package v1_test
 import (
 	"context"
 	hugegraph "hugegraph.apache.org/client-go"
-	"hugegraph.apache.org/client-go/hgapi"
-	v1 "hugegraph.apache.org/client-go/hgapi/v1"
+	"hugegraph.apache.org/client-go/api"
+	v1 "hugegraph.apache.org/client-go/api/v1"
 	"io"
 	"reflect"
 	"testing"
@@ -40,7 +40,7 @@ func TestVersionRequest_Do(t *testing.T) {
 	}
 	type args struct {
 		ctx       context.Context
-		transport hgapi.Transport
+		transport api.Transport
 	}
 	tests := []struct {
 		name    string
