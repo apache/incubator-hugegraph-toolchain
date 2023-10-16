@@ -1,0 +1,57 @@
+name: "hugegraph-spark-connector-ci"
+
+on:
+  push:
+    branches:
+      - master
+      - /^release-.*$/
+    paths:
+      - hugegraph-spark-connector/**
+      - hugegraph-dist/**
+      - .github/workflows/**
+      - pom.xml
+  pull_request:
+    paths:
+      - hugegraph-spark-connector/**
+      - hugegraph-dist/**
+      - hugegraph-client/**
+      - .github/workflows/**
+      - pom.xml
+
+jobs:
+  spark-connector-ci:
+    runs-on: ubuntu-latest
+    env:
+      TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
+      VERSION_ID: 1.0.0
+    steps:
+      - name: Install JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Compile
+        run: |
+          mvn install -pl hugegraph-spark-connector -Dmaven.javadoc.skip=true -DskipTests -ntp
+
+      - name: Prepare env and service
+        run: |
+          $TRAVIS_DIR/install-hugegraph-from-tar.sh $VERSION_ID
+
+      - name: Run test
+        run: |
+          cd hugegraph-spark-connector && ls
+          mvn test
