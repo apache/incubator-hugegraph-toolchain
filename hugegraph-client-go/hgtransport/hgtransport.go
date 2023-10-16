@@ -15,7 +15,6 @@ import (
 )
 
 // Version returns the package version as a string.
-//
 const Version = version.Client
 
 var (
@@ -28,13 +27,11 @@ func init() {
 }
 
 // Interface defines the interface for HTTP client.
-//
 type Interface interface {
 	Perform(*http.Request) (*http.Response, error)
 }
 
 // Config represents the configuration of HTTP client.
-//
 type Config struct {
 	URL        *url.URL
 	Username   string
@@ -47,7 +44,6 @@ type Config struct {
 }
 
 // Client represents the HTTP client.
-//
 type Client struct {
 	url         *url.URL
 	username    string
@@ -62,7 +58,6 @@ type Client struct {
 // New creates new HTTP client.
 //
 // http.DefaultTransport will be used if no transport is passed in the configuration.
-//
 func New(cfg Config) *Client {
 	if cfg.Transport == nil {
 		cfg.Transport = http.DefaultTransport
@@ -80,7 +75,6 @@ func New(cfg Config) *Client {
 }
 
 // Perform executes the request and returns a response or error.
-//
 func (c *Client) Perform(req *http.Request) (*http.Response, error) {
 
 	u := c.url
@@ -90,7 +84,6 @@ func (c *Client) Perform(req *http.Request) (*http.Response, error) {
 	c.setContentTypeJSON(req)
 	c.setGraph(req)
 	c.setGraphSpace(req)
-	c.setBodyGraphInfo(req)
 
 	if _, ok := req.Header["Authorization"]; !ok {
 		c.setBasicAuth(u, req)
@@ -108,25 +101,28 @@ func (c *Client) Perform(req *http.Request) (*http.Response, error) {
 	start := time.Now().UTC()
 	res, err := c.transport.RoundTrip(req)
 	dur := time.Since(start)
-	if c.logger != nil {
-		var dupRes http.Response
-		if res != nil {
-			dupRes = *res
-		}
-		if c.logger.RequestBodyEnabled() {
-			if req.Body != nil && req.Body != http.NoBody {
-				req.Body = ioutil.NopCloser(dupReqBody)
-			}
-		}
-		if c.logger.ResponseBodyEnabled() {
-			if res != nil && res.Body != nil && res.Body != http.NoBody {
-				b1, b2, _ := duplicateBody(res.Body)
-				dupRes.Body = b1
-				res.Body = b2
-			}
-		}
-		c.logger.LogRoundTrip(req, &dupRes, err, start, dur) // errcheck exclude
+
+	if c.logger == nil {
+		return res, err
 	}
+
+	var dupRes http.Response
+	if res != nil {
+		dupRes = *res
+	}
+	if c.logger.RequestBodyEnabled() {
+		if req.Body != nil && req.Body != http.NoBody {
+			req.Body = ioutil.NopCloser(dupReqBody)
+		}
+	}
+	if c.logger.ResponseBodyEnabled() {
+		if res != nil && res.Body != nil && res.Body != http.NoBody {
+			b1, b2, _ := duplicateBody(res.Body)
+			dupRes.Body = b1
+			res.Body = b2
+		}
+	}
+	c.logger.LogRoundTrip(req, &dupRes, err, start, dur) // errcheck exclude
 
 	// TODO(karmi): Wrap error
 	return res, err
@@ -186,39 +182,6 @@ func (c *Client) setGraph(req *http.Request) *http.Request {
 func (c *Client) setGraphSpace(req *http.Request) *http.Request {
 	req.URL.RawQuery = strings.ReplaceAll(req.URL.RawQuery, url.QueryEscape("${GRAPH_SPACE_NAME}"), c.graphspaces)
 	req.URL.Path = strings.ReplaceAll(req.URL.Path, "${GRAPH_SPACE_NAME}", c.graphspaces)
-	return req
-}
-
-func (c *Client) setBodyGraphInfo(req *http.Request) *http.Request {
-	//
-	if req.Body == nil {
-		return req
-	}
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return req
-	}
-	// 关闭 r.Body，因为我们已经读取了全部内容
-	req.Body.Close()
-	// 将字节切片转换成字符串
-	bodyStr := string(body)
-
-	// 是否需要替换
-	if strings.Contains(bodyStr, `"graph":"${GRAPH_SPACE_NAME}-${GRAPH_NAME}"`) {
-		bodyStr = strings.ReplaceAll(bodyStr, `"graph":"${GRAPH_SPACE_NAME}-${GRAPH_NAME}"`,
-			fmt.Sprintf(`"graph":"%s-%s"`, c.graphspaces, c.graph),
-		)
-	}
-	if strings.Contains(bodyStr, `"g":"__g_${GRAPH_SPACE_NAME}-${GRAPH_NAME}"`) {
-		bodyStr = strings.ReplaceAll(bodyStr, `"g":"__g_${GRAPH_SPACE_NAME}-${GRAPH_NAME}"`,
-			fmt.Sprintf(`"g":"__g_%s-%s"`, c.graphspaces, c.graph),
-		)
-	}
-
-	newBody := []byte(bodyStr)
-	// 创建一个新的 ReadCloser
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(newBody))
-	req.ContentLength = int64(len(newBody))
 	return req
 }
 

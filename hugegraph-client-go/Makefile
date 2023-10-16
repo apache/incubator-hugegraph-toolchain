@@ -5,7 +5,7 @@ OUTDIR  := $(HOMEDIR)/output
 # 设置编译时所需要的 go 环境
 export GOENV = $(HOMEDIR)/go.env
 
-GO      := go
+GO 		:= GO111MODULE=on go
 GOMOD   := $(GO) mod
 GOBUILD := $(GO) build
 GOTEST  := $(GO) test -race -timeout 30s -gcflags="-N -l"
@@ -19,21 +19,21 @@ COVHTML := $(HOMEDIR)/covhtml.html # HTML representation of coverage profile
 # make, make all
 all: prepare compile package
 
-set-env:
-	$(GO) env 
+print-env:
+	$(GO) env
 
 
 #make prepare, download dependencies
 prepare: gomod
 
-gomod: set-env
+gomod: print-env
 	$(GOMOD) download -x || $(GOMOD) download -x
 
 #make compile
 compile: build
 
 build:
-	$(GOBUILD) -o $(HOMEDIR)/go-hugegraph
+	$(GOBUILD) -o $(HOMEDIR)/client-go
 
 # make test, test your code
 test: prepare test-case
@@ -45,13 +45,13 @@ package: package-bin
 package-bin:
 	rm -rf $(OUTDIR)
 	mkdir -p $(OUTDIR)
-	mv go-hugegraph  $(OUTDIR)/
+	mv client-go  $(OUTDIR)/
 
 # make clean
 clean:
 	$(GO) clean
 	rm -rf $(OUTDIR)
-	rm -rf $(HOMEDIR)/go-hugegraph
+	rm -rf $(HOMEDIR)/client-go
 	rm -rf $(GOPATH)/pkg/darwin_amd64
 
 # avoid filename conflict and speed up build

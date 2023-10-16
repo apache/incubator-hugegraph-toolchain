@@ -1,36 +1,92 @@
-# hugegraph
+# Go huggage
 
-#### Description
-基于Go语言的hugegraph client SDK工具
+#### Introduction
+
+Hugegraph client SDK tool based on Go language
 
 #### Software Architecture
-Software architecture description
 
-#### Installation
+Software Architecture Description
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+#### Installation Tutorial
 
-#### Instructions
+```Shell
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+Go get github. com/go huggraph
 
-#### Contribution
+```
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+#### Implement API
+|API|说明|
+|--|--|
+|schema| Obtain the model schema|
+|version|Get version information|
 
 
-#### Gitee Feature
+#### Instructions for use
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+##### 1. Initialize the client
+
+```Go
+package main
+
+import "hugegraph.apache.org/client-go"
+import "hugegraph.apache.org/client-go/hgtransport"
+
+func main() {
+
+	clinet,err := hugegraph.NewClient(hugegraph.Config{
+		Host:  "127.0.0.1",
+		Port:  8888,
+		Graph: "hugegraph",
+		Logger: &hgtransport.ColorLogger{
+			Output:             os.Stdout,
+			EnableRequestBody:  true,
+			EnableResponseBody: true,
+		},
+	})
+
+	if err != nil {
+		log.Fatalf("Error creating the client: %s\n", err)
+	}
+}
+```
+
+##### 2. Obtain the hugegraph version
+
+-1. Use the SDK to obtain version information
+
+```Go
+func getVersion() {
+
+    client := initClient()
+    
+    res, err := client.Version()
+    if err != nil {
+    log.Fatalf("Error getting the response: %s\n", err)
+    }
+    defer res.Body.Close()
+    
+    fmt.Println(res.Versions)
+    
+    fmt.Println(res.Versions.Version)
+}
+
+```
+
+-2. Result Set Response Body
+
+```Go
+
+Type VersionResponse struct{
+    Versions struct{
+    Version string ` json: "version"`
+    Core string ` json: 'core'`
+    Gremlin string ` json: 'gremlin'`
+    API string ` json: 'API'`
+    }` json: 'versions'`
+}
+
+
+
+```
