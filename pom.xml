@@ -28,7 +28,8 @@
     <name>${project.artifactId}</name>
     <url>https://github.com/apache/incubator-hugegraph-toolchain</url>
     <description>
-        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it includes 4 main modules (loader/hubble/tools/client)
+        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph, it
+        includes 4 main modules (loader/hubble/tools/client)
     </description>
 
     <parent>
@@ -500,6 +501,9 @@
                         <!-- Maven -->
                         <exclude>.repository/**</exclude>
                         <exclude>**/.flattened-pom.xml</exclude>
+                        <!-- Go -->
+                        <exclude>**/hugegraph-client-go/go.sum</exclude>
+                        <exclude>**/hugegraph-client-go/go.mod</exclude>
                     </excludes>
                     <consoleOutput>true</consoleOutput>
                 </configuration>

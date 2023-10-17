@@ -1,29 +1,30 @@
 # go-hugegraph
 
 #### 介绍
-基于Go语言的hugegraph client SDK工具
+
+基于 Go 语言的 hugegraph client SDK 工具
 
 #### 软件架构
+
 软件架构说明
 
-
 #### 安装教程
+
 ```shell
 go get github.com/go-hugegraph
 ```
 
-#### 实现API
+#### 实现 API
 
-
-|API|说明|
-|--|--|
-|schema|获取模型schema|
-|version|获取版本信息|
-
+| API     | 说明          |
+|---------|-------------|
+| schema  | 获取模型 schema |
+| version | 获取版本信息      |
 
 #### 使用说明
 
 ##### 1.初始化客户端
+
 ```go
 package main
 
@@ -48,8 +49,11 @@ func main() {
 	}
 }
 ```
-##### 2.获取hugegraph版本
-- 1.使用SDK获取版本信息
+
+##### 2.获取 hugegraph 版本
+
+- 1.使用 SDK 获取版本信息
+
 ```go
 func getVersion() {
     
@@ -65,9 +69,10 @@ func getVersion() {
     
     fmt.Println(res.Versions.Version)
 }
-
 ```
+
 - 2.结果集响应体
+
 ```go
 type VersionResponse struct {
 	Versions   struct {
@@ -77,5 +82,4 @@ type VersionResponse struct {
 		API     string `json:"api"`
 	} `json:"versions"`
 }
-
 ```

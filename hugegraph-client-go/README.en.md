@@ -17,11 +17,11 @@ Go get github. com/go huggraph
 ```
 
 #### Implement API
-|API|说明|
-|--|--|
-|schema| Obtain the model schema|
-|version|Get version information|
 
+| API     | 说明                      |
+|---------|-------------------------|
+| schema  | Obtain the model schema |
+| version | Get version information |
 
 #### Instructions for use
 
@@ -77,7 +77,6 @@ func getVersion() {
 -2. Result Set Response Body
 
 ```Go
-
 Type VersionResponse struct{
     Versions struct{
     Version string ` json: "version"`
@@ -86,7 +85,4 @@ Type VersionResponse struct{
     API string ` json: 'API'`
     }` json: 'versions'`
 }
-
-
-
 ```
