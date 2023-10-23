@@ -2,7 +2,7 @@
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
- * licenses this file to You under the Apache License, CreateVertex 2.0 (the
+ * licenses this file to You under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -14,7 +14,6 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-
 package v1
 
 import (
@@ -35,9 +34,9 @@ import (
 // View Create a vertex
 //
 // See full documentation at https://hugegraph.apache.org/docs/clients/restful-api/vertex/#211-create-a-vertex
-func newCreateVertexFunc(t api.Transport) CreateVertex {
-	return func(o ...func(*CreateVertexRequest)) (*CreateVertexResponse, error) {
-		var r = CreateVertexRequest{}
+func newCreateFunc(t api.Transport) Create {
+	return func(o ...func(*CreateRequest)) (*CreateResponse, error) {
+		var r = CreateRequest{}
 		for _, f := range o {
 			f(&r)
 		}
@@ -45,9 +44,9 @@ func newCreateVertexFunc(t api.Transport) CreateVertex {
 	}
 }
 
-type CreateVertex func(o ...func(*CreateVertexRequest)) (*CreateVertexResponse, error)
+type Create func(o ...func(*CreateRequest)) (*CreateResponse, error)
 
-type CreateVertexRequest struct {
+type CreateRequest struct {
 	Body       io.Reader
 	ctx        context.Context
 	config     hgtransport.Config
@@ -55,21 +54,21 @@ type CreateVertexRequest struct {
 	Properties []byte
 }
 
-type CreateVertexResponse struct {
-	StatusCode   int                       `json:"-"`
-	Header       http.Header               `json:"-"`
-	Body         io.ReadCloser             `json:"-"`
-	CreateVertex *CreateVertexResponseData `json:"CreateVertex"`
+type CreateResponse struct {
+	StatusCode int                 `json:"-"`
+	Header     http.Header         `json:"-"`
+	Body       io.ReadCloser       `json:"-"`
+	CreateData *CreateResponseData `json:"Create"`
 }
 
-type CreateVertexResponseData struct {
+type CreateResponseData struct {
 	ID         string `json:"id"`
 	Label      string `json:"label"`
 	Type       string `json:"type"`
 	Properties any    `json:"properties"`
 }
 
-func (r CreateVertexRequest) Do(ctx context.Context, transport api.Transport) (*CreateVertexResponse, error) {
+func (r CreateRequest) Do(ctx context.Context, transport api.Transport) (*CreateResponse, error) {
 
 	config := transport.GetConfig()
 	url := ""
@@ -92,25 +91,25 @@ func (r CreateVertexRequest) Do(ctx context.Context, transport api.Transport) (*
 		return nil, err
 	}
 
-	createVertexRespData := &CreateVertexResponseData{}
+	CreateRespData := &CreateResponseData{}
 	bytes, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(bytes, createVertexRespData)
+	err = json.Unmarshal(bytes, CreateRespData)
 	if err != nil {
 		return nil, err
 	}
-	createVertexResp := &CreateVertexResponse{}
-	createVertexResp.StatusCode = res.StatusCode
-	createVertexResp.Header = res.Header
-	createVertexResp.Body = res.Body
-	createVertexResp.CreateVertex = createVertexRespData
-	return createVertexResp, nil
+	CreateResp := &CreateResponse{}
+	CreateResp.StatusCode = res.StatusCode
+	CreateResp.Header = res.Header
+	CreateResp.Body = res.Body
+	CreateResp.CreateData = CreateRespData
+	return CreateResp, nil
 }
 
-func (c CreateVertex) WithVertex(vertex *model.Vertex[any]) func(*CreateVertexRequest) {
-	return func(r *CreateVertexRequest) {
+func (c Create) WithVertex(vertex *model.Vertex[any]) func(*CreateRequest) {
+	return func(r *CreateRequest) {
 		jsonStr, err := json.Marshal(vertex.Properties)
 		if err != nil {
 			log.Println(err)

@@ -25,7 +25,7 @@ import (
 type APIV1 struct {
 	Version Version
 	Vertex  struct {
-		CreateVertex
+		Create
 	}
 }
 
@@ -34,9 +34,9 @@ func New(t api.Transport) *APIV1 {
 	return &APIV1{
 		Version: newVersionFunc(t),
 		Vertex: struct {
-			CreateVertex
+			Create
 		}{
-			CreateVertex: newCreateVertexFunc(t),
+			Create: newCreateFunc(t),
 		},
 	}
 }

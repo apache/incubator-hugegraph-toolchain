@@ -2,7 +2,7 @@
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
- * licenses this file to You under the Apache License, CreateVertex 2.0 (the
+ * licenses this file to You under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -40,11 +40,11 @@ func testDo(t *testing.T) {
 		Label:      "lemma",
 		Properties: m,
 	}
-	resp, err := client.Vertex.CreateVertex(
-		client.Vertex.CreateVertex.WithVertex(v),
+	resp, err := client.Vertex.Create(
+		client.Vertex.Create.WithVertex(v),
 	)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(resp.CreateVertex.ID)
+	fmt.Println(resp.CreateData.ID)
 }
