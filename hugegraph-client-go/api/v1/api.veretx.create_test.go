@@ -18,33 +18,33 @@
 package v1
 
 import (
-	"fmt"
-	hugegraph "hugegraph.apache.org/client-go"
-	"hugegraph.apache.org/client-go/internal/model"
-	"log"
-	"testing"
+    "fmt"
+    hugegraph "hugegraph.apache.org/client-go"
+    "hugegraph.apache.org/client-go/internal/model"
+    "log"
+    "testing"
 )
 
 type Model struct {
-	X string
+    X string
 }
 
 func testDo(t *testing.T) {
-	m := Model{X: "1"}
-	client, err := hugegraph.NewDefaultCommonClient()
-	if err != nil {
-		log.Println(err)
-	}
-	v := &model.Vertex[any]{
-		ID:         "1",
-		Label:      "lemma",
-		Properties: m,
-	}
-	resp, err := client.Vertex.Create(
-		client.Vertex.Create.WithVertex(v),
-	)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(resp.CreateData.ID)
+    m := Model{X: "1"}
+    client, err := hugegraph.NewDefaultCommonClient()
+    if err != nil {
+        log.Println(err)
+    }
+    v := &model.Vertex[any]{
+        ID:         "1",
+        Label:      "lemma",
+        Properties: m,
+    }
+    resp, err := client.Vertex.Create(
+        client.Vertex.Create.WithVertex(v),
+    )
+    if err != nil {
+        log.Fatalln(err)
+    }
+    fmt.Println(resp.CreateData.ID)
 }

@@ -19,7 +19,7 @@ package model
 
 // Vertex models that support generic types
 type Vertex[T any] struct {
-	ID         string
-	Label      string
-	Properties T
+    ID         string
+    Label      string
+    Properties T
 }

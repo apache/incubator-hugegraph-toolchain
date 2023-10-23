@@ -18,25 +18,25 @@
 package v1
 
 import (
-	"hugegraph.apache.org/client-go/api"
+    "hugegraph.apache.org/client-go/api"
 )
 
 // API contains the Hugegraph APIs
 type APIV1 struct {
-	Version Version
-	Vertex  struct {
-		Create
-	}
+    Version Version
+    Vertex  struct {
+        Create
+    }
 }
 
 // New creates new API
 func New(t api.Transport) *APIV1 {
-	return &APIV1{
-		Version: newVersionFunc(t),
-		Vertex: struct {
-			Create
-		}{
-			Create: newCreateFunc(t),
-		},
-	}
+    return &APIV1{
+        Version: newVersionFunc(t),
+        Vertex: struct {
+            Create
+        }{
+            Create: newCreateFunc(t),
+        },
+    }
 }

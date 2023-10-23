@@ -33,22 +33,22 @@ import "hugegraph.apache.org/client-go/hgtransport"
 
 func main() {
 
-	clinet, err := hugegraph.NewCommonClient(hugegraph.Config{
-		Host:     "127.0.0.1",
-		Port:     8080,
-		Graph:    "hugegraph",
-		Username: "",
-		Password: "",
-		Logger: &hgtransport.ColorLogger{
-			Output:             os.Stdout,
-			EnableRequestBody:  true,
-			EnableResponseBody: true,
-		},
-	})
+    clinet, err := hugegraph.NewCommonClient(hugegraph.Config{
+        Host:     "127.0.0.1",
+        Port:     8080,
+        Graph:    "hugegraph",
+        Username: "",
+        Password: "",
+        Logger: &hgtransport.ColorLogger{
+            Output:             os.Stdout,
+            EnableRequestBody:  true,
+            EnableResponseBody: true,
+        },
+    })
 
-	if err != nil {
-		log.Fatalf("Error creating the client: %s\n", err)
-	}
+    if err != nil {
+        log.Fatalf("Error creating the client: %s\n", err)
+    }
 }
 ```
 
@@ -60,21 +60,21 @@ func main() {
 package main
 
 import (
-	"fmt"
-	"log"
+    "fmt"
+    "log"
 )
 
 func getVersion() {
 
-	client := initClient()
-	res, err := client.Version()
-	if err != nil {
-		log.Fatalf("Error getting the response: %s\n", err)
-	}
-	defer res.Body.Close()
+    client := initClient()
+    res, err := client.Version()
+    if err != nil {
+        log.Fatalf("Error getting the response: %s\n", err)
+    }
+    defer res.Body.Close()
 
-	fmt.Println(res.Versions)
-	fmt.Println(res.Versions.Version)
+    fmt.Println(res.Versions)
+    fmt.Println(res.Versions.Version)
 }
 ```
 
@@ -84,11 +84,11 @@ func getVersion() {
 package main
 
 type VersionResponse struct {
-	Versions struct {
-		Version string `json:"version"` // hugegraph version
-		Core    string `json:"core"`    // hugegraph core version
-		Gremlin string `json:"gremlin"` // hugegraph gremlin version
-		API     string `json:"api"`     // hugegraph api version
-	} ` json: 'versions'`
+    Versions struct {
+        Version string `json:"version"` // hugegraph version
+        Core    string `json:"core"`    // hugegraph core version
+        Gremlin string `json:"gremlin"` // hugegraph gremlin version
+        API     string `json:"api"`     // hugegraph api version
+    } ` json: 'versions'`
 }
 ```
