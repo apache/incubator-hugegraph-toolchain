@@ -19,7 +19,7 @@
 HOMEDIR := $(shell pwd)
 OUTDIR  := $(HOMEDIR)/output
 
-# 设置编译时所需要的 go 环境
+# Get the go environment required for compilation
 export GOENV = $(HOMEDIR)/go.env
 
 GO 		:= GO111MODULE=on go

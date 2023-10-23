@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"time"
 
+	"hugegraph.apache.org/client-go/hgtransport"
 	"hugegraph.apache.org/client-go/internal/version"
 )
 
@@ -31,6 +32,7 @@ const VERSION = version.Client
 // Transport defines the interface for an API client.
 type Transport interface {
 	Perform(*http.Request) (*http.Response, error)
+	GetConfig() hgtransport.Config
 }
 
 // formatDuration converts duration to a string in the format

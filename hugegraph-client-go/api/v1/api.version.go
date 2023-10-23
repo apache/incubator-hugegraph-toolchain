@@ -20,6 +20,7 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"hugegraph.apache.org/client-go/hgtransport"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -28,10 +29,9 @@ import (
 )
 
 // ----- API Definition -------------------------------------------------------
-
-// 查看HugeGraph的版本信息
+// View version information of HugeGraph
 //
-// See full documentation at https://hugegraph.apache.org/cn/docs/clients/restful-api/other/#1011-%E6%9F%A5%E7%9C%8Bhugegraph%E7%9A%84%E7%89%88%E6%9C%AC%E4%BF%A1%E6%81%AF
+// See full documentation at https://hugegraph.apache.org/docs/clients/restful-api/other/#1111-view-version-information-of-hugegraph
 func newVersionFunc(t api.Transport) Version {
 	return func(o ...func(*VersionRequest)) (*VersionResponse, error) {
 		var r = VersionRequest{}
@@ -45,8 +45,9 @@ func newVersionFunc(t api.Transport) Version {
 type Version func(o ...func(*VersionRequest)) (*VersionResponse, error)
 
 type VersionRequest struct {
-	Body io.Reader
-	ctx  context.Context
+	Body   io.Reader
+	ctx    context.Context
+	config hgtransport.Config
 }
 
 type VersionResponse struct {
@@ -57,16 +58,18 @@ type VersionResponse struct {
 }
 
 type VersionResponseData struct {
-	Version string `json:"version"`
-	Core    string `json:"core"`
-	Gremlin string `json:"gremlin"`
-	API     string `json:"api"`
+	Version string `json:"version"` // hugegraph version
+	Core    string `json:"core"`    // hugegraph core version
+	Gremlin string `json:"gremlin"` // hugegraph gremlin version
+	API     string `json:"api"`     // hugegraph api version
 }
 
 func (r VersionRequest) Do(ctx context.Context, transport api.Transport) (*VersionResponse, error) {
 
-	req, _ := api.NewRequest("GET", "/versions", r.Body)
-
+	req, err := api.NewRequest("GET", "/versions", r.Body)
+	if err != nil {
+		return nil, err
+	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
 	}

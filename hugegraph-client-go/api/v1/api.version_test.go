@@ -19,12 +19,14 @@ package v1_test
 
 import (
 	"context"
-	hugegraph "hugegraph.apache.org/client-go"
-	"hugegraph.apache.org/client-go/api"
-	v1 "hugegraph.apache.org/client-go/api/v1"
+
 	"io"
 	"reflect"
 	"testing"
+
+	hugegraph "hugegraph.apache.org/client-go"
+	"hugegraph.apache.org/client-go/api"
+	v1 "hugegraph.apache.org/client-go/api/v1"
 )
 
 func TestVersionRequest_Do(t *testing.T) {
@@ -33,7 +35,6 @@ func TestVersionRequest_Do(t *testing.T) {
 	if err != nil {
 		t.Errorf("NewDefaultCommonClient() error = %v", err)
 	}
-
 	ctx := context.Background()
 
 	type fields struct {
@@ -72,10 +73,7 @@ func TestVersionRequest_Do(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := v1.VersionRequest{
-				Body: tt.fields.Body,
-			}
-			got, err := r.Do(tt.args.ctx, tt.args.transport)
+			got, err := client.Version()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Do() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -29,42 +29,33 @@ import (
 	"hugegraph.apache.org/client-go/hgtransport"
 )
 
-// ClientTypeEnum 客户端类型枚举
-type ClientTypeEnum string
-
-// CommonClientType 客户端类型-基础
-const CommonClientType ClientTypeEnum = ""
-
-// StarDefaultClientType 客户端类型-star版
-const StarDefaultClientType ClientTypeEnum = "star"
-
 // Config 配置类型
 type Config struct {
-	Host       string
-	Port       int
-	GraphSpace string
-	Graph      string
-	Username   string
-	Password   string
-
-	ClientType ClientTypeEnum     // Client Type
+	Host       string             // hugegraph Server host
+	Port       int                // hugegraph Server api port
+	GraphSpace string             // graphSpace is a feature supported feature. if you not set graphSpace, please set empty string
+	Graph      string             // this name is configured in the hugegraph
+	Username   string             // server username .if you not set username ,please set empty string
+	Password   string             // server password .if you not set password ,please set empty string
 	Transport  http.RoundTripper  // The HTTP transport object.
 	Logger     hgtransport.Logger // The logger object.
 }
 
 type CommonClient struct {
 	*v1.APIV1
-	Transport hgtransport.Interface
-	Graph     string
+	Transport  hgtransport.Interface
+	Graph      string
+	GraphSpace string
 }
 
 func NewDefaultCommonClient() (*CommonClient, error) {
 	return NewCommonClient(Config{
-		Host:     "127.0.0.1",
-		Port:     8080,
-		Graph:    "hugegraph",
-		Username: "",
-		Password: "",
+		Host:       "127.0.0.1",
+		Port:       8080,
+		GraphSpace: "",
+		Graph:      "hugegraph",
+		Username:   "",
+		Password:   "",
 		Logger: &hgtransport.ColorLogger{
 			Output:             os.Stdout,
 			EnableRequestBody:  true,
@@ -85,9 +76,6 @@ func NewCommonClient(cfg Config) (*CommonClient, error) {
 	if cfg.Port < 1 || cfg.Port > 65535 {
 		return nil, errors.New("cannot create client: port is error")
 	}
-	if cfg.ClientType != CommonClientType {
-		return nil, errors.New("cannot create client: NewCommonClient only supported commonClient")
-	}
 
 	tp := hgtransport.New(hgtransport.Config{
 		URL: &url.URL{
@@ -102,8 +90,9 @@ func NewCommonClient(cfg Config) (*CommonClient, error) {
 	})
 
 	return &CommonClient{
-		APIV1:     v1.New(tp),
-		Transport: tp,
-		Graph:     cfg.Graph,
+		APIV1:      v1.New(tp),
+		Transport:  tp,
+		Graph:      cfg.Graph,
+		GraphSpace: cfg.GraphSpace,
 	}, nil
 }

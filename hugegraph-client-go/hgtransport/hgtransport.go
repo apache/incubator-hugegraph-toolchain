@@ -46,6 +46,7 @@ func init() {
 // Interface defines the interface for HTTP client.
 type Interface interface {
 	Perform(*http.Request) (*http.Response, error)
+	GetConfig() Config
 }
 
 // Config represents the configuration of HTTP client.
@@ -55,21 +56,19 @@ type Config struct {
 	Password   string
 	GraphSpace string
 	Graph      string
-
-	Transport http.RoundTripper
-	Logger    Logger
+	Transport  http.RoundTripper
+	Logger     Logger
 }
 
 // Client represents the HTTP client.
 type Client struct {
-	url         *url.URL
-	username    string
-	password    string
-	graphspaces string
-	graph       string
-
-	transport http.RoundTripper
-	logger    Logger
+	url        *url.URL
+	username   string
+	password   string
+	graphspace string
+	graph      string
+	transport  http.RoundTripper
+	logger     Logger
 }
 
 // New creates new HTTP client.
@@ -81,13 +80,25 @@ func New(cfg Config) *Client {
 	}
 
 	return &Client{
-		url:         cfg.URL,
-		username:    cfg.Username,
-		password:    cfg.Password,
-		graphspaces: cfg.GraphSpace,
-		graph:       cfg.Graph,
-		transport:   cfg.Transport,
-		logger:      cfg.Logger,
+		url:        cfg.URL,
+		username:   cfg.Username,
+		password:   cfg.Password,
+		graphspace: cfg.GraphSpace,
+		graph:      cfg.Graph,
+		transport:  cfg.Transport,
+		logger:     cfg.Logger,
+	}
+}
+
+func (c *Client) GetConfig() Config {
+	return Config{
+		URL:        c.url,
+		Username:   c.username,
+		Password:   c.password,
+		GraphSpace: c.graphspace,
+		Graph:      c.graph,
+		Transport:  c.transport,
+		Logger:     nil,
 	}
 }
 
@@ -100,7 +111,6 @@ func (c *Client) Perform(req *http.Request) (*http.Response, error) {
 	c.setHost(req)
 	c.setContentTypeJSON(req)
 	c.setGraph(req)
-	c.setGraphSpace(req)
 
 	if _, ok := req.Header["Authorization"]; !ok {
 		c.setBasicAuth(u, req)
@@ -141,7 +151,6 @@ func (c *Client) Perform(req *http.Request) (*http.Response, error) {
 	}
 	c.logger.LogRoundTrip(req, &dupRes, err, start, dur) // errcheck exclude
 
-	// TODO(karmi): Wrap error
 	return res, err
 }
 
@@ -193,12 +202,6 @@ func (c *Client) setContentTypeJSON(req *http.Request) *http.Request {
 func (c *Client) setGraph(req *http.Request) *http.Request {
 	req.URL.RawQuery = strings.ReplaceAll(req.URL.RawQuery, url.QueryEscape("${GRAPH_NAME}"), c.graph)
 	req.URL.Path = strings.ReplaceAll(req.URL.Path, "${GRAPH_NAME}", c.graph)
-	return req
-}
-
-func (c *Client) setGraphSpace(req *http.Request) *http.Request {
-	req.URL.RawQuery = strings.ReplaceAll(req.URL.RawQuery, url.QueryEscape("${GRAPH_SPACE_NAME}"), c.graphspaces)
-	req.URL.Path = strings.ReplaceAll(req.URL.Path, "${GRAPH_SPACE_NAME}", c.graphspaces)
 	return req
 }
 

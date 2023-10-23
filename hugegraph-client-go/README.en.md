@@ -35,10 +35,12 @@ import "hugegraph.apache.org/client-go/hgtransport"
 
 func main() {
 
-	clinet,err := hugegraph.NewClient(hugegraph.Config{
-		Host:  "127.0.0.1",
-		Port:  8888,
-		Graph: "hugegraph",
+	clinet, err := hugegraph.NewCommonClient(hugegraph.Config{
+		Host:     "127.0.0.1",
+		Port:     8080,
+		Graph:    "hugegraph",
+		Username: "",
+		Password: "",
 		Logger: &hgtransport.ColorLogger{
 			Output:             os.Stdout,
 			EnableRequestBody:  true,
@@ -57,32 +59,39 @@ func main() {
 -1. Use the SDK to obtain version information
 
 ```Go
+package main
+
+import (
+	"fmt"
+	"log"
+)
+
 func getVersion() {
 
-    client := initClient()
-    
-    res, err := client.Version()
-    if err != nil {
-    log.Fatalf("Error getting the response: %s\n", err)
-    }
-    defer res.Body.Close()
-    
-    fmt.Println(res.Versions)
-    
-    fmt.Println(res.Versions.Version)
-}
+	client := initClient()
+	res, err := client.Version()
+	if err != nil {
+		log.Fatalf("Error getting the response: %s\n", err)
+	}
+	defer res.Body.Close()
 
+	fmt.Println(res.Versions)
+	fmt.Println(res.Versions.Version)
+}
 ```
 
 -2. Result Set Response Body
 
 ```Go
-type VersionResponse struct{
-    Versions struct{
-    Version string ` json: "version"`
-    Core string ` json: 'core'`
-    Gremlin string ` json: 'gremlin'`
-    API string ` json: 'API'`
-    }` json: 'versions'`
+package main
+
+type VersionResponse struct {
+	Versions struct {
+		Version string `json:"version"` // hugegraph version
+		Core    string `json:"core"`    // hugegraph core version
+		Gremlin string `json:"gremlin"` // hugegraph gremlin version
+		API     string `json:"api"`     // hugegraph api version
+	} ` json: 'versions'`
 }
+
 ```

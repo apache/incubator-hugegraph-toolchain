@@ -1,4 +1,4 @@
 module hugegraph.apache.org/client-go
 
-go 1.18
+go 1.19
 

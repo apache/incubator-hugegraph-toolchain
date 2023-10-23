@@ -2,7 +2,7 @@
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
- * licenses this file to You under the Apache License, Version 2.0 (the
+ * licenses this file to You under the Apache License, CreateVertex 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -15,11 +15,36 @@
  * under the License.
  */
 
-package model
+package v1
 
-// Vertex models that support generic types
-type Vertex[T any] struct {
-	ID         string
-	Label      string
-	Properties T
+import (
+	"fmt"
+	hugegraph "hugegraph.apache.org/client-go"
+	"hugegraph.apache.org/client-go/internal/model"
+	"log"
+	"testing"
+)
+
+type Model struct {
+	X string
+}
+
+func testDo(t *testing.T) {
+	m := Model{X: "1"}
+	client, err := hugegraph.NewDefaultCommonClient()
+	if err != nil {
+		log.Println(err)
+	}
+	v := &model.Vertex[any]{
+		ID:         "1",
+		Label:      "lemma",
+		Properties: m,
+	}
+	resp, err := client.Vertex.CreateVertex(
+		client.Vertex.CreateVertex.WithVertex(v),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(resp.CreateVertex.ID)
 }
