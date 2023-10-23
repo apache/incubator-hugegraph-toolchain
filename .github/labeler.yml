@@ -28,3 +28,5 @@ loader:
   - hugegraph-loader/**/*
 tools:
   - hugegraph-tools/**/*
+spark:
+  - hugegraph-spark-connector/**/*
