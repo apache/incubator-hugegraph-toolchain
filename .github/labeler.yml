@@ -21,7 +21,8 @@
 name: Add Scope Label
 
 client:
-  - hugegraph-client/**/*
+  - hugegraph-client*/**/*
+#  - hugegraph-client-go/**/*
 hubble:
   - hugegraph-hubble/**/*
 loader:
