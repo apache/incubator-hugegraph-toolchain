@@ -63,4 +63,4 @@ jobs:
           sudo sysctl -w vm.swappiness=1
           sudo sysctl -w fs.file-max=262144
           sudo sysctl -w vm.max_map_count=262144
-          hugegraph-client-go/make test
+          cd hugegraph-client-go && make test
