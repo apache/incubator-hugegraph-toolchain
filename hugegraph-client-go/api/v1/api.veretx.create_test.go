@@ -15,30 +15,32 @@
  * under the License.
  */
 
-package v1
+package v1_test
 
 import (
     "fmt"
-    hugegraph "hugegraph.apache.org/client-go"
-    "hugegraph.apache.org/client-go/internal/model"
     "log"
     "testing"
+
+    hugegraph "hugegraph.apache.org/client-go"
+    "hugegraph.apache.org/client-go/internal/model"
 )
 
 type Model struct {
     X string
 }
 
-func testDo(t *testing.T) {
-    m := Model{X: "1"}
+func testVertexCreate_Do(t *testing.T) {
     client, err := hugegraph.NewDefaultCommonClient()
     if err != nil {
         log.Println(err)
     }
     v := &model.Vertex[any]{
-        ID:         "1",
-        Label:      "lemma",
-        Properties: m,
+        ID:    "1",
+        Label: "lemma",
+        Properties: Model{
+            X: "1",
+        },
     }
     resp, err := client.Vertex.Create(
         client.Vertex.Create.WithVertex(v),

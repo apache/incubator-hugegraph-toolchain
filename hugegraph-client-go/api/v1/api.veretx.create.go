@@ -20,14 +20,14 @@ import (
     "context"
     "encoding/json"
     "fmt"
-    "hugegraph.apache.org/client-go/hgtransport"
-    "hugegraph.apache.org/client-go/internal/model"
     "io"
     "io/ioutil"
     "log"
     "net/http"
 
     "hugegraph.apache.org/client-go/api"
+    "hugegraph.apache.org/client-go/hgtransport"
+    "hugegraph.apache.org/client-go/internal/model"
 )
 
 // ----- API Definition -------------------------------------------------------
