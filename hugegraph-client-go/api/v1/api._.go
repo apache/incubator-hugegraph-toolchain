@@ -18,7 +18,7 @@
 package v1
 
 import (
-    "hugegraph.apache.org/client-go/api"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
 )
 
 // API contains the Hugegraph APIs

@@ -25,8 +25,8 @@ import (
     "net/url"
     "os"
 
-    v1 "hugegraph.apache.org/client-go/api/v1"
-    "hugegraph.apache.org/client-go/hgtransport"
+    v1 "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
 )
 
 // Config 配置类型

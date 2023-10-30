@@ -11,7 +11,7 @@
 #### 安装教程
 
 ```shell
-go get hugegraph.apache.org/client-go
+go get github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go
 ```
 
 #### 实现 API
@@ -28,8 +28,8 @@ go get hugegraph.apache.org/client-go
 ```go
 package main
 
-import "hugegraph.apache.org/client-go"
-import "hugegraph.apache.org/client-go/hgtransport"
+import "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
+import "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
 
 func main() {
 

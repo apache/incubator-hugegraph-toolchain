@@ -22,8 +22,8 @@ import (
     "log"
     "testing"
 
-    hugegraph "hugegraph.apache.org/client-go"
-    "hugegraph.apache.org/client-go/internal/model"
+    hugegraph "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/model"
 )
 
 type Model struct {

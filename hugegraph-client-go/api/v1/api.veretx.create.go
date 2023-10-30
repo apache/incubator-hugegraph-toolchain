@@ -25,9 +25,9 @@ import (
     "log"
     "net/http"
 
-    "hugegraph.apache.org/client-go/api"
-    "hugegraph.apache.org/client-go/hgtransport"
-    "hugegraph.apache.org/client-go/internal/model"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/model"
 )
 
 // ----- API Definition -------------------------------------------------------

@@ -28,7 +28,7 @@ import (
     "strings"
     "time"
 
-    "hugegraph.apache.org/client-go/internal/version"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/version"
 )
 
 // Version returns the package version as a string.

@@ -23,9 +23,9 @@ import (
     "reflect"
     "testing"
 
-    hugegraph "hugegraph.apache.org/client-go"
-    "hugegraph.apache.org/client-go/api"
-    v1 "hugegraph.apache.org/client-go/api/v1"
+    hugegraph "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
+    v1 "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
 )
 
 func TestVersionRequest_Do(t *testing.T) {

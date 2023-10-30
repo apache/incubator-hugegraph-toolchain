@@ -22,8 +22,8 @@ import (
     "strconv"
     "time"
 
-    "hugegraph.apache.org/client-go/hgtransport"
-    "hugegraph.apache.org/client-go/internal/version"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/version"
 )
 
 // VERSION returns the package version as a string.
