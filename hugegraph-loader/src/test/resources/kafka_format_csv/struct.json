@@ -1,0 +1,26 @@
+{
+  "version": "2.0",
+  "structs": [
+    {
+      "id": "1",
+      "input": {
+        "type": "kafka",
+        "bootstrap_server": "localhost:9093",
+        "topic": "vertex-format-csv",
+        "from_beginning": true,
+        "group": "consumer_format_csv",
+        "format": "CSV",
+        "header": ["id", "name", "age", "city"],
+        "early_stop": true
+      },
+      "vertices": [
+        {
+          "label": "person",
+          "id": "id",
+          "null_values": ["NULL"]
+        }
+      ],
+      "edges": []
+    }
+  ]
+}

@@ -16,11 +16,11 @@
 # under the License.
 #
 abs_path() {
-    SOURCE="${BASH_SOURCE[0]}"
-    while [[ -h "$SOURCE" ]]; do
+    SOURCE="$0"
+    while [ -h "$SOURCE" ]; do
         DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
         SOURCE="$(readlink "$SOURCE")"
-        [[ ${SOURCE} != /* ]] && SOURCE="$DIR/$SOURCE"
+        [ "${SOURCE}" != /* ] && SOURCE="$DIR/$SOURCE"
     done
     echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
@@ -34,18 +34,21 @@ LOG="$TOP/logs"
 
 # Use the unofficial bash strict mode to avoid subtle bugs impossible.
 # Don't use -u option for now because LOADER_HOME might not yet defined.
-set -eo pipefail
+if [ -n "$BASH_VERSION" ]; then
+    set -eo pipefail
+fi
 
-export VARS=${@:1}
+export VARS="$*"
+
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
-if [[ -n "$JAVA_HOME" ]]; then
+if [ -n "$JAVA_HOME" ]; then
     # Why we can't have nice things: Solaris combines x86 and x86_64
     # installations in the same tree, using an unconventional path for the
     # 64bit JVM.  Since we prefer 64bit, search the alternate path first,
     # (see https://issues.apache.org/jira/browse/CASSANDRA-4638).
     for java in "$JAVA_HOME"/bin/amd64/java "$JAVA_HOME"/bin/java; do
-        if [[ -x "$java" ]]; then
+        if [ -x "$java" ]; then
             JAVA="$java"
             break
         fi
@@ -54,7 +57,7 @@ else
     JAVA=java
 fi
 
-if [[ -z ${JAVA} ]] ; then
+if [ -z ${JAVA} ] ; then
     echo Unable to find java executable. Check JAVA_HOME and PATH environment variables. > /dev/stderr
     exit 1;
 fi

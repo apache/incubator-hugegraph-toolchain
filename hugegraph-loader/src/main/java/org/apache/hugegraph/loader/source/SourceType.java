@@ -23,5 +23,7 @@ public enum SourceType {
 
     HDFS,
 
-    JDBC
+    JDBC,
+
+    KAFKA
 }

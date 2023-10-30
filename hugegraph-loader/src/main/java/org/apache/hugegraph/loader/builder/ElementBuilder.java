@@ -515,7 +515,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             }
             List<String> primaryKeys = this.vertexLabel.primaryKeys();
             E.checkArgument(ListUtils.isEqualList(this.pkNames, primaryKeys),
-                            "Make sure the the primary key fields %s are " +
+                            "Make sure the primary key fields %s are " +
                             "not empty, or check whether the headers or " +
                             "field_mapping are configured correctly",
                             primaryKeys);
@@ -617,7 +617,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             this.pkName = mapping().mappingField(fieldName);
             String primaryKey = primaryKeys.get(0);
             E.checkArgument(this.pkName.equals(primaryKey),
-                            "Make sure the the primary key field '%s' is " +
+                            "Make sure the primary key field '%s' is " +
                             "not empty, or check whether the headers or " +
                             "field_mapping are configured correctly",
                             primaryKey);

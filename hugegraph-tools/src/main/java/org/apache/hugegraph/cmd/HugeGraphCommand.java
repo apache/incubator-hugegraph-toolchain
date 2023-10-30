@@ -163,7 +163,7 @@ public class HugeGraphCommand {
         this.throwMode.throwMode = throwMode;
     }
 
-    public JCommander jCommander() {
+    public JCommander jcommander() {
         JCommander.Builder builder = JCommander.newBuilder();
 
         // Add main command firstly
@@ -474,7 +474,7 @@ public class HugeGraphCommand {
     }
 
     public JCommander parseCommand(String[] args) {
-        JCommander jCommander = this.jCommander();
+        JCommander jCommander = this.jcommander();
         if (args.length == 0) {
             throw ExitException.exception(ToolUtil.commandUsage(jCommander),
                                           "No command found, please input" +

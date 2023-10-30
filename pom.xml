@@ -91,6 +91,7 @@
     <modules>
         <module>hugegraph-client</module>
         <module>hugegraph-loader</module>
+        <module>hugegraph-spark-connector</module>
         <module>hugegraph-tools</module>
         <module>hugegraph-hubble</module>
         <module>hugegraph-dist</module>
@@ -440,12 +441,13 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <configLocation>checkstyle.xml</configLocation>
+                    <configLocation>tools/checkstyle.xml</configLocation>
                     <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
                     <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                    <suppressionsLocation>tools/suppressions.xml</suppressionsLocation>
                 </configuration>
                 <executions>
                     <execution>

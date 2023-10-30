@@ -107,7 +107,7 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
         E.checkState(CollectionUtils.isNotEmpty(authManagers),
                      "Backup data is empty, please check the type");
         for (AuthManager authManager : authManagers) {
-             authManager.backup();
+            authManager.backup();
         }
     }
 
@@ -127,13 +127,13 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
                      "Restore data is empty, please check the type");
         List<String> allConflicts = Lists.newArrayList();
         for (AuthManager authManager : authManagers) {
-             allConflicts.addAll(authManager.checkConflict());
+            allConflicts.addAll(authManager.checkConflict());
         }
         E.checkState(CollectionUtils.isEmpty(allConflicts),
                      "Restore conflict with STOP strategy, conflicting " +
                      "data is s%", JsonUtil.toJson(allConflicts));
         for (AuthManager authManager : authManagers) {
-             authManager.restore();
+            authManager.restore();
         }
     }
 
@@ -158,7 +158,7 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
                     break;
                 default:
                     throw new AssertionError(String.format(
-                              "Bad auth restore type: %s", type));
+                            "Bad auth restore type: %s", type));
             }
         }
         return authManagers;
@@ -177,10 +177,10 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
         InputStream is = this.inputStream(type.string());
         try (InputStreamReader isr = new InputStreamReader(is, API.CHARSET);
              BufferedReader reader = new BufferedReader(isr)) {
-             String line;
-             while ((line = reader.readLine()) != null) {
-                 resultList.add(line);
-             }
+            String line;
+            while ((line = reader.readLine()) != null) {
+                resultList.add(line);
+            }
         } catch (IOException e) {
             throw new ToolsException("Failed to deserialize %s from %s",
                                      e, type.string(), resultList);
@@ -260,7 +260,7 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
                                      "querying users of authority");
             Map<String, User> userMap = Maps.newHashMap();
             for (User user : users) {
-                 userMap.put(user.name(), user);
+                userMap.put(user.name(), user);
             }
             List<String> userJsons = readRestoreData(HugeType.USER);
             List<String> conflicts = Lists.newArrayList();
@@ -339,7 +339,7 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
                                        "querying groups of authority");
             Map<String, Group> groupMap = Maps.newHashMap();
             for (Group group : groups) {
-                 groupMap.put(group.name(), group);
+                groupMap.put(group.name(), group);
             }
             List<String> groupJsons = readRestoreData(HugeType.GROUP);
             List<String> conflicts = Lists.newArrayList();
@@ -409,7 +409,7 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
                                          "querying targets of authority");
             Map<String, Target> targetMap = Maps.newHashMap();
             for (Target target : targets) {
-                 targetMap.put(target.name(), target);
+                targetMap.put(target.name(), target);
             }
             List<String> targetJsons = readRestoreData(HugeType.TARGET);
             List<String> conflicts = Lists.newArrayList();
@@ -483,10 +483,10 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
         public List<String> checkConflict() {
             List<Belong> belongs = retry(client.authManager()::listBelongs,
                                          "querying belongs of authority");
-            Map<String, Belong>  belongMap = Maps.newHashMap();
+            Map<String, Belong> belongMap = Maps.newHashMap();
             for (Belong belong : belongs) {
-                 String belongKey = belong.user() + ":" + belong.group();
-                 belongMap.put(belongKey, belong);
+                String belongKey = belong.user() + ":" + belong.group();
+                belongMap.put(belongKey, belong);
             }
             List<String> belongJsons = readRestoreData(HugeType.BELONG);
             List<String> conflicts = Lists.newArrayList();
@@ -520,7 +520,7 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
                 restoreBelong.user(idsMap.get(restoreBelong.user().toString()));
                 restoreBelong.group(idsMap.get(restoreBelong.group().toString()));
                 retry(() -> {
-                     return client.authManager().createBelong(restoreBelong);
+                    return client.authManager().createBelong(restoreBelong);
                 }, "restore belongs of authority");
                 count++;
             }
@@ -545,10 +545,10 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
         public List<String> checkConflict() {
             List<Access> accesses = retry(client.authManager()::listAccesses,
                                           "querying accesses of authority");
-            Map<String, Access>  accessMap = Maps.newHashMap();
+            Map<String, Access> accessMap = Maps.newHashMap();
             for (Access access : accesses) {
-                 String accessKey = access.group() + ":" + access.target();
-                 accessMap.put(accessKey, access);
+                String accessKey = access.group() + ":" + access.target();
+                accessMap.put(accessKey, access);
             }
             List<String> accessJsons = readRestoreData(HugeType.ACCESS);
             List<String> conflicts = Lists.newArrayList();
@@ -582,7 +582,7 @@ public class AuthBackupRestoreManager extends BackupRestoreBaseManager {
                 restoreAccess.target(idsMap.get(restoreAccess.target().toString()));
                 restoreAccess.group(idsMap.get(restoreAccess.group().toString()));
                 retry(() -> {
-                     return client.authManager().createAccess(restoreAccess);
+                    return client.authManager().createAccess(restoreAccess);
                 }, "restore accesses of authority");
                 count++;
             }

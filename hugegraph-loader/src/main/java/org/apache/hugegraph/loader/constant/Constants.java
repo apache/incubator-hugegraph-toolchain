@@ -81,4 +81,13 @@ public final class Constants {
     public static final String LOAD_DATA_PARSE_SUFFIX = "parse";
     public static final String LOAD_DATA_SER_SUFFIX = "ser";
     public static final String LOAD_DATA_INSERT_SUFFIX = "insert";
+
+    public static final long KAFKA_SESSION_TIMEOUT = 30000;
+    public static final long KAFKA_AUTO_COMMIT_INTERVAL = 1000;
+    public static final String KAFKA_AUTO_COMMIT = "true";
+    public static final String KAFKA_EARLIEST_OFFSET = "earliest";
+    public static final String KAFKA_LATEST_OFFSET = "latest";
+    public static final long KAFKA_POLL_DURATION = 1000;
+    public static final long KAFKA_POLL_GAP_INTERVAL = 1000;
+
 }
