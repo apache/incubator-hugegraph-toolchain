@@ -19,7 +19,6 @@ package hgtransport
 
 import (
     "bytes"
-    "fmt"
     "io/ioutil"
     "net/http"
     "net/url"
@@ -110,13 +109,11 @@ func (c *Client) Perform(req *http.Request) (*http.Response, error) {
     c.setUserAgent(req)
     c.setHost(req)
     c.setContentTypeJSON(req)
-    c.setGraph(req)
 
     if _, ok := req.Header["Authorization"]; !ok {
         c.setBasicAuth(u, req)
     }
 
-    fmt.Println(req.Header)
     var dupReqBody *bytes.Buffer
     if c.logger != nil && c.logger.RequestBodyEnabled() {
         if req.Body != nil && req.Body != http.NoBody {
@@ -195,13 +192,7 @@ func (c *Client) setHost(req *http.Request) *http.Request {
 }
 
 func (c *Client) setContentTypeJSON(req *http.Request) *http.Request {
-    req.Header.Set("Content-Type", "application/json")
-    return req
-}
-
-func (c *Client) setGraph(req *http.Request) *http.Request {
-    req.URL.RawQuery = strings.ReplaceAll(req.URL.RawQuery, url.QueryEscape("${GRAPH_NAME}"), c.graph)
-    req.URL.Path = strings.ReplaceAll(req.URL.Path, "${GRAPH_NAME}", c.graph)
+    req.Header.Set("Content-Type", "application/json;charset=UTF-8")
     return req
 }
 

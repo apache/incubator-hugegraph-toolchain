@@ -27,6 +27,9 @@ type APIV1 struct {
     Vertex  struct {
         Create
     }
+    Gremlin struct {
+        GremlinPost
+    }
 }
 
 // New creates new API
@@ -37,6 +40,11 @@ func New(t api.Transport) *APIV1 {
             Create
         }{
             Create: newCreateFunc(t),
+        },
+        Gremlin: struct {
+            GremlinPost
+        }{
+            GremlinPost: newGremlinPostFunc(t),
         },
     }
 }
