@@ -39,6 +39,13 @@ type APIV1 struct {
         PropertyKeyDeleteByName
         PropertyKeyUpdateUserdata
     }
+    Vertexlabel struct {
+        VertexlabelGet
+        VertexlabelGetAll
+        VertexlabelCreate
+        VertexlabelDeleteByName
+        VertexlabelUpdateUserdata
+    }
 }
 
 // New creates new API
@@ -70,6 +77,19 @@ func New(t api.Transport) *APIV1 {
             PropertyKeyCreate:         newPropertyKeyCreateFunc(t),
             PropertyKeyDeleteByName:   newPropertyKeyDeleteByNameFunc(t),
             PropertyKeyUpdateUserdata: newPropertyKeyUpdateUserdataFunc(t),
+        },
+        Vertexlabel: struct {
+            VertexlabelGet
+            VertexlabelGetAll
+            VertexlabelCreate
+            VertexlabelDeleteByName
+            VertexlabelUpdateUserdata
+        }{
+            VertexlabelGet:            newVertexlabelGetFunc(t),
+            VertexlabelGetAll:         newVertexlabelGetAllFunc(t),
+            VertexlabelCreate:         newVertexlabelCreateFunc(t),
+            VertexlabelDeleteByName:   newVertexlabelDeleteByNameFunc(t),
+            VertexlabelUpdateUserdata: newVertexlabelUpdateUserdataFunc(t),
         },
     }
 }

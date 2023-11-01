@@ -15,27 +15,23 @@
  * under the License.
  */
 
-package model
+package v1_test
 
-const (
-    PropertyDataTypeInt PropertyDataType = "INT" // data_type int
-
-    PropertyCardinalitySingle PropertyCardinality = "SINGLE" // cardinality single
-
-    ActionAppend    Action = "append"    // append action
-    ActionEliminate Action = "eliminate" // eliminate(remove) action
-
-    IDStrategyDefault IDStrategy = "DEFAULT" // default id_strategy,The default strategy is primary key ID.
+import (
+    "fmt"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
+    "log"
+    "testing"
 )
 
-type PropertyDataType string
-type PropertyCardinality string
-type Action string
-type IDStrategy string
-
-// Vertex models that support generic types
-type Vertex[T any] struct {
-    ID         string
-    Label      string
-    Properties T
+func TestVertexlabelGetAllRequest_Do(t *testing.T) {
+    client, err := hugegraph.NewDefaultCommonClient()
+    if err != nil {
+        log.Println(err)
+    }
+    resp, err := client.Vertexlabel.VertexlabelGetAll()
+    if err != nil {
+        log.Println(err)
+    }
+    fmt.Println(resp.VertexlabelGetAll.Vertexlabels)
 }

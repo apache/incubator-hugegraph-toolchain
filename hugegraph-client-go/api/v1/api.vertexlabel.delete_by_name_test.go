@@ -15,27 +15,12 @@
  * under the License.
  */
 
-package model
+package v1_test
 
-const (
-    PropertyDataTypeInt PropertyDataType = "INT" // data_type int
-
-    PropertyCardinalitySingle PropertyCardinality = "SINGLE" // cardinality single
-
-    ActionAppend    Action = "append"    // append action
-    ActionEliminate Action = "eliminate" // eliminate(remove) action
-
-    IDStrategyDefault IDStrategy = "DEFAULT" // default id_strategy,The default strategy is primary key ID.
+import (
+    "testing"
 )
 
-type PropertyDataType string
-type PropertyCardinality string
-type Action string
-type IDStrategy string
-
-// Vertex models that support generic types
-type Vertex[T any] struct {
-    ID         string
-    Label      string
-    Properties T
+func TestVertexlabelDeleteByNameRequest_Do(t *testing.T) {
+    // this test in TestVertexlabelCreateRequest_Do
 }

@@ -60,17 +60,27 @@ type PropertyKeyCreateRequestData struct {
 }
 
 type PropertyKeyCreateResponse struct {
-    StatusCode         int                           `json:"-"`
-    Header             http.Header                   `json:"-"`
-    Body               io.ReadCloser                 `json:"-"`
-    PropertyKeyCreates PropertyKeyCreateResponseData `json:"versions"`
+    StatusCode int                           `json:"-"`
+    Header     http.Header                   `json:"-"`
+    Body       io.ReadCloser                 `json:"-"`
+    Data       PropertyKeyCreateResponseData `json:"versions"`
 }
 
 type PropertyKeyCreateResponseData struct {
-    PropertyKeyCreate string `json:"version"` // hugegraph version
-    Core              string `json:"core"`    // hugegraph core version
-    Gremlin           string `json:"gremlin"` // hugegraph gremlin version
-    API               string `json:"api"`     // hugegraph api version
+    PropertyKey struct {
+        ID            int           `json:"id"`
+        Name          string        `json:"name"`
+        DataType      string        `json:"data_type"`
+        Cardinality   string        `json:"cardinality"`
+        AggregateType string        `json:"aggregate_type"`
+        WriteType     string        `json:"write_type"`
+        Properties    []interface{} `json:"properties"`
+        Status        string        `json:"status"`
+        UserData      struct {
+            CreateTime string `json:"~create_time"`
+        } `json:"user_data"`
+    } `json:"property_key"`
+    TaskID int `json:"task_id"`
 }
 
 func (r PropertyKeyCreateRequest) Do(ctx context.Context, transport api.Transport) (*PropertyKeyCreateResponse, error) {
@@ -104,19 +114,21 @@ func (r PropertyKeyCreateRequest) Do(ctx context.Context, transport api.Transpor
         return nil, err
     }
 
-    versionResp := &PropertyKeyCreateResponse{}
+    resp := &PropertyKeyCreateResponse{}
+    respData := PropertyKeyCreateResponseData{}
     bytes, err := ioutil.ReadAll(res.Body)
     if err != nil {
         return nil, err
     }
-    err = json.Unmarshal(bytes, versionResp)
+    err = json.Unmarshal(bytes, &respData)
     if err != nil {
         return nil, err
     }
-    versionResp.StatusCode = res.StatusCode
-    versionResp.Header = res.Header
-    versionResp.Body = res.Body
-    return versionResp, nil
+    resp.StatusCode = res.StatusCode
+    resp.Header = res.Header
+    resp.Body = res.Body
+    resp.Data = respData
+    return resp, nil
 }
 
 func (r PropertyKeyCreate) WithReqData(reqData PropertyKeyCreateRequestData) func(request *PropertyKeyCreateRequest) {

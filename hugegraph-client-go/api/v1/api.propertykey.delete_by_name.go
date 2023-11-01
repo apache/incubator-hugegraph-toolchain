@@ -52,17 +52,14 @@ type PropertyKeyDeleteByNameRequest struct {
 }
 
 type PropertyKeyDeleteByNameResponse struct {
-    StatusCode               int                                 `json:"-"`
-    Header                   http.Header                         `json:"-"`
-    Body                     io.ReadCloser                       `json:"-"`
-    PropertyKeyDeleteByNames PropertyKeyDeleteByNameResponseData `json:"versions"`
+    StatusCode int                                 `json:"-"`
+    Header     http.Header                         `json:"-"`
+    Body       io.ReadCloser                       `json:"-"`
+    Data       PropertyKeyDeleteByNameResponseData `json:"versions"`
 }
 
 type PropertyKeyDeleteByNameResponseData struct {
-    PropertyKeyDeleteByName string `json:"version"` // hugegraph version
-    Core                    string `json:"core"`    // hugegraph core version
-    Gremlin                 string `json:"gremlin"` // hugegraph gremlin version
-    API                     string `json:"api"`     // hugegraph api version
+    TaskID int `json:"task_id"`
 }
 
 func (r PropertyKeyDeleteByNameRequest) Do(ctx context.Context, transport api.Transport) (*PropertyKeyDeleteByNameResponse, error) {
@@ -83,19 +80,21 @@ func (r PropertyKeyDeleteByNameRequest) Do(ctx context.Context, transport api.Tr
         return nil, err
     }
 
-    versionResp := &PropertyKeyDeleteByNameResponse{}
+    resp := &PropertyKeyDeleteByNameResponse{}
+    respData := PropertyKeyDeleteByNameResponseData{}
     bytes, err := ioutil.ReadAll(res.Body)
     if err != nil {
         return nil, err
     }
-    err = json.Unmarshal(bytes, versionResp)
+    err = json.Unmarshal(bytes, &respData)
     if err != nil {
         return nil, err
     }
-    versionResp.StatusCode = res.StatusCode
-    versionResp.Header = res.Header
-    versionResp.Body = res.Body
-    return versionResp, nil
+    resp.StatusCode = res.StatusCode
+    resp.Header = res.Header
+    resp.Body = res.Body
+    resp.Data = respData
+    return resp, nil
 }
 
 func (p PropertyKeyDeleteByName) WithName(name string) func(request *PropertyKeyDeleteByNameRequest) {
