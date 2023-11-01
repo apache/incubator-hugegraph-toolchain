@@ -24,11 +24,18 @@ import (
 // API contains the Hugegraph APIs
 type APIV1 struct {
     Version Version
+    Schema  Schema
     Vertex  struct {
         Create
     }
     Gremlin struct {
         GremlinPost
+    }
+    PropertyKey struct {
+        PropertyKeyGetAll
+        PropertyKeyGetByName
+        PropertyKeyCreate
+        PropertyKeyDeleteByName
     }
 }
 
@@ -36,6 +43,7 @@ type APIV1 struct {
 func New(t api.Transport) *APIV1 {
     return &APIV1{
         Version: newVersionFunc(t),
+        Schema:  newSchemaFunc(t),
         Vertex: struct {
             Create
         }{
@@ -45,6 +53,17 @@ func New(t api.Transport) *APIV1 {
             GremlinPost
         }{
             GremlinPost: newGremlinPostFunc(t),
+        },
+        PropertyKey: struct {
+            PropertyKeyGetAll
+            PropertyKeyGetByName
+            PropertyKeyCreate
+            PropertyKeyDeleteByName
+        }{
+            PropertyKeyGetAll:         newPropertyKeyGetAllFunc(t),
+            PropertyKeyGetByName:      newPropertyKeyGetByNameFunc(t),
+            PropertyKeyCreate:         newPropertyKeyCreateFunc(t),
+            PropertyKeyDeleteByName:   newPropertyKeyDeleteByNameFunc(t),
         },
     }
 }

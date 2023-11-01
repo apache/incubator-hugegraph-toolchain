@@ -15,21 +15,23 @@
  * under the License.
  */
 
-package model
+package v1_test
 
-const (
-    PropertyDataTypeInt       PropertyDataType    = "INT"    // data_type int
-    PropertyCardinalitySingle PropertyCardinality = "SINGLE" // cardinality single
-    ActionAppend              Action              = "append" // append action
+import (
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
+    "log"
+    "testing"
 )
 
-type PropertyDataType string
-type PropertyCardinality string
-type Action string
-
-// Vertex models that support generic types
-type Vertex[T any] struct {
-    ID         string
-    Label      string
-    Properties T
+func TestPropertyKeyGetByNameRequest_Do(t *testing.T) {
+    client, err := hugegraph.NewDefaultCommonClient()
+    if err != nil {
+        log.Println(err)
+    }
+    _, err = client.PropertyKey.PropertyKeyGetByName(
+        client.PropertyKey.PropertyKeyGetByName.WithName("price"),
+    )
+    if err != nil {
+        log.Println(err)
+    }
 }

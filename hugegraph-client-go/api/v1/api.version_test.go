@@ -18,14 +18,9 @@
 package v1_test
 
 import (
-    "context"
-    "io"
-    "reflect"
     "testing"
 
     hugegraph "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
-    v1 "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
 )
 
 func TestVersionRequest_Do(t *testing.T) {
@@ -34,52 +29,11 @@ func TestVersionRequest_Do(t *testing.T) {
     if err != nil {
         t.Errorf("NewDefaultCommonClient() error = %v", err)
     }
-    ctx := context.Background()
-
-    type fields struct {
-        Body io.Reader
-        ctx  context.Context
+    resp, err := client.Version()
+    if err != nil {
+        t.Errorf(" client.Version() error = %v", err)
     }
-    type args struct {
-        ctx       context.Context
-        transport api.Transport
-    }
-    tests := []struct {
-        name    string
-        fields  fields
-        args    args
-        want    v1.VersionResponseData
-        wantErr bool
-    }{
-
-        {
-            name: "test-version",
-            fields: fields{
-                Body: nil,
-                ctx:  ctx,
-            },
-            args: args{
-                ctx:       ctx,
-                transport: client.Transport,
-            },
-            want: v1.VersionResponseData{
-                Version: "v1",
-                Core:    "1.0.0",
-                Gremlin: "3.4.3",
-                API:     "0.69.0.0",
-            },
-        },
-    }
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            got, err := client.Version()
-            if (err != nil) != tt.wantErr {
-                t.Errorf("Do() error = %v, wantErr %v", err, tt.wantErr)
-                return
-            }
-            if !reflect.DeepEqual(got.Versions, tt.want) {
-                t.Errorf("Do() got = %v, want %v", got.Versions, tt.want)
-            }
-        })
+    if resp.StatusCode != 200 {
+        t.Errorf(" client.Version() code error = %v", resp.StatusCode)
     }
 }

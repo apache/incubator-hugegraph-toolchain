@@ -15,21 +15,12 @@
  * under the License.
  */
 
-package model
+package v1_test
 
-const (
-    PropertyDataTypeInt       PropertyDataType    = "INT"    // data_type int
-    PropertyCardinalitySingle PropertyCardinality = "SINGLE" // cardinality single
-    ActionAppend              Action              = "append" // append action
+import (
+    "testing"
 )
 
-type PropertyDataType string
-type PropertyCardinality string
-type Action string
-
-// Vertex models that support generic types
-type Vertex[T any] struct {
-    ID         string
-    Label      string
-    Properties T
+func TestPropertyKeyDeleteByNameRequest_Do(t *testing.T) {
+    // this test in TestPropertyKeyCreateRequest_Do
 }

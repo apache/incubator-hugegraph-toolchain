@@ -20,22 +20,42 @@ package v1_test
 import (
     "fmt"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
+    v1 "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/model"
     "log"
+    "math/rand"
     "testing"
+    "time"
 )
 
-func TestGremlinPostRequest_Do(t *testing.T) {
-
+func TestPropertyKeyCreateRequest_Do(t *testing.T) {
     client, err := hugegraph.NewDefaultCommonClient()
     if err != nil {
         log.Println(err)
     }
-    resp, err := client.Gremlin.GremlinPost(
-        client.Gremlin.GremlinPost.WithGremlin("hugegraph.traversal().V().limit(3)"),
+    rand.Seed(time.Now().UnixNano())
+    name := fmt.Sprintf("testProperty%d", rand.Intn(99999))
+    resp, err := client.PropertyKey.PropertyKeyCreate(
+        client.PropertyKey.PropertyKeyCreate.WithReqData(
+            v1.PropertyKeyCreateRequestData{
+                Name:        name,
+                DataType:    model.PropertyDataTypeInt,
+                Cardinality: model.PropertyCardinalitySingle,
+            },
+        ),
     )
     if err != nil {
-        log.Fatalln(err)
+        log.Println(err)
     }
-    fmt.Println(resp.Data.Result.Data)
 
+    fmt.Println(resp)
+
+    // propertyKey delete after create
+    respDelete, err := client.PropertyKey.PropertyKeyDeleteByName(
+        client.PropertyKey.PropertyKeyDeleteByName.WithName(name),
+    )
+    if err != nil {
+        log.Println(err)
+    }
+    fmt.Println(respDelete)
 }
