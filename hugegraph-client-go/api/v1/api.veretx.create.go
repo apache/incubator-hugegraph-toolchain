@@ -79,7 +79,7 @@ func (r CreateRequest) Do(ctx context.Context, transport api.Transport) (*Create
         url = fmt.Sprintf("/graphs/%s/graph/vertices", config.Graph)
     }
 
-    req, err := api.NewRequest("POST", url, r.Body)
+    req, err := api.NewRequest("POST", url,nil, r.Body)
     if err != nil {
         return nil, err
     }

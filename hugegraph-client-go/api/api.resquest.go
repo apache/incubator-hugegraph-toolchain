@@ -41,10 +41,17 @@ type Request interface {
 }
 
 // newRequest creates an HTTP request.
-func NewRequest(method, path string, body io.Reader) (*http.Request, error) {
+func NewRequest(method, path string, params *url.Values, body io.Reader) (*http.Request, error) {
+
+    u := &url.URL{
+        Path: path,
+    }
+    if params != nil {
+        u.RawQuery = params.Encode()
+    }
     r := http.Request{
         Method:     method,
-        URL:        &url.URL{Path: path},
+        URL:        u,
         Proto:      "HTTP/1.1",
         ProtoMajor: 1,
         ProtoMinor: 1,

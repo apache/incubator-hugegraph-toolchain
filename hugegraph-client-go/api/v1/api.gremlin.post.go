@@ -115,7 +115,7 @@ func (g GremlinPostRequest) Do(ctx context.Context, transport api.Transport) (*G
     }
 
     reader := strings.NewReader(string(byteBody))
-    req, _ := api.NewRequest("POST", "/gremlin", reader)
+    req, _ := api.NewRequest("POST", "/gremlin", nil, reader)
 
     if ctx != nil {
         req = req.WithContext(ctx)

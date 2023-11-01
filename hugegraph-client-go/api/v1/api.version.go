@@ -66,7 +66,7 @@ type VersionResponseData struct {
 
 func (r VersionRequest) Do(ctx context.Context, transport api.Transport) (*VersionResponse, error) {
 
-    req, err := api.NewRequest("GET", "/versions", r.Body)
+    req, err := api.NewRequest("GET", "/versions", nil,r.Body)
     if err != nil {
         return nil, err
     }

@@ -70,7 +70,7 @@ type PropertyKeyGetAllResponseData struct {
 
 func (r PropertyKeyGetAllRequest) Do(ctx context.Context, transport api.Transport) (*PropertyKeyGetAllResponse, error) {
 
-    req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/propertykeys", transport.GetConfig().Graph), r.Body)
+    req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/propertykeys", transport.GetConfig().Graph), nil, r.Body)
     if err != nil {
         return nil, err
     }

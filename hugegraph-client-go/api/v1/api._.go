@@ -29,6 +29,7 @@ type APIV1 struct {
         Create
     }
     Gremlin struct {
+        GremlinGet
         GremlinPost
     }
     PropertyKey struct {
@@ -36,6 +37,7 @@ type APIV1 struct {
         PropertyKeyGetByName
         PropertyKeyCreate
         PropertyKeyDeleteByName
+        PropertyKeyUpdateUserdata
     }
 }
 
@@ -50,8 +52,10 @@ func New(t api.Transport) *APIV1 {
             Create: newCreateFunc(t),
         },
         Gremlin: struct {
+            GremlinGet
             GremlinPost
         }{
+            GremlinGet:  newGremlinGetFunc(t),
             GremlinPost: newGremlinPostFunc(t),
         },
         PropertyKey: struct {
@@ -59,11 +63,13 @@ func New(t api.Transport) *APIV1 {
             PropertyKeyGetByName
             PropertyKeyCreate
             PropertyKeyDeleteByName
+            PropertyKeyUpdateUserdata
         }{
             PropertyKeyGetAll:         newPropertyKeyGetAllFunc(t),
             PropertyKeyGetByName:      newPropertyKeyGetByNameFunc(t),
             PropertyKeyCreate:         newPropertyKeyCreateFunc(t),
             PropertyKeyDeleteByName:   newPropertyKeyDeleteByNameFunc(t),
+            PropertyKeyUpdateUserdata: newPropertyKeyUpdateUserdataFunc(t),
         },
     }
 }

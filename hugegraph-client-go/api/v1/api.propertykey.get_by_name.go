@@ -80,7 +80,7 @@ func (r PropertyKeyGetByNameRequest) Do(ctx context.Context, transport api.Trans
         return nil, errors.New("get_by_name must set name")
     }
 
-    req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/propertykeys/%s", transport.GetConfig().Graph, r.name), r.Body)
+    req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/propertykeys/%s", transport.GetConfig().Graph, r.name), nil, r.Body)
     if err != nil {
         return nil, err
     }

@@ -91,7 +91,7 @@ func (r PropertyKeyCreateRequest) Do(ctx context.Context, transport api.Transpor
     }
     reader := strings.NewReader(string(byteBody))
 
-    req, err := api.NewRequest("POST", fmt.Sprintf("/graphs/%s/schema/propertykeys", transport.GetConfig().Graph), reader)
+    req, err := api.NewRequest("POST", fmt.Sprintf("/graphs/%s/schema/propertykeys", transport.GetConfig().Graph), nil, reader)
     if err != nil {
         return nil, err
     }

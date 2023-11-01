@@ -70,7 +70,7 @@ func (r PropertyKeyDeleteByNameRequest) Do(ctx context.Context, transport api.Tr
     if len(r.name) <= 0 {
         return nil, errors.New("delete by name ,please set name")
     }
-    req, err := api.NewRequest("DELETE", fmt.Sprintf("/graphs/%s/schema/propertykeys/%s", transport.GetConfig().Graph, r.name), r.Body)
+    req, err := api.NewRequest("DELETE", fmt.Sprintf("/graphs/%s/schema/propertykeys/%s", transport.GetConfig().Graph, r.name), nil, r.Body)
     if err != nil {
         return nil, err
     }
