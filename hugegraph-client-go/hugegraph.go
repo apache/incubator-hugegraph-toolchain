@@ -54,8 +54,8 @@ func NewDefaultCommonClient() (*CommonClient, error) {
         Port:       8080,
         GraphSpace: "",
         Graph:      "hugegraph",
-        Username:   "",
-        Password:   "",
+        Username:   "admin",
+        Password:   "pa",
         Logger: &hgtransport.ColorLogger{
             Output:             os.Stdout,
             EnableRequestBody:  true,
