@@ -20,6 +20,7 @@ package v1
 import (
     "context"
     "encoding/json"
+    "errors"
     "fmt"
     "io"
     "io/ioutil"
@@ -29,12 +30,12 @@ import (
 )
 
 // ----- API Definition -------------------------------------------------------
-//  Get all PropertyKeys of HugeGraph
+// Delete EdgeLabel by name
 //
-// See full documentation at https://hugegraph.apache.org/docs/clients/restful-api/propertykey/#123-get-all-propertykeys
-func newPropertyKeyGetAllFunc(t api.Transport) PropertyKeyGetAll {
-    return func(o ...func(*PropertyKeyGetAllRequest)) (*PropertyKeyGetAllResponse, error) {
-        var r = PropertyKeyGetAllRequest{}
+// See full documentation at https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/#145-delete-edgelabel-by-name
+func newEdgelabelDeleteByNameFunc(t api.Transport) EdgelabelDeleteByName {
+    return func(o ...func(*EdgelabelDeleteByNameRequest)) (*EdgelabelDeleteByNameResponse, error) {
+        var r = EdgelabelDeleteByNameRequest{}
         for _, f := range o {
             f(&r)
         }
@@ -42,35 +43,31 @@ func newPropertyKeyGetAllFunc(t api.Transport) PropertyKeyGetAll {
     }
 }
 
-type PropertyKeyGetAll func(o ...func(*PropertyKeyGetAllRequest)) (*PropertyKeyGetAllResponse, error)
+type EdgelabelDeleteByName func(o ...func(*EdgelabelDeleteByNameRequest)) (*EdgelabelDeleteByNameResponse, error)
 
-type PropertyKeyGetAllRequest struct {
+type EdgelabelDeleteByNameRequest struct {
     Body io.Reader
     ctx  context.Context
+    name string
 }
 
-type PropertyKeyGetAllResponse struct {
-    StatusCode        int                           `json:"-"`
-    Header            http.Header                   `json:"-"`
-    Body              io.ReadCloser                 `json:"-"`
-    PropertyKeyGetAll PropertyKeyGetAllResponseData `json:"-"`
+type EdgelabelDeleteByNameResponse struct {
+    StatusCode int                               `json:"-"`
+    Header     http.Header                       `json:"-"`
+    Body       io.ReadCloser                     `json:"-"`
+    Data       EdgelabelDeleteByNameResponseData `json:"-"`
 }
 
-type PropertyKeyGetAllResponseData struct {
-    Propertykeys []struct {
-        ID          int           `json:"id"`
-        Name        string        `json:"name"`
-        DataType    string        `json:"data_type"`
-        Cardinality string        `json:"cardinality"`
-        Properties  []interface{} `json:"properties"`
-        UserData    struct {
-        } `json:"user_data"`
-    } `json:"propertykeys"`
+type EdgelabelDeleteByNameResponseData struct {
+    TaskID int `json:"task_id"`
 }
 
-func (r PropertyKeyGetAllRequest) Do(ctx context.Context, transport api.Transport) (*PropertyKeyGetAllResponse, error) {
+func (r EdgelabelDeleteByNameRequest) Do(ctx context.Context, transport api.Transport) (*EdgelabelDeleteByNameResponse, error) {
 
-    req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/propertykeys", transport.GetConfig().Graph), nil, r.Body)
+    if len(r.name) <= 0 {
+        return nil, errors.New("delete by name ,please set name")
+    }
+    req, err := api.NewRequest("DELETE", fmt.Sprintf("/graphs/%s/schema/edgelabels/%s", transport.GetConfig().Graph, r.name), nil, r.Body)
     if err != nil {
         return nil, err
     }
@@ -83,12 +80,12 @@ func (r PropertyKeyGetAllRequest) Do(ctx context.Context, transport api.Transpor
         return nil, err
     }
 
-    resp := &PropertyKeyGetAllResponse{}
+    resp := &EdgelabelDeleteByNameResponse{}
+    respData := EdgelabelDeleteByNameResponseData{}
     bytes, err := ioutil.ReadAll(res.Body)
     if err != nil {
         return nil, err
     }
-    respData := PropertyKeyGetAllResponseData{}
     err = json.Unmarshal(bytes, &respData)
     if err != nil {
         return nil, err
@@ -96,6 +93,12 @@ func (r PropertyKeyGetAllRequest) Do(ctx context.Context, transport api.Transpor
     resp.StatusCode = res.StatusCode
     resp.Header = res.Header
     resp.Body = res.Body
-    resp.PropertyKeyGetAll = respData
+    resp.Data = respData
     return resp, nil
+}
+
+func (p EdgelabelDeleteByName) WithName(name string) func(request *EdgelabelDeleteByNameRequest) {
+    return func(r *EdgelabelDeleteByNameRequest) {
+        r.name = name
+    }
 }

@@ -18,23 +18,30 @@
 package v1_test
 
 import (
-    "fmt"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-    "log"
     "testing"
 )
 
-func TestGremlinGetRequest_Do(t *testing.T) {
-
-    client, err := hugegraph.NewDefaultCommonClient()
-    if err != nil {
-        log.Println(err)
-    }
-    resp, err := client.Gremlin.GremlinGet(
-        client.Gremlin.GremlinGet.WithGremlin("hugegraph.traversal().V().limit(3)"),
-    )
-    if err != nil {
-        log.Fatalln(err)
-    }
-    fmt.Println(resp.Body)
+func TestEdgelabelCreateRequest_Do(t *testing.T) {
+    //client, err := hugegraph.NewDefaultCommonClient()
+    //if err != nil {
+    //    log.Println(err)
+    //}
+    //respCreate, err := client.Edgelabel.EdgelabelCreate(
+    //    client.Edgelabel.EdgelabelCreate.WithReqData(
+    //        v1.EdgelabelCreateRequestData{
+    //            Name:             "",
+    //            SourceLabel:      "",
+    //            TargetLabel:      "",
+    //            Frequency:        "",
+    //            Properties:       nil,
+    //            SortKeys:         nil,
+    //            NullableKeys:     nil,
+    //            EnableLabelIndex: false,
+    //        },
+    //    ),
+    //)
+    //if err != nil {
+    //    log.Println(err)
+    //}
+    //fmt.Println(respCreate)
 }

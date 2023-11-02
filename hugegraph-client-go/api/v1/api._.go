@@ -46,6 +46,9 @@ type APIV1 struct {
         VertexlabelDeleteByName
         VertexlabelUpdateUserdata
     }
+    Edgelabel struct {
+        EdgelabelCreate
+    }
 }
 
 // New creates new API
@@ -90,6 +93,11 @@ func New(t api.Transport) *APIV1 {
             VertexlabelCreate:         newVertexlabelCreateFunc(t),
             VertexlabelDeleteByName:   newVertexlabelDeleteByNameFunc(t),
             VertexlabelUpdateUserdata: newVertexlabelUpdateUserdataFunc(t),
+        },
+        Edgelabel: struct {
+            EdgelabelCreate
+        }{
+            EdgelabelCreate: newEdgelabelCreateFunc(t),
         },
     }
 }

@@ -28,10 +28,13 @@ func TestPropertyKeyGetByNameRequest_Do(t *testing.T) {
     if err != nil {
         log.Println(err)
     }
-    _, err = client.PropertyKey.PropertyKeyGetByName(
+    resp, err := client.PropertyKey.PropertyKeyGetByName(
         client.PropertyKey.PropertyKeyGetByName.WithName("price"),
     )
     if err != nil {
         log.Println(err)
+    }
+    if resp.StatusCode != 200 {
+        t.Error("client.PropertyKey.PropertyKeyGetByName error ")
     }
 }
