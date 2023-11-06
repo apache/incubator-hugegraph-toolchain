@@ -7,7 +7,7 @@
 
 hugegraph-loader is a customizable command line utility for loading small to medium size graph datasets into the HugeGraph database from multiple data sources with various input formats.
 
-## Features
+## 1. Features
 
 - Multiple data sources, such as local file(path), HDFS file(path), MySQL
 - Various input formats, such as json, csv, and text with any delimiters.
@@ -15,7 +15,92 @@ hugegraph-loader is a customizable command line utility for loading small to med
 - Detecting schema from data automatically, reduce the complex work of schema management.
 - Advanced customized operations with groovy script, users can configure how to construct vertices and edges by themselves.
 
-## Building
+## 2. Use Docker(Recommand)
+
+- deploy `loader` with Docker
+    - Docker run
+    - Docker-compose
+- Load data in docker container `loader`
+
+### 2.1 Start with Docker
+
+#### 2.1.1 Docker run
+
+Use the command `docker run -itd --name loader hugegraph/loader` to start loader.
+
+If you want to load your data, you can mount the data folder like `-v /path/to/data/file:/loader/file`
+
+
+#### 2.1.2 Docker-compose
+
+The example `docker-compose.yml` is [here](./docker/example/docker-compose.yml)
+
+If you want to load your data, you can mount the data folder like:
+```yaml
+volumes:
+    - /path/to/data/file:/loader/file
+```
+
+Use the command `docker-compose up -d` to deploy `loader` with `server` and `hubble`.
+
+### 2.2 Load data with docker container
+
+#### 2.2.1 enter the docker container
+
+```bash
+docker exec -it loader bash
+```
+
+#### 2.2.2  load data with `loader`
+
+If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`)
+
+```bash
+sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
+```
+    
+If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
+
+Then we can see the result.
+
+```bash
+HugeGraphLoader worked in NORMAL MODE
+vertices/edges loaded this time : 8/6
+--------------------------------------------------
+count metrics
+    input read success            : 14                  
+    input read failure            : 0                   
+    vertex parse success          : 8                   
+    vertex parse failure          : 0                   
+    vertex insert success         : 8                   
+    vertex insert failure         : 0                   
+    edge parse success            : 6                   
+    edge parse failure            : 0                   
+    edge insert success           : 6                   
+    edge insert failure           : 0                   
+--------------------------------------------------
+meter metrics
+    total time                    : 0.199s              
+    read time                     : 0.046s              
+    load time                     : 0.153s              
+    vertex load time              : 0.077s              
+    vertex load rate(vertices/s)  : 103                 
+    edge load time                : 0.112s              
+    edge load rate(edges/s)       : 53   
+```
+
+Then you can use `curl` or `hubble` to see the result.
+
+```bash
+> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
+{"vertices":[{"id":1,"label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328.0}},{"id":2,"label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199.0}},{"id":"1:tom","label":"person","type":"vertex","properties":{"name":"tom"}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"1:li,nary","label":"person","type":"vertex","properties":{"name":"li,nary","age":26,"city":"Wu,han"}}]}
+```
+
+If you want to check the edges, use `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`
+
+## 3. Building
+
+You can also build the `loader` by yourself.
 
 Required:
 
@@ -34,10 +119,10 @@ To build with default tests:
 mvn clean install
 ```
 
-## Doc
+## 4. Doc
 
 The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it. 
 
-## License
+## 5. License
 
 hugegraph-loader is licensed under Apache 2.0 License.
