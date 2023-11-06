@@ -1,0 +1,21 @@
+version: '3'
+services:
+  server:
+    image: hugegraph/hugegraph
+    container_name: graph
+    ports:
+      - 18081:8080
+
+  hubble:
+    image: hugegraph/hubble
+    container_name: hubble
+    ports:
+      - 8088:8088
+
+  loader:
+    image: hugegraph/loader
+    container_name: loader
+    # mount your own data here
+    # volumes:
+      # - /path/to/data/file:/loader/file
+    tty: true
