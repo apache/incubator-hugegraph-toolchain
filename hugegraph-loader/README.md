@@ -15,7 +15,7 @@ hugegraph-loader is a customizable command line utility for loading small to med
 - Detecting schema from data automatically, reduce the complex work of schema management.
 - Advanced customized operations with groovy script, users can configure how to construct vertices and edges by themselves.
 
-## 2. Use Docker(Recommand)
+## 2. Usage for Docker(Recommand)
 
 - deploy `loader` with Docker
     - Docker run
@@ -98,7 +98,28 @@ Then you can use `curl` or `hubble` to see the result.
 
 If you want to check the edges, use `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`
 
-## 3. Building
+## 3. Use loader directly
+
+> notice: currently, version is `1.0.0`
+
+Download and unzip the compiled archive
+
+```bash
+wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+tar zxf *hugegraph*.tar.gz
+```
+
+Then, load data with example file:
+
+```bash
+cd apache-hugegraph-toolchain-incubating-{version}
+cd apache-hugegraph-loader-incubating-{version}
+sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy
+```
+
+More details is in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/)
+
+## 4. Building
 
 You can also build the `loader` by yourself.
 
@@ -119,10 +140,10 @@ To build with default tests:
 mvn clean install
 ```
 
-## 4. Doc
+## 5. Doc
 
 The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it. 
 
-## 5. License
+## 6. License
 
 hugegraph-loader is licensed under Apache 2.0 License.
