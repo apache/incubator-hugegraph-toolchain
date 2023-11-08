@@ -35,4 +35,3 @@ services:
     # mount your own data here
     # volumes:
       # - /path/to/data/file:/loader/file
-    tty: true
