@@ -48,4 +48,4 @@ RUN set -x \
 VOLUME /loader
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD [ "/bin/bash" ]
+CMD ["tail","-f","/dev/null"]

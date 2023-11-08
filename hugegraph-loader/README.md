@@ -17,7 +17,7 @@ hugegraph-loader is a customizable command line utility for loading small to med
 
 ## 2. Usage for Docker(Recommand)
 
-- deploy `loader` with Docker
+- Run `loader` with Docker
     - Docker run
     - Docker-compose
 - Load data in docker container `loader`
@@ -45,21 +45,15 @@ Use the command `docker-compose up -d` to deploy `loader` with `server` and `hub
 
 ### 2.2 Load data with docker container
 
-#### 2.2.1 enter the docker container
+#### 2.2.1 load data with docker
+
+> If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`
+>
+> If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
 
 ```bash
-docker exec -it loader bash
+docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
 ```
-
-#### 2.2.2  load data with `loader`
-
-If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`)
-
-```bash
-sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
-```
-    
-If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
 
 Then we can see the result.
 
@@ -97,6 +91,22 @@ Then you can use `curl` or `hubble` to see the result.
 ```
 
 If you want to check the edges, use `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`
+
+#### 2.2.2 enter the docker container to load data
+
+If you want to do some additional operation in the container, you can enter the container as follows:
+
+```bash
+docker exec -it loader bash
+```
+
+Then, you can load data as follows:
+
+```bash
+sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
+```
+
+The result is as same as above.
 
 ## 3. Use loader directly
 
