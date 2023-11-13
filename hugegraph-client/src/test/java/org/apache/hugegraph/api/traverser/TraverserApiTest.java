@@ -49,6 +49,7 @@ public class TraverserApiTest extends BaseApiTest {
 
     protected static VerticesAPI verticesAPI;
     protected static EdgesAPI edgesAPI;
+    protected static EdgeExistenceAPI edgeExistenceAPI;
 
     @BeforeClass
     public static void init() {
@@ -82,5 +83,7 @@ public class TraverserApiTest extends BaseApiTest {
 
         verticesAPI = new VerticesAPI(client, GRAPH);
         edgesAPI = new EdgesAPI(client, GRAPH);
+
+        edgeExistenceAPI = new EdgeExistenceAPI(client, GRAPH);
     }
 }

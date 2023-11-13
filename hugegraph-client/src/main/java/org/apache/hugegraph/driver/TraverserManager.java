@@ -45,6 +45,7 @@ import org.apache.hugegraph.api.traverser.SingleSourceShortestPathAPI;
 import org.apache.hugegraph.api.traverser.TemplatePathsAPI;
 import org.apache.hugegraph.api.traverser.VerticesAPI;
 import org.apache.hugegraph.api.traverser.WeightedShortestPathAPI;
+import org.apache.hugegraph.api.traverser.EdgeExistenceAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
@@ -98,6 +99,7 @@ public class TraverserManager {
     private PersonalRankAPI personalRankAPI;
     private VerticesAPI verticesAPI;
     private EdgesAPI edgesAPI;
+    private EdgeExistenceAPI edgeExistenceAPI;
 
     public TraverserManager(RestClient client, GraphManager graphManager) {
         this.graphManager = graphManager;
@@ -124,6 +126,7 @@ public class TraverserManager {
         this.personalRankAPI = new PersonalRankAPI(client, graph);
         this.verticesAPI = new VerticesAPI(client, graph);
         this.edgesAPI = new EdgesAPI(client, graph);
+        this.edgeExistenceAPI = new EdgeExistenceAPI(client, graph);
     }
 
     public double jaccardSimilarity(Object vertexId, Object otherId) {
@@ -537,5 +540,11 @@ public class TraverserManager {
         return new GraphIterator<>(this.graphManager, sizePerPage, (page) -> {
             return this.edges(shard, page, sizePerPage);
         });
+    }
+
+    public List<Edge> edgeExistence(Object sourceId, Object targetId, String edgeLabel,
+                                    String sortValues, long limit){
+        return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel,
+                sortValues, limit);
     }
 }
