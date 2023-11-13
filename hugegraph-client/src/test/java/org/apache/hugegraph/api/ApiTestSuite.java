@@ -44,6 +44,7 @@ import org.apache.hugegraph.api.traverser.ShortestPathApiTest;
 import org.apache.hugegraph.api.traverser.SingleSourceShortestPathApiTest;
 import org.apache.hugegraph.api.traverser.TemplatePathsApiTest;
 import org.apache.hugegraph.api.traverser.WeightedShortestPathApiTest;
+import org.apache.hugegraph.api.traverser.EdgeExistenceAPITest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -84,6 +85,7 @@ import org.junit.runners.Suite;
         FusiformSimilarityApiTest.class,
         NeighborRankApiTest.class,
         PersonalRankApiTest.class,
+        EdgeExistenceAPITest.class,
 
         TargetApiTest.class,
         GroupApiTest.class,
