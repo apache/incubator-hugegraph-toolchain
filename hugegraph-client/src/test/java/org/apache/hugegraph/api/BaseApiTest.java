@@ -31,6 +31,7 @@ import org.apache.hugegraph.api.schema.PropertyKeyAPI;
 import org.apache.hugegraph.api.schema.SchemaAPI;
 import org.apache.hugegraph.api.schema.VertexLabelAPI;
 import org.apache.hugegraph.api.task.TaskAPI;
+import org.apache.hugegraph.api.traverser.EdgeExistenceAPI;
 import org.apache.hugegraph.api.variables.VariablesAPI;
 import org.apache.hugegraph.api.version.VersionAPI;
 import org.apache.hugegraph.client.RestClient;
