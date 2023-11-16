@@ -20,12 +20,15 @@ package hugegraph
 import (
     "errors"
     "fmt"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/gremlin"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/propertykey"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/version"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/vertex"
     "net"
     "net/http"
     "net/url"
     "os"
 
-    v1 "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/hgtransport"
 )
 
@@ -42,10 +45,13 @@ type Config struct {
 }
 
 type CommonClient struct {
-    *v1.APIV1
-    Transport  hgtransport.Interface
-    Graph      string
-    GraphSpace string
+    Vertex      *vertex.Vertex
+    Gremlin     *gremlin.Gremlin
+    Propertykey *propertykey.PropertyKey
+    Verison     version.Version
+    Transport   hgtransport.Interface
+    Graph       string
+    GraphSpace  string
 }
 
 func NewDefaultCommonClient() (*CommonClient, error) {
@@ -90,9 +96,12 @@ func NewCommonClient(cfg Config) (*CommonClient, error) {
     })
 
     return &CommonClient{
-        APIV1:      v1.New(tp),
-        Transport:  tp,
-        Graph:      cfg.Graph,
-        GraphSpace: cfg.GraphSpace,
+        Vertex:      vertex.New(tp),
+        Gremlin:     gremlin.New(tp),
+        Propertykey: propertykey.New(tp),
+        Verison:     version.New(tp),
+        Transport:   tp,
+        Graph:       cfg.Graph,
+        GraphSpace:  cfg.GraphSpace,
     }, nil
 }
