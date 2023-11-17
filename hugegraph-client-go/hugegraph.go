@@ -24,6 +24,7 @@ import (
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/propertykey"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/version"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/vertex"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/vertexlabel"
     "net"
     "net/http"
     "net/url"
@@ -48,6 +49,7 @@ type CommonClient struct {
     Vertex      *vertex.Vertex
     Gremlin     *gremlin.Gremlin
     Propertykey *propertykey.PropertyKey
+    VertexLabel *vertexlabel.VertexLabel
     Verison     version.Version
     Transport   hgtransport.Interface
     Graph       string
@@ -99,6 +101,7 @@ func NewCommonClient(cfg Config) (*CommonClient, error) {
         Vertex:      vertex.New(tp),
         Gremlin:     gremlin.New(tp),
         Propertykey: propertykey.New(tp),
+        VertexLabel: vertexlabel.New(tp),
         Verison:     version.New(tp),
         Transport:   tp,
         Graph:       cfg.Graph,

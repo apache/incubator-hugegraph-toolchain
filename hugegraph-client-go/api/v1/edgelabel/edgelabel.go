@@ -15,28 +15,47 @@
  * under the License.
  */
 
-package v1
+
+package edgelabel
 
 import (
     "context"
     "encoding/json"
     "errors"
     "fmt"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
     "io"
     "io/ioutil"
     "net/http"
     "strings"
-
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
 )
 
-// ----- API Definition -------------------------------------------------------
-// Create an EdgeLabel
-//
-// See full documentation at https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/#141-create-an-edgelabel
-func newEdgelabelCreateFunc(t api.Transport) EdgelabelCreate {
-    return func(o ...func(*EdgelabelCreateRequest)) (*EdgelabelCreateResponse, error) {
-        var r = EdgelabelCreateRequest{}
+type Edgelabel struct {
+    Create
+    DeleteByName
+}
+
+func New(t api.Transport) *Edgelabel {
+    return &Edgelabel{
+        // Create https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/#141-create-an-edgelabel
+        Create: newCreateFunc(t),
+        // DeleteByName https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/#145-delete-edgelabel-by-name
+        DeleteByName: newDeleteByNameFunc(t),
+    }
+}
+
+func newCreateFunc(t api.Transport) Create {
+    return func(o ...func(*CreateRequest)) (*CreateResponse, error) {
+        var r = CreateRequest{}
+        for _, f := range o {
+            f(&r)
+        }
+        return r.Do(r.ctx, t)
+    }
+}
+func newDeleteByNameFunc(t api.Transport) DeleteByName {
+    return func(o ...func(*DeleteByNameRequest)) (*DeleteByNameResponse, error) {
+        var r = DeleteByNameRequest{}
         for _, f := range o {
             f(&r)
         }
@@ -44,15 +63,15 @@ func newEdgelabelCreateFunc(t api.Transport) EdgelabelCreate {
     }
 }
 
-type EdgelabelCreate func(o ...func(*EdgelabelCreateRequest)) (*EdgelabelCreateResponse, error)
+type Create func(o ...func(*CreateRequest)) (*CreateResponse, error)
+type DeleteByName func(o ...func(*DeleteByNameRequest)) (*DeleteByNameResponse, error)
 
-type EdgelabelCreateRequest struct {
+type CreateRequest struct {
     Body    io.Reader
     ctx     context.Context
-    reqData EdgelabelCreateRequestData
+    reqData CreateRequestData
 }
-
-type EdgelabelCreateRequestData struct {
+type CreateRequestData struct {
     Name             string   `json:"name"`
     SourceLabel      string   `json:"source_label"`
     TargetLabel      string   `json:"target_label"`
@@ -62,15 +81,13 @@ type EdgelabelCreateRequestData struct {
     NullableKeys     []string `json:"nullable_keys"`
     EnableLabelIndex bool     `json:"enable_label_index"`
 }
-
-type EdgelabelCreateResponse struct {
-    StatusCode int                         `json:"-"`
-    Header     http.Header                 `json:"-"`
-    Body       io.ReadCloser               `json:"-"`
-    RespData   EdgelabelCreateResponseData `json:"-"`
+type CreateResponse struct {
+    StatusCode int                `json:"-"`
+    Header     http.Header        `json:"-"`
+    Body       io.ReadCloser      `json:"-"`
+    RespData   CreateResponseData `json:"-"`
 }
-
-type EdgelabelCreateResponseData struct {
+type CreateResponseData struct {
     ID               int      `json:"id"`
     SortKeys         []string `json:"sort_keys"`
     SourceLabel      string   `json:"source_label"`
@@ -85,7 +102,33 @@ type EdgelabelCreateResponseData struct {
     } `json:"user_data"`
 }
 
-func (r EdgelabelCreateRequest) Do(ctx context.Context, transport api.Transport) (*EdgelabelCreateResponse, error) {
+type DeleteByNameRequest struct {
+    Body io.Reader
+    ctx  context.Context
+    name string
+}
+type DeleteByNameResponse struct {
+    StatusCode int                      `json:"-"`
+    Header     http.Header              `json:"-"`
+    Body       io.ReadCloser            `json:"-"`
+    Data       DeleteByNameResponseData `json:"-"`
+}
+type DeleteByNameResponseData struct {
+    TaskID int `json:"task_id"`
+}
+
+func (r Create) WithReqData(reqData CreateRequestData) func(request *CreateRequest) {
+    return func(r *CreateRequest) {
+        r.reqData = reqData
+    }
+}
+func (p DeleteByName) WithName(name string) func(request *DeleteByNameRequest) {
+    return func(r *DeleteByNameRequest) {
+        r.name = name
+    }
+}
+
+func (r CreateRequest) Do(ctx context.Context, transport api.Transport) (*CreateResponse, error) {
 
     if len(r.reqData.Name) <= 0 {
         return nil, errors.New("create edgeLabel must set name")
@@ -119,8 +162,8 @@ func (r EdgelabelCreateRequest) Do(ctx context.Context, transport api.Transport)
         return nil, err
     }
 
-    resp := &EdgelabelCreateResponse{}
-    respData := EdgelabelCreateResponseData{}
+    resp := &CreateResponse{}
+    respData := CreateResponseData{}
     bytes, err := ioutil.ReadAll(res.Body)
     if err != nil {
         return nil, err
@@ -135,9 +178,37 @@ func (r EdgelabelCreateRequest) Do(ctx context.Context, transport api.Transport)
     resp.RespData = respData
     return resp, nil
 }
+func (r DeleteByNameRequest) Do(ctx context.Context, transport api.Transport) (*DeleteByNameResponse, error) {
 
-func (r EdgelabelCreate) WithReqData(reqData EdgelabelCreateRequestData) func(request *EdgelabelCreateRequest) {
-    return func(r *EdgelabelCreateRequest) {
-        r.reqData = reqData
+    if len(r.name) <= 0 {
+        return nil, errors.New("delete by name ,please set name")
     }
+    req, err := api.NewRequest("DELETE", fmt.Sprintf("/graphs/%s/schema/edgelabels/%s", transport.GetConfig().Graph, r.name), nil, r.Body)
+    if err != nil {
+        return nil, err
+    }
+    if ctx != nil {
+        req = req.WithContext(ctx)
+    }
+
+    res, err := transport.Perform(req)
+    if err != nil {
+        return nil, err
+    }
+
+    resp := &DeleteByNameResponse{}
+    respData := DeleteByNameResponseData{}
+    bytes, err := ioutil.ReadAll(res.Body)
+    if err != nil {
+        return nil, err
+    }
+    err = json.Unmarshal(bytes, &respData)
+    if err != nil {
+        return nil, err
+    }
+    resp.StatusCode = res.StatusCode
+    resp.Header = res.Header
+    resp.Body = res.Body
+    resp.Data = respData
+    return resp, nil
 }

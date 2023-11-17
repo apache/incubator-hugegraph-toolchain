@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package v1
+package schema
 
 import (
     "context"
@@ -54,8 +54,8 @@ type SchemaRequest struct {
 type SchemaResponse struct {
     StatusCode int                `json:"-"`
     Header     http.Header        `json:"-"`
-    Body       io.ReadCloser      `json:"-"`
-    Data       SchemaResponseData `json:"-"`
+    Body io.ReadCloser      `json:"-"`
+    Data SchemaResponseData `json:"-"`
 }
 
 type SchemaResponseData struct {

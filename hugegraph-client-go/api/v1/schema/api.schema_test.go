@@ -15,47 +15,24 @@
  * under the License.
  */
 
-package v1_test
+
+package schema_test
 
 import (
     "fmt"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
-    v1 "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/model"
     "log"
-    "math/rand"
     "testing"
-    "time"
 )
 
-func TestPropertyKeyCreateRequest_Do(t *testing.T) {
+func TestSchemaRequest_Do(t *testing.T) {
     client, err := hugegraph.NewDefaultCommonClient()
     if err != nil {
         log.Println(err)
     }
-    rand.Seed(time.Now().UnixNano())
-    name := fmt.Sprintf("testProperty%d", rand.Intn(99999))
-    resp, err := client.PropertyKey.PropertyKeyCreate(
-        client.PropertyKey.PropertyKeyCreate.WithReqData(
-            v1.PropertyKeyCreateRequestData{
-                Name:        name,
-                DataType:    model.PropertyDataTypeInt,
-                Cardinality: model.PropertyCardinalitySingle,
-            },
-        ),
-    )
+    schema, err := client.Schema()
     if err != nil {
-        log.Println(err)
+        log.Fatalln(err)
     }
-
-    fmt.Println(resp)
-
-    // propertyKey delete after create
-    respDelete, err := client.PropertyKey.PropertyKeyDeleteByName(
-        client.PropertyKey.PropertyKeyDeleteByName.WithName(name),
-    )
-    if err != nil {
-        log.Println(err)
-    }
-    fmt.Println(respDelete)
+    fmt.Println(schema.Data)
 }

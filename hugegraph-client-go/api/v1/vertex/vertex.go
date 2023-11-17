@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+
 package vertex
 
 import (
@@ -30,7 +48,7 @@ func New(t api.Transport) *Vertex {
         Create: newCreateFunc(t),
         // BatchCreate https://hugegraph.apache.org/docs/clients/restful-api/vertex/#212-create-multiple-vertices
         BatchCreate: newBatchCreateFunc(t),
-
+        // UpdateProperties https://hugegraph.apache.org/docs/clients/restful-api/vertex/#213-update-vertex-properties
         UpdateProperties: newUpdatePropertiesFunc(t),
     }
 }

@@ -35,7 +35,8 @@ type IDStrategy string
 
 // Vertex models that support generic types
 type Vertex[T any] struct {
-    ID         string
-    Label      string
-    Properties T
+    ID         string `json:"id,omitempty"`
+    Label      string `json:"label"`
+    Typ        string `json:"type,omitempty"`
+    Properties T      `json:"properties"`
 }

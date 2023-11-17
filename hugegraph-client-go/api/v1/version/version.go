@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package v1
+package version
 
 import (
     "context"
@@ -27,6 +27,10 @@ import (
 
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
 )
+
+func New(t api.Transport) Version {
+    return newVersionFunc(t)
+}
 
 // ----- API Definition -------------------------------------------------------
 // View version information of HugeGraph
@@ -66,7 +70,7 @@ type VersionResponseData struct {
 
 func (r VersionRequest) Do(ctx context.Context, transport api.Transport) (*VersionResponse, error) {
 
-    req, err := api.NewRequest("GET", "/versions", nil,r.Body)
+    req, err := api.NewRequest("GET", "/versions", nil, r.Body)
     if err != nil {
         return nil, err
     }
