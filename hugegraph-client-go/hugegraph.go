@@ -20,9 +20,9 @@ package hugegraph
 import (
     "errors"
     "fmt"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/gremlin"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/propertykey"
-    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/version"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/vertex"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api/v1/vertexlabel"
     "net"
@@ -50,10 +50,10 @@ type CommonClient struct {
     Gremlin     *gremlin.Gremlin
     Propertykey *propertykey.PropertyKey
     VertexLabel *vertexlabel.VertexLabel
-    Verison     version.Version
-    Transport   hgtransport.Interface
-    Graph       string
-    GraphSpace  string
+    *v1.APIV1
+    Transport  hgtransport.Interface
+    Graph      string
+    GraphSpace string
 }
 
 func NewDefaultCommonClient() (*CommonClient, error) {
@@ -102,7 +102,7 @@ func NewCommonClient(cfg Config) (*CommonClient, error) {
         Gremlin:     gremlin.New(tp),
         Propertykey: propertykey.New(tp),
         VertexLabel: vertexlabel.New(tp),
-        Verison:     version.New(tp),
+        APIV1:       v1.New(tp),
         Transport:   tp,
         Graph:       cfg.Graph,
         GraphSpace:  cfg.GraphSpace,

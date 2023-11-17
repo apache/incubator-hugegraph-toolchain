@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package version
+package v1
 
 import (
     "context"
@@ -27,10 +27,6 @@ import (
 
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
 )
-
-func New(t api.Transport) Version {
-    return newVersionFunc(t)
-}
 
 // ----- API Definition -------------------------------------------------------
 // View version information of HugeGraph

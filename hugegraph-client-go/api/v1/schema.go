@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package schema
+package v1
 
 import (
     "context"

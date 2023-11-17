@@ -15,26 +15,23 @@
  * under the License.
  */
 
-package version_test
+package v1_test
 
 import (
+    "fmt"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
+    "log"
     "testing"
-
-    hugegraph "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go"
 )
 
-func TestVersionRequest_Do(t *testing.T) {
-
+func TestSchemaRequest_Do(t *testing.T) {
     client, err := hugegraph.NewDefaultCommonClient()
     if err != nil {
-        t.Errorf("NewDefaultCommonClient() error = %v", err)
+        log.Println(err)
     }
-    client.Verison()
-    resp, err := client.Version()
+    schema, err := client.Schema()
     if err != nil {
-        t.Errorf(" client.Version() error = %v", err)
+        log.Fatalln(err)
     }
-    if resp != 200 {
-        t.Errorf(" client.Version() code error = %v", resp.StatusCode)
-    }
+    fmt.Println(schema.Data)
 }
