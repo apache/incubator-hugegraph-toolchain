@@ -26,12 +26,15 @@ const (
     ActionEliminate Action = "eliminate" // eliminate(remove) action
 
     IDStrategyDefault IDStrategy = "DEFAULT" // default id_strategy,The default strategy is primary key ID.
+
+    FrequencySingle Frequency = "SINGLE" // single frequency
 )
 
 type PropertyDataType string
 type PropertyCardinality string
 type Action string
 type IDStrategy string
+type Frequency string
 
 // Vertex models that support generic types
 type Vertex[T any] struct {

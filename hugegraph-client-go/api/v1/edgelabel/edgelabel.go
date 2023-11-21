@@ -15,7 +15,6 @@
  * under the License.
  */
 
-
 package edgelabel
 
 import (
@@ -24,6 +23,7 @@ import (
     "errors"
     "fmt"
     "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/api"
+    "github.com/apache/incubator-hugegraph-toolchain/hugegraph-client-go/internal/model"
     "io"
     "io/ioutil"
     "net/http"
@@ -33,6 +33,7 @@ import (
 type Edgelabel struct {
     Create
     DeleteByName
+    GetAll
 }
 
 func New(t api.Transport) *Edgelabel {
@@ -41,6 +42,8 @@ func New(t api.Transport) *Edgelabel {
         Create: newCreateFunc(t),
         // DeleteByName https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/#145-delete-edgelabel-by-name
         DeleteByName: newDeleteByNameFunc(t),
+        // GetAll https://hugegraph.apache.org/docs/clients/restful-api/edgelabel/#143-get-all-edgelabels
+        GetAll: newGetAll(t),
     }
 }
 
@@ -62,9 +65,19 @@ func newDeleteByNameFunc(t api.Transport) DeleteByName {
         return r.Do(r.ctx, t)
     }
 }
+func newGetAll(t api.Transport) GetAll {
+    return func(o ...func(*GetAllRequest)) (*GetAllResponse, error) {
+        var r = GetAllRequest{}
+        for _, f := range o {
+            f(&r)
+        }
+        return r.Do(r.ctx, t)
+    }
+}
 
 type Create func(o ...func(*CreateRequest)) (*CreateResponse, error)
 type DeleteByName func(o ...func(*DeleteByNameRequest)) (*DeleteByNameResponse, error)
+type GetAll func(o ...func(*GetAllRequest)) (*GetAllResponse, error)
 
 type CreateRequest struct {
     Body    io.Reader
@@ -72,20 +85,20 @@ type CreateRequest struct {
     reqData CreateRequestData
 }
 type CreateRequestData struct {
-    Name             string   `json:"name"`
-    SourceLabel      string   `json:"source_label"`
-    TargetLabel      string   `json:"target_label"`
-    Frequency        string   `json:"frequency"`
-    Properties       []string `json:"properties"`
-    SortKeys         []string `json:"sort_keys"`
-    NullableKeys     []string `json:"nullable_keys"`
-    EnableLabelIndex bool     `json:"enable_label_index"`
+    Name             string          `json:"name"`
+    SourceLabel      string          `json:"source_label"`
+    TargetLabel      string          `json:"target_label"`
+    Frequency        model.Frequency `json:"frequency"`
+    Properties       []string        `json:"properties"`
+    SortKeys         []string        `json:"sort_keys"`
+    NullableKeys     []string        `json:"nullable_keys"`
+    EnableLabelIndex bool            `json:"enable_label_index"`
 }
 type CreateResponse struct {
     StatusCode int                `json:"-"`
     Header     http.Header        `json:"-"`
     Body       io.ReadCloser      `json:"-"`
-    RespData   CreateResponseData `json:"-"`
+    Data       CreateResponseData `json:"-"`
 }
 type CreateResponseData struct {
     ID               int      `json:"id"`
@@ -115,6 +128,37 @@ type DeleteByNameResponse struct {
 }
 type DeleteByNameResponseData struct {
     TaskID int `json:"task_id"`
+}
+
+type GetAllRequest struct {
+    Body io.Reader
+    ctx  context.Context
+}
+type GetAllResponse struct {
+    StatusCode int                `json:"-"`
+    Header     http.Header        `json:"-"`
+    Body       io.ReadCloser      `json:"-"`
+    Data       GetAllResponseData `json:"-"`
+}
+
+type GetAllResponseData struct {
+    Edgelabels []struct {
+        ID               int           `json:"id"`
+        Name             string        `json:"name"`
+        SourceLabel      string        `json:"source_label"`
+        TargetLabel      string        `json:"target_label"`
+        Frequency        string        `json:"frequency"`
+        SortKeys         []interface{} `json:"sort_keys"`
+        NullableKeys     []interface{} `json:"nullable_keys"`
+        IndexLabels      []string      `json:"index_labels"`
+        Properties       []string      `json:"properties"`
+        Status           string        `json:"status"`
+        TTL              int           `json:"ttl"`
+        EnableLabelIndex bool          `json:"enable_label_index"`
+        UserData         struct {
+            CreateTime string `json:"~create_time"`
+        } `json:"user_data"`
+    } `json:"edgelabels"`
 }
 
 func (r Create) WithReqData(reqData CreateRequestData) func(request *CreateRequest) {
@@ -175,7 +219,7 @@ func (r CreateRequest) Do(ctx context.Context, transport api.Transport) (*Create
     resp.StatusCode = res.StatusCode
     resp.Header = res.Header
     resp.Body = res.Body
-    resp.RespData = respData
+    resp.Data = respData
     return resp, nil
 }
 func (r DeleteByNameRequest) Do(ctx context.Context, transport api.Transport) (*DeleteByNameResponse, error) {
@@ -205,6 +249,39 @@ func (r DeleteByNameRequest) Do(ctx context.Context, transport api.Transport) (*
     err = json.Unmarshal(bytes, &respData)
     if err != nil {
         return nil, err
+    }
+    resp.StatusCode = res.StatusCode
+    resp.Header = res.Header
+    resp.Body = res.Body
+    resp.Data = respData
+    return resp, nil
+}
+func (g GetAllRequest) Do(ctx context.Context, transport api.Transport) (*GetAllResponse, error) {
+
+    req, err := api.NewRequest("GET", fmt.Sprintf("/graphs/%s/schema/edgelabels", transport.GetConfig().Graph), nil, nil)
+    if err != nil {
+        return nil, err
+    }
+    if ctx != nil {
+        req = req.WithContext(ctx)
+    }
+
+    res, err := transport.Perform(req)
+    if err != nil {
+        return nil, err
+    }
+
+    resp := &GetAllResponse{}
+    bytes, err := ioutil.ReadAll(res.Body)
+    if err != nil {
+        return nil, err
+    }
+
+    fmt.Println(string(bytes))
+    respData := GetAllResponseData{}
+    err = json.Unmarshal(bytes, &respData)
+    if err != nil {
+       return nil, err
     }
     resp.StatusCode = res.StatusCode
     resp.Header = res.Header
