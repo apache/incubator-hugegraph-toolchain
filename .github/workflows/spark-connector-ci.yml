@@ -52,7 +52,8 @@ jobs:
 
       - name: Compile
         run: |
-          mvn install -pl hugegraph-spark-connector -Dmaven.javadoc.skip=true -DskipTests -ntp
+          mvn install -pl hugegraph-client,hugegraph-spark-connector -Dmaven.javadoc.skip=true 
+          -DskipTests -ntp
 
       - name: Prepare env and service
         run: |
