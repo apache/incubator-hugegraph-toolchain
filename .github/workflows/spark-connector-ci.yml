@@ -22,7 +22,7 @@ jobs:
   spark-connector-ci:
     runs-on: ubuntu-latest
     env:
-      SE_STAGE: 'true' # Whether to include the stage repository.
+      USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
       VERSION_ID: 1.0.0
     steps:

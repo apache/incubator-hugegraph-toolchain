@@ -29,6 +29,8 @@ on:
 jobs:
   check-license-header:
     runs-on: ubuntu-latest
+    env:
+      USE_STAGE: 'true' # Whether to include the stage repository.
     steps:
       - uses: actions/checkout@v3
       # More info could refer to: https://github.com/apache/skywalking-eyes
