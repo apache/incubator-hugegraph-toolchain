@@ -23,7 +23,7 @@ jobs:
   loader-ci:
     runs-on: ubuntu-latest
     env:
-      SE_STAGE: 'true' # Whether to include the stage repository.
+      USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
       COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
