@@ -19,8 +19,11 @@ package org.apache.hugegraph.exception;
 
 import java.util.Map;
 
-import okhttp3.Response;
 import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import okhttp3.Response;
 
 public class ServerException extends RuntimeException {
 
@@ -42,9 +45,9 @@ public class ServerException extends RuntimeException {
     private Object trace;
 
     public static ServerException fromResponse(Response response) {
-        RestResult rs = new RestResult(response);
+        OkhttpRestResult rs = new OkhttpRestResult(response);
         ServerException exception = new ServerException(rs.content());
-        exception.status(response.getStatus());
+        exception.status(response.code());
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> json = rs.readObject(Map.class);
