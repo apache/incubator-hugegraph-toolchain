@@ -24,6 +24,8 @@ import org.apache.hugegraph.rest.OkhttpRestResult;
 
 public class ServerException extends RuntimeException {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ServerException.class);
+
     private static final long serialVersionUID = 6335623004322652358L;
 
     private static final String[] EXCEPTION_KEYS = {"exception",
@@ -40,9 +42,9 @@ public class ServerException extends RuntimeException {
     private Object trace;
 
     public static ServerException fromResponse(Response response) {
-        OkhttpRestResult rs = new OkhttpRestResult(response);
+        RestResult rs = new RestResult(response);
         ServerException exception = new ServerException(rs.content());
-        exception.status(response.code());
+        exception.status(response.getStatus());
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> json = rs.readObject(Map.class);
@@ -51,6 +53,7 @@ public class ServerException extends RuntimeException {
             exception.cause = (String) getByKeys(json, CAUSE_KEYS);
             exception.trace = getByKeys(json, TRACE_KEYS);
         } catch (Exception ignored) {
+            LOG.error("ServerException fromResponse excepiton");
         }
 
         return exception;

@@ -65,6 +65,7 @@ jobs:
           mvn test -P file
           mvn test -P hdfs
           mvn test -P jdbc
+          mvn test -P kafka
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.0.0

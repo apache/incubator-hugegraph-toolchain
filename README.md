@@ -12,9 +12,15 @@
 ## Modules
 
 - [hugegraph-loader](./hugegraph-loader): Loading datasets into the HugeGraph from multiple data sources.
-- [hugegraph-hubble](./hugegraph-hubble): Online HugeGraph management and analysis dashboard (Include: data loading, schema management, graph traverser and display). We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start [hubble](https://hub.docker.com/r/hugegraph/hubble).
+- [hugegraph-hubble](./hugegraph-hubble): Online HugeGraph management and analysis dashboard (Include: data loading, schema management, graph traverser and display).
 - [hugegraph-tools](./hugegraph-tools): Command line tool for deploying, managing and backing-up/restoring graphs from HugeGraph.
 - [hugegraph-client](./hugegraph-client): A Java-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc.
+
+## Usage
+
+- [hugegraph-loader](./hugegraph-loader): We can use `docker run -itd --name loader hugegraph/loader` to quickly start [loader](https://hub.docker.com/r/hugegraph/loader) or we can follow [this](./hugegraph-loader/README.md#212-docker-compose) to use docker-compose to start `loader` with `server`. And we can find more details in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/).
+- [hugegraph-hubble](./hugegraph-hubble): We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start [hubble](https://hub.docker.com/r/hugegraph/hubble) or we can follow [this](hugegraph-hubble/README.md#quick-start) to use docker-compose to start `hubble` with `server`. And we can find more details in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/).
+- [hugegraph-client](./hugegraph-client): We can follow the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-client/) to learn how to quick start with `client`.
 
 ## Maven Dependencies
 

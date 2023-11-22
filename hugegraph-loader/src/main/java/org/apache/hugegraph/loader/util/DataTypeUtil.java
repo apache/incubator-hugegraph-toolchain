@@ -20,6 +20,7 @@ package org.apache.hugegraph.loader.util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +30,7 @@ import org.apache.hugegraph.loader.source.AbstractSource;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.ListFormat;
+import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 import org.apache.hugegraph.structure.constant.Cardinality;
 import org.apache.hugegraph.structure.constant.DataType;
 import org.apache.hugegraph.structure.schema.PropertyKey;
@@ -140,6 +142,31 @@ public final class DataTypeUtil {
                          "to Date, but got '%s'", source.getClass().getName());
             String dateFormat = ((FileSource) source).dateFormat();
             String timeZone = ((FileSource) source).timeZone();
+
+            if (source instanceof KafkaSource) {
+                List<String> extraDateFormats =
+                        ((KafkaSource) source).getExtraDateFormats();
+                dateFormat = ((KafkaSource) source).getDateFormat();
+                timeZone = ((KafkaSource) source).getTimeZone();
+                if (extraDateFormats == null || extraDateFormats.isEmpty()) {
+                    return parseDate(key, value, dateFormat, timeZone);
+                } else {
+                    HashSet<String> allDateFormats = new HashSet<>();
+                    allDateFormats.add(dateFormat);
+                    allDateFormats.addAll(extraDateFormats);
+                    int size = allDateFormats.size();
+                    for (String df : allDateFormats) {
+                        try {
+                            return parseDate(key, value, df, timeZone);
+                        } catch (Exception e) {
+                            if (--size <= 0) {
+                                throw e;
+                            }
+                        }
+                    }
+                }
+            }
+
             return parseDate(key, value, dateFormat, timeZone);
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
@@ -152,6 +179,7 @@ public final class DataTypeUtil {
                         "The value(key='%s') '%s'(%s) is not match with " +
                         "data type %s and can't convert to it",
                         key, value, value.getClass(), dataType);
+
         return value;
     }
 

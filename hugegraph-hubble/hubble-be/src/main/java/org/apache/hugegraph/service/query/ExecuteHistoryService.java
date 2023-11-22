@@ -39,6 +39,7 @@ import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.util.HubbleUtil;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -92,7 +93,6 @@ public class ExecuteHistoryService {
         return results;
     }
 
-
     public ExecuteHistory get(int connId, int id) {
         HugeClient client = this.getClient(connId);
         ExecuteHistory history = this.mapper.selectById(id);
@@ -111,9 +111,9 @@ public class ExecuteHistoryService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void save(ExecuteHistory history) {
-         if (this.mapper.insert(history) != 1) {
-             throw new InternalException("entity.insert.failed", history);
-         }
+        if (this.mapper.insert(history) != 1) {
+            throw new InternalException("entity.insert.failed", history);
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)

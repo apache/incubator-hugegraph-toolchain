@@ -189,7 +189,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         } else if (vertexLabel.idStrategy().isPrimaryKey()) {
             E.checkArgument(fields.size() >= 1,
                             "The source/target field must contains some " +
-                            "columns when id strategy is CUSTOMIZE");
+                            "columns when id strategy is PrimaryKey");
         } else {
             throw new IllegalArgumentException("Unsupported AUTOMATIC id strategy " +
                                                "for hugegraph-loader");
