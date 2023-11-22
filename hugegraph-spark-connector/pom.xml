@@ -36,7 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spark.verion>3.2.2</spark.verion>
         <spark.scope>provided</spark.scope>
-        <hugegraph.client.version>1.0.0</hugegraph.client.version>
+        <hugegraph.client.version>1.2.0</hugegraph.client.version>
         <jackson.version>2.12.3</jackson.version>
 <!--        <jersey.version>3.0.3</jersey.version>-->
 <!--        <jersey.container.servlet.core.version>2.34</jersey.container.servlet.core.version>-->
