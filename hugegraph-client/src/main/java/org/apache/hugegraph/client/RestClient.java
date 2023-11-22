@@ -21,16 +21,16 @@ import okhttp3.Response;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.serializer.PathDeserializer;
 import org.apache.hugegraph.structure.graph.Path;
-import org.apache.hugegraph.rest.OkhttpAbstractRestClient;
+import org.apache.hugegraph.rest.AbstractRestClient;
 import org.apache.hugegraph.rest.ClientException;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-public class RestClient extends OkhttpAbstractRestClient {
+public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
 
@@ -39,7 +39,7 @@ public class RestClient extends OkhttpAbstractRestClient {
     static {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
-        OkhttpRestResult.registerModule(module);
+        RestResult.registerModule(module);
     }
 
     public RestClient(String url, String username, String password,

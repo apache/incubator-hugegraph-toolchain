@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.WeightedPath;
 import org.apache.hugegraph.util.E;
@@ -61,7 +61,7 @@ public class WeightedShortestPathAPI extends TraversersAPI {
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
         params.put("with_vertex", withVertex);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readObject(WeightedPath.class);
     }
 }

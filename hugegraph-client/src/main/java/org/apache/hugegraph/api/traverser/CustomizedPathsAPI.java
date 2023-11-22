@@ -18,7 +18,7 @@
 package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.CustomizedPathsRequest;
 
@@ -34,7 +34,7 @@ public class CustomizedPathsAPI extends TraversersAPI {
     }
 
     public PathsWithVertices post(CustomizedPathsRequest request) {
-        OkhttpRestResult result = this.client.post(this.path(), request);
+        RestResult result = this.client.post(this.path(), request);
         return result.readObject(PathsWithVertices.class);
     }
 }

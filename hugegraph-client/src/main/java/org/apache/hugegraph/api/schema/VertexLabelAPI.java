@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.schema.VertexLabel;
@@ -43,7 +43,7 @@ public class VertexLabelAPI extends SchemaElementAPI {
 
     public VertexLabel create(VertexLabel vertexLabel) {
         Object vl = this.checkCreateOrUpdate(vertexLabel);
-        OkhttpRestResult result = this.client.post(this.path(), vl);
+        RestResult result = this.client.post(this.path(), vl);
         return result.readObject(VertexLabel.class);
     }
 
@@ -51,7 +51,7 @@ public class VertexLabelAPI extends SchemaElementAPI {
         String id = vertexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
         Object vl = this.checkCreateOrUpdate(vertexLabel);
-        OkhttpRestResult result = this.client.put(this.path(), id, vl, params);
+        RestResult result = this.client.put(this.path(), id, vl, params);
         return result.readObject(VertexLabel.class);
     }
 
@@ -59,17 +59,17 @@ public class VertexLabelAPI extends SchemaElementAPI {
         String id = vertexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         Object vl = this.checkCreateOrUpdate(vertexLabel);
-        OkhttpRestResult result = this.client.put(this.path(), id, vl, params);
+        RestResult result = this.client.put(this.path(), id, vl, params);
         return result.readObject(VertexLabel.class);
     }
 
     public VertexLabel get(String name) {
-        OkhttpRestResult result = this.client.get(this.path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(VertexLabel.class);
     }
 
     public List<VertexLabel> list() {
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         return result.readList(this.type(), VertexLabel.class);
     }
 
@@ -78,12 +78,12 @@ public class VertexLabelAPI extends SchemaElementAPI {
         E.checkArgument(names != null && !names.isEmpty(),
                         "The vertex label names can't be null or empty");
         Map<String, Object> params = ImmutableMap.of("names", names);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), VertexLabel.class);
     }
 
     public long delete(String name) {
-        OkhttpRestResult result = this.client.delete(this.path(), name);
+        RestResult result = this.client.delete(this.path(), name);
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);

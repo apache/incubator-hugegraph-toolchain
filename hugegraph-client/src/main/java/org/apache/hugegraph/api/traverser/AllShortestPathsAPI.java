@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.graph.Path;
 
@@ -59,7 +59,7 @@ public class AllShortestPathsAPI extends TraversersAPI {
         params.put("max_degree", degree);
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList("paths", Path.class);
     }
 }

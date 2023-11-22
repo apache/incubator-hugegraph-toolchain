@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.auth.Project;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -43,25 +43,25 @@ public class ProjectAPI extends AuthAPI {
     }
 
     public Project create(Project project) {
-        OkhttpRestResult result = this.client.post(this.path(), project);
+        RestResult result = this.client.post(this.path(), project);
         return result.readObject(Project.class);
     }
 
     public Project get(Object id) {
-        OkhttpRestResult result = this.client.get(this.path(), formatEntityId(id));
+        RestResult result = this.client.get(this.path(), formatEntityId(id));
         return result.readObject(Project.class);
     }
 
     public List<Project> list(long limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = ImmutableMap.of("limit", limit);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Project.class);
     }
 
     public Project update(Project project) {
         String id = formatEntityId(project.id());
-        OkhttpRestResult result = this.client.put(this.path(), id, project);
+        RestResult result = this.client.put(this.path(), id, project);
         return result.readObject(Project.class);
     }
 
@@ -72,7 +72,7 @@ public class ProjectAPI extends AuthAPI {
     public Project addGraphs(Object projectId, Set<String> graphs) {
         Project project = new Project();
         project.graphs(graphs);
-        OkhttpRestResult result = this.client.put(this.path(),
+        RestResult result = this.client.put(this.path(),
                                             formatEntityId(projectId),
                                             project,
                                             ImmutableMap.of("action",
@@ -83,7 +83,7 @@ public class ProjectAPI extends AuthAPI {
     public Project removeGraphs(Object projectId, Set<String> graphs) {
         Project project = new Project();
         project.graphs(graphs);
-        OkhttpRestResult result = this.client.put(this.path(),
+        RestResult result = this.client.put(this.path(),
                                             formatEntityId(projectId),
                                             project,
                                             ImmutableMap.of("action",

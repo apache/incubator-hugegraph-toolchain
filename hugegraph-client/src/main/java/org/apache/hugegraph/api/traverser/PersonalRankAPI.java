@@ -18,7 +18,7 @@
 package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.util.E;
@@ -37,7 +37,7 @@ public class PersonalRankAPI extends TraversersAPI {
     }
 
     public Ranks post(Request request) {
-        OkhttpRestResult result = this.client.post(this.path(), request);
+        RestResult result = this.client.post(this.path(), request);
         return result.readObject(Ranks.class);
     }
 

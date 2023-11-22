@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.IndexLabel;
@@ -60,7 +60,7 @@ public class RebuildAPI extends JobAPI {
                         "Only VertexLabel, EdgeLabel and IndexLabel support " +
                         "rebuild, but got '%s'", element);
         String path = String.join(PATH_SPLITOR, this.path(), element.type());
-        OkhttpRestResult result = this.client.put(path, element.name(), element);
+        RestResult result = this.client.put(path, element.name(), element);
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);

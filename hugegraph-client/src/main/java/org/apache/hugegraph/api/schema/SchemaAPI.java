@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotSupportException;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.SchemaElement;
 
 public class SchemaAPI extends API {
@@ -40,7 +40,7 @@ public class SchemaAPI extends API {
         if (this.client.apiVersionLt("0.66")) {
             throw new NotSupportException("schema get api");
         }
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         return result.readObject(Map.class);
     }
 

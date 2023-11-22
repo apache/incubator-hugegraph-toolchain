@@ -19,7 +19,7 @@ package org.apache.hugegraph.exception;
 
 import java.util.Map;
 
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ public class ServerException extends RuntimeException {
     private Object trace;
 
     public static ServerException fromResponse(Response response) {
-        OkhttpRestResult rs = new OkhttpRestResult(response);
+        RestResult rs = new RestResult(response);
         ServerException exception = new ServerException(rs.content());
         exception.status(response.code());
         try {

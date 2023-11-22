@@ -18,7 +18,7 @@
 package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.traverser.MultiNodeShortestPathRequest;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 
@@ -35,7 +35,7 @@ public class MultiNodeShortestPathAPI extends TraversersAPI {
 
     public PathsWithVertices post(MultiNodeShortestPathRequest request) {
         this.client.checkApiVersion("0.58", "multi node shortest path");
-        OkhttpRestResult result = this.client.post(this.path(), request);
+        RestResult result = this.client.post(this.path(), request);
         return result.readObject(PathsWithVertices.class);
     }
 }

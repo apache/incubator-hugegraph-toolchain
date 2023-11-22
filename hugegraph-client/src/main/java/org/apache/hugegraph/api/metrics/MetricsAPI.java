@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.hugegraph.util.CommonUtil;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class MetricsAPI extends API {
@@ -39,7 +39,7 @@ public class MetricsAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Map<String, Object>> system() {
-        OkhttpRestResult result = this.client.get(this.path(), "system");
+        RestResult result = this.client.get(this.path(), "system");
         Map<?, ?> map = result.readObject(Map.class);
         CommonUtil.checkMapClass(map, String.class, Map.class);
         for (Object mapValue : map.values()) {
@@ -50,7 +50,7 @@ public class MetricsAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Map<String, Object>> backend() {
-        OkhttpRestResult result = this.client.get(this.path(), "backend");
+        RestResult result = this.client.get(this.path(), "backend");
         Map<?, ?> map = result.readObject(Map.class);
         CommonUtil.checkMapClass(map, String.class, Map.class);
         for (Object mapValue : map.values()) {
@@ -65,7 +65,7 @@ public class MetricsAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Map<String, Object>> all() {
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         Map<?, ?> map = result.readObject(Map.class);
         CommonUtil.checkMapClass(map, String.class, Map.class);
         for (Object mapValue : map.values()) {

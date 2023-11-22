@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -38,12 +38,12 @@ public class AccessAPI extends AuthAPI {
     }
 
     public Access create(Access access) {
-        OkhttpRestResult result = this.client.post(this.path(), access);
+        RestResult result = this.client.post(this.path(), access);
         return result.readObject(Access.class);
     }
 
     public Access get(Object id) {
-        OkhttpRestResult result = this.client.get(this.path(), formatRelationId(id));
+        RestResult result = this.client.get(this.path(), formatRelationId(id));
         return result.readObject(Access.class);
     }
 
@@ -53,13 +53,13 @@ public class AccessAPI extends AuthAPI {
         params.put("limit", limit);
         params.put("group", formatEntityId(group));
         params.put("target", formatEntityId(target));
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Access.class);
     }
 
     public Access update(Access access) {
         String id = formatRelationId(access.id());
-        OkhttpRestResult result = this.client.put(this.path(), id, access);
+        RestResult result = this.client.put(this.path(), id, access);
         return result.readObject(Access.class);
     }
 

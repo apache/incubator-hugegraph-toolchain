@@ -18,7 +18,7 @@
 package org.apache.hugegraph.api.auth;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
 import org.apache.hugegraph.structure.constant.HugeType;
@@ -35,7 +35,7 @@ public class LoginAPI extends AuthAPI {
     }
 
     public LoginResult login(Login login) {
-        OkhttpRestResult result = this.client.post(this.path(), login);
+        RestResult result = this.client.post(this.path(), login);
         return result.readObject(LoginResult.class);
     }
 }

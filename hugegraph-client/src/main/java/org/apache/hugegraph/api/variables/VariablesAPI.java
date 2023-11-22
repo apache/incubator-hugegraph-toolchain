@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.google.common.collect.ImmutableMap;
@@ -42,14 +42,14 @@ public class VariablesAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> get(String key) {
-        OkhttpRestResult result = this.client.get(path(), key);
+        RestResult result = this.client.get(path(), key);
         return result.readObject(Map.class);
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> set(String key, Object value) {
         value = ImmutableMap.of("data", value);
-        OkhttpRestResult result = this.client.put(this.path(), key, value);
+        RestResult result = this.client.put(this.path(), key, value);
         return result.readObject(Map.class);
     }
 
@@ -59,7 +59,7 @@ public class VariablesAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> all() {
-        OkhttpRestResult result = this.client.get(path());
+        RestResult result = this.client.get(path());
         return result.readObject(Map.class);
     }
 }

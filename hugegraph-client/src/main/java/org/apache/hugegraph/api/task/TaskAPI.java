@@ -25,7 +25,7 @@ import org.apache.hugegraph.util.TaskCache;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.E;
@@ -62,7 +62,7 @@ public class TaskAPI extends API {
         if (status != null) {
             params.put("status", status);
         }
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(TASKS, Task.class);
     }
 
@@ -75,19 +75,19 @@ public class TaskAPI extends API {
         if (status != null) {
             params.put("status", status);
         }
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readObject(TasksWithPage.class);
     }
 
     public List<Task> list(List<Long> ids) {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("ids", ids);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(TASKS, Task.class);
     }
 
     public Task get(long id) {
-        OkhttpRestResult result = this.client.get(this.path(), String.valueOf(id));
+        RestResult result = this.client.get(this.path(), String.valueOf(id));
         return result.readObject(Task.class);
     }
 
@@ -97,7 +97,7 @@ public class TaskAPI extends API {
 
     public Task cancel(long id) {
         Map<String, Object> params = ImmutableMap.of("action", "cancel");
-        OkhttpRestResult result = this.client.put(path(), String.valueOf(id),
+        RestResult result = this.client.put(path(), String.valueOf(id),
                                             ImmutableMap.of(), params);
         return result.readObject(Task.class);
     }

@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotSupportException;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.constant.WriteType;
@@ -45,7 +45,7 @@ public class PropertyKeyAPI extends SchemaElementAPI {
 
     public PropertyKey.PropertyKeyWithTask create(PropertyKey propertyKey) {
         Object pkey = this.checkCreateOrUpdate(propertyKey);
-        OkhttpRestResult result = this.client.post(this.path(), pkey);
+        RestResult result = this.client.post(this.path(), pkey);
         if (this.client.apiVersionLt("0.65")) {
             return new PropertyKey.PropertyKeyWithTask(result.readObject(PropertyKey.class), 0L);
         }
@@ -56,7 +56,7 @@ public class PropertyKeyAPI extends SchemaElementAPI {
         String id = propertyKey.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
         Object pkey = this.checkCreateOrUpdate(propertyKey);
-        OkhttpRestResult result = this.client.put(this.path(), id, pkey, params);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
         return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }
 
@@ -64,7 +64,7 @@ public class PropertyKeyAPI extends SchemaElementAPI {
         String id = propertyKey.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         Object pkey = this.checkCreateOrUpdate(propertyKey);
-        OkhttpRestResult result = this.client.put(this.path(), id, pkey, params);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
         return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }
 
@@ -75,17 +75,17 @@ public class PropertyKeyAPI extends SchemaElementAPI {
         String id = propertyKey.name();
         Map<String, Object> params = ImmutableMap.of("action", "clear");
         Object pkey = this.checkCreateOrUpdate(propertyKey);
-        OkhttpRestResult result = this.client.put(this.path(), id, pkey, params);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
         return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }
 
     public PropertyKey get(String name) {
-        OkhttpRestResult result = this.client.get(this.path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(PropertyKey.class);
     }
 
     public List<PropertyKey> list() {
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         return result.readList(this.type(), PropertyKey.class);
     }
 
@@ -94,7 +94,7 @@ public class PropertyKeyAPI extends SchemaElementAPI {
         E.checkArgument(names != null && !names.isEmpty(),
                         "The property key names can't be null or empty");
         Map<String, Object> params = ImmutableMap.of("names", names);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), PropertyKey.class);
     }
 
@@ -103,7 +103,7 @@ public class PropertyKeyAPI extends SchemaElementAPI {
             this.client.delete(this.path(), name);
             return 0L;
         }
-        OkhttpRestResult result = this.client.delete(this.path(), name);
+        RestResult result = this.client.delete(this.path(), name);
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.structure.auth.User.UserRole;
 import org.apache.hugegraph.structure.constant.HugeType;
@@ -40,12 +40,12 @@ public class UserAPI extends AuthAPI {
     }
 
     public User create(User user) {
-        OkhttpRestResult result = this.client.post(this.path(), user);
+        RestResult result = this.client.post(this.path(), user);
         return result.readObject(User.class);
     }
 
     public User get(Object id) {
-        OkhttpRestResult result = this.client.get(this.path(), formatEntityId(id));
+        RestResult result = this.client.get(this.path(), formatEntityId(id));
         return result.readObject(User.class);
     }
 
@@ -53,20 +53,20 @@ public class UserAPI extends AuthAPI {
 //        String idEncoded = RestClient.encode(formatEntityId(id));
         String idEncoded = formatEntityId(id);
         String path = String.join("/", this.path(), idEncoded, "role");
-        OkhttpRestResult result = this.client.get(path);
+        RestResult result = this.client.get(path);
         return result.readObject(UserRole.class);
     }
 
     public List<User> list(int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = ImmutableMap.of("limit", limit);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), User.class);
     }
 
     public User update(User user) {
         String id = formatEntityId(user.id());
-        OkhttpRestResult result = this.client.put(this.path(), id, user);
+        RestResult result = this.client.put(this.path(), id, user);
         return result.readObject(User.class);
     }
 

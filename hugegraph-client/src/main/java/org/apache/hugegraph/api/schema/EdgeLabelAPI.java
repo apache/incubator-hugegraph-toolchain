@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
@@ -43,7 +43,7 @@ public class EdgeLabelAPI extends SchemaElementAPI {
 
     public EdgeLabel create(EdgeLabel edgeLabel) {
         Object el = this.checkCreateOrUpdate(edgeLabel);
-        OkhttpRestResult result = this.client.post(this.path(), el);
+        RestResult result = this.client.post(this.path(), el);
         return result.readObject(EdgeLabel.class);
     }
 
@@ -51,7 +51,7 @@ public class EdgeLabelAPI extends SchemaElementAPI {
         String id = edgeLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
         Object el = this.checkCreateOrUpdate(edgeLabel);
-        OkhttpRestResult result = this.client.put(this.path(), id, el, params);
+        RestResult result = this.client.put(this.path(), id, el, params);
         return result.readObject(EdgeLabel.class);
     }
 
@@ -59,17 +59,17 @@ public class EdgeLabelAPI extends SchemaElementAPI {
         String id = edgeLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         Object el = this.checkCreateOrUpdate(edgeLabel);
-        OkhttpRestResult result = this.client.put(this.path(), id, el, params);
+        RestResult result = this.client.put(this.path(), id, el, params);
         return result.readObject(EdgeLabel.class);
     }
 
     public EdgeLabel get(String name) {
-        OkhttpRestResult result = this.client.get(this.path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(EdgeLabel.class);
     }
 
     public List<EdgeLabel> list() {
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         return result.readList(this.type(), EdgeLabel.class);
     }
 
@@ -78,12 +78,12 @@ public class EdgeLabelAPI extends SchemaElementAPI {
         E.checkArgument(names != null && !names.isEmpty(),
                         "The edge label names can't be null or empty");
         Map<String, Object> params = ImmutableMap.of("names", names);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), EdgeLabel.class);
     }
 
     public long delete(String name) {
-        OkhttpRestResult result = this.client.delete(this.path(), name);
+        RestResult result = this.client.delete(this.path(), name);
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);

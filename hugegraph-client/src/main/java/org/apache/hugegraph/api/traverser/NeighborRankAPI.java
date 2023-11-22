@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.Ranks;
@@ -42,7 +42,7 @@ public class NeighborRankAPI extends TraversersAPI {
     }
 
     public List<Ranks> post(Request request) {
-        OkhttpRestResult result = this.client.post(this.path(), request);
+        RestResult result = this.client.post(this.path(), request);
         return result.readList("ranks", Ranks.class);
     }
 

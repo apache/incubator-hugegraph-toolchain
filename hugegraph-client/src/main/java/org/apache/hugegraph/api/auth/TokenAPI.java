@@ -18,7 +18,7 @@
 package org.apache.hugegraph.api.auth;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.auth.TokenPayload;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -34,7 +34,7 @@ public class TokenAPI extends AuthAPI {
     }
 
     public TokenPayload verifyToken() {
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         return result.readObject(TokenPayload.class);
     }
 }

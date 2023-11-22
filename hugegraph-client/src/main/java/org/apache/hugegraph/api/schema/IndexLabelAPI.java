@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotSupportException;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.constant.IndexType;
@@ -45,7 +45,7 @@ public class IndexLabelAPI extends SchemaElementAPI {
 
     public IndexLabel.IndexLabelWithTask create(IndexLabel indexLabel) {
         Object il = this.checkCreateOrUpdate(indexLabel);
-        OkhttpRestResult result = this.client.post(this.path(), il);
+        RestResult result = this.client.post(this.path(), il);
         return result.readObject(IndexLabel.IndexLabelWithTask.class);
     }
 
@@ -57,7 +57,7 @@ public class IndexLabelAPI extends SchemaElementAPI {
         String id = indexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "append");
         Object il = this.checkCreateOrUpdate(indexLabel);
-        OkhttpRestResult result = this.client.put(this.path(), id, il, params);
+        RestResult result = this.client.put(this.path(), id, il, params);
         return result.readObject(IndexLabel.class);
     }
 
@@ -69,17 +69,17 @@ public class IndexLabelAPI extends SchemaElementAPI {
         String id = indexLabel.name();
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         Object il = this.checkCreateOrUpdate(indexLabel);
-        OkhttpRestResult result = this.client.put(this.path(), id, il, params);
+        RestResult result = this.client.put(this.path(), id, il, params);
         return result.readObject(IndexLabel.class);
     }
 
     public IndexLabel get(String name) {
-        OkhttpRestResult result = this.client.get(this.path(), name);
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(IndexLabel.class);
     }
 
     public List<IndexLabel> list() {
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         return result.readList(this.type(), IndexLabel.class);
     }
 
@@ -88,12 +88,12 @@ public class IndexLabelAPI extends SchemaElementAPI {
         E.checkArgument(names != null && !names.isEmpty(),
                         "The index label names can't be null or empty");
         Map<String, Object> params = ImmutableMap.of("names", names);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), IndexLabel.class);
     }
 
     public long delete(String name) {
-        OkhttpRestResult result = this.client.delete(this.path(), name);
+        RestResult result = this.client.delete(this.path(), name);
         @SuppressWarnings("unchecked")
         Map<String, Object> task = result.readObject(Map.class);
         return TaskAPI.parseTaskId(task);

@@ -19,7 +19,7 @@ package org.apache.hugegraph.api.version;
 
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.version.Versions;
 
@@ -36,7 +36,7 @@ public class VersionAPI extends API {
     }
 
     public Versions get() {
-        OkhttpRestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path());
         return result.readObject(Versions.class);
     }
 }

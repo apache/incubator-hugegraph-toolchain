@@ -20,7 +20,7 @@ package org.apache.hugegraph.api.traverser;
 import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.traverser.CountRequest;
 import org.apache.hugegraph.util.E;
 
@@ -39,7 +39,7 @@ public class CountAPI extends TraversersAPI {
 
     public long post(CountRequest request) {
         this.client.checkApiVersion("0.55", "count");
-        OkhttpRestResult result = this.client.post(this.path(), request);
+        RestResult result = this.client.post(this.path(), request);
         @SuppressWarnings("unchecked")
         Map<String, Number> countMap = result.readObject(Map.class);
         E.checkState(countMap.containsKey(COUNT),

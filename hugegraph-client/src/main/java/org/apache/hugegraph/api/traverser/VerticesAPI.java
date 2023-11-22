@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.graph.Shard;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.graph.Vertices;
@@ -54,14 +54,14 @@ public class VerticesAPI extends TraversersAPI {
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("ids", stringIds);
-        OkhttpRestResult result = this.client.get(this.path(), params);
+        RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Vertex.class);
     }
 
     public List<Shard> shards(long splitSize) {
         String path = String.join(PATH_SPLITOR, this.path(), "shards");
         Map<String, Object> params = ImmutableMap.of("split_size", splitSize);
-        OkhttpRestResult result = this.client.get(path, params);
+        RestResult result = this.client.get(path, params);
         return result.readList("shards", Shard.class);
     }
 
@@ -73,7 +73,7 @@ public class VerticesAPI extends TraversersAPI {
         params.put("end", shard.end());
         params.put("page", page);
         params.put("page_limit", pageLimit);
-        OkhttpRestResult result = this.client.get(path, params);
+        RestResult result = this.client.get(path, params);
         return result.readObject(Vertices.class);
     }
 }

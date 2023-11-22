@@ -18,7 +18,7 @@
 package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.OkhttpRestResult;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarity;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarityRequest;
 
@@ -35,7 +35,7 @@ public class FusiformSimilarityAPI extends TraversersAPI {
 
     public FusiformSimilarity post(FusiformSimilarityRequest request) {
         this.client.checkApiVersion("0.49", "fusiform similarity");
-        OkhttpRestResult result = this.client.post(this.path(), request);
+        RestResult result = this.client.post(this.path(), request);
         return result.readObject(FusiformSimilarity.class);
     }
 }
