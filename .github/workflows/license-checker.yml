@@ -35,6 +35,7 @@ jobs:
       - name: Check License Header
         uses: apache/skywalking-eyes@main
         env:
+          SE_STAGE: 'true' # Whether to include the stage repository.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           log: info
@@ -44,6 +45,12 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
+
+      - name: use staged maven repo settings
+        if: ${{ env.USE_STAGE == 'true' }}
+        run: |
+          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
 
       - name: Use Node.js 16
         uses: actions/setup-node@v3

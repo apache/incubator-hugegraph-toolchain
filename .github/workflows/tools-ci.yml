@@ -21,6 +21,7 @@ jobs:
   tools-ci:
     runs-on: ubuntu-latest
     env:
+      SE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-tools/assembly/travis
       # TODO: could we use one param to unify it? or use a action template (could use one ci file)
       COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
@@ -36,6 +37,11 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
+      - name: use staged maven repo settings
+        if: ${{ env.USE_STAGE == 'true' }}
+        run: |
+          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
       - name: Checkout
         uses: actions/checkout@v3
         with:
