@@ -43,16 +43,16 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
       - name: use staged maven repo settings
         if: ${{ env.USE_STAGE == 'true' }}
         run: |
           cp $HOME/.m2/settings.xml /tmp/settings.xml
           mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
-
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
       - name: Compile
         run: |
