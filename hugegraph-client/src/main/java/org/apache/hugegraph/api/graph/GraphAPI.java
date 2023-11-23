@@ -68,16 +68,6 @@ public abstract class GraphAPI extends API {
             return null;
         }
         String json = JsonUtil.toJson(properties);
-        /*
-         * Don't use UrlEncoder.encode, it encoded the space as `+`,
-         * which will invalidate the jersey's automatic decoding
-         * because it considers the space to be encoded as `%2F`
-         */
-//        return encode(json);
         return json;
     }
-
-//    public static String encode(String raw) {
-//        return UriComponent.encode(raw, Type.QUERY_PARAM_SPACE_ENCODED);
-//    }
 }
