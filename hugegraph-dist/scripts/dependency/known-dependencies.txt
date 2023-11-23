@@ -138,7 +138,6 @@ jersey-container-servlet-core-2.27.jar
 javax.inject-2.5.0-b32.jar
 javax.inject-2.5.0-b42.jar
 jakarta.xml.bind-api-2.3.2.jar
-jakarta.xml.bind-api-4.0.0-RC2.jar
 jamon-runtime-2.4.1.jar
 javassist-3.24.0-GA.jar
 javassist-3.25.0-GA.jar
