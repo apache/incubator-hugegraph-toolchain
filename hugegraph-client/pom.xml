@@ -45,24 +45,6 @@
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.media</groupId>
-                    <artifactId>jersey-media-json-jackson</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.connectors</groupId>
-                    <artifactId>jersey-apache-connector</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.inject</groupId>
-                    <artifactId>jersey-hk2</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.lz4</groupId>
