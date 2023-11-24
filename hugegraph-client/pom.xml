@@ -30,7 +30,7 @@
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
-    <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-client</url>
+    <url>https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client</url>
     <description>
         hugegraph-client is a Java-written client of HugeGraph, providing
         operations of graph, schema, gremlin, variables and traversals etc.
@@ -54,7 +54,6 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
