@@ -36,10 +36,6 @@
         operations of graph, schema, gremlin, variables and traversals etc.
     </description>
 
-    <properties>
-        <!--        <lombok.version>1.18.8</lombok.version>-->
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
