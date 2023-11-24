@@ -19,12 +19,12 @@ package org.apache.hugegraph.driver;
 
 import java.io.Closeable;
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.hugegraph.version.ClientVersion;
 import org.apache.hugegraph.client.RestClient;
-
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.util.VersionUtil;
+import org.apache.hugegraph.version.ClientVersion;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class HugeClient implements Closeable {
@@ -110,7 +110,7 @@ public class HugeClient implements Closeable {
 
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(this.version.getApiVersion());
-        VersionUtil.check(apiVersion, "0.38", "0.70", "hugegraph-api in server");
+        VersionUtil.check(apiVersion, "0.38", "0.72", "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
     }
 

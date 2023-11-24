@@ -17,18 +17,19 @@
 
 package org.apache.hugegraph.client;
 
-import okhttp3.Response;
 import org.apache.hugegraph.exception.ServerException;
-import org.apache.hugegraph.serializer.PathDeserializer;
-import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.rest.AbstractRestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.serializer.PathDeserializer;
+import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
+
+import okhttp3.Response;
 
 public class RestClient extends AbstractRestClient {
 
@@ -42,8 +43,7 @@ public class RestClient extends AbstractRestClient {
         RestResult.registerModule(module);
     }
 
-    public RestClient(String url, String username, String password,
-                      int timeout) {
+    public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);
     }
 
@@ -72,8 +72,7 @@ public class RestClient extends AbstractRestClient {
     }
 
     public boolean apiVersionLt(String minVersion) {
-        String apiVersion = this.apiVersion == null ?
-                            null : this.apiVersion.get();
+        String apiVersion = this.apiVersion == null ? null : this.apiVersion.get();
         return apiVersion != null && !VersionUtil.gte(apiVersion, minVersion);
     }
 

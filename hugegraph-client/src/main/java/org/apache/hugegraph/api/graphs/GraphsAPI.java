@@ -17,8 +17,9 @@
 
 package org.apache.hugegraph.api.graphs;
 
-import com.google.common.collect.ImmutableMap;
-import okhttp3.Headers;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
@@ -29,8 +30,7 @@ import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
 
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.ImmutableMap;
 
 public class GraphsAPI extends API {
 
@@ -38,7 +38,6 @@ public class GraphsAPI extends API {
     private static final String MODE = "mode";
     private static final String GRAPH_READ_MODE = "graph_read_mode";
     private static final String CLEAR = "clear";
-
     private static final String CONFIRM_MESSAGE = "confirm_message";
 
     public GraphsAPI(RestClient client) {
@@ -113,8 +112,7 @@ public class GraphsAPI extends API {
         // NOTE: Must provide id for PUT. If use "graph/graph_read_mode", "/"
         // will be encoded to "%2F". So use "graph_read_mode" here although
         // inaccurate.
-        this.client.put(joinPath(this.path(), graph, GRAPH_READ_MODE),
-                        null, readMode);
+        this.client.put(joinPath(this.path(), graph, GRAPH_READ_MODE), null, readMode);
     }
 
     public GraphReadMode readMode(String graph) {

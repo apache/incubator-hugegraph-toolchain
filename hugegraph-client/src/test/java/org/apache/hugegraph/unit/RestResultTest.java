@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import lombok.SneakyThrows;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.rest.RestHeaders;
 import org.apache.hugegraph.rest.RestResult;
@@ -54,6 +53,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
+import lombok.SneakyThrows;
 
 public class RestResultTest extends BaseUnitTest {
 
@@ -131,14 +132,12 @@ public class RestResultTest extends BaseUnitTest {
 
         Mockito.when(this.mockResponse.code()).thenReturn(200);
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
-        Mockito.when(this.mockResponse.body().string())
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertEquals(result.headers(), new RestHeaders());
 
-        List<PropertyKey> propertyKeys = result.readList("propertykeys",
-                                                         PropertyKey.class);
+        List<PropertyKey> propertyKeys = result.readList("propertykeys", PropertyKey.class);
         Assert.assertEquals(2, propertyKeys.size());
         PropertyKey propertyKey1 = propertyKeys.get(0);
         PropertyKey propertyKey2 = propertyKeys.get(1);
@@ -168,8 +167,7 @@ public class RestResultTest extends BaseUnitTest {
 
         Mockito.when(this.mockResponse.code()).thenReturn(200);
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
-        Mockito.when(this.mockResponse.body().string())
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertEquals(result.headers(), new RestHeaders());
@@ -178,10 +176,8 @@ public class RestResultTest extends BaseUnitTest {
 
         Assert.assertEquals("software", vertexLabel.name());
         Assert.assertEquals(IdStrategy.PRIMARY_KEY, vertexLabel.idStrategy());
-        Assert.assertEquals(ImmutableList.of("name"),
-                            vertexLabel.primaryKeys());
-        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"),
-                            vertexLabel.properties());
+        Assert.assertEquals(ImmutableList.of("name"), vertexLabel.primaryKeys());
+        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"), vertexLabel.properties());
     }
 
     @SneakyThrows
@@ -208,31 +204,25 @@ public class RestResultTest extends BaseUnitTest {
 
         Mockito.when(this.mockResponse.code()).thenReturn(200);
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
-        Mockito.when(this.mockResponse.body().string())
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertEquals(result.headers(), new RestHeaders());
 
-        List<VertexLabel> vertexLabels = result.readList("vertexlabels",
-                                                         VertexLabel.class);
+        List<VertexLabel> vertexLabels = result.readList("vertexlabels", VertexLabel.class);
         Assert.assertEquals(2, vertexLabels.size());
         VertexLabel vertexLabel1 = vertexLabels.get(0);
         VertexLabel vertexLabel2 = vertexLabels.get(1);
 
         Assert.assertEquals("software", vertexLabel1.name());
         Assert.assertEquals(IdStrategy.PRIMARY_KEY, vertexLabel1.idStrategy());
-        Assert.assertEquals(ImmutableList.of("name"),
-                            vertexLabel1.primaryKeys());
-        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"),
-                            vertexLabel1.properties());
+        Assert.assertEquals(ImmutableList.of("name"), vertexLabel1.primaryKeys());
+        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"), vertexLabel1.properties());
 
         Assert.assertEquals("person", vertexLabel2.name());
         Assert.assertEquals(IdStrategy.CUSTOMIZE_STRING, vertexLabel2.idStrategy());
-        Assert.assertEquals(Collections.emptyList(),
-                            vertexLabel2.primaryKeys());
-        Assert.assertEquals(ImmutableSet.of("city", "name", "age"),
-                            vertexLabel2.properties());
+        Assert.assertEquals(Collections.emptyList(), vertexLabel2.primaryKeys());
+        Assert.assertEquals(ImmutableSet.of("city", "name", "age"), vertexLabel2.properties());
     }
 
     @SneakyThrows
@@ -251,8 +241,7 @@ public class RestResultTest extends BaseUnitTest {
 
         Mockito.when(this.mockResponse.code()).thenReturn(200);
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
-        Mockito.when(this.mockResponse.body().string())
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
         Assert.assertEquals(result.headers(), new RestHeaders());
@@ -531,7 +520,7 @@ public class RestResultTest extends BaseUnitTest {
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-       Assert.assertEquals(result.headers(), new RestHeaders());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         Edge edge = result.readObject(Edge.class);
 
@@ -541,8 +530,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals("software:lop", edge.targetId());
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals(ImmutableMap.of("city", "Hongkong",
-                                            "date", 1495036800000L),
+        Assert.assertEquals(ImmutableMap.of("city", "Hongkong", "date", 1495036800000L),
                             edge.properties());
     }
 
@@ -583,7 +571,7 @@ public class RestResultTest extends BaseUnitTest {
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-       Assert.assertEquals(result.headers(), new RestHeaders());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         List<Edge> edges = result.readList("edges", Edge.class);
         Assert.assertEquals(2, edges.size());
@@ -1027,8 +1015,7 @@ public class RestResultTest extends BaseUnitTest {
         created.targetLabel("software");
         created.property("date", 1490284800000L);
         created.property("weight", 0.2);
-        Assert.assertTrue(Utils.contains(ImmutableList.of(created),
-                                         result.getEdge()));
+        Assert.assertTrue(Utils.contains(ImmutableList.of(created), result.getEdge()));
 
         Assert.assertTrue(results.hasNext());
         result = results.next();

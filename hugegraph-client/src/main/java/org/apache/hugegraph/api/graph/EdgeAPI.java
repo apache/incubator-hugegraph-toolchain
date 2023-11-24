@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import okhttp3.Headers;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotAllCreatedException;
 import org.apache.hugegraph.rest.RestHeaders;
@@ -52,10 +51,8 @@ public class EdgeAPI extends GraphAPI {
 
     public List<String> create(List<Edge> edges, boolean checkVertex) {
         RestHeaders headers = new RestHeaders().add(RestHeaders.CONTENT_ENCODING, BATCH_ENCODING);
-        Map<String, Object> params = ImmutableMap.of("check_vertex",
-                                                     checkVertex);
-        RestResult result = this.client.post(this.batchPath(), edges,
-                                             headers, params);
+        Map<String, Object> params = ImmutableMap.of("check_vertex", checkVertex);
+        RestResult result = this.client.post(this.batchPath(), edges, headers, params);
         List<String> ids = result.readList(String.class);
         if (edges.size() != ids.size()) {
             throw new NotAllCreatedException("Not all edges are successfully created, " +
@@ -95,11 +92,9 @@ public class EdgeAPI extends GraphAPI {
         return this.list(null, null, null, null, 0, null, limit);
     }
 
-    public Edges list(Object vertexId, Direction direction,
-                      String label, Map<String, Object> properties,
-                      int offset, String page, int limit) {
-        return this.list(vertexId, direction, label, properties, false,
-                         offset, page, limit);
+    public Edges list(Object vertexId, Direction direction, String label,
+                      Map<String, Object> properties, int offset, String page, int limit) {
+        return this.list(vertexId, direction, label, properties, false, offset, page, limit);
     }
 
     public Edges list(Object vertexId, Direction direction, String label,
