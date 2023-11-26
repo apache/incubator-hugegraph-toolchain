@@ -46,6 +46,21 @@ import com.google.common.collect.Iterators;
 
 public class EdgeTest extends BaseFuncTest {
 
+    private static void assertContains(List<Edge> edges, Object source,
+                                       String label, Object target,
+                                       Object... keyValues) {
+        Map<String, Object> properties = Utils.asMap(keyValues);
+
+        Edge edge = new Edge(label);
+        edge.sourceId(source);
+        edge.targetId(target);
+        for (String key : properties.keySet()) {
+            edge.property(key, properties.get(key));
+        }
+
+        Assert.assertTrue(Utils.contains(edges, edge));
+    }
+
     @Override
     @Before
     public void setup() {
@@ -80,7 +95,7 @@ public class EdgeTest extends BaseFuncTest {
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "2017-03-24");
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"));
+                "date", Utils.formatDate("2017-03-24"));
         Assert.assertEquals(props, created.properties());
 
         created.property("city", "HongKong");
@@ -97,7 +112,7 @@ public class EdgeTest extends BaseFuncTest {
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "2017-03-24");
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"));
+                "date", Utils.formatDate("2017-03-24"));
         Assert.assertEquals(props, created.properties());
 
         created.property("date", "2017-08-08");
@@ -125,16 +140,16 @@ public class EdgeTest extends BaseFuncTest {
                                        "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"),
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "date", Utils.formatDate("2017-03-24"),
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, created.properties());
 
         created.property("time", "2014-02-14");
         props = ImmutableMap.of("date", Utils.formatDate("2017-03-24"),
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10"),
-                                        Utils.formatDate("2014-02-14")));
+                        Utils.formatDate("2012-10-10"),
+                        Utils.formatDate("2014-02-14")));
         Assert.assertEquals(props, created.properties());
     }
 
@@ -158,16 +173,16 @@ public class EdgeTest extends BaseFuncTest {
                                        "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"),
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "date", Utils.formatDate("2017-03-24"),
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, created.properties());
 
         created.property("time", "2014-02-14");
         props = ImmutableMap.of("date", Utils.formatDate("2017-03-24"),
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10"),
-                                        Utils.formatDate("2014-02-14")));
+                        Utils.formatDate("2012-10-10"),
+                        Utils.formatDate("2014-02-14")));
         Assert.assertEquals(props, created.properties());
     }
 
@@ -191,16 +206,16 @@ public class EdgeTest extends BaseFuncTest {
                                        "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"),
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "date", Utils.formatDate("2017-03-24"),
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, created.properties());
 
         created.property("time", "2012-10-10");
         props = ImmutableMap.of("date", Utils.formatDate("2017-03-24"),
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10"),
-                                        Utils.formatDate("2012-10-10")));
+                        Utils.formatDate("2012-10-10"),
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, created.properties());
     }
 
@@ -224,15 +239,15 @@ public class EdgeTest extends BaseFuncTest {
                                        "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"),
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "date", Utils.formatDate("2017-03-24"),
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, created.properties());
 
         created.property("time", "2012-10-10");
         props = ImmutableMap.of("date", Utils.formatDate("2017-03-24"),
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10")));
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, created.properties());
     }
 
@@ -245,8 +260,8 @@ public class EdgeTest extends BaseFuncTest {
                                                          "city", "HongKong");
         Edge created = graph().addEdge(peter, "created", lop, properties);
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"),
-                                    "city", "HongKong");
+                "date", Utils.formatDate("2017-03-24"),
+                "city", "HongKong");
         Assert.assertEquals(props, created.properties());
     }
 
@@ -270,9 +285,9 @@ public class EdgeTest extends BaseFuncTest {
                                        "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"),
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "date", Utils.formatDate("2017-03-24"),
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, created.properties());
 
         created.removeProperty("time");
@@ -288,7 +303,7 @@ public class EdgeTest extends BaseFuncTest {
         Edge created = graph().addEdge(peterId, "created", lopId,
                                        "date", "2017-03-24");
         Map<String, Object> props = ImmutableMap.of(
-                                    "date", Utils.formatDate("2017-03-24"));
+                "date", Utils.formatDate("2017-03-24"));
         Assert.assertEquals(props, created.properties());
 
         Assert.assertThrows(InvalidOperationException.class, () -> {
@@ -511,8 +526,8 @@ public class EdgeTest extends BaseFuncTest {
         Object rippleId = getVertexId("software", "name", "ripple");
 
         Map<String, Object> properties = ImmutableMap.of(
-                                         "date",
-                                         Utils.formatDate("2015-01-10"));
+                "date",
+                Utils.formatDate("2015-01-10"));
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", properties);
         Assert.assertEquals(1, edges.size());
@@ -534,8 +549,8 @@ public class EdgeTest extends BaseFuncTest {
         Object joshId = getVertexId("person", "name", "josh");
 
         Map<String, Object> properties = ImmutableMap.of(
-                                         "date",
-                                         Utils.formatDate("2015-01-10"));
+                "date",
+                Utils.formatDate("2015-01-10"));
         List<Edge> edges = graph().getEdges(joshId, Direction.OUT,
                                             "created", properties);
         Assert.assertEquals(1, edges.size());
@@ -555,7 +570,7 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testGetEdgesByLabelAndPropertiesWithRangeCondition()
-                throws ParseException {
+            throws ParseException {
         schema().indexLabel("knowsByDate").range()
                 .onE("knows").by("date").create();
         schema().indexLabel("createdByDate").range()
@@ -567,7 +582,7 @@ public class EdgeTest extends BaseFuncTest {
         Date expected2 = DateUtil.parse("2016-01-10");
 
         Map<String, Object> properties = ImmutableMap.of(
-                                         "date", "P.eq(\"2014-1-10\")");
+                "date", "P.eq(\"2014-1-10\")");
         List<Edge> edges = graph().listEdges("created", properties);
 
         Date time;
@@ -649,18 +664,28 @@ public class EdgeTest extends BaseFuncTest {
 
     @Test
     public void testGetEdgesByLabelAndPropertiesWithKeepP()
-                throws ParseException {
+            throws ParseException {
         schema().indexLabel("createdByCity").secondary()
                 .onE("created").by("city").create();
         schema().indexLabel("createdByDate").secondary()
-                .onE("created").by("date").create();
+                .onE("created").by("date 2&@").create();
 
         BaseClientTest.initEdge();
 
+        {
+            //test special character
+            Map<String, Object> properties = ImmutableMap.of(
+                    "date 2&@", "P.eq(\"2014-1-10\")");
+            List<Edge> edges = graph().listEdges("created", properties, false);
+            Assert.assertEquals(1, edges.size());
+        }
+
+
         Map<String, Object> properties = ImmutableMap.of(
-                                         "date", "P.eq(\"2014-1-10\")");
+                "date", "P.eq(\"2014-1-10\")");
         List<Edge> edges = graph().listEdges("created", properties, false);
         Assert.assertEquals(1, edges.size());
+
 
         Assert.assertThrows(ServerException.class, () -> {
             graph().listEdges("created", properties, true);
@@ -778,20 +803,5 @@ public class EdgeTest extends BaseFuncTest {
             Assert.assertContains("Can't query by paging and filtering",
                                   e.getMessage());
         });
-    }
-
-    private static void assertContains(List<Edge> edges, Object source,
-                                       String label, Object target,
-                                       Object... keyValues) {
-        Map<String, Object> properties = Utils.asMap(keyValues);
-
-        Edge edge = new Edge(label);
-        edge.sourceId(source);
-        edge.targetId(target);
-        for (String key : properties.keySet()) {
-            edge.property(key, properties.get(key));
-        }
-
-        Assert.assertTrue(Utils.contains(edges, edge));
     }
 }

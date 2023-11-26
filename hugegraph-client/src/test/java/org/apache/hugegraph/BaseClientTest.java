@@ -125,16 +125,6 @@ public class BaseClientTest {
         return client.metrics();
     }
 
-    @Before
-    public void setup() {
-        // this.clearData();
-    }
-
-    @After
-    public void teardown() throws Exception {
-        // pass
-    }
-
     protected static Object getVertexId(String label, String key,
                                         String value) {
         return getVertex(label, key, value).id();
@@ -185,6 +175,7 @@ public class BaseClientTest {
         schema.propertyKey("city").asText().ifNotExist().create();
         schema.propertyKey("lang").asText().ifNotExist().create();
         schema.propertyKey("date").asDate().ifNotExist().create();
+        schema.propertyKey("date 2&@").asDate().ifNotExist().create();
         schema.propertyKey("price").asInt().ifNotExist().create();
         schema.propertyKey("weight").asDouble().ifNotExist().create();
     }
@@ -230,8 +221,8 @@ public class BaseClientTest {
         schema.edgeLabel("created")
               .sourceLabel("person")
               .targetLabel("software")
-              .properties("date", "city")
-              .nullableKeys("city")
+              .properties("date", "date 2&@", "city")
+              .nullableKeys("city", "date 2&@")
               .ifNotExist()
               .create();
     }
@@ -294,13 +285,23 @@ public class BaseClientTest {
         graph().addEdge(markoId, "knows", vadasId, "date", "2012-01-10");
         graph().addEdge(markoId, "knows", joshId, "date", "2013-01-10");
         graph().addEdge(markoId, "created", lopId,
-                        "date", "2014-01-10", "city", "Shanghai");
+                        "date", "2014-01-10", "city", "Shanghai", "date 2&@", "2014-01-10");
         graph().addEdge(joshId, "created", rippleId,
                         "date", "2015-01-10", "city", "Beijing");
         graph().addEdge(joshId, "created", lopId,
                         "date", "2016-01-10", "city", "Beijing");
         graph().addEdge(peterId, "created", lopId,
                         "date", "2017-01-10", "city", "Hongkong");
+    }
+
+    @Before
+    public void setup() {
+        // this.clearData();
+    }
+
+    @After
+    public void teardown() throws Exception {
+        // pass
     }
 
     protected List<Vertex> create100PersonBatch() {
