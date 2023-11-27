@@ -663,23 +663,44 @@ public class EdgeTest extends BaseFuncTest {
     }
 
     @Test
+    public void testSpecialCharacter() {
+        schema().indexLabel("createdByCity").secondary()
+                .onE("created").by("city").create();
+        schema().indexLabel("createdByDate").secondary()
+                .onE("created").by("date @&$=*?").create();
+
+        Object markoId = getVertexId("person", "name", "marko");
+        Object lopId = getVertexId("software", "name", "lop");
+        Object rippleId = getVertexId("software", "name", "ripple");
+        graph().addEdge(markoId, "created", lopId,
+                        "date", "2014-01-10", "city", "Shanghai", "date @&$=*?", "2014-01-10");
+        graph().addEdge(markoId, "created", rippleId,
+                        "date", "2015-01-10", "city", "Shanghai @&$=*?");
+
+        Map<String, Object> properties = ImmutableMap.of(
+                "date @&$=*?", "P.eq(\"2014-1-10\")");
+        List<Edge> edges = graph().listEdges("created", properties, false);
+        Assert.assertEquals(1, edges.size());
+
+        Map<String, Object> properties2 = ImmutableMap.of("city", "Shanghai");
+        edges = graph().listEdges("created", properties2, true);
+        Assert.assertEquals(1, edges.size());
+
+        Map<String, Object> properties3 = ImmutableMap.of("city", "Shanghai @&$=*?");
+        edges = graph().listEdges("created", properties3, true);
+        Assert.assertEquals(1, edges.size());
+
+    }
+
+    @Test
     public void testGetEdgesByLabelAndPropertiesWithKeepP()
             throws ParseException {
         schema().indexLabel("createdByCity").secondary()
                 .onE("created").by("city").create();
         schema().indexLabel("createdByDate").secondary()
-                .onE("created").by("date 2&@").create();
+                .onE("created").by("date").create();
 
         BaseClientTest.initEdge();
-
-        {
-            //test special character
-            Map<String, Object> properties = ImmutableMap.of(
-                    "date 2&@", "P.eq(\"2014-1-10\")");
-            List<Edge> edges = graph().listEdges("created", properties, false);
-            Assert.assertEquals(1, edges.size());
-        }
-
 
         Map<String, Object> properties = ImmutableMap.of(
                 "date", "P.eq(\"2014-1-10\")");

@@ -146,11 +146,11 @@ public class UserApiTest extends AuthApiTest {
     public void testGetUserRole() {
         User user1 = createUser("test1", "psw1");
         User user2 = createUser("test2", "psw2");
-        User user3 = createUser("test3 aaa", "psw3");
+        User user3 = createUser("test3 @&$=*?", "psw3");
 
         Assert.assertEquals("test1", user1.name());
         Assert.assertEquals("test2", user2.name());
-        Assert.assertContains("test3 aaa", user3.name());//test special character
+        Assert.assertContains("test3 @&$=*?", user3.name());// test special character
 
         UserRole role1 = api.getUserRole(user1.id());
         UserRole role2 = api.getUserRole(user2.id());

@@ -61,7 +61,7 @@ public class HugeClient implements Closeable {
                                          builder.trustStoreFile(),
                                          builder.trustStorePassword());
         } catch (Exception e) {
-            log.error("", e);
+            log.warn("create RestClient instance error", e);
             throw new ClientException("Failed to connect url '%s'", builder.url());
         }
         try {

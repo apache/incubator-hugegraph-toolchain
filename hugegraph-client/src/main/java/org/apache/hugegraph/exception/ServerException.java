@@ -23,8 +23,6 @@ import org.apache.hugegraph.rest.RestResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import okhttp3.Response;
-
 public class ServerException extends RuntimeException {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerException.class);
@@ -44,7 +42,7 @@ public class ServerException extends RuntimeException {
     private String cause;
     private Object trace;
 
-    public static ServerException fromResponse(Response response) {
+    public static ServerException fromResponse(okhttp3.Response response) {
         RestResult rs = new RestResult(response);
         ServerException exception = new ServerException(rs.content());
         exception.status(response.code());

@@ -29,7 +29,6 @@ import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import okhttp3.Response;
 
 public class RestClient extends AbstractRestClient {
 
@@ -77,7 +76,7 @@ public class RestClient extends AbstractRestClient {
     }
 
     @Override
-    protected void checkStatus(Response response, int... statuses) {
+    protected void checkStatus(okhttp3.Response response, int... statuses) {
         boolean match = false;
         for (int status : statuses) {
             if (status == response.code()) {
