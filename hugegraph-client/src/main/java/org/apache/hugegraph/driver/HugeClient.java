@@ -23,11 +23,12 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.version.ClientVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class HugeClient implements Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
 
     static {
         ClientVersion.check();
