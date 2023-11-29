@@ -24,7 +24,7 @@ on:
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
   # TODO: need update it later (eed6103359fe40d2f1476fb8c56d9388c3111a99)
-  COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
+  COMMIT_ID: 69e6b461add1051831dd6cc0c36a5e249a3b3176
 
 jobs:
   hubble-ci:
