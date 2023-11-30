@@ -28,6 +28,7 @@ GIT_DIR=hugegraph
 # download code and compile
 git clone --depth 100 ${HUGEGRAPH_GIT_URL} $GIT_DIR
 cd "${GIT_DIR}"
+git log
 git checkout "${COMMIT_ID}"
 mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
 
