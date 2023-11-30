@@ -543,8 +543,7 @@ public class TraverserManager {
     }
 
     public List<Edge> edgeExistence(Object sourceId, Object targetId, String edgeLabel,
-                                    String sortValues, long limit){
-        return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel,
-                sortValues, limit);
+                                    String sortValues, int limit){
+        return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel, sortValues, limit);
     }
 }
