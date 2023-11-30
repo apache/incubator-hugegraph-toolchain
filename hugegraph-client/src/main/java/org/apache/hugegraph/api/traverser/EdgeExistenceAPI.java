@@ -49,7 +49,7 @@ public class EdgeExistenceAPI extends TraversersAPI {
         params.put("target", target);
         params.put("label", edgeLabel);
         if (Strings.isEmpty(sortValues)){
-            params.put("sortValues", sortValues);
+            params.put("sort_values", sortValues);
         }
         if (null != limit){
             params.put("limit", limit);
