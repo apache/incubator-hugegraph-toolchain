@@ -22,6 +22,7 @@ import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.logging.log4j.util.Strings;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,18 +40,20 @@ public class EdgeExistenceAPI extends TraversersAPI {
     }
 
     public List<Edge> get(Object sourceId, Object targetId, String edgeLabel,
-                          String sortValues, long limit) {
+                          String sortValues, Long limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
-
-        checkLimit((int) limit);
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("source", source);
         params.put("target", target);
         params.put("label", edgeLabel);
-        params.put("sortValues", sortValues);
-        params.put("limit", limit);
+        if (Strings.isEmpty(sortValues)){
+            params.put("sortValues", sortValues);
+        }
+        if (null != limit){
+            params.put("limit", limit);
+        }
         RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Edge.class);
     }
