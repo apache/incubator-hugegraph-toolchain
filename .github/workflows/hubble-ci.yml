@@ -1,7 +1,6 @@
 name: "hugegraph-hubble-ci"
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - master
@@ -23,8 +22,8 @@ on:
 
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
-  # TODO: replace it with the (latest - n) commit id (n >= 15)
-  COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
+  # TODO: need update it later (ed493f3093eab293a75cd2f539e29ca11fa6cd81)
+  COMMIT_ID: ed493f3093eab293a75cd2f539e29ca11fa6cd81
 
 jobs:
   hubble-ci:
@@ -114,7 +113,6 @@ jobs:
           hubble-dist/assembly/travis/run-api-test.sh
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v3.0.0
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           file: target/site/jacoco/*.xml
