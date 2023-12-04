@@ -24,7 +24,8 @@ jobs:
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
-      COMMIT_ID: 69e6b461add1051831dd6cc0c36a5e249a3b3176
+      # TODO: replace it with the (latest - n) commit id (n >= 15)
+      COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +71,7 @@ jobs:
           mvn test -Dtest=FuncTestSuite
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.0.0
+        uses: codecov/codecov-action@v
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: target/jacoco.xml
