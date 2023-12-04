@@ -40,7 +40,7 @@ public class EdgeExistenceAPI extends TraversersAPI {
     }
 
     public List<Edge> get(Object sourceId, Object targetId, String edgeLabel,
-                          String sortValues, Long limit) {
+                          String sortValues, int limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
 
@@ -51,7 +51,7 @@ public class EdgeExistenceAPI extends TraversersAPI {
         if (Strings.isEmpty(sortValues)){
             params.put("sort_values", sortValues);
         }
-        if (null != limit){
+        if (limit > 0){
             params.put("limit", limit);
         }
         RestResult result = this.client.get(this.path(), params);

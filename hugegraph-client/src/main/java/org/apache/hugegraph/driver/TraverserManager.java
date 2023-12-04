@@ -544,13 +544,13 @@ public class TraverserManager {
 
     public List<Edge> edgeExistence(Object sourceId, Object targetId, String edgeLabel,
                                     String sortValues, int limit){
-        return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel, sortValues, (long) limit);
+        return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel, sortValues, limit);
     }
     public List<Edge> edgeExistence(Object sourceId, Object targetId){
-        return this.edgeExistenceAPI.get(sourceId, targetId, "", "", null);
+        return this.edgeExistenceAPI.get(sourceId, targetId, "", "", -1);
     }
 
     public List<Edge> edgeExistence(Object sourceId, Object targetId, String edgeLabel){
-        return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel, null, null);
+        return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel, null, -1);
     }
 }
