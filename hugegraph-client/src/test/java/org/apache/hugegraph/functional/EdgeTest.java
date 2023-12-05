@@ -46,9 +46,8 @@ import com.google.common.collect.Iterators;
 
 public class EdgeTest extends BaseFuncTest {
 
-    private static void assertContains(List<Edge> edges, Object source,
-                                       String label, Object target,
-                                       Object... keyValues) {
+    private static void assertContains(List<Edge> edges, Object source, String label,
+                                       Object target, Object... keyValues) {
         Map<String, Object> properties = Utils.asMap(keyValues);
 
         Edge edge = new Edge(label);

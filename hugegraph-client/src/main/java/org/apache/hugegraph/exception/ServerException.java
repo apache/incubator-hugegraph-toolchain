@@ -29,12 +29,10 @@ public class ServerException extends RuntimeException {
 
     private static final long serialVersionUID = 6335623004322652358L;
 
-    private static final String[] EXCEPTION_KEYS = {"exception",
-                                                    "Exception-Class"};
+    private static final String[] EXCEPTION_KEYS = {"exception", "Exception-Class"};
     private static final String[] MESSAGE_KEYS = {"message"};
     private static final String[] CAUSE_KEYS = {"cause", "exceptions"};
     private static final String[] TRACE_KEYS = {"trace", "stackTrace"};
-
 
     private int status = 0;
     private String exception;
@@ -54,7 +52,7 @@ public class ServerException extends RuntimeException {
             exception.cause = (String) getByKeys(json, CAUSE_KEYS);
             exception.trace = getByKeys(json, TRACE_KEYS);
         } catch (Exception ignored) {
-            LOG.error("ServerException fromResponse excepiton");
+            LOG.error("ServerException fromResponse exception");
         }
 
         return exception;
