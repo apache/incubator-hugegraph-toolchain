@@ -27,6 +27,9 @@ COPY . /pkg
 WORKDIR /pkg
 
 RUN set -x \
+    && mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
+
+RUN set -x \
     && cd /pkg/hugegraph-hubble/ \
     && mvn package -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
 
