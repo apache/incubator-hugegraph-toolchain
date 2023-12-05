@@ -57,11 +57,8 @@ public class BaseClientTest {
 
     private static HugeClient client;
 
-    protected static HugeClient open() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
-                           .configUser(USERNAME, PASSWORD)
-                           .build();
-        return client;
+    protected static void open() {
+        client = HugeClient.builder(BASE_URL, GRAPH).configUser(USERNAME, PASSWORD).build();
     }
 
     @BeforeClass
@@ -125,18 +122,7 @@ public class BaseClientTest {
         return client.metrics();
     }
 
-    @Before
-    public void setup() {
-        // this.clearData();
-    }
-
-    @After
-    public void teardown() throws Exception {
-        // pass
-    }
-
-    protected static Object getVertexId(String label, String key,
-                                        String value) {
+    protected static Object getVertexId(String label, String key, String value) {
         return getVertex(label, key, value).id();
     }
 
@@ -158,23 +144,19 @@ public class BaseClientTest {
         return edges.get(0);
     }
 
-    protected static void assertContains(List<PropertyKey> propertyKeys,
-                                         PropertyKey propertyKey) {
+    protected static void assertContains(List<PropertyKey> propertyKeys, PropertyKey propertyKey) {
         Assert.assertTrue(Utils.contains(propertyKeys, propertyKey));
     }
 
-    protected static void assertContains(List<VertexLabel> vertexLabels,
-                                         VertexLabel vertexLabel) {
+    protected static void assertContains(List<VertexLabel> vertexLabels, VertexLabel vertexLabel) {
         Assert.assertTrue(Utils.contains(vertexLabels, vertexLabel));
     }
 
-    protected static void assertContains(List<EdgeLabel> edgeLabels,
-                                         EdgeLabel edgeLabel) {
+    protected static void assertContains(List<EdgeLabel> edgeLabels, EdgeLabel edgeLabel) {
         Assert.assertTrue(Utils.contains(edgeLabels, edgeLabel));
     }
 
-    protected static void assertContains(List<IndexLabel> indexLabels,
-                                         IndexLabel indexLabel) {
+    protected static void assertContains(List<IndexLabel> indexLabels, IndexLabel indexLabel) {
         Assert.assertTrue(Utils.contains(indexLabels, indexLabel));
     }
 
@@ -185,6 +167,7 @@ public class BaseClientTest {
         schema.propertyKey("city").asText().ifNotExist().create();
         schema.propertyKey("lang").asText().ifNotExist().create();
         schema.propertyKey("date").asDate().ifNotExist().create();
+        schema.propertyKey("date @&$=*?").asDate().ifNotExist().create();
         schema.propertyKey("price").asInt().ifNotExist().create();
         schema.propertyKey("weight").asDouble().ifNotExist().create();
     }
@@ -230,8 +213,8 @@ public class BaseClientTest {
         schema.edgeLabel("created")
               .sourceLabel("person")
               .targetLabel("software")
-              .properties("date", "city")
-              .nullableKeys("city")
+              .properties("date", "date @&$=*?", "city")
+              .nullableKeys("city", "date @&$=*?")
               .ifNotExist()
               .create();
     }
@@ -301,6 +284,16 @@ public class BaseClientTest {
                         "date", "2016-01-10", "city", "Beijing");
         graph().addEdge(peterId, "created", lopId,
                         "date", "2017-01-10", "city", "Hongkong");
+    }
+
+    @Before
+    public void setup() {
+        // this.clearData();
+    }
+
+    @After
+    public void teardown() throws Exception {
+        // pass
     }
 
     protected List<Vertex> create100PersonBatch() {

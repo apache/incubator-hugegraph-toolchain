@@ -50,8 +50,8 @@ public class UserAPI extends AuthAPI {
     }
 
     public UserRole getUserRole(Object id) {
-        String idEncoded = RestClient.encode(formatEntityId(id));
-        String path = String.join("/", this.path(), idEncoded, "role");
+        String formattedId = formatEntityId(id);
+        String path = String.join("/", this.path(), formattedId, "role");
         RestResult result = this.client.get(path);
         return result.readObject(UserRole.class);
     }

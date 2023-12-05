@@ -18,18 +18,17 @@
 package org.apache.hugegraph.client;
 
 import org.apache.hugegraph.exception.ServerException;
-import org.apache.hugegraph.serializer.PathDeserializer;
-import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.rest.AbstractRestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.serializer.PathDeserializer;
+import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import jakarta.ws.rs.core.Response;
 
 public class RestClient extends AbstractRestClient {
 
@@ -43,8 +42,7 @@ public class RestClient extends AbstractRestClient {
         RestResult.registerModule(module);
     }
 
-    public RestClient(String url, String username, String password,
-                      int timeout) {
+    public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);
     }
 
@@ -73,16 +71,15 @@ public class RestClient extends AbstractRestClient {
     }
 
     public boolean apiVersionLt(String minVersion) {
-        String apiVersion = this.apiVersion == null ?
-                            null : this.apiVersion.get();
+        String apiVersion = this.apiVersion == null ? null : this.apiVersion.get();
         return apiVersion != null && !VersionUtil.gte(apiVersion, minVersion);
     }
 
     @Override
-    protected void checkStatus(Response response, Response.Status... statuses) {
+    protected void checkStatus(okhttp3.Response response, int... statuses) {
         boolean match = false;
-        for (Response.Status status : statuses) {
-            if (status.getStatusCode() == response.getStatus()) {
+        for (int status : statuses) {
+            if (status == response.code()) {
                 match = true;
                 break;
             }
