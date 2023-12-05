@@ -15,8 +15,8 @@
   License for the specific language governing permissions and limitations
   under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -30,14 +30,11 @@
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
-    <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-client</url>
+    <url>https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-client</url>
     <description>
         hugegraph-client is a Java-written client of HugeGraph, providing
         operations of graph, schema, gremlin, variables and traversals etc.
     </description>
-
-    <properties>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -49,13 +46,15 @@
             <artifactId>lz4-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-servlet</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

@@ -30,7 +30,7 @@
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
-    <url>https://github.com/apache/incubator-hugegraph-toolchain/tree/master/hugegraph-hubble</url>
+    <url>https://github.com/apache/hugegraph-toolchain/tree/master/hugegraph-hubble</url>
     <description>
         hugegraph-hubble is a graph management and analysis platform that provides features:
         graph data load, schema management, graph relationship analysis and graphical display.
@@ -47,13 +47,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.glassfish.jersey</groupId>
-                <artifactId>jersey-bom</artifactId>
-                <version>${jersey.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>

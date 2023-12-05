@@ -19,15 +19,16 @@ package org.apache.hugegraph.driver;
 
 import java.io.Closeable;
 
-import org.apache.hugegraph.version.ClientVersion;
 import org.apache.hugegraph.client.RestClient;
-
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.util.VersionUtil;
-
-import jakarta.ws.rs.ProcessingException;
+import org.apache.hugegraph.version.ClientVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HugeClient implements Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
 
     static {
         ClientVersion.check();
@@ -60,7 +61,8 @@ public class HugeClient implements Closeable {
                                          builder.maxConnsPerRoute(),
                                          builder.trustStoreFile(),
                                          builder.trustStorePassword());
-        } catch (ProcessingException e) {
+        } catch (Exception e) {
+            LOG.warn("Failed to create RestClient instance", e);
             throw new ClientException("Failed to connect url '%s'", builder.url());
         }
         try {
@@ -110,7 +112,7 @@ public class HugeClient implements Closeable {
     private void checkServerApiVersion() {
         VersionUtil.Version apiVersion = VersionUtil.Version.of(this.version.getApiVersion());
         // TODO: find a way to keep the range of api version correct automatically
-        // 0.81 equals to the {latest_api_version} +10  
+        //       0.81 equals to the {latest_api_version} +10
         VersionUtil.check(apiVersion, "0.38", "0.81", "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
     }

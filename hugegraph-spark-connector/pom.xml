@@ -36,10 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spark.verion>3.2.2</spark.verion>
         <spark.scope>provided</spark.scope>
-        <hugegraph.client.version>1.0.0</hugegraph.client.version>
         <jackson.version>2.12.3</jackson.version>
-        <jersey.version>3.0.3</jersey.version>
-        <jersey.container.servlet.core.version>2.34</jersey.container.servlet.core.version>
         <log4j.version>2.18.0</log4j.version>
         <slf4j.api.version>1.7.25</slf4j.api.version>
         <scala.minor.version>2.12.11</scala.minor.version>
@@ -91,36 +88,7 @@
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>${hugegraph.client.version}</version>
-        </dependency>
-
-        <!-- jersey version override -->
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-common</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-hk2</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-server</artifactId>
-            <version>${jersey.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-servlet-core</artifactId>
-            <version>${jersey.container.servlet.core.version}</version>
-            <scope>provided</scope>
+            <version>${revision}</version>
         </dependency>
 
         <!-- jackson version override -->

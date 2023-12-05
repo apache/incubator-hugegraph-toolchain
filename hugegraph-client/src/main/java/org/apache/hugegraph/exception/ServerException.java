@@ -23,20 +23,16 @@ import org.apache.hugegraph.rest.RestResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.ws.rs.core.Response;
-
 public class ServerException extends RuntimeException {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerException.class);
 
     private static final long serialVersionUID = 6335623004322652358L;
 
-    private static final String[] EXCEPTION_KEYS = {"exception",
-                                                    "Exception-Class"};
+    private static final String[] EXCEPTION_KEYS = {"exception", "Exception-Class"};
     private static final String[] MESSAGE_KEYS = {"message"};
     private static final String[] CAUSE_KEYS = {"cause", "exceptions"};
     private static final String[] TRACE_KEYS = {"trace", "stackTrace"};
-
 
     private int status = 0;
     private String exception;
@@ -44,10 +40,10 @@ public class ServerException extends RuntimeException {
     private String cause;
     private Object trace;
 
-    public static ServerException fromResponse(Response response) {
+    public static ServerException fromResponse(okhttp3.Response response) {
         RestResult rs = new RestResult(response);
         ServerException exception = new ServerException(rs.content());
-        exception.status(response.getStatus());
+        exception.status(response.code());
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> json = rs.readObject(Map.class);
@@ -56,7 +52,7 @@ public class ServerException extends RuntimeException {
             exception.cause = (String) getByKeys(json, CAUSE_KEYS);
             exception.trace = getByKeys(json, TRACE_KEYS);
         } catch (Exception ignored) {
-            LOG.error("ServerException fromResponse excepiton");
+            LOG.error("ServerException fromResponse exception");
         }
 
         return exception;
