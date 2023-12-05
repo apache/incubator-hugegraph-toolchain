@@ -21,6 +21,7 @@ jobs:
   client-ci:
     runs-on: ubuntu-20.04
     env:
+      USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
       COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
     strategy:
@@ -46,6 +47,12 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Use staged maven repo
+        if: ${{ env.USE_STAGE == 'true' }}
+        run: |
+          cp $HOME/.m2/settings.xml /tmp/settings.xml
+          mv -vf .github/configs/settings.xml $HOME/.m2/settings.xml
+
       - name: Compile
         run: |
           mvn -e compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp
@@ -62,6 +69,6 @@ jobs:
           mvn test -Dtest=FuncTestSuite
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.0.0
+        uses: codecov/codecov-action@v3
         with:
           file: target/jacoco.xml

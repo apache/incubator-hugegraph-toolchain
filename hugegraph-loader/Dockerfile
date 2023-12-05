@@ -17,27 +17,35 @@
 
 FROM maven:3.9.0-eclipse-temurin-11 AS build
 
-RUN set -x \
-    && apt-get -q update \
-    && apt-get install -y nodejs npm \
-    && npm install --global yarn \
-    && apt-get clean
-
 COPY . /pkg
 WORKDIR /pkg
 
 RUN set -x \
     && mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
+
 RUN set -x \
-    && cd /pkg/hugegraph-hubble/ \
-    && mvn package -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
+    && cd /pkg/hugegraph-loader/ \
+    && echo "$(ls)" \
+    && mvn clean package -DskipTests
 
 
 FROM openjdk:11-slim
 
-COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /hubble
-WORKDIR /hubble/
+COPY --from=build /pkg/hugegraph-loader/apache-hugegraph-loader-incubating-*/ /loader
+WORKDIR /loader/
 
-EXPOSE 8088
-ENTRYPOINT ["./bin/start-hubble.sh", "-f true"]
+RUN set -x \
+    && apt-get -q update \
+    && apt-get -q install -y --no-install-recommends --no-install-suggests \
+       dumb-init \
+       procps \
+       curl \
+       lsof \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+VOLUME /loader
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["tail","-f","/dev/null"]

@@ -579,7 +579,6 @@ const EdgeMap: React.FC<EdgeMapProps> = observer(
                         <Select
                           width={170}
                           size="medium"
-                          getPopupContainer={(e: any) => e.parentNode}
                           value={mapped_name}
                           onChange={(value: string) => {
                             dataMapStore.setEdgeFieldMapping(

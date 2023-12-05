@@ -15,29 +15,23 @@
 # limitations under the License.
 #
 
-FROM maven:3.9.0-eclipse-temurin-11 AS build
+version: '3'
+services:
+  server:
+    image: hugegraph/hugegraph
+    container_name: graph
+    ports:
+      - 8080:8080
 
-RUN set -x \
-    && apt-get -q update \
-    && apt-get install -y nodejs npm \
-    && npm install --global yarn \
-    && apt-get clean
+  hubble:
+    image: hugegraph/hubble
+    container_name: hubble
+    ports:
+      - 8088:8088
 
-COPY . /pkg
-WORKDIR /pkg
-
-RUN set -x \
-    && mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-
-RUN set -x \
-    && cd /pkg/hugegraph-hubble/ \
-    && mvn package -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
-
-
-FROM openjdk:11-slim
-
-COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /hubble
-WORKDIR /hubble/
-
-EXPOSE 8088
-ENTRYPOINT ["./bin/start-hubble.sh", "-f true"]
+  loader:
+    image: hugegraph/loader
+    container_name: loader
+    # mount your own data here
+    # volumes:
+      # - /path/to/data/file:/loader/file
