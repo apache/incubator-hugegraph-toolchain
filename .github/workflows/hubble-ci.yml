@@ -1,6 +1,7 @@
 name: "hugegraph-hubble-ci"
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -113,6 +114,7 @@ jobs:
           hubble-dist/assembly/travis/run-api-test.sh
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.0.0
+        uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: target/site/jacoco/*.xml

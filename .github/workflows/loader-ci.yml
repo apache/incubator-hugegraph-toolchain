@@ -1,6 +1,7 @@
 name: "hugegraph-loader-ci"
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -74,6 +75,7 @@ jobs:
           mvn test -P kafka
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.0.0
+        uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: target/jacoco.xml

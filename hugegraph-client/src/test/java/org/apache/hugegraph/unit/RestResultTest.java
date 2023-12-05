@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.rest.RestHeaders;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.serializer.PathDeserializer;
 import org.apache.hugegraph.structure.constant.Cardinality;
@@ -53,9 +54,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import lombok.SneakyThrows;
+
 public class RestResultTest extends BaseUnitTest {
 
-    private jakarta.ws.rs.core.Response mockResponse;
+    private okhttp3.Response mockResponse;
     private static GraphManager graphManager;
 
     @BeforeClass
@@ -74,7 +77,7 @@ public class RestResultTest extends BaseUnitTest {
     @Before
     public void setup() {
         // Mock caches
-        this.mockResponse = Mockito.mock(jakarta.ws.rs.core.Response.class);
+        this.mockResponse = Mockito.mock(okhttp3.Response.class, Mockito.RETURNS_DEEP_STUBS);
     }
 
     @After
@@ -82,6 +85,7 @@ public class RestResultTest extends BaseUnitTest {
         // pass
     }
 
+    @SneakyThrows
     @Test
     public void testReadPropertyKey() {
         String json = "{"
@@ -92,13 +96,12 @@ public class RestResultTest extends BaseUnitTest {
                       + "\"properties\": []"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         PropertyKey propertyKey = result.readObject(PropertyKey.class);
 
@@ -108,6 +111,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals(Collections.emptySet(), propertyKey.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadPropertyKeys() {
         String json = "{\"propertykeys\": ["
@@ -126,16 +130,14 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "]}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
-        List<PropertyKey> propertyKeys = result.readList("propertykeys",
-                                                         PropertyKey.class);
+        List<PropertyKey> propertyKeys = result.readList("propertykeys", PropertyKey.class);
         Assert.assertEquals(2, propertyKeys.size());
         PropertyKey propertyKey1 = propertyKeys.get(0);
         PropertyKey propertyKey2 = propertyKeys.get(1);
@@ -151,6 +153,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals(Collections.emptySet(), propertyKey2.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadVertexLabel() {
         String json = "{"
@@ -162,24 +165,22 @@ public class RestResultTest extends BaseUnitTest {
                       + "\"properties\": [\"price\", \"name\", \"lang\"]"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         VertexLabel vertexLabel = result.readObject(VertexLabel.class);
 
         Assert.assertEquals("software", vertexLabel.name());
         Assert.assertEquals(IdStrategy.PRIMARY_KEY, vertexLabel.idStrategy());
-        Assert.assertEquals(ImmutableList.of("name"),
-                            vertexLabel.primaryKeys());
-        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"),
-                            vertexLabel.properties());
+        Assert.assertEquals(ImmutableList.of("name"), vertexLabel.primaryKeys());
+        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"), vertexLabel.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadVertexLabels() {
         String json = "{\"vertexlabels\": ["
@@ -201,35 +202,30 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "]}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
-        List<VertexLabel> vertexLabels = result.readList("vertexlabels",
-                                                         VertexLabel.class);
+        List<VertexLabel> vertexLabels = result.readList("vertexlabels", VertexLabel.class);
         Assert.assertEquals(2, vertexLabels.size());
         VertexLabel vertexLabel1 = vertexLabels.get(0);
         VertexLabel vertexLabel2 = vertexLabels.get(1);
 
         Assert.assertEquals("software", vertexLabel1.name());
         Assert.assertEquals(IdStrategy.PRIMARY_KEY, vertexLabel1.idStrategy());
-        Assert.assertEquals(ImmutableList.of("name"),
-                            vertexLabel1.primaryKeys());
-        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"),
-                            vertexLabel1.properties());
+        Assert.assertEquals(ImmutableList.of("name"), vertexLabel1.primaryKeys());
+        Assert.assertEquals(ImmutableSet.of("price", "name", "lang"), vertexLabel1.properties());
 
         Assert.assertEquals("person", vertexLabel2.name());
         Assert.assertEquals(IdStrategy.CUSTOMIZE_STRING, vertexLabel2.idStrategy());
-        Assert.assertEquals(Collections.emptyList(),
-                            vertexLabel2.primaryKeys());
-        Assert.assertEquals(ImmutableSet.of("city", "name", "age"),
-                            vertexLabel2.properties());
+        Assert.assertEquals(Collections.emptyList(), vertexLabel2.primaryKeys());
+        Assert.assertEquals(ImmutableSet.of("city", "name", "age"), vertexLabel2.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadEdgeLabel() {
         String json = "{"
@@ -243,13 +239,12 @@ public class RestResultTest extends BaseUnitTest {
                       + "\"frequency\": \"SINGLE\""
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
-               .thenReturn(json);
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         EdgeLabel edgeLabel = result.readObject(EdgeLabel.class);
 
@@ -261,6 +256,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals(ImmutableSet.of("date"), edgeLabel.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadEdgeLabels() {
         String json = "{\"edgelabels\": ["
@@ -285,13 +281,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "]}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         List<EdgeLabel> edgeLabels = result.readList("edgelabels",
                                                      EdgeLabel.class);
@@ -315,6 +311,7 @@ public class RestResultTest extends BaseUnitTest {
                             edgeLabel2.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadIndexLabel() {
         String json = "{"
@@ -326,13 +323,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "\"base_type\": \"VERTEX_LABEL\""
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         IndexLabel indexLabel = result.readObject(IndexLabel.class);
 
@@ -344,6 +341,7 @@ public class RestResultTest extends BaseUnitTest {
                             indexLabel.indexFields());
     }
 
+    @SneakyThrows
     @Test
     public void testReadIndexLabels() {
         String json = "{\"indexlabels\": ["
@@ -365,13 +363,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "]}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         List<IndexLabel> indexLabels = result.readList("indexlabels",
                                                        IndexLabel.class);
@@ -394,6 +392,7 @@ public class RestResultTest extends BaseUnitTest {
                             indexLabel2.indexFields());
     }
 
+    @SneakyThrows
     @Test
     public void testReadVertex() {
         String json = "{"
@@ -405,13 +404,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         Vertex vertex = result.readObject(Vertex.class);
 
@@ -421,6 +420,7 @@ public class RestResultTest extends BaseUnitTest {
                             vertex.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadVertices() {
         String json = "{\"vertices\": ["
@@ -456,13 +456,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "]}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         List<Vertex> vertices = result.readList("vertices", Vertex.class);
         Assert.assertEquals(3, vertices.size());
@@ -497,6 +497,7 @@ public class RestResultTest extends BaseUnitTest {
                             vertex3.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadEdge() {
         String json = "{"
@@ -513,13 +514,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         Edge edge = result.readObject(Edge.class);
 
@@ -529,11 +530,11 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertEquals("software:lop", edge.targetId());
         Assert.assertEquals("person", edge.sourceLabel());
         Assert.assertEquals("software", edge.targetLabel());
-        Assert.assertEquals(ImmutableMap.of("city", "Hongkong",
-                                            "date", 1495036800000L),
+        Assert.assertEquals(ImmutableMap.of("city", "Hongkong", "date", 1495036800000L),
                             edge.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadEdges() {
         String json = "{\"edges\": ["
@@ -564,13 +565,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "]}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertNull(result.headers());
+        Assert.assertEquals(result.headers(), new RestHeaders());
 
         List<Edge> edges = result.readList("edges", Edge.class);
         Assert.assertEquals(2, edges.size());
@@ -597,6 +598,7 @@ public class RestResultTest extends BaseUnitTest {
                             edge2.properties());
     }
 
+    @SneakyThrows
     @Test
     public void testReadGremlinVertices() {
         String json = "{"
@@ -643,13 +645,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
-        Assert.assertNull(restResult.headers());
+        Assert.assertEquals(restResult.headers(), new RestHeaders());
 
         Response response = restResult.readObject(Response.class);
         response.graphManager(graph());
@@ -689,6 +691,7 @@ public class RestResultTest extends BaseUnitTest {
         }
     }
 
+    @SneakyThrows
     @Test
     public void testReadGremlinEdges() {
         String json = "{"
@@ -731,13 +734,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
-        Assert.assertNull(restResult.headers());
+        Assert.assertEquals(restResult.headers(), new RestHeaders());
 
         Response response = restResult.readObject(Response.class);
         response.graphManager(graph());
@@ -774,6 +777,7 @@ public class RestResultTest extends BaseUnitTest {
         }
     }
 
+    @SneakyThrows
     @Test
     public void testReadGremlinPathWithVertexAndEdge() {
         String json = "{"
@@ -819,13 +823,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
-        Assert.assertNull(restResult.headers());
+        Assert.assertEquals(restResult.headers(), new RestHeaders());
 
         Response response = restResult.readObject(Response.class);
         response.graphManager(graph());
@@ -862,6 +866,7 @@ public class RestResultTest extends BaseUnitTest {
                                path.objects());
     }
 
+    @SneakyThrows
     @Test
     public void testReadGremlinNullData() {
         String json = "{"
@@ -877,13 +882,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
-        Assert.assertNull(restResult.headers());
+        Assert.assertEquals(restResult.headers(), new RestHeaders());
 
         Response response = restResult.readObject(Response.class);
         response.graphManager(graph());
@@ -895,6 +900,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertNull(object);
     }
 
+    @SneakyThrows
     @Test
     public void testReadGremlinNullAndVertex() {
         String json = "{"
@@ -922,13 +928,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
-        Assert.assertNull(restResult.headers());
+        Assert.assertEquals(restResult.headers(), new RestHeaders());
 
         Response response = restResult.readObject(Response.class);
         response.graphManager(graph());
@@ -952,6 +958,7 @@ public class RestResultTest extends BaseUnitTest {
         Assert.assertTrue(Utils.contains(ImmutableList.of(marko), vertex));
     }
 
+    @SneakyThrows
     @Test
     public void testReadGremlinEdgeAndNull() {
         String json = "{"
@@ -982,13 +989,13 @@ public class RestResultTest extends BaseUnitTest {
                       + "}"
                       + "}";
 
-        Mockito.when(this.mockResponse.getStatus()).thenReturn(200);
-        Mockito.when(this.mockResponse.getHeaders()).thenReturn(null);
-        Mockito.when(this.mockResponse.readEntity(String.class))
+        Mockito.when(this.mockResponse.code()).thenReturn(200);
+        Mockito.when(this.mockResponse.headers()).thenReturn(null);
+        Mockito.when(this.mockResponse.body().string())
                .thenReturn(json);
         RestResult restResult = new RestResult(this.mockResponse);
         Assert.assertEquals(200, restResult.status());
-        Assert.assertNull(restResult.headers());
+        Assert.assertEquals(restResult.headers(), new RestHeaders());
 
         Response response = restResult.readObject(Response.class);
         response.graphManager(graph());
@@ -1008,8 +1015,7 @@ public class RestResultTest extends BaseUnitTest {
         created.targetLabel("software");
         created.property("date", 1490284800000L);
         created.property("weight", 0.2);
-        Assert.assertTrue(Utils.contains(ImmutableList.of(created),
-                                         result.getEdge()));
+        Assert.assertTrue(Utils.contains(ImmutableList.of(created), result.getEdge()));
 
         Assert.assertTrue(results.hasNext());
         result = results.next();

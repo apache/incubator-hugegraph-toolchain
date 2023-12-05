@@ -1,5 +1,6 @@
 name: "hugegraph-tools-ci"
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -56,6 +57,7 @@ jobs:
         run: |
           mvn test -Dtest=FuncTestSuite -pl hugegraph-tools -ntp
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.0.0
+        uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: target/jacoco.xml

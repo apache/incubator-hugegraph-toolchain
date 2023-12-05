@@ -20,9 +20,6 @@ package org.apache.hugegraph.api.graph;
 import java.util.Map;
 import java.util.UUID;
 
-import org.glassfish.jersey.uri.UriComponent;
-import org.glassfish.jersey.uri.UriComponent.Type;
-
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.util.E;
@@ -61,8 +58,7 @@ public abstract class GraphAPI extends API {
             id = id.toString();
         }
         E.checkArgument(id instanceof String || id instanceof Number,
-                        "The vertex id must be either String or " +
-                        "Number, but got '%s'", id);
+                        "The vertex id must be either String or Number, but got '%s'", id);
         return (uuid ? "U" : "") + JsonUtil.toJson(id);
     }
 
@@ -70,16 +66,6 @@ public abstract class GraphAPI extends API {
         if (properties == null) {
             return null;
         }
-        String json = JsonUtil.toJson(properties);
-        /*
-         * Don't use UrlEncoder.encode, it encoded the space as `+`,
-         * which will invalidate the jersey's automatic decoding
-         * because it considers the space to be encoded as `%2F`
-         */
-        return encode(json);
-    }
-
-    public static String encode(String raw) {
-        return UriComponent.encode(raw, Type.QUERY_PARAM_SPACE_ENCODED);
+        return JsonUtil.toJson(properties);
     }
 }

@@ -40,7 +40,7 @@ public class SchemaTest extends BaseFuncTest {
         Assert.assertTrue(schemas.containsKey("vertexlabels"));
         Assert.assertTrue(schemas.containsKey("edgelabels"));
         Assert.assertTrue(schemas.containsKey("indexlabels"));
-        Assert.assertEquals(7, schemas.get("propertykeys").size());
+        Assert.assertEquals(8, schemas.get("propertykeys").size());
         Assert.assertEquals(3, schemas.get("vertexlabels").size());
         Assert.assertEquals(2, schemas.get("edgelabels").size());
         Assert.assertTrue(schemas.get("indexlabels").isEmpty());

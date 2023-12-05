@@ -1,6 +1,7 @@
 name: "hugegraph-client-ci"
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -24,10 +25,11 @@ jobs:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
       COMMIT_ID: ed493f3093eab293a75cd2f539e29ca11fa6cd81
+
     strategy:
       fail-fast: false
       matrix:
-        JAVA_VERSION: ['8']
+        JAVA_VERSION: [ '8' ]
     steps:
       - name: Install JDK 8
         uses: actions/setup-java@v3
@@ -71,4 +73,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: target/jacoco.xml
