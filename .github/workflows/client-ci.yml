@@ -24,7 +24,7 @@ jobs:
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
-      COMMIT_ID: ed493f3093eab293a75cd2f539e29ca11fa6cd81
+      COMMIT_ID: e8fb2696d6154f20fd4d6e45ca58763e69145116
 
     strategy:
       fail-fast: false
