@@ -36,7 +36,7 @@ public class EdgeExistenceAPI extends TraversersAPI {
 
     @Override
     protected String type() {
-        return "edgeexistence";
+        return "edgeexist";
     }
 
     public List<Edge> get(Object sourceId, Object targetId, String edgeLabel,
@@ -48,13 +48,13 @@ public class EdgeExistenceAPI extends TraversersAPI {
         params.put("source", source);
         params.put("target", target);
         params.put("label", edgeLabel);
-        if (Strings.isEmpty(sortValues)){
+        if (!Strings.isEmpty(sortValues)){
             params.put("sort_values", sortValues);
         }
         if (limit > 0){
             params.put("limit", limit);
         }
         RestResult result = this.client.get(this.path(), params);
-        return result.readList(this.type(), Edge.class);
+        return result.readList("edges", Edge.class);
     }
 }
