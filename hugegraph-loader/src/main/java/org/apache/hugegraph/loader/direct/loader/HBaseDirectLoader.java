@@ -74,10 +74,10 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
 
         String tableName = null;
         if (struct.edges().size() > 0) {
-            tableName = this.loadOptions.edgeTablename;
+            tableName = this.loadOptions.edgeTableName;
 
         } else if (struct.vertices().size() > 0) {
-            tableName = this.loadOptions.vertexTablename;
+            tableName = this.loadOptions.vertexTableName;
 
         }
         return tableName;
