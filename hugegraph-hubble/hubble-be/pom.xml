@@ -138,10 +138,10 @@
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-stdlib</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>com.squareup.okhttp3</groupId>
-                    <artifactId>okhttp</artifactId>
-                </exclusion>
+                <!--                <exclusion>-->
+                <!--                    <groupId>com.squareup.okhttp3</groupId>-->
+                <!--                    <artifactId>okhttp</artifactId>-->
+                <!--                </exclusion>-->
             </exclusions>
         </dependency>
         <dependency>
