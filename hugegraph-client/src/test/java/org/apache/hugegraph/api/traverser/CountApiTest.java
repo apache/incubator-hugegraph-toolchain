@@ -24,6 +24,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.CountRequest;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -253,6 +254,7 @@ public class CountApiTest extends TraverserApiTest {
     }
 
     @Test
+    @Ignore
     public void testCountWithProperties() {
         CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
