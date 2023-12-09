@@ -25,7 +25,7 @@ jobs:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-tools/assembly/travis
       # TODO: could we use one param to unify it? or use a action template (could use one ci file)
-      COMMIT_ID: ed493f3093eab293a75cd2f539e29ca11fa6cd81
+      COMMIT_ID: bfe9fae150446857412db23ada0dae9d05035837
     steps:
       - name: Install JDK 11
         uses: actions/setup-java@v3
