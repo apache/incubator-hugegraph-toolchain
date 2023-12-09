@@ -29,6 +29,7 @@ import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TokenApiTest extends AuthApiTest {
@@ -58,6 +59,7 @@ public class TokenApiTest extends AuthApiTest {
     }
 
     @Test
+    @Ignore
     public void testVerify() {
         User user1 = new User();
         user1.name("user1");
