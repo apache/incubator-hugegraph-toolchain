@@ -43,6 +43,8 @@ public class CrosspointsRequest {
     private boolean withPath;
     @JsonProperty("with_vertex")
     private boolean withVertex;
+    @JsonProperty("with_edge")
+    private boolean withEdge;
 
     private CrosspointsRequest() {
         this.sources = null;
@@ -51,6 +53,7 @@ public class CrosspointsRequest {
         this.limit = Traverser.DEFAULT_CROSSPOINT_LIMIT;
         this.withPath = false;
         this.withVertex = false;
+        this.withEdge = false;
     }
 
     public static Builder builder() {
@@ -61,9 +64,10 @@ public class CrosspointsRequest {
     public String toString() {
         return String.format("CrosspointsRequest{sourceVertex=%s," +
                              "pathPatterns=%s,capacity=%s,limit=%s," +
-                             "withPath=%s,withVertex=%s}",
+                             "withPath=%s,withVertex=%s,withEdge=%s}",
                              this.sources, this.pathPatterns, this.capacity,
-                             this.limit, this.withPath, this.withVertex);
+                             this.limit, this.withPath, this.withVertex,
+                             this.withEdge);
     }
 
     public static class Builder {
@@ -107,6 +111,11 @@ public class CrosspointsRequest {
 
         public Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
+            return this;
+        }
+
+        public Builder withEdge(boolean withEdge) {
+            this.request.withEdge = withEdge;
             return this;
         }
 

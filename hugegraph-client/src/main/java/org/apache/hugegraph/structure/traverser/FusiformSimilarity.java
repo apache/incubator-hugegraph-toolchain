@@ -30,6 +30,8 @@ public class FusiformSimilarity {
     private Map<Object, Set<Similar>> similarsMap;
     @JsonProperty("vertices")
     private Set<Vertex> vertices;
+    @JsonProperty("measure")
+    private Map<String, Object> measure;
 
     public Map<Object, Set<Similar>> similarsMap() {
         return this.similarsMap;
@@ -37,6 +39,10 @@ public class FusiformSimilarity {
 
     public Set<Vertex> vertices() {
         return this.vertices;
+    }
+
+    public Map<String, Object> measure() {
+        return this.measure;
     }
 
     public int size() {

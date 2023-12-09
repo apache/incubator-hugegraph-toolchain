@@ -102,6 +102,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.targets().ids(rippleId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(3);
+        builder.withVertex(true).withEdge(true);
         PathsRequest request = builder.build();
 
         PathsWithVertices pathsWithVertices = pathsAPI.post(request);
@@ -129,7 +130,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.targets().ids(rippleId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(3);
-        builder.withVertex(true);
+        builder.withVertex(true).withEdge(true);
         PathsRequest request = builder.build();
 
         PathsWithVertices pathsWithVertices = pathsAPI.post(request);
@@ -165,6 +166,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.targets().ids(rippleId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(3);
+        builder.withVertex(true).withEdge(true);
         PathsRequest request = builder.build();
 
         PathsWithVertices pathsWithVertices = pathsAPI.post(request);
@@ -184,6 +186,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.targets().ids(rippleId);
         builder.step().direction(Direction.BOTH).labels("created");
         builder.maxDepth(3);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = pathsAPI.post(request);
         paths = pathsWithVertices.paths();
@@ -225,6 +228,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.targets().ids(jimId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(6);
+        builder.withVertex(true).withEdge(true);
         PathsRequest request = builder.build();
 
         PathsWithVertices pathsWithVertices = pathsAPI.post(request);
@@ -247,6 +251,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.step().direction(Direction.BOTH);
         builder.nearest(true);
         builder.maxDepth(6);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = pathsAPI.post(request);
         paths = pathsWithVertices.paths();
@@ -272,6 +277,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.targets().ids(rippleId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(3);
+        builder.withVertex(true).withEdge(true);
         PathsRequest request = builder.build();
 
         PathsWithVertices pathsWithVertices = pathsAPI.post(request);
@@ -292,6 +298,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.step().direction(Direction.BOTH)
                .properties("date", "P.gt(\"2014-01-01 00:00:00\")");
         builder.maxDepth(3);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = pathsAPI.post(request);
         paths = pathsWithVertices.paths();
@@ -316,6 +323,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.targets().ids(rippleId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(3);
+        builder.withVertex(true).withEdge(true);
         PathsRequest request = builder.build();
 
         PathsWithVertices pathsWithVertices = pathsAPI.post(request);
@@ -336,6 +344,7 @@ public class PathsApiTest extends TraverserApiTest {
         builder.step().direction(Direction.BOTH);
         builder.limit(1);
         builder.maxDepth(3);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = pathsAPI.post(request);
         paths = pathsWithVertices.paths();

@@ -19,6 +19,7 @@ package org.apache.hugegraph.api.traverser;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.api.BaseApiTest;
@@ -45,6 +46,16 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
         BaseApiTest.initEdge();
     }
 
+    private static boolean contains(List<List<Object>> expected,
+                                    PathsWithVertices.Paths path) {
+        List<Object> objects = path.objects();
+        if (expected.contains(objects)) {
+            return true;
+        }
+        Collections.reverse(objects);
+        return expected.contains(objects);
+    }
+
     @Test
     public void testMultiNodeShortestPath() {
         Object markoId = getVertexId("person", "name", "marko");
@@ -59,6 +70,7 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
         builder.vertices().ids(markoId, rippleId, joshId,
                                lopId, vadasId, peterId);
         builder.step().direction(Direction.BOTH);
+        builder.withVertex(true).withEdge(true);
 
         MultiNodeShortestPathRequest request = builder.build();
         PathsWithVertices pathsWithVertices =
@@ -103,6 +115,7 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
                                lopId, vadasId, peterId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(2);
+        builder.withVertex(true).withEdge(true);
 
         MultiNodeShortestPathRequest request = builder.build();
         PathsWithVertices pathsWithVertices =
@@ -133,6 +146,7 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
                                lopId, vadasId, peterId);
         builder.step().direction(Direction.BOTH);
         builder.maxDepth(1);
+        builder.withVertex(true).withEdge(true);
 
         request = builder.build();
         pathsWithVertices = multiNodeShortestPathAPI.post(request);
@@ -166,7 +180,7 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
         builder.vertices().ids(markoId, rippleId, joshId,
                                lopId, vadasId, peterId);
         builder.step().direction(Direction.BOTH);
-        builder.withVertex(true);
+        builder.withVertex(true).withEdge(true);
 
         MultiNodeShortestPathRequest request = builder.build();
         PathsWithVertices pathsWithVertices =
@@ -202,15 +216,5 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
         for (Vertex vertex : vertices) {
             Assert.assertTrue(vertexIds.contains(vertex.id()));
         }
-    }
-
-    private static boolean contains(List<List<Object>> expected,
-                                    PathsWithVertices.Paths path) {
-        List<Object> objects = path.objects();
-        if (expected.contains(objects)) {
-            return true;
-        }
-        Collections.reverse(objects);
-        return expected.contains(objects);
     }
 }

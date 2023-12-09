@@ -41,7 +41,7 @@ public class WeightedShortestPathAPI extends TraversersAPI {
     public WeightedPath get(Object sourceId, Object targetId,
                             Direction direction, String label,
                             String weight, long degree, long skipDegree,
-                            long capacity, boolean withVertex) {
+                            long capacity, boolean withVertex, boolean withEdge) {
         this.client.checkApiVersion("0.51", "weighted shortest path");
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
@@ -61,6 +61,7 @@ public class WeightedShortestPathAPI extends TraversersAPI {
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
         params.put("with_vertex", withVertex);
+        params.put("with_edge", withEdge);
         RestResult result = this.client.get(this.path(), params);
         return result.readObject(WeightedPath.class);
     }

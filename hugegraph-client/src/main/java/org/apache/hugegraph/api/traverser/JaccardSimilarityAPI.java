@@ -64,7 +64,7 @@ public class JaccardSimilarityAPI extends TraversersAPI {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<Object, Double> post(SingleSourceJaccardSimilarityRequest request) {
+    public Map<String, Map<Object, Double>> post(SingleSourceJaccardSimilarityRequest request) {
         this.client.checkApiVersion("0.58", "jaccard similar");
         RestResult result = this.client.post(this.path(), request);
         return result.readObject(Map.class);

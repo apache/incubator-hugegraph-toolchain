@@ -108,6 +108,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).maxTimes(3);
         builder.steps().direction(Direction.OUT).maxTimes(3);
         builder.steps().direction(Direction.IN).maxTimes(3);
+        builder.withVertex(true).withEdge(true);
         TemplatePathsRequest request = builder.build();
         PathsWithVertices pathsWithVertices = templatePathsAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
@@ -130,7 +131,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("relateTo").maxTimes(3);
-        builder.withVertex(true);
+        builder.withVertex(true).withEdge(true);
         TemplatePathsRequest request = builder.build();
         PathsWithVertices pathsWithVertices = templatePathsAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
@@ -155,6 +156,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("link").maxTimes(3);
         builder.steps().direction(Direction.OUT).labels("link").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("link").maxTimes(3);
+        builder.withVertex(true).withEdge(true);
         TemplatePathsRequest request = builder.build();
         PathsWithVertices pathsWithVertices = templatePathsAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
@@ -174,6 +176,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("relateTo").maxTimes(3);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = templatePathsAPI.post(request);
         paths = pathsWithVertices.paths();
@@ -194,6 +197,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("relateTo").maxTimes(3);
+        builder.withVertex(true).withEdge(true);
         TemplatePathsRequest request = builder.build();
         PathsWithVertices pathsWithVertices = templatePathsAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
@@ -212,6 +216,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("relateTo").maxTimes(3);
         builder.withRing(true);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = templatePathsAPI.post(request);
         paths = pathsWithVertices.paths();
@@ -236,6 +241,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("relateTo").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("relateTo").maxTimes(3);
         builder.withRing(true);
+        builder.withVertex(true).withEdge(true);
         TemplatePathsRequest request = builder.build();
         PathsWithVertices pathsWithVertices = templatePathsAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
@@ -260,6 +266,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.IN).labels("relateTo")
                .properties("weight", "P.gt(0.4)").maxTimes(3);
         builder.withRing(true);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = templatePathsAPI.post(request);
         paths = pathsWithVertices.paths();
@@ -280,6 +287,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("link").maxTimes(3);
         builder.steps().direction(Direction.OUT).labels("link").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("link").maxTimes(3);
+        builder.withVertex(true).withEdge(true);
         TemplatePathsRequest request = builder.build();
         PathsWithVertices pathsWithVertices = templatePathsAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
@@ -300,6 +308,7 @@ public class TemplatePathsApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).labels("link").maxTimes(3);
         builder.steps().direction(Direction.IN).labels("link").maxTimes(3);
         builder.limit(2);
+        builder.withVertex(true).withEdge(true);
         request = builder.build();
         pathsWithVertices = templatePathsAPI.post(request);
         paths = pathsWithVertices.paths();
