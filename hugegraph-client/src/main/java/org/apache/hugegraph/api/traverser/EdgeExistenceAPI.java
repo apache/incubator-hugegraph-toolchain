@@ -51,9 +51,7 @@ public class EdgeExistenceAPI extends TraversersAPI {
         if (!Strings.isEmpty(sortValues)){
             params.put("sort_values", sortValues);
         }
-        if (limit > 0){
-            params.put("limit", limit);
-        }
+        params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readList("edges", Edge.class);
     }
