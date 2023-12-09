@@ -18,7 +18,9 @@
 package org.apache.hugegraph.structure.traverser;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.api.traverser.TraversersAPI;
@@ -29,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class VESteps {
+
     @JsonProperty("direction")
     public Direction direction;
     @JsonAlias("degree")
@@ -37,9 +40,9 @@ public class VESteps {
     @JsonProperty("skip_degree")
     public long skipDegree;
     @JsonProperty("vertex_steps")
-    public List<VEStepEntity> vSteps;
+    public List<VEStep> vSteps;
     @JsonProperty("edge_steps")
-    public List<VEStepEntity> eSteps;
+    public List<VEStep> eSteps;
 
     protected VESteps() {
         this.direction = Direction.BOTH;
@@ -62,6 +65,7 @@ public class VESteps {
     }
 
     public static class Builder {
+
         protected VESteps steps;
 
         private Builder() {
@@ -73,24 +77,40 @@ public class VESteps {
             return this;
         }
 
-        public VESteps.Builder vSteps(List<VEStepEntity> vSteps) {
+        public VESteps.Builder vSteps(List<VEStep> vSteps) {
             this.steps.vSteps = vSteps;
             return this;
         }
 
-        public VESteps.Builder vSteps(VEStepEntity vStepEntity) {
-            this.steps.vSteps.add(vStepEntity);
+        public VESteps.Builder addVStep(String label, Map<String, Object> properties) {
+            VEStep vStep = VEStep.builder()
+                                 .label(label)
+                                 .properties(properties)
+                                 .build();
+            this.steps.vSteps.add(vStep);
             return this;
         }
 
-        public VESteps.Builder eSteps(List<VEStepEntity> eSteps) {
+        public VESteps.Builder addVStep(String label) {
+            return this.addVStep(label, Collections.emptyMap());
+        }
+
+        public VESteps.Builder eSteps(List<VEStep> eSteps) {
             this.steps.eSteps = eSteps;
             return this;
         }
 
-        public VESteps.Builder eSteps(VEStepEntity eStepEntity) {
-            this.steps.eSteps.add(eStepEntity);
+        public VESteps.Builder addEStep(String label, Map<String, Object> properties) {
+            VEStep eStep = VEStep.builder()
+                                 .label(label)
+                                 .properties(properties)
+                                 .build();
+            this.steps.eSteps.add(eStep);
             return this;
+        }
+
+        public VESteps.Builder addEStep(String label) {
+            return this.addEStep(label, Collections.emptyMap());
         }
 
         public VESteps.Builder degree(long degree) {
@@ -113,5 +133,4 @@ public class VESteps {
             return this.steps;
         }
     }
-
 }

@@ -35,7 +35,7 @@ public class PathsWithVertices {
     @JsonProperty
     private Set<Edge> edges;
     @JsonProperty
-    private Map<String, Object> measure;
+    private ApiMeasure measure;
 
     public List<Paths> paths() {
         return this.paths;
@@ -49,7 +49,7 @@ public class PathsWithVertices {
         return this.edges;
     }
 
-    public Map<String, Object> measure() {
+    public ApiMeasure measure() {
         return this.measure;
     }
 

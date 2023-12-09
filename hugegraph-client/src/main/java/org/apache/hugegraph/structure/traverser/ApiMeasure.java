@@ -17,38 +17,26 @@
 
 package org.apache.hugegraph.structure.traverser;
 
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.hugegraph.structure.graph.Edge;
-import org.apache.hugegraph.structure.graph.Vertex;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class WeightedPaths {
+public class ApiMeasure {
 
-    @JsonProperty
-    private Map<Object, WeightedPath.Path> paths;
-    @JsonProperty
-    private Set<Vertex> vertices;
-    @JsonProperty
-    private Set<Edge> edges;
-    @JsonProperty
-    private ApiMeasure measure;
+    @JsonProperty("edge_iterations")
+    private Long edgeIters;
+    @JsonProperty("vertice_iterations")
+    private Long verticeIters;
+    @JsonProperty("cost(ns)")
+    private Long totalTime;
 
-    public Map<Object, WeightedPath.Path> paths() {
-        return this.paths;
+    public Long edgeIters() {
+        return this.edgeIters;
     }
 
-    public Set<Vertex> vertices() {
-        return this.vertices;
+    public Long verticeIters() {
+        return this.verticeIters;
     }
 
-    public Set<Edge> edges() {
-        return this.edges;
-    }
-
-    public ApiMeasure measure() {
-        return this.measure;
+    public Long totalTime() {
+        return this.totalTime;
     }
 }

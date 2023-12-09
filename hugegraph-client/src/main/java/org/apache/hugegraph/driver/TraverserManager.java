@@ -19,7 +19,6 @@ package org.apache.hugegraph.driver;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.hugegraph.api.traverser.AllShortestPathsAPI;
 import org.apache.hugegraph.api.traverser.CountAPI;
@@ -59,6 +58,7 @@ import org.apache.hugegraph.structure.traverser.CustomizedCrosspoints;
 import org.apache.hugegraph.structure.traverser.CustomizedPathsRequest;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarity;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarityRequest;
+import org.apache.hugegraph.structure.traverser.JaccardSimilarity;
 import org.apache.hugegraph.structure.traverser.Kneighbor;
 import org.apache.hugegraph.structure.traverser.KneighborRequest;
 import org.apache.hugegraph.structure.traverser.Kout;
@@ -143,8 +143,7 @@ public class TraverserManager {
                                              label, degree);
     }
 
-    public Map<String, Map<Object, Double>> jaccardSimilarity(
-            SingleSourceJaccardSimilarityRequest request) {
+    public JaccardSimilarity jaccardSimilarity(SingleSourceJaccardSimilarityRequest request) {
         return this.jaccardSimilarityAPI.post(request);
     }
 

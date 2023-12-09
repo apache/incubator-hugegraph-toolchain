@@ -26,12 +26,12 @@ import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.Kneighbor;
 import org.apache.hugegraph.structure.traverser.KneighborRequest;
-import org.apache.hugegraph.structure.traverser.VEStepEntity;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class KneighborApiTest extends TraverserApiTest {
@@ -75,7 +75,8 @@ public class KneighborApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps().direction(Direction.BOTH);
         builder.maxDepth(1);
-        builder.withVertex(true);;
+        builder.withVertex(true);
+        ;
         KneighborRequest request = builder.build();
 
         Kneighbor kneighborResult = kneighborAPI.post(request);
@@ -272,8 +273,7 @@ public class KneighborApiTest extends TraverserApiTest {
 
         KneighborRequest.Builder builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("created").build());
+        builder.steps().direction(Direction.BOTH).addEStep("created");
         builder.maxDepth(1);
         builder.withVertex(true);
         KneighborRequest request = builder.build();
@@ -286,8 +286,7 @@ public class KneighborApiTest extends TraverserApiTest {
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("created").build());
+        builder.steps().direction(Direction.BOTH).addEStep("created");
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -300,8 +299,7 @@ public class KneighborApiTest extends TraverserApiTest {
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("knows").build());
+        builder.steps().direction(Direction.BOTH).addEStep("knows");
         builder.maxDepth(1);
         builder.withVertex(true);
         request = builder.build();
@@ -314,8 +312,7 @@ public class KneighborApiTest extends TraverserApiTest {
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("knows").build());
+        builder.steps().direction(Direction.BOTH).addEStep("knows");
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -374,10 +371,7 @@ public class KneighborApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder()
-                                   .label("created")
-                                   .properties("date", "P.gt(\"2014-01-01 00:00:00\")")
-                                   .build());
+               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
         builder.maxDepth(1);
         builder.withVertex(true);
         KneighborRequest request = builder.build();
@@ -392,10 +386,7 @@ public class KneighborApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder()
-                                   .label("created")
-                                   .properties("date", "P.gt(\"2014-01-01 00:00:00\")")
-                                   .build());
+               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -410,11 +401,7 @@ public class KneighborApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .eSteps(VEStepEntity
-                               .builder()
-                               .label("created")
-                               .properties("date", "P.gt(\"2014-01-01 00:00:00\")")
-                               .build());
+               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
         builder.maxDepth(3);
         builder.withVertex(true);
         request = builder.build();

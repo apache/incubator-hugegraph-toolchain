@@ -17,12 +17,12 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.traverser.JaccardSimilarity;
 import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
@@ -138,8 +138,7 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.vertex(4);
         builder.step().direction(Direction.BOTH);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        Map<String, Map<Object, Double>> response = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results = response.get("jaccard_similarity");
+        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
 
         Assert.assertEquals(9, results.size());
         Set<Object> expected = ImmutableSet.of("1", "2", "3", "5", "6",
@@ -165,8 +164,7 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.step().direction(Direction.BOTH);
         builder.top(5);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        Map<String, Map<Object, Double>> response = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results = response.get("jaccard_similarity");
+        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
 
         Assert.assertEquals(5, results.size());
         Set<Object> expected = ImmutableSet.of("3", "5", "6", "7", "8");
@@ -186,8 +184,7 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.vertex(4);
         builder.step().direction(Direction.BOTH).labels("link");
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        Map<String, Map<Object, Double>> response = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results = response.get("jaccard_similarity");
+        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
 
         Assert.assertEquals(7, results.size());
         Set<Object> expected = ImmutableSet.of("3", "7", "8", "9",
@@ -210,8 +207,7 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.vertex(4);
         builder.step().direction(Direction.OUT);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        Map<String, Map<Object, Double>> response = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results = response.get("jaccard_similarity");
+        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
 
         Assert.assertEquals(6, results.size());
         Set<Object> expected = ImmutableSet.of("1", "2", "3",

@@ -59,7 +59,6 @@ public class TokenApiTest extends AuthApiTest {
     }
 
     @Test
-    @Ignore
     public void testVerify() {
         User user1 = new User();
         user1.name("user1");

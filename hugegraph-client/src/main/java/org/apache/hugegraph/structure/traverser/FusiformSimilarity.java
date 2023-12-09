@@ -31,7 +31,7 @@ public class FusiformSimilarity {
     @JsonProperty("vertices")
     private Set<Vertex> vertices;
     @JsonProperty("measure")
-    private Map<String, Object> measure;
+    private ApiMeasure measure;
 
     public Map<Object, Set<Similar>> similarsMap() {
         return this.similarsMap;
@@ -41,7 +41,7 @@ public class FusiformSimilarity {
         return this.vertices;
     }
 
-    public Map<String, Object> measure() {
+    public ApiMeasure measure() {
         return this.measure;
     }
 

@@ -40,7 +40,7 @@ public class Kout {
     @JsonProperty
     private Set<Edge> edges;
     @JsonProperty
-    private Map<String, Object> measure;
+    private ApiMeasure measure;
 
     public int size() {
         return this.size;
@@ -62,7 +62,7 @@ public class Kout {
         return this.edges;
     }
 
-    public Map<String, Object> measure() {
+    public ApiMeasure measure() {
         return this.measure;
     }
 }

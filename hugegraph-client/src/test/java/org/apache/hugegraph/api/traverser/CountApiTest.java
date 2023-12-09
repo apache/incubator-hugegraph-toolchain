@@ -254,7 +254,6 @@ public class CountApiTest extends TraverserApiTest {
     }
 
     @Test
-    @Ignore
     public void testCountWithProperties() {
         CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);

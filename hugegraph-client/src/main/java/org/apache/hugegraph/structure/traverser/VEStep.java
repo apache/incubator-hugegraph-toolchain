@@ -22,7 +22,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class VEStepEntity {
+public class VEStep {
 
     @JsonProperty("label")
     public String label;
@@ -30,7 +30,7 @@ public class VEStepEntity {
     @JsonProperty("properties")
     public Map<String, Object> properties;
 
-    protected VEStepEntity() {
+    protected VEStep() {
         this.properties = new HashMap<>();
     }
 
@@ -45,29 +45,30 @@ public class VEStepEntity {
     }
 
     public static class Builder {
-        protected VEStepEntity veStepEntity;
+
+        protected VEStep veStep;
 
         private Builder() {
-            this.veStepEntity = new VEStepEntity();
+            this.veStep = new VEStep();
         }
 
-        public VEStepEntity.Builder label(String label) {
-            this.veStepEntity.label = label;
+        public VEStep.Builder label(String label) {
+            this.veStep.label = label;
             return this;
         }
 
-        public VEStepEntity.Builder properties(Map<String, Object> properties) {
-            this.veStepEntity.properties = properties;
+        public VEStep.Builder properties(Map<String, Object> properties) {
+            this.veStep.properties = properties;
             return this;
         }
 
-        public VEStepEntity.Builder properties(String key, Object value) {
-            this.veStepEntity.properties.put(key, value);
+        public VEStep.Builder properties(String key, Object value) {
+            this.veStep.properties.put(key, value);
             return this;
         }
 
-        public VEStepEntity build() {
-            return this.veStepEntity;
+        public VEStep build() {
+            return this.veStep;
         }
 
     }

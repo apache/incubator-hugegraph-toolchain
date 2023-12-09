@@ -27,12 +27,12 @@ import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.Kout;
 import org.apache.hugegraph.structure.traverser.KoutRequest;
-import org.apache.hugegraph.structure.traverser.VEStepEntity;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class KoutApiTest extends TraverserApiTest {
@@ -373,8 +373,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         KoutRequest.Builder builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("created").build());
+        builder.steps().direction(Direction.BOTH).addEStep("created");
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -387,8 +386,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("created").build());
+        builder.steps().direction(Direction.BOTH).addEStep("created");
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -401,8 +399,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("knows").build());
+        builder.steps().direction(Direction.BOTH).addEStep("knows");
         builder.maxDepth(1);
         builder.withVertex(true);
         request = builder.build();
@@ -415,8 +412,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("knows").build());
+        builder.steps().direction(Direction.BOTH).addEStep("knows");
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -438,8 +434,8 @@ public class KoutApiTest extends TraverserApiTest {
         KoutRequest.Builder builder = KoutRequest.builder();
         builder.source(markoId);
         builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("knows").build())
-               .eSteps(VEStepEntity.builder().label("created").build());
+               .addEStep("knows")
+               .addEStep("created");
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -453,8 +449,8 @@ public class KoutApiTest extends TraverserApiTest {
         builder = KoutRequest.builder();
         builder.source(markoId);
         builder.steps().direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder().label("knows").build())
-               .eSteps(VEStepEntity.builder().label("created").build());
+               .addEStep("knows")
+               .addEStep("created");
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -513,10 +509,7 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder()
-                                   .label("created")
-                                   .properties("date", "P.gt(\"2014-01-01 00:00:00\")")
-                                   .build());
+               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -531,10 +524,8 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder()
-                                   .label("created")
-                                   .properties("date", "P.gt(\"2014-01-01 00:00:00\")")
-                                   .build());
+               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
+
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -549,10 +540,7 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .eSteps(VEStepEntity.builder()
-                                   .label("created")
-                                   .properties("date", "P.gt(\"2014-01-01 00:00:00\")")
-                                   .build());
+               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
         builder.maxDepth(3);
         builder.withVertex(true);
         request = builder.build();

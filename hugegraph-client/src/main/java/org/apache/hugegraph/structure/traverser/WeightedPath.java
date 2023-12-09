@@ -18,7 +18,6 @@
 package org.apache.hugegraph.structure.traverser;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.structure.graph.Edge;
@@ -35,7 +34,7 @@ public class WeightedPath {
     @JsonProperty
     private Set<Edge> edges;
     @JsonProperty
-    private Map<String, Object> measure;
+    private ApiMeasure measure;
 
     public Path path() {
         return this.path;
@@ -49,7 +48,7 @@ public class WeightedPath {
         return this.edges;
     }
 
-    public Map<String, Object> measure() {
+    public ApiMeasure measure() {
         return this.measure;
     }
 
