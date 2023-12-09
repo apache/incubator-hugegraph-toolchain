@@ -55,7 +55,6 @@ public class KneighborAPI extends TraversersAPI {
         params.put("max_degree", degree);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        System.out.println(result);
         return result.readList("vertices", Object.class);
     }
 
