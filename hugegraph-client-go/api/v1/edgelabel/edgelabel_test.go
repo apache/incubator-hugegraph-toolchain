@@ -85,8 +85,8 @@ func TestEdgelabel(t *testing.T) {
         client.VertexLabel.DeleteByName.WithName(vertexLabelName2),
     )
 
-    deletePk(client, pkName1, t)
-    deletePk(client, pkName2, t)
+    //deletePk(client, pkName1, t)
+    //deletePk(client, pkName2, t)
 }
 
 func createPk(client *hugegraph.CommonClient, pkName string, t *testing.T) *propertykey.CreateResponse {

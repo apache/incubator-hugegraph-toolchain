@@ -193,7 +193,7 @@ func (r CreateRequest) Do(ctx context.Context, transport api.Transport) (*Create
     }
     reader := strings.NewReader(string(byteBody))
 
-    req, err := api.NewRequest("POST", fmt.Sprintf("/graphs/%s/schema/vertexlabels", transport.GetConfig().Graph), nil, reader)
+    req, err := api.NewRequest("POST", fmt.Sprintf("/graphs/%s/schema/edgelabels", transport.GetConfig().Graph), nil, reader)
     if err != nil {
         return nil, err
     }

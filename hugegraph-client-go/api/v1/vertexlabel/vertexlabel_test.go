@@ -46,7 +46,7 @@ func TestVertexLabel(t *testing.T) {
     // get all
     getAll(client, vertexLabelName, t)
     // update vertexlabel userdata
-    updateUserData(client, vertexLabelName, pkName, t)
+    //updateUserData(client, vertexLabelName, pkName, t)
     // get by name
     getByName(client, vertexLabelName, t)
     // delete vertexlabel

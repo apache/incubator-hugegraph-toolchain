@@ -18,16 +18,16 @@
 package model
 
 const (
-    PropertyDataTypeInt PropertyDataType = "INT" // data_type int
+	PropertyDataTypeInt PropertyDataType = "INT" // data_type int
 
-    PropertyCardinalitySingle PropertyCardinality = "SINGLE" // cardinality single
+	PropertyCardinalitySingle PropertyCardinality = "SINGLE" // cardinality single
 
-    ActionAppend    Action = "append"    // append action
-    ActionEliminate Action = "eliminate" // eliminate(remove) action
+	ActionAppend    Action = "append"    // append action
+	ActionEliminate Action = "eliminate" // eliminate(remove) action
 
-    IDStrategyDefault IDStrategy = "DEFAULT" // default id_strategy,The default strategy is primary key ID.
+	IDStrategyDefault IDStrategy = "DEFAULT" // default id_strategy,The default strategy is primary key ID.
 
-    FrequencySingle Frequency = "SINGLE" // single frequency
+	FrequencySingle Frequency = "SINGLE" // single frequency
 )
 
 type PropertyDataType string
@@ -38,8 +38,20 @@ type Frequency string
 
 // Vertex models that support generic types
 type Vertex[T any] struct {
-    ID         string `json:"id,omitempty"`
-    Label      string `json:"label"`
-    Typ        string `json:"type,omitempty"`
-    Properties T      `json:"properties"`
+	ID         string `json:"id,omitempty"`
+	Label      string `json:"label"`
+	Typ        string `json:"type,omitempty"`
+	Properties T      `json:"properties"`
+}
+
+// Edge models that support generic types
+type Edge[T any] struct {
+	ID         string `json:"id,omitempty"`
+	Label      string `json:"label"`
+	Typ        string `json:"type,omitempty"`
+	OutV       string `json:"outV"`
+	OutVLabel  string `json:"outVLabel"`
+	InV        string `json:"inV"`
+	InVLabel   string `json:"inVLabel"`
+	Properties T      `json:"properties"`
 }

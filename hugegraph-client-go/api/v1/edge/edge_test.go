@@ -17,3 +17,10 @@
 
 package edge_test
 
+import "testing"
+
+func testEdge(t *testing.T) {
+	// 1.create source vertex
+	// 2.create target vertex
+	// 3.create edge
+}
