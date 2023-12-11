@@ -209,28 +209,34 @@ public class LoadOptions implements Serializable {
                description = "Sink to different storage")
     public boolean sinkType = true;
 
-    @Parameter(names = {"--edge-partitions"}, arity = 1,
-               description = "The number of partitions of the HBase edge table")
-    public int edgePartitions = 64;
-
     @Parameter(names = {"--vertex-partitions"}, arity = 1,
+               validateWith = {PositiveValidator.class},
                description = "The number of partitions of the HBase vertex table")
     public int vertexPartitions = 64;
 
-    @Parameter(names = {"edgeTablename"}, arity = 1,
-               description = "edgeTablename")
-    public String edgeTablename;
-    @Parameter(names = {"vertexTablename"}, arity = 1,
-               description = "vertexTablename")
-    public String vertexTablename;
-    @Parameter(names = {"hbaseZKQuorum"}, arity = 1,
-               description = "hbaseZKQuorum")
+    @Parameter(names = {"--edge-partitions"}, arity = 1,
+               validateWith = {PositiveValidator.class},
+               description = "The number of partitions of the HBase edge table")
+    public int edgePartitions = 64;
+
+    @Parameter(names = {"--vertex-table-name"}, arity = 1,
+               description = "HBase vertex table name")
+    public String vertexTableName;
+
+    @Parameter(names = {"--edge-table-name"}, arity = 1,
+               description = "HBase edge table name")
+    public String edgeTableName;
+
+    @Parameter(names = {"--hbase-zk-quorum"}, arity = 1,
+               description = "HBase zookeeper quorum")
     public String hbaseZKQuorum;
-    @Parameter(names = {"hbaseZKPort"}, arity = 1,
-               description = "hbaseZKPort")
+
+    @Parameter(names = {"--hbase-zk-port"}, arity = 1,
+               description = "HBase zookeeper port")
     public String hbaseZKPort;
-    @Parameter(names = {"hbaseZKParent"}, arity = 1,
-               description = "hbaseZKParent")
+
+    @Parameter(names = {"--hbase-zk-parent"}, arity = 1,
+               description = "HBase zookeeper parent")
     public String hbaseZKParent;
 
     public String workModeString() {
@@ -292,8 +298,8 @@ public class LoadOptions implements Serializable {
 
     public void copyBackendStoreInfo (BackendStoreInfo backendStoreInfo) {
         E.checkArgument(null != backendStoreInfo, "The backendStoreInfo can't be null");
-        this.edgeTablename = backendStoreInfo.getEdgeTablename();
-        this.vertexTablename = backendStoreInfo.getVertexTablename();
+        this.edgeTableName = backendStoreInfo.getEdgeTablename();
+        this.vertexTableName = backendStoreInfo.getVertexTablename();
         this.hbaseZKParent = backendStoreInfo.getHbaseZKParent();
         this.hbaseZKPort = backendStoreInfo.getHbaseZKPort();
         this.hbaseZKQuorum = backendStoreInfo.getHbaseZKQuorum();

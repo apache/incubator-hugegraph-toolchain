@@ -49,7 +49,7 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build && npm run license",
+    "build": "CI=false && react-app-rewired build && npm run license",
     "test": "react-app-rewired test",
     "license": "node add-license.js"
   },
