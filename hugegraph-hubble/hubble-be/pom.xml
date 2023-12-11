@@ -33,7 +33,6 @@
         <app.port>36320</app.port>
         <mybatis.starter.version>2.1.0</mybatis.starter.version>
         <mybatis.plus.starter.version>3.3.0</mybatis.plus.starter.version>
-        <okhttp.version>4.10.0</okhttp.version>
     </properties>
 
     <dependencies>
@@ -151,6 +150,18 @@
         </dependency>
 
         <!--overwrite okhttp and kotlin for version conflict-->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib-common</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>
