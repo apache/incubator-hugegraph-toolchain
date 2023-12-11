@@ -18,7 +18,6 @@
 package org.apache.hugegraph.structure.traverser;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.structure.graph.Edge;
