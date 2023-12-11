@@ -48,9 +48,6 @@
         <fileSet>
             <directory>${project.build.directory}</directory>
             <outputDirectory>lib</outputDirectory>
-            <excludes>
-                <exclude>hugegraph-loader-1.0.0.jar</exclude>
-            </excludes>
             <includes>
                 <include>*.jar</include>
             </includes>
