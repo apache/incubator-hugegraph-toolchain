@@ -1,6 +1,7 @@
 name: "hugegraph-spark-connector-ci"
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -25,9 +26,10 @@ jobs:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
       VERSION_ID: 1.0.0
+      COMMIT_ID: bfe9fae150446857412db23ada0dae9d05035837
     steps:
       - name: Install JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'adopt'
@@ -56,7 +58,7 @@ jobs:
 
       - name: Prepare env and service
         run: |
-          $TRAVIS_DIR/install-hugegraph-from-tar.sh $VERSION_ID
+          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
 
       - name: Run test
         run: |
