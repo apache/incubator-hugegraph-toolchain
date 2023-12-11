@@ -293,11 +293,11 @@ public class HugeGraphSparkLoader implements Serializable {
             case FILE:
             case HDFS:
                 FileSource fileSource = struct.input().asFileSource();
-                String delimiter = fileSource.delimiter() ;
+                String delimiter = fileSource.delimiter();
                 if (Optional.ofNullable(delimiter).isPresent()) {
                     elements = builder.build(fileSource.header(),
                                row.mkString(delimiter).split(delimiter));
-                }else {
+                } else {
                     elements = builder.build(row);
                 }
                 break;
