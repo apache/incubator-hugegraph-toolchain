@@ -1,4 +1,4 @@
-name: "hugegraph-hubble-ci"
+name: "hubble-ci"
 
 on:
   workflow_dispatch:

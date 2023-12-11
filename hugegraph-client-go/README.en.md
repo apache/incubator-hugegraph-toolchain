@@ -1,8 +1,8 @@
-# Go huggage
+# go-hugegraph
 
 #### Introduction
 
-Hugegraph client SDK tool based on Go language
+HugeGraph client SDK tool based on Go language
 
 #### Software Architecture
 
@@ -93,5 +93,4 @@ type VersionResponse struct {
         API     string `json:"api"`     // hugegraph api version
     } ` json: 'versions'`
 }
-
 ```

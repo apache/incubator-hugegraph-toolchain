@@ -2,7 +2,7 @@
 
 #### 介绍
 
-基于 Go 语言的 hugegraph client SDK 工具
+基于 Go 语言的 HugeGraph Client SDK 工具
 
 #### 软件架构
 
