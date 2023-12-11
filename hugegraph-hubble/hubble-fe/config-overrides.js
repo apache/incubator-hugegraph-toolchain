@@ -47,7 +47,7 @@ module.exports = {
     addWebpackAlias({
       'hubble-ui': require('path').resolve(__dirname, './src/components/hubble-ui')
     }),
-    addWebpackPlugin(new ProgressPlugin()),
+    // addWebpackPlugin(new ProgressPlugin()),
   ),
   devServer: overrideDevServer(addProxy(), watchAll())
 };
