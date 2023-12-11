@@ -1,4 +1,4 @@
-name: "hugegraph-loader-ci"
+name: "loader-ci"
 
 on:
   workflow_dispatch:
