@@ -26,6 +26,7 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 
 import org.apache.hugegraph.structure.constant.Direction;
+import org.apache.hugegraph.structure.traverser.JaccardSimilarity;
 import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
 
 import org.apache.hugegraph.util.E;
@@ -64,9 +65,9 @@ public class JaccardSimilarityAPI extends TraversersAPI {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<Object, Double> post(SingleSourceJaccardSimilarityRequest request) {
+    public JaccardSimilarity post(SingleSourceJaccardSimilarityRequest request) {
         this.client.checkApiVersion("0.58", "jaccard similar");
         RestResult result = this.client.post(this.path(), request);
-        return result.readObject(Map.class);
+        return result.readObject(JaccardSimilarity.class);
     }
 }

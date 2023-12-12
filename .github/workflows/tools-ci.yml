@@ -1,4 +1,4 @@
-name: "hugegraph-tools-ci"
+name: "tools-ci"
 on:
   workflow_dispatch:
   push:
@@ -25,7 +25,8 @@ jobs:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-tools/assembly/travis
       # TODO: could we use one param to unify it? or use a action template (could use one ci file)
-      COMMIT_ID: c997f35b0475e94a98748dda636cb9bfa78fda77
+      # TODO: replace it with the (latest - n) commit id (n >= 15)
+      COMMIT_ID: b52517c
     steps:
       - name: Install JDK 11
         uses: actions/setup-java@v3

@@ -33,4 +33,6 @@ public class Traverser {
     public static final double DEFAULT_ALPHA = 0.9;
     public static final int DEFAULT_MAX_TOP = 1000;
     public static final int DEFAULT_MAX_DEPTH = 5000;
+    public static final String TRAVERSE_MODE_BFS = "breadth_first_search";
+    public static final String TRAVERSE_MODE_DFS = "depth_first_search";
 }

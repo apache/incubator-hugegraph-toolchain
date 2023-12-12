@@ -1,4 +1,4 @@
-name: "hugegraph-spark-connector-ci"
+name: "spark-connector-ci"
 
 on:
   push:

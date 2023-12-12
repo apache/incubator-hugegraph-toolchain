@@ -41,6 +41,8 @@ public class PathsRequest {
     public int limit = Traverser.DEFAULT_LIMIT;
     @JsonProperty("with_vertex")
     public boolean withVertex = false;
+    @JsonProperty("with_edge")
+    public boolean withEdge = false;
 
     public static Builder builder() {
         return new Builder();
@@ -50,10 +52,10 @@ public class PathsRequest {
     public String toString() {
         return String.format("PathRequest{sources=%s,targets=%s,step=%s," +
                              "maxDepth=%s,nearest=%s,capacity=%s," +
-                             "limit=%s,withVertex=%s}",
+                             "limit=%s,withVertex=%s,withEdge=%s}",
                              this.sources, this.targets, this.step, this.depth,
                              this.nearest, this.capacity,
-                             this.limit, this.withVertex);
+                             this.limit, this.withVertex, this.withEdge);
     }
 
     public static class Builder {
@@ -109,6 +111,11 @@ public class PathsRequest {
 
         public PathsRequest.Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
+            return this;
+        }
+
+        public PathsRequest.Builder withEdge(boolean withEdge) {
+            this.request.withEdge = withEdge;
             return this;
         }
 

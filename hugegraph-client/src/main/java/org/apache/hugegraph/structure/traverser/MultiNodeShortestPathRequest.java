@@ -35,6 +35,8 @@ public class MultiNodeShortestPathRequest {
     public long capacity;
     @JsonProperty("with_vertex")
     public boolean withVertex;
+    @JsonProperty("with_edge")
+    public boolean withEdge;
 
     private MultiNodeShortestPathRequest() {
         this.vertices = null;
@@ -42,6 +44,7 @@ public class MultiNodeShortestPathRequest {
         this.maxDepth = Traverser.DEFAULT_MAX_DEPTH;
         this.capacity = Traverser.DEFAULT_CAPACITY;
         this.withVertex = false;
+        this.withEdge = false;
     }
 
     public static Builder builder() {
@@ -51,9 +54,9 @@ public class MultiNodeShortestPathRequest {
     @Override
     public String toString() {
         return String.format("MultiNodeShortestPathRequest{vertices=%s," +
-                             "step=%s,maxDepth=%s,capacity=%s,withVertex=%s}",
+                             "step=%s,maxDepth=%s,capacity=%s,withVertex=%s,withEdge=%s}",
                              this.vertices, this.step, this.maxDepth,
-                             this.capacity, this.withVertex);
+                             this.capacity, this.withVertex, this.withEdge);
     }
 
     public static class Builder {
@@ -92,6 +95,11 @@ public class MultiNodeShortestPathRequest {
 
         public Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
+            return this;
+        }
+
+        public Builder withEdge(boolean withEdge) {
+            this.request.withEdge = withEdge;
             return this;
         }
 

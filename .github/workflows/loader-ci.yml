@@ -1,4 +1,4 @@
-name: "hugegraph-loader-ci"
+name: "loader-ci"
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ jobs:
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
       # TODO: replace it with the (latest - n) commit id (n >= 15)
-      COMMIT_ID: c997f35b0475e94a98748dda636cb9bfa78fda77
+      COMMIT_ID: b52517c
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test

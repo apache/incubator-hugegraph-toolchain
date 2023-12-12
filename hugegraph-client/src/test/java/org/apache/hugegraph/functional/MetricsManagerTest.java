@@ -50,5 +50,17 @@ public class MetricsManagerTest extends BaseFuncTest {
         Assert.assertEquals(ImmutableSet.of("gauges", "counters", "histograms",
                                             "meters", "timers"),
                             results.keySet());
+        // prom format
+        String resultsProm = metrics().allWithPromFormat();
+        Assert.assertContains("# HELP hugegraph_info", resultsProm);
+    }
+
+    @Test
+    public void testStatisticsMetrics() {
+        Map<String, Map<String, Object>> results = metrics().statistics();
+        Assert.assertNotNull(results);
+        // prom format
+        String resultsProm = metrics().statisticsWithPromFormat();
+        Assert.assertContains("# HELP hugegraph_info", resultsProm);
     }
 }

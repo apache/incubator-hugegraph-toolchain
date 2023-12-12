@@ -99,11 +99,11 @@ public class CommonTraverserApiTest extends TraverserApiTest {
         CrosspointsRequest.Builder builder = CrosspointsRequest.builder();
         builder.sources().ids(lopId, rippleId);
         builder.pathPatterns().steps().direction(Direction.IN)
-                                      .labels("created").degree(-1);
-        builder.withPath(true).withVertex(true).capacity(-1).limit(-1);
+               .labels("created").degree(-1);
+        builder.withPath(true).withVertex(true).withEdge(true).capacity(-1).limit(-1);
 
         CustomizedCrosspoints customizedCrosspoints =
-                              customizedCrosspointsAPI.post(builder.build());
+                customizedCrosspointsAPI.post(builder.build());
         List<Object> crosspoints = customizedCrosspoints.crosspoints();
         Assert.assertEquals(1, crosspoints.size());
         Assert.assertEquals(joshId, crosspoints.get(0));

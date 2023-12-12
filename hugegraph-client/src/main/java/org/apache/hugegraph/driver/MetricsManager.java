@@ -48,4 +48,16 @@ public class MetricsManager {
     public Map<String, Map<String, Object>> all() {
         return this.metricsAPI.all();
     }
+
+    public String allWithPromFormat() {
+        return this.metricsAPI.allWithPromFormat();
+    }
+
+    public Map<String, Map<String, Object>> statistics() {
+        return this.metricsAPI.statistics();
+    }
+
+    public String statisticsWithPromFormat() {
+        return this.metricsAPI.statisticsWithPromFormat();
+    }
 }

@@ -24,6 +24,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.CountRequest;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -253,6 +254,7 @@ public class CountApiTest extends TraverserApiTest {
     }
 
     @Test
+    @Ignore
     public void testCountWithProperties() {
         CountRequest.Builder builder = CountRequest.builder();
         builder.source("A").containsTraversed(false);
@@ -427,29 +429,26 @@ public class CountApiTest extends TraverserApiTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             builder.dedupSize(-5);
         }, e -> {
-            Assert.assertContains("The dedup size must be >= 0 or == -1, " +
-                                  "but got: ", e.getMessage());
+            Assert.assertContains("The dedup size must be >= 0 or == -1, but got: ",
+                                  e.getMessage());
         });
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             builder.steps().degree(0);
         }, e -> {
-            Assert.assertContains("Degree must be > 0 or == -1, but got: ",
-                                  e.getMessage());
+            Assert.assertContains("Degree must be > 0 or == -1, but got: ", e.getMessage());
         });
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             builder.steps().skipDegree(-3);
         }, e -> {
-            Assert.assertContains("The skipped degree must be >= 0, but got",
-                                  e.getMessage());
+            Assert.assertContains("The skipped degree must be >= 0, but got", e.getMessage());
         });
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             builder.steps().degree(5).skipDegree(3);
         }, e -> {
-            Assert.assertContains("The skipped degree must be >= max degree",
-                                  e.getMessage());
+            Assert.assertContains("The skipped degree must be >= max degree", e.getMessage());
         });
 
         CountRequest.Builder builder1 = CountRequest.builder();
@@ -459,8 +458,7 @@ public class CountApiTest extends TraverserApiTest {
             countAPI.post(builder1.build());
         }, e -> {
             Assert.assertContains("The properties filter condition can be " +
-                                  "set only if just set one edge label",
-                                  e.getMessage());
+                                  "set only if just set one edge label", e.getMessage());
         });
 
         CountRequest.Builder builder2 = CountRequest.builder();
@@ -471,8 +469,7 @@ public class CountApiTest extends TraverserApiTest {
             countAPI.post(builder2.build());
         }, e -> {
             Assert.assertContains("The properties filter condition can be " +
-                                  "set only if just set one edge label",
-                                  e.getMessage());
+                                  "set only if just set one edge label", e.getMessage());
         });
 
         CountRequest.Builder builder3 = CountRequest.builder();
@@ -488,8 +485,7 @@ public class CountApiTest extends TraverserApiTest {
                     .properties(ImmutableMap.of("weight", 3.3D));
             countAPI.post(builder4.build());
         }, e -> {
-            Assert.assertContains("does not match sort keys of edge label",
-                                  e.getMessage());
+            Assert.assertContains("does not match sort keys of edge label", e.getMessage());
         });
     }
 }

@@ -45,6 +45,8 @@ public class CustomizedPathsRequest {
     private int limit;
     @JsonProperty("with_vertex")
     private boolean withVertex;
+    @JsonProperty("with_edge")
+    private boolean withEdge;
 
     private CustomizedPathsRequest() {
         this.sources = null;
@@ -53,6 +55,7 @@ public class CustomizedPathsRequest {
         this.capacity = Traverser.DEFAULT_CAPACITY;
         this.limit = Traverser.DEFAULT_PATHS_LIMIT;
         this.withVertex = false;
+        this.withEdge = false;
     }
 
     public static Builder builder() {
@@ -63,9 +66,9 @@ public class CustomizedPathsRequest {
     public String toString() {
         return String.format("CustomizedPathsRequest{sourceVertex=%s,steps=%s," +
                              "sortBy=%s,capacity=%s,limit=%s," +
-                             "withVertex=%s}", this.sources, this.steps,
+                             "withVertex=%s,withEdge=%s}", this.sources, this.steps,
                              this.sortBy, this.capacity, this.limit,
-                             this.withVertex);
+                             this.withVertex, this.withEdge);
     }
 
     public static class Builder {
@@ -109,6 +112,11 @@ public class CustomizedPathsRequest {
 
         public Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
+            return this;
+        }
+
+        public Builder withEdge(boolean withEdge) {
+            this.request.withEdge = withEdge;
             return this;
         }
 
