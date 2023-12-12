@@ -26,7 +26,8 @@ jobs:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
-      COMMIT_ID: bfe9fae150446857412db23ada0dae9d05035837
+      # TODO: replace it with the (latest - n) commit id (n >= 15)
+      COMMIT_ID: b52517c
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test

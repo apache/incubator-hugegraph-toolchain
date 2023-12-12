@@ -120,25 +120,25 @@ public class BaseApiTest extends BaseClientTest {
         indexLabelAPI.list().forEach(indexLabel -> {
             ilTaskIds.add(indexLabelAPI.delete(indexLabel.name()));
         });
-        ilTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        ilTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
 
         List<Long> elTaskIds = new ArrayList<>();
         edgeLabelAPI.list().forEach(edgeLabel -> {
             elTaskIds.add(edgeLabelAPI.delete(edgeLabel.name()));
         });
-        elTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        elTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
 
         List<Long> vlTaskIds = new ArrayList<>();
         vertexLabelAPI.list().forEach(vertexLabel -> {
             vlTaskIds.add(vertexLabelAPI.delete(vertexLabel.name()));
         });
-        vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        vlTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
 
         List<Long> pkTaskIds = new ArrayList<>();
         propertyKeyAPI.list().forEach(propertyKey -> {
             pkTaskIds.add(propertyKeyAPI.delete(propertyKey.name()));
         });
-        pkTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId));
+        pkTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
 
         // Clear system
         taskAPI.list(null, -1).forEach(task -> {
