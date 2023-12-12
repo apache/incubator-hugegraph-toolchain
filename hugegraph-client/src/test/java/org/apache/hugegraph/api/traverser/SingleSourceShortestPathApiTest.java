@@ -126,8 +126,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testSingleSourceShortestPath() {
         WeightedPaths weightedPaths = singleSourceShortestPathAPI.get(
-                                      "A", Direction.BOTH, null, "weight",
-                                      -1, 0, -1, -1, false);
+                "A", Direction.BOTH, null, "weight",
+                -1, 0, -1, -1, true, true);
         Assert.assertEquals(18, weightedPaths.paths().size());
 
         WeightedPath.Path path = weightedPaths.paths().get("B");
@@ -216,8 +216,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testSingleSourceShortestPathWithLabel() {
         WeightedPaths weightedPaths = singleSourceShortestPathAPI.get(
-                                      "A", Direction.BOTH, "link", "weight",
-                                      -1, 0, -1, -1, false);
+                "A", Direction.BOTH, "link", "weight",
+                -1, 0, -1, -1, true, true);
         Assert.assertEquals(12, weightedPaths.paths().size());
 
         WeightedPath.Path path = weightedPaths.paths().get("B");
@@ -276,8 +276,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
                             path.vertices());
 
         weightedPaths = singleSourceShortestPathAPI.get(
-                        "A", Direction.BOTH, "relateTo", "weight",
-                        -1, 0, -1, -1, false);
+                "A", Direction.BOTH, "relateTo", "weight",
+                -1, 0, -1, -1, true, true);
 
         Assert.assertEquals(7, weightedPaths.paths().size());
 
@@ -319,8 +319,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testSingleSourceShortestPathWithDirection() {
         WeightedPaths weightedPaths = singleSourceShortestPathAPI.get(
-                                      "A", Direction.OUT, null, "weight",
-                                      -1, 0, -1, -1, false);
+                "A", Direction.OUT, null, "weight",
+                -1, 0, -1, -1, true, true);
 
         Assert.assertEquals(17, weightedPaths.paths().size());
 
@@ -411,8 +411,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testSingleSourceShortestPathWithDegree() {
         WeightedPaths weightedPaths = singleSourceShortestPathAPI.get(
-                                      "A", Direction.OUT, null, "weight",
-                                      1, 0, -1, -1, false);
+                "A", Direction.OUT, null, "weight",
+                1, 0, -1, -1, true, true);
         Assert.assertEquals(4, weightedPaths.paths().size());
 
         WeightedPath.Path path = weightedPaths.paths().get("B");
@@ -439,8 +439,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testSingleSourceShortestPathWithLimit() {
         WeightedPaths weightedPaths = singleSourceShortestPathAPI.get(
-                                      "A", Direction.BOTH, null, "weight",
-                                      -1, 0, -1, 11, false);
+                "A", Direction.BOTH, null, "weight",
+                -1, 0, -1, 11, true, true);
         Assert.assertEquals(11, weightedPaths.paths().size());
 
         WeightedPath.Path path = weightedPaths.paths().get("B");
@@ -497,8 +497,8 @@ public class SingleSourceShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testSingleSourceShortestPathWithVertex() {
         WeightedPaths weightedPaths = singleSourceShortestPathAPI.get(
-                                      "A", Direction.BOTH, null, "weight",
-                                      -1, 0, -1, -1, true);
+                "A", Direction.BOTH, null, "weight",
+                -1, 0, -1, -1, true, true);
         Assert.assertEquals(18, weightedPaths.paths().size());
         Assert.assertEquals(19, weightedPaths.vertices().size());
     }

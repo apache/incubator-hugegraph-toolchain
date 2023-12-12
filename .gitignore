@@ -95,3 +95,6 @@ tree.txt
 
 # system ignore
 Thumbs.db
+
+# client-go
+go.env

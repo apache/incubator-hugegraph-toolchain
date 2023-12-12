@@ -17,6 +17,7 @@
 
 package org.apache.hugegraph.api.metrics;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hugegraph.util.CommonUtil;
@@ -26,6 +27,8 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class MetricsAPI extends API {
+
+    public static final String STATISTICS_PATH = "/statistics";
 
     public MetricsAPI(RestClient client) {
         super(client);
@@ -65,12 +68,39 @@ public class MetricsAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Map<String, Object>> all() {
-        RestResult result = this.client.get(this.path());
+        Map<String,Object> params = new HashMap<>();
+        params.put("type", "json");
+        RestResult result = this.client.get(this.path(), params);
         Map<?, ?> map = result.readObject(Map.class);
         CommonUtil.checkMapClass(map, String.class, Map.class);
         for (Object mapValue : map.values()) {
             CommonUtil.checkMapClass(mapValue, String.class, Object.class);
         }
         return (Map<String, Map<String, Object>>) map;
+    }
+
+    @SuppressWarnings("unchecked")
+    public String allWithPromFormat() {
+        RestResult result = this.client.get(this.path());
+        return result.content();
+    }
+
+    public Map<String, Map<String, Object>> statistics() {
+        Map<String,Object> params = new HashMap<>();
+        params.put("type", "json");
+        RestResult result = this.client.get(this.path() + STATISTICS_PATH, params);
+        Map<?, ?> map = result.readObject(Map.class);
+        CommonUtil.checkMapClass(map, String.class, Map.class);
+        for (Object mapValue : map.values()) {
+            CommonUtil.checkMapClass(mapValue, String.class, Object.class);
+        }
+
+        return (Map<String, Map<String, Object>>) map;
+    }
+
+    @SuppressWarnings("unchecked")
+    public String statisticsWithPromFormat() {
+        RestResult result = this.client.get(this.path() + STATISTICS_PATH);
+        return result.content();
     }
 }

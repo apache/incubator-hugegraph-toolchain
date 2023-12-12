@@ -1,4 +1,4 @@
-name: "hugegraph-loader-ci"
+name: "loader-ci"
 
 on:
   workflow_dispatch:
@@ -26,8 +26,7 @@ jobs:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
-      # TODO: replace it with the (latest - n) commit id (n >= 15)
-      COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
+      COMMIT_ID: bfe9fae150446857412db23ada0dae9d05035837
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test

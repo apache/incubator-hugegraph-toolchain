@@ -506,6 +506,9 @@
                         <!-- Maven -->
                         <exclude>.repository/**</exclude>
                         <exclude>**/.flattened-pom.xml</exclude>
+                        <!-- Go -->
+                        <exclude>**/hugegraph-client-go/go.sum</exclude>
+                        <exclude>**/hugegraph-client-go/go.mod</exclude>
                     </excludes>
                     <consoleOutput>true</consoleOutput>
                 </configuration>

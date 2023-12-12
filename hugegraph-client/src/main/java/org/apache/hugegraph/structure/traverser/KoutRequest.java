@@ -27,8 +27,8 @@ public class KoutRequest {
 
     @JsonProperty("source")
     private Object source;
-    @JsonProperty("step")
-    public EdgeStep step;
+    @JsonProperty("steps")
+    public VESteps steps;
     @JsonProperty("max_depth")
     public int maxDepth;
     @JsonProperty("nearest")
@@ -43,10 +43,14 @@ public class KoutRequest {
     public boolean withVertex;
     @JsonProperty("with_path")
     public boolean withPath;
+    @JsonProperty("with_edge")
+    public boolean withEdge;
+    @JsonProperty("traverse_mode")
+    public String traverseMode;
 
     private KoutRequest() {
         this.source = null;
-        this.step = null;
+        this.steps = null;
         this.maxDepth = Traverser.DEFAULT_MAX_DEPTH;
         this.nearest = true;
         this.countOnly = false;
@@ -54,6 +58,8 @@ public class KoutRequest {
         this.limit = Traverser.DEFAULT_PATHS_LIMIT;
         this.withVertex = false;
         this.withPath = false;
+        this.withEdge = false;
+        this.traverseMode = Traverser.TRAVERSE_MODE_BFS;
     }
 
     public static Builder builder() {
@@ -62,22 +68,24 @@ public class KoutRequest {
 
     @Override
     public String toString() {
-        return String.format("KoutRequest{source=%s,step=%s,maxDepth=%s" +
+        return String.format("KoutRequest{source=%s,steps=%s,maxDepth=%s" +
                              "nearest=%s,countOnly=%s,capacity=%s," +
-                             "limit=%s,withVertex=%s,withPath=%s}",
-                             this.source, this.step, this.maxDepth,
+                             "limit=%s,withVertex=%s,withPath=%s," +
+                             "withEdge=%s,traverseMode=%s}",
+                             this.source, this.steps, this.maxDepth,
                              this.nearest, this.countOnly, this.capacity,
-                             this.limit, this.withVertex, this.withPath);
+                             this.limit, this.withVertex, this.withPath,
+                             this.withEdge, this.traverseMode);
     }
 
     public static class Builder {
 
         private final KoutRequest request;
-        private EdgeStep.Builder stepBuilder;
+        private VESteps.Builder stepBuilder;
 
         private Builder() {
             this.request = new KoutRequest();
-            this.stepBuilder = EdgeStep.builder();
+            this.stepBuilder = VESteps.builder();
         }
 
         public Builder source(Object source) {
@@ -86,8 +94,8 @@ public class KoutRequest {
             return this;
         }
 
-        public EdgeStep.Builder step() {
-            EdgeStep.Builder builder = EdgeStep.builder();
+        public VESteps.Builder steps() {
+            VESteps.Builder builder = VESteps.builder();
             this.stepBuilder = builder;
             return builder;
         }
@@ -130,17 +138,22 @@ public class KoutRequest {
             return this;
         }
 
+        public Builder withEdge(boolean withEdge) {
+            this.request.withEdge = withEdge;
+            return this;
+        }
+
         public KoutRequest build() {
             E.checkNotNull(this.request.source, "The source can't be null");
-            this.request.step = this.stepBuilder.build();
-            E.checkNotNull(this.request.step, "step");
+            this.request.steps = this.stepBuilder.build();
+            E.checkNotNull(this.request.steps, "step");
             TraversersAPI.checkPositive(this.request.maxDepth, "max depth");
             TraversersAPI.checkCapacity(this.request.capacity);
             TraversersAPI.checkLimit(this.request.limit);
             if (this.request.countOnly) {
                 E.checkArgument(!this.request.withVertex &&
-                                !this.request.withPath,
-                                "Can't return vertex or path " +
+                                !this.request.withPath && !this.request.withEdge,
+                                "Can't return vertex or path or edge " +
                                 "when count only is true");
             }
             return this.request;

@@ -20,6 +20,7 @@ package org.apache.hugegraph.structure.traverser;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,6 +31,10 @@ public class WeightedPaths {
     private Map<Object, WeightedPath.Path> paths;
     @JsonProperty
     private Set<Vertex> vertices;
+    @JsonProperty
+    private Set<Edge> edges;
+    @JsonProperty
+    private ApiMeasure measure;
 
     public Map<Object, WeightedPath.Path> paths() {
         return this.paths;
@@ -37,5 +42,13 @@ public class WeightedPaths {
 
     public Set<Vertex> vertices() {
         return this.vertices;
+    }
+
+    public Set<Edge> edges() {
+        return this.edges;
+    }
+
+    public ApiMeasure measure() {
+        return this.measure;
     }
 }

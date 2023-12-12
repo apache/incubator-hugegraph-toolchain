@@ -73,7 +73,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true).withEdge(true)
                .capacity(-1).limit(-1);
         CustomizedPathsRequest request = builder.build();
 
@@ -111,7 +111,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         builder.sources().ids(markoId, peterId);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true).withEdge(true)
                .capacity(-1).limit(-1);
         CustomizedPathsRequest request = builder.build();
 
@@ -152,7 +152,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
         builder.sources().label("person").property("name", names);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true).withEdge(true)
                .capacity(-1).limit(-1);
         CustomizedPathsRequest request = builder.build();
 
@@ -195,7 +195,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1).sample(1);
-        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true).withEdge(true)
                .capacity(-1).limit(-1);
         CustomizedPathsRequest request = builder.build();
 
@@ -236,7 +236,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(CustomizedPathsRequest.SortBy.DECR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.DECR).withVertex(true).withEdge(true)
                .capacity(-1).limit(-1);
         CustomizedPathsRequest request = builder.build();
 
@@ -277,7 +277,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true).withEdge(true)
                .capacity(-1).limit(1);
         CustomizedPathsRequest request = builder.build();
 
@@ -315,7 +315,7 @@ public class CustomizedPathsApiTest extends TraverserApiTest {
                .weightBy("weight").degree(-1);
         builder.steps().direction(Direction.OUT).labels("created1")
                .weightBy("weight").degree(-1);
-        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true)
+        builder.sortBy(CustomizedPathsRequest.SortBy.INCR).withVertex(true).withEdge(true)
                .capacity(1).limit(-1);
         CustomizedPathsRequest request = builder.build();
 

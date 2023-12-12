@@ -27,8 +27,8 @@ public class KneighborRequest {
 
     @JsonProperty("source")
     private Object source;
-    @JsonProperty("step")
-    public EdgeStep step;
+    @JsonProperty("steps")
+    public VESteps steps;
     @JsonProperty("max_depth")
     public int maxDepth;
     @JsonProperty("count_only")
@@ -39,15 +39,18 @@ public class KneighborRequest {
     public boolean withVertex;
     @JsonProperty("with_path")
     public boolean withPath;
+    @JsonProperty("with_edge")
+    public boolean withEdge;
 
     private KneighborRequest() {
         this.source = null;
-        this.step = null;
+        this.steps = null;
         this.maxDepth = Traverser.DEFAULT_MAX_DEPTH;
         this.countOnly = false;
         this.limit = Traverser.DEFAULT_PATHS_LIMIT;
         this.withVertex = false;
         this.withPath = false;
+        this.withEdge = false;
     }
 
     public static Builder builder() {
@@ -56,21 +59,21 @@ public class KneighborRequest {
 
     @Override
     public String toString() {
-        return String.format("KneighborRequest{source=%s,step=%s,maxDepth=%s" +
-                             "countOnly=%s,limit=%s,withVertex=%s,withPath=%s}",
-                             this.source, this.step, this.maxDepth,
-                             this.countOnly, this.limit,
-                             this.withVertex, this.withPath);
+        return String.format("KneighborRequest{source=%s,steps=%s,maxDepth=%s" +
+                             "countOnly=%s,limit=%s,withVertex=%s,withPath=%s,withEdge=%s}",
+                             this.source, this.steps, this.maxDepth,
+                             this.countOnly, this.limit, this.withVertex,
+                             this.withPath, this.withEdge);
     }
 
     public static class Builder {
 
         private KneighborRequest request;
-        private EdgeStep.Builder stepBuilder;
+        private VESteps.Builder stepBuilder;
 
         private Builder() {
             this.request = new KneighborRequest();
-            this.stepBuilder = EdgeStep.builder();
+            this.stepBuilder = VESteps.builder();
         }
 
         public Builder source(Object source) {
@@ -79,8 +82,8 @@ public class KneighborRequest {
             return this;
         }
 
-        public EdgeStep.Builder step() {
-            EdgeStep.Builder builder = EdgeStep.builder();
+        public VESteps.Builder steps() {
+            VESteps.Builder builder = VESteps.builder();
             this.stepBuilder = builder;
             return builder;
         }
@@ -107,6 +110,11 @@ public class KneighborRequest {
             return this;
         }
 
+        public Builder withEdge(boolean withEdge) {
+            this.request.withEdge = withEdge;
+            return this;
+        }
+
         public Builder withPath(boolean withPath) {
             this.request.withPath = withPath;
             return this;
@@ -114,8 +122,8 @@ public class KneighborRequest {
 
         public KneighborRequest build() {
             E.checkNotNull(this.request.source, "The source can't be null");
-            this.request.step = this.stepBuilder.build();
-            E.checkNotNull(this.request.step, "step");
+            this.request.steps = this.stepBuilder.build();
+            E.checkNotNull(this.request.steps, "steps");
             TraversersAPI.checkPositive(this.request.maxDepth, "max depth");
             TraversersAPI.checkLimit(this.request.limit);
             if (this.request.countOnly) {

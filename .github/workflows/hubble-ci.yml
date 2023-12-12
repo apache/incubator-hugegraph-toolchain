@@ -1,4 +1,4 @@
-name: "hugegraph-hubble-ci"
+name: "hubble-ci"
 
 on:
   workflow_dispatch:
@@ -23,8 +23,8 @@ on:
 
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
-  # TODO: replace it with the (latest - n) commit id (n >= 15)
-  COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
+  # TODO: need update it later (eed6103359fe40d2f1476fb8c56d9388c3111a99)
+  COMMIT_ID: bfe9fae150446857412db23ada0dae9d05035837
 
 jobs:
   hubble-ci:
