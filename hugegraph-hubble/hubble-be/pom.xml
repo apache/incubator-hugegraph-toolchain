@@ -138,7 +138,7 @@
                     <artifactId>kotlin-stdlib</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.squareup.okhttp3</groupId>
+                    <groupId>com.squareup.okhttp</groupId>
                     <artifactId>okhttp</artifactId>
                 </exclusion>
             </exclusions>

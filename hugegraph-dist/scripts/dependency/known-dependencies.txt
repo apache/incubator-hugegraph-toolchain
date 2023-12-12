@@ -256,7 +256,6 @@ nimbus-jose-jwt-9.8.1.jar
 okhttp-2.7.5.jar
 okhttp-4.10.0.jar
 logging-interceptor-4.10.0.jar
-kotlin-stdlib-1.2.71.jar
 kotlin-stdlib-1.6.20.jar
 kotlin-stdlib-common-1.5.31.jar
 kotlin-stdlib-jdk7-1.2.71.jar
