@@ -23,17 +23,17 @@ RUN set -x \
     && npm install --global yarn \
     && apt-get clean
 
-ARG MAVEN_PROFILE
+ARG USE_STAGE
 
 COPY . /pkg
 WORKDIR /pkg
 
 RUN set -x \
-    && mvn install $MAVEN_PROFILE -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
+    && mvn install $USE_STAGE -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
 RUN set -x \
     && cd /pkg/hugegraph-hubble/ \
-    && mvn package $MAVEN_PROFILE -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
+    && mvn package $USE_STAGE -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
 
 
 FROM openjdk:11-slim
