@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import java.util.List;
 
-public class EdgeExistenceAPITest extends TraverserApiTest{
+public class EdgeExistenceAPITest extends TraverserApiTest {
 
     @BeforeClass
     public static void prepareSchemaAndGraph() {
@@ -43,11 +43,11 @@ public class EdgeExistenceAPITest extends TraverserApiTest{
         Object markoId = getVertexId("person", "name", "marko");
         Object vadasId = getVertexId("person", "name", "vadas");
 
-        List<Edge> edges = edgeExistenceAPI.get(markoId, vadasId,"", "", 100);
+        List<Edge> edges = edgeExistenceAPI.get(markoId, vadasId, "", "", 100);
         Assert.assertEquals(1, edges.size());
 
         String sortValues = edges.get(0).name();
-        edges = edgeExistenceAPI.get(markoId, vadasId,"knows", sortValues, 100);
+        edges = edgeExistenceAPI.get(markoId, vadasId, "knows", sortValues, 100);
         String id = edges.get(0).id();
 
         Assert.assertEquals(1, edges.size());

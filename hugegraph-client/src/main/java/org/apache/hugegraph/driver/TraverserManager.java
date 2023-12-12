@@ -77,29 +77,29 @@ import org.apache.hugegraph.util.E;
 public class TraverserManager {
 
     private final GraphManager graphManager;
-    private JaccardSimilarityAPI jaccardSimilarityAPI;
-    private SameNeighborsAPI sameNeighborsAPI;
-    private ShortestPathAPI shortestPathAPI;
-    private AllShortestPathsAPI allShortestPathsAPI;
-    private SingleSourceShortestPathAPI singleSourceShortestPathAPI;
-    private WeightedShortestPathAPI weightedShortestPathAPI;
-    private MultiNodeShortestPathAPI multiNodeShortestPathAPI;
-    private PathsAPI pathsAPI;
-    private CrosspointsAPI crosspointsAPI;
-    private KoutAPI koutAPI;
-    private KneighborAPI kneighborAPI;
-    private CountAPI countAPI;
-    private RingsAPI ringsAPI;
-    private RaysAPI raysAPI;
-    private CustomizedPathsAPI customizedPathsAPI;
-    private CustomizedCrosspointsAPI customizedCrosspointsAPI;
-    private TemplatePathsAPI templatePathsAPI;
-    private FusiformSimilarityAPI fusiformSimilarityAPI;
-    private NeighborRankAPI neighborRankAPI;
-    private PersonalRankAPI personalRankAPI;
-    private VerticesAPI verticesAPI;
-    private EdgesAPI edgesAPI;
-    private EdgeExistenceAPI edgeExistenceAPI;
+    private final JaccardSimilarityAPI jaccardSimilarityAPI;
+    private final SameNeighborsAPI sameNeighborsAPI;
+    private final ShortestPathAPI shortestPathAPI;
+    private final AllShortestPathsAPI allShortestPathsAPI;
+    private final SingleSourceShortestPathAPI singleSourceShortestPathAPI;
+    private final WeightedShortestPathAPI weightedShortestPathAPI;
+    private final MultiNodeShortestPathAPI multiNodeShortestPathAPI;
+    private final PathsAPI pathsAPI;
+    private final CrosspointsAPI crosspointsAPI;
+    private final KoutAPI koutAPI;
+    private final KneighborAPI kneighborAPI;
+    private final CountAPI countAPI;
+    private final RingsAPI ringsAPI;
+    private final RaysAPI raysAPI;
+    private final CustomizedPathsAPI customizedPathsAPI;
+    private final CustomizedCrosspointsAPI customizedCrosspointsAPI;
+    private final TemplatePathsAPI templatePathsAPI;
+    private final FusiformSimilarityAPI fusiformSimilarityAPI;
+    private final NeighborRankAPI neighborRankAPI;
+    private final PersonalRankAPI personalRankAPI;
+    private final VerticesAPI verticesAPI;
+    private final EdgesAPI edgesAPI;
+    private final EdgeExistenceAPI edgeExistenceAPI;
 
     public TraverserManager(RestClient client, GraphManager graphManager) {
         this.graphManager = graphManager;
@@ -545,14 +545,15 @@ public class TraverserManager {
     }
 
     public List<Edge> edgeExistence(Object sourceId, Object targetId, String edgeLabel,
-                                    String sortValues, int limit){
+                                    String sortValues, int limit) {
         return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel, sortValues, limit);
     }
-    public List<Edge> edgeExistence(Object sourceId, Object targetId){
+
+    public List<Edge> edgeExistence(Object sourceId, Object targetId) {
         return this.edgeExistenceAPI.get(sourceId, targetId, "", "", -1);
     }
 
-    public List<Edge> edgeExistence(Object sourceId, Object targetId, String edgeLabel){
+    public List<Edge> edgeExistence(Object sourceId, Object targetId, String edgeLabel) {
         return this.edgeExistenceAPI.get(sourceId, targetId, edgeLabel, null, -1);
     }
 }
