@@ -20,35 +20,32 @@ package org.apache.hugegraph.structure.traverser;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hugegraph.structure.graph.Edge;
-import org.apache.hugegraph.structure.graph.Vertex;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class WeightedPaths {
+public class JaccardSimilarity {
 
-    @JsonProperty
-    private Map<Object, WeightedPath.Path> paths;
-    @JsonProperty
-    private Set<Vertex> vertices;
-    @JsonProperty
-    private Set<Edge> edges;
+    @JsonProperty("jaccard_similarity")
+    private Map<Object, Double> similarsMap;
     @JsonProperty
     private ApiMeasure measure;
 
-    public Map<Object, WeightedPath.Path> paths() {
-        return this.paths;
-    }
-
-    public Set<Vertex> vertices() {
-        return this.vertices;
-    }
-
-    public Set<Edge> edges() {
-        return this.edges;
+    public Map<Object, Double> similarsMap() {
+        return this.similarsMap;
     }
 
     public ApiMeasure measure() {
         return this.measure;
+    }
+
+    public int size() {
+        return this.similarsMap.size();
+    }
+
+    public Set<Object> keySet() {
+        return this.similarsMap.keySet();
+    }
+
+    public Double get(Object key) {
+        return this.similarsMap.get(key);
     }
 }

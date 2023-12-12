@@ -127,9 +127,10 @@ public class WeightedShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testWeightedShortestPath() {
         WeightedPath weightedPath = weightedShortestPathAPI.get(
-                                     "A", "Z", Direction.BOTH, null,
-                                     "weight", -1, 0, -1, false);
-        Assert.assertTrue(weightedPath.vertices().isEmpty());
+                "A", "Z", Direction.BOTH, null,
+                "weight", -1, 0, -1, true, true);
+        Assert.assertFalse(weightedPath.vertices().isEmpty());
+        Assert.assertFalse(weightedPath.edges().isEmpty());
         Assert.assertEquals(0.5D, weightedPath.path().weight(),
                             Double.MIN_VALUE);
         Assert.assertEquals(ImmutableList.of("A", "H", "I", "J", "Z"),
@@ -139,18 +140,20 @@ public class WeightedShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testWeightedShortestPathWithLabel() {
         WeightedPath weightedPath = weightedShortestPathAPI.get(
-                                    "A", "Z", Direction.BOTH, "link",
-                                    "weight", -1, 0, -1, false);
-        Assert.assertTrue(weightedPath.vertices().isEmpty());
+                "A", "Z", Direction.BOTH, "link",
+                "weight", -1, 0, -1, true, true);
+        Assert.assertFalse(weightedPath.vertices().isEmpty());
+        Assert.assertFalse(weightedPath.edges().isEmpty());
         Assert.assertEquals(0.5D, weightedPath.path().weight(),
                             Double.MIN_VALUE);
         Assert.assertEquals(ImmutableList.of("A", "H", "I", "J", "Z"),
                             weightedPath.path().vertices());
 
         weightedPath = weightedShortestPathAPI.get(
-                       "A", "Z", Direction.BOTH, "relateTo",
-                       "weight", -1, 0, -1, false);
-        Assert.assertTrue(weightedPath.vertices().isEmpty());
+                "A", "Z", Direction.BOTH, "relateTo",
+                "weight", -1, 0, -1, true, true);
+        Assert.assertFalse(weightedPath.vertices().isEmpty());
+        Assert.assertFalse(weightedPath.edges().isEmpty());
         Assert.assertEquals(6.3999999999999995D, weightedPath.path().weight(),
                             Double.MIN_VALUE);
         Assert.assertEquals(ImmutableList.of("A", "Q", "R", "Z"),
@@ -160,9 +163,10 @@ public class WeightedShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testWeightedShortestPathWithDirection() {
         WeightedPath weightedPath = weightedShortestPathAPI.get(
-                                    "A", "Z", Direction.OUT, null,
-                                    "weight", -1, 0, -1, false);
-        Assert.assertTrue(weightedPath.vertices().isEmpty());
+                "A", "Z", Direction.OUT, null,
+                "weight", -1, 0, -1, true, true);
+        Assert.assertFalse(weightedPath.vertices().isEmpty());
+        Assert.assertFalse(weightedPath.edges().isEmpty());
         Assert.assertEquals(2.0D, weightedPath.path().weight(),
                             Double.MIN_VALUE);
         Assert.assertEquals(ImmutableList.of("A", "B", "C", "D", "Z"),
@@ -172,9 +176,10 @@ public class WeightedShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testWeightedShortestPathWithDegree() {
         WeightedPath weightedPath = weightedShortestPathAPI.get(
-                                    "A", "Z", Direction.OUT, null,
-                                    "weight", 1L, 0L, -1L, false);
-        Assert.assertTrue(weightedPath.vertices().isEmpty());
+                "A", "Z", Direction.OUT, null,
+                "weight", 1L, 0L, -1L, true, true);
+        Assert.assertFalse(weightedPath.vertices().isEmpty());
+        Assert.assertFalse(weightedPath.edges().isEmpty());
         Assert.assertEquals(2.0D, weightedPath.path().weight(),
                             Double.MIN_VALUE);
         Assert.assertEquals(ImmutableList.of("A", "B", "C", "D", "Z"),
@@ -184,9 +189,10 @@ public class WeightedShortestPathApiTest extends TraverserApiTest {
     @Test
     public void testWeightedShortestPathWithVertex() {
         WeightedPath weightedPath = weightedShortestPathAPI.get(
-                                    "A", "Z", Direction.BOTH, null, "weight",
-                                    -1, 0, -1, true);
+                "A", "Z", Direction.BOTH, null, "weight",
+                -1, 0, -1, true, true);
         Assert.assertEquals(5, weightedPath.vertices().size());
+        Assert.assertFalse(weightedPath.edges().isEmpty());
         List<Object> expected = ImmutableList.of("A", "H", "I", "J", "Z");
         for (Vertex vertex : weightedPath.vertices()) {
             Assert.assertTrue(expected.contains(vertex.id()));

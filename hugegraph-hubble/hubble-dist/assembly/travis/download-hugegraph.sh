@@ -32,7 +32,8 @@ git checkout "${COMMIT_ID}"
 mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
 
 # TODO: lack incubator after apache package release (update it later)
+cd hugegraph-server
 TAR=$(echo apache-hugegraph-*.tar.gz)
-cp apache-hugegraph-*.tar.gz ../
-cd ../
+cp apache-hugegraph-*.tar.gz ../../
+cd ../../
 rm -rf "${GIT_DIR}"

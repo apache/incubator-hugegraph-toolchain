@@ -28,10 +28,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TemplatePathsRequest {
 
-    @JsonProperty("sources")
-    private VerticesArgs sources;
-    @JsonProperty("targets")
-    private VerticesArgs targets;
     @JsonProperty("steps")
     public List<RepeatEdgeStep> steps;
     @JsonProperty("with_ring")
@@ -42,6 +38,12 @@ public class TemplatePathsRequest {
     public int limit;
     @JsonProperty("with_vertex")
     public boolean withVertex;
+    @JsonProperty("with_edge")
+    public boolean withEdge;
+    @JsonProperty("sources")
+    private VerticesArgs sources;
+    @JsonProperty("targets")
+    private VerticesArgs targets;
 
     private TemplatePathsRequest() {
         this.sources = null;
@@ -51,6 +53,7 @@ public class TemplatePathsRequest {
         this.capacity = Traverser.DEFAULT_CAPACITY;
         this.limit = Traverser.DEFAULT_PATHS_LIMIT;
         this.withVertex = false;
+        this.withEdge = false;
     }
 
     public static Builder builder() {
@@ -61,9 +64,10 @@ public class TemplatePathsRequest {
     public String toString() {
         return String.format("TemplatePathsRequest{sources=%s,targets=%s," +
                              "steps=%s,withRing=%s,capacity=%s,limit=%s," +
-                             "withVertex=%s}", this.sources, this.targets,
-                             this.steps, this.withRing, this.capacity,
-                             this.limit, this.withVertex);
+                             "withVertex=%s,withEdge=%s}",
+                             this.sources, this.targets, this.steps,
+                             this.withRing, this.capacity, this.limit,
+                             this.withVertex, this.withEdge);
     }
 
     public static class Builder {
@@ -113,6 +117,11 @@ public class TemplatePathsRequest {
 
         public Builder withVertex(boolean withVertex) {
             this.request.withVertex = withVertex;
+            return this;
+        }
+
+        public Builder withEdge(boolean withEdge) {
+            this.request.withEdge = withEdge;
             return this;
         }
 

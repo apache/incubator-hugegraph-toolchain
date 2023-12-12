@@ -20,6 +20,7 @@ package org.apache.hugegraph.structure.traverser;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 
@@ -35,6 +36,10 @@ public class Kneighbor {
     private List<Path> paths;
     @JsonProperty
     private Set<Vertex> vertices;
+    @JsonProperty
+    private Set<Edge> edges;
+    @JsonProperty
+    private ApiMeasure measure;
 
     public int size() {
         return this.size;
@@ -50,5 +55,13 @@ public class Kneighbor {
 
     public Set<Vertex> vertices() {
         return this.vertices;
+    }
+
+    public Set<Edge> edges() {
+        return this.edges;
+    }
+
+    public ApiMeasure measure() {
+        return this.measure;
     }
 }

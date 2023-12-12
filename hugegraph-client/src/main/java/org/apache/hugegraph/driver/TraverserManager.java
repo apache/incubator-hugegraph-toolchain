@@ -19,10 +19,7 @@ package org.apache.hugegraph.driver;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.api.traverser.AllShortestPathsAPI;
 import org.apache.hugegraph.api.traverser.CountAPI;
 import org.apache.hugegraph.api.traverser.CrosspointsAPI;
@@ -46,6 +43,8 @@ import org.apache.hugegraph.api.traverser.TemplatePathsAPI;
 import org.apache.hugegraph.api.traverser.VerticesAPI;
 import org.apache.hugegraph.api.traverser.WeightedShortestPathAPI;
 import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.constant.Direction;
+import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
 import org.apache.hugegraph.structure.graph.GraphIterator;
@@ -56,18 +55,19 @@ import org.apache.hugegraph.structure.graph.Vertices;
 import org.apache.hugegraph.structure.traverser.CountRequest;
 import org.apache.hugegraph.structure.traverser.CrosspointsRequest;
 import org.apache.hugegraph.structure.traverser.CustomizedCrosspoints;
-import org.apache.hugegraph.structure.traverser.MultiNodeShortestPathRequest;
-import org.apache.hugegraph.structure.traverser.PathsWithVertices;
+import org.apache.hugegraph.structure.traverser.CustomizedPathsRequest;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarity;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarityRequest;
-import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
+import org.apache.hugegraph.structure.traverser.JaccardSimilarity;
 import org.apache.hugegraph.structure.traverser.Kneighbor;
 import org.apache.hugegraph.structure.traverser.KneighborRequest;
 import org.apache.hugegraph.structure.traverser.Kout;
 import org.apache.hugegraph.structure.traverser.KoutRequest;
-import org.apache.hugegraph.structure.traverser.CustomizedPathsRequest;
+import org.apache.hugegraph.structure.traverser.MultiNodeShortestPathRequest;
 import org.apache.hugegraph.structure.traverser.PathsRequest;
+import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.Ranks;
+import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
 import org.apache.hugegraph.structure.traverser.TemplatePathsRequest;
 import org.apache.hugegraph.structure.traverser.WeightedPath;
 import org.apache.hugegraph.structure.traverser.WeightedPaths;
@@ -143,7 +143,7 @@ public class TraverserManager {
                                              label, degree);
     }
 
-    public Map<Object, Double> jaccardSimilarity(SingleSourceJaccardSimilarityRequest request) {
+    public JaccardSimilarity jaccardSimilarity(SingleSourceJaccardSimilarityRequest request) {
         return this.jaccardSimilarityAPI.post(request);
     }
 
@@ -241,19 +241,20 @@ public class TraverserManager {
 
     public WeightedPaths singleSourceShortestPath(Object sourceId,
                                                   String weight,
-                                                  boolean withVertex) {
+                                                  boolean withVertex,
+                                                  boolean withEdge) {
         return this.singleSourceShortestPath(sourceId, Direction.BOTH, null,
-                                             weight, withVertex);
+                                             weight, withVertex, withEdge);
     }
 
     public WeightedPaths singleSourceShortestPath(Object sourceId,
                                                   Direction direction,
                                                   String label, String weight,
-                                                  boolean withVertex) {
+                                                  boolean withVertex, boolean withEdge) {
         return this.singleSourceShortestPath(sourceId, direction, label, weight,
                                              Traverser.DEFAULT_MAX_DEGREE, 0L,
                                              Traverser.DEFAULT_CAPACITY,
-                                             Traverser.DEFAULT_PATHS_LIMIT, withVertex);
+                                             Traverser.DEFAULT_PATHS_LIMIT, withVertex, withEdge);
     }
 
     public WeightedPaths singleSourceShortestPath(Object sourceId,
@@ -261,35 +262,36 @@ public class TraverserManager {
                                                   String label, String weight,
                                                   long degree, long skipDegree,
                                                   long capacity, int limit,
-                                                  boolean withVertex) {
+                                                  boolean withVertex, boolean withEdge) {
         return this.singleSourceShortestPathAPI.get(sourceId, direction, label,
                                                     weight, degree, skipDegree,
                                                     capacity, limit,
-                                                    withVertex);
+                                                    withVertex, withEdge);
     }
 
     public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
-                                             String weight, boolean withVertex) {
+                                             String weight, boolean withVertex, boolean withEdge) {
         return this.weightedShortestPath(sourceId, targetId, Direction.BOTH,
-                                         null, weight, withVertex);
+                                         null, weight, withVertex, withEdge);
     }
 
     public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
                                              Direction direction, String label,
                                              String weight,
-                                             boolean withVertex) {
+                                             boolean withVertex,
+                                             boolean withEdge) {
         return this.weightedShortestPath(sourceId, targetId, direction, label,
                                          weight, Traverser.DEFAULT_MAX_DEGREE, 0L,
-                                         Traverser.DEFAULT_CAPACITY, withVertex);
+                                         Traverser.DEFAULT_CAPACITY, withVertex, withEdge);
     }
 
     public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
                                              Direction direction,
                                              String label, String weight,
                                              long degree, long skipDegree,
-                                             long capacity, boolean withVertex) {
+                                             long capacity, boolean withVertex, boolean withEdge) {
         return this.weightedShortestPathAPI.get(sourceId, targetId, direction, label, weight,
-                                                degree, skipDegree, capacity, withVertex);
+                                                degree, skipDegree, capacity, withVertex, withEdge);
     }
 
     public PathsWithVertices multiNodeShortestPath(MultiNodeShortestPathRequest request) {
