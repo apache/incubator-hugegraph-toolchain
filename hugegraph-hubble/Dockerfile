@@ -24,6 +24,11 @@ COPY . /pkg
 WORKDIR /pkg
 
 RUN set -x \
+    && apt-get -q update \
+    && apt-get install -y npm \
+    && apt-get clean
+
+RUN set -x \
     && mvn install $USE_STAGE -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
 RUN set -x \
