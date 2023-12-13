@@ -23,17 +23,16 @@ ARG MAVEN_ARGS
 COPY . /pkg
 WORKDIR /pkg
 
-# RUN set -x \
-#     && apt-get -q update \
-#     && apt-get install curl gnupg -yq \
-#     && curl -sL https://deb.nodesource.com/setup_16.x | bash \
-#     && apt-get install -y nodejs \
-#     && apt-get clean
+RUN set -x \
+    && apt-get -q update \
+    && apt-get install curl gnupg -yq \
+    && curl -sL https://deb.nodesource.com/setup_16.x | bash \
+    && apt-get install -y nodejs \
+    && apt-get clean
 
 RUN set -x \
     && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp \
     && cd /pkg/hugegraph-hubble/ \
-    && mvn -e compile $MAVEN_ARGS -Dmaven.javadoc.skip=true -ntp \
     && mvn package $MAVEN_ARGS -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
 
 FROM openjdk:11-slim
