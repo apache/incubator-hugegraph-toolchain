@@ -20,15 +20,15 @@ FROM maven:3.9.0-eclipse-temurin-11 AS build
 COPY . /pkg
 WORKDIR /pkg
 
-RUN set -x \
-    && mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
+ARG MAVEN_ARGS
 
+RUN set -x \
+    && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
 RUN set -x \
     && cd /pkg/hugegraph-loader/ \
     && echo "$(ls)" \
-    && mvn clean package -DskipTests
-
+    && mvn clean package $MAVEN_ARGS -DskipTests
 
 FROM openjdk:11-slim
 

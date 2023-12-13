@@ -17,22 +17,23 @@
 
 FROM maven:3.9.0-eclipse-temurin-11 AS build
 
-RUN set -x \
-    && apt-get -q update \
-    && apt-get install -y nodejs npm \
-    && npm install --global yarn \
-    && apt-get clean
+
+ARG MAVEN_ARGS
 
 COPY . /pkg
 WORKDIR /pkg
 
 RUN set -x \
-    && mvn install -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
+    && apt-get -q update \
+    && apt-get install -y npm \
+    && apt-get clean
+
+RUN set -x \
+    && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
 RUN set -x \
     && cd /pkg/hugegraph-hubble/ \
-    && mvn package -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
-
+    && mvn package $MAVEN_ARGS -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
 
 FROM openjdk:11-slim
 
