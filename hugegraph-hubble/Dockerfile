@@ -31,9 +31,7 @@ RUN set -x \
     && apt-get clean
 
 RUN set -x \
-    && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
-
-RUN set -x \
+    && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp \
     && cd /pkg/hugegraph-hubble/ \
     && mvn package $MAVEN_ARGS -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
 
