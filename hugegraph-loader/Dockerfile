@@ -28,7 +28,7 @@ RUN set -x \
 RUN set -x \
     && cd /pkg/hugegraph-loader/ \
     && echo "$(ls)" \
-    && mvn $MAVEN_ARGS clean package -DskipTests
+    && mvn clean package $MAVEN_ARGS -DskipTests
 
 FROM openjdk:11-slim
 
