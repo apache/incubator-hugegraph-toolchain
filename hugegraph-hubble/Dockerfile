@@ -18,7 +18,7 @@
 FROM maven:3.9.0-eclipse-temurin-11 AS build
 
 
-ARG USE_STAGE
+ARG MAVEN_ARGS
 
 COPY . /pkg
 WORKDIR /pkg
@@ -29,12 +29,11 @@ RUN set -x \
     && apt-get clean
 
 RUN set -x \
-    && mvn install $USE_STAGE -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
+    && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp
 
 RUN set -x \
     && cd /pkg/hugegraph-hubble/ \
-    && mvn package $USE_STAGE -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
-
+    && mvn package $MAVEN_ARGS -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
 
 FROM openjdk:11-slim
 
