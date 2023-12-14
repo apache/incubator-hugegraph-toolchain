@@ -34,53 +34,43 @@ public class AuthBackupTest extends AuthTest {
 
     @Test
     public void testAuthBackup() {
-        String[] args = new String[]{
-                "--throw-mode", "true",
-                "--user", USER_NAME,
-                "--password", USER_PASSWORD,
-                "auth-backup"
+        String[] args = new String[]{"--throw-mode", "true", "--user", USER_NAME,
+                                     "--password", USER_PASSWORD, "auth-backup"
         };
 
         HugeGraphCommand.main(args);
 
         Assert.assertTrue(FileUtil.checkFileExists(DEFAULT_URL));
         List<String> fileNames = FileUtil.subdirectories(DEFAULT_URL);
-        Assert.assertTrue(fileNames.size() == 5);
+        Assert.assertEquals(5, fileNames.size());
     }
 
     @Test
     public void testAuthBackupByTypes() {
-        String[] args = new String[]{
-                "--throw-mode", "true",
-                "--user", USER_NAME,
-                "--password", USER_PASSWORD,
-                "auth-backup",
-                "--types", "user,group"
+        String[] args = new String[]{"--throw-mode", "true", "--user", USER_NAME,
+                                     "--password", USER_PASSWORD, "auth-backup",
+                                     "--types", "user,group"
         };
 
         HugeGraphCommand.main(args);
 
         Assert.assertTrue(FileUtil.checkFileExists(DEFAULT_URL));
         List<String> fileNames = FileUtil.subdirectories(DEFAULT_URL);
-        Assert.assertTrue(fileNames.size() == 2);
+        Assert.assertEquals(2, fileNames.size());
     }
 
     @Test
     public void testAuthBackupWithWrongType() {
-        String[] args = new String[]{
-                "--throw-mode", "true",
-                "--user", USER_NAME,
-                "--password", USER_PASSWORD,
-                "auth-backup",
-                "--types", "user,group,test"
+        String[] args = new String[]{"--throw-mode", "true", "--user", USER_NAME,
+                                     "--password", USER_PASSWORD, "auth-backup",
+                                     "--types", "user,group,test"
         };
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             HugeGraphCommand.main(args);
         }, e -> {
             Assert.assertContains("valid value is 'all' or combination of " +
-                                  "[user,group,target,belong,access]",
-                                  e.getMessage());
+                                  "[user,group,target,belong,access]", e.getMessage());
         });
     }
 
@@ -99,6 +89,6 @@ public class AuthBackupTest extends AuthTest {
 
         Assert.assertTrue(FileUtil.checkFileExists(directory));
         List<String> fileNames = FileUtil.subdirectories(directory);
-        Assert.assertTrue(fileNames.size() == 5);
+        Assert.assertEquals(5, fileNames.size());
     }
 }

@@ -28,8 +28,8 @@
     <name>${project.artifactId}</name>
     <url>https://github.com/apache/incubator-hugegraph-toolchain</url>
     <description>
-        hugegraph-toolchain is the integration project of a series of utilities for HugeGraph,
-        it includes 4 main modules (loader/hubble/tools/client)
+        hugegraph-toolchain is the integration project contains a series of utilities for HugeGraph,
+        it includes 5+ main modules (loader/hubble/tools/clients/data connector)
     </description>
 
     <parent>
@@ -48,7 +48,7 @@
 
     <developers>
         <developer>
-            <id>Apache Hugegraph(Incubating)</id>
+            <id>Apache HugeGraph(Incubating)</id>
             <email>dev-subscribe@hugegraph.apache.org</email>
             <url>https://hugegraph.apache.org/</url>
         </developer>

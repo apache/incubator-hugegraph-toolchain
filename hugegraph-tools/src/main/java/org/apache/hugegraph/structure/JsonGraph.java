@@ -32,7 +32,7 @@ public class JsonGraph {
 
     private static final int INIT_VERTEX_CAPACITY = 1_000_000;
 
-    private Map<String, Map<Object, JsonVertex>> tables;
+    private final Map<String, Map<Object, JsonVertex>> tables;
 
     public JsonGraph() {
         this.tables = new ConcurrentHashMap<>();

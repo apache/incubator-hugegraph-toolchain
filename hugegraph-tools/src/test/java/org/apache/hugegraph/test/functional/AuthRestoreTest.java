@@ -58,14 +58,10 @@ public class AuthRestoreTest extends AuthTest {
         this.loadData(HugeType.BELONG, "auth_belongs.txt");
         this.loadData(HugeType.ACCESS, "auth_accesses.txt");
 
-        String[] args = new String[]{
-                "--throw-mode", "true",
-                "--user", USER_NAME,
-                "--password", USER_PASSWORD,
-                "auth-restore",
-                "--directory", DEFAULT_URL,
-                "--init-password", "123456",
-                "--strategy", "ignore"
+        String[] args = new String[]{"--throw-mode", "true", "--user", USER_NAME,
+                                     "--password", USER_PASSWORD, "auth-restore",
+                                     "--directory", DEFAULT_URL, "--init-password", "123456",
+                                     "--strategy", "ignore"
         };
 
         HugeGraphCommand.main(args);
@@ -82,7 +78,7 @@ public class AuthRestoreTest extends AuthTest {
         List<Group> groups = this.client.auth().listGroups();
         Map<String, Group> groupMap = Maps.newHashMap();
         for (Group group : groups) {
-             groupMap.put(group.name(), group);
+            groupMap.put(group.name(), group);
         }
         Assert.assertTrue(groupMap.containsKey("test_group6"));
         idList.add(groupMap.get("test_group6").id().toString());
@@ -90,7 +86,7 @@ public class AuthRestoreTest extends AuthTest {
         List<Target> targets = this.client.auth().listTargets();
         Map<String, Target> targetMap = Maps.newHashMap();
         for (Target target : targets) {
-             targetMap.put(target.name(), target);
+            targetMap.put(target.name(), target);
         }
         Assert.assertTrue(targetMap.containsKey("test_target1"));
         idList.add(targetMap.get("test_target1").id().toString());
@@ -139,7 +135,7 @@ public class AuthRestoreTest extends AuthTest {
         List<User> userList = this.client.auth().listUsers();
         Map<String, User> userMap = Maps.newHashMap();
         for (User user1 : userList) {
-             userMap.put(user1.name(), user1);
+            userMap.put(user1.name(), user1);
         }
 
         Assert.assertTrue(userMap.containsKey("test_user1"));
@@ -160,8 +156,7 @@ public class AuthRestoreTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             String msg = e.getMessage();
-            Assert.assertTrue(msg.endsWith("The following option is " +
-                                           "required: [--init-password]"));
+            Assert.assertTrue(msg.endsWith("The following option is required: [--init-password]"));
         });
     }
 
@@ -182,8 +177,7 @@ public class AuthRestoreTest extends AuthTest {
         Assert.assertThrows(IllegalStateException.class, () -> {
             HugeGraphCommand.main(args);
         }, e -> {
-            Assert.assertContains("Restore conflict with STOP strategy",
-                                  e.getMessage());
+            Assert.assertContains("Restore conflict with STOP strategy", e.getMessage());
         });
     }
 
@@ -206,7 +200,7 @@ public class AuthRestoreTest extends AuthTest {
         List<User> userList = this.client.auth().listUsers();
         Map<String, User> userMap = Maps.newHashMap();
         for (User user1 : userList) {
-             userMap.put(user1.name(), user1);
+            userMap.put(user1.name(), user1);
         }
 
         Assert.assertTrue(userMap.containsKey("admin"));
@@ -230,8 +224,7 @@ public class AuthRestoreTest extends AuthTest {
         Assert.assertThrows(IllegalStateException.class, () -> {
             HugeGraphCommand.main(args);
         }, e -> {
-            Assert.assertContains("The directory does not exist",
-                                  e.getMessage());
+            Assert.assertContains("The directory does not exist", e.getMessage());
         });
     }
 
@@ -244,7 +237,7 @@ public class AuthRestoreTest extends AuthTest {
                 "--user", USER_NAME,
                 "--password", USER_PASSWORD,
                 "auth-restore",
-                "--types", "user，test",
+                "--types", "user, test",
                 "--strategy", "stop",
                 "--init-password", "123456",
                 "--directory", filePath
@@ -254,8 +247,7 @@ public class AuthRestoreTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             Assert.assertContains("valid value is 'all' or combination of " +
-                                  "[user,group,target,belong,access]",
-                                  e.getMessage());
+                                  "[user,group,target,belong,access]", e.getMessage());
         });
     }
 
@@ -278,8 +270,7 @@ public class AuthRestoreTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             Assert.assertContains("if type contains 'belong' then " +
-                                  "'user' and 'group' are required.",
-                                  e.getMessage());
+                                  "'user' and 'group' are required.", e.getMessage());
         });
     }
 
@@ -302,8 +293,7 @@ public class AuthRestoreTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             Assert.assertContains("if type contains 'access' then " +
-                                  "'group' and 'target' are required.",
-                                  e.getMessage());
+                                  "'group' and 'target' are required.", e.getMessage());
         });
     }
 
@@ -326,8 +316,7 @@ public class AuthRestoreTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             Assert.assertContains("Invalid --strategy 'test', valid " +
-                                  "value is 'stop' or 'ignore",
-                                  e.getMessage());
+                                  "value is 'stop' or 'ignore", e.getMessage());
         });
     }
 
@@ -335,8 +324,7 @@ public class AuthRestoreTest extends AuthTest {
         String restoreDataPath = DEFAULT_URL + hugeType.string();
         String testRestoreDataPath = DEFAULT_TEST_URL + dataFilePath;
 
-        List<String> list = FileUtil.readTestRestoreData(FileUtil.configPath(
-                                                         testRestoreDataPath));
+        List<String> list = FileUtil.readTestRestoreData(FileUtil.configPath(testRestoreDataPath));
         FileUtil.writeTestRestoreData(restoreDataPath, list);
     }
 }

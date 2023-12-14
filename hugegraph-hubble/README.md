@@ -4,14 +4,15 @@
 [![hugegraph-hubble-ci](https://github.com/apache/incubator-hugegraph-toolchain/actions/workflows/hubble-ci.yml/badge.svg?branch=master)](https://github.com/apache/incubator-hugegraph-toolchain/actions/workflows/hubble-ci.yml)
 [![CodeQL](https://github.com/apache/incubator-hugegraph-toolchain/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/apache/incubator-hugegraph-toolchain/actions/workflows/codeql-analysis.yml)
 
-hugegraph-hubble is a graph management and analysis platform that provides features: graph data load, schema management, graph relationship analysis and graphical display.
+hugegraph-hubble is a graph management and analysis platform that provides features:
+graph data load, schema management, graph relationship analysis, and graphical display.
 
 ## Features
 
 - Graph connection management, supporting to easily switch graph to operate
 - Graph data load, supporting to load large amounts of data from files into hugegraph-server
 - Schema management, supporting to easily perform schema manipulation and display
-- Graph analysis and graphical display, supporting to build query via the gremlin or algorithms with a little effort then will get cool graphical results
+- Graph analysis and graphical display, supporting to build a query via the gremlin or algorithms with a little effort then will get cool graphical results
 
 ## Quick Start
 
@@ -29,7 +30,7 @@ We can quickly start `hubble` in two ways:
             #environment:
             #  - PRELOAD=true
             ports:
-              - 18080:8080
+              - 8080:8080
 
         hubble:
             image: hugegraph/hubble

@@ -20,11 +20,11 @@ package org.apache.hugegraph.test.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -45,10 +45,7 @@ public class FileUtil {
 
     public static boolean checkFileExists(String filePath) {
         File file = new File(filePath);
-        if (file.exists()) {
-            return true;
-        }
-        return false;
+        return file.exists();
     }
 
     public static List<String> subdirectories(String filePath) {
@@ -58,9 +55,9 @@ public class FileUtil {
         }
         String[] files = file.list();
         List<String> list = Lists.newArrayList();
-        for (int i = 0; i < files.length; i++) {
-             File fileDir = new File(file, files[i]);
-             list.add(fileDir.getName());
+        for (String s : files) {
+            File fileDir = new File(file, s);
+            list.add(fileDir.getName());
         }
 
         return list;
@@ -70,8 +67,8 @@ public class FileUtil {
         File file = new File(filePath);
         if (file.exists()) {
             String[] files = file.list();
-            for (int i = 0; i < files.length; i++) {
-                File fileDir = new File(file, files[i]);
+            for (String s : files) {
+                File fileDir = new File(file, s);
                 fileDir.delete();
             }
         }
@@ -81,16 +78,15 @@ public class FileUtil {
         long count = 0L;
         try (FileOutputStream os = new FileOutputStream(filePath);
              ByteArrayOutputStream baos = new ByteArrayOutputStream(LBUF_SIZE)) {
-             StringBuilder builder = new StringBuilder(LBUF_SIZE);
-             for (Object e : list) {
-                  count++;
-                  builder.append(e).append("\n");
-             }
-             baos.write(builder.toString().getBytes(API.CHARSET));
-             os.write(baos.toByteArray());
+            StringBuilder builder = new StringBuilder(LBUF_SIZE);
+            for (Object e : list) {
+                count++;
+                builder.append(e).append("\n");
+            }
+            baos.write(builder.toString().getBytes(API.CHARSET));
+            os.write(baos.toByteArray());
         } catch (IOException e) {
-             throw new ToolsException("Failed write file path is %s",
-                                      e, filePath);
+            throw new ToolsException("Failed write file path is %s", e, filePath);
         }
 
         return count;
@@ -98,16 +94,15 @@ public class FileUtil {
 
     public static List<String> readTestRestoreData(String filePath) {
         List<String> results = Lists.newArrayList();
-        try (InputStream is = new FileInputStream(filePath);
+        try (InputStream is = Files.newInputStream(Paths.get(filePath));
              InputStreamReader isr = new InputStreamReader(is, API.CHARSET)) {
-             BufferedReader reader = new BufferedReader(isr);
-             String line;
-             while ((line = reader.readLine()) != null) {
-                 results.add(line);
-             }
+            BufferedReader reader = new BufferedReader(isr);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                results.add(line);
+            }
         } catch (IOException e) {
-             throw new ToolsException("Failed read file path is %s",
-                                      e, filePath);
+            throw new ToolsException("Failed read file path is %s", e, filePath);
         }
 
         return results;
