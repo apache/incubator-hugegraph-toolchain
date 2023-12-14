@@ -62,7 +62,7 @@ public final class ToolUtil {
     }
 
     public static String commandsCategory(JCommander jCommander) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("================================================");
         sb.append("\n");
         sb.append("Warning : must provide one sub-command");

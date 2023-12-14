@@ -82,9 +82,11 @@
                         <id>install node and yarn</id>
                         <goals>
                             <goal>install-node-and-yarn</goal>
+                            <goal>install-node-and-npm</goal>
                         </goals>
                         <configuration>
                             <nodeVersion>v16.16.0</nodeVersion>
+                            <npmVersion>8.19.1</npmVersion>
                             <yarnVersion>v1.22.15</yarnVersion>
                         </configuration>
                     </execution>

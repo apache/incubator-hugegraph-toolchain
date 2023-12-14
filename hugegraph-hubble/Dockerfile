@@ -25,10 +25,9 @@ WORKDIR /pkg
 
 RUN set -x \
     && apt-get -q update \
-    && apt-get install curl gnupg -yq \
-    && curl -sL https://deb.nodesource.com/setup_16.x | bash \
-    && apt-get install -y nodejs \
-    && apt-get clean
+    && apt-get install curl -yq \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN set -x \
     && mvn install $MAVEN_ARGS -pl hugegraph-client,hugegraph-loader -am -Dmaven.javadoc.skip=true -DskipTests -ntp \

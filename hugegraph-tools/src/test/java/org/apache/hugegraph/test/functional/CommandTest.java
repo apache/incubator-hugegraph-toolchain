@@ -26,21 +26,16 @@ public class CommandTest extends AuthTest {
 
     @Test
     public void testHelpCommand() {
-        String[] args = new String[]{
-                "--throw-mode", "true",
-                "--user", USER_NAME,
-                "--password", USER_PASSWORD,
-                "help"
+        String[] args = new String[]{"--throw-mode", "true", "--user", USER_NAME,
+                                     "--password", USER_PASSWORD, "help"
         };
 
         Assert.assertThrows(ExitException.class, () -> {
             HugeGraphCommand.main(args);
         }, e -> {
             ExitException exception = (ExitException) e;
-            Assert.assertContains("Command : hugegragh help",
-                                  exception.getMessage());
-            Assert.assertContains("Usage: hugegraph [options] [command]",
-                                  exception.details());
+            Assert.assertContains("Command : hugegragh help", exception.getMessage());
+            Assert.assertContains("Usage: hugegraph [options] [command]", exception.details());
         });
     }
 
@@ -57,10 +52,8 @@ public class CommandTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             ExitException exception = (ExitException) e;
-            Assert.assertContains("Command : hugegragh help auth-backup",
-                                  exception.getMessage());
-            Assert.assertContains("Usage: auth-backup [options]",
-                                  exception.details());
+            Assert.assertContains("Command : hugegragh help auth-backup", exception.getMessage());
+            Assert.assertContains("Usage: auth-backup [options]", exception.details());
         });
     }
 
@@ -78,11 +71,9 @@ public class CommandTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             ExitException exception = (ExitException) e;
-            Assert.assertContains(String.format(
-                                  "Unexpected help sub-command %s",
-                                  badCommand), exception.getMessage());
-            Assert.assertContains("Here are some sub-command ",
-                                  exception.details());
+            Assert.assertContains(String.format("Unexpected help sub-command %s",
+                                                badCommand), exception.getMessage());
+            Assert.assertContains("Here are some sub-command ", exception.details());
         });
     }
 
@@ -98,10 +89,8 @@ public class CommandTest extends AuthTest {
             HugeGraphCommand.main(args);
         }, e -> {
             ExitException exception = (ExitException) e;
-            Assert.assertContains("No sub-command found",
-                                  exception.getMessage());
-            Assert.assertContains("Warning : must provide one sub-command",
-                                  exception.details());
+            Assert.assertContains("No sub-command found", exception.getMessage());
+            Assert.assertContains("Warning : must provide one sub-command", exception.details());
         });
     }
 }
