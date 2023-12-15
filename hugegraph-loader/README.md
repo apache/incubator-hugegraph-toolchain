@@ -17,6 +17,10 @@ hugegraph-loader is a customizable command line utility for loading small to med
 
 ## 2. Usage for Docker(Recommand)
 
+> Note: The docker image of hugegraph-loader is a convenience release, not official distribution artifacts from ASF. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
+
+> Note: Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+
 - Run `loader` with Docker
     - Docker run
     - Docker-compose
@@ -110,7 +114,7 @@ The result is as same as above.
 
 ## 3. Use loader directly
 
-> notice: currently, version is `1.0.0`
+> notice: currently, version is `1.2.0`
 
 Download and unzip the compiled archive
 

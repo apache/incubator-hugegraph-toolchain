@@ -16,6 +16,10 @@ graph data load, schema management, graph relationship analysis, and graphical d
 
 ## Quick Start
 
+> Note: The docker image of hugegraph-hubble is a convenience release, not official distribution artifacts from ASF. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
+
+> Note: Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+
 We can quickly start `hubble` in two ways:
 
 1. We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start [hubble](https://hub.docker.com/r/hugegraph/hubble).
