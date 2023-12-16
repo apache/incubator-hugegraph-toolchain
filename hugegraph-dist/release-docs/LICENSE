@@ -530,7 +530,6 @@ See licenses/ for text of these licenses.
 	(Apache License, Version 2.0) * less (less:3.13.1 - https://github.com/less/less.js)
 	(Apache License, Version 2.0) * typescript (typescript:3.9.10 - https://github.com/Microsoft/TypeScript)
 	hugegraph-hubble/ui/favicon.ico
-	(Apache License, Version 2.0) * JetBrains Java Annotations (org.jetbrains:annotations - https://github.com/JetBrains/java-annotations)
 	(Apache License, Version 2.0) * kotlin-stdlib (org.jetbrains.kotlin:kotlin-stdlib:1.6.20 - https://github.com/JetBrains/kotlin)
 	(Apache License, Version 2.0) * kotlin-stdlib-common (org.jetbrains.kotlin:kotlin-stdlib-common:1.5.31 - https://github.com/JetBrains/kotlin)
 	(Apache License, Version 2.0) * kotlin-stdlib-jdk7 (org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.71 - https://github.com/JetBrains/kotlin)
@@ -548,8 +547,8 @@ See licenses/ for text of these licenses.
 	(CDDL) * Expression Language 3.0 (org.glassfish:javax.el:3.0.0 - http://el-spec.java.net)
 	(CDDL) * Expression Language 3.0 (org.glassfish:javax.el:3.0.1-b12 - http://uel.java.net)
 	(CDDL) * JSR 353 (JSON Processing) Default Provider (org.glassfish:javax.json:1.0 - http://jsonp.java.net)
-	(CDDL) * HK2 API module (org.glassfish.hk2:hk2-api:2.5.0-b42 - https://github.com/hk2-project/hk2/hk2-api)
-	(CDDL) * HK2 Implementation Utilities (org.glassfish.hk2:hk2-utils:2.5.0-b42 - https://github.com/hk2-project/hk2/hk2-utils)
+	(CDDL) * HK2 API module (org.glassfish.hk2:hk2-api:2.6.1 - https://github.com/hk2-project/hk2/hk2-api)
+	(CDDL) * HK2 Implementation Utilities (org.glassfish.hk2:hk2-utils:2.6.1 - https://github.com/hk2-project/hk2/hk2-utils)
 	(CDDL) * JSP implementation (org.glassfish.web:javax.servlet.jsp:2.3.2 - http://jsp.java.net)
 	(CDDL) * Java Servlet API (javax.servlet:javax.servlet-api:3.1.0 - http://servlet-spec.java.net)
 	(CDDL) * Java Servlet API (javax.servlet:javax.servlet-api:4.0.1 - https://javaee.github.io/servlet-spec/)
