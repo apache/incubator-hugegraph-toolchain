@@ -307,7 +307,7 @@ COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1
 
     The Covered Software is a "commercial item," as that term is defined
     in 48 C.F.R. 2.101 (Oct. 1995), consisting of "commercial computer
-    software" (as that term is defined at 48 C.F.R. §
+    software" (as that term is defined at 48 C.F.R. �
     252.227-7014(a)(1)) and "commercial computer software documentation"
     as such terms are used in 48 C.F.R. 12.212 (Sept. 1995). Consistent
     with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1 through 227.7202-4
@@ -348,15 +348,3 @@ COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1
     work with Initial Developer and Contributors to distribute such
     responsibility on an equitable basis. Nothing herein is intended or
     shall be deemed to constitute any admission of liability.
-
-------------------------------------------------------------------------
-
-NOTICE PURSUANT TO SECTION 9 OF THE COMMON DEVELOPMENT AND DISTRIBUTION
-LICENSE (CDDL)
-
-The code released under the CDDL shall be governed by the laws of the
-State of California (excluding conflict-of-law provisions). Any
-litigation relating to this License shall be subject to the jurisdiction
-of the Federal Courts of the Northern District of California and the
-state courts of the State of California, with venue lying in Santa Clara
-County, California.
