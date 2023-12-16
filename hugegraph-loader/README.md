@@ -17,7 +17,7 @@ hugegraph-loader is a customizable command line utility for loading small to med
 
 ## 2. Quick start 
 
-There are two ways to get HugeGraph-Loader:
+There are three ways to get HugeGraph-Loader:
 
 - Download the compiled tarball
 - Clone source code then compile and install
