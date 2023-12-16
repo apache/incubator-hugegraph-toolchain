@@ -21,7 +21,7 @@ There are three ways to get HugeGraph-Loader:
 
 - Download the compiled tarball
 - Clone source code then compile and install
-- Use docker image (Convenient)
+- Use docker image (Convenient for Test/Dev)
 
 And you can find more details in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#2-get-hugegraph-loader)
 
@@ -63,7 +63,7 @@ cd hugegraph-loader
 mvn clean package -DskipTests
 ```
 
-### 2.3 Use docker image (Convenient)
+### 2.3 Use docker image (Convenient for Test/Dev)
 
 #### 2.3.1 Docker run
 
@@ -77,7 +77,7 @@ If you want to load your data, you can mount the data folder like `-v /path/to/d
 The example `docker-compose.yml` is [here](./docker/example/docker-compose.yml). Use the command `docker-compose up -d` to deploy `loader` with `server` and `hubble`.
 
 > Note: 
-> 1. The docker image of hugegraph-loader is a convenience release, not official distribution artifacts from ASF. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
+> 1. The docker image of hugegraph-loader is a convenience release, not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 >
 > 2. Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
 

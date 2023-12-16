@@ -20,7 +20,7 @@ There are three ways to get HugeGraph-Loader:
 
 - Download the Toolchain binary package
 - Source code compilation
-- Use Docker image (Convenient)
+- Use Docker image (Convenient for Test/Dev)
 
 And you can find more details in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#2-get-hugegraph-loader)
 
@@ -88,14 +88,14 @@ Run `hubble`
 bin/start-hubble.sh -d
 ```
 
-### 3. User docker image (Convenient)
+### 3. User docker image (Convenient for Test/Dev)
 
 We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start [hubble](https://hub.docker.com/r/hugegraph/hubble). An you can visit [hubble deploy doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/#2-deploy) for more details.
 
 Then we should follow the [hubble workflow doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/#3platform-workflow) to create the graph.
 
 > Note: 
-> 1. The docker image of hugegraph-hubble is a convenience release, not official distribution artifacts from ASF. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
+> 1. The docker image of hugegraph-hubble is a convenience release, but not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 > 
 > 2. Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
 
