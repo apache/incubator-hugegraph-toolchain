@@ -20,8 +20,8 @@ it includes 5+ main modules.
 
 ## Usage
 
-- [hugegraph-loader](./hugegraph-loader): We can use `docker run -itd --name loader hugegraph/loader` to quickly start [loader,](https://hub.docker.com/r/hugegraph/loader) or we can follow [this](./hugegraph-loader/README.md#212-docker-compose) to use docker-compose to start `loader` with `server`. And we can find more details in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/).
-- [hugegraph-hubble](./hugegraph-hubble): We can use `docker run -itd --name=hubble -p 8088:8088 hugegraph/hubble` to quickly start [hubble,](https://hub.docker.com/r/hugegraph/hubble) or we can follow [this](hugegraph-hubble/README.md#quick-start) to use docker-compose to start `hubble` with `server`. And we can find more details in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/).
+- [hugegraph-loader](./hugegraph-loader): We can follow the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) to learn how to quickly start with `loader`.
+- [hugegraph-hubble](./hugegraph-hubble): We can follow the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-hubble/) to learn how to quickly start with `hubble`.
 - [hugegraph-client](./hugegraph-client): We can follow the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-client/) to learn how to quickly start with `client`.
 
 ## Maven Dependencies
