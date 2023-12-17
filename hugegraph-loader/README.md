@@ -15,102 +15,77 @@ hugegraph-loader is a customizable command line utility for loading small to med
 - Detecting schema from data automatically, reduce the complex work of schema management.
 - Advanced customized operations with groovy script, users can configure how to construct vertices and edges by themselves.
 
-## 2. Usage for Docker(Recommand)
+## 2. Quick start 
 
-- Run `loader` with Docker
-    - Docker run
-    - Docker-compose
-- Load data in docker container `loader`
+There are three ways to get HugeGraph-Loader:
 
-### 2.1 Start with Docker
+- Download the compiled tarball
+- Clone source code then compile and install
+- Use docker image (Convenient for Test/Dev)
 
-#### 2.1.1 Docker run
+And you can find more details in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#2-get-hugegraph-loader)
+
+### 2.1 Download the compiled tarball
+
+Download the latest version of the HugeGraph-Toolchain release package:
+
+``` bash
+wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}.tar.gz
+tar zxf *hugegraph*.tar.gz
+```
+
+### 2.2 Clone source code then compile and install
+
+Clone the latest version of HugeGraph-Loader source package:
+
+```bash
+# 1. get from github
+git clone https://github.com/apache/hugegraph-toolchain.git
+
+# 2. get from direct  (e.g. here is 1.0.0, please choose the latest version)
+wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph-toolchain-incubating-{version}-src.tar.gz
+```
+
+Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository. Visit the [Oracle jdbc downloads page](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html). Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
+
+After opening the link, select “ojdbc8.jar”.
+
+Install ojdbc8 to the local maven repository, enter the directory where ojdbc8.jar is located, and execute the following command.
+
+```bash
+mvn install:install-file -Dfile=./ojdbc8.jar -DgroupId=com.oracle -DartifactId=ojdbc8 -Dversion=12.2.0.1 -Dpackaging=jar
+```
+
+Compile and generate tar package:
+
+```
+cd hugegraph-loader
+mvn clean package -DskipTests
+```
+
+### 2.3 Use docker image (Convenient for Test/Dev)
+
+#### 2.3.1 Docker run
 
 Use the command `docker run -itd --name loader hugegraph/loader` to start loader.
 
 If you want to load your data, you can mount the data folder like `-v /path/to/data/file:/loader/file`
 
 
-#### 2.1.2 Docker-compose
+#### 2.3.2 Docker-compose
 
-The example `docker-compose.yml` is [here](./docker/example/docker-compose.yml)
+The example `docker-compose.yml` is [here](./docker/example/docker-compose.yml). Use the command `docker-compose up -d` to deploy `loader` with `server` and `hubble`.
 
-If you want to load your data, you can mount the data folder like:
-```yaml
-volumes:
-    - /path/to/data/file:/loader/file
-```
-
-Use the command `docker-compose up -d` to deploy `loader` with `server` and `hubble`.
-
-### 2.2 Load data with docker container
-
-#### 2.2.1 load data with docker
-
-> If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`
+> Note: 
+> 1. The docker image of hugegraph-loader is a convenience release, not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 >
-> If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
+> 2. Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
 
-```bash
-docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
-```
+## 3 Load data
 
-Then we can see the result.
+### 3.1 Use loader directly
 
-```bash
-HugeGraphLoader worked in NORMAL MODE
-vertices/edges loaded this time : 8/6
---------------------------------------------------
-count metrics
-    input read success            : 14                  
-    input read failure            : 0                   
-    vertex parse success          : 8                   
-    vertex parse failure          : 0                   
-    vertex insert success         : 8                   
-    vertex insert failure         : 0                   
-    edge parse success            : 6                   
-    edge parse failure            : 0                   
-    edge insert success           : 6                   
-    edge insert failure           : 0                   
---------------------------------------------------
-meter metrics
-    total time                    : 0.199s              
-    read time                     : 0.046s              
-    load time                     : 0.153s              
-    vertex load time              : 0.077s              
-    vertex load rate(vertices/s)  : 103                 
-    edge load time                : 0.112s              
-    edge load rate(edges/s)       : 53   
-```
-
-Then you can use `curl` or `hubble` to see the result.
-
-```bash
-> curl "http://localhost:8080/graphs/hugegraph/graph/vertices" | gunzip
-{"vertices":[{"id":1,"label":"software","type":"vertex","properties":{"name":"lop","lang":"java","price":328.0}},{"id":2,"label":"software","type":"vertex","properties":{"name":"ripple","lang":"java","price":199.0}},{"id":"1:tom","label":"person","type":"vertex","properties":{"name":"tom"}},{"id":"1:josh","label":"person","type":"vertex","properties":{"name":"josh","age":32,"city":"Beijing"}},{"id":"1:marko","label":"person","type":"vertex","properties":{"name":"marko","age":29,"city":"Beijing"}},{"id":"1:peter","label":"person","type":"vertex","properties":{"name":"peter","age":35,"city":"Shanghai"}},{"id":"1:vadas","label":"person","type":"vertex","properties":{"name":"vadas","age":27,"city":"Hongkong"}},{"id":"1:li,nary","label":"person","type":"vertex","properties":{"name":"li,nary","age":26,"city":"Wu,han"}}]}
-```
-
-If you want to check the edges, use `curl "http://localhost:8080/graphs/hugegraph/graph/edges" | gunzip`
-
-#### 2.2.2 enter the docker container to load data
-
-If you want to do some additional operation in the container, you can enter the container as follows:
-
-```bash
-docker exec -it loader bash
-```
-
-Then, you can load data as follows:
-
-```bash
-sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
-```
-
-The result is as same as above.
-
-## 3. Use loader directly
-
-> notice: currently, version is `1.0.0`
+> notice: currently, version is `1.2.0`
 
 Download and unzip the compiled archive
 
@@ -129,31 +104,23 @@ sh bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/f
 
 More details is in the [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/)
 
-## 4. Building
+### 3.2 Load data with docker
 
-You can also build the `loader` by yourself.
+> If the `loader` and `server` is in the same docker network (for example, you deploy `loader` and `server` with `docker-compose`), we can set `-h {server_container_name}`. In our example, the container name of `server` is `graph`
+>
+> If `loader` is deployed alone, the `-h` should be set to the ip of the host of `server`. Other parameter description is [here](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#341-parameter-description)
 
-Required:
-
-- Java 8
-- Maven 3.6+
-
-To build without executing tests:
-
+Visit [doc](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/#45-use-docker-to-load-data) for more details.
+ 
 ```bash
-mvn clean install -DskipTests=true
+docker exec -it loader bin/hugegraph-loader.sh -g hugegraph -f example/file/struct.json -s example/file/schema.groovy -h graph -p 8080
 ```
 
-To build with default tests:
 
-```bash
-mvn clean install
-```
-
-## 5. Doc
+## 4. Doc
 
 The [loader homepage](https://hugegraph.apache.org/docs/quickstart/hugegraph-loader/) contains more information about it. 
 
-## 6. License
+## 5. License
 
 hugegraph-loader is licensed under Apache 2.0 License.
