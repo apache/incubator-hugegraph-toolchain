@@ -19,7 +19,8 @@ FROM maven:3.9.0-eclipse-temurin-11 AS build
 
 RUN set -x \
     && apt-get -q update \
-    && apt-get install -y nodejs npm curl \
+    && apt-get install -y nodejs npm \
+    && apt-get install -y curl \
     && npm install --global yarn \
     && apt-get clean
 
