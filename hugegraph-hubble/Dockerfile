@@ -20,7 +20,6 @@ FROM maven:3.9.0-eclipse-temurin-11 AS build
 RUN set -x \
     && apt-get -q update \
     && apt-get install -y nodejs npm \
-    && apt-get install -y curl \
     && npm install --global yarn \
     && apt-get clean
 
@@ -36,6 +35,11 @@ FROM openjdk:11-slim
 
 COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /hubble
 WORKDIR /hubble/
+
+RUN set -x \
+    && apt-get -q update \
+    && apt-get install -y curl \
+    && apt-get clean
 
 EXPOSE 8088
 ENTRYPOINT ["./bin/start-hubble.sh", "-f true"]
