@@ -39,7 +39,9 @@ WORKDIR /hubble/
 RUN set -x \
     && apt-get -q update \
     && apt-get install -y curl \
-    && apt-get clean
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+    
 
 EXPOSE 8088
 ENTRYPOINT ["./bin/start-hubble.sh", "-f true"]
