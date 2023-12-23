@@ -44,4 +44,4 @@ RUN set -x \
     
 
 EXPOSE 8088
-ENTRYPOINT ["./bin/start-hubble.sh", "-f true && tail -f /dev/null"]
+ENTRYPOINT ["./bin/start-hubble.sh && tail -f /dev/null"]
