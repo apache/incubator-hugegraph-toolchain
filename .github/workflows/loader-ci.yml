@@ -24,7 +24,7 @@ jobs:
     env:
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
-      COMMIT_ID: be6ee386b9939dc6bd6fcbdf2274b8acc3a0a314
+      COMMIT_ID: eed6103359fe40d2f1476fb8c56d9388c3111a99
       DB_USER: root
       DB_PASS: root
       DB_DATABASE: load_test
