@@ -25,7 +25,7 @@ get_params "$@"
 echo "engine_params: $ENGINE_PARAMS"
 echo "hugegraph_params: $HUGEGRAPH_PARAMS"
 
-ASSEMBLY_JAR_NAME=$(find "${LIB_DIR}" -name 'apache-hugegraph-loader*.jar')
+ASSEMBLY_JAR_NAME=$(find "${LIB_DIR}" -name 'hugegraph-loader*.jar')
 
 DEFAULT_APP_NAME="hugegraph-spark-loader"
 APP_NAME=${APP_NAME:-$DEFAULT_APP_NAME}
