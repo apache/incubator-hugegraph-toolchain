@@ -35,7 +35,6 @@
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
         <hubble-fe.dir>${project.basedir}/../hubble-fe</hubble-fe.dir>
         <build.node.version>v16.20.2</build.node.version>
-        <build.npm.version>8.19.4</build.npm.version>
         <build.yarn.version>v1.22.21</build.yarn.version>
     </properties>
 
@@ -88,11 +87,9 @@
                         </goals>
                         <configuration>
                             <nodeVersion>${build.node.version}</nodeVersion>
-                            <npmVersion>${build.npm.version}</npmVersion>
                             <yarnVersion>${build.yarn.version}</yarnVersion>
-                            <nodeDownloadRoot>https://npm.taobao.org/mirrors/node/</nodeDownloadRoot>
-                            <npmDownloadRoot>https://registry.npmmirror.com/npm/-/</npmDownloadRoot>
-                            <yarnDownloadRoot>https://repo.huaweicloud.com/yarn/</yarnDownloadRoot>
+                            <nodeDownloadRoot>https://registry.npmmirror.com/node/</nodeDownloadRoot>
+                            <yarnDownloadRoot>https://registry.npmmirror.com/yarn/</yarnDownloadRoot>
                             <npmRegistryURL>https://registry.npmmirror.com</npmRegistryURL>
                         </configuration>
                     </execution>
