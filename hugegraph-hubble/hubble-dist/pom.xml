@@ -88,7 +88,7 @@
                         <configuration>
                             <nodeVersion>${build.node.version}</nodeVersion>
                             <yarnVersion>${build.yarn.version}</yarnVersion>
-                            <nodeDownloadRoot>https://registry.npmmirror.com/node/</nodeDownloadRoot>
+                            <nodeDownloadRoot>https://mirrors.aliyun.com/nodejs-release/node/</nodeDownloadRoot>
                             <yarnDownloadRoot>https://registry.npmmirror.com/yarn/</yarnDownloadRoot>
                             <npmRegistryURL>https://registry.npmmirror.com</npmRegistryURL>
                         </configuration>
