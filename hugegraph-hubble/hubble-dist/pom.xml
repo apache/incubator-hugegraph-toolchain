@@ -34,6 +34,9 @@
         <assembly.descriptor.dir>${assembly.dir}/descriptor</assembly.descriptor.dir>
         <assembly.static.dir>${assembly.dir}/static</assembly.static.dir>
         <hubble-fe.dir>${project.basedir}/../hubble-fe</hubble-fe.dir>
+        <build.node.version>v16.20.2</build.node.version>
+        <build.npm.version>8.19.4</build.npm.version>
+        <build.yarn.version>v1.22.21</build.yarn.version>
     </properties>
 
     <dependencies>
@@ -73,8 +76,8 @@
                 <version>1.14.2</version>
 
                 <configuration>
-                    <installDirectory>target</installDirectory>
-                    <workingDirectory>../hubble-fe</workingDirectory>
+                    <installDirectory>${hubble-fe.dir}</installDirectory>
+                    <workingDirectory>${hubble-fe.dir}</workingDirectory>
                 </configuration>
 
                 <executions>
@@ -82,12 +85,15 @@
                         <id>install node and yarn</id>
                         <goals>
                             <goal>install-node-and-yarn</goal>
-                            <goal>install-node-and-npm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v16.16.0</nodeVersion>
-                            <npmVersion>8.19.1</npmVersion>
-                            <yarnVersion>v1.22.15</yarnVersion>
+                            <nodeVersion>${build.node.version}</nodeVersion>
+                            <npmVersion>${build.npm.version}</npmVersion>
+                            <yarnVersion>${build.yarn.version}</yarnVersion>
+                            <nodeDownloadRoot>https://npm.taobao.org/mirrors/node/</nodeDownloadRoot>
+                            <npmDownloadRoot>https://registry.npmmirror.com/npm/-/</npmDownloadRoot>
+                            <yarnDownloadRoot>https://repo.huaweicloud.com/yarn/</yarnDownloadRoot>
+                            <npmRegistryURL>https://registry.npmmirror.com</npmRegistryURL>
                         </configuration>
                     </execution>
 
