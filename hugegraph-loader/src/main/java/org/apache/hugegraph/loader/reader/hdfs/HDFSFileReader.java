@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
@@ -52,6 +53,8 @@ public class HDFSFileReader extends FileReader {
 
     private final FileSystem hdfs;
     private final Configuration conf;
+    private String prefix;
+    private String input_path;
 
     public HDFSFileReader(HDFSSource source) {
         super(source);
@@ -62,7 +65,20 @@ public class HDFSFileReader extends FileReader {
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
-        Path path = new Path(source.path());
+        String input = source.path();
+        if (input.contains("*")) {
+            int lastSlashIndex = input.lastIndexOf('/');
+            if (lastSlashIndex != -1) {
+                input_path = input.substring(0, lastSlashIndex);
+                prefix = input.substring(lastSlashIndex + 1, input.length() - 1);
+            } else {
+                LOG.error("File path format error!");
+            }
+        } else {
+            input_path = input;
+        }
+
+        Path path = new Path(input_path);
         checkExist(this.hdfs, path);
     }
 
@@ -98,7 +114,7 @@ public class HDFSFileReader extends FileReader {
 
     @Override
     protected List<Readable> scanReadables() throws IOException {
-        Path path = new Path(this.source().path());
+        Path path = new Path(input_path);
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
         if (this.hdfs.isFile(path)) {
@@ -109,7 +125,18 @@ public class HDFSFileReader extends FileReader {
             paths.add(new HDFSFile(this.hdfs, path));
         } else {
             assert this.hdfs.isDirectory(path);
-            FileStatus[] statuses = this.hdfs.listStatus(path);
+            FileStatus[] statuses;
+            if (prefix == null || prefix.isEmpty()) {
+                statuses = this.hdfs.listStatus(path);
+            } else {
+                PathFilter prefixFilter = new PathFilter() {
+                    @Override
+                    public boolean accept(Path path) {
+                        return path.getName().startsWith(prefix);
+                    }
+                };
+                statuses = this.hdfs.listStatus(path,prefixFilter);
+            }
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             for (Path subPath : subPaths) {
                 if (filter.reserved(subPath.getName())) {
