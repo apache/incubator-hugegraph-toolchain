@@ -106,15 +106,18 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
     public static String fileID() {
         long timeStamp = System.currentTimeMillis() / 1000;
         ByteBuffer byteBuffer = ByteBuffer.allocate(12);
+
         byteBuffer.put(int3((int) timeStamp));
         byteBuffer.put(int2((int) timeStamp));
         byteBuffer.put(int1((int) timeStamp));
         byteBuffer.put(int0((int) timeStamp));
+
         byteBuffer.put(int2(RANDOM_VALUE1));
         byteBuffer.put(int1(RANDOM_VALUE1));
         byteBuffer.put(int0(RANDOM_VALUE1));
         byteBuffer.put(short1(RANDOM_VALUE2));
         byteBuffer.put(short0(RANDOM_VALUE2));
+
         byteBuffer.put(int2(NEXT_COUNTER.incrementAndGet()));
         byteBuffer.put(int1(NEXT_COUNTER.incrementAndGet()));
         byteBuffer.put(int0(NEXT_COUNTER.incrementAndGet()));
