@@ -65,11 +65,13 @@ public class HDFSFileReader extends FileReader {
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
+
         String input = source.path();
         if (input.contains("*")) {
             int lastSlashIndex = input.lastIndexOf('/');
             if (lastSlashIndex != -1) {
                 input_path = input.substring(0, lastSlashIndex);
+                // TODO: support multiple prefix in uri?
                 prefix = input.substring(lastSlashIndex + 1, input.length() - 1);
             } else {
                 LOG.error("File path format error!");
@@ -117,25 +119,22 @@ public class HDFSFileReader extends FileReader {
         Path path = new Path(input_path);
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
-        if (this.hdfs.isFile(path)) {
+        FileStatus status = this.hdfs.getFileStatus(path);
+
+        if (status.isFile()) {
             if (!filter.reserved(path.getName())) {
                 throw new LoadException("Please check path name and extensions, ensure that " +
                                         "at least one path is available for reading");
             }
             paths.add(new HDFSFile(this.hdfs, path));
         } else {
-            assert this.hdfs.isDirectory(path);
+            assert status.isDirectory();
             FileStatus[] statuses;
             if (prefix == null || prefix.isEmpty()) {
                 statuses = this.hdfs.listStatus(path);
             } else {
-                PathFilter prefixFilter = new PathFilter() {
-                    @Override
-                    public boolean accept(Path path) {
-                        return path.getName().startsWith(prefix);
-                    }
-                };
-                statuses = this.hdfs.listStatus(path,prefixFilter);
+                PathFilter prefixFilter = scanPath -> scanPath.getName().startsWith(prefix);
+                statuses = this.hdfs.listStatus(path, prefixFilter);
             }
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             for (Path subPath : subPaths) {
@@ -170,12 +169,11 @@ public class HDFSFileReader extends FileReader {
     private static void checkExist(FileSystem fs, Path path) {
         try {
             if (!fs.exists(path)) {
-                throw new LoadException("Please ensure the file or directory " +
-                                        "exists: '%s'", path);
+                throw new LoadException("Please ensure the file or directory exists: '%s'", path);
             }
         } catch (IOException e) {
-            throw new LoadException("An exception occurred while checking " +
-                                    "HDFS path: '%s'", e, path);
+            throw new LoadException("An exception occurred while checking HDFS path: '%s'",
+                                    e, path);
         }
     }
 
@@ -216,20 +214,20 @@ public class HDFSFileReader extends FileReader {
                 timestamp = this.hdfs.getFileStatus(this.path)
                                      .getModificationTime();
             } catch (IOException e) {
-                throw new LoadException("Failed to get last modified time " +
-                                        "for HDFS path '%s'", e, this.path);
+                throw new LoadException("Failed to get last modified time for HDFS path '%s'",
+                                        e, this.path);
             }
             byte[] bytes;
             try {
                 FileChecksum checksum = this.hdfs.getFileChecksum(this.path);
                 if (checksum == null) {
-                    throw new LoadException("The checksum of HDFS path '%s' " +
-                                            "is null", this.path);
+                    throw new LoadException("The checksum of HDFS path '%s' is null",
+                                            this.path);
                 }
                 bytes = checksum.getBytes();
             } catch (IOException e) {
-                throw new LoadException("Failed to calculate checksum " +
-                                        "for HDFS path '%s'", e, this.path);
+                throw new LoadException("Failed to calculate checksum for HDFS path '%s'",
+                                        e, this.path);
             }
             String checkSum = new String(bytes, Constants.CHARSET);
             return new FileItemProgress(name, timestamp, checkSum, 0L);
