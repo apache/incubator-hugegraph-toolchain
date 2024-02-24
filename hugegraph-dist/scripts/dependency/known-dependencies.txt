@@ -20,7 +20,7 @@ audience-annotations-0.5.0.jar
 avro-1.10.2.jar
 avro-1.7.7.jar
 caffeine-2.6.2.jar
-checker-qual-3.33.0.jar
+checker-qual-3.5.0.jar
 classmate-1.4.0.jar
 commons-beanutils-1.9.4.jar
 commons-cli-1.3.1.jar
@@ -50,14 +50,14 @@ datanucleus-core-4.1.17.jar
 disruptor-3.3.6.jar
 dnsjava-2.1.7.jar
 dropwizard-metrics-hadoop-metrics2-reporter-0.1.2.jar
-error_prone_annotations-2.18.0.jar
+error_prone_annotations-2.3.4.jar
 failureaccess-1.0.1.jar
 findbugs-annotations-1.3.9-1.jar
 flatbuffers-1.2.0-3f79e055.jar
 flatbuffers-java-1.9.0.jar
 groovy-all-2.4.21.jar
 gson-2.8.9.jar
-guava-32.0.1-jre.jar
+guava-30.0-jre.jar
 h2-1.4.199.jar
 hadoop-annotations-3.3.1.jar
 hadoop-auth-3.3.1.jar
@@ -119,7 +119,7 @@ httpcore-4.4.12.jar
 httpcore-4.4.13.jar
 ivy-2.4.0.jar
 ivy-2.5.0.jar
-j2objc-annotations-2.8.jar
+j2objc-annotations-1.3.jar
 jackson-annotations-2.12.3.jar
 jackson-core-2.12.3.jar
 jackson-core-asl-1.9.13.jar

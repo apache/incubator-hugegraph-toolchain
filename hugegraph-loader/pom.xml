@@ -176,6 +176,10 @@
                     <groupId>com.fasterxml.jackson.jaxrs</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>error_prone_annotations</artifactId>
+                    <groupId>com.google.errorprone</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -201,10 +205,6 @@
             <artifactId>sfm-csv</artifactId>
             <version>${sfm.csv.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
 
         <!--hbase -->
         <dependency>
@@ -227,6 +227,10 @@
                 <exclusion>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-json</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>error_prone_annotations</artifactId>
+                    <groupId>com.google.errorprone</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -358,6 +362,10 @@
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-compress</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -668,38 +676,18 @@
                             <finalName>${final.name}-shaded</finalName>
                             <relocations>
                                 <relocation>
-                                    <pattern>org.glassfish.jersey</pattern>
-                                    <shadedPattern>shaded.org.glassfish.jersey</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>jakarta.ws.rs</pattern>
-                                    <shadedPattern>shaded.jakarta.ws.rs</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>com.google.common.base</pattern>
                                     <shadedPattern>shaded.com.google.common.base</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.glassfish.hk2</pattern>
-                                    <shadedPattern>shaded.org.glassfish.hk2</shadedPattern>
+                                    <pattern>okio</pattern>
+                                    <shadedPattern>shaded.okio</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.jvnet.hk2</pattern>
-                                    <shadedPattern>shaded.org.jvnet.hk2</shadedPattern>
+                                    <pattern>okhttp3</pattern>
+                                    <shadedPattern>shaded.okhttp3</shadedPattern>
                                 </relocation>
                             </relocations>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer">
-                                </transformer>
-                            </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>module-info.class</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
                         </configuration>
                     </execution>
                 </executions>
