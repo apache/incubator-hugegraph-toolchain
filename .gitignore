@@ -43,7 +43,8 @@ build/
 /hubble-fe/node_modules
 /hubble-fe/.pnp
 .pnp.js
-/hugegraph-hubble/hubble-fe/node/node
+hugegraph-hubble/dist.sh
+/hugegraph-hubble/hubble-fe/node/node*
 
 # testingå
 /hubble-fe/coverage
@@ -99,4 +100,3 @@ Thumbs.db
 
 # client-go
 go.env
-

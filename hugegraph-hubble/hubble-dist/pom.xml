@@ -127,9 +127,6 @@
                             <tasks>
                                 <!-- TODO: change to assembly plugin in future  -->
                                 <echo file="${top.level.dir}/dist.sh">
-                                    cd ${hubble-fe.dir} || exit 1
-                                    export CI=false
-
                                     cd ${top.level.dir} &amp;&amp; pwd
                                     rm -rf ${final.name}/ui
                                     cp -r ${hubble-fe.dir}/build ${final.name}/ui
