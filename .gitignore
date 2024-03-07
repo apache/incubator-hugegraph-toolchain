@@ -43,7 +43,7 @@ build/
 /hubble-fe/node_modules
 /hubble-fe/.pnp
 .pnp.js
-hugegraph-hubble/dist.sh
+/hugegraph-hubble/dist.sh
 /hugegraph-hubble/hubble-fe/node/node*
 
 # testingå
