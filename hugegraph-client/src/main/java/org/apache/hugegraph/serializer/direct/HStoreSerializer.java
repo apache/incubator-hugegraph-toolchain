@@ -17,7 +17,6 @@
 
 package org.apache.hugegraph.serializer.direct;
 
-
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.serializer.direct.struct.HugeType;
 import org.apache.hugegraph.serializer.direct.util.BytesBuffer;
@@ -30,7 +29,7 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import java.util.Map;
 
 /**
- * 直接实现BinarySerializer  生成点边Key-Value
+ * Directly implement BinarySerializer to generate point-edge Key-Value
  */
 public class HStoreSerializer {
 
@@ -46,16 +45,14 @@ public class HStoreSerializer {
         byte[] array = null;
         if (e.type() == "vertex" && e.id() != null) {
             BytesBuffer buffer = BytesBuffer.allocate(2 + 1 + e.id().toString().length());
-            //buffer.writeShort(getPartition(HugeType.VERTEX,  IdGenerator.of(e.id())));
             buffer.writeId(IdGenerator.of(e.id()));
             array = buffer.bytes();
         } else if (e.type() == "edge") {
             BytesBuffer buffer = BytesBuffer.allocate(BytesBuffer.BUF_EDGE_ID);
             Edge edge = (Edge)e;
-            //buffer.writeShort(getPartition(HugeType.EDGE, IdGenerator.of(edge.sourceId())));
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_OUT.code());
-            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
+            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id()));
             buffer.writeStringWithEnding("");
             buffer.writeId(IdGenerator.of(edge.targetId()));
             array = buffer.bytes();
@@ -67,10 +64,9 @@ public class HStoreSerializer {
         byte[] array = null;
         BytesBuffer buffer = BytesBuffer.allocate(BytesBuffer.BUF_EDGE_ID);
         Edge edge = (Edge)e;
-        //buffer.writeShort(getPartition(HugeType.EDGE, IdGenerator.of(edge.sourceId())));
         buffer.writeId(IdGenerator.of(edge.targetId()));
         buffer.write(HugeType.EDGE_IN.code());
-        buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
+        buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id()));
         buffer.writeStringWithEnding("");
         buffer.writeId(IdGenerator.of(edge.sourceId()));
         array = buffer.bytes();
@@ -80,7 +76,7 @@ public class HStoreSerializer {
     public byte[] getValueBytes(GraphElement e) {
         byte[] array = null;
         if (e.type() == "vertex") {
-            int propsCount = e.properties().size(); //vertex.sizeOfProperties();
+            int propsCount = e.properties().size();
             BytesBuffer buffer = BytesBuffer.allocate(8 + 16 * propsCount);
             buffer.writeId(IdGenerator.of(graphSchema.getVertexLabel(e.label()).id()));
             buffer.writeVInt(propsCount);
@@ -101,11 +97,8 @@ public class HStoreSerializer {
             }
             array = buffer.bytes();
         }
-
         return array;
     }
-
-
 
     public byte[] getOwnerKeyBytes(GraphElement e) {
         byte[] array = null;
@@ -117,9 +110,6 @@ public class HStoreSerializer {
         }
         return array;
     }
-
-
-
 
     public void close() {
         this.client.close();
