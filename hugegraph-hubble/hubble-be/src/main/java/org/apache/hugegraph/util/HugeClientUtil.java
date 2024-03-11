@@ -23,6 +23,7 @@ import java.util.Set;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.ExternalGenericException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import org.apache.hugegraph.driver.HugeClient;
@@ -90,7 +91,7 @@ public final class HugeClientUtil {
                 throw new ExternalException(
                           "graph-connection.missing-username-password", e);
             }
-            throw e;
+            throw new ExternalGenericException(e, host, port);
         } catch (ClientException e) {
             Throwable cause = e.getCause();
             if (cause == null || cause.getMessage() == null) {

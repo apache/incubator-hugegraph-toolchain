@@ -18,10 +18,7 @@
 
 package org.apache.hugegraph.handler;
 
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.exception.IllegalGremlinException;
-import org.apache.hugegraph.exception.InternalException;
-import org.apache.hugegraph.exception.ParameterizedException;
+import org.apache.hugegraph.exception.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +29,8 @@ import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 
 import lombok.extern.log4j.Log4j2;
+
+import java.net.ConnectException;
 
 @Log4j2
 @RestControllerAdvice
@@ -64,6 +63,28 @@ public class ExceptionAdvisor {
                        .build();
     }
 
+    @ExceptionHandler(ExternalGenericException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Response exceptionHandler(ExternalGenericException e) {
+        log.error("ExternalGenericException:", e);
+        return Response.builder()
+                .status(e.status())
+                .message("An error occurred while trying to connect to the server.")
+                .cause(null)
+                .build();
+    }
+
+    @ExceptionHandler(ConnectException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Response exceptionHandler(ConnectException e) {
+        log.error("ConnectException:", e);
+        return Response.builder()
+                .status(Constant.STATUS_BAD_REQUEST)
+                .message("An error occurred while trying to connect to the server.")
+                .cause(null)
+                .build();
+    }
+
     @ExceptionHandler(ParameterizedException.class)
     @ResponseStatus(HttpStatus.OK)
     public Response exceptionHandler(ParameterizedException e) {
@@ -87,6 +108,7 @@ public class ExceptionAdvisor {
                        .cause(e.getCause())
                        .build();
     }
+
 
     @ExceptionHandler(IllegalGremlinException.class)
     @ResponseStatus(HttpStatus.OK)
