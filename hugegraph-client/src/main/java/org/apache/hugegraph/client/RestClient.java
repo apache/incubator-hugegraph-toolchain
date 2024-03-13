@@ -20,6 +20,7 @@ package org.apache.hugegraph.client;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.AbstractRestClient;
 import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.rest.RestClientConfig;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.serializer.PathDeserializer;
 import org.apache.hugegraph.structure.graph.Path;
@@ -50,6 +51,10 @@ public class RestClient extends AbstractRestClient {
                       String trustStoreFile, String trustStorePassword) {
         super(url, username, password, timeout * SECOND, maxConns,
               maxConnsPerRoute, trustStoreFile, trustStorePassword);
+    }
+
+    public RestClient(String url, RestClientConfig config) {
+        super(url, config);
     }
 
     public void apiVersion(Version version) {

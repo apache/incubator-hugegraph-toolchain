@@ -32,11 +32,15 @@ public class HugeClientBuilder {
     private String username;
     private String password;
     private int timeout;
+    private Integer connectTimeout;
+    private Integer readTimeout;
     private int maxConns;
     private int maxConnsPerRoute;
     private int idleTime;
     private String trustStoreFile;
     private String trustStorePassword;
+
+    private Boolean followRedirects;
 
     public HugeClientBuilder(String url, String graph) {
         E.checkArgument(url != null && !url.isEmpty(),
@@ -138,6 +142,14 @@ public class HugeClientBuilder {
         return this.timeout;
     }
 
+    public Integer connectTimeout() {
+        return this.connectTimeout;
+    }
+
+    public Integer readTimeout() {
+        return this.readTimeout;
+    }
+
     public int maxConns() {
         return maxConns;
     }
@@ -156,5 +168,9 @@ public class HugeClientBuilder {
 
     public String trustStorePassword() {
         return this.trustStorePassword;
+    }
+
+    public Boolean followRedirects() {
+        return this.followRedirects;
     }
 }
