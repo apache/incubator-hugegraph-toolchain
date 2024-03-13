@@ -21,7 +21,7 @@ DEP_PATH=$BASE_PATH/all_dependencies
 FILE_NAME=${1:-known-dependencies.txt}
 
 if [[ -d $DEP_PATH ]];then
-  echo "rm -r -f DEP_PATH"
+  echo "rm -r -f $DEP_PATH"
   rm -r -f $DEP_PATH
 fi
 
