@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 public class HugeClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
-    private static final int SECOND = 1000;
 
     static {
         ClientVersion.check();
@@ -59,9 +58,9 @@ public class HugeClient implements Closeable {
             config = RestClientConfig.builder()
                                      .user(builder.username())
                                      .password(builder.password())
-                                     .timeout(builder.timeout() * SECOND)
-                                     .connectTimeout(builder.connectTimeout() * SECOND)
-                                     .readTimeout(builder.readTimeout() * SECOND)
+                                     .timeout(builder.timeout())
+                                     .connectTimeout(builder.connectTimeout())
+                                     .readTimeout(builder.readTimeout())
                                      .maxConns(builder.maxConns())
                                      .maxConnsPerRoute(builder.maxConnsPerRoute())
                                      .trustStoreFile(builder.trustStoreFile())
