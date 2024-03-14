@@ -32,6 +32,7 @@ public class HugeClientTest {
     public void testContext() {
         HugeClient client = HugeClient.builder(BASE_URL, GRAPH)
                                       .configUser(USERNAME, PASSWORD)
+                                      .configHttpBuilder(builder -> builder.followRedirects(false))
                                       .build();
 
         String token = "Bearer token";

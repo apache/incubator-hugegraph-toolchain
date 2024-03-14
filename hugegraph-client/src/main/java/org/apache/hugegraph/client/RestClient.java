@@ -46,6 +46,7 @@ public class RestClient extends AbstractRestClient {
         super(url, username, password, timeout * SECOND);
     }
 
+    @Deprecated
     public RestClient(String url, String username, String password, int timeout,
                       int maxConns, int maxConnsPerRoute,
                       String trustStoreFile, String trustStorePassword) {

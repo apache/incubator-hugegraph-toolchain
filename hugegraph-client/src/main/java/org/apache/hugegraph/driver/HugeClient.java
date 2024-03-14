@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 public class HugeClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
+    private static final int SECOND = 1000;
 
     static {
         ClientVersion.check();
@@ -53,28 +54,26 @@ public class HugeClient implements Closeable {
 
     public HugeClient(HugeClientBuilder builder) {
         this.borrowedClient = false;
+        RestClientConfig config;
         try {
-            RestClientConfig config = RestClientConfig.builder()
-                                                      .user(builder.username())
-                                                      .password(builder.password())
-                                                      .timeout(builder.timeout())
-                                                      .connectTimeout(builder.connectTimeout())
-                                                      .readTimeout(builder.readTimeout())
-                                                      .maxConns(builder.maxConns())
-                                                      .maxConnsPerRoute(builder.maxConnsPerRoute())
-                                                      .trustStoreFile(builder.trustStoreFile())
-                                                      .trustStorePassword(
-                                                              builder.trustStorePassword())
-                                                      .builderCallback(okHttpClientBuilder -> {
-                                                          okHttpClientBuilder.followRedirects(
-                                                                  builder.followRedirects());
-                                                      })
-                                                      .build();
+            config = RestClientConfig.builder()
+                                     .user(builder.username())
+                                     .password(builder.password())
+                                     .timeout(builder.timeout() * SECOND)
+                                     .connectTimeout(builder.connectTimeout() * SECOND)
+                                     .readTimeout(builder.readTimeout() * SECOND)
+                                     .maxConns(builder.maxConns())
+                                     .maxConnsPerRoute(builder.maxConnsPerRoute())
+                                     .trustStoreFile(builder.trustStoreFile())
+                                     .trustStorePassword(builder.trustStorePassword())
+                                     .builderCallback(builder.httpBuilderConsumer())
+                                     .build();
             this.client = new RestClient(builder.url(), config);
         } catch (Exception e) {
             LOG.warn("Failed to create RestClient instance", e);
             throw new ClientException("Failed to connect url '%s'", builder.url());
         }
+
         try {
             this.initManagers(this.client, builder.graph());
         } catch (Throwable e) {

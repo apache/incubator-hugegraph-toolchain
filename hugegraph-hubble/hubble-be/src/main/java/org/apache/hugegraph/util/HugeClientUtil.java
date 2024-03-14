@@ -67,6 +67,7 @@ public final class HugeClientUtil {
                                .configUser(username, password)
                                .configTimeout(timeout)
                                .configSSL(trustStoreFile, trustStorePassword)
+                               .configHttpBuilder(http -> http.followRedirects(false))
                                .build();
         } catch (IllegalStateException e) {
             String message = e.getMessage();

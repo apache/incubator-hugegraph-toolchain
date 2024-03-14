@@ -17,7 +17,11 @@
 
 package org.apache.hugegraph.driver;
 
+import java.util.function.Consumer;
+
 import org.apache.hugegraph.util.E;
+
+import okhttp3.OkHttpClient;
 
 public class HugeClientBuilder {
 
@@ -32,15 +36,15 @@ public class HugeClientBuilder {
     private String username;
     private String password;
     private int timeout;
-    private Integer connectTimeout;
-    private Integer readTimeout;
     private int maxConns;
     private int maxConnsPerRoute;
     private int idleTime;
     private String trustStoreFile;
     private String trustStorePassword;
-
-    private Boolean followRedirects;
+    private Consumer<OkHttpClient.Builder> httpBuilderConsumer;
+    /** Set them null by default to keep compatibility with 'timeout' */
+    private final Integer connectTimeout;
+    private final Integer readTimeout;
 
     public HugeClientBuilder(String url, String graph) {
         E.checkArgument(url != null && !url.isEmpty(),
@@ -53,11 +57,15 @@ public class HugeClientBuilder {
         this.username = "";
         this.password = "";
         this.timeout = DEFAULT_TIMEOUT;
+
         this.maxConns = DEFAULT_MAX_CONNS;
         this.maxConnsPerRoute = DEFAULT_MAX_CONNS_PER_ROUTE;
         this.trustStoreFile = "";
         this.trustStorePassword = "";
         this.idleTime = DEFAULT_IDLE_TIME;
+        this.httpBuilderConsumer = null;
+        this.connectTimeout = null;
+        this.readTimeout = null;
     }
 
     public HugeClient build() {
@@ -118,7 +126,11 @@ public class HugeClientBuilder {
         }
         this.username = username;
         this.password = password;
+        return this;
+    }
 
+    public HugeClientBuilder configHttpBuilder(Consumer<OkHttpClient.Builder> builderConsumer) {
+        this.httpBuilderConsumer = builderConsumer;
         return this;
     }
 
@@ -170,7 +182,7 @@ public class HugeClientBuilder {
         return this.trustStorePassword;
     }
 
-    public Boolean followRedirects() {
-        return this.followRedirects;
+    public Consumer<OkHttpClient.Builder> httpBuilderConsumer() {
+        return httpBuilderConsumer;
     }
 }
