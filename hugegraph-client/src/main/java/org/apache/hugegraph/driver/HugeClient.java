@@ -21,6 +21,7 @@ import java.io.Closeable;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.rest.RestClientConfig;
 import org.apache.hugegraph.util.VersionUtil;
 import org.apache.hugegraph.version.ClientVersion;
 import org.slf4j.Logger;
@@ -52,19 +53,26 @@ public class HugeClient implements Closeable {
 
     public HugeClient(HugeClientBuilder builder) {
         this.borrowedClient = false;
+        RestClientConfig config;
         try {
-            this.client = new RestClient(builder.url(),
-                                         builder.username(),
-                                         builder.password(),
-                                         builder.timeout(),
-                                         builder.maxConns(),
-                                         builder.maxConnsPerRoute(),
-                                         builder.trustStoreFile(),
-                                         builder.trustStorePassword());
+            config = RestClientConfig.builder()
+                                     .user(builder.username())
+                                     .password(builder.password())
+                                     .timeout(builder.timeout())
+                                     .connectTimeout(builder.connectTimeout())
+                                     .readTimeout(builder.readTimeout())
+                                     .maxConns(builder.maxConns())
+                                     .maxConnsPerRoute(builder.maxConnsPerRoute())
+                                     .trustStoreFile(builder.trustStoreFile())
+                                     .trustStorePassword(builder.trustStorePassword())
+                                     .builderCallback(builder.httpBuilderConsumer())
+                                     .build();
+            this.client = new RestClient(builder.url(), config);
         } catch (Exception e) {
             LOG.warn("Failed to create RestClient instance", e);
             throw new ClientException("Failed to connect url '%s'", builder.url());
         }
+
         try {
             this.initManagers(this.client, builder.graph());
         } catch (Throwable e) {

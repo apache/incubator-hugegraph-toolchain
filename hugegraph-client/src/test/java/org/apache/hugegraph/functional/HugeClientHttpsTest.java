@@ -71,7 +71,8 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientWithConnectionPoolNoUserParam() {
         client = HugeClient.builder(BASE_URL, GRAPH)
-                           .configTimeout(TIMEOUT)
+                           .configConnectTimeout(3)
+                           .configReadTimeout(10)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
