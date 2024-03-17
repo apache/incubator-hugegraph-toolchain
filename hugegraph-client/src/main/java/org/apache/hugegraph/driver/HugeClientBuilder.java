@@ -17,7 +17,11 @@
 
 package org.apache.hugegraph.driver;
 
+import java.util.function.Consumer;
+
 import org.apache.hugegraph.util.E;
+
+import okhttp3.OkHttpClient;
 
 public class HugeClientBuilder {
 
@@ -26,6 +30,7 @@ public class HugeClientBuilder {
     private static final int DEFAULT_MAX_CONNS = 4 * CPUS;
     private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 2 * CPUS;
     private static final int DEFAULT_IDLE_TIME = 30;
+    private static final int SECOND = 1000;
 
     private String url;
     private String graph;
@@ -37,6 +42,10 @@ public class HugeClientBuilder {
     private int idleTime;
     private String trustStoreFile;
     private String trustStorePassword;
+    private Consumer<OkHttpClient.Builder> httpBuilderConsumer;
+    /** Set them null by default to keep compatibility with 'timeout' */
+    private Integer connectTimeout;
+    private Integer readTimeout;
 
     public HugeClientBuilder(String url, String graph) {
         E.checkArgument(url != null && !url.isEmpty(),
@@ -48,12 +57,16 @@ public class HugeClientBuilder {
         this.graph = graph;
         this.username = "";
         this.password = "";
-        this.timeout = DEFAULT_TIMEOUT;
+        this.timeout = DEFAULT_TIMEOUT * SECOND;
+
         this.maxConns = DEFAULT_MAX_CONNS;
         this.maxConnsPerRoute = DEFAULT_MAX_CONNS_PER_ROUTE;
         this.trustStoreFile = "";
         this.trustStorePassword = "";
         this.idleTime = DEFAULT_IDLE_TIME;
+        this.httpBuilderConsumer = null;
+        this.connectTimeout = null;
+        this.readTimeout = null;
     }
 
     public HugeClient build() {
@@ -96,7 +109,21 @@ public class HugeClientBuilder {
         if (timeout == 0) {
             timeout = DEFAULT_TIMEOUT;
         }
-        this.timeout = timeout;
+        this.timeout = timeout * SECOND;
+        return this;
+    }
+
+    public HugeClientBuilder configConnectTimeout(Integer connectTimeout) {
+        if (connectTimeout != null) {
+            this.connectTimeout = connectTimeout * SECOND;
+        }
+        return this;
+    }
+
+    public HugeClientBuilder configReadTimeout(Integer readTimeout) {
+        if (readTimeout != null) {
+            this.readTimeout = readTimeout * SECOND;
+        }
         return this;
     }
 
@@ -114,7 +141,11 @@ public class HugeClientBuilder {
         }
         this.username = username;
         this.password = password;
+        return this;
+    }
 
+    public HugeClientBuilder configHttpBuilder(Consumer<OkHttpClient.Builder> builderConsumer) {
+        this.httpBuilderConsumer = builderConsumer;
         return this;
     }
 
@@ -138,6 +169,14 @@ public class HugeClientBuilder {
         return this.timeout;
     }
 
+    public Integer connectTimeout() {
+        return this.connectTimeout;
+    }
+
+    public Integer readTimeout() {
+        return this.readTimeout;
+    }
+
     public int maxConns() {
         return maxConns;
     }
@@ -156,5 +195,9 @@ public class HugeClientBuilder {
 
     public String trustStorePassword() {
         return this.trustStorePassword;
+    }
+
+    public Consumer<OkHttpClient.Builder> httpBuilderConsumer() {
+        return httpBuilderConsumer;
     }
 }

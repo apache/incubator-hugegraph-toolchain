@@ -64,8 +64,10 @@ public final class HugeClientUtil {
         try {
             client = HugeClient.builder(url, graph)
                                .configUser(username, password)
+                               // TODO: change it to connTimeout & readTimeout
                                .configTimeout(timeout)
                                .configSSL(trustStoreFile, trustStorePassword)
+                               .configHttpBuilder(http -> http.followRedirects(false))
                                .build();
         } catch (IllegalStateException e) {
             String message = e.getMessage();
