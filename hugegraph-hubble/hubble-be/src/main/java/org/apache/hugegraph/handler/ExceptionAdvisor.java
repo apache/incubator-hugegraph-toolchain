@@ -70,7 +70,7 @@ public class ExceptionAdvisor {
         log.error("GenericException:", e);
         return Response.builder()
                 .status(Constant.STATUS_BAD_REQUEST)
-                .message("An error occurred while trying to connect to the server.")
+                .message("Connection to the graph server failed. Please refer to the Hubble log for details.")
                 .cause(null)
                 .build();
     }
