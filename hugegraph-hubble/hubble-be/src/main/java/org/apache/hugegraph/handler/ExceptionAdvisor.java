@@ -23,7 +23,6 @@ import java.net.ConnectException;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.exception.ExternalGenericException;
 import org.apache.hugegraph.exception.IllegalGremlinException;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.exception.ParameterizedException;
