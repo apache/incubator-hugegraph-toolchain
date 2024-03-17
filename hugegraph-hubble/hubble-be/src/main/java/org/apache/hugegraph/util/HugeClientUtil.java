@@ -23,7 +23,7 @@ import java.util.Set;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.exception.ExternalGenericException;
+import org.apache.hugegraph.exception.GenericException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import org.apache.hugegraph.driver.HugeClient;
@@ -88,7 +88,7 @@ public final class HugeClientUtil {
             if (message != null && message.contains("Invalid syntax for username and password")) {
                 throw new ExternalException("graph-connection.missing-username-password", e);
             }
-            throw new ExternalGenericException(e, host, port);
+            throw new GenericException(e);
         } catch (ClientException e) {
             Throwable cause = e.getCause();
             if (cause == null || cause.getMessage() == null) {
@@ -104,6 +104,8 @@ public final class HugeClientUtil {
                 throw new ExternalException("service.suspected-web", e, host, port);
             }
             throw e;
+        } catch (Exception e) {
+            throw new GenericException(e);
         }
 
         try {
