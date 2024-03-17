@@ -27,6 +27,7 @@ import org.apache.hugegraph.exception.ExternalGenericException;
 import org.apache.hugegraph.exception.IllegalGremlinException;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.exception.ParameterizedException;
+import org.apache.hugegraph.exception.GenericException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,26 +67,15 @@ public class ExceptionAdvisor {
                        .build();
     }
 
-    @ExceptionHandler(ExternalGenericException.class)
+    @ExceptionHandler(GenericException.class)
     @ResponseStatus(HttpStatus.OK)
-    public Response exceptionHandler(ExternalGenericException e) {
-        log.error("ExternalGenericException:", e);
+    public Response exceptionHandler(GenericException e) {
+        log.error("GenericException:", e);
         return Response.builder()
-                       .status(e.status())
-                       .message("An error occurred while trying to connect to the server.")
-                       .cause(null)
-                       .build();
-    }
-
-    @ExceptionHandler(ConnectException.class)
-    @ResponseStatus(HttpStatus.OK)
-    public Response exceptionHandler(ConnectException e) {
-        log.error("ConnectException:", e);
-        return Response.builder()
-                       .status(Constant.STATUS_BAD_REQUEST)
-                       .message("An error occurred while trying to connect to the server.")
-                       .cause(null)
-                       .build();
+                .status(Constant.STATUS_BAD_REQUEST)
+                .message("An error occurred while trying to connect to the server.")
+                .cause(null)
+                .build();
     }
 
     @ExceptionHandler(ParameterizedException.class)
