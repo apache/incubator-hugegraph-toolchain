@@ -18,10 +18,6 @@
 
 package org.apache.hugegraph.exception;
 
-import org.apache.hugegraph.rest.ClientException;
-
-import java.net.ConnectException;
-
 public class GenericException extends ParameterizedException {
 
     public GenericException(ServerException e) {
