@@ -18,8 +18,6 @@
 
 package org.apache.hugegraph.handler;
 
-import java.net.ConnectException;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.exception.ExternalException;
