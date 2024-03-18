@@ -20,6 +20,11 @@ package org.apache.hugegraph.controller.task;
 
 import java.util.List;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.controller.BaseController;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.service.algorithm.AsyncTaskService;
+import org.apache.hugegraph.structure.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,11 +34,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.controller.BaseController;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.service.algorithm.AsyncTaskService;
-import org.apache.hugegraph.structure.Task;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
@@ -81,23 +81,23 @@ public class AsyncTaskController extends BaseController {
                             @RequestParam(name = "page_no",
                                           required = false,
                                           defaultValue = "1")
-                                          int pageNo,
+                            int pageNo,
                             @RequestParam(name = "page_size",
                                           required = false,
                                           defaultValue = "10")
-                                          int pageSize,
+                            int pageSize,
                             @RequestParam(name = "content",
                                           required = false,
                                           defaultValue = "")
-                                          String content,
+                            String content,
                             @RequestParam(name = "type",
                                           required = false,
                                           defaultValue = "")
-                                          String type,
+                            String type,
                             @RequestParam(name = "status",
                                           required = false,
                                           defaultValue = "")
-                                          String status) {
+                            String status) {
         return this.service.list(connId, pageNo, pageSize, content, type, status);
     }
 

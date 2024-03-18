@@ -22,17 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.entity.enums.JobStatus;
@@ -48,6 +37,17 @@ import org.apache.hugegraph.service.load.JobManagerService;
 import org.apache.hugegraph.service.load.LoadTaskService;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
@@ -77,14 +77,14 @@ public class JobManagerController {
             Ex.check(entity.getJobName().length() <= 48,
                      "job.manager.job-name.reached-limit");
             Ex.check(entity.getJobName() != null, () ->
-                     Constant.COMMON_NAME_PATTERN.matcher(
-                     entity.getJobName()).matches(),
+                             Constant.COMMON_NAME_PATTERN.matcher(
+                                     entity.getJobName()).matches(),
                      "job.manager.job-name.unmatch-regex");
             Ex.check(entity.getJobRemarks().length() <= 200,
                      "job.manager.job-remarks.reached-limit");
             Ex.check(!StringUtils.isEmpty(entity.getJobRemarks()), () ->
-                     Constant.COMMON_REMARK_PATTERN.matcher(
-                     entity.getJobRemarks()).matches(),
+                             Constant.COMMON_REMARK_PATTERN.matcher(
+                                     entity.getJobRemarks()).matches(),
                      "job.manager.job-remarks.unmatch-regex");
             Ex.check(this.service.count() < LIMIT,
                      "job.manager.reached-limit", LIMIT);
@@ -131,15 +131,15 @@ public class JobManagerController {
                                   @RequestParam(name = "page_no",
                                                 required = false,
                                                 defaultValue = "1")
-                                                int pageNo,
+                                  int pageNo,
                                   @RequestParam(name = "page_size",
                                                 required = false,
                                                 defaultValue = "10")
-                                                int pageSize,
+                                  int pageSize,
                                   @RequestParam(name = "content",
                                                 required = false,
                                                 defaultValue = "")
-                                                String content) {
+                                  String content) {
         return this.service.list(connId, pageNo, pageSize, content);
     }
 
@@ -150,12 +150,12 @@ public class JobManagerController {
         Ex.check(newEntity.getJobName().length() <= 48,
                  "job.manager.job-name.reached-limit");
         Ex.check(newEntity.getJobName() != null, () ->
-                 Constant.COMMON_NAME_PATTERN.matcher(
-                 newEntity.getJobName()).matches(),
+                         Constant.COMMON_NAME_PATTERN.matcher(
+                                 newEntity.getJobName()).matches(),
                  "job.manager.job-name.unmatch-regex");
         Ex.check(!StringUtils.isEmpty(newEntity.getJobRemarks()), () ->
-                 Constant.COMMON_REMARK_PATTERN.matcher(
-                 newEntity.getJobRemarks()).matches(),
+                         Constant.COMMON_REMARK_PATTERN.matcher(
+                                 newEntity.getJobRemarks()).matches(),
                  "job.manager.job-remarks.unmatch-regex");
         // Check exist Job Manager with this id
         JobManager entity = this.service.get(id);

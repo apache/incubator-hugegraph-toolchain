@@ -24,16 +24,15 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.UserInfo;
+import org.apache.hugegraph.service.UserInfoService;
+import org.apache.hugegraph.util.E;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.UserInfo;
-import org.apache.hugegraph.service.UserInfoService;
-import org.apache.hugegraph.util.E;
 
 @RestController
 @RequestMapping(Constant.API_VERSION + "setting")

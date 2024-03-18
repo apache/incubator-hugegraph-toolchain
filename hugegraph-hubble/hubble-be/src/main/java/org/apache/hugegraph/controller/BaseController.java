@@ -20,12 +20,11 @@ package org.apache.hugegraph.controller;
 
 import java.util.List;
 
-import org.springframework.util.StringUtils;
-
 import org.apache.hugegraph.common.Identifiable;
 import org.apache.hugegraph.common.Mergeable;
 import org.apache.hugegraph.util.EntityUtil;
 import org.apache.hugegraph.util.Ex;
+import org.springframework.util.StringUtils;
 
 public abstract class BaseController {
 
