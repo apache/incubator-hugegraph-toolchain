@@ -98,7 +98,7 @@
     </modules>
 
     <properties>
-        <revision>1.2.0</revision>
+        <revision>1.5.0</revision>
         <hugegraph.common.version>1.3.0</hugegraph.common.version>
         <release.name>${project.artifactId}</release.name>
         <final.name>apache-${release.name}-incubating-${project.version}</final.name>
