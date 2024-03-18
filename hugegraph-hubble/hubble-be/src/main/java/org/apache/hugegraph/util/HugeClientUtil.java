@@ -21,16 +21,15 @@ package org.apache.hugegraph.util;
 import java.util.Set;
 
 import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.GenericException;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -54,8 +53,8 @@ public final class HugeClientUtil {
         String trustStoreFile = connection.getTrustStoreFile();
         String trustStorePassword = connection.getTrustStorePassword();
 
-        String url = UriComponentsBuilder.newInstance().scheme(protocol).host(host).port(port)
-                                         .toUriString();
+        String url = UriComponentsBuilder.newInstance()
+                                         .scheme(protocol).host(host).port(port).toUriString();
         if (username == null) {
             username = "";
             password = "";

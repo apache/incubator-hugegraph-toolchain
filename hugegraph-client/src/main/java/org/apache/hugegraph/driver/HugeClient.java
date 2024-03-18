@@ -27,6 +27,11 @@ import org.apache.hugegraph.version.ClientVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The HugeClient class is the main entry point for interacting with a HugeGraph server.
+ * It provides methods for managing graphs, schemas, jobs, tasks, and other resources.
+ * It also implements the Closeable interface, so it can be used in a try-with-resources statement.
+ */
 public class HugeClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
@@ -51,6 +56,11 @@ public class HugeClient implements Closeable {
     private AuthManager auth;
     private MetricsManager metrics;
 
+    /**
+     * Constructs a new HugeClient using the provided builder.
+     *
+     * @param builder the HugeClientBuilder to use for configuration
+     */
     public HugeClient(HugeClientBuilder builder) {
         this.borrowedClient = false;
         RestClientConfig config;
@@ -76,6 +86,7 @@ public class HugeClient implements Closeable {
         try {
             this.initManagers(this.client, builder.graph());
         } catch (Throwable e) {
+            // TODO: catch some exception(like IO/Network related) rather than throw Throwable
             this.client.close();
             throw e;
         }

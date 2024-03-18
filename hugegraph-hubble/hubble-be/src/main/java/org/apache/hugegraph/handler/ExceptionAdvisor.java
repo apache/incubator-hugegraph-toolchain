@@ -21,10 +21,10 @@ package org.apache.hugegraph.handler;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.GenericException;
 import org.apache.hugegraph.exception.IllegalGremlinException;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.exception.ParameterizedException;
-import org.apache.hugegraph.exception.GenericException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -69,10 +69,11 @@ public class ExceptionAdvisor {
     public Response exceptionHandler(GenericException e) {
         log.error("GenericException:", e);
         return Response.builder()
-                .status(Constant.STATUS_BAD_REQUEST)
-                .message("Connection to the graph server failed. Please refer to the Hubble log for details.")
-                .cause(null)
-                .build();
+                       .status(Constant.STATUS_BAD_REQUEST)
+                       .message("Faied to the graph server failed. Please refer to the " +
+                                "Hubble log for details.")
+                       .cause(null)
+                       .build();
     }
 
     @ExceptionHandler(ParameterizedException.class)

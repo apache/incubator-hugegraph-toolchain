@@ -18,12 +18,15 @@
 
 package org.apache.hugegraph.exception;
 
+/**
+ * Used to wrap other unexpected exceptions like Client/ServerException, and convert them into this.
+ * This is typically done to handle exceptions uniformly in the hubble UI.
+ */
 public class GenericException extends ParameterizedException {
 
     public GenericException(ServerException e) {
         super(e.getMessage(), e.getCause());
     }
-
 
     public GenericException(Exception e) {
         super(e.getMessage(), e.getCause());
