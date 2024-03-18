@@ -49,7 +49,7 @@ public class HugeGraphHubble extends SpringBootServletInitializer {
 
     @Override
     protected SpringApplicationBuilder configure(
-                                       SpringApplicationBuilder builder) {
+            SpringApplicationBuilder builder) {
         return builder.sources(this.getClass());
     }
 }

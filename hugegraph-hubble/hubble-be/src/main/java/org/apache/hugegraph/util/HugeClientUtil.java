@@ -21,15 +21,15 @@ package org.apache.hugegraph.util;
 import java.util.Set;
 
 import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.ExternalException;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import com.google.common.collect.ImmutableSet;
 
 public final class HugeClientUtil {
@@ -76,7 +76,7 @@ public final class HugeClientUtil {
                 throw new ExternalException("client-server.version.unmatched", e);
             }
             if (message != null && (message.startsWith("Error loading trust store from") ||
-                message.startsWith("Cannot find trust store file"))) {
+                                    message.startsWith("Cannot find trust store file"))) {
                 throw new ExternalException("https.load.truststore.error", e);
             }
             throw e;
@@ -85,12 +85,12 @@ public final class HugeClientUtil {
             if (Constant.STATUS_UNAUTHORIZED == e.status() ||
                 (message != null && message.startsWith("Authentication"))) {
                 throw new ExternalException(
-                          "graph-connection.username-or-password.incorrect", e);
+                        "graph-connection.username-or-password.incorrect", e);
             }
             if (message != null && message.contains("Invalid syntax for " +
                                                     "username and password")) {
                 throw new ExternalException(
-                          "graph-connection.missing-username-password", e);
+                        "graph-connection.missing-username-password", e);
             }
             throw e;
         } catch (ClientException e) {
@@ -117,7 +117,7 @@ public final class HugeClientUtil {
         } catch (ServerException e) {
             if (Constant.STATUS_UNAUTHORIZED == e.status()) {
                 throw new ExternalException(
-                          "graph-connection.username-or-password.incorrect", e);
+                        "graph-connection.username-or-password.incorrect", e);
             }
             String message = e.message();
             if (message != null && message.contains("Could not rebind [g]")) {
