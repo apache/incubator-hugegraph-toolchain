@@ -141,7 +141,7 @@
                                     rm -f ${top.level.dir}/dist.sh
                                 </echo>
                                 <exec executable="${shell-executable}" dir="${top.level.dir}" failonerror="true">
-                                    <arg line="./dist.sh"/>
+                                    <arg line="./dist.sh" />
                                 </exec>
                             </tasks>
                         </configuration>
