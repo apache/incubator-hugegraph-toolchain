@@ -58,6 +58,6 @@ public class FileUploadResult {
 
         FAILURE,
 
-        SUSPEND;
+        SUSPEND
     }
 }
