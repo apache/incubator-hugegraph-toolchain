@@ -20,6 +20,7 @@ package org.apache.hugegraph.entity.load;
 
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Mergeable;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;

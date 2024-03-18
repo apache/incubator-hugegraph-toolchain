@@ -24,6 +24,7 @@ import java.util.Set;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;

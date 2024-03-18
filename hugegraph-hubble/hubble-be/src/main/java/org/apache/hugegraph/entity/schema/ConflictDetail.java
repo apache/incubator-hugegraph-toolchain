@@ -64,7 +64,7 @@ public class ConflictDetail {
 
     @SuppressWarnings("unchecked")
     public <T extends SchemaEntity> List<SchemaConflict<T>> getConflicts(
-                                                            SchemaType type) {
+            SchemaType type) {
         switch (type) {
             case PROPERTY_KEY:
                 return (List<SchemaConflict<T>>) (Object) this.pkConflicts;
@@ -76,7 +76,7 @@ public class ConflictDetail {
                 return (List<SchemaConflict<T>>) (Object) this.elConflicts;
             default:
                 throw new AssertionError(String.format(
-                          "Unknown schema type '%s'", type));
+                        "Unknown schema type '%s'", type));
         }
     }
 
@@ -109,8 +109,8 @@ public class ConflictDetail {
     }
 
     private <T extends SchemaEntity> boolean anyConflict(
-                                             List<SchemaConflict<T>> conflicts,
-                                             Collection<String> names) {
+            List<SchemaConflict<T>> conflicts,
+            Collection<String> names) {
         if (CollectionUtils.isEmpty(names)) {
             return false;
         }
