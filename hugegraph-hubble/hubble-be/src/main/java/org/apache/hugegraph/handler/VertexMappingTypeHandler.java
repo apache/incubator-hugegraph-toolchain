@@ -24,18 +24,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
+import org.apache.hugegraph.entity.load.VertexMapping;
+import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedJdbcTypes;
 import org.apache.ibatis.type.MappedTypes;
 
-import org.apache.hugegraph.entity.load.VertexMapping;
-import org.apache.hugegraph.loader.util.JsonUtil;
-
 @MappedTypes(value = {VertexMapping.class})
 @MappedJdbcTypes(value = {JdbcType.VARCHAR})
 public class VertexMappingTypeHandler
-       extends BaseTypeHandler<Set<VertexMapping>> {
+        extends BaseTypeHandler<Set<VertexMapping>> {
 
     @Override
     public void setNonNullParameter(PreparedStatement preparedStatement,
@@ -48,7 +47,7 @@ public class VertexMappingTypeHandler
     @Override
     public Set<VertexMapping> getNullableResult(ResultSet resultSet,
                                                 String columnName)
-                                                throws SQLException {
+            throws SQLException {
         String json = resultSet.getString(columnName);
         return JsonUtil.convertSet(json, VertexMapping.class);
     }
@@ -56,15 +55,15 @@ public class VertexMappingTypeHandler
     @Override
     public Set<VertexMapping> getNullableResult(ResultSet resultSet,
                                                 int columnIndex)
-                                                throws SQLException {
+            throws SQLException {
         String json = resultSet.getString(columnIndex);
         return JsonUtil.convertSet(json, VertexMapping.class);
     }
 
     @Override
     public Set<VertexMapping> getNullableResult(
-                              CallableStatement callableStatement,
-                              int columnIndex) throws SQLException {
+            CallableStatement callableStatement,
+            int columnIndex) throws SQLException {
         String json = callableStatement.getString(columnIndex);
         return JsonUtil.convertSet(json, VertexMapping.class);
     }

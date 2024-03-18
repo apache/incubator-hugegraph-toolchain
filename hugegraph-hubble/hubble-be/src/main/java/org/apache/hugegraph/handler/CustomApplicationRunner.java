@@ -18,14 +18,13 @@
 
 package org.apache.hugegraph.handler;
 
+import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.license.ServerInfo;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
-
-import org.apache.hugegraph.config.HugeConfig;
 
 import lombok.extern.log4j.Log4j2;
 

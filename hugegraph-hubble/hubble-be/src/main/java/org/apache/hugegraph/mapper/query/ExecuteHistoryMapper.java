@@ -18,12 +18,12 @@
 
 package org.apache.hugegraph.mapper.query;
 
+import org.apache.hugegraph.entity.query.ExecuteHistory;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Component;
 
-import org.apache.hugegraph.entity.query.ExecuteHistory;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 @Mapper
