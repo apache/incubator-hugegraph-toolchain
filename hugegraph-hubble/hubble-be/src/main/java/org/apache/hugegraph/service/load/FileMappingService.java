@@ -40,7 +40,17 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.config.HugeConfig;
+import org.apache.hugegraph.entity.enums.FileMappingStatus;
+import org.apache.hugegraph.entity.load.FileMapping;
+import org.apache.hugegraph.entity.load.FileSetting;
+import org.apache.hugegraph.entity.load.FileUploadResult;
 import org.apache.hugegraph.exception.InternalException;
+import org.apache.hugegraph.mapper.load.FileMappingMapper;
+import org.apache.hugegraph.options.HubbleOptions;
+import org.apache.hugegraph.util.Ex;
+import org.apache.hugegraph.util.HubbleUtil;
+import org.apache.hugegraph.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -49,16 +59,6 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.apache.hugegraph.config.HugeConfig;
-import org.apache.hugegraph.entity.enums.FileMappingStatus;
-import org.apache.hugegraph.entity.load.FileMapping;
-import org.apache.hugegraph.entity.load.FileSetting;
-import org.apache.hugegraph.entity.load.FileUploadResult;
-import org.apache.hugegraph.mapper.load.FileMappingMapper;
-import org.apache.hugegraph.options.HubbleOptions;
-import org.apache.hugegraph.util.Ex;
-import org.apache.hugegraph.util.HubbleUtil;
-import org.apache.hugegraph.util.StringUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -214,7 +214,7 @@ public class FileMappingService {
                         log.error("Failed to copy file stream from {} to {}",
                                   partFile, newFile, e);
                         throw new InternalException(
-                                  "load.upload.merge-file.failed", e);
+                                "load.upload.merge-file.failed", e);
                     }
                 }
             } catch (IOException e) {
@@ -299,7 +299,7 @@ public class FileMappingService {
         } catch (IOException e) {
             this.remove(mapping.getId());
             throw new InternalException(
-                      "Failed to move file to next level directory");
+                    "Failed to move file to next level directory");
         }
         return Paths.get(destPath, currFile.getName()).toString();
     }
@@ -337,7 +337,7 @@ public class FileMappingService {
         query.in("file_status", FileMappingStatus.UPLOADING.getValue());
         List<FileMapping> mappings = this.mapper.selectList(query);
         long threshold = this.config.get(
-                         HubbleOptions.UPLOAD_FILE_MAX_TIME_CONSUMING) * 1000;
+                HubbleOptions.UPLOAD_FILE_MAX_TIME_CONSUMING) * 1000;
         Date now = HubbleUtil.nowDate();
         for (FileMapping mapping : mappings) {
             Date updateTime = mapping.getUpdateTime();

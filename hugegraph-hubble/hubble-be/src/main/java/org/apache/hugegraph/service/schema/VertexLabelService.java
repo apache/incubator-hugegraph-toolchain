@@ -30,11 +30,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.apache.hugegraph.exception.ExternalException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
@@ -48,6 +43,7 @@ import org.apache.hugegraph.entity.schema.SchemaType;
 import org.apache.hugegraph.entity.schema.VertexLabelEntity;
 import org.apache.hugegraph.entity.schema.VertexLabelStyle;
 import org.apache.hugegraph.entity.schema.VertexLabelUpdateEntity;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
@@ -56,6 +52,9 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.JsonUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -168,8 +167,8 @@ public class VertexLabelService extends SchemaService {
 
         List<String> addedIndexLabelNames = entity.getAppendPropertyIndexNames();
         List<IndexLabel> addedIndexLabels = convertIndexLabels(
-                                            entity.getAppendPropertyIndexes(),
-                                            client, true, entity.getName());
+                entity.getAppendPropertyIndexes(),
+                client, true, entity.getName());
 
         List<String> removedIndexLabelNames = entity.getRemovePropertyIndexes();
 
@@ -177,8 +176,8 @@ public class VertexLabelService extends SchemaService {
             for (String name : addedIndexLabelNames) {
                 if (existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                              "schema.vertexlabel.update.append-index-existed",
-                              entity.getName(), name);
+                            "schema.vertexlabel.update.append-index-existed",
+                            entity.getName(), name);
                 }
             }
         }
@@ -186,8 +185,8 @@ public class VertexLabelService extends SchemaService {
             for (String name : removedIndexLabelNames) {
                 if (!existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                              "schema.vertexlabel.update.remove-index-unexisted",
-                              entity.getName(), name);
+                            "schema.vertexlabel.update.remove-index-unexisted",
+                            entity.getName(), name);
                 }
             }
         }

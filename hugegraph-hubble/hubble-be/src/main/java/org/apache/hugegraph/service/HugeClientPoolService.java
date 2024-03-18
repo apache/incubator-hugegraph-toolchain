@@ -22,22 +22,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PreDestroy;
 
-import org.apache.hugegraph.exception.ExternalException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.util.HugeClientUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
 public final class HugeClientPoolService
-             extends ConcurrentHashMap<Integer, HugeClient> {
+        extends ConcurrentHashMap<Integer, HugeClient> {
 
     @Autowired
     private HugeConfig config;

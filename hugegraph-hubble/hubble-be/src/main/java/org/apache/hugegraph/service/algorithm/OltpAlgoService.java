@@ -24,9 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.TraverserManager;
 import org.apache.hugegraph.entity.algorithm.ShortestPath;
@@ -44,6 +41,9 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.google.common.collect.ImmutableMap;
 
 import lombok.extern.log4j.Log4j2;

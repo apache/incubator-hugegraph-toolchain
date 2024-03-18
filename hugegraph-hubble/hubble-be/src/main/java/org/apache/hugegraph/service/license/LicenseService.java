@@ -24,17 +24,16 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.handler.MessageSourceHandler;
 import org.apache.hugegraph.service.GraphConnectionService;
 import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.util.Ex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -80,11 +79,11 @@ public class LicenseService {
 
             String comma = LicenseService.this.getMessage("common.joiner.comma");
             String semicolon = LicenseService.this.getMessage(
-                                                   "common.joiner.semicolon");
+                    "common.joiner.semicolon");
 
             StringBuilder sb = new StringBuilder();
             sb.append(LicenseService.this.getMessage(
-                      "license.verify.graph-connection.failed.preifx"));
+                    "license.verify.graph-connection.failed.preifx"));
             sb.append(comma);
             if (!StringUtils.isEmpty(this.graphsMessage)) {
                 sb.append(this.graphsMessage);
@@ -101,7 +100,7 @@ public class LicenseService {
             sb.deleteCharAt(sb.length() - 1);
             sb.append(comma);
             sb.append(LicenseService.this.getMessage(
-                      "license.verify.graph-connection.failed.suffix"));
+                    "license.verify.graph-connection.failed.suffix"));
             return sb.toString();
         }
     }
