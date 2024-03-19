@@ -23,12 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileChecksum;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
@@ -129,17 +124,13 @@ public class HDFSFileReader extends FileReader {
             paths.add(new HDFSFile(this.hdfs, path));
         } else {
             assert status.isDirectory();
-            FileStatus[] statuses;
-            if (prefix == null || prefix.isEmpty()) {
-                statuses = this.hdfs.listStatus(path);
-            } else {
-                PathFilter prefixFilter = scanPath -> scanPath.getName().startsWith(prefix);
-                statuses = this.hdfs.listStatus(path, prefixFilter);
-            }
-            Path[] subPaths = FileUtil.stat2Paths(statuses);
-            for (Path subPath : subPaths) {
-                if (filter.reserved(subPath.getName())) {
-                    paths.add(new HDFSFile(this.hdfs, subPath));
+            RemoteIterator<FileStatus> iter = this.hdfs.listStatusIterator(path);
+            while (iter.hasNext()) {
+                FileStatus subStatus = iter.next();
+                // check file/dirname StartWith prefiex & passed filter
+                if ((prefix == null || prefix.isEmpty() || subStatus.getPath().getName().startsWith(prefix)) &&
+                        filter.reserved(subStatus.getPath().getName())) {
+                    paths.add(new HDFSFile(this.hdfs, subStatus.getPath()));
                 }
             }
         }
