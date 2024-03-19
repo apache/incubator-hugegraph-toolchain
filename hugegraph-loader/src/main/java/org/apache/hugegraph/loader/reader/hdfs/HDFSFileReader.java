@@ -174,7 +174,7 @@ public class HDFSFileReader extends FileReader {
             }
         } catch (IOException e) {
             throw new LoadException("An exception occurred while checking " +
-                                    "HDFS path: '%s'",e, path);
+                                    "HDFS path: '%s'", e, path);
         }
     }
 
@@ -216,19 +216,19 @@ public class HDFSFileReader extends FileReader {
                                      .getModificationTime();
             } catch (IOException e) {
                 throw new LoadException("Failed to get last modified time " +
-                                        "for HDFS path '%s'",e, this.path);
+                                        "for HDFS path '%s'", e, this.path);
             }
             byte[] bytes;
             try {
                 FileChecksum checksum = this.hdfs.getFileChecksum(this.path);
                 if (checksum == null) {
                     throw new LoadException("The checksum of HDFS path '%s' " +
-                                            "is null",this.path);
+                                            "is null", this.path);
                 }
                 bytes = checksum.getBytes();
             } catch (IOException e) {
                 throw new LoadException("Failed to calculate checksum " +
-                                        "for HDFS path '%s'",e, this.path);
+                                        "for HDFS path '%s'", e, this.path);
             }
             String checkSum = new String(bytes, Constants.CHARSET);
             return new FileItemProgress(name, timestamp, checkSum, 0L);
