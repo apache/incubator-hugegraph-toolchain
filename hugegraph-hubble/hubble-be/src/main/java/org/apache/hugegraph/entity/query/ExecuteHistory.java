@@ -27,6 +27,7 @@ import org.apache.hugegraph.entity.enums.AsyncTaskStatus;
 import org.apache.hugegraph.entity.enums.ExecuteStatus;
 import org.apache.hugegraph.entity.enums.ExecuteType;
 import org.apache.hugegraph.util.SerializeUtil;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;

@@ -18,13 +18,14 @@
 
 package org.apache.hugegraph.mapper.algorithm;
 
+import org.apache.hugegraph.entity.task.AsyncTask;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Component;
 
-import org.apache.hugegraph.entity.task.AsyncTask;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 @Mapper
 @Component
 public interface AsyncTaskMapper extends BaseMapper<AsyncTask> {
+
 }

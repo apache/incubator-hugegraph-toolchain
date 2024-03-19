@@ -31,14 +31,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.exception.IllegalGremlinException;
-import org.apache.hugegraph.exception.InternalException;
-import org.apache.hugegraph.service.schema.VertexLabelService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
 import org.apache.hugegraph.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
@@ -51,10 +43,14 @@ import org.apache.hugegraph.entity.query.JsonView;
 import org.apache.hugegraph.entity.query.TableView;
 import org.apache.hugegraph.entity.query.TypedResult;
 import org.apache.hugegraph.entity.schema.VertexLabelEntity;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.IllegalGremlinException;
+import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.service.HugeClientPoolService;
+import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.graph.Edge;
@@ -64,6 +60,10 @@ import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.GremlinUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -145,7 +145,7 @@ public class GremlinQueryService {
 
         List<Vertex> vertices = new ArrayList<>(resultSet.size());
         List<Edge> edges = new ArrayList<>(resultSet.size());
-        for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext();) {
+        for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext(); ) {
             Path path = iter.next().getPath();
             List<Object> objects = path.objects();
             assert objects.size() == 3;
@@ -311,7 +311,7 @@ public class GremlinQueryService {
                 return new TableView(TableView.PATH_HEADER, paths);
             default:
                 throw new AssertionError(String.format(
-                          "Unknown result type '%s'", typedResult.getType()));
+                        "Unknown result type '%s'", typedResult.getType()));
         }
     }
 
@@ -368,7 +368,7 @@ public class GremlinQueryService {
 
     private String buildGremlinQuery(int connId, AdjacentQuery query) {
         int degreeLimit = this.config.get(
-                          HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT);
+                HubbleOptions.GREMLIN_VERTEX_DEGREE_LIMIT);
 
         Object id = this.getRealVertexId(connId, query);
         StringBuilder sb = new StringBuilder("g.V(");
@@ -453,7 +453,7 @@ public class GremlinQueryService {
             ResultSet resultSet = client.gremlin().gremlin(gremlin).execute();
             // The edges count for per vertex
             Map<Object, Integer> degrees = new HashMap<>(resultSet.size());
-            for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext();) {
+            for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext(); ) {
                 Edge edge = iter.next().getEdge();
                 Object source = edge.sourceId();
                 Object target = edge.targetId();
@@ -498,7 +498,7 @@ public class GremlinQueryService {
             String ids = StringUtils.join(escapedIds, ",");
             String gremlin = String.format("g.V(%s)", ids);
             ResultSet resultSet = client.gremlin().gremlin(gremlin).execute();
-            for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext();) {
+            for (Iterator<Result> iter = resultSet.iterator(); iter.hasNext(); ) {
                 Vertex vertex = iter.next().getVertex();
                 vertices.put(vertex.id(), vertex);
             }

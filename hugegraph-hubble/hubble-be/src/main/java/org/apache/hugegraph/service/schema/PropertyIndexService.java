@@ -28,10 +28,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.schema.ConflictDetail;
@@ -44,6 +40,10 @@ import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.util.PageUtil;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
@@ -112,13 +112,13 @@ public class PropertyIndexService extends SchemaService {
      * --------------+------------------------+---------------------------------
      * xxxname       | xxxByName              | name
      * --------------+------------------------+---------------------------------
-     *               | personByName           | name
+     * | personByName           | name
      * person        +------------------------+---------------------------------
-     *               | personByAgeAndName     | age name
+     * | personByAgeAndName     | age name
      * --------------+------------------------+---------------------------------
-     *               | softwareByName         | name
+     * | softwareByName         | name
      * software      +------------------------+---------------------------------
-     *               | softwareByPriveAndName | price name
+     * | softwareByPriveAndName | price name
      * --------------+------------------------+---------------------------------
      */
     public IPage<PropertyIndex> list(int connId, HugeType type, String content,
@@ -138,10 +138,10 @@ public class PropertyIndexService extends SchemaService {
             boolean match = baseValue.contains(content);
             if (match) {
                 groupedIndexes = matchedResults.computeIfAbsent(baseValue,
-                                                k -> new ArrayList<>());
+                                                                k -> new ArrayList<>());
             } else {
                 groupedIndexes = unMatchResults.computeIfAbsent(baseValue,
-                                                k -> new ArrayList<>());
+                                                                k -> new ArrayList<>());
             }
             match = match || indexLabel.name().contains(content) ||
                     indexLabel.indexFields().stream()
@@ -154,11 +154,12 @@ public class PropertyIndexService extends SchemaService {
         // Sort matched results by relevance
         if (!StringUtils.isEmpty(content)) {
             for (Map.Entry<String, List<PropertyIndex>> entry :
-                 matchedResults.entrySet()) {
+                    matchedResults.entrySet()) {
                 List<PropertyIndex> groupedIndexes = entry.getValue();
                 groupedIndexes.sort(new Comparator<PropertyIndex>() {
                     final int highScore = 2;
                     final int lowScore = 1;
+
                     @Override
                     public int compare(PropertyIndex o1, PropertyIndex o2) {
                         int o1Score = 0;

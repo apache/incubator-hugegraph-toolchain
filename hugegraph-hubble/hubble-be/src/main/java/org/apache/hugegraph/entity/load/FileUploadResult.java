@@ -19,6 +19,7 @@
 package org.apache.hugegraph.entity.load;
 
 import org.apache.hugegraph.util.SerializeUtil;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -57,6 +58,6 @@ public class FileUploadResult {
 
         FAILURE,
 
-        SUSPEND;
+        SUSPEND
     }
 }

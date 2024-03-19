@@ -19,4 +19,5 @@
 package org.apache.hugegraph.entity.schema;
 
 public class SchemaStyle {
+
 }

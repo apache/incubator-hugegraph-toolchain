@@ -24,17 +24,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.config.HugeConfig;
@@ -48,6 +37,17 @@ import org.apache.hugegraph.service.SettingSSLService;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.HugeClientUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
@@ -201,14 +201,14 @@ public class GraphConnectionController extends BaseController {
         log.debug("The host: {}, ip: {}", address.getHostName(), ip);
 
         List<String> ipWhiteList = this.config.get(
-                                   HubbleOptions.CONNECTION_IP_WHITE_LIST);
+                HubbleOptions.CONNECTION_IP_WHITE_LIST);
         if (!ipWhiteList.contains("*")) {
             Ex.check(ipWhiteList.contains(host) || ipWhiteList.contains(ip),
                      "graph-connection.host.unauthorized");
         }
 
         List<Integer> portWhiteList = this.config.get(
-                                      HubbleOptions.CONNECTION_PORT_WHITE_LIST);
+                HubbleOptions.CONNECTION_PORT_WHITE_LIST);
         if (!portWhiteList.contains(-1)) {
             Ex.check(portWhiteList.contains(port),
                      "graph-connection.port.unauthorized");
@@ -226,8 +226,8 @@ public class GraphConnectionController extends BaseController {
             Ex.check(!oldEntity.getName().equals(newEntity.getName()),
                      "graph-connection.exist.name", oldEntity.getName());
             Ex.check(!(oldEntity.getGraph().equals(newEntity.getGraph()) &&
-                     oldEntity.getHost().equals(newEntity.getHost()) &&
-                     oldEntity.getPort().equals(newEntity.getPort())),
+                       oldEntity.getHost().equals(newEntity.getHost()) &&
+                       oldEntity.getPort().equals(newEntity.getPort())),
                      "graph-connection.exist.graph-host-port",
                      oldEntity.getGraph(), oldEntity.getHost(),
                      oldEntity.getPort());

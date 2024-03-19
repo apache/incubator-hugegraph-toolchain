@@ -34,9 +34,9 @@ public class SettingSSLService {
         if ("https".equals(protocol)) {
             connection.setProtocol(protocol);
             String trustStoreFile = config.get(
-                                    HubbleOptions.CLIENT_TRUSTSTORE_FILE);
+                    HubbleOptions.CLIENT_TRUSTSTORE_FILE);
             String trustStorePass = config.get(
-                                    HubbleOptions.CLIENT_TRUSTSTORE_PASSWORD);
+                    HubbleOptions.CLIENT_TRUSTSTORE_PASSWORD);
             connection.setTrustStoreFile(trustStoreFile);
             connection.setTrustStorePassword(trustStorePass);
         }

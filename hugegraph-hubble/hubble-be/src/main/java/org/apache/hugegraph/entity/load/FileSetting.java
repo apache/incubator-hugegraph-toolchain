@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Mergeable;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -117,7 +118,7 @@ public class FileSetting implements Mergeable {
         @Override
         public String deserialize(JsonParser jsonParser,
                                   DeserializationContext context)
-                                  throws IOException {
+                throws IOException {
             String delimiter = jsonParser.getText();
             if ("\\t".equals(delimiter)) {
                 return "\t";

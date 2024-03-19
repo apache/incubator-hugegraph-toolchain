@@ -30,11 +30,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.apache.hugegraph.exception.ExternalException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
@@ -48,6 +43,7 @@ import org.apache.hugegraph.entity.schema.PropertyIndex;
 import org.apache.hugegraph.entity.schema.SchemaConflict;
 import org.apache.hugegraph.entity.schema.SchemaEntity;
 import org.apache.hugegraph.entity.schema.SchemaType;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.constant.Frequency;
@@ -57,6 +53,9 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.JsonUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -158,8 +157,8 @@ public class EdgeLabelService extends SchemaService {
 
         List<String> addedIndexLabelNames = entity.getAppendPropertyIndexNames();
         List<IndexLabel> addedIndexLabels = convertIndexLabels(
-                                            entity.getAppendPropertyIndexes(),
-                                            client, false, entity.getName());
+                entity.getAppendPropertyIndexes(),
+                client, false, entity.getName());
 
         List<String> removedIndexLabelNames = entity.getRemovePropertyIndexes();
 
@@ -167,8 +166,8 @@ public class EdgeLabelService extends SchemaService {
             for (String name : addedIndexLabelNames) {
                 if (existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                              "schema.edgelabel.update.append-index-existed",
-                              entity.getName(), name);
+                            "schema.edgelabel.update.append-index-existed",
+                            entity.getName(), name);
                 }
             }
         }
@@ -176,8 +175,8 @@ public class EdgeLabelService extends SchemaService {
             for (String name : removedIndexLabelNames) {
                 if (!existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                              "schema.edgelabel.update.remove-index-unexisted",
-                              entity.getName(), name);
+                            "schema.edgelabel.update.remove-index-unexisted",
+                            entity.getName(), name);
                 }
             }
         }
@@ -234,7 +233,7 @@ public class EdgeLabelService extends SchemaService {
             }
             // Then check conflict of edge label itself
             EdgeLabelEntity originElEntity = originElEntities.get(
-                                             elEntity.getName());
+                    elEntity.getName());
             ConflictStatus status = SchemaEntity.compare(elEntity,
                                                          originElEntity);
             detail.add(elEntity, status);
@@ -354,7 +353,7 @@ public class EdgeLabelService extends SchemaService {
             return null;
         }
         Frequency frequency = entity.isLinkMultiTimes() ? Frequency.MULTIPLE :
-                                                          Frequency.SINGLE;
+                              Frequency.SINGLE;
         EdgeLabelStyle style = entity.getStyle();
         return client.schema().edgeLabel(entity.getName())
                      .sourceLabel(entity.getSourceLabel())

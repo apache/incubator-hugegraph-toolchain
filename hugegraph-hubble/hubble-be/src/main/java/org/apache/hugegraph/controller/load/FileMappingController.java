@@ -22,18 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.entity.enums.JobStatus;
@@ -54,6 +42,18 @@ import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
@@ -195,7 +195,7 @@ public class FileMappingController extends BaseController {
         boolean removed = mapping.getVertexMappings().remove(vertexMapping);
         if (!removed) {
             throw new ExternalException(
-                      "load.file-mapping.vertex-mapping.not-exist.id", vmid);
+                    "load.file-mapping.vertex-mapping.not-exist.id", vmid);
         }
         this.service.update(mapping);
         return mapping;
@@ -252,7 +252,7 @@ public class FileMappingController extends BaseController {
         boolean removed = mapping.getEdgeMappings().remove(edgeMapping);
         if (!removed) {
             throw new ExternalException(
-                      "load.file-mapping.edge-mapping.not-exist.id", emid);
+                    "load.file-mapping.edge-mapping.not-exist.id", emid);
         }
         this.service.update(mapping);
         return mapping;
@@ -305,15 +305,15 @@ public class FileMappingController extends BaseController {
                      vl.getPrimaryKeys().size(),
                      "load.file-mapping.vertex.id-fields-should-same-size-pks");
             Ex.check(!CollectionUtils.containsAny(
-                     vertexMapping.fieldMappingToMap().values(),
-                     vl.getPrimaryKeys()),
+                             vertexMapping.fieldMappingToMap().values(),
+                             vl.getPrimaryKeys()),
                      "load.file-mapping.vertex.mapping-fields-cannot-contains-pk");
         } else {
             Ex.check(vertexMapping.getIdFields().size() == 1,
                      "load.file-mapping.vertex.id-fields-should-only-one");
         }
         Ex.check(CollectionUtil.allUnique(
-                 vertexMapping.fieldMappingToMap().values()),
+                         vertexMapping.fieldMappingToMap().values()),
                  "load.file-mapping.mapping-fields-should-no-duplicate");
         this.checkMappingValid(vertexMapping, fileMapping);
     }
@@ -341,7 +341,7 @@ public class FileMappingController extends BaseController {
                  "load.file-mapping.edge.target-fields-should-in-column-names",
                  edgeMapping.getTargetFields(), columnNames);
         Ex.check(CollectionUtil.allUnique(
-                 edgeMapping.fieldMappingToMap().values()),
+                         edgeMapping.fieldMappingToMap().values()),
                  "load.file-mapping.mapping-fields-should-no-duplicate");
         this.checkMappingValid(edgeMapping, fileMapping);
     }

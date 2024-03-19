@@ -18,13 +18,14 @@
 
 package org.apache.hugegraph.mapper.load;
 
+import org.apache.hugegraph.entity.load.FileMapping;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Component;
 
-import org.apache.hugegraph.entity.load.FileMapping;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 @Mapper
 @Component
 public interface FileMappingMapper extends BaseMapper<FileMapping> {
+
 }

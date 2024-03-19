@@ -18,13 +18,13 @@
 
 package org.apache.hugegraph.mapper.load;
 
+import org.apache.hugegraph.entity.load.JobManager;
+import org.apache.hugegraph.entity.load.JobManagerItem;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
 
-import org.apache.hugegraph.entity.load.JobManager;
-import org.apache.hugegraph.entity.load.JobManagerItem;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 @Mapper

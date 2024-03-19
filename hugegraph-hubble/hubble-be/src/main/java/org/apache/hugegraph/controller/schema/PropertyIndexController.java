@@ -18,6 +18,10 @@
 
 package org.apache.hugegraph.controller.schema;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.schema.PropertyIndex;
+import org.apache.hugegraph.service.schema.PropertyIndexService;
+import org.apache.hugegraph.structure.constant.HugeType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,10 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.schema.PropertyIndex;
-import org.apache.hugegraph.service.schema.PropertyIndexService;
-import org.apache.hugegraph.structure.constant.HugeType;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 @RestController
@@ -55,7 +55,7 @@ public class PropertyIndexController extends SchemaController {
                                                    defaultValue = "10")
                                      int pageSize) {
         HugeType type = isVertexLabel ? HugeType.VERTEX_LABEL :
-                                        HugeType.EDGE_LABEL;
+                        HugeType.EDGE_LABEL;
         if (StringUtils.isEmpty(content)) {
             return this.service.list(connId, type, pageNo, pageSize);
         } else {

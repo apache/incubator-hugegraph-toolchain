@@ -24,6 +24,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.UserInfo;
 import org.apache.hugegraph.service.UserInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -33,9 +35,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.util.WebUtils;
-
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.UserInfo;
 
 import lombok.extern.log4j.Log4j2;
 

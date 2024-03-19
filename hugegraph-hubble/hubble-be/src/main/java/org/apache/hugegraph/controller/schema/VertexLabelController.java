@@ -24,19 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
 import org.apache.hugegraph.entity.schema.ConflictDetail;
@@ -52,6 +39,19 @@ import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableList;
 
@@ -124,9 +124,9 @@ public class VertexLabelController extends SchemaController {
 
     @PostMapping("check_conflict")
     public ConflictDetail checkConflicts(
-                          @PathVariable("connId") int connId,
-                          @RequestParam("reused_conn_id") int reusedConnId,
-                          @RequestBody ConflictCheckEntity entity) {
+            @PathVariable("connId") int connId,
+            @RequestParam("reused_conn_id") int reusedConnId,
+            @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getVlEntities()),
                  "common.param.cannot-be-empty", "vertexlabels");
         Ex.check(CollectionUtils.isEmpty(entity.getPkEntities()),
@@ -151,8 +151,8 @@ public class VertexLabelController extends SchemaController {
 
     @PostMapping("recheck_conflict")
     public ConflictDetail recheckConflicts(
-                          @PathVariable("connId") int connId,
-                          @RequestBody ConflictCheckEntity entity) {
+            @PathVariable("connId") int connId,
+            @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getVlEntities()),
                  "common.param.cannot-be-empty", "vertexlabels");
         Ex.check(CollectionUtils.isEmpty(entity.getElEntities()),
@@ -181,8 +181,8 @@ public class VertexLabelController extends SchemaController {
 
     @PostMapping("check_using")
     public Map<String, Boolean> checkUsing(
-                                @PathVariable("connId") int connId,
-                                @RequestBody UsingCheckEntity entity) {
+            @PathVariable("connId") int connId,
+            @RequestBody UsingCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getNames()),
                  "common.param.cannot-be-empty", "names");
         Map<String, Boolean> inUsing = new LinkedHashMap<>();

@@ -18,6 +18,8 @@
 
 package org.apache.hugegraph.handler;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.IllegalGremlinException;
 import org.apache.hugegraph.exception.InternalException;
@@ -27,9 +29,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.common.Response;
 
 import lombok.extern.log4j.Log4j2;
 

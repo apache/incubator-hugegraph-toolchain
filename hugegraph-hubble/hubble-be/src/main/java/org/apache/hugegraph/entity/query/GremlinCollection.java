@@ -23,6 +23,7 @@ import java.util.Date;
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Identifiable;
 import org.apache.hugegraph.common.Mergeable;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;

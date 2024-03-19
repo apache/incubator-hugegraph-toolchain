@@ -22,6 +22,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
+import org.apache.hugegraph.entity.schema.ConflictDetail;
+import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
+import org.apache.hugegraph.entity.schema.UsingCheckEntity;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.service.schema.PropertyKeyService;
+import org.apache.hugegraph.util.Ex;
+import org.apache.hugegraph.util.HubbleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,15 +42,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
-import org.apache.hugegraph.entity.schema.ConflictDetail;
-import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
-import org.apache.hugegraph.entity.schema.UsingCheckEntity;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.service.schema.PropertyKeyService;
-import org.apache.hugegraph.util.HubbleUtil;
-import org.apache.hugegraph.util.Ex;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
 import lombok.extern.log4j.Log4j2;
@@ -91,8 +91,8 @@ public class PropertyKeyController extends SchemaController {
 
     @PostMapping("check_conflict")
     public ConflictDetail checkConflict(
-                          @PathVariable("connId") int connId,
-                          @RequestBody ConflictCheckEntity entity) {
+            @PathVariable("connId") int connId,
+            @RequestBody ConflictCheckEntity entity) {
         List<PropertyKeyEntity> entities = entity.getPkEntities();
         Ex.check(!CollectionUtils.isEmpty(entities),
                  "common.param.cannot-be-empty", "entities");
@@ -108,8 +108,8 @@ public class PropertyKeyController extends SchemaController {
 
     @PostMapping("recheck_conflict")
     public ConflictDetail recheckConflict(
-                          @PathVariable("connId") int connId,
-                          @RequestBody ConflictCheckEntity entity) {
+            @PathVariable("connId") int connId,
+            @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getPkEntities()),
                  "common.param.cannot-be-empty", "propertykeys");
         Ex.check(CollectionUtils.isEmpty(entity.getPiEntities()),
