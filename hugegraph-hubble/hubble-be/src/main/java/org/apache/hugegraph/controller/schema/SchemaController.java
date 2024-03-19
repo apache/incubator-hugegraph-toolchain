@@ -28,13 +28,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
@@ -53,6 +46,13 @@ import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.PageUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -96,8 +96,8 @@ public class SchemaController extends BaseController {
         for (EdgeLabelEntity entity : edgeLabels) {
             Map<String, Object> edge = new LinkedHashMap<>();
             String edgeId = String.format(
-                            "%s-%s->%s", entity.getSourceLabel(),
-                            entity.getName(), entity.getTargetLabel());
+                    "%s-%s->%s", entity.getSourceLabel(),
+                    entity.getName(), entity.getTargetLabel());
             edge.put("id", edgeId);
             edge.put("label", entity.getName());
             edge.put("source", entity.getSourceLabel());
@@ -147,10 +147,10 @@ public class SchemaController extends BaseController {
     }
 
     public <T extends SchemaEntity> IPage<T> listInPage(
-                                             Function<Integer, List<T>> fetcher,
-                                             int connId, String content,
-                                             String nameOrder,
-                                             int pageNo, int pageSize) {
+            Function<Integer, List<T>> fetcher,
+            int connId, String content,
+            String nameOrder,
+            int pageNo, int pageSize) {
         Boolean nameOrderAsc = null;
         if (!StringUtils.isEmpty(nameOrder)) {
             Ex.check(ORDER_ASC.equals(nameOrder) || ORDER_DESC.equals(nameOrder),

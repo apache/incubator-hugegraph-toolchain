@@ -44,17 +44,17 @@ public final class GremlinUtil {
     );
 
     private static final String[] COMPILE_SEARCH_LIST = new String[]{
-        ".", "(", ")"
+            ".", "(", ")"
     };
     private static final String[] COMPILE_TARGET_LIST = new String[]{
-        "\\.", "\\(", "\\)"
+            "\\.", "\\(", "\\)"
     };
 
     private static final String[] ESCAPE_SEARCH_LIST = new String[]{
-        "\\", "\"", "'", "\n"
+            "\\", "\"", "'", "\n"
     };
     private static final String[] ESCAPE_TARGET_LIST = new String[]{
-        "\\\\", "\\\"", "\\'", "\\n"
+            "\\\\", "\\\"", "\\'", "\\n"
     };
 
     private static final Set<Pattern> LIMIT_PATTERNS = compile(LIMIT_SUFFIXES);

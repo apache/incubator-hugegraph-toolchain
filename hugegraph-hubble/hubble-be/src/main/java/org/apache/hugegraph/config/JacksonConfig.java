@@ -21,13 +21,13 @@ package org.apache.hugegraph.config;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.hugegraph.common.Response;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Vertex;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
-import org.apache.hugegraph.common.Response;
-import org.apache.hugegraph.structure.graph.Edge;
-import org.apache.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -98,7 +98,7 @@ public class JacksonConfig {
 
     private static void writeIdField(String fieldName, Object id,
                                      JsonGenerator generator)
-                                     throws IOException {
+            throws IOException {
         // Serialize id to string
         generator.writeStringField(fieldName, id.toString());
     }
@@ -106,7 +106,7 @@ public class JacksonConfig {
     private static void writePropertiesField(Map<String, Object> properties,
                                              JsonGenerator generator,
                                              SerializerProvider provider)
-                                             throws IOException {
+            throws IOException {
         // Start write properties
         generator.writeFieldName("properties");
         generator.writeStartObject();

@@ -18,12 +18,12 @@
 
 package org.apache.hugegraph.mapper;
 
+import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
 
-import org.apache.hugegraph.entity.GraphConnection;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 

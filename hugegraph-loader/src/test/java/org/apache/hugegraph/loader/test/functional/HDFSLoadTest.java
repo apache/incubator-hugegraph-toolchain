@@ -73,6 +73,33 @@ public class HDFSLoadTest extends FileLoadTest {
     }
 
     @Test
+    public void testHDFSWithFilePrefix() {
+        ioUtil.write("vertex_person_0.csv",
+                "name,age,city",
+                "marko,29,Beijing");
+
+        ioUtil.write("vertex_person_1.csv",
+                "name,age,city",
+                "vadas,27,Hongkong",
+                "josh,32,Beijing",
+                "peter,35,Shanghai",
+                "\"li,nary\",26,\"Wu,han\"");
+
+        String[] args = new String[]{
+                "-f", structPath("hdfs_file_with_prefix/struct.json"),
+                "-s", configPath("hdfs_file_with_prefix/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader loader = new HugeGraphLoader(args);
+        loader.load();
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+        Assert.assertEquals(5, vertices.size());
+    }
+
+    @Test
     public void testHDFSWithCoreSitePathEmpty() {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",

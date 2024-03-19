@@ -21,13 +21,6 @@ package org.apache.hugegraph.service.graph;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.service.schema.EdgeLabelService;
-import org.apache.hugegraph.service.schema.PropertyKeyService;
-import org.apache.hugegraph.service.schema.VertexLabelService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.graph.EdgeEntity;
@@ -37,16 +30,23 @@ import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
 import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
 import org.apache.hugegraph.entity.schema.SchemaLabelEntity;
 import org.apache.hugegraph.entity.schema.VertexLabelEntity;
+import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.ListFormat;
 import org.apache.hugegraph.loader.util.DataTypeUtil;
 import org.apache.hugegraph.service.HugeClientPoolService;
+import org.apache.hugegraph.service.schema.EdgeLabelService;
+import org.apache.hugegraph.service.schema.PropertyKeyService;
+import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.util.Ex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.google.common.collect.ImmutableSet;
 
 import lombok.extern.log4j.Log4j2;

@@ -33,17 +33,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.entity.enums.FileMappingStatus;
@@ -59,6 +48,16 @@ import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.FileUtil;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -259,13 +258,13 @@ public class FileUploadController {
 
         String format = FilenameUtils.getExtension(fileName);
         List<String> formatWhiteList = this.config.get(
-                                       HubbleOptions.UPLOAD_FILE_FORMAT_LIST);
+                HubbleOptions.UPLOAD_FILE_FORMAT_LIST);
         Ex.check(formatWhiteList.contains(format),
                  "load.upload.file.format.unsupported");
 
         long fileSize = file.getSize();
         long singleFileSizeLimit = this.config.get(
-                                   HubbleOptions.UPLOAD_SINGLE_FILE_SIZE_LIMIT);
+                HubbleOptions.UPLOAD_SINGLE_FILE_SIZE_LIMIT);
         Ex.check(fileSize <= singleFileSizeLimit,
                  "load.upload.file.exceed-single-size",
                  FileUtils.byteCountToDisplaySize(singleFileSizeLimit));
@@ -277,7 +276,7 @@ public class FileUploadController {
                  "load.upload.file.existed", fileName);
 
         long totalFileSizeLimit = this.config.get(
-                                  HubbleOptions.UPLOAD_TOTAL_FILE_SIZE_LIMIT);
+                HubbleOptions.UPLOAD_TOTAL_FILE_SIZE_LIMIT);
         List<FileMapping> fileMappings = this.service.listAll();
         long currentTotalSize = fileMappings.stream()
                                             .map(FileMapping::getTotalSize)

@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.hugegraph.loader.constant.Constants;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public final class ListFormat {

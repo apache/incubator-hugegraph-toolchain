@@ -21,6 +21,7 @@ package org.apache.hugegraph.entity.graph;
 import java.util.Map;
 
 import org.apache.hugegraph.common.Identifiable;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;

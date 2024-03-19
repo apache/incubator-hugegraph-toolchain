@@ -39,7 +39,7 @@ public final class Constant {
     public static final String CONFIG_FILE = "hugegraph-hubble.properties";
 
     public static final String CONTROLLER_PACKAGE =
-                               "org.apache.hugegraph.controller";
+            "org.apache.hugegraph.controller";
 
     public static final String COOKIE_USER = "user";
     public static final String API_V1_1 = "/api/v1.1/";

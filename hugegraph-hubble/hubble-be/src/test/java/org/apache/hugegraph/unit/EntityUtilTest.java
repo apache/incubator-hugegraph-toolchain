@@ -20,11 +20,10 @@ package org.apache.hugegraph.unit;
 
 import java.util.Date;
 
-import org.junit.Test;
-
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.util.EntityUtil;
+import org.junit.Test;
 
 public class EntityUtilTest {
 
@@ -34,7 +33,7 @@ public class EntityUtilTest {
         GraphConnection newEntity;
         oldEntity = new GraphConnection(1, "conn1", "graph1", "host1", 8001,
                                         30, "", "", true, "",
-                                        new Date(),"http","","");
+                                        new Date(), "http", "", "");
         Thread.sleep(10);
         newEntity = new GraphConnection(2, "conn2", "graph2", "host2", 8002,
                                         40, "u", "p", false, "xxx",

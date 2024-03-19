@@ -38,7 +38,7 @@ public final class FileUtil {
     public static int countLines(File file) {
         if (!file.exists()) {
             throw new IllegalArgumentException(String.format(
-                      "The file %s doesn't exist", file));
+                    "The file %s doesn't exist", file));
         }
         long fileLength = file.length();
         try (FileInputStream fis = new FileInputStream(file);

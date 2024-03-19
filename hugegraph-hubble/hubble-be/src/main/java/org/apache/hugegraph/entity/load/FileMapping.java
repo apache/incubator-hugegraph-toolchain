@@ -30,6 +30,7 @@ import org.apache.hugegraph.handler.EdgeMappingTypeHandler;
 import org.apache.hugegraph.handler.VertexMappingTypeHandler;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.SerializeUtil;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;

@@ -18,17 +18,16 @@
 
 package org.apache.hugegraph.controller.algorithm;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.algorithm.ShortestPath;
+import org.apache.hugegraph.entity.query.GremlinResult;
+import org.apache.hugegraph.service.algorithm.OltpAlgoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.algorithm.ShortestPath;
-import org.apache.hugegraph.entity.query.GremlinResult;
-import org.apache.hugegraph.service.algorithm.OltpAlgoService;
 
 import lombok.extern.log4j.Log4j2;
 

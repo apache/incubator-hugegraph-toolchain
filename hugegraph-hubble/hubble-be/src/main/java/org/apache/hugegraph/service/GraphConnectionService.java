@@ -20,16 +20,16 @@ package org.apache.hugegraph.service;
 
 import java.util.List;
 
+import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.InternalException;
+import org.apache.hugegraph.mapper.GraphConnectionMapper;
+import org.apache.hugegraph.util.SQLUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import org.apache.hugegraph.entity.GraphConnection;
-import org.apache.hugegraph.mapper.GraphConnectionMapper;
-import org.apache.hugegraph.util.SQLUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;

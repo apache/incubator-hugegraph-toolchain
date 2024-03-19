@@ -29,10 +29,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
@@ -49,6 +45,9 @@ import org.apache.hugegraph.structure.SchemaElement;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.util.HubbleUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -73,7 +72,7 @@ public class SchemaService {
     }
 
     public static <T extends SchemaElement> List<String> collectNames(
-                                                         List<T> schemas) {
+            List<T> schemas) {
         return schemas.stream().map(SchemaElement::name)
                       .collect(Collectors.toList());
     }
@@ -89,8 +88,8 @@ public class SchemaService {
     }
 
     public static List<PropertyIndex> collectPropertyIndexes(
-                                      SchemaLabel schemaLabel,
-                                      List<IndexLabel> indexLabels) {
+            SchemaLabel schemaLabel,
+            List<IndexLabel> indexLabels) {
         List<PropertyIndex> propertyIndexes = new ArrayList<>();
         if (indexLabels == null) {
             return propertyIndexes;
@@ -165,7 +164,7 @@ public class SchemaService {
     }
 
     public static <T extends SchemaEntity>
-           void compareWithEachOther(ConflictDetail detail, SchemaType type) {
+    void compareWithEachOther(ConflictDetail detail, SchemaType type) {
         List<SchemaConflict<T>> conflicts = detail.getConflicts(type);
         for (int i = 0; i < conflicts.size(); i++) {
             SchemaConflict<T> conflict = conflicts.get(i);
@@ -178,8 +177,8 @@ public class SchemaService {
     }
 
     public static <T extends SchemaEntity>
-           ConflictStatus compareWithOthers(int currentIdx,
-                                            List<SchemaConflict<T>> conflicts) {
+    ConflictStatus compareWithOthers(int currentIdx,
+                                     List<SchemaConflict<T>> conflicts) {
         SchemaConflict<T> current = conflicts.get(currentIdx);
         T currentEntity = current.getEntity();
         // May changed
@@ -205,8 +204,8 @@ public class SchemaService {
     }
 
     public static <T extends SchemaElement> void addBatch(
-           List<T> schemas, HugeClient client,
-           BiConsumer<HugeClient, T> func, SchemaType type) {
+            List<T> schemas, HugeClient client,
+            BiConsumer<HugeClient, T> func, SchemaType type) {
         if (CollectionUtils.isEmpty(schemas)) {
             return;
         }
@@ -221,8 +220,8 @@ public class SchemaService {
     }
 
     public static <T extends SchemaElement> List<Long> addBatch(
-           List<T> schemas, HugeClient client,
-           BiFunction<HugeClient, T, Long> func, SchemaType type) {
+            List<T> schemas, HugeClient client,
+            BiFunction<HugeClient, T, Long> func, SchemaType type) {
         List<Long> tasks = new ArrayList<>();
         if (CollectionUtils.isEmpty(schemas)) {
             return tasks;
@@ -239,8 +238,8 @@ public class SchemaService {
     }
 
     public static List<Long> removeBatch(
-           List<String> names, HugeClient client,
-           BiFunction<HugeClient, String, Long> func, SchemaType type) {
+            List<String> names, HugeClient client,
+            BiFunction<HugeClient, String, Long> func, SchemaType type) {
         List<Long> tasks = new ArrayList<>();
         if (CollectionUtils.isEmpty(names)) {
             return tasks;

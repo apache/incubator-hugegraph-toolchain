@@ -19,6 +19,7 @@
 package org.apache.hugegraph.entity.algorithm;
 
 import org.apache.hugegraph.structure.constant.Direction;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;

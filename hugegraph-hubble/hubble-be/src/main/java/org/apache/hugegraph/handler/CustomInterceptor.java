@@ -40,7 +40,7 @@ public class CustomInterceptor extends HandlerInterceptorAdapter {
     private LicenseService licenseService;
 
     private static final Pattern CHECK_API_PATTERN =
-                         Pattern.compile(".*/graph-connections/\\d+/.+");
+            Pattern.compile(".*/graph-connections/\\d+/.+");
 
     @Override
     public boolean preHandle(HttpServletRequest request,
@@ -52,7 +52,7 @@ public class CustomInterceptor extends HandlerInterceptorAdapter {
         }
 
         String connIdValue = StringUtils.substringBetween(
-                             url, "/graph-connections/", "/");
+                url, "/graph-connections/", "/");
         if (StringUtils.isEmpty(connIdValue)) {
             throw new InternalException("Not found conn id in url");
         }

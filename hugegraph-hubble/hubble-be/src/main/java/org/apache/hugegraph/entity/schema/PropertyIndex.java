@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.hugegraph.structure.constant.IndexType;
 import org.apache.hugegraph.util.HubbleUtil;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;

@@ -69,7 +69,7 @@ public enum SchemaType {
                 return PROPERTY_INDEX;
             default:
                 throw new InternalException(
-                          "Can't convert HugeType '%s' to SchemaType", type);
+                        "Can't convert HugeType '%s' to SchemaType", type);
         }
     }
 }

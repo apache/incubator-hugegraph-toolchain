@@ -29,17 +29,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.exception.InternalException;
-import org.apache.hugegraph.service.schema.EdgeLabelService;
-import org.apache.hugegraph.service.schema.VertexLabelService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.entity.GraphConnection;
@@ -53,6 +42,8 @@ import org.apache.hugegraph.entity.load.LoadTask;
 import org.apache.hugegraph.entity.load.VertexMapping;
 import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
 import org.apache.hugegraph.entity.schema.VertexLabelEntity;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.handler.LoadTaskExecutor;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
@@ -63,7 +54,15 @@ import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.util.MappingUtil;
 import org.apache.hugegraph.mapper.load.LoadTaskMapper;
 import org.apache.hugegraph.service.SettingSSLService;
+import org.apache.hugegraph.service.schema.EdgeLabelService;
+import org.apache.hugegraph.service.schema.VertexLabelService;
 import org.apache.hugegraph.util.Ex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -422,7 +421,7 @@ public class LoadTaskService {
     }
 
     private List<org.apache.hugegraph.loader.mapping.VertexMapping>
-        buildVertexMappings(GraphConnection connection,
+    buildVertexMappings(GraphConnection connection,
                         FileMapping fileMapping) {
         int connId = connection.getId();
         List<org.apache.hugegraph.loader.mapping.VertexMapping> vMappings =
@@ -477,7 +476,7 @@ public class LoadTaskService {
     }
 
     private List<org.apache.hugegraph.loader.mapping.EdgeMapping>
-        buildEdgeMappings(GraphConnection connection,
+    buildEdgeMappings(GraphConnection connection,
                       FileMapping fileMapping) {
         int connId = connection.getId();
         List<org.apache.hugegraph.loader.mapping.EdgeMapping> eMappings =
