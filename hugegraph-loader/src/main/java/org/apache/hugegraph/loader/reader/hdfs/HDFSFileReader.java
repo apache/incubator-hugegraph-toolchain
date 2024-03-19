@@ -26,8 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
@@ -52,6 +52,8 @@ public class HDFSFileReader extends FileReader {
 
     private final FileSystem hdfs;
     private final Configuration conf;
+    private String prefix;
+    private String input_path;
 
     public HDFSFileReader(HDFSSource source) {
         super(source);
@@ -62,7 +64,22 @@ public class HDFSFileReader extends FileReader {
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
-        Path path = new Path(source.path());
+
+        String input = source.path();
+        if (input.contains("*")) {
+            int lastSlashIndex = input.lastIndexOf('/');
+            if (lastSlashIndex != -1) {
+                input_path = input.substring(0, lastSlashIndex);
+                // TODO: support multiple prefix in uri?
+                prefix = input.substring(lastSlashIndex + 1, input.length() - 1);
+            } else {
+                LOG.error("File path format error!");
+            }
+        } else {
+            input_path = input;
+        }
+
+        Path path = new Path(input_path);
         checkExist(this.hdfs, path);
     }
 
@@ -98,22 +115,26 @@ public class HDFSFileReader extends FileReader {
 
     @Override
     protected List<Readable> scanReadables() throws IOException {
-        Path path = new Path(this.source().path());
+        Path path = new Path(input_path);
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
-        if (this.hdfs.isFile(path)) {
+        FileStatus status = this.hdfs.getFileStatus(path);
+
+        if (status.isFile()) {
             if (!filter.reserved(path.getName())) {
                 throw new LoadException("Please check path name and extensions, ensure that " +
                                         "at least one path is available for reading");
             }
             paths.add(new HDFSFile(this.hdfs, path));
         } else {
-            assert this.hdfs.isDirectory(path);
-            FileStatus[] statuses = this.hdfs.listStatus(path);
-            Path[] subPaths = FileUtil.stat2Paths(statuses);
-            for (Path subPath : subPaths) {
-                if (filter.reserved(subPath.getName())) {
-                    paths.add(new HDFSFile(this.hdfs, subPath));
+            assert status.isDirectory();
+            RemoteIterator<FileStatus> iter = this.hdfs.listStatusIterator(path);
+            while (iter.hasNext()) {
+                FileStatus subStatus = iter.next();
+                // check file/dirname StartWith prefiex & passed filter
+                if ((prefix == null || prefix.isEmpty() || subStatus.getPath().getName().startsWith(prefix)) &&
+                        filter.reserved(subStatus.getPath().getName())) {
+                    paths.add(new HDFSFile(this.hdfs, subStatus.getPath()));
                 }
             }
         }
