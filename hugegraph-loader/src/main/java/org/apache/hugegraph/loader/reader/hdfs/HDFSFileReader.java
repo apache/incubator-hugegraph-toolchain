@@ -169,11 +169,12 @@ public class HDFSFileReader extends FileReader {
     private static void checkExist(FileSystem fs, Path path) {
         try {
             if (!fs.exists(path)) {
-                throw new LoadException("Please ensure the file or directory exists: '%s'", path);
+                throw new LoadException("Please ensure the file or directory " +
+                                        "exists: '%s'", path);
             }
         } catch (IOException e) {
-            throw new LoadException("An exception occurred while checking HDFS path: '%s'",
-                                    e, path);
+            throw new LoadException("An exception occurred while checking " +
+                                    "HDFS path: '%s'",e, path);
         }
     }
 
@@ -214,20 +215,20 @@ public class HDFSFileReader extends FileReader {
                 timestamp = this.hdfs.getFileStatus(this.path)
                                      .getModificationTime();
             } catch (IOException e) {
-                throw new LoadException("Failed to get last modified time for HDFS path '%s'",
-                                        e, this.path);
+                throw new LoadException("Failed to get last modified time " +
+                                        "for HDFS path '%s'",e, this.path);
             }
             byte[] bytes;
             try {
                 FileChecksum checksum = this.hdfs.getFileChecksum(this.path);
                 if (checksum == null) {
-                    throw new LoadException("The checksum of HDFS path '%s' is null",
-                                            this.path);
+                    throw new LoadException("The checksum of HDFS path '%s' " +
+                                            "is null",this.path);
                 }
                 bytes = checksum.getBytes();
             } catch (IOException e) {
-                throw new LoadException("Failed to calculate checksum for HDFS path '%s'",
-                                        e, this.path);
+                throw new LoadException("Failed to calculate checksum " +
+                                        "for HDFS path '%s'",e, this.path);
             }
             String checkSum = new String(bytes, Constants.CHARSET);
             return new FileItemProgress(name, timestamp, checkSum, 0L);
