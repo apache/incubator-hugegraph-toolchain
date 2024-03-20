@@ -21,6 +21,7 @@ package org.apache.hugegraph.handler;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.GenericException;
 import org.apache.hugegraph.exception.IllegalGremlinException;
 import org.apache.hugegraph.exception.InternalException;
 import org.apache.hugegraph.exception.ParameterizedException;
@@ -60,6 +61,18 @@ public class ExceptionAdvisor {
                        .status(e.status())
                        .message(message)
                        .cause(e.getCause())
+                       .build();
+    }
+
+    @ExceptionHandler(GenericException.class)
+    @ResponseStatus(HttpStatus.OK)
+    public Response exceptionHandler(GenericException e) {
+        log.error("GenericException:", e);
+        return Response.builder()
+                       .status(Constant.STATUS_BAD_REQUEST)
+                       .message("Faied to connect the graph server. Please refer to the " +
+                                "Hubble log for details.")
+                       .cause(null)
                        .build();
     }
 
