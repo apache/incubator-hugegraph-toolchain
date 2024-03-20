@@ -132,7 +132,7 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
                 ImmutableList.of(1, 21, 22, 6),
                 ImmutableList.of(1, 23, 24, 6)
         );
-        for (Path path : paths){
+        for (Path path : paths) {
             Assert.assertTrue(expected.contains(path.objects()));
         }
     }
@@ -149,7 +149,7 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
                 ImmutableList.of(1, 21, 22, 6),
                 ImmutableList.of(1, 23, 24, 6)
         );
-        for (Path path : paths){
+        for (Path path : paths) {
             Assert.assertTrue(expected.contains(path.objects()));
         }
     }
@@ -178,7 +178,7 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
                 ImmutableList.of(1, 21, 22, 6),
                 ImmutableList.of(1, 23, 24, 6)
         );
-        for (Path path : paths){
+        for (Path path : paths) {
             Assert.assertTrue(expected.contains(path.objects()));
         }
         Assert.assertThrows(ServerException.class, () -> {

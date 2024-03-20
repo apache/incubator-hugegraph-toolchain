@@ -22,13 +22,10 @@ import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
-
 import org.apache.hugegraph.rest.RestResult;
-
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.traverser.JaccardSimilarity;
 import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
-
 import org.apache.hugegraph.util.E;
 
 public class JaccardSimilarityAPI extends TraversersAPI {

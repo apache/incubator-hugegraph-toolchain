@@ -96,16 +96,16 @@ public class VertexTest extends BaseFuncTest {
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "name", "vadas", "age", 19,
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "name", "vadas", "age", 19,
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2014-02-14");
         props = ImmutableMap.of("name", "vadas", "age", 19,
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10"),
-                                        Utils.formatDate("2014-02-14")));
+                        Utils.formatDate("2012-10-10"),
+                        Utils.formatDate("2014-02-14")));
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -125,16 +125,16 @@ public class VertexTest extends BaseFuncTest {
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "name", "vadas", "age", 19,
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "name", "vadas", "age", 19,
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2014-02-14");
         props = ImmutableMap.of("name", "vadas", "age", 19,
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10"),
-                                        Utils.formatDate("2014-02-14")));
+                        Utils.formatDate("2012-10-10"),
+                        Utils.formatDate("2014-02-14")));
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -154,16 +154,16 @@ public class VertexTest extends BaseFuncTest {
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "name", "vadas", "age", 19,
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "name", "vadas", "age", 19,
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2012-10-10");
         props = ImmutableMap.of("name", "vadas", "age", 19,
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10"),
-                                        Utils.formatDate("2012-10-10")));
+                        Utils.formatDate("2012-10-10"),
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -183,15 +183,15 @@ public class VertexTest extends BaseFuncTest {
                                          "age", 19, "time", "2012-10-10");
 
         Map<String, Object> props = ImmutableMap.of(
-                                    "name", "vadas", "age", 19,
-                                    "time", ImmutableList.of(
-                                            Utils.formatDate("2012-10-10")));
+                "name", "vadas", "age", 19,
+                "time", ImmutableList.of(
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
 
         vadas.property("time", "2012-10-10");
         props = ImmutableMap.of("name", "vadas", "age", 19,
                                 "time", ImmutableList.of(
-                                        Utils.formatDate("2012-10-10")));
+                        Utils.formatDate("2012-10-10")));
         Assert.assertEquals(props, vadas.properties());
     }
 
@@ -406,7 +406,7 @@ public class VertexTest extends BaseFuncTest {
         for (Vertex v : vertices) {
             Assert.assertEquals("person", v.label());
             Assert.assertThat(v.property("age"), CoreMatchers.anyOf(
-                              CoreMatchers.is(27), CoreMatchers.is(32)));
+                    CoreMatchers.is(27), CoreMatchers.is(32)));
         }
     }
 

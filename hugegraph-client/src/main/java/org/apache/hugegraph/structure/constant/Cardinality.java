@@ -22,7 +22,7 @@ public enum Cardinality {
     SINGLE(1, "single"),
 
     LIST(2, "list"),
-    
+
     SET(3, "set");
 
     // HugeKeys define

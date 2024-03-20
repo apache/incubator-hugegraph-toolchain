@@ -56,8 +56,9 @@ public class SplicingIdGenerator {
 
     /**
      * Concat multiple ids into one composite id with IDS_SPLITOR
+     *
      * @param ids the string id values to be contacted
-     * @return    contacted string value
+     * @return contacted string value
      */
     public static String concat(String... ids) {
         // NOTE: must support string id when using this method
@@ -66,8 +67,9 @@ public class SplicingIdGenerator {
 
     /**
      * Split a composite id into multiple ids with IDS_SPLITOR
+     *
      * @param ids the string id value to be split
-     * @return    split string values
+     * @return split string values
      */
     public static String[] split(String ids) {
         return IdUtil.unescape(ids, IDS_SPLITOR_STR, ESCAPE_STR);
@@ -75,8 +77,9 @@ public class SplicingIdGenerator {
 
     /**
      * Concat property values with NAME_SPLITOR
+     *
      * @param values the property values to be contacted
-     * @return       contacted string value
+     * @return contacted string value
      */
     public static String concatValues(List<?> values) {
         // Convert the object list to string array
@@ -90,8 +93,9 @@ public class SplicingIdGenerator {
 
     /**
      * Concat property values with NAME_SPLITOR
+     *
      * @param values the property values to be contacted
-     * @return       contacted string value
+     * @return contacted string value
      */
     public static String concatValues(Object... values) {
         return concatValues(Arrays.asList(values));

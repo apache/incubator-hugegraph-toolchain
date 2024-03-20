@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
-
 import org.apache.hugegraph.api.auth.AccessAPI;
 import org.apache.hugegraph.api.auth.BelongAPI;
 import org.apache.hugegraph.api.auth.GroupAPI;

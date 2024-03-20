@@ -21,9 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.constant.IdStrategy;
-import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.E;
 

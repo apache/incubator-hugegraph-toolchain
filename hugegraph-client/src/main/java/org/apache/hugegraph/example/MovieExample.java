@@ -17,11 +17,11 @@
 
 package org.apache.hugegraph.example;
 
-import org.apache.hugegraph.structure.constant.T;
-import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.constant.T;
+import org.apache.hugegraph.structure.graph.Vertex;
 
 public class MovieExample {
 

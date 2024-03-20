@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.apache.hugegraph.serializer.PathDeserializer;
-import org.apache.hugegraph.structure.constant.GraphAttachable;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.rest.SerializeException;
+import org.apache.hugegraph.serializer.PathDeserializer;
+import org.apache.hugegraph.structure.constant.GraphAttachable;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;

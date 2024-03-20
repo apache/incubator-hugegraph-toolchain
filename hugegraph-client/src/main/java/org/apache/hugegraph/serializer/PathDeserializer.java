@@ -37,7 +37,7 @@ public class PathDeserializer extends JsonDeserializer<Path> {
 
     @Override
     public Path deserialize(JsonParser parser, DeserializationContext ctxt)
-                            throws IOException {
+            throws IOException {
 
         JsonNode node = parser.getCodec().readTree(parser);
         Path path = new Path();

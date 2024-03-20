@@ -95,7 +95,7 @@ public class TaskCache {
 
     private void asyncQueryTask() {
         for (Map.Entry<TaskAPI, Map<Long, Task>> query :
-             this.taskTable.entrySet()) {
+                this.taskTable.entrySet()) {
             TaskAPI api = query.getKey();
             Map<Long, Task> targets = query.getValue();
             if (targets == null || targets.isEmpty()) {

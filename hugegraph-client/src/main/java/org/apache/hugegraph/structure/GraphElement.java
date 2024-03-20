@@ -24,8 +24,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.hugegraph.structure.constant.GraphAttachable;
 import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.structure.constant.GraphAttachable;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.ReflectionUtil;
 

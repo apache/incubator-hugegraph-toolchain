@@ -613,7 +613,6 @@ public class EdgeApiTest extends BaseApiTest {
 //            edgeAPI.get(ids.get(1));
 //        });
 //    }
-
     @Test
     public void testBatchCreateWithInvalidVertexLabelButNotCheck() {
         List<Edge> edges = new ArrayList<>(2);

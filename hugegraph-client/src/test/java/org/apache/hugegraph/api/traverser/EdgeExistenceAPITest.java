@@ -17,14 +17,13 @@
 
 package org.apache.hugegraph.api.traverser;
 
+import java.util.List;
 
 import org.apache.hugegraph.api.BaseApiTest;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.List;
 
 public class EdgeExistenceAPITest extends TraverserApiTest {
 

@@ -206,7 +206,6 @@ public class PathsApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
 
-
         Vertex tom = graph().addVertex(T.LABEL, "person", "name", "Tom",
                                        "age", 29, "city", "Shanghai");
         Vertex jim = graph().addVertex(T.LABEL, "person", "name", "Jim",

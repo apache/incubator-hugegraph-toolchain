@@ -153,13 +153,13 @@ public enum DataType {
                     break;
                 default:
                     throw new AssertionError(String.format(
-                              "Number type only contains Byte, Integer, " +
-                              "Long, Float, Double, but got %s", this.clazz()));
+                            "Number type only contains Byte, Integer, " +
+                            "Long, Float, Double, but got %s", this.clazz()));
             }
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(String.format(
-                      "Can't read '%s' as %s: %s",
-                      value, this.name, e.getMessage()));
+                    "Can't read '%s' as %s: %s",
+                    value, this.name, e.getMessage()));
         }
         return number;
     }

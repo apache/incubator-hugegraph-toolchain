@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Response {
 
     public static class Status {
+
         @JsonProperty
         private String message;
         @JsonProperty

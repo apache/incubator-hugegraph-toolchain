@@ -33,4 +33,5 @@ import org.junit.runners.Suite;
         SplicingIdGeneratorTest.class
 })
 public class UnitTestSuite {
+
 }

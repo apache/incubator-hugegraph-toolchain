@@ -19,10 +19,10 @@ package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.api.job.RebuildAPI;
 import org.apache.hugegraph.api.task.TaskAPI;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
-import org.apache.hugegraph.client.RestClient;
 
 public class JobManager {
 

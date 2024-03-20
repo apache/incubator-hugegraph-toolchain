@@ -38,4 +38,5 @@ import org.junit.runners.Suite;
         HugeClientTest.class
 })
 public class FuncTestSuite {
+
 }

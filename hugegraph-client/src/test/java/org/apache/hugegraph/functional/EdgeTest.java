@@ -685,7 +685,6 @@ public class EdgeTest extends BaseFuncTest {
         List<Edge> edges = graph().listEdges("created", properties, false);
         Assert.assertEquals(1, edges.size());
 
-
         Assert.assertThrows(ServerException.class, () -> {
             graph().listEdges("created", properties, true);
         }, e -> {

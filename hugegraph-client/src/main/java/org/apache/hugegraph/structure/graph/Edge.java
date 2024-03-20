@@ -17,10 +17,10 @@
 
 package org.apache.hugegraph.structure.graph;
 
-import org.apache.hugegraph.util.SplicingIdGenerator;
 import org.apache.hugegraph.exception.InvalidOperationException;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.SplicingIdGenerator;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -19,8 +19,8 @@ package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.CustomizedPathsRequest;
+import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 
 public class CustomizedPathsAPI extends TraversersAPI {
 

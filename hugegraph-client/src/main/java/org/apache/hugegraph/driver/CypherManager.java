@@ -18,9 +18,9 @@
 package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.api.gremlin.CypherAPI;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.gremlin.Response;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
-import org.apache.hugegraph.client.RestClient;
 
 public class CypherManager {
 
