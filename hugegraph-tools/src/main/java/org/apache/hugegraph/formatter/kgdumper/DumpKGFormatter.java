@@ -55,7 +55,7 @@ public class DumpKGFormatter implements Formatter {
     }
 
     private String dumpEntity(JsonGraph.JsonVertex vertex)
-                              throws UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         if (vertex == null) {
             return "";
         }
@@ -113,7 +113,7 @@ public class DumpKGFormatter implements Formatter {
     }
 
     private String dumpMemtion(JsonGraph.JsonVertex vertex)
-                               throws UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         if (vertex == null) {
             return "";
         }

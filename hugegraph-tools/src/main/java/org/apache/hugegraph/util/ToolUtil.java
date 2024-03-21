@@ -32,7 +32,7 @@ public final class ToolUtil {
         Printer.print("Failed to execute %s", e.getMessage());
         if (throwMode) {
             if (e instanceof RuntimeException) {
-                throw  (RuntimeException) e;
+                throw (RuntimeException) e;
             }
             throw new RuntimeException(e);
         }

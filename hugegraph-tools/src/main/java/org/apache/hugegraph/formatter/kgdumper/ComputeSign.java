@@ -34,7 +34,7 @@ public class ComputeSign {
     private String inputEncoding;
 
     public ComputeSign(String tradeValueFile, String inputEncode)
-                       throws IOException {
+            throws IOException {
 
         File file = new File(tradeValueFile);
         Long fileLen = file.length();
@@ -65,7 +65,7 @@ public class ComputeSign {
     }
 
     public synchronized String computeSeqNum(String entPlain)
-           throws UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         String seqNum = "0";
         if (entPlain2Id.containsKey(entPlain)) {
             seqNum = entPlain2Id.get(entPlain);

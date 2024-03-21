@@ -68,7 +68,7 @@ public class BackupManager extends BackupRestoreBaseManager {
 
     private static final String BACKEND = "backend";
     private static final Set<String> BACKENDS_NO_PAGING =
-                                     ImmutableSet.of("memory");
+            ImmutableSet.of("memory");
     private static final String PAGE_NONE = "";
 
     private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
@@ -151,7 +151,7 @@ public class BackupManager extends BackupRestoreBaseManager {
                     break;
                 default:
                     throw new AssertionError(String.format(
-                              "Bad backup type: %s", type));
+                            "Bad backup type: %s", type));
             }
         }
         this.printSummary();
@@ -161,8 +161,8 @@ public class BackupManager extends BackupRestoreBaseManager {
         Printer.print("Vertices backup started");
         Printer.printInBackward("Vertices has been backup: ");
         List<Shard> shards = retry(() ->
-                             this.client.traverser().vertexShards(splitSize()),
-                             "querying shards of vertices");
+                                           this.client.traverser().vertexShards(splitSize()),
+                                   "querying shards of vertices");
         this.writeShards(this.allShardsLog(HugeType.VERTEX), shards);
         for (Shard shard : shards) {
             this.backupVertexShardAsync(shard);
@@ -178,8 +178,8 @@ public class BackupManager extends BackupRestoreBaseManager {
         Printer.print("Edges backup started");
         Printer.printInBackward("Edges has been backup: ");
         List<Shard> shards = retry(() ->
-                             this.client.traverser().edgeShards(splitSize()),
-                             "querying shards of edges");
+                                           this.client.traverser().edgeShards(splitSize()),
+                                   "querying shards of edges");
         this.writeShards(this.allShardsLog(HugeType.EDGE), shards);
         for (Shard shard : shards) {
             this.backupEdgeShardAsync(shard);
@@ -342,8 +342,8 @@ public class BackupManager extends BackupRestoreBaseManager {
                 break;
             default:
                 throw new AssertionError(String.format(
-                          "Only VERTEX or EDGE exception is expected, " +
-                          "but got '%s' exception", type));
+                        "Only VERTEX or EDGE exception is expected, " +
+                        "but got '%s' exception", type));
         }
         if (isLimitExceedException(e)) {
             this.logLimitExceedShard(type, shard);

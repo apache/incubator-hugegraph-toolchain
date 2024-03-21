@@ -54,8 +54,8 @@ public class RetryManager extends ToolManager {
             } catch (Exception e) {
                 if (retries == this.retry) {
                     throw new ToolsException(
-                              "Exception occurred while %s(after %s retries)",
-                              e, description, this.retry);
+                            "Exception occurred while %s(after %s retries)",
+                            e, description, this.retry);
                 }
                 // Ignore exception and retry
                 continue;
@@ -89,7 +89,7 @@ public class RetryManager extends ToolManager {
             this.pool.awaitTermination(24, TimeUnit.HOURS);
         } catch (InterruptedException e) {
             throw new ToolsException(
-                      "Exception appears in %s threads", e, taskType);
+                    "Exception appears in %s threads", e, taskType);
         }
     }
 
