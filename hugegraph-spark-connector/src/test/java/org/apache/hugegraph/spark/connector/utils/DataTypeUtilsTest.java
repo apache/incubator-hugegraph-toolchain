@@ -61,45 +61,46 @@ public class DataTypeUtilsTest {
     public void convertSingleNumber() {
         PropertyKey.Builder builder = new PropertyKey.BuilderImpl("number", null);
         PropertyKey bytePropertyKey = builder.dataType(DataType.BYTE)
-                                   .cardinality(Cardinality.SINGLE)
-                                   .build();
+                                             .cardinality(Cardinality.SINGLE)
+                                             .build();
         Assert.assertEquals((byte) 25, DataTypeUtils.convert("25", bytePropertyKey));
         Assert.assertEquals((byte) 25, DataTypeUtils.convert(25, bytePropertyKey));
 
         PropertyKey intPropertyKey = builder.dataType(DataType.INT)
-                                             .cardinality(Cardinality.SINGLE)
-                                             .build();
+                                            .cardinality(Cardinality.SINGLE)
+                                            .build();
         Assert.assertEquals(20230920, DataTypeUtils.convert("20230920", intPropertyKey));
         Assert.assertEquals(20230920, DataTypeUtils.convert(20230920, intPropertyKey));
 
         PropertyKey longPropertyKey = builder.dataType(DataType.LONG)
-                                            .cardinality(Cardinality.SINGLE)
-                                            .build();
+                                             .cardinality(Cardinality.SINGLE)
+                                             .build();
         Assert.assertEquals(202309205435343242L, DataTypeUtils.convert("202309205435343242",
                                                                        longPropertyKey));
         Assert.assertEquals(202309205435343242L, DataTypeUtils.convert(202309205435343242L,
                                                                        longPropertyKey));
 
         PropertyKey floatPropertyKey = builder.dataType(DataType.FLOAT)
-                                             .cardinality(Cardinality.SINGLE)
-                                             .build();
+                                              .cardinality(Cardinality.SINGLE)
+                                              .build();
         Assert.assertEquals(123.45f, DataTypeUtils.convert("123.45", floatPropertyKey));
         Assert.assertEquals(123.45f, DataTypeUtils.convert(123.45, floatPropertyKey));
 
         PropertyKey doublePropertyKey = builder.dataType(DataType.DOUBLE)
-                                              .cardinality(Cardinality.SINGLE)
-                                              .build();
+                                               .cardinality(Cardinality.SINGLE)
+                                               .build();
         Assert.assertEquals(1235443.48956783, DataTypeUtils.convert("1235443.48956783",
-                                                                 doublePropertyKey));
-        Assert.assertEquals(1235443.48956783, DataTypeUtils.convert(1235443.48956783, doublePropertyKey));
+                                                                    doublePropertyKey));
+        Assert.assertEquals(1235443.48956783,
+                            DataTypeUtils.convert(1235443.48956783, doublePropertyKey));
     }
 
     @Test
     public void testConvertSingleBoolean() {
         PropertyKey.Builder builder = new PropertyKey.BuilderImpl("boolean", null);
         PropertyKey booleanPropertyKey = builder.dataType(DataType.BOOLEAN)
-                                               .cardinality(Cardinality.SINGLE)
-                                               .build();
+                                                .cardinality(Cardinality.SINGLE)
+                                                .build();
 
         Assert.assertEquals(true, DataTypeUtils.convert(true, booleanPropertyKey));
         Assert.assertEquals(true, DataTypeUtils.convert("true", booleanPropertyKey));
@@ -130,8 +131,8 @@ public class DataTypeUtilsTest {
     public void testConvertSingleUUID() {
         PropertyKey.Builder builder = new PropertyKey.BuilderImpl("uuid", null);
         PropertyKey uuidPropertyKey = builder.dataType(DataType.UUID)
-                                                .cardinality(Cardinality.SINGLE)
-                                                .build();
+                                             .cardinality(Cardinality.SINGLE)
+                                             .build();
         UUID uuid = UUID.randomUUID();
         Assert.assertEquals(uuid, DataTypeUtils.convert(uuid, uuidPropertyKey));
         Assert.assertEquals(uuid, DataTypeUtils.convert(uuid.toString(), uuidPropertyKey));
