@@ -20,16 +20,14 @@ package org.apache.hugegraph.loader.test.functional;
 import java.util.List;
 
 import org.apache.hugegraph.loader.HugeGraphLoader;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.testutil.Assert;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import org.apache.hugegraph.structure.graph.Edge;
-import org.apache.hugegraph.structure.graph.Vertex;
-
-import org.apache.hugegraph.testutil.Assert;
 
 /**
  * TODO: add more test cases
@@ -215,16 +213,16 @@ public class JDBCLoadTest extends LoadTest {
     @Test
     public void testNumberToStringInJDBCSource() {
         dbUtil.insert("INSERT INTO `person` VALUES " +
-                "(1,'marko',29,'Beijing')," +
-                "(2,'vadas',27,'HongKong')," +
-                "(3,'josh',32,'Beijing')," +
-                "(4,'peter',35,'Shanghai')," +
-                "(5,'li,nary',26,'Wu,han')," +
-                "(6,'tom',NULL,NULL);");
+                      "(1,'marko',29,'Beijing')," +
+                      "(2,'vadas',27,'HongKong')," +
+                      "(3,'josh',32,'Beijing')," +
+                      "(4,'peter',35,'Shanghai')," +
+                      "(5,'li,nary',26,'Wu,han')," +
+                      "(6,'tom',NULL,NULL);");
 
         dbUtil.insert("INSERT INTO `software` VALUES " +
-                "(100,'lop','java',328.08)," +
-                "(200,'ripple','java',199.67);");
+                      "(100,'lop','java',328.08)," +
+                      "(200,'ripple','java',199.67);");
 
         String[] args = new String[]{
                 "-f", configPath("jdbc_number_to_string/struct.json"),

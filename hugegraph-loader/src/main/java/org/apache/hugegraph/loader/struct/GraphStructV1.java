@@ -24,20 +24,19 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.ListUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
-import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.loader.mapping.BackendStoreInfo;
-import org.apache.commons.collections.ListUtils;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-
+import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -22,7 +22,6 @@ import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.util.E;
 

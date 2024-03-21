@@ -35,13 +35,12 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
-import org.apache.hugegraph.loader.util.DataTypeUtil;
 import org.apache.hugegraph.loader.source.InputSource;
+import org.apache.hugegraph.loader.util.DataTypeUtil;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.graph.Vertex;
@@ -51,10 +50,9 @@ import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.LongEncoding;
+import org.apache.spark.sql.Row;
 
 import com.google.common.collect.ImmutableList;
-
-import org.apache.spark.sql.Row;
 
 public abstract class ElementBuilder<GE extends GraphElement> {
 
@@ -166,7 +164,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             Collection<String> missed = CollectionUtils.subtract(requiredKeys,
                                                                  keys);
             E.checkArgument(false, "All non-null property keys %s of '%s' " +
-                            "must be set, but missed keys %s",
+                                   "must be set, but missed keys %s",
                             requiredKeys, this.schemaLabel().name(), missed);
         }
     }

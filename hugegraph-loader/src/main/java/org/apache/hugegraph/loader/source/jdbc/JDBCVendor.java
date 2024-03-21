@@ -20,7 +20,6 @@ package org.apache.hugegraph.loader.source.jdbc;
 import java.net.URISyntaxException;
 
 import org.apache.http.client.utils.URIBuilder;
-
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.reader.jdbc.JDBCUtil;

@@ -26,14 +26,13 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.fs.Path;
-
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.progress.InputItemProgress;
+import org.apache.hugegraph.loader.reader.Readable;
 import org.apache.hugegraph.loader.source.file.Compression;
 import org.apache.hugegraph.loader.source.file.FileFilter;
 import org.apache.hugegraph.loader.source.file.FileSource;
-import org.apache.hugegraph.loader.reader.Readable;
 
 public class LocalFileReader extends FileReader {
 

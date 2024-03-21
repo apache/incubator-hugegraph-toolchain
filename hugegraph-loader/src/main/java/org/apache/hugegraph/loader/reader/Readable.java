@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.hadoop.fs.Path;
-
 import org.apache.hugegraph.loader.progress.InputItemProgress;
 
 public interface Readable {

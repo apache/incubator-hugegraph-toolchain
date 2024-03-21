@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.util.E;

@@ -17,6 +17,11 @@
 
 package org.apache.hugegraph.loader.metrics;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.mapping.EdgeMapping;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
@@ -24,11 +29,6 @@ import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.spark.SparkContext;
 import org.apache.spark.util.LongAccumulator;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public final class LoadDistributeMetrics implements Serializable {
 

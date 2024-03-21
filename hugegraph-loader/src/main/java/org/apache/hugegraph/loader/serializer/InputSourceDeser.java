@@ -19,13 +19,13 @@ package org.apache.hugegraph.loader.serializer;
 
 import java.io.IOException;
 
-import org.apache.hugegraph.loader.source.kafka.KafkaSource;
-import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.SourceType;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
+import org.apache.hugegraph.loader.source.kafka.KafkaSource;
+import org.apache.hugegraph.loader.util.JsonUtil;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;

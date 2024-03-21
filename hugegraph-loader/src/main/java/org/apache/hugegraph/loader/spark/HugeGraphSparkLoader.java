@@ -17,6 +17,19 @@
 
 package org.apache.hugegraph.loader.spark;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hugegraph.driver.GraphManager;
@@ -27,20 +40,20 @@ import org.apache.hugegraph.loader.direct.loader.HBaseDirectLoader;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
-import org.apache.hugegraph.loader.metrics.LoadDistributeMetrics;
-import org.apache.hugegraph.loader.source.InputSource;
-import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
-import org.apache.hugegraph.loader.util.Printer;
 import org.apache.hugegraph.loader.mapping.EdgeMapping;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.LoadMapping;
 import org.apache.hugegraph.loader.mapping.VertexMapping;
+import org.apache.hugegraph.loader.metrics.LoadDistributeMetrics;
+import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.file.Compression;
 import org.apache.hugegraph.loader.source.file.FileFilter;
 import org.apache.hugegraph.loader.source.file.FileFormat;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.SkippedLine;
+import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
+import org.apache.hugegraph.loader.util.Printer;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
@@ -48,7 +61,6 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.UpdateStrategy;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.util.Log;
-
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.sql.DataFrameReader;
@@ -58,19 +70,6 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
-
-import java.io.Serializable;
-import java.util.Optional;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import scala.collection.JavaConverters;
 
@@ -104,20 +103,20 @@ public class HugeGraphSparkLoader implements Serializable {
             conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
                 .set("spark.kryo.registrationRequired", "true")
                 .registerKryoClasses(new Class[]{
-                    ImmutableBytesWritable.class,
-                    KeyValue.class,
-                    org.apache.spark.sql.types.StructType.class,
-                    StructField[].class,
-                    StructField.class,
-                    org.apache.spark.sql.types.LongType$.class,
-                    org.apache.spark.sql.types.Metadata.class,
-                    org.apache.spark.sql.types.StringType$.class,
-                    org.apache.spark.sql.catalyst.InternalRow.class,
-                    org.apache.spark.sql.catalyst.InternalRow[].class,
-                    Class.forName("org.apache.spark.internal.io." +
+                        ImmutableBytesWritable.class,
+                        KeyValue.class,
+                        org.apache.spark.sql.types.StructType.class,
+                        StructField[].class,
+                        StructField.class,
+                        org.apache.spark.sql.types.LongType$.class,
+                        org.apache.spark.sql.types.Metadata.class,
+                        org.apache.spark.sql.types.StringType$.class,
+                        org.apache.spark.sql.catalyst.InternalRow.class,
+                        org.apache.spark.sql.catalyst.InternalRow[].class,
+                        Class.forName("org.apache.spark.internal.io." +
                                       "FileCommitProtocol$TaskCommitMessage"),
-                    Class.forName("scala.collection.immutable.Set$EmptySet$"),
-                    Class.forName("org.apache.spark.sql.types.DoubleType$")
+                        Class.forName("scala.collection.immutable.Set$EmptySet$"),
+                        Class.forName("org.apache.spark.sql.types.DoubleType$")
                 });
         } catch (ClassNotFoundException e) {
             LOG.error("spark kryo serialized registration failed");
@@ -296,7 +295,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 String delimiter = fileSource.delimiter();
                 if (Optional.ofNullable(delimiter).isPresent()) {
                     elements = builder.build(fileSource.header(),
-                               row.mkString(delimiter).split(delimiter));
+                                             row.mkString(delimiter).split(delimiter));
                 } else {
                     elements = builder.build(row);
                 }
@@ -339,15 +338,15 @@ public class HugeGraphSparkLoader implements Serializable {
                 BatchVertexRequest.Builder req =
                         new BatchVertexRequest.Builder();
                 req.vertices((List<Vertex>) (Object) graphElements)
-                    .updatingStrategies(updateStrategyMap)
-                    .createIfNotExist(true);
+                   .updatingStrategies(updateStrategyMap)
+                   .createIfNotExist(true);
                 g.updateVertices(req.build());
             } else {
                 BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                 req.edges((List<Edge>) (Object) graphElements)
-                    .updatingStrategies(updateStrategyMap)
-                    .checkVertex(isCheckVertex)
-                    .createIfNotExist(true);
+                   .updatingStrategies(updateStrategyMap)
+                   .checkVertex(isCheckVertex)
+                   .createIfNotExist(true);
                 g.updateEdges(req.build());
             }
         }

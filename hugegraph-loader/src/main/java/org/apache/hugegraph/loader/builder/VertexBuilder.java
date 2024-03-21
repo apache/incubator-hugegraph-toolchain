@@ -26,9 +26,8 @@ import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
-
-import org.apache.spark.sql.Row;
 import org.apache.hugegraph.util.E;
+import org.apache.spark.sql.Row;
 
 public class VertexBuilder extends ElementBuilder<Vertex> {
 

@@ -22,17 +22,16 @@ import static org.apache.hugegraph.loader.constant.Constants.BATCH_PRINT_FREQ;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.loader.util.Printer;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.builder.Record;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.util.Printer;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public class BatchInsertTask extends InsertTask {
 

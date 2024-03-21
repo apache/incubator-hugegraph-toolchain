@@ -18,8 +18,6 @@
 package org.apache.hugegraph.loader.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
@@ -28,6 +26,7 @@ import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.util.Log;
 import org.apache.hugegraph.util.TimeUtil;
+import org.slf4j.Logger;
 
 public final class Printer {
 

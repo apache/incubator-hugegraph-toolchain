@@ -26,13 +26,6 @@ import java.util.Objects;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.loader.task.ParseTaskBuilder;
-import org.apache.hugegraph.loader.task.TaskManager;
-import org.apache.hugegraph.loader.util.HugeClientHolder;
-import org.apache.hugegraph.loader.util.LoadUtil;
-import org.apache.hugegraph.loader.util.Printer;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.loader.builder.Record;
 import org.apache.hugegraph.loader.constant.Constants;
@@ -50,7 +43,13 @@ import org.apache.hugegraph.loader.metrics.LoadMetrics;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.reader.InputReader;
 import org.apache.hugegraph.loader.reader.line.Line;
+import org.apache.hugegraph.loader.task.ParseTaskBuilder;
+import org.apache.hugegraph.loader.task.TaskManager;
+import org.apache.hugegraph.loader.util.HugeClientHolder;
+import org.apache.hugegraph.loader.util.LoadUtil;
+import org.apache.hugegraph.loader.util.Printer;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public final class HugeGraphLoader {
 
@@ -233,7 +232,7 @@ public final class HugeGraphLoader {
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context, struct);
         final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
-        for (boolean finished = false; !finished;) {
+        for (boolean finished = false; !finished; ) {
             if (this.context.stopped()) {
                 break;
             }

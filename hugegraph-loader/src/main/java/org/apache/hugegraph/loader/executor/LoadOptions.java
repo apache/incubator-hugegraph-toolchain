@@ -21,14 +21,14 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Set;
 
-import org.apache.hugegraph.loader.util.LoadUtil;
-import org.apache.hugegraph.loader.mapping.BackendStoreInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.constant.Constants;
+import org.apache.hugegraph.loader.mapping.BackendStoreInfo;
+import org.apache.hugegraph.loader.util.LoadUtil;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
+
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -296,7 +296,7 @@ public class LoadOptions implements Serializable {
         return options;
     }
 
-    public void copyBackendStoreInfo (BackendStoreInfo backendStoreInfo) {
+    public void copyBackendStoreInfo(BackendStoreInfo backendStoreInfo) {
         E.checkArgument(null != backendStoreInfo, "The backendStoreInfo can't be null");
         this.edgeTableName = backendStoreInfo.getEdgeTablename();
         this.vertexTableName = backendStoreInfo.getVertexTablename();
@@ -315,7 +315,7 @@ public class LoadOptions implements Serializable {
                            "([0-9a-z_!~*'()-]+\\.)*[0-9a-z_!~*'()-]+)$";
             if (!value.matches(regex)) {
                 throw new ParameterException(String.format(
-                          "Invalid url value of args '%s': '%s'", name, value));
+                        "Invalid url value of args '%s': '%s'", name, value));
             }
         }
     }

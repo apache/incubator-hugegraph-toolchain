@@ -22,14 +22,14 @@ import java.util.List;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.util.Collector;
+import org.apache.hugegraph.loader.constant.Constants;
+import org.apache.hugegraph.util.Log;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 
-import org.apache.hugegraph.loader.constant.Constants;
-import org.apache.hugegraph.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ververica.cdc.debezium.DebeziumDeserializationSchema;
@@ -60,7 +60,7 @@ public class HugeGraphDeserialization implements DebeziumDeserializationSchema<S
                 break;
             default:
                 throw new IllegalArgumentException(
-                          "The type of `op` should be 'c' 'r' 'u' 'd' only");
+                        "The type of `op` should be 'c' 'r' 'u' 'd' only");
         }
         ObjectNode rootNode = mapper.createObjectNode();
         if (data != null) {

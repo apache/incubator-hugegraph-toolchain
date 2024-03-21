@@ -26,8 +26,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.builder.Record;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
@@ -37,6 +35,7 @@ import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.util.ExecutorUtil;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public final class TaskManager {
 
@@ -67,9 +66,9 @@ public final class TaskManager {
          * the thread pool, the producer will be blocked, so OOM will not occur.
          */
         this.batchService = ExecutorUtil.newFixedThreadPool(
-                            this.options.batchInsertThreads, BATCH_WORKER);
+                this.options.batchInsertThreads, BATCH_WORKER);
         this.singleService = ExecutorUtil.newFixedThreadPool(
-                             this.options.singleInsertThreads, SINGLE_WORKER);
+                this.options.singleInsertThreads, SINGLE_WORKER);
     }
 
     private int batchSemaphoreNum() {
@@ -150,20 +149,20 @@ public final class TaskManager {
         InsertTask task = new BatchInsertTask(this.context, struct,
                                               mapping, batch);
         CompletableFuture.runAsync(task, this.batchService).whenComplete(
-            (r, e) -> {
-                if (e != null) {
-                    LOG.warn("Batch insert {} error, try single insert",
-                             mapping.type(), e);
-                    // The time of single insert is counted separately
-                    this.submitInSingle(struct, mapping, batch);
-                } else {
-                    summary.metrics(struct).minusFlighting(batch.size());
-                }
+                (r, e) -> {
+                    if (e != null) {
+                        LOG.warn("Batch insert {} error, try single insert",
+                                 mapping.type(), e);
+                        // The time of single insert is counted separately
+                        this.submitInSingle(struct, mapping, batch);
+                    } else {
+                        summary.metrics(struct).minusFlighting(batch.size());
+                    }
 
-                this.batchSemaphore.release();
-                long end = System.currentTimeMillis();
-                this.context.summary().addTimeRange(mapping.type(), start, end);
-            });
+                    this.batchSemaphore.release();
+                    long end = System.currentTimeMillis();
+                    this.context.summary().addTimeRange(mapping.type(), start, end);
+                });
     }
 
     private void submitInSingle(InputStruct struct, ElementMapping mapping,
@@ -180,12 +179,12 @@ public final class TaskManager {
         InsertTask task = new SingleInsertTask(this.context, struct,
                                                mapping, batch);
         CompletableFuture.runAsync(task, this.singleService).whenComplete(
-            (r, e) -> {
-                summary.metrics(struct).minusFlighting(batch.size());
-                this.singleSemaphore.release();
+                (r, e) -> {
+                    summary.metrics(struct).minusFlighting(batch.size());
+                    this.singleSemaphore.release();
 
-                long end = System.currentTimeMillis();
-                this.context.summary().addTimeRange(mapping.type(), start, end);
-            });
+                    long end = System.currentTimeMillis();
+                    this.context.summary().addTimeRange(mapping.type(), start, end);
+                });
     }
 }

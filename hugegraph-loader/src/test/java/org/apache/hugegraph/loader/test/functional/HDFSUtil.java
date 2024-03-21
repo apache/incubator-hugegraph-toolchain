@@ -30,11 +30,10 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.source.file.Compression;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public class HDFSUtil implements IOUtil {
 

@@ -34,10 +34,9 @@ import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.E;
+import org.apache.spark.sql.Row;
 
 import com.google.common.collect.ImmutableList;
-
-import org.apache.spark.sql.Row;
 
 public class EdgeBuilder extends ElementBuilder<Edge> {
 

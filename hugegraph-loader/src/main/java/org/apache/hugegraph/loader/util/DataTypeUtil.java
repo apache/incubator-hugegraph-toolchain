@@ -227,9 +227,9 @@ public final class DataTypeUtil {
                 return false;
             } else {
                 throw new IllegalArgumentException(String.format(
-                          "Failed to convert '%s'(key='%s') to Boolean, " +
-                          "the acceptable boolean strings are %s or %s",
-                          key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
+                        "Failed to convert '%s'(key='%s') to Boolean, " +
+                        "the acceptable boolean strings are %s or %s",
+                        key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
             }
         }
         throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +

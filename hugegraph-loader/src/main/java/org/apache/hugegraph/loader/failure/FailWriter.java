@@ -30,9 +30,8 @@ import org.apache.hugegraph.loader.exception.InsertException;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.exception.ParseException;
 import org.apache.hugegraph.loader.exception.ReadException;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public final class FailWriter {
 

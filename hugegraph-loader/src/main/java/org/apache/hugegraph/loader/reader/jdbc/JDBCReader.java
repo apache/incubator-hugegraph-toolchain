@@ -25,9 +25,9 @@ import org.apache.hugegraph.loader.exception.InitException;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.reader.AbstractReader;
 import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
-import org.apache.hugegraph.loader.reader.AbstractReader;
 
 public class JDBCReader extends AbstractReader {
 

@@ -31,12 +31,11 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
+import org.apache.hugegraph.loader.reader.Readable;
 import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.loader.source.file.FileSource;
-import org.slf4j.Logger;
-
-import org.apache.hugegraph.loader.reader.Readable;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public class OrcFileLineFetcher extends FileLineFetcher {
 

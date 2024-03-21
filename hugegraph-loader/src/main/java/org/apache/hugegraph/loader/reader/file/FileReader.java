@@ -28,13 +28,12 @@ import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.progress.InputItemProgress;
-import org.apache.hugegraph.loader.reader.line.Line;
-import org.apache.hugegraph.loader.source.file.FileSource;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.reader.AbstractReader;
 import org.apache.hugegraph.loader.reader.Readable;
+import org.apache.hugegraph.loader.reader.line.Line;
+import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public abstract class FileReader extends AbstractReader {
 
