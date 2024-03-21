@@ -33,13 +33,13 @@ You could use import the dependencies in `maven` like this:
   <dependency>
        <groupId>org.apache.hugegraph</groupId>
        <artifactId>hugegraph-client</artifactId>
-       <version>1.2.0</version>
+       <version>1.3.0</version>
   </dependency>
   
   <dependency>
        <groupId>org.apache.hugegraph</groupId>
        <artifactId>hugegraph-loader</artifactId>
-       <version>1.2.0</version>
+       <version>1.3.0</version>
   </dependency>
 ```
 
