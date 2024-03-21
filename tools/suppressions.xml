@@ -14,13 +14,13 @@
   limitations under the License.
   -->
 <!DOCTYPE suppressions PUBLIC
-        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
-        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+            "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+            "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
-    <suppress files="target[\\/].*" checks=".*"/>
-    <suppress files="messages.properties" checks="LineLength"/>
-    <suppress files="(Batch|Single)Example.java" checks="RegexpSingleline"/>
-    <suppress files="(Printer|ToolUtil).java" checks="RegexpSingleline"/>
-    <suppress files="Constant.java" checks="AvoidEscapedUnicodeCharacters"/>
-    <suppress files="BytesDemo.java" checks="Indentation"/>
+    <suppress files="target[\\/].*" checks=".*" />
+    <suppress files="messages.properties" checks="LineLength" />
+    <suppress files="(Batch|Single)Example.java" checks="RegexpSingleline" />
+    <suppress files="(Printer|ToolUtil).java" checks="RegexpSingleline" />
+    <suppress files="Constant.java" checks="AvoidEscapedUnicodeCharacters" />
+    <suppress files="BytesDemo.java" checks="Indentation" />
 </suppressions>
