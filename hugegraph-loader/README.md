@@ -48,7 +48,7 @@ wget https://downloads.apache.org/incubator/hugegraph/{version}/apache-hugegraph
 
 Due to the license limitation of the `Oracle OJDBC`, you need to manually install ojdbc to the local maven repository. Visit the [Oracle jdbc downloads page](https://www.oracle.com/database/technologies/appdev/jdbc-drivers-archive.html). Select Oracle Database 12c Release 2 (12.2.0.1) drivers, as shown in the following figure.
 
-After opening the link, select “ojdbc8.jar”.
+After opening the link, select "ojdbc8.jar".
 
 Install ojdbc8 to the local maven repository, enter the directory where ojdbc8.jar is located, and execute the following command.
 
@@ -79,13 +79,13 @@ The example `docker-compose.yml` is [here](./docker/example/docker-compose.yml).
 > Note: 
 > 1. The docker image of hugegraph-loader is a convenience release, not **official distribution** artifacts. You can find more details from [ASF Release Distribution Policy](https://infra.apache.org/release-distribution.html#dockerhub).
 >
-> 2. Recommand to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
+> 2. Recommend to use `release tag`(like `1.0.0`) for the stable version. Use `latest` tag to experience the newest functions in development.
 
 ## 3 Load data
 
 ### 3.1 Use loader directly
 
-> notice: currently, version is `1.2.0`
+> notice: currently, version is `1.3.0`
 
 Download and unzip the compiled archive
 
