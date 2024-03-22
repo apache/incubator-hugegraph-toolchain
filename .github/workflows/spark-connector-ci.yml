@@ -25,7 +25,6 @@ jobs:
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
-      VERSION_ID: 1.0.0
       COMMIT_ID: 6a4041e
     steps:
       - name: Install JDK 11
