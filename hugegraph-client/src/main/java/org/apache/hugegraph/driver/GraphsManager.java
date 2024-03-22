@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graphs.GraphsAPI;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
-import org.apache.hugegraph.client.RestClient;
 
 public class GraphsManager {
 

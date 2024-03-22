@@ -25,9 +25,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
+import org.apache.hugegraph.loader.reader.Readable;
 import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.util.ParquetUtil;
+import org.apache.hugegraph.util.Log;
 import org.apache.parquet.column.page.PageReadStore;
 import org.apache.parquet.example.data.simple.SimpleGroup;
 import org.apache.parquet.example.data.simple.convert.GroupRecordConverter;
@@ -39,9 +41,6 @@ import org.apache.parquet.io.RecordReader;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.Type;
 import org.slf4j.Logger;
-
-import org.apache.hugegraph.loader.reader.Readable;
-import org.apache.hugegraph.util.Log;
 
 public class ParquetFileLineFetcher extends FileLineFetcher {
 

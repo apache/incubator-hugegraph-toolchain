@@ -20,4 +20,5 @@ package org.apache.hugegraph.api.auth;
 import org.apache.hugegraph.api.BaseApiTest;
 
 public class AuthApiTest extends BaseApiTest {
+
 }

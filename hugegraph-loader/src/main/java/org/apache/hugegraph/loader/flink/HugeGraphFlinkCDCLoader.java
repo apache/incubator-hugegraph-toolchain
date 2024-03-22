@@ -30,9 +30,9 @@ import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.LoadMapping;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 import org.apache.hugegraph.loader.util.Printer;
+import org.apache.hugegraph.util.Log;
 import org.slf4j.Logger;
 
-import org.apache.hugegraph.util.Log;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 
 public class HugeGraphFlinkCDCLoader {

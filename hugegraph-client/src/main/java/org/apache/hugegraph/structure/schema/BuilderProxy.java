@@ -43,10 +43,10 @@ public class BuilderProxy<T> implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args)
-                         throws Throwable {
+            throws Throwable {
         if (this.finished) {
             throw new InvalidOperationException(
-                      "Can't access builder which is completed");
+                    "Can't access builder which is completed");
         }
         // The result may be equal this.builder, like method `asText`
         Object result = method.invoke(this.builder, args);

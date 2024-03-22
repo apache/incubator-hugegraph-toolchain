@@ -21,12 +21,11 @@ import java.io.File;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.hugegraph.loader.util.MappingUtil;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.mapping.LoadMapping;
+import org.apache.hugegraph.loader.util.MappingUtil;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public final class MappingConverter {
 

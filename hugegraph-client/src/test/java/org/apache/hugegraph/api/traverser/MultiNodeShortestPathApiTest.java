@@ -19,7 +19,6 @@ package org.apache.hugegraph.api.traverser;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.api.BaseApiTest;
@@ -74,7 +73,7 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
 
         MultiNodeShortestPathRequest request = builder.build();
         PathsWithVertices pathsWithVertices =
-                          multiNodeShortestPathAPI.post(request);
+                multiNodeShortestPathAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
         Assert.assertEquals(15, paths.size());
 
@@ -119,7 +118,7 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
 
         MultiNodeShortestPathRequest request = builder.build();
         PathsWithVertices pathsWithVertices =
-                          multiNodeShortestPathAPI.post(request);
+                multiNodeShortestPathAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
         Assert.assertEquals(12, paths.size());
 
@@ -184,7 +183,7 @@ public class MultiNodeShortestPathApiTest extends TraverserApiTest {
 
         MultiNodeShortestPathRequest request = builder.build();
         PathsWithVertices pathsWithVertices =
-                          multiNodeShortestPathAPI.post(request);
+                multiNodeShortestPathAPI.post(request);
         List<PathsWithVertices.Paths> paths = pathsWithVertices.paths();
         Assert.assertEquals(15, paths.size());
 

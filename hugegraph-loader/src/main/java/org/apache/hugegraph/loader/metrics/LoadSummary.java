@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.commons.lang3.time.StopWatch;
-
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.loader.mapping.InputStruct;

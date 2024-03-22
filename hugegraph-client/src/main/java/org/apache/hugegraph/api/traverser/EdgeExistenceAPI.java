@@ -17,16 +17,15 @@
 
 package org.apache.hugegraph.api.traverser;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.logging.log4j.util.Strings;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 public class EdgeExistenceAPI extends TraversersAPI {
 

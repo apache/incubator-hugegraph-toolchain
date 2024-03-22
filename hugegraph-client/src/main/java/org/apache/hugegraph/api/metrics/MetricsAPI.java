@@ -20,11 +20,11 @@ package org.apache.hugegraph.api.metrics;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.hugegraph.util.CommonUtil;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
+import org.apache.hugegraph.util.CommonUtil;
 
 public class MetricsAPI extends API {
 
@@ -68,7 +68,7 @@ public class MetricsAPI extends API {
 
     @SuppressWarnings("unchecked")
     public Map<String, Map<String, Object>> all() {
-        Map<String,Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("type", "json");
         RestResult result = this.client.get(this.path(), params);
         Map<?, ?> map = result.readObject(Map.class);
@@ -86,7 +86,7 @@ public class MetricsAPI extends API {
     }
 
     public Map<String, Map<String, Object>> statistics() {
-        Map<String,Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
         params.put("type", "json");
         RestResult result = this.client.get(this.path() + STATISTICS_PATH, params);
         Map<?, ?> map = result.readObject(Map.class);

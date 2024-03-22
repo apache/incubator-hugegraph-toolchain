@@ -20,9 +20,9 @@ package org.apache.hugegraph.driver;
 import org.apache.hugegraph.api.gremlin.GremlinAPI;
 import org.apache.hugegraph.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.api.job.GremlinJobAPI;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.gremlin.Response;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
-import org.apache.hugegraph.client.RestClient;
 
 public class GremlinManager {
 

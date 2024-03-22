@@ -23,10 +23,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 /**
  * HugeGraph is a mirror of server-side data(vertex/edge), it used to speed up

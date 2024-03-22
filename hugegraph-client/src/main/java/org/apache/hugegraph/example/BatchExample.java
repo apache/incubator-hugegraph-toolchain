@@ -20,11 +20,11 @@ package org.apache.hugegraph.example;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.hugegraph.structure.graph.Edge;
-import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Vertex;
 
 public class BatchExample {
 

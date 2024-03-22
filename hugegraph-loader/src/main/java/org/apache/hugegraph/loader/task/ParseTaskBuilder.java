@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.builder.EdgeBuilder;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
 import org.apache.hugegraph.loader.builder.Record;
@@ -40,6 +38,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public final class ParseTaskBuilder {
 
@@ -83,7 +82,7 @@ public final class ParseTaskBuilder {
         final ElementMapping mapping = builder.mapping();
         final boolean needRemoveId = builder instanceof VertexBuilder &&
                                      ((VertexLabel) builder.schemaLabel())
-                                     .idStrategy().isPrimaryKey();
+                                             .idStrategy().isPrimaryKey();
         return new ParseTask(mapping, () -> {
             List<List<Record>> batches = new ArrayList<>();
             // One batch record

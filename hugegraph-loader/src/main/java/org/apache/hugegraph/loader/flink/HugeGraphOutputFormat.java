@@ -34,6 +34,7 @@ import org.apache.flink.runtime.util.ExecutorThreadFactory;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.loader.builder.EdgeBuilder;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
 import org.apache.hugegraph.loader.builder.VertexBuilder;
@@ -45,9 +46,6 @@ import org.apache.hugegraph.loader.mapping.EdgeMapping;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.VertexMapping;
-import org.slf4j.Logger;
-
-import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
@@ -55,6 +53,7 @@ import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.UpdateStrategy;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 import io.debezium.data.Envelope;
 
@@ -103,7 +102,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
         int flushIntervalMs = this.loadOptions.flushIntervalMs;
         if (flushIntervalMs > 0) {
             this.scheduler = new ScheduledThreadPoolExecutor(1, new ExecutorThreadFactory(
-                                 "hugegraph-streamload-outputformat"));
+                    "hugegraph-streamload-outputformat"));
             this.scheduledFuture = this.scheduler.scheduleWithFixedDelay(
                     this::flushAll, flushIntervalMs, flushIntervalMs, TimeUnit.MILLISECONDS);
         }
@@ -183,15 +182,15 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                     if (isVertex) {
                         BatchVertexRequest.Builder req = new BatchVertexRequest.Builder();
                         req.vertices((List<Vertex>) (Object) graphElements)
-                            .updatingStrategies(updateStrategyMap)
-                            .createIfNotExist(true);
+                           .updatingStrategies(updateStrategyMap)
+                           .createIfNotExist(true);
                         g.updateVertices(req.build());
                     } else {
                         BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                         req.edges((List<Edge>) (Object) graphElements)
-                            .updatingStrategies(updateStrategyMap)
-                            .checkVertex(this.loadOptions.checkVertex)
-                            .createIfNotExist(true);
+                           .updatingStrategies(updateStrategyMap)
+                           .checkVertex(this.loadOptions.checkVertex)
+                           .createIfNotExist(true);
                         g.updateEdges(req.build());
                     }
                     break;
@@ -205,7 +204,7 @@ public class HugeGraphOutputFormat<T> extends RichOutputFormat<T> {
                     break;
                 default:
                     throw new IllegalArgumentException(
-                              "The type of `op` should be 'c' 'r' 'u' 'd' only");
+                            "The type of `op` should be 'c' 'r' 'u' 'd' only");
             }
         }
         rows.clear();

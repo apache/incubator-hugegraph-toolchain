@@ -21,9 +21,6 @@ import static org.apache.hugegraph.loader.constant.Constants.SINGLE_PRINT_FREQ;
 
 import java.util.List;
 
-import org.apache.hugegraph.loader.util.Printer;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.builder.Record;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.InsertException;
@@ -31,7 +28,10 @@ import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.util.Printer;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
+
 import com.google.common.collect.ImmutableList;
 
 public class SingleInsertTask extends InsertTask {

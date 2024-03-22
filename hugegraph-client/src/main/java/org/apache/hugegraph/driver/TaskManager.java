@@ -21,8 +21,8 @@ import java.util.List;
 
 import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.api.task.TasksWithPage;
-import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.Task;
 
 public class TaskManager {
 

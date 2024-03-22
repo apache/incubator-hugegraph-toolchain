@@ -66,7 +66,7 @@
 
                                 </echo>
                                 <exec executable="${shell-executable}" dir="${project.basedir}" failonerror="true">
-                                    <arg line="./dist.sh"/>
+                                    <arg line="./dist.sh" />
                                 </exec>
                             </tasks>
                         </configuration>
