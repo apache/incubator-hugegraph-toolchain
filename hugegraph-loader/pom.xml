@@ -49,7 +49,7 @@
         <apache.httpclient.version>4.5.13</apache.httpclient.version>
         <xz.version>1.8</xz.version>
         <mysql.connector.version>8.0.28</mysql.connector.version>
-        <postgres.version>42.4.1</postgres.version>
+        <postgres.version>42.4.4</postgres.version>
         <mssql.jdbc.version>7.2.0.jre8</mssql.jdbc.version>
         <kafka.testcontainer.version>1.19.0</kafka.testcontainer.version>
     </properties>
