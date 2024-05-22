@@ -53,7 +53,7 @@ hugegraph-toolchain is licensed under `Apache 2.0` License.
 
 ## Contributing
 
-- Welcome to contribute to HugeGraph, please see [How to Contribute](https://github.com/apache/incubator-hugegraph/blob/master/CONTRIBUTING.md) & [Guidelines](https://hugegraph.apache.org/docs/contribution-guidelines/) for more information.
+- Welcome to contribute to HugeGraph, please see [How to Contribute](https://github.com/apache/incubator-hugegraph/blob/master/CONTRIBUTING.md) for more information.
 - Note: It's recommended to use [GitHub Desktop](https://desktop.github.com/) to greatly simplify the PR and commit process.
 - Thank you to all the people who already contributed to HugeGraph!
 
