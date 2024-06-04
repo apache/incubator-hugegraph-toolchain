@@ -49,12 +49,12 @@ public class HBaseSerializer {
 
     public byte[] getKeyBytes(GraphElement e) {
         byte[] array = null;
-        if (e.type() == "vertex" && e.id() != null) {
+        if ("vertex".equals(e.type()) && e.id() != null) {
             BytesBuffer buffer = BytesBuffer.allocate(2 + 1 + e.id().toString().length());
             buffer.writeShort(getPartition(HugeType.VERTEX,  IdGenerator.of(e.id())));
             buffer.writeId(IdGenerator.of(e.id()));
             array = buffer.bytes();
-        } else if (e.type() == "edge") {
+        } else if ("edge".equals(e.type())) {
             BytesBuffer buffer = BytesBuffer.allocate(BytesBuffer.BUF_EDGE_ID);
             Edge edge = (Edge)e;
             buffer.writeShort(getPartition(HugeType.EDGE, IdGenerator.of(edge.sourceId())));
@@ -70,7 +70,7 @@ public class HBaseSerializer {
 
     public byte[] getValueBytes(GraphElement e) {
         byte[] array = null;
-        if (e.type() == "vertex") {
+        if ("vertex".equals(e.type())) {
             int propsCount = e.properties().size(); //vertex.sizeOfProperties();
             BytesBuffer buffer = BytesBuffer.allocate(8 + 16 * propsCount);
             buffer.writeId(IdGenerator.of(graphSchema.getVertexLabel(e.label()).id()));
@@ -81,7 +81,7 @@ public class HBaseSerializer {
                 buffer.writeProperty(propertyKey.dataType(),entry.getValue());
             }
             array = buffer.bytes();
-        } else if (e.type() == "edge") {
+        } else if ("edge".equals(e.type())) {
             int propsCount =  e.properties().size();
             BytesBuffer buffer = BytesBuffer.allocate(4 + 16 * propsCount);
             buffer.writeVInt(propsCount);
