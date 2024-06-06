@@ -17,14 +17,14 @@
 
 package org.apache.hugegraph.serializer.direct.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
+import net.jpountz.lz4.LZ4BlockInputStream;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
-import net.jpountz.lz4.LZ4BlockInputStream;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 
 public class LZ4Util {
 

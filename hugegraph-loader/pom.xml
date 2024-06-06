@@ -726,7 +726,7 @@
                                 <tar destfile="${project.basedir}/target/${final.name}.tar.gz"
                                      compression="gzip">
                                     <tarfileset dir="${project.basedir}" filemode="755">
-                                        <include name="${final.name}/**"/>
+                                        <include name="${final.name}/**" />
                                     </tarfileset>
                                 </tar>
                             </target>

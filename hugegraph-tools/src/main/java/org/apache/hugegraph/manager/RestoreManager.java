@@ -92,7 +92,7 @@ public class RestoreManager extends BackupRestoreBaseManager {
                     break;
                 default:
                     throw new AssertionError(String.format(
-                              "Bad restore type: %s", type));
+                            "Bad restore type: %s", type));
             }
         }
         this.printSummary();

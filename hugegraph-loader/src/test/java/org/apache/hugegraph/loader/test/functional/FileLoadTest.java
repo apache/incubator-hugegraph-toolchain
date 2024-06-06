@@ -593,7 +593,7 @@ public class FileLoadTest extends LoadTest {
 
     @Test
     public void testValueListPropertyInTextFile()
-           throws java.text.ParseException {
+            throws java.text.ParseException {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -626,7 +626,7 @@ public class FileLoadTest extends LoadTest {
 
     @Test
     public void testValueSetPropertyInTextFile()
-           throws java.text.ParseException {
+            throws java.text.ParseException {
         ioUtil.write("vertex_person.txt", "jin\t29\tBeijing");
         ioUtil.write("vertex_software.txt", "tom\tChinese\t328");
         ioUtil.write("edge_use.txt",
@@ -1708,7 +1708,7 @@ public class FileLoadTest extends LoadTest {
         Assert.assertEquals(1, vertices.size());
     }
 
-//    @Test
+    //    @Test
     public void testSnappyRawCompressFile() {
         ioUtil.write("vertex_person.snappy", Compression.SNAPPY_RAW,
                      "name,age,city",
@@ -1854,9 +1854,9 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testParserV2() {
         ioUtil.write("vertex_person.csv",
-                "name,age,city",
-                "tom,24,Hongkong",
-                "jerry,18");
+                     "name,age,city",
+                     "tom,24,Hongkong",
+                     "jerry,18");
 
         String[] args = new String[]{
                 "-f", structPath("mapping_v2/struct.json"),
@@ -2026,7 +2026,7 @@ public class FileLoadTest extends LoadTest {
 
     @Test
     public void testLoadIncrementalModeAndLoadFailure()
-           throws IOException, InterruptedException {
+            throws IOException, InterruptedException {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
                      "marko,应该是数字,Beijing",
@@ -2041,7 +2041,7 @@ public class FileLoadTest extends LoadTest {
                      "ripple,java,199");
 
         // 1st time
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
                 "-s",
@@ -2155,7 +2155,7 @@ public class FileLoadTest extends LoadTest {
 
         File softwareFailureFile = files[2];
         List<String> softwareFailureLines = FileUtils.readLines(
-                                            softwareFailureFile, GBK);
+                softwareFailureFile, GBK);
         Assert.assertEquals(2, softwareFailureLines.size());
         Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(1));
 
@@ -2281,9 +2281,9 @@ public class FileLoadTest extends LoadTest {
 
         // Reload with modification
         File structDir = FileUtils.getFile(structPath(
-                         "reload_json_failure_files/struct"));
+                "reload_json_failure_files/struct"));
         File failureDir = FileUtils.getFile(structPath(
-                          "reload_json_failure_files/struct/failure-data/"));
+                "reload_json_failure_files/struct/failure-data/"));
         File[] files = failureDir.listFiles();
         assert files != null;
         Arrays.sort(files, Comparator.comparing(File::getName));
@@ -2430,7 +2430,8 @@ public class FileLoadTest extends LoadTest {
         if (this.ioUtil instanceof HDFSUtil) {
             HDFSUtil hdfsUtil = (HDFSUtil) this.ioUtil;
             CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "vertex_person.parquet",
-                                         "src/test/resources/parquet_compress_file/vertex_person.parquet");
+                                         "src/test/resources/parquet_compress_file/vertex_person" +
+                                         ".parquet");
             hdfsUtil.copy(path, "hdfs://localhost:8020/files/vertex_person.parquet");
         }
         HugeGraphLoader.main(args);
@@ -2624,7 +2625,7 @@ public class FileLoadTest extends LoadTest {
                      ",peter,35,Shanghai",
                      "3,\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-f", structPath("vertex_id_column_empty/struct.json"),
                 "-s", configPath("vertex_id_column_empty/schema.groovy"),
                 "-g", GRAPH,
@@ -2694,7 +2695,7 @@ public class FileLoadTest extends LoadTest {
                      "7|8|9,peter,35,Shanghai",
                      "10,\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-f", structPath("vertex_customized_id_unfold/struct.json"),
                 "-s", configPath("vertex_customized_id_unfold/schema.groovy"),
                 "-g", GRAPH,
@@ -2727,7 +2728,7 @@ public class FileLoadTest extends LoadTest {
                      "7|8|9,peter,35,Shanghai",
                      "10,\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-f", structPath("vertex_customized_id_unfold_with_mapping/struct.json"),
                 "-s", configPath("vertex_customized_id_unfold_with_mapping/schema.groovy"),
                 "-g", GRAPH,
@@ -2758,7 +2759,7 @@ public class FileLoadTest extends LoadTest {
                      "peter|peter1|peter2,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-f", structPath("vertex_primarykey_unfold/struct.json"),
                 "-s", configPath("vertex_primarykey_unfold/schema.groovy"),
                 "-g", GRAPH,
@@ -2791,7 +2792,7 @@ public class FileLoadTest extends LoadTest {
                      "peter|peter1|peter2,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-f", structPath("vertex_primarykey_unfold_with_mapping/struct.json"),
                 "-s", configPath("vertex_primarykey_unfold_with_mapping/schema.groovy"),
                 "-g", GRAPH,
@@ -2823,7 +2824,7 @@ public class FileLoadTest extends LoadTest {
                      "peter|peter1|peter2,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
 
-        String[] args = new String[] {
+        String[] args = new String[]{
                 "-f", structPath("vertex_primarykey_unfold_exceed_limit/struct.json"),
                 "-s", configPath("vertex_primarykey_unfold_exceed_limit/schema.groovy"),
                 "-g", GRAPH,

@@ -20,11 +20,11 @@ package org.apache.hugegraph.loader.serializer;
 import java.io.IOException;
 import java.util.Set;
 
-import org.apache.hugegraph.loader.util.JsonUtil;
+import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.progress.InputItemProgress;
 import org.apache.hugegraph.loader.progress.InputProgress;
-import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.source.SourceType;
+import org.apache.hugegraph.loader.util.JsonUtil;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -62,7 +62,7 @@ public class InputProgressDeser extends JsonDeserializer<InputProgress> {
             case FILE:
             case HDFS:
                 loadedItems = (Set<InputItemProgress>) (Object)
-                              JsonUtil.convertSet(loadedItemsNode, FileItemProgress.class);
+                        JsonUtil.convertSet(loadedItemsNode, FileItemProgress.class);
                 loadingItem = JsonUtil.convert(loadingItemNode, FileItemProgress.class);
                 break;
             case JDBC:

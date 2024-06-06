@@ -22,20 +22,19 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.hugegraph.loader.exception.LoadException;
-import org.apache.hugegraph.loader.progress.LoadProgress;
-import org.apache.hugegraph.loader.util.DateUtil;
-import org.apache.hugegraph.loader.util.HugeClientHolder;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.builder.SchemaCache;
+import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.failure.FailLogger;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
+import org.apache.hugegraph.loader.progress.LoadProgress;
+import org.apache.hugegraph.loader.util.DateUtil;
+import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public final class LoadContext implements Serializable {
 

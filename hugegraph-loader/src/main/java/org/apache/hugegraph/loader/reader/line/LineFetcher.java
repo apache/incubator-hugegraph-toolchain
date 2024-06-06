@@ -20,8 +20,8 @@ package org.apache.hugegraph.loader.reader.line;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.reader.Readable;
+import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.util.E;
 
 /**

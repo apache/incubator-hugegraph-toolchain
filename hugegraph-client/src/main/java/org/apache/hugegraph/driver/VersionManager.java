@@ -18,8 +18,8 @@
 package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.api.version.VersionAPI;
-import org.apache.hugegraph.structure.version.Versions;
 import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.version.Versions;
 
 public class VersionManager {
 

@@ -30,15 +30,14 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadOptions;
+import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.loader.util.LoadUtil;
 import org.apache.hugegraph.loader.util.MappingUtil;
-import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.util.E;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.util.TaskCache;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
@@ -29,6 +28,7 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.TaskCache;
 
 import com.google.common.collect.ImmutableMap;
 

@@ -28,7 +28,7 @@ import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.flink.util.Preconditions;
 
 public class HugeGraphSinkFunction<T> extends RichSinkFunction<T>
-                                      implements CheckpointedFunction {
+        implements CheckpointedFunction {
 
     private static final long serialVersionUID = -2259171589402599426L;
     private final HugeGraphOutputFormat<Object> outputFormat;
