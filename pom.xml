@@ -561,6 +561,8 @@
                         <!-- You can exclude further files from processing: -->
                         <exclude>**/*.txt</exclude>
                         <exclude>**/.flattened-pom.xml</exclude>
+                        <exclude>**/hubble-fe/**/*</exclude>
+                        <exclude>**/apache-hugegraph-hubble-incubating-*/**/*</exclude>
                     </excludes>
                     <!-- All files are included by default:
                     <includes>
