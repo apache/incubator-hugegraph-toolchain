@@ -108,6 +108,7 @@ Then we should follow the [hubble workflow doc](https://hugegraph.apache.org/doc
 hugegraph-hubble is licensed under Apache 2.0 License.
 
 ## Notice
+
 The `hubble-fe` folder contains the frontend code, including all related source code for the frontend.
 
 The `hubble-be` folder contains the backend code, including all related source code for the backend.
