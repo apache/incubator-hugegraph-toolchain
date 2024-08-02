@@ -45,15 +45,15 @@ public class ToolManager {
     }
 
     @SuppressWarnings("unchecked")
-    protected  <T> List<T> readList(String key, Class<T> clazz,
-                                    String content) {
+    protected <T> List<T> readList(String key, Class<T> clazz,
+                                   String content) {
         ObjectMapper mapper = this.client.mapper();
         try {
             JsonNode root = mapper.readTree(content);
             JsonNode element = root.get(key);
             if (element == null) {
                 throw new SerializeException(
-                          "Can't find value of the key: %s in json.", key);
+                        "Can't find value of the key: %s in json.", key);
             } else {
                 JavaType t = mapper.getTypeFactory()
                                    .constructParametricType(List.class, clazz);
@@ -61,11 +61,11 @@ public class ToolManager {
             }
         } catch (IOException e) {
             throw new SerializeException(
-                      "Failed to deserialize %s", e, content);
+                    "Failed to deserialize %s", e, content);
         }
     }
 
-    public void close () {
+    public void close() {
         this.client.close();
     }
 }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.hugegraph.util.E;
+
 import com.google.common.collect.Sets;
 
 public final class Line {

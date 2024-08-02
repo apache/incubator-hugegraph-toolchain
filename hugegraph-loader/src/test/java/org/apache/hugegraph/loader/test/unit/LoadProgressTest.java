@@ -17,12 +17,11 @@
 
 package org.apache.hugegraph.loader.test.unit;
 
+import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.loader.test.functional.LoadTest;
 import org.apache.hugegraph.loader.util.JsonUtil;
-import org.junit.Test;
-
-import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.testutil.Assert;
+import org.junit.Test;
 
 public class LoadProgressTest extends LoadTest {
 

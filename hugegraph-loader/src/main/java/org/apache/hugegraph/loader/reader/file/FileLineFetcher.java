@@ -37,20 +37,19 @@ import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hugegraph.loader.exception.LoadException;
-import org.apache.hugegraph.loader.reader.line.Line;
-import org.apache.hugegraph.loader.reader.line.LineFetcher;
-import org.apache.hugegraph.loader.source.file.Compression;
-import org.apache.hugegraph.loader.source.file.FileFormat;
-import org.apache.hugegraph.loader.source.file.FileSource;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.parser.CsvLineParser;
 import org.apache.hugegraph.loader.parser.JsonLineParser;
 import org.apache.hugegraph.loader.parser.LineParser;
 import org.apache.hugegraph.loader.parser.TextLineParser;
 import org.apache.hugegraph.loader.reader.Readable;
+import org.apache.hugegraph.loader.reader.line.Line;
+import org.apache.hugegraph.loader.reader.line.LineFetcher;
+import org.apache.hugegraph.loader.source.file.Compression;
+import org.apache.hugegraph.loader.source.file.FileFormat;
+import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 /**
  * Used to iterate all readable data files, like local files, hdfs paths

@@ -30,7 +30,6 @@ import java.util.Arrays;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-
 import org.apache.hugegraph.loader.source.file.Compression;
 
 public class FileUtil implements IOUtil {

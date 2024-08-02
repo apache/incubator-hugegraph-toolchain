@@ -76,11 +76,11 @@ public class HugeGraphCommand {
 
     @ParametersDelegate
     private SubCommands.TrustStoreFile trustStoreFile =
-                                       new SubCommands.TrustStoreFile();
+            new SubCommands.TrustStoreFile();
 
     @ParametersDelegate
     private SubCommands.TrustStorePassword trustStorePassword =
-                                           new SubCommands.TrustStorePassword();
+            new SubCommands.TrustStorePassword();
 
     @ParametersDelegate
     private SubCommands.ThrowMode throwMode = new SubCommands.ThrowMode();
@@ -397,7 +397,7 @@ public class HugeGraphCommand {
                 break;
             default:
                 throw new ParameterException(String.format(
-                          "Invalid sub-command: %s", subCmd));
+                        "Invalid sub-command: %s", subCmd));
         }
     }
 
@@ -417,30 +417,30 @@ public class HugeGraphCommand {
     private <T extends ToolManager> T manager(Class<T> clz) {
         try {
             ToolClient.ConnectionInfo info = new ToolClient.ConnectionInfo(this.url(), this.graph(),
-                                                     this.username(),
-                                                     this.password(),
-                                                     this.timeout(),
-                                                     this.trustStoreFile(),
-                                                     this.trustStorePassword());
+                                                                           this.username(),
+                                                                           this.password(),
+                                                                           this.timeout(),
+                                                                           this.trustStoreFile(),
+                                                                           this.trustStorePassword());
             T toolManager = clz.getConstructor(ToolClient.ConnectionInfo.class)
                                .newInstance(info);
             this.taskManagers.add(toolManager);
             return toolManager;
         } catch (Exception e) {
             throw new RuntimeException(String.format(
-                      "Construct manager failed for class '%s', please make " +
-                      "sure global arguments set correctly: " +
-                      "--url=%s,--graph=%s,--user=%s,--password=%s," +
-                      "--timeout=%s,--trust-store-file=%s," +
-                      "--trust-store-password=%s", clz.getSimpleName(),
-                      this.url(), this.graph(), this.username(),
-                      this.password(), this.timeout(),
-                      this.trustStoreFile(), this.trustStorePassword()), e);
+                    "Construct manager failed for class '%s', please make " +
+                    "sure global arguments set correctly: " +
+                    "--url=%s,--graph=%s,--user=%s,--password=%s," +
+                    "--timeout=%s,--trust-store-file=%s," +
+                    "--trust-store-password=%s", clz.getSimpleName(),
+                    this.url(), this.graph(), this.username(),
+                    this.password(), this.timeout(),
+                    this.trustStoreFile(), this.trustStorePassword()), e);
         }
     }
 
     private static SubCommands.Backup convMigrate2Backup(
-                                      SubCommands.Migrate migrate) {
+            SubCommands.Migrate migrate) {
         SubCommands.Backup backup = new SubCommands.Backup();
         backup.splitSize(migrate.splitSize());
         backup.directory(migrate.directory());
@@ -452,8 +452,8 @@ public class HugeGraphCommand {
     }
 
     private static SubCommands.Restore convMigrate2Restore(
-                                       SubCommands.Migrate migrate,
-                                       String directory) {
+            SubCommands.Migrate migrate,
+            String directory) {
         SubCommands.Restore restore = new SubCommands.Restore();
         restore.clean(!migrate.keepData());
         restore.directory(directory);
@@ -488,7 +488,7 @@ public class HugeGraphCommand {
         String subCommand = jCommander.getParsedCommand();
         if (subCommand == null) {
             throw ExitException.normal(ToolUtil.commandsCategory(
-                                       jCommander),
+                                               jCommander),
                                        "No sub-command found");
         }
         return jCommander;
@@ -518,7 +518,7 @@ public class HugeGraphCommand {
         Map<String, JCommander> commands = jCommander.getCommands();
         if (commands.containsKey(subCommand)) {
             throw ExitException.normal(ToolUtil.commandUsage(
-                                       commands.get(subCommand)),
+                                               commands.get(subCommand)),
                                        "Command : hugegragh help %s",
                                        subCommand);
         } else {

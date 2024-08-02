@@ -18,9 +18,8 @@
 package org.apache.hugegraph.loader.test.unit;
 
 import org.apache.hugegraph.loader.util.DateUtil;
-import org.junit.Test;
-
 import org.apache.hugegraph.testutil.Assert;
+import org.junit.Test;
 
 public class DateUtilTest {
 

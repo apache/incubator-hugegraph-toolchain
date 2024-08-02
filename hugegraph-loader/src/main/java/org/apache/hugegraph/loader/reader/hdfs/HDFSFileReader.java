@@ -33,18 +33,17 @@ import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.progress.InputItemProgress;
-import org.apache.hugegraph.loader.source.file.Compression;
-import org.apache.hugegraph.loader.source.file.FileFilter;
-import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
-import org.apache.hugegraph.loader.source.hdfs.KerberosConfig;
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.reader.Readable;
 import org.apache.hugegraph.loader.reader.file.FileLineFetcher;
 import org.apache.hugegraph.loader.reader.file.FileReader;
 import org.apache.hugegraph.loader.reader.file.OrcFileLineFetcher;
 import org.apache.hugegraph.loader.reader.file.ParquetFileLineFetcher;
+import org.apache.hugegraph.loader.source.file.Compression;
+import org.apache.hugegraph.loader.source.file.FileFilter;
+import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
+import org.apache.hugegraph.loader.source.hdfs.KerberosConfig;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 public class HDFSFileReader extends FileReader {
 
@@ -132,8 +131,9 @@ public class HDFSFileReader extends FileReader {
             while (iter.hasNext()) {
                 FileStatus subStatus = iter.next();
                 // check file/dirname StartWith prefiex & passed filter
-                if ((prefix == null || prefix.isEmpty() || subStatus.getPath().getName().startsWith(prefix)) &&
-                        filter.reserved(subStatus.getPath().getName())) {
+                if ((prefix == null || prefix.isEmpty() ||
+                     subStatus.getPath().getName().startsWith(prefix)) &&
+                    filter.reserved(subStatus.getPath().getName())) {
                     paths.add(new HDFSFile(this.hdfs, subStatus.getPath()));
                 }
             }

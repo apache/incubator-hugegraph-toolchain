@@ -17,10 +17,9 @@
 
 package org.apache.hugegraph.loader.test.unit;
 
-import org.junit.Test;
-
 import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.testutil.Assert;
+import org.junit.Test;
 
 public class LineTest {
 

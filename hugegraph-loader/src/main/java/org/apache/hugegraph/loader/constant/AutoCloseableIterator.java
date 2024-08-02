@@ -20,4 +20,5 @@ package org.apache.hugegraph.loader.constant;
 import java.util.Iterator;
 
 public interface AutoCloseableIterator<E> extends AutoCloseable, Iterator<E> {
+
 }

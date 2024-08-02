@@ -42,6 +42,7 @@ public class GremlinRequest {
     }
 
     public static class Builder {
+
         private GremlinRequest request;
         private GremlinManager manager;
 

@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-
 import org.apache.hugegraph.loader.progress.InputProgress;
 import org.apache.hugegraph.loader.serializer.DeserializeException;
 import org.apache.hugegraph.loader.serializer.InputProgressDeser;
@@ -34,6 +32,7 @@ import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.rest.SerializeException;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
