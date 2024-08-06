@@ -49,7 +49,7 @@ The [project homepage](https://hugegraph.apache.org/docs/quickstart/) contains m
 
 ## License
 
-hugegraph-toolchain is licensed under `Apache 2.0` License.
+hugegraph-toolchain is licensed under [Apache 2.0](https://github.com/apache/incubator-hugegraph-toolchain/blob/master/LICENSE) License.
 
 ## Contributing
 
