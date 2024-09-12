@@ -1,0 +1,29 @@
+.iconsWrapper {
+    width: 252px;
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -14px;
+    margin-bottom: -14px;
+
+    .icon {
+        width: 28px;
+        height: 28px;
+        margin: 0 14px 14px 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all .3s;
+        border: 1px solid #999999;
+    
+        &:hover {
+            transform: scale(1.2);
+        }
+    }
+    
+    .iconSelected {
+        border: 1px solid #999999;
+        box-shadow: 0 0 5px 0 #999999;
+    }
+}

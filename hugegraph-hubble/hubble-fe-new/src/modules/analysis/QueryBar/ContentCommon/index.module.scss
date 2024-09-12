@@ -1,0 +1,53 @@
+.tabContent {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 10px;
+
+    .leftHeader {
+        width: 90%;
+
+        .btnGroup {
+            width: 600px;
+
+            .questionCircleIcon {
+                margin: 0 24px 0 10px;
+            }
+
+            .btn {
+                position: relative;
+                margin: 10px 10px 6px 0px;
+            }
+        }
+    }
+
+    .showMoreButton {
+        cursor: pointer;
+        user-select: none;
+    }
+}
+
+.hidden {
+    display: none;
+}
+
+.tabContentCollpased {
+    justify-content: flex-end;
+
+    .leftHeader {
+        display: none;
+    }
+}
+
+.favoriteModel {
+    :global(.ant-popover-content) {
+        width: 368px;
+    }
+
+    :global(.ant-popover-title) {
+        padding: 24px 24px 4px;
+    }
+
+    :global(.ant-popover-inner-content) {
+        padding: 28px 24px 24px;
+    }
+}

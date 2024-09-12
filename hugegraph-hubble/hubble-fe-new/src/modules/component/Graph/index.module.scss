@@ -1,0 +1,48 @@
+.graph {
+    position: relative;
+    border: 1px solid #E7E8E9;
+    margin-left: -1px;
+    height: calc(100vh - 40px);
+    width: auto;
+    overflow: hidden;
+    background-image: url('/assets/canvas_bg.png');
+
+    :global(.g6-legend-container) {
+        top: 0px !important;
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+
+    :global(.hiddenLegend) {
+        display: none;
+    }
+    
+    :global(.g6-minimap) {
+        position: absolute !important;
+        bottom: 0px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        left: 0px;
+        background-color: #FFF;
+        margin: 0 0 -1px -1px;
+    }
+
+    :global(.hiddenMiniMap) {
+        display: none;
+    }
+
+    :global(.g6-minimap-viewport) {
+        z-index: 1;
+    }
+
+    &:fullscreen {
+        background-color: #FFF;
+    }
+}
+
+:global(.hiddenGrid) {
+    background-image: none;
+}
+
+.layoutPanelOpen {
+    width: 76%;
+}

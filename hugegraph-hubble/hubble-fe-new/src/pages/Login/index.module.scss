@@ -1,0 +1,33 @@
+.loginContainer {
+    text-align: center;
+    padding-top: 200px;
+
+    .loginForm {
+        text-align: left;
+        width: 400px;
+        padding: 25px;
+        border: 1px solid #d9d9d9;
+        border-radius: 8px;
+        display: inline-block;
+        // background-color: #8c8c8c;
+
+        .title {
+            text-align: center;
+        }
+
+        .loginFormButton {
+            width: 350px;
+            margin-bottom: 10px;
+        }
+
+        .left {
+            text-align: left;
+            color: #1890ff;
+        }
+
+        .right {
+            text-align: right;
+            color: #8c8c8c;
+        }
+    }
+}

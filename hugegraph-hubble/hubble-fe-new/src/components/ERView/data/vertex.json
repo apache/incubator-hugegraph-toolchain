@@ -1,0 +1,123 @@
+[
+    {
+      "name": "男人",
+      "id_strategy": "PRIMARY_KEY",
+      "properties": [
+        {
+          "name": "特点",
+          "nullable": false
+        },
+        {
+          "name": "亲疏",
+          "nullable": false
+        },
+        {
+          "name": "性别",
+          "nullable": false
+        },
+        {
+          "name": "姓名",
+          "nullable": false
+        },
+        {
+          "name": "年龄",
+          "nullable": false
+        }
+      ],
+      "primary_keys": [
+        "姓名"
+      ],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "icon": "",
+        "color": "#5C73E6",
+        "size": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "女人",
+      "id_strategy": "PRIMARY_KEY",
+      "properties": [
+        {
+          "name": "特点",
+          "nullable": false
+        },
+        {
+          "name": "亲疏",
+          "nullable": false
+        },
+        {
+          "name": "性别",
+          "nullable": false
+        },
+        {
+          "name": "姓名",
+          "nullable": false
+        },
+        {
+          "name": "年龄",
+          "nullable": false
+        }
+      ],
+      "primary_keys": [
+        "姓名"
+      ],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "icon": "",
+        "color": "#5C73E6",
+        "size": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    },
+    {
+      "name": "机构",
+      "id_strategy": "PRIMARY_KEY",
+      "properties": [
+        {
+          "name": "特点",
+          "nullable": false
+        },
+        {
+          "name": "亲疏",
+          "nullable": false
+        },
+        {
+          "name": "姓名",
+          "nullable": false
+        }
+      ],
+      "primary_keys": [
+        "姓名"
+      ],
+      "property_indexes": [],
+      "open_label_index": true,
+      "style": {
+        "icon": "",
+        "color": "#5C73E6",
+        "size": "NORMAL",
+        "display_fields": [
+          "~id"
+        ],
+        "join_symbols": [
+          "-"
+        ]
+      },
+      "create_time": "1970-01-01 08:00:00"
+    }
+]

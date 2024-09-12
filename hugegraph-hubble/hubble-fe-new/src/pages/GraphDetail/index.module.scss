@@ -1,0 +1,38 @@
+.top {
+    margin-bottom: 10px;
+}
+
+.type {
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 8px;
+    border: 1px solid #f0f0f0;
+    border-radius: 4px;
+    height: 40px;
+    line-height: 40px;
+    box-shadow: 0 0 2px #d9d9d9;
+
+    .vertex, .edge {
+        color: #fff;
+        vertical-align: middle;
+
+        border-radius: 4px;
+    }
+
+    .vertex {
+        background-color: #1890ff;
+        img {
+            margin-bottom: 3px;
+        }
+    }
+    .edge {
+        background-color: #69c0ff;
+        img {
+            margin-right: 2px;
+        }
+    }
+}
+
+.card {
+    box-shadow: 0 0 2px #d9d9d9;
+}

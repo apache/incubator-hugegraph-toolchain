@@ -1,0 +1,26 @@
+.statistics {
+    background: #fff;
+    z-index: 1;
+    position: absolute;
+    right: 0px;
+    width: 250px;
+    height: calc(100vh - 40px);
+    overflow-y: auto;
+    border: 1px solid #E7E8E9;
+    border-top: none;
+
+    :global(.ant-radio-button-wrapper){
+        width: 124px;
+        text-align: center;
+        height: 35px;
+        line-height: 35px;
+    }
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.statisticsHidden {
+    display: none;
+}

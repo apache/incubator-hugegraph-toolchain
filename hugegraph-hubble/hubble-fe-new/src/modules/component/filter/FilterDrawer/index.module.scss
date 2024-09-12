@@ -1,0 +1,11 @@
+div.card {
+    background-color: #f0f0f0;
+    & > div {
+        padding: 10px;
+    }
+    margin-bottom: 10px;
+}
+
+.add {
+    margin-bottom: 10px;
+}

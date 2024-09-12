@@ -1,0 +1,43 @@
+.row {
+    :global {
+        .ant-col:not(:last-child) {
+            // border: 1px solid;
+            .cardbox {
+                border-right: 1px solid #E1E1E1;
+            }
+        }
+    }
+}
+
+.cardbox {
+    text-align: center;
+    border-right: 1px solid #E1E1E1;
+
+    .title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+    }
+
+    .label {
+        font-size: 14px;
+        color: #999;
+        font-weight: 400;
+    }
+
+    .value {
+        font-size: 24px;
+        color: #000;
+        text-align: center;
+        line-height: 24px;
+        font-weight: 600;
+        margin: 20px 0 8px;
+    }
+}
+
+.last {
+    .cardbox {
+        border-right: 0;
+    }
+    
+}

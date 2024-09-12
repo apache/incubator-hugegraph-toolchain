@@ -1,0 +1,48 @@
+.panelHeader {
+    display: flex;
+    align-items: center;
+    margin-right: -16px;
+
+    .panelHeaderIcon {
+        margin-left: -4px;
+    }
+
+    .panelHeaderIconHighlight{
+        color: #1890ff;
+    }
+
+    .panelHeaderName {
+        max-width: 130px;
+        margin: 0 6px;
+        user-select: none;
+    
+        .highlight {
+            color: #1890ff;
+            background-color: #fff;
+        }
+    }
+    
+    .panelHeaderRight{
+        position: absolute;
+        right: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 40px;
+
+        :global{
+            .anticon-loading{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        :global{
+            .ant-btn{
+                width: 18px !important;
+                height: 18px !important;
+            }
+        } 
+    }
+}

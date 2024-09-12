@@ -1,0 +1,35 @@
+.circularLayoutForm {
+    :global(.ant-segmented) {
+        width: 100%;
+    }
+
+    :global(.ant-segmented-item) {
+        width: 33.3%;
+    }
+
+    :global(.ant-segmented-group) {
+        height: 30px;
+    }
+
+    :global(.ant-segmented-item) {
+        border: 1px solid #F5F5F4;
+        transition: none;
+
+        :focus{
+            color: none;
+        }
+        
+        :hover{
+            color: none;
+        }
+    }
+    
+    :global(.ant-segmented-item-selected) {
+            border: 1px solid #1890ff;
+            color: #1890ff;
+
+            :hover{
+                color:  #1890ff;
+            }
+    }
+}

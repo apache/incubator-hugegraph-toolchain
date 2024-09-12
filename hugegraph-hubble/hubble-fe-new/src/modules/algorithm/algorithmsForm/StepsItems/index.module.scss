@@ -1,0 +1,32 @@
+.stepsItemsContent {
+    position: relative;
+
+    .stepHeader {
+        display: flex;
+        align-items: center;
+
+        .stepIcon {
+            font-size: 12px;
+            line-height: 12px;
+            margin-right: 4px;
+        }
+
+        .stepTitle {
+            user-select: none;
+        }
+        
+        .tooltip {
+            margin-left: 4px;
+            color: rgba(0, 0, 0, 0.45);
+            cursor: pointer;
+        }
+    }
+
+    .stepContent {
+        padding-left: 20px;
+    }
+
+    .contentHidden{
+        display: none;
+    }
+}

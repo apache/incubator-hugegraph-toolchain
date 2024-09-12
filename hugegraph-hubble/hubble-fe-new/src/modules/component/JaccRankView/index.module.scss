@@ -1,0 +1,46 @@
+.jaccViewContent {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+
+    .circleContent {
+        text-align: center;
+        margin-right: 30px;
+
+        .singleCircle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+
+        .circleLabel{
+            font-size: 14px;
+            font-weight: bold;
+        }
+    }
+
+    .jaccardCanvasTitle {
+        position: relative;
+        background-image: linear-gradient(to right, #92D7F0, #3EB2E4);
+        width: 170px;
+        height: 50px;
+        line-height: 50px;
+        border-radius: 25px;
+        text-align: center;
+        color: #fff;
+    }
+    
+    .jaccardCanvasData {
+        position: relative;
+        background-image: linear-gradient(to right, #E7F2FB, #DCECF8);
+        height: 60px;
+        line-height: 60px;
+        border-radius: 10px;
+        text-align: center;
+        color: #42B3E5;
+        font-size: 24px;
+        min-width: 300px;
+        max-width: 430px;
+        word-break: break-all;
+    }
+}

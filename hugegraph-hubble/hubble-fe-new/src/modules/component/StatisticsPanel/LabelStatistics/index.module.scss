@@ -1,0 +1,12 @@
+.labelStatistics {
+    border-top: none;
+    height: calc(100vh - 75px);
+
+    :global(.ant-collapse >.ant-collapse-item >.ant-collapse-header) {
+        padding: 5px;
+    }
+
+    :global(.ant-collapse >.ant-collapse-item >.ant-collapse-content >.ant-collapse-content-box) {
+        padding: 5px;
+    }
+}

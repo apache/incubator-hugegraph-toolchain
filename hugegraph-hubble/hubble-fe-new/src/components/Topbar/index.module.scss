@@ -1,0 +1,27 @@
+div.nav {
+    background-color: #121212;
+    :global(.one-ui-pro-nav-profile) {
+        span, svg {
+            color: #fff;
+        }
+
+        &:hover {
+            span, svg {
+                color: #0066ff;
+            }
+        }
+    }
+}
+
+.logo {
+    float: left;
+    width: 120px;
+    height: 31px;
+}
+
+.right {
+     display: flex;
+     float: right;
+    color: #fff;
+    cursor: pointer;
+}

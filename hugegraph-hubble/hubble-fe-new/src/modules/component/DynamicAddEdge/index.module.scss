@@ -1,0 +1,39 @@
+.addEdgeDrawer {
+  .fields {
+    display: flex;
+    margin-top: 3px;
+
+    div:first-child {
+      width: 80px;
+      word-break: break-all;
+    }
+  
+    div:last-child {
+      max-width: 200px;
+      word-wrap: break-word;
+    }
+  }
+
+  :gloabl {
+      .ant-row {
+          align-items: center;
+      }
+  }
+
+  :global {
+      .ant-form-item-label {
+          word-break: break-all;
+          max-width: 140px;
+      }
+
+      .ant-form-item-label > label {
+          height: auto;
+      }
+  }  
+  
+  :global {
+      .ant-form-item-explain-error {
+          word-break: break-all;
+      }
+  }   
+}

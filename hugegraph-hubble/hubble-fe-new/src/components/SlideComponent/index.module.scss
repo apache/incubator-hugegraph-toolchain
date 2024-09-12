@@ -1,0 +1,22 @@
+.layoutSlider {
+    display: flex;
+    align-items: center;
+
+    :global(.ant-slider-horizontal) {
+        width: 90%;
+    }
+
+    :global(.ant-slider-handle) {
+        border: solid 2px #1990ff;
+    };
+    
+    :global(.ant-slider-track) {
+        background-color: #1990ff;
+    
+        &:hover {
+            border: solid 2px #1990ff;
+        }
+    }
+}
+
+

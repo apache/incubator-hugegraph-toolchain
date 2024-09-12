@@ -1,0 +1,13 @@
+.noneGraphContent{
+    display: flex;
+    padding-top: 10%;
+    padding-bottom: 100px;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    height: calc(100vh - 40px);
+    border: 1px solid #E7E8E9;
+    margin-left: -1px;
+    word-break: break-all;
+    overflow-y: auto;
+}

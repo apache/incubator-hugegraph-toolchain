@@ -1,0 +1,64 @@
+.fields {
+  display: flex;
+  margin-top: 3px;
+  
+  div:first-child {
+    width: 120px;
+    margin-right: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  div:last-child {
+    max-width: 200px;
+    word-wrap: break-word;
+  }
+
+  .edgeTypeTag{
+    margin-left: 10px;
+  }
+}
+
+.fieldWithoutName{
+  margin: 10px 0 10px 125px;
+}
+
+.subEdges{
+margin: 5px 0 5px 100px;
+
+.edgeTypeTag{
+  margin-left: 10px;
+}
+}
+
+.graphNodeInfo {
+  margin-top: 3px;
+  font-size: 14px;
+  line-height: 30px;
+  color: #333;
+  
+  .detailItem {
+    display: flex;
+    margin: 8px 0;
+
+    div:last-child {
+      max-width: 200px;
+      word-wrap: break-word;
+    }
+  }
+
+  .disabled {
+      color: #999;
+  }    
+}
+
+.editForm{
+  margin-top : 8px;
+
+  :global {
+    .ant-form-item-label {
+        word-break: break-all;
+    }
+  }  
+}

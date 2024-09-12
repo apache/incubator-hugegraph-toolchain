@@ -1,0 +1,24 @@
+.queryBar {
+    margin-top: 10px;
+    background-color: #fff;
+
+    :global {
+        .ant-tabs-nav {
+            background-color: #f0f2f5;
+            margin: 0px !important;
+        }
+
+        .ant-tabs-card .ant-tabs-nav .ant-tabs-tab {
+            background: #f0f2f5;
+            border: 0px;
+        }
+
+        .ant-tabs-card  .ant-tabs-nav .ant-tabs-tab-active {
+            background: #fff;
+        }
+    }
+
+    .hidden {
+        display: none;
+    }
+}

@@ -1,0 +1,15 @@
+.gremlinAsyncTask {
+    position: relative;
+
+    .content {
+        margin-top: 10px;
+        padding: 20px;
+        background-color: #fff;
+    }
+
+    .queryBar {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: flex-end;
+    }
+}

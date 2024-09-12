@@ -1,0 +1,95 @@
+{
+    "markup": [
+        {
+            "tagName": "rect",
+            "selector": "portBody"
+        },
+        {
+            "tagName": "text",
+            "selector": "portNameLabel"
+        },
+        {
+            "tagName": "text",
+            "selector": "portTypeLabel"
+        },
+        {
+            "tagName": "g",
+            "attrs": {
+              "class": "btn add"
+            },
+            "children": [
+              {
+                "tagName": "circle",
+                "attrs": {
+                  "class": "add"
+                }
+              },
+              {
+                "tagName": "text",
+                "attrs": {
+                  "class": "add"
+                }
+              }
+            ]
+          }
+    ],
+    "attrs": {
+        "portBody": {
+            "width": 150,
+            "height": 24,
+            "strokeWidth": 1,
+            "stroke": "#5F95FF",
+            "fill": "#EFF4FF",
+            "magnet": true
+        },
+      "portNameLabel": {
+        "refX": 6,
+        "refY": 6,
+        "fontSize": 10,
+        "text": "ID"
+      },
+      "portTypeLabel": {
+        "refX": 95,
+        "refY": 6,
+        "fontSize": 10,
+        "text": ""
+      },
+      "rect": {
+        "fill": "#FAFAFA"
+      },
+      ".btn.add": {
+        "refDx": -16,
+        "refY": 16,
+        "event": "node:add"
+      },
+      ".btn.del": {
+        "refDx": -44,
+        "refY": 16,
+        "event": "node:delete"
+      },
+      ".btn > circle": {
+        "r": 10,
+        "fill": "transparent",
+        "stroke": "#fff",
+        "strokeWidth": 1
+      },
+      ".btn.add > text": {
+        "fontSize": 20,
+        "fontWeight": 800,
+        "fill": "#fff",
+        "x": -5.5,
+        "y": 7,
+        "fontFamily": "Times New Roman",
+        "text": "+"
+      },
+      ".btn.del > text": {
+        "fontSize": 28,
+        "fontWeight": 500,
+        "fill": "#fff",
+        "x": -4.5,
+        "y": 6,
+        "fontFamily": "Times New Roman",
+        "text": "-"
+      }
+    }
+}

@@ -1,0 +1,56 @@
+.algorithmSidebar {
+    position: relative;
+    width: 250px;
+    background-color: #fff;
+    border: 1px solid #E7E8E9;
+    border-top: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    .algorithmCatagery {
+        margin: 10px 0 0 10px;
+        font-weight: bold;
+    }
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .algorithmCatagery {
+        margin: 10px 0 0 10px;
+        font-weight: bold;
+    }
+
+    .sideBarCollapse {
+        margin-left: -8px;
+    }
+
+    .listEmpty {
+        position: absolute;
+        left: 50%;            
+        top: 50%;            
+        transform:translate(-50%,-50%);
+    }
+
+    :global {
+        .ant-collapse >.ant-collapse-item >.ant-collapse-header{
+            padding: 12px 10px;
+        }
+    }    
+
+    :global {
+        .ant-form-item-label {
+            word-break: break-all;
+        }
+    }
+
+    :global(.ant-input-number) {
+        width: 100%;
+    }
+
+    :global {
+        .ant-form-item {
+            margin-bottom: 12px;
+        }
+    }
+}

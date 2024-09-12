@@ -1,0 +1,40 @@
+.noneGraphStatus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+    height: calc(100vh - 40px);
+    border: 1px solid #E7E8E9;
+    margin-left: -1px;
+    word-break: break-all;
+    padding: 0 10%;
+
+    .loadingContent {
+        position: relative;
+        width: 144px;
+        height: 144px;
+    }
+
+    .loadingBackImage {
+        position: absolute;
+        left: 22px;
+        top: 20px;
+    }
+
+    .loadingFrontIamge {
+        position: absolute;
+        left: 57px;
+        top: 52px;
+        animation: loading-rotate 2s linear infinite;
+    }
+
+    @keyframes loading-rotate {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}

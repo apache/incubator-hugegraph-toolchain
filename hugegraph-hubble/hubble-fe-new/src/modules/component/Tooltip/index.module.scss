@@ -1,0 +1,23 @@
+:global(.g6-component-tooltip){
+    user-select: none;
+
+    .tagBlue{
+        display: inline-block;
+        color: #0958d9;
+        background: #e6f4ff;
+        border: 1px solid #91caff;
+        margin-left: 10px;
+        padding: 0px 4px;
+        border-radius: 3px;
+    }
+
+    .tagGlod{
+        display: inline-block;
+        color: #d48806;
+        background: #fffbe6;
+        border: 1px solid #ffe58f;
+        margin-left: 10px;
+        padding: 0px 4px;
+        border-radius: 3px;
+    }
+}

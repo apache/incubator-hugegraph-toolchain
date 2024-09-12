@@ -1,0 +1,19 @@
+form.form_label {
+    .form_input {
+        width: 140px;
+    }
+
+    .form_split {
+        display: inline-block;
+        width: 24px;
+        line-height: 32px;
+        text-align: center;
+    }
+
+    .form_add {
+        border: 1px dashed #40a9ff;
+        text-align: center;
+        padding: 4px;
+        cursor: pointer;
+    }
+}

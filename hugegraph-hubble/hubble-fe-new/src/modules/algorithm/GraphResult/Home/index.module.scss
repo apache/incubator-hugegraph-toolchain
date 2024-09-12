@@ -1,0 +1,11 @@
+.graphResult {
+    position: relative;
+    width: calc(100% - 250px);
+    background-color: #fff;
+
+    .graphContainer {
+        display: flex;
+        justify-content: flex-start;
+        flex: 1 1 0;
+    }
+}

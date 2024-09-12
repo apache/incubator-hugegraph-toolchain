@@ -1,0 +1,26 @@
+iframe {
+    border: medium none;
+}
+
+.main {
+    min-height: calc(100vh - 60px);
+
+    .content {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+
+        .container {
+            background: #fff;
+            padding-left: 25px;
+            margin-top: 10px;
+
+            padding: 10px;
+            flex: 1 auto;
+        }
+    }
+
+    .center {
+        text-align: center;
+    }
+}

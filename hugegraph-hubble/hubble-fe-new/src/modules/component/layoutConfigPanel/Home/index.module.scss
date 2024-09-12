@@ -1,0 +1,67 @@
+.changeLayout {
+    position: absolute;
+    right: 0px;
+    background-color: #fff;
+    z-index: 1;
+    flex: 1;  
+    padding: 15px 30px 15px 15px; 
+    height: calc(100vh - 40px);
+    overflow-y: auto;
+    border: 1px solid #E7E8E9;
+    margin: -1px 0  0 -1px;
+    width: 250px;
+
+    .changeLayoutTitle {
+        font-weight: bold;
+        font-size: 18px;
+        margin-bottom: 10px;
+    } 
+}
+
+.changeLayoutHidden {
+    display: none;
+}
+
+.changeLayoutTypeSelectIcon {
+    width: 20px;
+    height: 20px;
+}
+
+.changeLayoutTypeSelectName {
+    margin-left: 20px;
+    height: 20px;
+    line-height: 20px;
+}
+
+.assetsItem {
+    display: flex;
+    align-items: center;
+    
+    .assetsTitle {
+        height: 44px;
+        width: 44px;
+        background: rgb(234, 238, 252);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center; 
+
+        .changeLayoutTypeSelectIcon {
+            width: 20px;
+            height: 20px;
+        }
+    }
+}
+
+.layoutTypeForm {
+    :global{
+        .ant-select-selection-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .ant-select-single:not(.ant-select-customize-input) .ant-select-selector {
+            height: 52px;
+        }
+    } 
+}

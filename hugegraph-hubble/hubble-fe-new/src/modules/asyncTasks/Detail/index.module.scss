@@ -1,0 +1,21 @@
+.gremlinAsyncTaskDetail {
+    position: relative;
+
+    .nolinebreak {
+        overflow:hidden;
+        text-overflow: ellipsis;
+    }
+
+    .massDelete {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        height: 40px;
+        padding: 0 16px;
+        background: #2b65ff;
+        border-radius: 3px 3px 0 0;
+        align-items: center;
+        font-size: 14px;
+        color: #fff;
+    }
+}

@@ -1,0 +1,49 @@
+.oltpForms{
+    .stepHeader {
+        display: flex;
+        align-items: center;
+        min-height: 32px;
+
+        .stepIcon {
+            font-size: 12px;
+            line-height: 12px;
+            margin-right: 4px;
+        }
+
+        .stepTitle {
+            user-select: none;
+
+            &::before{
+                display: inline-block;
+                margin-right: 4px;
+                color: #ff4d4f;
+                font-size: 14px;
+                font-family: SimSun, sans-serif;
+                line-height: 1;
+                content: '*'
+            }
+        }
+
+        .tooltip {
+            margin-left: 4px;
+            color: rgba(0, 0, 0, 0.45);
+            cursor: pointer;
+        }
+        
+        .stepTitleNotRequired {
+            user-select: none;
+        }
+    }
+
+    .stepInnerContent {
+        padding-left: 40px;
+    }
+
+    .stepContent {
+        padding-left: 20px;
+    }
+
+    .contentHidden{
+        display: none;
+    }
+}

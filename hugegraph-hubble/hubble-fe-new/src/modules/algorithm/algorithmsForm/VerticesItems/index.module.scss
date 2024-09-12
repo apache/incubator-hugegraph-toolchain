@@ -1,0 +1,42 @@
+.verticesItems {
+    position: relative;
+
+    .stepHeader {
+        display: flex;
+        align-items: center;
+
+        .stepIcon {
+            font-size: 12px;
+            line-height: 12px;
+            margin-right: 4px;
+        }
+
+        .verticesItemsTitle {
+            user-select: none;
+     
+            &::before{
+                display: inline-block;
+                margin-right: 4px;
+                color: #ff4d4f;
+                font-size: 14px;
+                font-family: SimSun, sans-serif;
+                line-height: 1;
+                content: '*'
+            }
+        }
+        
+        .tooltip {
+            margin-left: 4px;
+            color: rgba(0, 0, 0, 0.45);
+            cursor: pointer;
+        }
+    }
+
+    .verticesItemsContent {
+        padding-left: 20px;
+    }
+
+    .contentHidden {
+        display: none;
+    }
+}

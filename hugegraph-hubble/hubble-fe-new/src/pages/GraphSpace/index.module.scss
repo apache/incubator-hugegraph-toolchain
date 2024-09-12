@@ -1,0 +1,98 @@
+div.add_card {
+    // height: 262px;
+    height: 308px;
+    border-style: dashed;
+    font-size: 22px;
+    text-align: center;
+    // padding-top: 90px;
+    padding-top: 110px;
+    color: #8c8c8c;
+    cursor: pointer;
+
+    &:hover {
+        border-color: #1890ff;
+        color: #1890ff;
+    }
+}
+
+.card {
+    cursor: pointer;
+    height: 100%;
+
+    .card_content {
+        height: 144px;
+        font-size: 12px;
+    }
+    &:hover {
+        border-color: #1890ff;
+    }
+}
+
+.tooltip {
+    :global {
+        .ant-tooltip-arrow {
+            display: none;
+        }
+        .ant-tooltip-inner {
+            background-color: #fff;
+            padding: 0;
+        }
+    }
+}
+
+.list {
+    :global {
+        .ant-list-item {
+            padding: 12px;
+            &:hover {
+                background-color: #bae7ff;
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+.subtitle {
+    font-size: 12px;
+    font-weight: 400;
+    height: 20px;
+    color: #999;
+    font-family: PingFangSC-Regular;
+}
+
+.default {
+    border-radius: 2px;
+    background-color: #E7EEFF;
+    font-size: 12px;
+    padding: 0 4px;
+    color: #3388FF;
+    margin-right: 8px;
+}
+
+span.disable {
+    color: #8c8c8c;
+}
+
+.card_col {
+    div {
+        max-width: 100px;
+    }
+}
+
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    li {
+        height: 24px;
+    }
+}
+
+.dropdown {
+    button {
+        background: transparent;
+        &:hover {
+            background: transparent;
+        }
+    }
+}

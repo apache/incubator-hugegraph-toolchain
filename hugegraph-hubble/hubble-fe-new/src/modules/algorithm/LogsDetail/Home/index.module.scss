@@ -1,0 +1,28 @@
+.footerTabs {
+    background-color: #fff;
+    margin-top: 10px;
+    
+    :global {
+        .ant-table-wrapper {
+            word-break: break-all;
+        }
+        
+        .ant-tabs-nav {
+            background-color: #f0f2f5;          
+        }
+
+        .ant-tabs-card .ant-tabs-nav .ant-tabs-tab {
+            background: #f0f2f5;
+            border: 0;
+        }
+
+        .ant-tabs-card  .ant-tabs-nav .ant-tabs-tab-active {
+            background: #fff;
+        }  
+
+        .ant-tabs-content-holder{
+            padding: 16px;
+        }  
+    }
+}
+

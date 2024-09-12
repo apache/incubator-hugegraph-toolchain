@@ -1,0 +1,15 @@
+.panelButton {
+    position: absolute;
+    z-index: 1;
+    right: 250px;
+    display: block;
+    width: 20px;
+    background-color: #F3F3F2;
+    text-align: center;
+    top: 14px;
+    cursor: pointer;
+}
+
+.panelButtonHidden {
+    display: none;
+}

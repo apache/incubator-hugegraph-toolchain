@@ -1,0 +1,55 @@
+.canvas3d{
+    .graph{
+        position: relative;
+        border: 1px solid #E7E8E9;    
+        margin-left: -1px;
+        height: calc(100vh - 40px);
+        width: auto;
+        overflow: hidden;
+        background-image: url('/assets/canvas_bg.png');
+    }
+
+    .tooltip{
+        border: 1px solid #e2e2e2;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #545454;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 10px 8px;
+        box-shadow: rgb(174, 174, 174) 0px 0px 10px;
+        user-select: none;
+
+        .tagBlue{
+            display: inline-block;
+            color: #0958d9;
+            background: #e6f4ff;
+            border: 1px solid #91caff;
+            margin-left: 10px;
+            padding: 0px 4px;
+            border-radius: 3px;
+        }
+    
+        .tagGlod{
+            display: inline-block;
+            color: #d48806;
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            margin-left: 10px;
+            padding: 0px 4px;
+            border-radius: 3px;
+        }
+    }
+
+    .useGuide{
+        position: absolute;
+        color: #a5a3a6;
+        font-size: 12px;
+        bottom: 3px;
+        left: 50%;
+        transform: translateX(-50%);
+
+        .emphasis{
+            color: #0091ff;
+        }
+    }
+}

@@ -1,0 +1,22 @@
+.toolBarTop{
+    height: 50px;
+    display: flex;
+    align-items: center;
+    position: absolute;
+    right: 30px;
+    top: 0;
+}
+
+.toolBarWithPadding{
+    height: 50px;
+    display: flex;
+    align-items: center;
+    position: absolute;
+    right: 30px;
+    top: 0;
+    padding-right: 250px;
+}
+
+:global(.g6-component-toolbar){
+    display: none;
+}
