@@ -19,9 +19,15 @@ div.nav {
     height: 31px;
 }
 
-.right {
-     display: flex;
-     float: right;
-    color: #fff;
-    cursor: pointer;
+.rightContainer {
+  display: flex;
+  align-items: center;
+  float: right;
+  color: #fff;
+  cursor: pointer;
 }
+
+.right {
+  margin-left: 10px;
+}
+

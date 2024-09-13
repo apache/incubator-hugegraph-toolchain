@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "i18next": "^19.5.3",
+    "react-i18next": "^11.7.3",
+    "@types/lodash-es": "^4.17.3",
     "@ant-design/icons": "^4.7.0",
     "@antv/g6": "^4.6.15",
     "@antv/graphin": "^2.7.12",

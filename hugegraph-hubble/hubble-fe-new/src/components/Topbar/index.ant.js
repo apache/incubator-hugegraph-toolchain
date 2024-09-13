@@ -5,16 +5,28 @@ import Logo from '../../assets/logo.png';
 import {useNavigate, useLocation} from 'react-router-dom';
 import * as api from '../../api/index';
 import * as user from '../../utils/user';
+import {useState} from 'react';
+import {Select} from 'antd';
+import {useTranslation} from 'react-i18next';
+const {Option} = Select;
 
 const Topbar = () => {
     const userInfo = user.getUser();
     const navigate = useNavigate();
     const location = useLocation();
+    const {t} = useTranslation();
+    const [languageType, setLanguageType] = useState(localStorage.getItem('languageType') || 'zh-CN');
 
     if (!userInfo || !userInfo.id) {
         sessionStorage.setItem('redirect', `${location.pathname}${location.search}`);
         window.location.href = '/login';
     }
+
+    const i18Change = e => {
+        localStorage.setItem('languageType', e);
+        setLanguageType(e);
+        window.location.reload();
+    };
 
     const logout = () => {
 
@@ -31,8 +43,8 @@ const Topbar = () => {
     const confirm = () => {
         Modal.confirm({
             title: '确定退出吗？',
-            okText: '确定',
-            cancelText: '取消',
+            okText: t('common.verify.ok'),
+            cancelText: t('common.verify.cancel'),
             onOk: logout,
         });
     };
@@ -40,12 +52,23 @@ const Topbar = () => {
     return (
         <Layout.Header>
             <div className={style.logo}><img src={Logo} alt='' /></div>
-            <Dropdown overlay={<Menu items={[{key: 'logout', label: <a onClick={confirm}>退出登录</a>}]} />}>
-                <Space className={style.right}>
-                    <Avatar size={'small'} icon={<UserOutlined />} />
-                    <span>{userInfo?.user_nickname ?? ''}</span>
-                </Space>
-            </Dropdown>
+            <div className={style.rightContainer}>
+                <Select
+                    defaultValue={languageType}
+                    style={{width: 120}}
+                    size="small"
+                    onChange={i18Change}
+                >
+                    <Option value="zh-CN">中文</Option>
+                    <Option value="en-US">English</Option>
+                </Select>
+                <Dropdown overlay={<Menu items={[{key: 'logout', label: <a onClick={confirm}>退出登录</a>}]} />}>
+                    <Space className={style.right}>
+                        <Avatar size={'small'} icon={<UserOutlined />} />
+                        <span>{userInfo?.user_nickname ?? ''}</span>
+                    </Space>
+                </Dropdown>
+            </div>
         </Layout.Header>
     );
 };

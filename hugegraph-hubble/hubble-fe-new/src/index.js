@@ -3,16 +3,19 @@ import ReactDOM from 'react-dom/client';
 import {BrowserRouter} from 'react-router-dom';
 import {ConfigProvider} from 'antd';
 import 'moment/locale/zh-cn';
-import locale from 'antd/lib/locale/zh_CN';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import zhCN from 'antd/lib/locale/zh_CN';
+import enUS from 'antd/lib/locale/en_US';
+import './i18n';
 
+const languageType = localStorage.getItem('languageType') === 'en-US' ? enUS : zhCN;
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
     <BrowserRouter>
-        <ConfigProvider locale={locale}>
+        <ConfigProvider locale={languageType}>
             <App />
         </ConfigProvider>
     </BrowserRouter>

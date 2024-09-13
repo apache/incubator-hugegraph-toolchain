@@ -138,8 +138,8 @@ const Account = () => {
                     {<a onClick={() => showEdit(row)}>编辑</a>}
                     <a onClick={() => showAuth(row)}>分配权限</a>
                     {row.user_name !== 'admin'
-                    && row.user_name !== getUser().id
-                    && <a onClick={() => handleDelete(row)}>删除</a>}
+                        && row.user_name !== getUser().id
+                        && <a onClick={() => handleDelete(row)}>删除</a>}
                 </Space>
             ),
         },
@@ -172,6 +172,7 @@ const Account = () => {
             />
 
             <div className='container'>
+                // TODO remove here
                 {/* <TableHeader> */}
                 {/*     <Row justify="space-between"> */}
                 {/*         <Col><Button onClick={showAdd} type='primary'><PlusOutlined
