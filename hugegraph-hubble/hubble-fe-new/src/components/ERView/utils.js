@@ -1,3 +1,5 @@
+import {useTranslation} from 'react-i18next';
+
 const setPropertyRow = item => {
     return {...item, attr: {...item.attr, rect: {fill: '#FAFAFA'}}};
 };
@@ -6,9 +8,8 @@ const setValueRow = item => {
     return {...item, attr: {...item.attr, rect: {fill: '#ACACAC'}}};
 };
 
-const setCell = (cell, type) => {
+const setCell = (t, cell, type) => {
     const idList = [];
-
     if (type === 'edge') {
         idList.push(
             {
@@ -16,7 +17,7 @@ const setCell = (cell, type) => {
                 group: 'list',
                 attrs: {
                     portNameLabel: {
-                        text: '起点ID',
+                        text: t('ERView.edge.start'),
                     },
                     portTypeLabel: {
                         text: '',
@@ -34,7 +35,7 @@ const setCell = (cell, type) => {
                 group: 'list',
                 attrs: {
                     portNameLabel: {
-                        text: '终点ID',
+                        text: t('ERView.edge.end'),
                     },
                     portTypeLabel: {
                         text: '',

@@ -18,8 +18,6 @@ import Resource from '../pages/Resource';
 import Navigation from '../pages/Navigation';
 import Error404 from '../pages/Error404';
 import Test from '../pages/Test';
-import Bill from '../pages/Bill';
-import Order from '../pages/Order';
 
 // 图分析的路由
 import GraphAnalysis from '../pages/GraphAnalysis';
@@ -64,9 +62,6 @@ const RouteList = ({element}) => {
                 <Route path="/asyncTasks/result/:graphspace/:graph/:taskId" element={<AsyncTaskResultPage />} />
 
                 <Route path="/navigation" element={<Navigation />} />
-
-                <Route path='/bill' element={<Bill />} />
-                <Route path='/order' element={<Order />} />
                 <Route path="*" element={<Error404 />} />
             </Route>
 

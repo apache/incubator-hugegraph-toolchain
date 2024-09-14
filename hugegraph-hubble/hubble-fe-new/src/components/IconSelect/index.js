@@ -6,6 +6,7 @@ import classnames from 'classnames';
 import {iconsMap} from '../../utils/constants';
 
 import c from './index.module.scss';
+import {useTranslation} from 'react-i18next';
 
 const DEFAULT_ICON = 'UserOutlined';
 
@@ -15,7 +16,7 @@ const IconSelect = props => {
         onChange,
         disabled,
     } = props;
-
+    const {t} = useTranslation();
     const [icon, setIcon] = useState();
 
     useEffect(
@@ -77,7 +78,7 @@ const IconSelect = props => {
             content={<div className={c.iconsWrapper}>{renderIcons()}</div>}
         >
             <Input
-                placeholder="请选择"
+                placeholder={t('selector.placeholder')}
                 value={icon}
                 suffix={<CurrentIcon />}
             />

@@ -10,13 +10,14 @@ import {
 } from '@ant-design/icons';
 import {Link, useLocation} from 'react-router-dom';
 import * as user from '../../utils/user';
+import {useTranslation} from 'react-i18next';
 
-const items = () => {
+const items = t => {
     const userInfo = user.getUser();
-    const MY = {label: <Link to='/my'>个人中心</Link>, key: 'my'};
-    const ACCOUNT = {label: <Link to='/account'>账号管理</Link>, key: 'account'};
-    const RESOURCE = {label: <Link to='/resource'>资源管理</Link>, key: 'resource'};
-    const ROLE = {label: <Link to='/role'>角色管理</Link>, key: 'role'};
+    const MY = {label: <Link to='/my'>{t('home.my')}</Link>, key: 'my'};
+    const ACCOUNT = {label: <Link to='/account'>{t('home.account')}</Link>, key: 'account'};
+    const RESOURCE = {label: <Link to='/resource'>{t('home.resource')}</Link>, key: 'resource'};
+    const ROLE = {label: <Link to='/role'>{t('home.role')}</Link>, key: 'role'};
 
     let systemList = [MY];
     if (userInfo.is_superadmin) {
@@ -28,51 +29,37 @@ const items = () => {
 
     const menu = [
         {
-            label: <Link to='/navigation'>导航</Link>,
+            label: <Link to='/navigation'>{t('navigation.name')}</Link>,
             key: 'navigation',
             icon: <HomeOutlined />,
         },
         {
-            label: '数据管理',
+            label: t('manage.name'),
             key: 'manage',
             icon: <FundViewOutlined />,
             children: [
-                {label: <Link to='/graphspace'>图管理</Link>, key: 'graphspace'},
-                {label: <Link to='/source'>数据源管理</Link>, key: 'source'}, // TODO X fix import
-                {label: <Link to='/task'>数据导入</Link>, key: 'task'},
+                {label: <Link to='/graphspace'>{t('manage.graphspace')}</Link>, key: 'graphspace'},
+                {label: <Link to='/source'>{t('manage.source')}</Link>, key: 'source'}, // TODO X fix import
+                {label: <Link to='/task'>{t('manage.task')}</Link>, key: 'task'},
             ],
         },
         {
-            label: '业务分析',
+            label: t('analysis.name'),
             key: 'analysis',
             icon: <DatabaseOutlined />,
             children: [
-                {label: <Link to='/gremlin'>图语言分析</Link>, key: 'gremlin'},
-                {label: <Link to='/algorithms'>图算法</Link>, key: 'algorithms'},
-                {label: <Link to='/asyncTasks'>任务管理</Link>, key: 'asyncTasks'},
+                {label: <Link to='/gremlin'>{t('analysis.query.name')}</Link>, key: 'gremlin'},
+                {label: <Link to='/algorithms'>{t('analysis.algorithm.name')}</Link>, key: 'algorithms'},
+                {label: <Link to='/asyncTasks'>{t('analysis.async_task.name')}</Link>, key: 'asyncTasks'},
             ],
         },
         {
-            label: '系统管理',
+            label: t('home.name'),
             key: 'system',
             icon: <AlertOutlined />,
             children: [...systemList],
         },
     ];
-
-    // if (userInfo.is_superadmin) {
-    //     menu.push({
-    //         label: '系统管理',
-    //         key: 'system',
-    //         icon: <AlertOutlined />,
-    //         children: [
-    //             {label: <Link to='/super'>超管管理</Link>, key: 'super'},
-    //             {label: <Link to='/account'>账号管理</Link>, key: 'account'},
-    //             {label: <Link to='/resource'>资源管理</Link>, key: 'resource'},
-    //             {label: <Link to='/role'>角色管理</Link>, key: 'role'},
-    //         ],
-    //     });
-    // }
 
     return menu;
 };
@@ -80,6 +67,7 @@ const items = () => {
 const Sidebar = () => {
     const [collapsed, setCollapsed] = useState(false);
     const href = useLocation();
+    const {t} = useTranslation();
     const menuKey = href.pathname.split('/')[1] || 'navigation';
 
     return (
@@ -96,7 +84,7 @@ const Sidebar = () => {
                 defaultSelectedKeys={['graphspace']}
                 defaultOpenKeys={['manage', 'analysis', 'system']}
                 mode="inline"
-                items={items()}
+                items={items(t)}
                 selectedKeys={[menuKey]}
             />
         </Layout.Sider>

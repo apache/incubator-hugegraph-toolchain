@@ -1,16 +1,18 @@
 import {useCallback} from 'react';
 import style from './index.module.scss';
+import {useTranslation} from 'react-i18next';
 
 const StatusField = ({status}) => {
+    const {t} = useTranslation();
     const lower = status ? status.toLowerCase() : 'undefined';
     const config = {
-        new: '新建',
-        running: '执行中',
-        success: '完成',
-        cancelling: '停止',
-        cancelled: '停止',
-        failed: '失败',
-        undefined: '未知',
+        new: t('common.status.new'),
+        running: t('common.status.running'),
+        success: t('common.status.success'),
+        cancelling: t('common.status.cancelling'),
+        cancelled: t('common.status.cancelled'),
+        failed: t('common.status.failed'),
+        undefined: t('common.status.undefined'),
     };
 
     return (

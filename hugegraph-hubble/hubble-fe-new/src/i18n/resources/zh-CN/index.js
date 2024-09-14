@@ -1,12 +1,23 @@
 import {merge} from 'lodash-es';
 import {
-    Bar,
+    Board,
     Common,
+    ERView,
 } from './components';
+import {
+    Algorithm,
+    Home,
+    Manage,
+} from './modules';
+
 const translation = {
     translation: merge(
-        Bar,
-        Common
+        Board,
+        Common,
+        Algorithm,
+        Home,
+        Manage,
+        ERView
     ),
 };
 

@@ -19,6 +19,7 @@ import '@antv/x6-react-components/es/menu/style/index.css';
 import '@antv/x6-react-components/es/toolbar/style/index.css';
 import {EditVertexLayer, EditEdgeLayer} from './EditLayer';
 import {setCell} from './utils';
+import {useTranslation} from 'react-i18next';
 
 Graph.registerPortLayout('erPortPosition', erPortPosition);
 Graph.registerNode('er-rect', erRectConfig, true);
@@ -51,6 +52,7 @@ const ERShapce = memo(
 const ERView = () => {
     const container = useRef(null);
     const graph = useRef(null);
+    const {t} = useTranslation();
     const [vertexVisible, setVertexVisible] = useState(false);
     const [edgeVisible, setEdgeVisible] = useState(false);
     const [data, setData] = useState([]);
@@ -218,12 +220,12 @@ const ERView = () => {
     const [edgeList, setEdgeList] = useState([]);
 
     const addVertex = useCallback(vertex => {
-        graph.current.addNode(graph.current.createNode(setCell(vertex)));
-    }, []);
+        graph.current.addNode(graph.current.createNode(setCell(t, vertex)));
+    }, [t]);
 
     const addEdge = useCallback(edge => {
-        graph.current.addNode(graph.current.createNode(setCell(edge, 'edge')));
-    }, []);
+        graph.current.addNode(graph.current.createNode(setCell(t, edge, 'edge')));
+    }, [t]);
 
     const addValueMap = () => {
 
@@ -265,19 +267,19 @@ const ERView = () => {
     const Group = Toolbar.Group;
     const vertexMenu = (
         <Menu>
-            <Menu.Item key="1" onClick={showVertex}>新增顶点</Menu.Item>
+            <Menu.Item key="1" onClick={showVertex}>{t('ERView.vertex.create')}</Menu.Item>
             <Menu.Divider />
-            <Menu.Item key="2">顶点1</Menu.Item>
-            <Menu.Item key="3">顶点2</Menu.Item>
+            <Menu.Item key="2">{t('ERView.vertex.v1name')}</Menu.Item>
+            <Menu.Item key="3">{t('ERView.vertex.v2name')}</Menu.Item>
         </Menu>
     );
 
     const edgeMenu = (
         <Menu>
-            <Menu.Item key="1" onClick={showEdge}>新增边</Menu.Item>
+            <Menu.Item key="1" onClick={showEdge}>{t('ERView.edge.create')}</Menu.Item>
             <Menu.Divider />
-            <Menu.Item key="2">边1</Menu.Item>
-            <Menu.Item key="3">边2</Menu.Item>
+            <Menu.Item key="2">{t('ERView.edge.e1name')}</Menu.Item>
+            <Menu.Item key="3">{t('ERView.edge.e2name')}</Menu.Item>
         </Menu>
     );
 
@@ -287,13 +289,13 @@ const ERView = () => {
                 <Group>
                     <Item
                         name="zoomIn"
-                        tooltip="放大"
+                        tooltip={t('ERView.control.zoom_in')}
                         icon={<ZoomInOutlined />}
                         onClick={handleZoomIn}
                     />
                     <Item
                         name="zoomOut"
-                        tooltip="缩小"
+                        tooltip={t('ERView.control.zoom_out')}
                         icon={<ZoomOutOutlined />}
                         onClick={handleZoomOut}
                     />
@@ -301,13 +303,13 @@ const ERView = () => {
                 <Group>
                     <Item
                         name="undo"
-                        tooltip="撤销"
+                        tooltip={t('ERView.control.undo')}
                         icon={<UndoOutlined />}
                         onClick={handleUndo}
                     />
                     <Item
                         name="redo"
-                        tooltip="重做"
+                        tooltip={t('ERView.control.redo')}
                         icon={<RedoOutlined />}
                         onClick={handleRedo}
                     />
@@ -316,11 +318,11 @@ const ERView = () => {
                     <Item name="delete" icon={<DeleteOutlined />} disabled tooltip="Delete (Delete)" />
                 </Group>
                 <Group>
-                    <Item text="自动映射" />
+                    <Item text={t('ERView.control.auto_map')} />
                 </Group>
                 <Group>
-                    <Item text='顶点' dropdown={vertexMenu} />
-                    <Item text='边' dropdown={edgeMenu} />
+                    <Item text={t('ERView.vertex.name')} dropdown={vertexMenu} />
+                    <Item text={t('ERView.edge.name')} dropdown={edgeMenu} />
                 </Group>
             </Toolbar>
             <div ref={container} className={style.content} />

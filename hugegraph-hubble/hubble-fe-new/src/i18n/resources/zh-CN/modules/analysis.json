@@ -1,0 +1,41 @@
+{
+  "analysis": {
+    "name": "业务分析",
+    "query": {
+      "name": "图语言分析",
+      "placeholder": "请输入查询语句"
+    },
+    "algorithm": {
+      "name": "图算法",
+      "placeholder": "算法查询",
+      "capacity_item": {
+        "tooltip": "遍历过程中最大的访问的顶点数目"
+      },
+      "direction_item": {
+        "tooltip": "顶点向外发散的方向"
+      },
+      "label_item": {
+        "tooltip": "边的类型（默认代表所有edge label）"
+      },
+      "max_degree_item": {
+        "tooltip": "查询过程中，单个顶点遍历的最大邻接边数目"
+      },
+      "max_depth_item": {
+        "tooltip": "步数"
+      },
+      "nearest_item": {
+        "tooltip": "nearest为true时，代表起始顶点到达结果顶点的最短路径长度为depth，不存在更短的路径；near\n            est为false时，代表起始顶点到结果顶点有一条长度为depth的路径（未必最短且可以有环）",
+        "placeholder": "最短路径长度"
+      },
+      "olap": {
+
+      },
+      "oltp": {
+
+      }
+    },
+    "async_task":{
+      "name": "任务管理"
+    }
+  }
+}

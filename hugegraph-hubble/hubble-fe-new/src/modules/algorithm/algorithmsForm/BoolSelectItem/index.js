@@ -1,13 +1,14 @@
 import React from 'react';
 
 import {Form, Select} from 'antd';
-
-const boolOptions = [
-    {label: '是', value: true},
-    {label: '否', value: false},
-];
+import {useTranslation} from 'react-i18next';
 
 const BoolSelectItem = props => {
+    const {t} = useTranslation();
+    const boolOptions = [
+        {label: t('common.verify.yes'), value: true},
+        {label: t('common.verify.no'), value: false},
+    ];
     const {
         name,
         initialValue = false,

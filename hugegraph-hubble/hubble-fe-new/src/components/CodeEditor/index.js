@@ -5,9 +5,10 @@ import React, {useRef, useEffect} from 'react';
 import {placeholder as cmplaceholder} from '@codemirror/view';
 import syntaxConfig from './syntax';
 import {tags} from '@lezer/highlight';
+import {useTranslation} from 'react-i18next';
 
 const CodeEditor = ({value, placeholder, onChange, lang = 'gremlin'}) => {
-
+    const {t} = useTranslation();
     const editor = useRef();
     const cm = useRef();
 
@@ -53,7 +54,7 @@ const CodeEditor = ({value, placeholder, onChange, lang = 'gremlin'}) => {
                         },
                     }
                 ),
-                cmplaceholder(placeholder ?? '请输入查询语句'),
+                cmplaceholder(placeholder ?? t('analysis.query.placeholder')),
             ],
             parent: editor.current,
         });
@@ -63,7 +64,7 @@ const CodeEditor = ({value, placeholder, onChange, lang = 'gremlin'}) => {
         return () => {
             cm.current.destroy();
         };
-    }, [lang, onChange, placeholder]);
+    }, [t, lang, onChange, placeholder]);
 
     useEffect(() => {
         if (value !== null && cm.current.state.doc && value !== cm.current.state.doc.toString()) {

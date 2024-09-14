@@ -17,6 +17,7 @@ import {
     alphaValidator,
     greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator,
 } from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {BETWEENNESS_CENTRALITY} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
@@ -35,7 +36,7 @@ const BetweennessCentrality = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);

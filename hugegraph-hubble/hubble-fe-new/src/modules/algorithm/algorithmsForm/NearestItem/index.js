@@ -5,22 +5,22 @@
 
 import React from 'react';
 import {Form, Select} from 'antd';
-
-const boolOptions = [
-    {label: '是', value: true},
-    {label: '否', value: false},
-];
+import {useTranslation} from 'react-i18next';
 
 const NearestItem = props => {
+    const {t} = useTranslation();
+    const boolOptions = [
+        {label: t('common.verify.yes'), value: true},
+        {label: t('common.verify.no'), value: false},
+    ];
     return (
         <Form.Item
             label='nearest'
             name='nearest'
             initialValue
-            tooltip={`nearest为true时，代表起始顶点到达结果顶点的最短路径长度为depth，不存在更短的路径；near
-            est为false时，代表起始顶点到结果顶点有一条长度为depth的路径（未必最短且可以有环）`}
+            tooltip={t('analysis.algorithm.nearest_item.tooltip')}
         >
-            <Select placeholder="最短路径长度" allowClear options={boolOptions} />
+            <Select placeholder={t('analysis.algorithm.nearest_item.placeholder')} allowClear options={boolOptions} />
         </Form.Item>
     );
 };

@@ -1,4 +1,4 @@
-import {Layout, Space, Avatar, Dropdown, Menu, message, Modal} from 'antd';
+import {Layout, Space, Avatar, Dropdown, Menu, message, Modal, Select} from 'antd';
 import {UserOutlined} from '@ant-design/icons';
 import style from './index.module.scss';
 import Logo from '../../assets/logo.png';
@@ -6,8 +6,8 @@ import {useNavigate, useLocation} from 'react-router-dom';
 import * as api from '../../api/index';
 import * as user from '../../utils/user';
 import {useState} from 'react';
-import {Select} from 'antd';
 import {useTranslation} from 'react-i18next';
+
 const {Option} = Select;
 
 const Topbar = () => {
@@ -34,7 +34,7 @@ const Topbar = () => {
             if (res.status === 200) {
                 sessionStorage.removeItem('redirect');
                 user.clearUser();
-                message.success('退出成功');
+                message.success(t('Topbar.exit.success'));
                 navigate('/login');
             }
         });
@@ -42,7 +42,7 @@ const Topbar = () => {
 
     const confirm = () => {
         Modal.confirm({
-            title: '确定退出吗？',
+            title: t('Topbar.exit.confirm'),
             okText: t('common.verify.ok'),
             cancelText: t('common.verify.cancel'),
             onOk: logout,
@@ -62,7 +62,10 @@ const Topbar = () => {
                     <Option value="zh-CN">中文</Option>
                     <Option value="en-US">English</Option>
                 </Select>
-                <Dropdown overlay={<Menu items={[{key: 'logout', label: <a onClick={confirm}>退出登录</a>}]} />}>
+                <Dropdown overlay={<Menu
+                    items={[{key: 'logout', label: <a onClick={confirm}>{t('Topbar.exit.name')}</a>}]}
+                />}
+                >
                     <Space className={style.right}>
                         <Avatar size={'small'} icon={<UserOutlined />} />
                         <span>{userInfo?.user_nickname ?? ''}</span>

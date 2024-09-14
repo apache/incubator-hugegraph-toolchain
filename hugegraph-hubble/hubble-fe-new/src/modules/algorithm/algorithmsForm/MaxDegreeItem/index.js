@@ -5,9 +5,10 @@
 
 import React from 'react';
 import {Form, InputNumber} from 'antd';
+import {useTranslation} from 'react-i18next';
 
 const MaxDegreeItem = props => {
-
+    const {t} = useTranslation();
     const {isRequired, initialValue, validator} = props;
 
     return (
@@ -16,7 +17,7 @@ const MaxDegreeItem = props => {
             name='max_degree'
             initialValue={initialValue}
             rules={[{required: isRequired}, {validator: validator}]}
-            tooltip={'查询过程中，单个顶点遍历的最大邻接边数目'}
+            tooltip={t('analysis.algorithm.max_degree_item.tooltip')}
         >
             <InputNumber />
         </Form.Item>

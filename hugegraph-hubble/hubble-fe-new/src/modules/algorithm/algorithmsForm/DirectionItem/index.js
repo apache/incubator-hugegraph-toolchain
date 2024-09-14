@@ -5,16 +5,16 @@
 
 import React from 'react';
 import {Form, Select} from 'antd';
-
-const directionOptions = [
-    {label: '出边', value: 'OUT'},
-    {label: '入边', value: 'IN'},
-    {label: '双边', value: 'BOTH'},
-];
+import {useTranslation} from 'react-i18next';
 
 const DirectionItem = props => {
-
+    const {t} = useTranslation();
     const {desc} = props;
+    const directionOptions = [
+        {label: t('ERView.edge.out'), value: 'OUT'},
+        {label: t('ERView.edge.in'), value: 'IN'},
+        {label: t('ERView.edge.both'), value: 'BOTH'},
+    ];
 
     return (
         <Form.Item
@@ -24,7 +24,7 @@ const DirectionItem = props => {
             tooltip={desc}
         >
             <Select
-                placeholder="顶点向外发散的方向"
+                placeholder={t('analysis.algorithm.direction_item.tooltip')}
                 allowClear
                 options={directionOptions}
             />

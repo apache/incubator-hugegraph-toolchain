@@ -1,7 +1,8 @@
 import Common from './common.json';
-import Bar from './bar.json';
-
+import Board from './board.json';
+import ERView from './ERView.json';
 export {
     Common,
-    Bar,
+    Board,
+    ERView,
 };

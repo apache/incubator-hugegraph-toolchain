@@ -7,12 +7,13 @@ import React, {useMemo} from 'react';
 import {Input} from 'antd';
 import _ from 'lodash';
 import c from './index.module.scss';
+import {useTranslation} from 'react-i18next';
 
 const AlgorithmSearch = props => {
-
+    const {t} = useTranslation();
     const {onSearch} = props;
 
-    const deboucedOnChange = useMemo(
+    const debounceOnChange = useMemo(
         () => {
             return _.debounce(e => {
                 const {value} = e.target;
@@ -25,8 +26,8 @@ const AlgorithmSearch = props => {
     return (
         <div className={c.algorithmSearch}>
             <Input
-                placeholder='算法查询'
-                onChange={deboucedOnChange}
+                placeholder={t('analysis.algorithm.placeholder')}
+                onChange={debounceOnChange}
                 allowClear
             />
         </div>

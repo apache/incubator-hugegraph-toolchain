@@ -1,0 +1,9 @@
+{
+  "Topbar": {
+    "exit":{
+      "name": "logout",
+      "confirm":"confirm logout?",
+      "success":"logout success"
+    }
+  }
+}
