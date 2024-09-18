@@ -12,31 +12,32 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {
     integerValidator,
     greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator,
 } from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {FILTERED_RINGS_DETECTION} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const info = {
-    name: 'Filtered Rings Detection',
-    desc: `带过滤条件的环路检测算法（Filtered Rings Detection）用于检测图中的环路，
-        环路的路径由环路中最小id的顶点来记录。可通过指定点、边属性过滤规则让算法选择性的做路径传播。`,
-    icon: <SafetyCertificateOutlined />,
-};
-const placeholder = '{"vertex_filter":[{"label":"user","property_filter":"$element.weight==1"}]}';
 
+const placeholder = '{"vertex_filter":[{"label":"user","property_filter":"$element.weight==1"}]}';
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.filtered_rings_detection';
 const FilteredRingsDetection = props => {
+    const {t} = useTranslation();
     const {
         handleFormSubmit,
         searchValue,
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const info = {
+        name: 'Filtered Rings Detection',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <SafetyCertificateOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -122,7 +123,7 @@ const FilteredRingsDetection = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -130,7 +131,7 @@ const FilteredRingsDetection = props => {
                     label='rings.property_filter'
                     name='rings.property_filter'
                     initialValue={placeholder}
-                    tooltip='点边属性过滤条件'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.property_filter')}
                 >
                     <Input.TextArea
                         placeholder={placeholder}
@@ -141,7 +142,7 @@ const FilteredRingsDetection = props => {
                     label='rings.min_ring_length'
                     name='rings.min_ring_length'
                     initialValue={0}
-                    tooltip='输出环路的最小长度'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.min_ring_length')}
                     rules={[{validator: integerValidator}]}
                 >
                     <InputNumber />
@@ -150,7 +151,7 @@ const FilteredRingsDetection = props => {
                     label='rings.max_ring_length'
                     name='rings.max_ring_length'
                     initialValue={Number.MAX_SAFE_INTEGER}
-                    tooltip='输出环路的最大长度'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_ring_length')}
                     rules={[{validator: integerValidator}]}
                 >
                     <InputNumber />
@@ -159,7 +160,7 @@ const FilteredRingsDetection = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

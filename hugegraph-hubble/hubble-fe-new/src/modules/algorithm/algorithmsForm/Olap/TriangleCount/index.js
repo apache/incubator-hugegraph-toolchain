@@ -12,21 +12,18 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {
     greaterThanOneAndLowerThanOneHundredThousandIntegerValidator,
     greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator,
 } from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {TRIANGLE_COUNT} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const info = {
-    name: 'Triangle Count',
-    desc: '三角形计数算法，用于计算通过每个顶点的三角形个数。',
-    icon: <SendOutlined />,
-};
 
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.triangle_count';
 const TriangleCount = props => {
     const {
         handleFormSubmit,
@@ -34,7 +31,12 @@ const TriangleCount = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Triangle Count',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <SendOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -120,7 +122,7 @@ const TriangleCount = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -128,7 +130,7 @@ const TriangleCount = props => {
                     label='input.limit_edges_in_one_vertex'
                     name='limit_edges_in_one_vertex'
                     initialValue={-1}
-                    tooltip='最大出边限制'
+                    tooltip={t(OWNED_TEXT_PATH + '.limit_edges_in_one_vertex')}
                 >
                     <InputNumber />
                 </Form.Item>
@@ -136,7 +138,7 @@ const TriangleCount = props => {
                     label='input.minimum_edges_use_superedge_cache'
                     name='input.minimum_edges_use_superedge_cache'
                     initialValue={100}
-                    tooltip='利用内存减少消息量，如果内存不够，可以从100改成1000，但三角计数可能计算不完'
+                    tooltip={t(OWNED_TEXT_PATH + '.minimum_edges_use_superedge_cache')}
                     rules={[{validator: greaterThanOneAndLowerThanOneHundredThousandIntegerValidator}]}
                 >
                     <InputNumber />
@@ -145,7 +147,7 @@ const TriangleCount = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

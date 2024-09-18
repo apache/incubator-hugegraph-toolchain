@@ -9,28 +9,31 @@ import {TagsOutlined} from '@ant-design/icons';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import GraphAnalysisContext from '../../../../Context';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import OlapComputerItem from '../OlapComputerItem';
+import {useTranslation} from 'react-i18next';
 
 const {K_CORE} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const info = {
-    name: 'K-Core',
-    desc: 'K-Core算法，标记所有度数为K的顶点。',
-    icon: <TagsOutlined />,
-};
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.k_core';
+
 
 const KCore = props => {
+    const {t} = useTranslation();
     const {
         handleFormSubmit,
         searchValue,
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const info = {
+        name: 'K-Core',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <TagsOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -116,7 +119,7 @@ const KCore = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -124,7 +127,7 @@ const KCore = props => {
                     initialValue={3}
                     label='kcore.k'
                     name='kcore.k'
-                    tooltip='K-Core算法的k值，非必需，有默认值'
+                    tooltip={t(OWNED_TEXT_PATH + '.k')}
                 >
                     <InputNumber />
                 </Form.Item>

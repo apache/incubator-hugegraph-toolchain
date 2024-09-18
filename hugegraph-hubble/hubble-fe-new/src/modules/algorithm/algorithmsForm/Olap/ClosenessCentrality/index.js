@@ -12,17 +12,13 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {alphaValidator, greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {CLOSENESS_CENTRALITY} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-
-const info = {
-    name: 'Closeness Centrality',
-    desc: '计算一个节点到所有其他可达节点的最短距离的倒数，进行累积后归一化的值。用于计算图中每个节点的度中心性值，支持无向图和有向图。',
-    icon: <DeleteColumnOutlined />,
-};
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.closeness_centrality';
 
 const ClosenessCentrality = props => {
     const {
@@ -31,7 +27,12 @@ const ClosenessCentrality = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Closeness Centrality',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <DeleteColumnOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -58,7 +59,7 @@ const ClosenessCentrality = props => {
                 params: {...args},
             };
             const filteredParams = removeNilKeys(formParams);
-            const response =  await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
+            const response = await api.analysis.postOlapInfo(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
                 handleFormSubmit(FAILED, '', message);
@@ -117,14 +118,14 @@ const ClosenessCentrality = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
                 <Form.Item
                     label='closeness_centrality.weight_property'
                     name='closeness_centrality.weight_property'
-                    tooltip='权重属性名'
+                    tooltip={t(OWNED_TEXT_PATH + '.weight_property')}
                 >
                     <Input />
                 </Form.Item>
@@ -132,7 +133,7 @@ const ClosenessCentrality = props => {
                     label='closeness_centrality.sample_rate'
                     name='closeness_centrality.sample_rate'
                     initialValue={1.0}
-                    tooltip='边的采样率'
+                    tooltip={t(OWNED_TEXT_PATH + '.sample_rate')}
                     rules={[{validator: alphaValidator}]}
                 >
                     <InputNumber />
@@ -141,7 +142,7 @@ const ClosenessCentrality = props => {
                     label='input.limit_edges_in_one_vertex'
                     name='input.limit_edges_in_one_vertex'
                     initialValue={-1}
-                    tooltip='最大出边限制'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.input_limit_edges_per_vertex')}
                 >
                     <InputNumber />
                 </Form.Item>
@@ -149,7 +150,7 @@ const ClosenessCentrality = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

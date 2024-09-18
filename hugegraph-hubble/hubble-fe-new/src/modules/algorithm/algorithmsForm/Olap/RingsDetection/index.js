@@ -12,18 +12,15 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {RINGS_DETECTION} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const info = {
-    name: 'Rings Detection',
-    desc: '环路检测算法（Rings Detection），用于检测图中的环路，环路的路径由环路中最小id的顶点来记录。',
-    icon: <PropertySafetyOutlined />,
-};
 
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.ring_detection';
 const RingsDetection = props => {
     const {
         handleFormSubmit,
@@ -31,7 +28,12 @@ const RingsDetection = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Rings Detection',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <PropertySafetyOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -116,7 +118,7 @@ const RingsDetection = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -124,7 +126,7 @@ const RingsDetection = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

@@ -11,19 +11,15 @@ import OlapComputerItem from '../OlapComputerItem';
 import {BarcodeOutlined} from '@ant-design/icons';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator} from '../../utils';
 import _ from 'lodash';
+import {useTranslation} from 'react-i18next';
 
 const {WEAKLY_CONNECTED_COMPONENT} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const info = {
-    name: 'Weakly Connected Component',
-    desc: '弱连通分量，计算无向图中所有联通的子图，输出各顶点所属的弱联通子图id',
-    icon: <BarcodeOutlined />,
-};
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.weakly_connected_component';
 const WeaklyConnectedComponent = props => {
     const {
         handleFormSubmit,
@@ -31,7 +27,12 @@ const WeaklyConnectedComponent = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Weakly Connected Component',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <BarcodeOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -117,7 +118,7 @@ const WeaklyConnectedComponent = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -125,7 +126,7 @@ const WeaklyConnectedComponent = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

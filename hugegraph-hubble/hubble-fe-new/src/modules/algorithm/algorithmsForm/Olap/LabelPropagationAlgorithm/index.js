@@ -12,17 +12,12 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
 const {LABEL_PROPAGATION_ALGORITHM} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-
-const info = {
-    name: 'Label Propagation Algorithm',
-    desc: '标签传递算法，是一种图聚类算法，常用在社交网络中。',
-    icon: <ContainerOutlined />,
-};
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.label_propagation_algorithm';
 const LabelPropagationAlgorithm = props => {
     const {
         handleFormSubmit,
@@ -30,7 +25,12 @@ const LabelPropagationAlgorithm = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Label Propagation Algorithm',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <ContainerOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -116,7 +116,7 @@ const LabelPropagationAlgorithm = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>

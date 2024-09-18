@@ -11,32 +11,35 @@ import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {
+    GRAPH_STATUS,
+    ALGORITHM_NAME,
+    GRAPH_LOAD_STATUS,
+    TEXT_PATH,
+    useTranslatedConstants,
+} from '../../../../../utils/constants';
 import {positiveIntegerValidator, greaterThanZeroAndLowerThanOneContainsValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {CLOSENESS_CENTRALITY} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
-
-const boolOptions = [
-    {label: '是', value: 1},
-    {label: '否', value: 0},
-];
-
-const info = {
-    name: 'Closeness Centrality',
-    desc: '计算一个节点到所有其他可达节点的最短距离的倒数，进行累积后归一化的值。用于计算图中每个节点的度中心性值，支持无向图和有向图。',
-    icon: <DeleteColumnOutlined />,
-};
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.closeness_centrality';
 
 const ClosenessCentralityVermeer = props => {
+
     const {
         handleFormSubmit,
         searchValue,
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const info = {
+        name: 'Closeness Centrality',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <DeleteColumnOutlined />,
+    };
+    const {boolOptions} = useTranslatedConstants();
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
@@ -64,9 +67,9 @@ const ClosenessCentralityVermeer = props => {
             setRequiring(true);
             updateCurrentAlgorithm(CLOSENESS_CENTRALITY);
             handleFormSubmit(LOADING);
-            const formParams =  {'compute.algorithm': 'closeness_centrality', ...algorithmParams};
+            const formParams = {'compute.algorithm': 'closeness_centrality', ...algorithmParams};
             const filteredParams = removeNilKeys(formParams);
-            const response =  await api.analysis.runOlapVermeer(graphSpace, graph, filteredParams);
+            const response = await api.analysis.runOlapVermeer(graphSpace, graph, filteredParams);
             const {data, status, message} = response || {};
             if (status !== 200) {
                 handleFormSubmit(FAILED, '', message);
@@ -127,7 +130,7 @@ const ClosenessCentralityVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + './worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -136,7 +139,7 @@ const ClosenessCentralityVermeer = props => {
                     label='closeness_centrality.sample_rate'
                     name='closeness_centrality.sample_rate'
                     initialValue={1.0}
-                    tooltip='边的采样率，由于此算法是指数型增长的算法，算力要求非常高，需要根据业务需求设置合理的采样率，得到一个近似结果'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + './sample_rate')}
                     rules={[{validator: greaterThanZeroAndLowerThanOneContainsValidator}]}
                 >
                     <InputNumber />
@@ -145,7 +148,7 @@ const ClosenessCentralityVermeer = props => {
                     label='closeness_centrality.wf_improved'
                     name='closeness_centrality.wf_improved'
                     initialValue={1}
-                    tooltip={'是否使用 Wasserman and Faust 紧密中心性公式'}
+                    tooltip={t(OWNED_TEXT_PATH + './wf_improved')}
                 >
                     <Select allowClear options={boolOptions} />
                 </Form.Item>

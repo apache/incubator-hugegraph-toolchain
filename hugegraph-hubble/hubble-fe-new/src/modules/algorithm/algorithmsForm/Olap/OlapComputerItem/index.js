@@ -1,20 +1,22 @@
 import React, {useContext} from 'react';
 import {Form, Input, InputNumber} from 'antd';
 import GraphAnalysisContext from '../../../../Context';
+import {TEXT_PATH} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
-const desp = {
-    computer_cpu: 'master最大CPU',
-    worker_cpu: 'worker最大CPU',
-    master_request_memory: 'master最小内存，不满足最小内存则分配不成功',
-    worker_request_memory: 'worker最小内存，不满足最小内存则分配不成功',
-    master_memory: 'master最大内存，超过最大内存则会被k8s中止',
-    worker_memory: 'worker最大内存，超过最大内存则会被k8s中止',
-};
 
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.computer_item';
 const OlapComputerItem = () => {
-
+    const {t} = useTranslation();
     const {isVermeer} =  useContext(GraphAnalysisContext);
-
+    const desp = {
+        computer_cpu: t(`${OWNED_TEXT_PATH}.computer_cpu`),
+        worker_cpu: t(`${OWNED_TEXT_PATH}.worker_cpu`),
+        master_request_memory: t(`${OWNED_TEXT_PATH}.master_request_memory`),
+        worker_request_memory: t(`${OWNED_TEXT_PATH}.worker_request_memory`),
+        master_memory: t(`${OWNED_TEXT_PATH}.master_memory`),
+        worker_memory: t(`${OWNED_TEXT_PATH}.worker_memory`),
+    };
     const formItem = (
         <>
             <Form.Item

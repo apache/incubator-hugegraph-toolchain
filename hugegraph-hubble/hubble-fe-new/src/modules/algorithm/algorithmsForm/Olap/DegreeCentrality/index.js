@@ -12,26 +12,26 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {DEGREE_CENTRALIT} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-
-const info = {
-    name: 'Degree Centrality',
-    desc: '用于计算图中每个节点的度中心性值，支持无向图和有向图。',
-    icon: <ControlOutlined />,
-};
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.degree_centrality';
 const DegreeCentrality = props => {
+    const {t} = useTranslation();
     const {
         handleFormSubmit,
         searchValue,
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const info = {
+        name: 'Degree Centrality',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <ControlOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -117,14 +117,14 @@ const DegreeCentrality = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
                 <Form.Item
                     label='degree_centrality.weight_property'
                     name='degree_centrality.weight_property'
-                    tooltip='权重属性名'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.weight_property')}
                     initialValue=''
                 >
                     <Input />
@@ -133,7 +133,7 @@ const DegreeCentrality = props => {
                     label='degree_centrality.direction'
                     name='degree_centrality.direction'
                     initialValue=''
-                    tooltip='方向，in/out/both 入边/出边/双边'
+                    tooltip={t(OWNED_TEXT_PATH + '.direction')}
                 >
                     <Input />
                 </Form.Item>
@@ -141,7 +141,7 @@ const DegreeCentrality = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

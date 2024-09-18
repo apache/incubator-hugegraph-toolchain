@@ -12,17 +12,15 @@ import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {positiveIntegerValidator} from '../../utils/index';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS, TEXT_PATH} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
 const {LABEL_PROPAGATION_ALGORITHM} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
 
-const info = {
-    name: 'Label Propagation Algorithm',
-    desc: '标签传递算法，是一种图聚类算法，常用在社交网络中。',
-    icon: <ContainerOutlined />,
-};
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.label_propagation_algorithm';
+
 
 const LabelPropagationAlgorithmVermeer = props => {
     const {
@@ -31,7 +29,12 @@ const LabelPropagationAlgorithmVermeer = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Label Propagation Algorithm',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <ContainerOutlined />,
+    };
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
@@ -122,7 +125,7 @@ const LabelPropagationAlgorithmVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -131,7 +134,7 @@ const LabelPropagationAlgorithmVermeer = props => {
                     label='compute.max_step'
                     name='compute.max_step'
                     initialValue={10}
-                    tooltip='最大迭代步数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_step')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />

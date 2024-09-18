@@ -12,16 +12,14 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
 const {LOUVAIN} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const info = {
-    name: 'Louvain',
-    desc: 'Louvain 算法是基于模块度的社区发现算法。由于Louvain算法的特殊性，只用一个worker instance运行。',
-    icon: <HomeOutlined />,
-};
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.louvain';
+
 
 const Louvain = props => {
     const {
@@ -30,7 +28,12 @@ const Louvain = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Louvain',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <HomeOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(true);
     const [isRequiring, setRequiring] = useState(false);
@@ -117,7 +120,7 @@ const Louvain = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                     initialValue={1}
                 >
                     <InputNumber disabled />
@@ -125,21 +128,21 @@ const Louvain = props => {
                 <Form.Item
                     label='louvain.weightkey'
                     name='louvain.weightkey'
-                    tooltip='权重属性名'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.weight_property')}
                 >
                     <Input />
                 </Form.Item>
                 <Form.Item
                     label='k8s.workerRequestMemory'
                     name='k8s.workerRequestMemory'
-                    tooltip='计算节点最小内存需求'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.request_memory')}
                 >
                     <Input />
                 </Form.Item>
                 <Form.Item
                     label='k8s.jvm_options'
                     name='k8s.jvm_options'
-                    tooltip='jvm环境内存大小，默认为32g'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.JVM_memory')}
                 >
                     <Input />
                 </Form.Item>

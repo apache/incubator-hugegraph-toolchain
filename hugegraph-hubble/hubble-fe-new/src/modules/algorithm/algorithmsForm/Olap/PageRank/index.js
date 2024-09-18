@@ -16,25 +16,25 @@ import {
     greaterThanZeroAndLowerThanOneValidator,
     greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator,
 } from '../../utils';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
 const {PAGE_RANK} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-
-const info = {
-    name: 'PageRank',
-    desc: 'PageRank算法又称网页排名算法，是一种由搜索引擎根据网页（节点）之间相互的超链接进行计算的技术，用来体现网页（节点）的相关性和重要性。',
-    icon: <BranchesOutlined />,
-};
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.page_rank';
 const PageRank = props => {
+    const {t} = useTranslation();
     const {
         handleFormSubmit,
         searchValue,
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const info = {
+        name: 'PageRank',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <BranchesOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -119,7 +119,7 @@ const PageRank = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -127,7 +127,7 @@ const PageRank = props => {
                     label='pagerank.alpha'
                     name='pagerank.alpha'
                     initialValue={0.15}
-                    tooltip='权重系数(又称阻尼系数)'
+                    tooltip={t(OWNED_TEXT_PATH + '.alpha')}
                     rules={[{validator: greaterThanZeroAndLowerThanOneValidator}]}
                 >
                     <InputNumber step={0.1} />
@@ -136,7 +136,7 @@ const PageRank = props => {
                     label='pagerank.l1DiffThreshold'
                     name='pagerank.l1DiffThreshold'
                     initialValue={0.00001}
-                    tooltip='收敛精度,为每次迭代各个点相较于上次迭代变化的绝对值累加和上限，当小于这个值时认为计算收敛，算法停止。'
+                    tooltip={t(OWNED_TEXT_PATH + '.l1')}
                     rules={[{validator: greaterThanZeroAndLowerThanOneValidator}]}
                 >
                     <InputNumber />
@@ -145,7 +145,7 @@ const PageRank = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

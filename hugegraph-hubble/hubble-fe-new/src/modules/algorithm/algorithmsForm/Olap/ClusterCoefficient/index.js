@@ -12,26 +12,27 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {greaterThanOneAndLowerThanTenThousandIntegerValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {CLUSTER_COEFFICIENT} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-
-const info = {
-    name: 'Cluster Coefficient',
-    desc: '聚集系数，计算每个点局部的聚集系数, 暂时未提供全局聚集系数。',
-    icon: <WalletOutlined />,
-};
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.cluster_coefficient';
 
 const ClusterCoefficient = props => {
+    const {t} = useTranslation();
     const {
         handleFormSubmit,
         searchValue,
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const info = {
+        name: 'Cluster Coefficient',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <WalletOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -117,7 +118,7 @@ const ClusterCoefficient = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -125,7 +126,7 @@ const ClusterCoefficient = props => {
                     label='input.minimum_edges_use_superedge_cache'
                     name='input.minimum_edges_use_superedge_cache'
                     initialValue={100}
-                    tooltip='利用内存减少消息量，如果内存不够，可以从100改成1000，但聚集系数可能计算不完'
+                    tooltip={t(OWNED_TEXT_PATH + '.minimum_edges_use_superedge_cache')}
                     rules={[{validator: greaterThanOneAndLowerThanTenThousandIntegerValidator}]}
                 >
                     <InputNumber />

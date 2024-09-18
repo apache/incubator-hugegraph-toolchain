@@ -11,19 +11,16 @@ import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS, TEXT_PATH} from '../../../../../utils/constants';
 import {positiveIntegerValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {TRIANGLE_COUNT} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
 
-const info = {
-    name: 'Triangle Count',
-    desc: '三角形计数算法，用于计算通过每个顶点的三角形个数。',
-    icon: <SendOutlined />,
-};
 
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.triangle_count';
 const TriangleCountVermeer = props => {
     const {
         handleFormSubmit,
@@ -31,7 +28,12 @@ const TriangleCountVermeer = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Triangle Count',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <SendOutlined />,
+    };
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
@@ -121,7 +123,7 @@ const TriangleCountVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />

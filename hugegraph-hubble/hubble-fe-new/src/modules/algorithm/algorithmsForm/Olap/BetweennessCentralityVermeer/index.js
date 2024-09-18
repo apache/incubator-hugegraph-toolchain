@@ -13,22 +13,11 @@ import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
 import {positiveIntegerValidator, greaterThanZeroAndLowerThanOneContainsValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {BETWEENNESS_CENTRALITY} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
-
-const info = {
-    name: 'Betweenness Centrality',
-    desc: `中介中心性算法（Betweeness Centrality）判断一个节点具有"桥梁"节点的值,
-        值越大说明它作为图中两点间必经路径的可能性越大, 典型的例子包括社交网络中的共同关注的人`,
-    icon: <ControlOutlined />,
-};
-
-const boolOptions = [
-    {label: '是', value: 1},
-    {label: '否', value: 0},
-];
 
 const BetweennessCentralityVermeer = props => {
     const {
@@ -37,7 +26,16 @@ const BetweennessCentralityVermeer = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Betweenness Centrality',
+        desc: t('analysis.algorithm.olap.betweenness_centrality.desc'),
+        icon: <ControlOutlined />,
+    };
+    const boolOptions = [
+        {label: t('common.verify.yes'), value: 1},
+        {label: t('common.verify.no'), value: 0},
+    ];
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(true);
     const [isRequiring, setRequiring] = useState(false);
@@ -127,7 +125,7 @@ const BetweennessCentralityVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t('analysis.algorithm.common.worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -136,7 +134,7 @@ const BetweennessCentralityVermeer = props => {
                     label='betweenness_centrality.sample_rate'
                     name='betweenness_centrality.sample_rate'
                     initialValue={1}
-                    tooltip='边的采样率，由于此算法是指数型增长的算法，算力要求非常高，需要根据业务需求设置合理的采样率，得到一个近似结果'
+                    tooltip={t('analysis.algorithm.olap.betweenness_centrality.sample_rate_long')}
                     rules={[{validator: greaterThanZeroAndLowerThanOneContainsValidator}]}
                 >
                     <InputNumber />
@@ -145,7 +143,7 @@ const BetweennessCentralityVermeer = props => {
                     label='betweenness_centrality.use_endpoint'
                     name='betweenness_centrality.use_endpoint'
                     initialValue={0}
-                    tooltip={'是否计算最后一个点'}
+                    tooltip={t('analysis.algorithm.olap.betweenness_centrality.use_endpoint')}
                 >
                     <Select allowClear options={boolOptions} />
                 </Form.Item>

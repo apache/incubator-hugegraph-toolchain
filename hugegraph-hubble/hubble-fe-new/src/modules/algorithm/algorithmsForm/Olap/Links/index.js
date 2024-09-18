@@ -12,22 +12,17 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator} from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {TextArea} = Input;
 
 const {LINKS} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-
-const info = {
-    name: 'Links',
-    desc: '链路追踪算法，通过指定的一批开始顶点，按照指定的传播规则进行传播，到指定的结束条件后停止并记录下路径。',
-    icon: <UngroupOutlined />,
-};
 // eslint-disable-next-line
 const placeholder='{"start_vertexes":["A","B","C","D","E"],"vertex_end_condition":{"label":"user","property_filter":"$element.age <= 90"},"edge_end_condition":{"label":"pay","property_filter":"double($out.money) >= 4"},"edge_compare_condition":{"label":"pay","property_filter":"$out.money > $in.money"}}';
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.links';
 const Links = props => {
     const {
         handleFormSubmit,
@@ -35,7 +30,12 @@ const Links = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'Links',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <UngroupOutlined />,
+    };
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
     const [isRequiring, setRequiring] = useState(false);
@@ -120,7 +120,7 @@ const Links = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -128,7 +128,7 @@ const Links = props => {
                     label='links.analyze_config'
                     name='links.analyze_config'
                     initialValue={placeholder}
-                    tooltip='链路传播条件配置'
+                    tooltip={t(OWNED_TEXT_PATH + '.analyze_config')}
                     rules={[{required: true}]}
                 >
                     <TextArea
@@ -140,7 +140,7 @@ const Links = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

@@ -10,28 +10,30 @@ import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {positiveIntegerValidator} from '../../utils';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS, TEXT_PATH} from '../../../../../utils/constants';
 import GraphAnalysisContext from '../../../../Context';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
+import {useTranslation} from 'react-i18next';
 
 const {K_CORE} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
 
-const info = {
-    name: 'K-Core',
-    desc: 'K-Core算法，标记所有度数为K的顶点。',
-    icon: <TagsOutlined />,
-};
 
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.k_core';
 const KCoreVermeer = props => {
+    const {t} = useTranslation();
     const {
         handleFormSubmit,
         searchValue,
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const info = {
+        name: 'K-Core',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <TagsOutlined />,
+    };
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
@@ -122,7 +124,7 @@ const KCoreVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -131,7 +133,7 @@ const KCoreVermeer = props => {
                     label='kcore.degree_k'
                     name='kcore.degree_k'
                     initialValue={3}
-                    tooltip='最小度数阈值'
+                    tooltip={t(OWNED_TEXT_PATH + '.degree_k')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />

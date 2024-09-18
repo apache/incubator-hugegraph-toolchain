@@ -12,18 +12,13 @@ import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {greaterThanZeroAndLowerThanOneValidator, positiveIntegerValidator} from '../../utils';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS, TEXT_PATH} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
 const {PAGE_RANK} = ALGORITHM_NAME;
 const {LOADED} = GRAPH_LOAD_STATUS;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-
-const info = {
-    name: 'PageRank',
-    desc: 'PageRank算法又称网页排名算法，是一种由搜索引擎根据网页（节点）之间相互的超链接进行计算的技术，用来体现网页（节点）的相关性和重要性。',
-    icon: <BranchesOutlined />,
-};
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.page_rank';
 const PageRankVermeer = props => {
     const {
         handleFormSubmit,
@@ -31,7 +26,12 @@ const PageRankVermeer = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'PageRank',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <BranchesOutlined />,
+    };
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(true);
@@ -121,7 +121,7 @@ const PageRankVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -130,7 +130,7 @@ const PageRankVermeer = props => {
                     label='compute.max_step'
                     name='compute.max_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -139,7 +139,7 @@ const PageRankVermeer = props => {
                     label='pagerank.damping'
                     name='pagerank.damping'
                     initialValue={0.85}
-                    tooltip='阻尼系数，传导到下个点的百分比'
+                    tooltip={t(OWNED_TEXT_PATH + '.dampling')}
                     rules={[{validator: greaterThanZeroAndLowerThanOneValidator}]}
                 >
                     <InputNumber />
@@ -148,7 +148,7 @@ const PageRankVermeer = props => {
                     label='pagerank.diff_threshold'
                     name='pagerank.diff_threshold'
                     initialValue={0.00001}
-                    tooltip='收敛精度,为每次迭代各个点相较于上次迭代变化的绝对值累加和上限，当小于这个值时认为计算收敛，算法停止。'
+                    tooltip={t(OWNED_TEXT_PATH + '.diff')}
                     rules={[{validator: greaterThanZeroAndLowerThanOneValidator}]}
                 >
                     <InputNumber />

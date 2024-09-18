@@ -4,7 +4,6 @@
  */
 
 import React, {useContext} from 'react';
-import {ALGORITHM_NAME} from '../../../../../utils/constants';
 import GraphAnalysisContext from '../../../../Context';
 import PageRank from '../PageRank';
 import PageRankVermeer from '../PageRankVermeer';
@@ -30,27 +29,32 @@ import KCore from '../KCore';
 import KCoreVermeer from '../KCoreVermeer';
 import PersonalPageRank from '../PersonalPageRank';
 import SSSPVermeer from '../SSSPVermeer';
+import {useTranslatedConstants} from '../../../../../utils/constants';
 
-const {
-    PAGE_RANK,
-    WEAKLY_CONNECTED_COMPONENT,
-    DEGREE_CENTRALIT,
-    CLOSENESS_CENTRALITY,
-    TRIANGLE_COUNT,
-    RINGS_DETECTION,
-    FILTERED_RINGS_DETECTION,
-    LINKS,
-    CLUSTER_COEFFICIENT,
-    BETWEENNESS_CENTRALITY,
-    LABEL_PROPAGATION_ALGORITHM,
-    LOUVAIN,
-    FILTER_SUBGRAPH_MATCHING,
-    K_CORE,
-    PERSONAL_PAGE_RANK,
-    SSSP,
-} = ALGORITHM_NAME;
+
 
 const OlapItem = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {
+        PAGE_RANK,
+        WEAKLY_CONNECTED_COMPONENT,
+        DEGREE_CENTRALIT,
+        CLOSENESS_CENTRALITY,
+        TRIANGLE_COUNT,
+        RINGS_DETECTION,
+        FILTERED_RINGS_DETECTION,
+        LINKS,
+        CLUSTER_COEFFICIENT,
+        BETWEENNESS_CENTRALITY,
+        LABEL_PROPAGATION_ALGORITHM,
+        LOUVAIN,
+        FILTER_SUBGRAPH_MATCHING,
+        K_CORE,
+        PERSONAL_PAGE_RANK,
+        SSSP,
+    } = ALGORITHM_NAME;
+
+
     const {
         algorithmName,
         ...args

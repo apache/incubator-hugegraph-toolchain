@@ -10,20 +10,16 @@ import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import {BarcodeOutlined} from '@ant-design/icons';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS, TEXT_PATH} from '../../../../../utils/constants';
 import {positiveIntegerValidator} from '../../utils';
 import _ from 'lodash';
+import {useTranslation} from 'react-i18next';
 
 const {WEAKLY_CONNECTED_COMPONENT} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
 
-const info = {
-    name: 'Weakly Connected Component',
-    desc: '弱连通分量，计算无向图中所有联通的子图，输出各顶点所属的弱联通子图id',
-    icon: <BarcodeOutlined />,
-};
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.weakly_connected_component';
 const WeaklyConnectedComponentVermeer = props => {
     const {
         handleFormSubmit,
@@ -31,6 +27,12 @@ const WeaklyConnectedComponentVermeer = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
+    const {t} = useTranslation();
+    const info = {
+        name: 'Weakly Connected Component',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <BarcodeOutlined />,
+    };
 
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
@@ -123,7 +125,7 @@ const WeaklyConnectedComponentVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -132,7 +134,7 @@ const WeaklyConnectedComponentVermeer = props => {
                     label='compute.max_step'
                     name='compute.max_step'
                     initialValue={10}
-                    tooltip='最大迭代步数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />

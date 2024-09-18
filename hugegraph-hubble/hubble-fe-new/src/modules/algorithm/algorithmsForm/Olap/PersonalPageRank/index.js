@@ -12,21 +12,17 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {
     alphaValidator,
     greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator,
 } from '../../utils';
+import {useTranslation} from 'react-i18next';
 
 const {PERSONAL_PAGE_RANK} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const info = {
-    name: 'PersonalPageRank',
-    desc: `PersonalPageRank 算法又称个性化推荐算法，
-        是一种由搜索引擎根据网页（节点）之间相互的超链接进行计算的技术，用来体现网页（节点）的相关性和重要性`,
-    icon: <TeamOutlined />,
-};
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.personal_page_bank';
 
 const PersonalPageRank = props => {
     const {
@@ -35,6 +31,12 @@ const PersonalPageRank = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
+    const {t} = useTranslation();
+    const info = {
+        name: 'PersonalPageRank',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <TeamOutlined />,
+    };
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
@@ -122,7 +124,7 @@ const PersonalPageRank = props => {
                     label='worker'
                     name='worker'
                     rules={[{required: true}]}
-                    tooltip='实例数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
                 >
                     <InputNumber min={1} precision={0} />
                 </Form.Item>
@@ -131,7 +133,7 @@ const PersonalPageRank = props => {
                     label='ppr.source'
                     name='ppr.source'
                     initialValue='/'
-                    tooltip='起始顶点'
+                    tooltip={t(OWNED_TEXT_PATH + '.source')}
                     rules={[{required: true}]}
                 >
                     <Input />
@@ -141,7 +143,7 @@ const PersonalPageRank = props => {
                     label='ppr.alpha'
                     name='ppr.alpha'
                     initialValue={0.85}
-                    tooltip='权重系数(又称阻尼系数)'
+                    tooltip={t(OWNED_TEXT_PATH + '.alpha')}
                     rules={[{validator: alphaValidator}]}
                 >
                     <InputNumber />
@@ -151,7 +153,7 @@ const PersonalPageRank = props => {
                     label='ppr.l1DiffThreshold'
                     name='ppr.l1DiffThreshold'
                     initialValue={0.00001}
-                    tooltip='收敛精度'
+                    tooltip={t(OWNED_TEXT_PATH + '.l1')}
                     rules={[{validator: alphaValidator}]}
                 >
                     <InputNumber />
@@ -161,10 +163,10 @@ const PersonalPageRank = props => {
                     label='input.use_id_fixlength'
                     name='input.use_id_fixlength'
                     initialValue
-                    tooltip='true时，系统采用自增id运算'
+                    tooltip={t(OWNED_TEXT_PATH + '.use_id_fixlength')}
                 >
                     <Select
-                        placeholder="是否采用自增id运算"
+                        placeholder={t(OWNED_TEXT_PATH + '.use_id_fixlength_query')}
                         allowClear
                     >
                         <Select.Option value>是</Select.Option>
@@ -176,7 +178,7 @@ const PersonalPageRank = props => {
                     label='bsp.max_super_step'
                     name='bsp.max_super_step'
                     initialValue={10}
-                    tooltip='最大迭代次数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
                     rules={[{validator: greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator}]}
                 >
                     <InputNumber />

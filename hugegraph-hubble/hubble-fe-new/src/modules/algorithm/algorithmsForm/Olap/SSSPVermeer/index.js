@@ -12,18 +12,15 @@ import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {positiveIntegerValidator} from '../../utils';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS, TEXT_PATH} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
 const {SSSP} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
 
-const info = {
-    name: 'SSSP',
-    desc: '单元最短路径算法，求一个点到其他所有点的最短距离',
-    icon: <NodeIndexOutlined />,
-};
 
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.SSSPVermeer';
 const SSSPVermeer = props => {
     const {
         handleFormSubmit,
@@ -31,7 +28,12 @@ const SSSPVermeer = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
-
+    const {t} = useTranslation();
+    const info = {
+        name: 'SSSP',
+        desc: t(OWNED_TEXT_PATH + '.desc'),
+        icon: <NodeIndexOutlined />,
+    };
     const {graphSpace, graph, graphStatus} = useContext(GraphAnalysisContext);
 
     const [isEnableRun, setEnableRun] = useState(false);
@@ -122,7 +124,7 @@ const SSSPVermeer = props => {
                     label='compute.parallel'
                     name='compute.parallel'
                     initialValue={1}
-                    tooltip='worker计算线程数'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
                     rules={[{validator: positiveIntegerValidator}]}
                 >
                     <InputNumber />
@@ -130,7 +132,7 @@ const SSSPVermeer = props => {
                 <Form.Item
                     label='sssp.source'
                     name='sssp.source'
-                    tooltip='起始点ID'
+                    tooltip={t(TEXT_PATH.ALGORITHM_COMMON + '.source')}
                     rules={[{required: true}]}
                 >
                     <Input />
