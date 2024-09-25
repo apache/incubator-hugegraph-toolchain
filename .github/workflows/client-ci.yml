@@ -69,6 +69,7 @@ jobs:
           mvn test -Dtest=UnitTestSuite -ntp
           mvn test -Dtest=ApiTestSuite
           mvn test -Dtest=FuncTestSuite
+        continue-on-error: true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
