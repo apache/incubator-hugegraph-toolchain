@@ -17,10 +17,10 @@
 
 package org.apache.hugegraph.structure.schema;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.apache.hugegraph.structure.constant.EdgeLabelType;
 import org.apache.hugegraph.structure.constant.Frequency;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.driver.SchemaManager;
@@ -33,12 +33,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EdgeLabel extends SchemaLabel {
 
+    @JsonProperty("edgelabel_type")
+    private EdgeLabelType edgeLabelType = EdgeLabelType.NORMAL;
+    @JsonProperty("parent_label")
+    private String parentLabel;
     @JsonProperty("frequency")
     private Frequency frequency;
     @JsonProperty("source_label")
     private String sourceLabel;
     @JsonProperty("target_label")
     private String targetLabel;
+    @JsonProperty("links")
+    private Set<Map<String, String>> links;
     @JsonProperty("sort_keys")
     private List<String> sortKeys;
     @JsonProperty("ttl")
@@ -60,6 +66,22 @@ public class EdgeLabel extends SchemaLabel {
         return HugeType.EDGE_LABEL.string();
     }
 
+    public boolean parent() {
+        return this.edgeLabelType.parent();
+    }
+
+    public boolean sub() {
+        return this.edgeLabelType.sub();
+    }
+
+    public String parentLabel(){
+        return this.parentLabel;
+    }
+
+    public EdgeLabelType edgeLabelType(){
+        return this.edgeLabelType;
+    }
+
     public Frequency frequency() {
         return this.frequency;
     }
@@ -72,9 +94,23 @@ public class EdgeLabel extends SchemaLabel {
         return this.targetLabel;
     }
 
+    public Set<Map<String, String>> links() {
+        return this.links;
+    }
+
     public boolean linkedVertexLabel(String vertexLabel) {
-        return this.sourceLabel.equals(vertexLabel) ||
-               this.targetLabel.equals(vertexLabel);
+         if (this.edgeLabelType.parent() || this.links == null) {
+             return false;
+         }
+
+         for (Map<String, String> pair : this.links) {
+             for(String str : pair.keySet()){
+                 if (str.equals(vertexLabel) || pair.get(str).equals(vertexLabel)) {
+                     return true;
+                 }
+             }
+         }
+         return false;
     }
 
     public List<String> sortKeys() {
@@ -92,11 +128,13 @@ public class EdgeLabel extends SchemaLabel {
     @Override
     public String toString() {
         return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
-                             "sortKeys=%s, indexLabels=%s, nullableKeys=%s, " +
-                             "properties=%s, ttl=%s, ttlStartTime=%s, " +
-                             "status=%s}",
+                             "edgeLabel_type=%s, " + "parent_label=%s" +
+                             "links=%s, sortKeys=%s, indexLabels=%s, " +
+                             "nullableKeys=%s, properties=%s, ttl=%s, " +
+                             "ttlStartTime=%s, status=%s}",
                              this.name, this.sourceLabel, this.targetLabel,
-                             this.sortKeys, this.indexLabels,
+                             this.edgeLabelType, this.parentLabel,
+                             this.links, this.sortKeys, this.indexLabels,
                              this.nullableKeys, this.properties, this.ttl,
                              this.ttlStartTime, this.status);
     }
@@ -114,6 +152,12 @@ public class EdgeLabel extends SchemaLabel {
         Builder nullableKeys(String... keys);
 
         Builder link(String sourceLabel, String targetLabel);
+
+        Builder asBase();
+
+        Builder withBase(String fatherLabel);
+
+        Builder asGeneral();
 
         Builder sourceLabel(String label);
 
@@ -197,19 +241,56 @@ public class EdgeLabel extends SchemaLabel {
 
         @Override
         public Builder link(String sourceLabel, String targetLabel) {
-            this.edgeLabel.sourceLabel = sourceLabel;
-            this.edgeLabel.targetLabel = targetLabel;
+            if (this.edgeLabel.links == null) {
+                this.edgeLabel.links = new HashSet<>();
+                this.edgeLabel.sourceLabel = sourceLabel;
+                this.edgeLabel.targetLabel = targetLabel;
+            }
+            HashMap<String, String> map = new HashMap<>();
+            map.put(sourceLabel, targetLabel);
+            this.edgeLabel.links.add(map);
             return this;
         }
 
         @Override
+        public Builder asBase() {
+            this.edgeLabel.edgeLabelType = EdgeLabelType.PARENT;
+            return this;
+        }
+
+        @Override
+        public Builder withBase(String parentLabel) {
+            this.edgeLabel.edgeLabelType = EdgeLabelType.SUB;
+            this.edgeLabel.parentLabel = parentLabel;
+            return this;
+        }
+
+        @Override
+        public Builder asGeneral() {
+            this.edgeLabel.edgeLabelType = EdgeLabelType.GENERAL;
+            return this;
+        }
+
+
+        @Override
         public Builder sourceLabel(String label) {
+            E.checkArgument(this.edgeLabel.links == null ||
+                            this.edgeLabel.links.isEmpty(),
+                            "Not allowed add source label to an edge label which " +
+                            "already has links");
             this.edgeLabel.sourceLabel = label;
             return this;
         }
 
         @Override
         public Builder targetLabel(String label) {
+            E.checkArgument(this.edgeLabel.links == null ||
+                            this.edgeLabel.links.isEmpty(),
+                            "Not allowed add source label to an edge label which " +
+                            "already has links");
+            E.checkArgument(this.edgeLabel.sourceLabel != null,
+                            "Not allowed add target label to an edge label which " +
+                            "not has source label yet");
             this.edgeLabel.targetLabel = label;
             return this;
         }
