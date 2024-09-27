@@ -28,7 +28,7 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.factory.PDHugeClientFactory;
 import org.apache.hugegraph.exception.ParameterizedException;
 import org.apache.hugegraph.service.HugeClientPoolService;
-//import org.apache.hugegraph.service.auth.UserService; // TODO RECOVER WHEN AUTH
+import org.apache.hugegraph.service.auth.UserService;
 import org.apache.hugegraph.util.EntityUtil;
 import org.apache.hugegraph.util.Ex;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,8 +54,8 @@ public abstract class BaseController {
     @Autowired
     private HugeConfig config;
 
-//    @Autowired
-//    UserService userService; // TODO RECOVER WHEN AUTH
+    @Autowired
+    UserService userService;
 
     public static final String ORDER_ASC = "asc";
     public static final String ORDER_DESC = "desc";
