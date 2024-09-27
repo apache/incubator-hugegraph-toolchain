@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,12 +19,12 @@
 
 package org.apache.hugegraph.util;
 
+import org.apache.hugegraph.exception.InternalException;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-
-import org.apache.hugegraph.exception.InternalException;
 
 public final class FileUtil {
 
@@ -38,7 +39,7 @@ public final class FileUtil {
     public static int countLines(File file) {
         if (!file.exists()) {
             throw new IllegalArgumentException(String.format(
-                    "The file %s doesn't exist", file));
+                      "The file %s doesn't exist", file));
         }
         long fileLength = file.length();
         try (FileInputStream fis = new FileInputStream(file);

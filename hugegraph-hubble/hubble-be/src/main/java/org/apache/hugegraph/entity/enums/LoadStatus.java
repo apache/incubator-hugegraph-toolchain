@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -30,7 +31,10 @@ public enum LoadStatus implements IEnum<Byte> {
 
     PAUSED(3),
 
-    STOPPED(4);
+    STOPPED(4),
+
+    // No Used
+    INIT(5);
 
     private byte code;
 

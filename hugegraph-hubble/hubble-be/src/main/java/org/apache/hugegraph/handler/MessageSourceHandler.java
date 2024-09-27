@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,11 +19,7 @@
 
 package org.apache.hugegraph.handler;
 
-import java.util.Locale;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.entity.UserInfo;
@@ -36,7 +33,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.util.WebUtils;
 
-import lombok.extern.log4j.Log4j2;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Locale;
 
 @Log4j2
 @Component

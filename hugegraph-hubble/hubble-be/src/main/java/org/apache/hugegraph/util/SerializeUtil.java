@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,13 +19,12 @@
 
 package org.apache.hugegraph.util;
 
-import java.io.IOException;
-
-import org.apache.commons.io.FileUtils;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import org.apache.commons.io.FileUtils;
+
+import java.io.IOException;
 
 public final class SerializeUtil {
 

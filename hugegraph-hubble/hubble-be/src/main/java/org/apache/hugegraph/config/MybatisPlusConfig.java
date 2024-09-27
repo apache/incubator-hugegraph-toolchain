@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,11 +19,10 @@
 
 package org.apache.hugegraph.config;
 
+import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-
-import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
 
 @Configuration
 @EnableTransactionManagement

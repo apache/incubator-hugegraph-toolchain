@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,10 +19,10 @@
 
 package org.apache.hugegraph.util;
 
-import java.util.concurrent.Callable;
-
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.InternalException;
+
+import java.util.concurrent.Callable;
 
 public final class Ex {
 

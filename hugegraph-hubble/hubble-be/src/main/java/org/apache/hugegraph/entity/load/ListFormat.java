@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,13 +19,12 @@
 
 package org.apache.hugegraph.entity.load;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.hugegraph.loader.constant.Constants;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.apache.hugegraph.loader.constant.Constants;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public final class ListFormat {
 

@@ -18,30 +18,25 @@
 
 package org.apache.hugegraph.controller.algorithm;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.entity.algorithm.ShortestPath;
 import org.apache.hugegraph.entity.query.GremlinResult;
-import org.apache.hugegraph.service.algorithm.OltpAlgoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import lombok.extern.log4j.Log4j2;
+import org.springframework.web.bind.annotation.*;
 
 @Log4j2
 @RestController
 @RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/algorithms")
 public class OltpAlgoController {
+    // TODO RECOVER WHEN ALGO
 
-    @Autowired
-    private OltpAlgoService service;
-
-    @PostMapping("shortestPath")
-    public GremlinResult shortPath(@PathVariable("connId") int connId,
-                                   @RequestBody ShortestPath body) {
-        return this.service.shortestPath(connId, body);
-    }
+//    @Autowired
+////    private OltpAlgoService service;
+//
+//    @PostMapping("shortestPath")
+//    public GremlinResult shortPath(@PathVariable("connId") int connId,
+//                                   @RequestBody ShortestPath body) {
+////        return this.service.shortestPath(connId, body);
+//    }
 }

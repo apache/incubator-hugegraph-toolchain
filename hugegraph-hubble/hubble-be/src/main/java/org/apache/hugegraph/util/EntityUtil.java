@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,11 +19,11 @@
 
 package org.apache.hugegraph.util;
 
-import java.lang.reflect.Field;
-
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Mergeable;
 import org.apache.hugegraph.exception.InternalException;
+
+import java.lang.reflect.Field;
 
 public final class EntityUtil {
 

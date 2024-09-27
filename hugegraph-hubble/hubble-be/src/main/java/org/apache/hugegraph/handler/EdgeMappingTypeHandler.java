@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,18 +19,18 @@
 
 package org.apache.hugegraph.handler;
 
-import java.sql.CallableStatement;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Set;
-
 import org.apache.hugegraph.entity.load.EdgeMapping;
 import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedJdbcTypes;
 import org.apache.ibatis.type.MappedTypes;
+
+import java.sql.CallableStatement;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Set;
 
 @MappedTypes(value = {EdgeMapping.class})
 @MappedJdbcTypes(value = {JdbcType.VARCHAR})
@@ -45,7 +46,7 @@ public class EdgeMappingTypeHandler extends BaseTypeHandler<Set<EdgeMapping>> {
     @Override
     public Set<EdgeMapping> getNullableResult(ResultSet resultSet,
                                               String columnName)
-            throws SQLException {
+                                              throws SQLException {
         String json = resultSet.getString(columnName);
         return JsonUtil.convertSet(json, EdgeMapping.class);
     }
@@ -53,15 +54,15 @@ public class EdgeMappingTypeHandler extends BaseTypeHandler<Set<EdgeMapping>> {
     @Override
     public Set<EdgeMapping> getNullableResult(ResultSet resultSet,
                                               int columnIndex)
-            throws SQLException {
+                                              throws SQLException {
         String json = resultSet.getString(columnIndex);
         return JsonUtil.convertSet(json, EdgeMapping.class);
     }
 
     @Override
     public Set<EdgeMapping> getNullableResult(
-            CallableStatement callableStatement,
-            int columnIndex) throws SQLException {
+                            CallableStatement callableStatement,
+                            int columnIndex) throws SQLException {
         String json = callableStatement.getString(columnIndex);
         return JsonUtil.convertSet(json, EdgeMapping.class);
     }

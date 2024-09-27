@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -19,7 +20,6 @@
 package org.apache.hugegraph.entity.query;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,6 +42,9 @@ public class GremlinResult {
 
     @JsonProperty("graph_view")
     private GraphView graphView;
+
+    @JsonProperty("pathnum")
+    private Integer pathnum;
 
     public enum Type {
 

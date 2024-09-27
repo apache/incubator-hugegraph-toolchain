@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,10 +19,10 @@
 
 package org.apache.hugegraph.controller.query;
 
-import java.util.regex.Pattern;
-
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.util.Ex;
+
+import java.util.regex.Pattern;
 
 public abstract class GremlinController extends BaseController {
 

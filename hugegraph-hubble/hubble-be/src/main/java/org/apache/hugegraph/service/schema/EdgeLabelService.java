@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,34 +19,15 @@
 
 package org.apache.hugegraph.service.schema;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
-import org.apache.hugegraph.entity.schema.ConflictDetail;
-import org.apache.hugegraph.entity.schema.ConflictStatus;
-import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
-import org.apache.hugegraph.entity.schema.EdgeLabelStyle;
-import org.apache.hugegraph.entity.schema.EdgeLabelUpdateEntity;
-import org.apache.hugegraph.entity.schema.Property;
-import org.apache.hugegraph.entity.schema.PropertyIndex;
-import org.apache.hugegraph.entity.schema.SchemaConflict;
-import org.apache.hugegraph.entity.schema.SchemaEntity;
-import org.apache.hugegraph.entity.schema.SchemaType;
+import org.apache.hugegraph.entity.schema.*;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.SchemaElement;
+import org.apache.hugegraph.structure.constant.EdgeLabelType;
 import org.apache.hugegraph.structure.constant.Frequency;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.IndexLabel;
@@ -57,7 +39,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import lombok.extern.log4j.Log4j2;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -70,17 +55,17 @@ public class EdgeLabelService extends SchemaService {
     @Autowired
     private PropertyIndexService piService;
 
-    public List<EdgeLabelEntity> list(int connId) {
-        return this.list(Collections.emptyList(), connId);
+    public List<EdgeLabelEntity> list(HugeClient client) {
+        return this.list(Collections.emptyList(), client);
     }
 
-    public List<EdgeLabelEntity> list(Collection<String> names, int connId) {
-        return this.list(names, connId, true);
+    public List<EdgeLabelEntity> list(Collection<String> names,
+                                      HugeClient client) {
+        return this.list(names, client, true, null);
     }
 
-    public List<EdgeLabelEntity> list(Collection<String> names, int connId,
-                                      boolean emptyAsAll) {
-        HugeClient client = this.client(connId);
+    public List<EdgeLabelEntity> list(Collection<String> names, HugeClient client,
+                                      boolean emptyAsAll, String type) {
         List<EdgeLabel> edgeLabels;
         if (CollectionUtils.isEmpty(names)) {
             if (emptyAsAll) {
@@ -91,21 +76,51 @@ public class EdgeLabelService extends SchemaService {
         } else {
             edgeLabels = client.schema().getEdgeLabels(new ArrayList<>(names));
         }
+        List<EdgeLabel> edgeLabelsQuery = client.schema().getEdgeLabels();
         List<IndexLabel> indexLabels = client.schema().getIndexLabels();
 
         List<EdgeLabelEntity> results = new ArrayList<>(edgeLabels.size());
         edgeLabels.forEach(edgeLabel -> {
-            results.add(convert(edgeLabel, indexLabels));
+            if (StringUtils.isEmpty(type) ||
+                (StringUtils.isNotEmpty(type) &&
+                edgeLabel.edgeLabelType() == EdgeLabelType.valueOf(type))) {
+                EdgeLabelEntity entity =
+                        convert(edgeLabel, indexLabels, client);
+
+                if (edgeLabel.parent()) {
+                    List<String> children = new ArrayList<>();
+                    for (EdgeLabel edgeLabel1: edgeLabelsQuery) {
+                        if (edgeLabel.name().equals(edgeLabel1.parentLabel())) {
+                            children.add(edgeLabel1.name());
+                        }
+                    }
+                    entity.setChildren(children);
+                }
+
+                results.add(entity);
+            }
         });
         return results;
     }
 
-    public EdgeLabelEntity get(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public EdgeLabelEntity get(String name, HugeClient client) {
         try {
             EdgeLabel edgeLabel = client.schema().getEdgeLabel(name);
             List<IndexLabel> indexLabels = client.schema().getIndexLabels();
-            return convert(edgeLabel, indexLabels);
+
+            List<EdgeLabel> edgeLabelsQuery = client.schema().getEdgeLabels();
+            EdgeLabelEntity entity = convert(edgeLabel, indexLabels, client);
+
+            if (edgeLabel.parent()) {
+                List<String> children = new ArrayList<>();
+                for (EdgeLabel edgeLabel1: edgeLabelsQuery) {
+                    if (edgeLabel.name().equals(edgeLabel1.parentLabel())) {
+                        children.add(edgeLabel1.name());
+                    }
+                }
+                entity.setChildren(children);
+            }
+            return entity;
         } catch (ServerException e) {
             if (e.status() == Constant.STATUS_NOT_FOUND) {
                 throw new ExternalException("schema.edgelabel.not-exist",
@@ -115,14 +130,14 @@ public class EdgeLabelService extends SchemaService {
         }
     }
 
-    public void checkExist(String name, int connId) {
+    public void checkExist(String name, HugeClient client) {
         // Throw exception if it doesn't exist
-        this.get(name, connId);
+        this.get(name, client);
     }
 
-    public void checkNotExist(String name, int connId) {
+    public void checkNotExist(String name, HugeClient client) {
         try {
-            this.get(name, connId);
+            this.get(name, client);
         } catch (ExternalException e) {
             Throwable cause = e.getCause();
             if (cause instanceof ServerException &&
@@ -134,8 +149,7 @@ public class EdgeLabelService extends SchemaService {
         throw new ExternalException("schema.edgelabel.exist", name);
     }
 
-    public void add(EdgeLabelEntity entity, int connId) {
-        HugeClient client = this.client(connId);
+    public void add(EdgeLabelEntity entity, HugeClient client) {
         EdgeLabel edgeLabel = convert(entity, client);
         try {
             client.schema().addEdgeLabel(edgeLabel);
@@ -147,8 +161,7 @@ public class EdgeLabelService extends SchemaService {
         this.piService.addBatch(indexLabels, client);
     }
 
-    public void update(EdgeLabelUpdateEntity entity, int connId) {
-        HugeClient client = this.client(connId);
+    public void update(EdgeLabelUpdateEntity entity, HugeClient client) {
         EdgeLabel edgeLabel = convert(entity, client);
 
         // All existed indexlabels
@@ -157,8 +170,8 @@ public class EdgeLabelService extends SchemaService {
 
         List<String> addedIndexLabelNames = entity.getAppendPropertyIndexNames();
         List<IndexLabel> addedIndexLabels = convertIndexLabels(
-                entity.getAppendPropertyIndexes(),
-                client, false, entity.getName());
+                                            entity.getAppendPropertyIndexes(),
+                                            client, false, entity.getName());
 
         List<String> removedIndexLabelNames = entity.getRemovePropertyIndexes();
 
@@ -166,8 +179,8 @@ public class EdgeLabelService extends SchemaService {
             for (String name : addedIndexLabelNames) {
                 if (existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                            "schema.edgelabel.update.append-index-existed",
-                            entity.getName(), name);
+                              "schema.edgelabel.update.append-index-existed",
+                              entity.getName(), name);
                 }
             }
         }
@@ -175,8 +188,8 @@ public class EdgeLabelService extends SchemaService {
             for (String name : removedIndexLabelNames) {
                 if (!existedIndexLabelNames.contains(name)) {
                     throw new ExternalException(
-                            "schema.edgelabel.update.remove-index-unexisted",
-                            entity.getName(), name);
+                              "schema.edgelabel.update.remove-index-unexisted",
+                              entity.getName(), name);
                 }
             }
         }
@@ -192,29 +205,29 @@ public class EdgeLabelService extends SchemaService {
         this.piService.removeBatch(removedIndexLabelNames, client);
     }
 
-    public void remove(String name, int connId) {
-        HugeClient client = this.client(connId);
+    public void remove(String name, HugeClient client) {
         client.schema().removeEdgeLabelAsync(name);
     }
 
     public ConflictDetail checkConflict(ConflictCheckEntity entity,
-                                        int connId, boolean compareEachOther) {
+                                        HugeClient client,
+                                        boolean compareEachOther) {
         ConflictDetail detail = new ConflictDetail(SchemaType.EDGE_LABEL);
         if (CollectionUtils.isEmpty(entity.getElEntities())) {
             return detail;
         }
 
         Map<String, EdgeLabelEntity> originElEntities = new HashMap<>();
-        for (EdgeLabelEntity e : this.list(connId)) {
+        for (EdgeLabelEntity e : this.list(client)) {
             originElEntities.put(e.getName(), e);
         }
 
         this.pkService.checkConflict(entity.getPkEntities(), detail,
-                                     connId, compareEachOther);
+                                     client, compareEachOther);
         this.piService.checkConflict(entity.getPiEntities(), detail,
-                                     connId, compareEachOther);
+                                     client, compareEachOther);
         this.vlService.checkConflict(entity.getVlEntities(), detail,
-                                     connId, compareEachOther);
+                                     client, compareEachOther);
         for (EdgeLabelEntity elEntity : entity.getElEntities()) {
             // Firstly check if any properties are conflicted
             if (detail.anyPropertyKeyConflict(elEntity.getPropNames())) {
@@ -233,7 +246,7 @@ public class EdgeLabelService extends SchemaService {
             }
             // Then check conflict of edge label itself
             EdgeLabelEntity originElEntity = originElEntities.get(
-                    elEntity.getName());
+                                             elEntity.getName());
             ConflictStatus status = SchemaEntity.compare(elEntity,
                                                          originElEntity);
             detail.add(elEntity, status);
@@ -244,9 +257,8 @@ public class EdgeLabelService extends SchemaService {
         return detail;
     }
 
-    public void reuse(ConflictDetail detail, int connId) {
+    public void reuse(ConflictDetail detail, HugeClient client) {
         Ex.check(!detail.hasConflict(), "schema.cannot-reuse-conflict");
-        HugeClient client = this.client(connId);
 
         List<PropertyKey> propertyKeys = this.pkService.filter(detail, client);
         if (!propertyKeys.isEmpty()) {
@@ -315,17 +327,20 @@ public class EdgeLabelService extends SchemaService {
         removeBatch(names, client, func, SchemaType.EDGE_LABEL);
     }
 
-    private static EdgeLabelEntity convert(EdgeLabel edgeLabel,
-                                           List<IndexLabel> indexLabels) {
+    private EdgeLabelEntity convert(EdgeLabel edgeLabel,
+                                    List<IndexLabel> indexLabels,
+                                    HugeClient client) {
         if (edgeLabel == null) {
             return null;
         }
-        Set<Property> properties = collectProperties(edgeLabel);
+        Set<Property> properties = collectProperties(edgeLabel, client);
         List<PropertyIndex> propertyIndexes = collectPropertyIndexes(edgeLabel,
                                                                      indexLabels);
         boolean linkMultiTimes = edgeLabel.frequency() == Frequency.MULTIPLE;
         return EdgeLabelEntity.builder()
                               .name(edgeLabel.name())
+                              .parentLabel(edgeLabel.parentLabel())
+                              .edgeLabelType(edgeLabel.edgeLabelType().string())
                               .sourceLabel(edgeLabel.sourceLabel())
                               .targetLabel(edgeLabel.targetLabel())
                               .linkMultiTimes(linkMultiTimes)
@@ -338,34 +353,35 @@ public class EdgeLabelService extends SchemaService {
                               .build();
     }
 
-    private static EdgeLabelStyle getStyle(SchemaElement element) {
-        String styleValue = (String) element.userdata().get(USER_KEY_STYLE);
-        if (styleValue != null) {
-            return JsonUtil.fromJson(styleValue, EdgeLabelStyle.class);
-        } else {
-            return new EdgeLabelStyle();
-        }
-    }
-
     private static EdgeLabel convert(EdgeLabelEntity entity,
                                      HugeClient client) {
         if (entity == null) {
             return null;
         }
         Frequency frequency = entity.isLinkMultiTimes() ? Frequency.MULTIPLE :
-                              Frequency.SINGLE;
+                                                          Frequency.SINGLE;
         EdgeLabelStyle style = entity.getStyle();
-        return client.schema().edgeLabel(entity.getName())
-                     .sourceLabel(entity.getSourceLabel())
-                     .targetLabel(entity.getTargetLabel())
-                     .frequency(frequency)
-                     .properties(toStringArray(entity.getPropNames()))
-                     .sortKeys(toStringArray(entity.getSortKeys()))
-                     .nullableKeys(toStringArray(entity.getNullableProps()))
-                     .enableLabelIndex(entity.isOpenLabelIndex())
-                     .userdata(USER_KEY_CREATE_TIME, entity.getCreateTime())
-                     .userdata(USER_KEY_STYLE, JsonUtil.toJson(style))
-                     .build();
+        EdgeLabel.Builder builder =
+                client.schema().edgeLabel(entity.getName());
+        if (EdgeLabelType.valueOf(entity.getEdgeLabelType()).parent()) {
+            builder.asBase();
+        } else {
+            builder.sourceLabel(entity.getSourceLabel())
+                   .targetLabel(entity.getTargetLabel())
+                   .frequency(frequency)
+                   .properties(toStringArray(entity.getPropNames()))
+                   .sortKeys(toStringArray(entity.getSortKeys()))
+                   .nullableKeys(toStringArray(entity.getNullableProps()))
+                   .enableLabelIndex(entity.getOpenLabelIndex())
+                   .userdata(USER_KEY_CREATE_TIME, entity.getCreateTime())
+                   .userdata(USER_KEY_STYLE, JsonUtil.toJson(style));
+        }
+
+        if (EdgeLabelType.valueOf(entity.getEdgeLabelType()).sub()) {
+            builder.withBase(entity.getParentLabel());
+        }
+
+        return builder.build();
     }
 
     private static EdgeLabel convert(EdgeLabelUpdateEntity entity,
@@ -392,5 +408,14 @@ public class EdgeLabelService extends SchemaService {
             userdata.put(USER_KEY_STYLE, JsonUtil.toJson(style));
         }
         return edgeLabel;
+    }
+
+    private static EdgeLabelStyle getStyle(SchemaElement element) {
+        String styleValue = (String) element.userdata().get(USER_KEY_STYLE);
+        if (styleValue != null) {
+            return JsonUtil.fromJson(styleValue, EdgeLabelStyle.class);
+        } else {
+            return new EdgeLabelStyle();
+        }
     }
 }

@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,12 +19,11 @@
 
 package org.apache.hugegraph.handler;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.service.load.LoadTaskService;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Component

@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,15 +19,14 @@
 
 package org.apache.hugegraph.entity.schema;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.collections.CollectionUtils;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.apache.commons.collections.CollectionUtils;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface SchemaLabelEntity extends SchemaEntity {
 
@@ -34,7 +34,7 @@ public interface SchemaLabelEntity extends SchemaEntity {
 
     List<PropertyIndex> getPropertyIndexes();
 
-    boolean isOpenLabelIndex();
+    Boolean getOpenLabelIndex();
 
     SchemaStyle getStyle();
 

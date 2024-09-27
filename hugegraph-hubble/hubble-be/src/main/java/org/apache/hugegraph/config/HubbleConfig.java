@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,22 +19,18 @@
 
 package org.apache.hugegraph.config;
 
-import java.io.File;
-
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.options.HubbleOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.File;
+
 @Configuration
 public class HubbleConfig {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HubbleConfig.class);
 
     @Autowired
     private ApplicationArguments arguments;
@@ -43,7 +40,7 @@ public class HubbleConfig {
         String[] args = this.arguments.getSourceArgs();
         if (args.length > 1) {
             throw new ExternalException(
-                    "HugeGraphHubble accept up to one param as config file");
+                      "HugeGraphHubble accept up to one param as config file");
         } else if (args.length == 0) {
             args = new String[]{Constant.CONFIG_FILE};
         }
@@ -59,7 +56,6 @@ public class HubbleConfig {
                 conf = path;
             }
         } catch (Exception ignored) {
-            LOG.error("hugeConfig exception");
         }
         return new HugeConfig(conf);
     }

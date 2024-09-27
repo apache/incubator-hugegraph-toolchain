@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,28 +19,22 @@
 
 package org.apache.hugegraph.controller.query;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.enums.ExecuteType;
 import org.apache.hugegraph.entity.query.GremlinCollection;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.service.query.GremlinCollectionService;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/gremlin-collections")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/gremlin-collections")
 public class GremlinCollectionController extends GremlinController {
 
     private static final int LIMIT = 100;
@@ -52,7 +47,10 @@ public class GremlinCollectionController extends GremlinController {
     }
 
     @GetMapping
-    public IPage<GremlinCollection> list(@PathVariable("connId") int connId,
+    public IPage<GremlinCollection> list(@PathVariable("graphspace") String graphSpace,
+                                         @PathVariable("graph") String graph,
+                                         @RequestParam(name = "type")
+                                             String type,
                                          @RequestParam(name = "content",
                                                        required = false)
                                          String content,
@@ -85,7 +83,15 @@ public class GremlinCollectionController extends GremlinController {
                      "common.time-order.invalid", timeOrder);
             timeOrderAsc = ORDER_ASC.equals(timeOrder);
         }
-        return this.service.list(connId, content, nameOrderAsc, timeOrderAsc,
+
+        if (!StringUtils.isEmpty(type)) {
+            Ex.check(ExecuteType.GREMLIN.name().equals(type) || ExecuteType.CYPHER.name().equals(type)
+                            || ExecuteType.ALGORITHM.name().equals(type),
+                    "common.type.invalid", type);
+        }
+
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.service.list(client, content, type, nameOrderAsc, timeOrderAsc,
                                  pageNo, pageSize);
     }
 
@@ -95,14 +101,16 @@ public class GremlinCollectionController extends GremlinController {
     }
 
     @PostMapping
-    public GremlinCollection create(@PathVariable("connId") int connId,
+    public GremlinCollection create(@PathVariable("graphspace") String graphSpace,
+                                    @PathVariable("graph") String graph,
                                     @RequestBody GremlinCollection newEntity) {
         this.checkParamsValid(newEntity, true);
-        newEntity.setConnId(connId);
+        newEntity.setGraphSpace(graphSpace);
+        newEntity.setGraph(graph);
         newEntity.setCreateTime(HubbleUtil.nowDate());
         this.checkEntityUnique(newEntity, true);
         // The service is an singleton object
-        synchronized (this.service) {
+        synchronized(this.service) {
             Ex.check(this.service.count() < LIMIT,
                      "gremlin-collection.reached-limit", LIMIT);
             this.service.save(newEntity);
@@ -163,10 +171,17 @@ public class GremlinCollectionController extends GremlinController {
 
     private void checkEntityUnique(GremlinCollection newEntity,
                                    boolean creating) {
-        int connId = newEntity.getConnId();
+        String graphSpace = newEntity.getGraphSpace();
+        String graph = newEntity.getGraph();
         String name = newEntity.getName();
+        String type = newEntity.getType();
         // NOTE: Full table scan may slow, it's better to use index
-        GremlinCollection oldEntity = this.service.getByName(connId, name);
+        GremlinCollection oldEntity = this.service.getByName(graphSpace, graph,
+                                                             name, type);
+        Ex.check(newEntity.getType().equals(ExecuteType.GREMLIN.name())
+                || newEntity.getType().equals(ExecuteType.CYPHER.name()) ||
+                newEntity.getType().equals(ExecuteType.ALGORITHM.name()) ,
+                "gremlin-collection.type.invalid", newEntity.getType());
         if (creating) {
             Ex.check(oldEntity == null, "gremlin-collection.exist.name", name);
         } else {

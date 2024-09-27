@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,10 +19,8 @@
 
 package org.apache.hugegraph.config;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
@@ -30,8 +29,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableCaching
@@ -43,7 +43,10 @@ public class CacheConfig {
     public enum Caches {
 
         // No used
-        GREMLIN_QUERY;
+        GREMLIN_QUERY,
+
+        // es query cached
+        ES_QUERY(DEFAULT_MAXSIZE, 60);
 
         private int maxSize = DEFAULT_MAXSIZE;
         private int ttl = DEFAULT_TTL;

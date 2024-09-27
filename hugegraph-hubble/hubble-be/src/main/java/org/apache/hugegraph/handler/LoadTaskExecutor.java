@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,11 +19,10 @@
 
 package org.apache.hugegraph.handler;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.entity.load.LoadTask;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Component
@@ -31,8 +31,13 @@ public class LoadTaskExecutor {
     @Async
     public void execute(LoadTask task, Runnable callback) {
         log.info("Executing task: {}", task.getId());
-        task.run();
-        log.info("Executed task: {}, update status to db", task.getId());
-        callback.run();
+        try {
+            task.run();
+        } catch (Throwable t) {
+            log.warn("Executing task: {} error", task.getId(), t);
+        } finally {
+            log.info("Executed task: {}, update status to db", task.getId());
+            callback.run();
+        }
     }
 }

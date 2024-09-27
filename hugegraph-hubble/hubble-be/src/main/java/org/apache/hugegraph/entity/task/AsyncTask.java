@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,23 +19,21 @@
 
 package org.apache.hugegraph.entity.task;
 
-import java.util.Date;
-
-import org.apache.hugegraph.annotation.MergeProperty;
-import org.apache.hugegraph.util.SerializeUtil;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.apache.hugegraph.annotation.MergeProperty;
+import org.apache.hugegraph.util.SerializeUtil;
+
+import java.util.Date;
 
 @Data
 @NoArgsConstructor

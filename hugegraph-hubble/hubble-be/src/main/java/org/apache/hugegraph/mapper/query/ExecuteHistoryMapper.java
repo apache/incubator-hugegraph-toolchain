@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,20 +19,29 @@
 
 package org.apache.hugegraph.mapper.query;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.hugegraph.entity.query.ExecuteHistory;
-import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import java.util.List;
 
 @Mapper
 @Component
 public interface ExecuteHistoryMapper extends BaseMapper<ExecuteHistory> {
 
-    @Delete("DELETE FROM `execute_history` WHERE `id` IN (" +
-            "SELECT `id` FROM `execute_history` ORDER BY `create_time` DESC " +
-            "LIMIT #{limit} OFFSET #{limit})")
-    void deleteExceedLimit(@Param("limit") int limit);
+
+    // 删除超出限制的记录
+    default void deleteExceedLimit(int limit) {
+        List<Long> ids = findIdsToDelete(limit, limit);
+        if (!ids.isEmpty()) {
+            deleteBatchIds(ids);
+        }
+    }
+
+    // 查询满足条件的 id 列表
+    @Select("SELECT id FROM `execute_history` ORDER BY `create_time` DESC LIMIT #{limit} OFFSET #{offset}")
+    List<Long> findIdsToDelete(@Param("limit") int limit, @Param("offset") int offset);
 }

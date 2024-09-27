@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,11 +19,19 @@
 
 package org.apache.hugegraph.entity.load;
 
-import java.util.Date;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.entity.enums.LoadStatus;
@@ -33,20 +42,10 @@ import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
 import org.apache.hugegraph.util.SerializeUtil;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Log4j2
 @Data
@@ -58,7 +57,7 @@ public class LoadTask implements Runnable {
 
     @TableField(exist = false)
     @JsonIgnore
-    private final transient Lock lock = new ReentrantLock();
+    private transient final Lock lock = new ReentrantLock();
 
     @TableField(exist = false)
     @JsonIgnore
@@ -77,6 +76,16 @@ public class LoadTask implements Runnable {
     @MergeProperty
     @JsonProperty("conn_id")
     private Integer connId;
+
+    @TableField(value = "graphspace")
+    @MergeProperty
+    @JsonProperty("graphspace")
+    private String graphSpace;
+
+    @TableField(value = "graph")
+    @MergeProperty
+    @JsonProperty("graph")
+    private String graph;
 
     @TableField(value = "job_id")
     @MergeProperty
@@ -144,6 +153,8 @@ public class LoadTask implements Runnable {
         this.finished = false;
         this.id = null;
         this.connId = connection.getId();
+        this.graphSpace = connection.getGraphSpace();
+        this.graph = connection.getGraph();
         this.jobId = mapping.getJobId();
         this.fileId = mapping.getId();
         this.fileName = mapping.getName();
@@ -156,13 +167,14 @@ public class LoadTask implements Runnable {
         this.lastDuration = 0L;
         this.currDuration = 0L;
         this.createTime = HubbleUtil.nowDate();
+
+        this.loader = new HugeGraphLoader(this.options);
     }
 
     @Override
     public void run() {
         Ex.check(this.options != null, "The load options shouldn't be null");
         log.info("LoadTask is start running : {}", this.id);
-        this.loader = new HugeGraphLoader(this.options);
 
         boolean noError;
         try {
@@ -182,7 +194,7 @@ public class LoadTask implements Runnable {
                     this.status = LoadStatus.FAILED;
                 }
             }
-            this.fileReadLines = this.context().newProgress().totalInputRead();
+            //this.fileReadLines = this.context().newProgress().totalInputReaded();//TODO Changed
             this.lastDuration += this.context().summary().totalTime();
             this.currDuration = 0L;
         } finally {

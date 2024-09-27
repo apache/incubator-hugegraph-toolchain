@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -69,7 +70,7 @@ public enum SchemaType {
                 return PROPERTY_INDEX;
             default:
                 throw new InternalException(
-                        "Can't convert HugeType '%s' to SchemaType", type);
+                          "Can't convert HugeType '%s' to SchemaType", type);
         }
     }
 }

@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,17 +19,15 @@
 
 package org.apache.hugegraph.entity.schema;
 
-import java.util.Date;
-
-import org.apache.hugegraph.structure.constant.Cardinality;
-import org.apache.hugegraph.structure.constant.DataType;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.hugegraph.structure.constant.Cardinality;
+import org.apache.hugegraph.structure.constant.DataType;
+
+import java.util.Date;
 
 @Data
 @NoArgsConstructor

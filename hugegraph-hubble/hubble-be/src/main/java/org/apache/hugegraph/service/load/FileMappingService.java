@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,25 +19,11 @@
 
 package org.apache.hugegraph.service.load;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.regex.Pattern;
-
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,12 +46,12 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-
-import lombok.extern.log4j.Log4j2;
+import java.io.*;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.regex.Pattern;
 
 @Log4j2
 @Service
@@ -93,9 +80,11 @@ public class FileMappingService {
         return this.mapper.selectById(id);
     }
 
-    public FileMapping get(int connId, int jobId, String fileName) {
+    public FileMapping get(String graphSpace, String graph, int jobId,
+                           String fileName) {
         QueryWrapper<FileMapping> query = Wrappers.query();
-        query.eq("conn_id", connId)
+        query.eq("graphspace", graphSpace)
+             .eq("graph", graph)
              .eq("job_id", jobId)
              .eq("name", fileName);
         return this.mapper.selectOne(query);
@@ -105,9 +94,11 @@ public class FileMappingService {
         return this.mapper.selectList(null);
     }
 
-    public IPage<FileMapping> list(int connId, int jobId, int pageNo, int pageSize) {
+    public IPage<FileMapping> list(String graphSpace, String graph, int jobId,
+                                   int pageNo, int pageSize) {
         QueryWrapper<FileMapping> query = Wrappers.query();
-        query.eq("conn_id", connId);
+        query.eq("graphspace", graphSpace);
+        query.eq("graph", graph);
         query.eq("job_id", jobId);
         query.eq("file_status", FileMappingStatus.COMPLETED.getValue());
         query.orderByDesc("create_time");
@@ -214,7 +205,7 @@ public class FileMappingService {
                         log.error("Failed to copy file stream from {} to {}",
                                   partFile, newFile, e);
                         throw new InternalException(
-                                "load.upload.merge-file.failed", e);
+                                  "load.upload.merge-file.failed", e);
                     }
                 }
             } catch (IOException e) {
@@ -299,7 +290,7 @@ public class FileMappingService {
         } catch (IOException e) {
             this.remove(mapping.getId());
             throw new InternalException(
-                    "Failed to move file to next level directory");
+                      "Failed to move file to next level directory");
         }
         return Paths.get(destPath, currFile.getName()).toString();
     }
@@ -337,7 +328,7 @@ public class FileMappingService {
         query.in("file_status", FileMappingStatus.UPLOADING.getValue());
         List<FileMapping> mappings = this.mapper.selectList(query);
         long threshold = this.config.get(
-                HubbleOptions.UPLOAD_FILE_MAX_TIME_CONSUMING) * 1000;
+                         HubbleOptions.UPLOAD_FILE_MAX_TIME_CONSUMING) * 1000;
         Date now = HubbleUtil.nowDate();
         for (FileMapping mapping : mappings) {
             Date updateTime = mapping.getUpdateTime();

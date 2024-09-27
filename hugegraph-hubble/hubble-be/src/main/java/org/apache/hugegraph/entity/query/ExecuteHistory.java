@@ -1,4 +1,5 @@
 /*
+ * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,8 +19,15 @@
 
 package org.apache.hugegraph.entity.query;
 
-import java.util.Date;
-
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Identifiable;
 import org.apache.hugegraph.common.Mergeable;
@@ -28,21 +36,10 @@ import org.apache.hugegraph.entity.enums.ExecuteStatus;
 import org.apache.hugegraph.entity.enums.ExecuteType;
 import org.apache.hugegraph.util.SerializeUtil;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 @TableName("execute_history")
 public class ExecuteHistory implements Identifiable, Mergeable {
@@ -52,10 +49,15 @@ public class ExecuteHistory implements Identifiable, Mergeable {
     @JsonProperty("id")
     private Integer id;
 
-    @TableField(value = "conn_id")
+    @TableField(value = "graphspace")
     @MergeProperty
-    @JsonProperty("conn_id")
-    private Integer connId;
+    @JsonProperty("graphspace")
+    private String graphspace;
+
+    @TableField(value = "graph")
+    @MergeProperty
+    @JsonProperty("graphe")
+    private String graph;
 
     @TableField(value = "async_id")
     @MergeProperty
@@ -67,9 +69,16 @@ public class ExecuteHistory implements Identifiable, Mergeable {
     @JsonProperty("type")
     private ExecuteType type;
 
+    // gremlin/cypher
     @MergeProperty
     @JsonProperty("content")
     private String content;
+
+    // 用户输入的语义文本
+    @TableField(value = "text")
+    @MergeProperty
+    @JsonProperty("text")
+    private String text;
 
     @TableField(value = "execute_status")
     @MergeProperty
@@ -89,6 +98,34 @@ public class ExecuteHistory implements Identifiable, Mergeable {
     @MergeProperty(useNew = false)
     @JsonProperty("create_time")
     private Date createTime;
+
+    public ExecuteHistory(Integer id, String graphspace, String graph,
+                          Long asyncId,
+                          ExecuteType type, String content,
+                          ExecuteStatus status,
+                          AsyncTaskStatus asyncStatus, Long duration,
+                          Date createTime) {
+        this(id, graphspace, graph, asyncId, type, content, "", status,
+             asyncStatus, duration, createTime);
+    }
+
+    public ExecuteHistory(Integer id, String graphspace, String graph,
+                          Long asyncId,
+                          ExecuteType type, String content, String text,
+                          ExecuteStatus status, AsyncTaskStatus asyncStatus,
+                          Long duration, Date createTime) {
+        this.id = id;
+        this.graphspace = graphspace;
+        this.graph = graph;
+        this.asyncId = asyncId;
+        this.type = type;
+        this.content = content;
+        this.text = text;
+        this.status = status;
+        this.asyncStatus = asyncStatus;
+        this.duration = duration;
+        this.createTime = createTime;
+    }
 
     public void setAsyncStatus(AsyncTaskStatus status) {
         this.asyncStatus = status;
