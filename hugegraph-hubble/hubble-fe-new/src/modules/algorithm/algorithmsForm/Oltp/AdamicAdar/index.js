@@ -12,26 +12,19 @@ import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {maxDegreeValidator} from '../../utils';
-import {GRAPH_STATUS, Algorithm_Url, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {
+    GRAPH_STATUS,
+    Algorithm_Url,
+    ALGORITHM_NAME,
+    useTranslatedConstants,
+    TEXT_PATH,
+} from '../../../../../utils/constants';
+import {useTranslation} from 'react-i18next';
 
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {ADAMIC_ADAR} = ALGORITHM_NAME;
-const directionOptions = [
-    {label: '出边', value: 'OUT'},
-    {label: '入边', value: 'IN'},
-    {label: '双边', value: 'BOTH'},
-];
 
-const description = {
-    vertex: '起始顶点',
-    other: '终点顶点',
-    direction: '起始顶点到目的顶点的方向，目的地到起始点是反方向，BOTH时不考虑方向',
-    label: '默认代表所有edge label',
-    max_degree: '查询过程中，单个顶点遍历的最大邻接边数目',
-};
-
-const algorithmDescription = '主要用于社交网络中判断两点紧密度的算法, 用来求两点间共同邻居密集度的一个系数';
-
+const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.adamic_adar';
 const AdamicAdar = props => {
     const {
         handleFormSubmit,
@@ -39,6 +32,17 @@ const AdamicAdar = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } = props;
+    const {t} = useTranslation();
+    const {directionOptions} = useTranslatedConstants();
+    const description = {
+        vertex: t(OWNED_TEXT_PATH + '.vertex'),
+        other: t(OWNED_TEXT_PATH + '.other'),
+        direction: t(OWNED_TEXT_PATH + '.direction'),
+        label: t(OWNED_TEXT_PATH + '.label'),
+        max_degree: t(OWNED_TEXT_PATH + '.max_degree'),
+    };
+
+    const algorithmDescription = t(OWNED_TEXT_PATH + '.desc');
 
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
     const [isEnableRun, setEnableRun] = useState(false);
@@ -141,7 +145,7 @@ const AdamicAdar = props => {
                     tooltip={description.direction}
                 >
                     <Select
-                        placeholder="顶点向外发散的方向"
+                        placeholder={t(OWNED_TEXT_PATH + '.select_direction')}
                         allowClear
                         options={directionOptions}
                     />

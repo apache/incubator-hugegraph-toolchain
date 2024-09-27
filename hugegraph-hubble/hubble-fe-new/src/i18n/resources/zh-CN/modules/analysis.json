@@ -21,7 +21,12 @@
         "max_step": "最大迭代步数",
         "request_memory": "计算节点最小内存需求",
         "JVM_memory": "jvm环境内存大小，默认为32g",
-        "source": "起始点ID"
+        "source": "起始点ID",
+        "query_tooltip":"仅当选择的图数据加载完成后，才可以使用OLAP算法。"
+      },
+      "mode": {
+        "OLTP": "OLTP算法",
+        "OLAP": "OLAP算法"
       },
       "capacity_item": {
         "tooltip": "遍历过程中最大的访问的顶点数目"
@@ -170,6 +175,15 @@
         }
       },
       "oltp": {
+        "adamic_adar": {
+          "desc": "主要用于社交网络中判断两点紧密度的算法, 用来求两点间共同邻居密集度的一个系数",
+          "vertex": "起始顶点",
+          "other": "终点顶点",
+          "direction": "起始顶点到目的顶点的方向，目的地到起始点是反方向，BOTH时不考虑方向",
+          "label": "默认代表所有edge label",
+          "max_degree": "查询过程中，单个顶点遍历的最大邻接边数目",
+          "select_direction": "顶点向外发散的方向"
+        }
       }
     },
     "async_task": {

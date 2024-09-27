@@ -69,10 +69,6 @@ export const GRAPH_STATUS = {
     UPLOAD_FAILED: 'uploadFailed',
 };
 
-export const ALGORITHM_MODE = {
-    OLTP: 'OLTP算法',
-    OLAP: 'OLAP算法',
-};
 
 export const ANALYSIS_TYPE = {
     GREMLIN: 'Gremlin',
@@ -379,11 +375,16 @@ export const useTranslatedConstants = () => {
         [ALGORITHM_NAME.EGONET]: 'egonet',
         [ALGORITHM_NAME.PATHS]: 'paths',
     };
+    export const ALGORITHM_MODE = {
+        OLTP: t(TEXT_PATH.ALGORITHM + '.mode.OLTP'),
+        OLAP: t(TEXT_PATH.ALGORITHM + '.mode.OLAP'),
+    };
     return {
         boolOptions,
         directionOptions,
         ALGORITHM_NAME,
         Algorithm_Layout,
         Algorithm_Url,
+        ALGORITHM_MODE,
     };
 };

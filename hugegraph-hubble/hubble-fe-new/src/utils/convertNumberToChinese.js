@@ -1,3 +1,4 @@
+// TODO REMOVE
 export default function convertNumberToChinese(num) {
     let numChar = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
     let numUnit = ['', '十', '百', '千']; // 权位
