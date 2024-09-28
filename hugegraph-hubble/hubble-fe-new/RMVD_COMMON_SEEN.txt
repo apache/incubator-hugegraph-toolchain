@@ -1,8 +1,0 @@
-{t(TEXT_PATH.ALGORITHM_COMMON + '.instance_num')}
-{t(TEXT_PATH.ALGORITHM_COMMON + '.max_iter_step')}
-const {t} = useTranslation();
-t(OWNED_TEXT_PATH + '.desc')
-{t(TEXT_PATH.ALGORITHM_COMMON + '.weight_property')}
-{t(TEXT_PATH.ALGORITHM_COMMON + '.worker_num')}
-t(OWNED_TEXT_PATH + '.desc')
-{t(TEXT_PATH.ALGORITHM_COMMON + '.source')}
