@@ -18,9 +18,10 @@
 
 package org.apache.hugegraph.unit;
 
-import org.apache.hugegraph.testutil.Assert;
-import org.apache.hugegraph.util.FileUtil;
 import org.junit.Test;
+
+import org.apache.hugegraph.testutil.Assert;
+import org.apache.hugegraph.util.FileUtil;;
 
 public class FileUtilTest {
 

@@ -1,23 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with this
- * work for additional information regarding copyright ownership. The ASF
- * licenses this file to You under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -103,8 +84,8 @@ public class OltpAlgoController extends BaseController {
 
     @PostMapping("kout_post")
     public GremlinResult koutPost(@PathVariable("graphspace") String graphSpace,
-                                   @PathVariable("graph") String graph,
-                                   @RequestBody KoutRequest body) {
+                                  @PathVariable("graph") String graph,
+                                  @RequestBody KoutRequest body) {
         HugeClient client = this.authClient(graphSpace, graph);
         return this.service.koutPost(client, body);
     }
@@ -119,16 +100,16 @@ public class OltpAlgoController extends BaseController {
 
     @PostMapping("kneighbor_post")
     public GremlinResult kneighborPost(@PathVariable("graphspace") String graphSpace,
-                                        @PathVariable("graph") String graph,
-                                        @RequestBody KneighborRequest body) {
+                                       @PathVariable("graph") String graph,
+                                       @RequestBody KneighborRequest body) {
         HugeClient client = this.authClient(graphSpace, graph);
         return this.service.kneighborPost(client, body);
     }
 
     @PostMapping("jaccardSimilarity")
     public JaccardsimilarityView jaccardSimilarity(@PathVariable("graphspace") String graphSpace,
-                                           @PathVariable("graph") String graph,
-                                           @RequestBody JaccardSimilarityEntity body) {
+                                                   @PathVariable("graph") String graph,
+                                                   @RequestBody JaccardSimilarityEntity body) {
         HugeClient client = this.authClient(graphSpace, graph);
         return this.service.jaccardSimilarity(client, body);
     }
@@ -196,6 +177,7 @@ public class OltpAlgoController extends BaseController {
         HugeClient client = this.authClient(graphSpace, graph);
         return this.service.paths(client, body);
     }
+
     @PostMapping("customizedpaths")
     public GremlinResult customizedPaths(@PathVariable("graphspace") String graphSpace,
                                          @PathVariable("graph") String graph,
@@ -203,6 +185,7 @@ public class OltpAlgoController extends BaseController {
         HugeClient client = this.authClient(graphSpace, graph);
         return this.service.customizedPaths(client, body);
     }
+
     @PostMapping("templatepaths")
     public GremlinResult templatePaths(@PathVariable("graphspace") String graphSpace,
                                        @PathVariable("graph") String graph,
@@ -253,8 +236,8 @@ public class OltpAlgoController extends BaseController {
 
     @PostMapping("resourceallocation")
     public Map<String, Double> resourceallocation(@PathVariable("graphspace") String graphSpace,
-                                     @PathVariable("graph") String graph,
-                                     @RequestBody ResourceallocationEntity body) {
+                                                  @PathVariable("graph") String graph,
+                                                  @RequestBody ResourceallocationEntity body) {
         HugeClient client = this.authClient(graphSpace, graph);
         return this.service.resourceallocation(client, body);
     }

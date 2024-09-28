@@ -1,5 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -37,7 +36,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
-                "/{graph}/algorithms/vermeer")
+        "/{graph}/algorithms/vermeer")
 public class VermeerAlgoController extends BaseController {
 
     @Autowired
@@ -47,17 +46,17 @@ public class VermeerAlgoController extends BaseController {
 
     @PostMapping
     public Map<String, Object> olapView(@PathVariable("graphspace") String graphspace,
-                         @PathVariable("graph") String graph,
-                         @RequestBody VParams body) {
+                                        @PathVariable("graph") String graph,
+                                        @RequestBody VParams body) {
         String vGraph = vermeerService.convert2VG(graphspace, graph);
         HugeClient client = this.authClient(null, null);
 
         Map<String, Object> graphInfo =
                 (Map<String, Object>) client.vermeer()
-                                            .getGraphInfoByName(vGraph)
-                                            .get("graph");
+                        .getGraphInfoByName(vGraph)
+                        .get("graph");
         E.checkArgument(graphInfo != null && !graphInfo.isEmpty(),
-                        "graph not loaded");
+                "graph not loaded");
 
         Map<String, Object> params = new HashMap<>();
         // default params
@@ -71,7 +70,7 @@ public class VermeerAlgoController extends BaseController {
         params.put("output.hugegraph_password", (String) this.getSession(
                 "password"));
         params.put("output.hugegraph_property", body.params.get("compute" +
-                                                            ".algorithm"));
+                ".algorithm"));
         // input params
         params.putAll(body.analyze());
         return vermeerService.compute(client, graphspace, graph, params);
