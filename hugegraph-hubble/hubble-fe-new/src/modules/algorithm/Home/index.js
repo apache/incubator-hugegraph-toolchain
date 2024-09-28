@@ -8,19 +8,23 @@ import AlgorithmFormHome from '../algorithmsForm/Home';
 import GraphResult from '../GraphResult/Home';
 import LogsDetail from '../LogsDetail/Home';
 import GraphAnalysisContext from '../../Context';
-import {GRAPH_STATUS, PANEL_TYPE, ALGORITHM_MODE, GRAPH_RENDER_MODE} from '../../../utils/constants';
+import {GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE, useTranslatedConstants} from '../../../utils/constants';
 import * as api from '../../../api';
 import _ from 'lodash';
 import c from './index.module.scss';
 
-const {STANDBY} = GRAPH_STATUS;
-const {CLOSED} = PANEL_TYPE;
-const {OLTP, OLAP} = ALGORITHM_MODE;
-const {CANVAS2D} = GRAPH_RENDER_MODE;
-const defaultPageParams = {page: 1, pageSize: 10};
-const TYPE  = {GREMLIN: '0', ALGORITHM: '1', CYPHER: '2'};
+
 
 const AlgorithmHome = () => {
+    const {ALGORITHM_MODE} = useTranslatedConstants();
+
+    const {STANDBY} = GRAPH_STATUS;
+    const {CLOSED} = PANEL_TYPE;
+    const {OLTP, OLAP} = ALGORITHM_MODE;
+    const {CANVAS2D} = GRAPH_RENDER_MODE;
+    const defaultPageParams = {page: 1, pageSize: 10};
+    const TYPE  = {GREMLIN: '0', ALGORITHM: '1', CYPHER: '2'};
+
     const {graphSpace, graph} = useContext(GraphAnalysisContext);
 
     const [metaData, setMetaData] = useState();

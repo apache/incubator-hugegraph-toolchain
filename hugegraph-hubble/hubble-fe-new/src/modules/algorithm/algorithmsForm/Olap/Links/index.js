@@ -12,18 +12,21 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {GRAPH_STATUS, TEXT_PATH, useTranslatedConstants} from '../../../../../utils/constants';
 import {greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator} from '../../utils';
 import {useTranslation} from 'react-i18next';
 
 const {TextArea} = Input;
 
-const {LINKS} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-// eslint-disable-next-line
-const placeholder='{"start_vertexes":["A","B","C","D","E"],"vertex_end_condition":{"label":"user","property_filter":"$element.age <= 90"},"edge_end_condition":{"label":"pay","property_filter":"double($out.money) >= 4"},"edge_compare_condition":{"label":"pay","property_filter":"$out.money > $in.money"}}';
-const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.links';
+
 const Links = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {LINKS} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+    // eslint-disable-next-line
+    const placeholder='{"start_vertexes":["A","B","C","D","E"],"vertex_end_condition":{"label":"user","property_filter":"$element.age <= 90"},"edge_end_condition":{"label":"pay","property_filter":"double($out.money) >= 4"},"edge_compare_condition":{"label":"pay","property_filter":"$out.money > $in.money"}}';
+    const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.links';
+
     const {
         handleFormSubmit,
         searchValue,

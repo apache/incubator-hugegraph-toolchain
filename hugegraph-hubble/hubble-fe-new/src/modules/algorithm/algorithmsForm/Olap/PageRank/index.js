@@ -19,6 +19,7 @@ import {
 import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
 import {useTranslation} from 'react-i18next';
 
+// TODO CONSTANT UPDATED TILL HERE
 const {PAGE_RANK} = ALGORITHM_NAME;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.page_rank';

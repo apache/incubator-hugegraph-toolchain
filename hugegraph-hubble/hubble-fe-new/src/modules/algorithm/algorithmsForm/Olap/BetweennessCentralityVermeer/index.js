@@ -11,15 +11,17 @@ import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS} from '../../../../../utils/constants';
+import {GRAPH_STATUS, GRAPH_LOAD_STATUS, useTranslatedConstants} from '../../../../../utils/constants';
 import {positiveIntegerValidator, greaterThanZeroAndLowerThanOneContainsValidator} from '../../utils';
 import {useTranslation} from 'react-i18next';
 
-const {BETWEENNESS_CENTRALITY} = ALGORITHM_NAME;
+
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
 
 const BetweennessCentralityVermeer = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {BETWEENNESS_CENTRALITY} = ALGORITHM_NAME;
     const {
         handleFormSubmit,
         searchValue,

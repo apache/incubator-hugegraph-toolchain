@@ -13,7 +13,6 @@ import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {
     GRAPH_STATUS,
-    ALGORITHM_NAME,
     GRAPH_LOAD_STATUS,
     TEXT_PATH,
     useTranslatedConstants,
@@ -21,13 +20,15 @@ import {
 import {positiveIntegerValidator, greaterThanZeroAndLowerThanOneContainsValidator} from '../../utils';
 import {useTranslation} from 'react-i18next';
 
-const {CLOSENESS_CENTRALITY} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-const {LOADED} = GRAPH_LOAD_STATUS;
-const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.closeness_centrality';
+
 
 const ClosenessCentralityVermeer = props => {
-
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {CLOSENESS_CENTRALITY} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+    const {LOADED} = GRAPH_LOAD_STATUS;
+    const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.closeness_centrality';
+    const {t} = useTranslation();
     const {
         handleFormSubmit,
         searchValue,

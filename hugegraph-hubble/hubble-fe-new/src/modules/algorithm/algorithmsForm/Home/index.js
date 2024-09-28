@@ -8,7 +8,7 @@ import {Empty} from 'antd';
 import OlapFormHome from '../OlapHome';
 import OltpFormHome from '../OltpHome';
 import AlgorithmSearch from '../../AlgorithmSearch';
-import {ALGORITHM_NAME} from '../../../../utils/constants';
+import {useTranslatedConstants} from '../../../../utils/constants';
 import c from './index.module.scss';
 import _ from 'lodash';
 
@@ -19,7 +19,7 @@ const AlgorithmFormHome = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } =  props;
-
+    const {ALGORITHM_NAME} = useTranslatedConstants();
     const [search, setSearch] = useState('');
 
     const handleSearch = useCallback(value => {

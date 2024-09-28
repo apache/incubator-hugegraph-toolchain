@@ -12,20 +12,22 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {GRAPH_STATUS, TEXT_PATH, useTranslatedConstants} from '../../../../../utils/constants';
 import {
     integerValidator,
     greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator,
 } from '../../utils';
 import {useTranslation} from 'react-i18next';
 
-const {FILTERED_RINGS_DETECTION} = ALGORITHM_NAME;
+
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
 
 const placeholder = '{"vertex_filter":[{"label":"user","property_filter":"$element.weight==1"}]}';
 const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.filtered_rings_detection';
 const FilteredRingsDetection = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {FILTERED_RINGS_DETECTION} = ALGORITHM_NAME;
     const {t} = useTranslation();
     const {
         handleFormSubmit,

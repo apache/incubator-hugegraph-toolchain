@@ -9,19 +9,21 @@ import {TagsOutlined} from '@ant-design/icons';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {GRAPH_STATUS, TEXT_PATH, useTranslatedConstants} from '../../../../../utils/constants';
 import GraphAnalysisContext from '../../../../Context';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import OlapComputerItem from '../OlapComputerItem';
 import {useTranslation} from 'react-i18next';
 
-const {K_CORE} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 
-const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.k_core';
 
 
 const KCore = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {K_CORE} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+
+    const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.k_core';
     const {t} = useTranslation();
     const {
         handleFormSubmit,

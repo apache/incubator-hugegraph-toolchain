@@ -12,17 +12,19 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME} from '../../../../../utils/constants';
+import {GRAPH_STATUS, useTranslatedConstants} from '../../../../../utils/constants';
 import {
     alphaValidator,
     greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator,
 } from '../../utils';
 import {useTranslation} from 'react-i18next';
 
-const {BETWEENNESS_CENTRALITY} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+
 
 const BetweennessCentrality = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {BETWEENNESS_CENTRALITY} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
     const {
         handleFormSubmit,
         searchValue,

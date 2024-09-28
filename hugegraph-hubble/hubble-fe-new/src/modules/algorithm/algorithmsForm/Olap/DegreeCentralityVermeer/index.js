@@ -14,7 +14,6 @@ import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {positiveIntegerValidator} from '../../utils';
 import {
     GRAPH_STATUS,
-    ALGORITHM_NAME,
     GRAPH_LOAD_STATUS,
     TEXT_PATH,
     useTranslatedConstants,
@@ -23,12 +22,14 @@ import {useTranslation} from 'react-i18next';
 
 
 
-const {DEGREE_CENTRALIT} = ALGORITHM_NAME;
+
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {LOADED} = GRAPH_LOAD_STATUS;
 
 const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.degree_centrality';
 const DegreeCentralityVermeer = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {DEGREE_CENTRALIT} = ALGORITHM_NAME;
     const {
         handleFormSubmit,
         searchValue,

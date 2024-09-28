@@ -10,18 +10,25 @@ import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
 import {positiveIntegerValidator} from '../../utils';
-import {GRAPH_STATUS, ALGORITHM_NAME, GRAPH_LOAD_STATUS, TEXT_PATH} from '../../../../../utils/constants';
+import {
+    GRAPH_STATUS,
+    GRAPH_LOAD_STATUS,
+    TEXT_PATH,
+    useTranslatedConstants,
+} from '../../../../../utils/constants';
 import GraphAnalysisContext from '../../../../Context';
 import AlgorithmNameHeader from '../../AlgorithmNameHeader';
 import {useTranslation} from 'react-i18next';
 
-const {K_CORE} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-const {LOADED} = GRAPH_LOAD_STATUS;
+
 
 
 const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.k_core';
 const KCoreVermeer = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {K_CORE} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+    const {LOADED} = GRAPH_LOAD_STATUS;
     const {t} = useTranslation();
     const {
         handleFormSubmit,

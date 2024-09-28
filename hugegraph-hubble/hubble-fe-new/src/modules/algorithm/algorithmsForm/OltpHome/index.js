@@ -6,7 +6,7 @@
 import React from 'react';
 import {Collapse} from 'antd';
 import _ from 'lodash';
-import {ALGORITHM_NAME, ALGORITHM_MODE} from '../../../../utils/constants';
+import {ALGORITHM_NAME, useTranslatedConstants} from '../../../../utils/constants';
 import OltpItem from '../Oltp/OltpItem';
 import c from './index.module.scss';
 
@@ -69,7 +69,7 @@ const oltpListRaw = [
     PATHS,
 ];
 
-const {OLTP} = ALGORITHM_MODE;
+
 
 const OltpFormHome = props => {
     const {
@@ -78,7 +78,8 @@ const OltpFormHome = props => {
         currentAlgorithm,
         updateCurrentAlgorithm,
     } =  props;
-
+    const {ALGORITHM_MODE} = useTranslatedConstants();
+    const {OLTP} = ALGORITHM_MODE;
     const getSearchedList = (arr, value) => {
         return arr.filter(item => item.includes(value));
     };

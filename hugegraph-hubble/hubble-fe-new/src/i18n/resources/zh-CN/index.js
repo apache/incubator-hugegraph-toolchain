@@ -5,7 +5,6 @@ import {
     ERView,
 } from './components';
 import {
-    Algorithm,
     Home,
     Manage,
 } from './modules';
@@ -14,7 +13,6 @@ const translation = {
     translation: merge(
         Board,
         Common,
-        Algorithm,
         Home,
         Manage,
         ERView

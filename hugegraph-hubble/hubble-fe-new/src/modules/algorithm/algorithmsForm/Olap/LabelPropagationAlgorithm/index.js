@@ -12,13 +12,15 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {GRAPH_STATUS, TEXT_PATH, useTranslatedConstants} from '../../../../../utils/constants';
 import {useTranslation} from 'react-i18next';
 
-const {LABEL_PROPAGATION_ALGORITHM} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.label_propagation_algorithm';
+
 const LabelPropagationAlgorithm = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {LABEL_PROPAGATION_ALGORITHM} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+    const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.label_propagation_algorithm';
     const {
         handleFormSubmit,
         searchValue,

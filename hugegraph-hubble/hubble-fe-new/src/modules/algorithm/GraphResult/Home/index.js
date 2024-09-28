@@ -31,18 +31,11 @@ import {formatToGraphData, formatToOptionedGraphData, formatToStyleData,
     formatToDownloadData, updateGraphDataStyle, formatToLegendData} from '../../../../utils/formatGraphResultData';
 import {fetchExpandInfo, handleAddGraphNode, handleAddGraphEdge, handleExpandGraph} from '../utils';
 import {mapLayoutNameToLayoutDetails} from '../../../../utils/graph';
-import {GRAPH_STATUS, ALGORITHM_NAME, PANEL_TYPE,
-    Algorithm_Layout, GRAPH_RENDER_MODE} from '../../../../utils/constants';
+import {
+    GRAPH_STATUS, PANEL_TYPE, GRAPH_RENDER_MODE, useTranslatedConstants,
+} from '../../../../utils/constants';
 import c from './index.module.scss';
 import _ from 'lodash';
-
-const {STANDBY, LOADING, SUCCESS, FAILED, UPLOAD_FAILED} = GRAPH_STATUS;
-const {JACCARD_SIMILARITY, JACCARD_SIMILARITY_POST, RANK_API,
-    NEIGHBOR_RANK_API, ADAMIC_ADAR, RESOURCE_ALLOCATION} = ALGORITHM_NAME;
-const noneGraphAlgorithm = [JACCARD_SIMILARITY, JACCARD_SIMILARITY_POST, RANK_API,
-    NEIGHBOR_RANK_API, ADAMIC_ADAR, RESOURCE_ALLOCATION];
-const {CLOSED, LAYOUT, SETTING, STATISTICS} = PANEL_TYPE;
-const {CANVAS2D} = GRAPH_RENDER_MODE;
 
 const GraphResult = props => {
     const {
@@ -62,6 +55,16 @@ const GraphResult = props => {
         graphRenderMode,
         onGraphRenderModeChange,
     } = props;
+    const {ALGORITHM_NAME, Algorithm_Layout} = useTranslatedConstants();
+
+    const {STANDBY, LOADING, SUCCESS, FAILED, UPLOAD_FAILED} = GRAPH_STATUS;
+    const {JACCARD_SIMILARITY, JACCARD_SIMILARITY_POST, RANK_API,
+        NEIGHBOR_RANK_API, ADAMIC_ADAR, RESOURCE_ALLOCATION} = ALGORITHM_NAME;
+    const noneGraphAlgorithm = [JACCARD_SIMILARITY, JACCARD_SIMILARITY_POST, RANK_API,
+        NEIGHBOR_RANK_API, ADAMIC_ADAR, RESOURCE_ALLOCATION];
+    const {CLOSED, LAYOUT, SETTING, STATISTICS} = PANEL_TYPE;
+    const {CANVAS2D} = GRAPH_RENDER_MODE;
+
 
     const graphSpaceInfo = useContext(GraphAnalysisContext);
     const {edgeMeta, vertexMeta} = metaData || {};

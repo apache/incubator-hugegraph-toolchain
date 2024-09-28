@@ -12,14 +12,16 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {GRAPH_STATUS, TEXT_PATH, useTranslatedConstants} from '../../../../../utils/constants';
 import {greaterThanZeroAndLowerThanTwoThousandAndOneIntegerValidator} from '../../utils';
 import {useTranslation} from 'react-i18next';
 
-const {DEGREE_CENTRALIT} = ALGORITHM_NAME;
+
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.degree_centrality';
 const DegreeCentrality = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {DEGREE_CENTRALIT} = ALGORITHM_NAME;
     const {t} = useTranslation();
     const {
         handleFormSubmit,

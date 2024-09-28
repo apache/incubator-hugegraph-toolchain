@@ -12,15 +12,17 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {GRAPH_STATUS, TEXT_PATH, useTranslatedConstants} from '../../../../../utils/constants';
 import {greaterThanOneAndLowerThanTenThousandIntegerValidator} from '../../utils';
 import {useTranslation} from 'react-i18next';
 
-const {CLUSTER_COEFFICIENT} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
-const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.cluster_coefficient';
+
 
 const ClusterCoefficient = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {CLUSTER_COEFFICIENT} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+    const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.cluster_coefficient';
     const {t} = useTranslation();
     const {
         handleFormSubmit,

@@ -12,12 +12,10 @@ import OlapComputerItem from '../OlapComputerItem';
 import _ from 'lodash';
 import * as api from '../../../../../api';
 import removeNilKeys from '../../../../../utils/removeNilKeys';
-import {GRAPH_STATUS, ALGORITHM_NAME, TEXT_PATH} from '../../../../../utils/constants';
+import {GRAPH_STATUS, TEXT_PATH, useTranslatedConstants} from '../../../../../utils/constants';
 import {useTranslation} from 'react-i18next';
 
-const {TextArea} = Input;
-const {FILTER_SUBGRAPH_MATCHING} = ALGORITHM_NAME;
-const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
+
 
 const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.filter_subgraph_matching';
 
@@ -26,6 +24,10 @@ const OWNED_TEXT_PATH = TEXT_PATH.OLAP + '.filter_subgraph_matching';
 const placeholder = '[{"id":"A","label":"person",},{"id":"B","label":"person","property_filter":"$element.x > 3"},{"id":"C","label":"person","edges":[{"targetId":"A","label":"knows","property_filter":"$element.x > 3"}]},{"id":"D","label":"person","property_filter":"$element.x > 3","edges":[{"targetId":"B","label":"knows",},{"targetId":"F","label":"knows","property_filter":"$element.x > 3"},{"targetId":"C","label":"knows",},{"targetId":"E","label":"knows",}]},{"id":"E","label":"person",},{"id":"F","label":"person","property_filter":"$element.x > 3","edges":[{"targetId":"B","label":"knows","property_filter":"$element.x > 3"},{"targetId":"C","label":"knows","property_filter":"$element.x > 3"}]}]';
 
 const FilterSubGraphMatching = props => {
+    const {ALGORITHM_NAME} = useTranslatedConstants();
+    const {TextArea} = Input;
+    const {FILTER_SUBGRAPH_MATCHING} = ALGORITHM_NAME;
+    const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
     const {t} = useTranslation();
     const {
         handleFormSubmit,
