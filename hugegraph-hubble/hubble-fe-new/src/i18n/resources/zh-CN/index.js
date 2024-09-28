@@ -7,6 +7,7 @@ import {
 import {
     Home,
     Manage,
+    Analysis,
 } from './modules';
 
 const translation = {
@@ -15,7 +16,8 @@ const translation = {
         Common,
         Home,
         Manage,
-        ERView
+        ERView,
+        Analysis
     ),
 };
 
