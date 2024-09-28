@@ -19,17 +19,19 @@
 
 package org.apache.hugegraph.util;
 
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.GraphConnection;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ServerException;
-import org.apache.hugegraph.rest.ClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.Set;
+
+import  org.apache.hugegraph.rest.ClientException;
+import com.google.common.collect.ImmutableSet;
 
 public final class HugeClientUtil {
 

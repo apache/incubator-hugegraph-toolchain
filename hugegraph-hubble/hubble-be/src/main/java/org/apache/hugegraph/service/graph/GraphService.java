@@ -71,7 +71,6 @@ public class GraphService {
 
     @Autowired
     private UserService userService;
-
     public GraphView addVertex(HugeClient client, VertexEntity entity) {
         this.checkParamsValid(client, entity, true);
         Vertex vertex = this.buildVertex(client, entity);

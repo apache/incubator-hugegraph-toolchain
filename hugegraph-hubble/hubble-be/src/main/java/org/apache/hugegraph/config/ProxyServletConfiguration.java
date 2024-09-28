@@ -1,6 +1,7 @@
 package org.apache.hugegraph.config;
 
 import org.apache.hugegraph.options.HubbleOptions;
+
 import org.mitre.dsmiley.httpproxy.ProxyServlet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;

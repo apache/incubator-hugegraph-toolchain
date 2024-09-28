@@ -19,13 +19,35 @@
 
 package org.apache.hugegraph.controller.load;
 
-import lombok.extern.log4j.Log4j2;
+import static org.apache.hugegraph.service.load.FileMappingService.CONN_PREIFX;
+import static org.apache.hugegraph.service.load.FileMappingService.JOB_PREIFX;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import org.apache.hugegraph.controller.BaseController;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.config.HugeConfig;
-import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.entity.enums.FileMappingStatus;
 import org.apache.hugegraph.entity.enums.JobStatus;
 import org.apache.hugegraph.entity.load.FileMapping;
@@ -39,21 +61,8 @@ import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.FileUtil;
 import org.apache.hugegraph.util.HubbleUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import static org.apache.hugegraph.service.load.FileMappingService.CONN_PREIFX;
-import static org.apache.hugegraph.service.load.FileMappingService.JOB_PREIFX;
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController

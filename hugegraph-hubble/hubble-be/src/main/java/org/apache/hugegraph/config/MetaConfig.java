@@ -21,6 +21,7 @@ package org.apache.hugegraph.config;
 
 import org.apache.hugegraph.driver.factory.PDHugeClientFactory;
 import org.apache.hugegraph.options.HubbleOptions;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

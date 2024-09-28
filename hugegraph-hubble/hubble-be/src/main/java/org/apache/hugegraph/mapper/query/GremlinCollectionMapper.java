@@ -19,13 +19,14 @@
 
 package org.apache.hugegraph.mapper.query;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import org.apache.hugegraph.entity.query.GremlinCollection;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Component;
+
+import org.apache.hugegraph.entity.query.GremlinCollection;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 
 @Mapper
 @Component

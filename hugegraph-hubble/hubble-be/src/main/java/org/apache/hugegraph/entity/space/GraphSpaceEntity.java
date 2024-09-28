@@ -21,15 +21,15 @@
 
 package org.apache.hugegraph.entity.space;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.hugegraph.structure.space.GraphSpace;
-import org.apache.hugegraph.util.JsonUtil;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.hugegraph.structure.space.GraphSpace;
+import org.apache.hugegraph.util.JsonUtil;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GraphSpaceEntity extends GraphSpace {

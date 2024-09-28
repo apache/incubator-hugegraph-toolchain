@@ -19,12 +19,13 @@
 
 package org.apache.hugegraph.util;
 
+import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import org.apache.commons.io.FileUtils;
-
-import java.io.IOException;
 
 public final class SerializeUtil {
 

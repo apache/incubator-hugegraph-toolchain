@@ -19,12 +19,12 @@
 
 package org.apache.hugegraph.entity.query;
 
+import org.apache.hugegraph.structure.traverser.FusiformSimilarity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.hugegraph.structure.traverser.FusiformSimilarity;
 
 import java.util.Map;
 import java.util.Set;

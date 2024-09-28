@@ -19,12 +19,12 @@
 
 package org.apache.hugegraph.util;
 
+import java.util.Collections;
+import java.util.List;
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.common.collect.Lists;
-
-import java.util.Collections;
-import java.util.List;
 
 public final class PageUtil {
 

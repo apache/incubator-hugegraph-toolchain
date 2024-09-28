@@ -19,12 +19,12 @@
 
 package org.apache.hugegraph.util;
 
-import org.apache.hugegraph.exception.InternalException;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+
+import org.apache.hugegraph.exception.InternalException;
 
 public final class FileUtil {
 

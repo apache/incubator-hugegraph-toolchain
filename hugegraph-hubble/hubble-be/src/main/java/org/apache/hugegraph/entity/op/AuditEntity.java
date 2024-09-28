@@ -19,13 +19,13 @@
 
 package org.apache.hugegraph.entity.op;
 
+import org.apache.hugegraph.util.JsonUtil;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.hugegraph.util.JsonUtil;
 
 import java.util.Map;
 

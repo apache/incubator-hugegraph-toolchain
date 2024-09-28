@@ -19,17 +19,25 @@
 
 package org.apache.hugegraph.entity.query;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.hugegraph.entity.graph.VertexQueryEntity;
+import org.apache.hugegraph.structure.graph.Edge;
+import org.apache.hugegraph.structure.graph.Vertex;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.hugegraph.entity.graph.VertexQueryEntity;
-import org.apache.hugegraph.structure.graph.Edge;
-import org.apache.hugegraph.structure.graph.Vertex;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor

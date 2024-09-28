@@ -19,15 +19,16 @@
 
 package org.apache.hugegraph.service.space;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.structure.space.SchemaTemplate;
-import org.apache.hugegraph.util.PageUtil;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.springframework.stereotype.Service;
+
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.structure.space.SchemaTemplate;
+import org.apache.hugegraph.util.PageUtil;
 
 @Service
 public class SchemaTemplateService {

@@ -19,6 +19,18 @@
 
 package org.apache.hugegraph.entity.load;
 
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.hugegraph.annotation.MergeProperty;
+import org.apache.hugegraph.entity.enums.FileMappingStatus;
+import org.apache.hugegraph.handler.EdgeMappingTypeHandler;
+import org.apache.hugegraph.handler.VertexMappingTypeHandler;
+import org.apache.hugegraph.util.HubbleUtil;
+import org.apache.hugegraph.util.SerializeUtil;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -27,23 +39,12 @@ import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.apache.hugegraph.annotation.MergeProperty;
-import org.apache.hugegraph.entity.enums.FileMappingStatus;
-import org.apache.hugegraph.handler.EdgeMappingTypeHandler;
-import org.apache.hugegraph.handler.VertexMappingTypeHandler;
-import org.apache.hugegraph.util.HubbleUtil;
-import org.apache.hugegraph.util.SerializeUtil;
-
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor

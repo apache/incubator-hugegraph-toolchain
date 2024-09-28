@@ -19,31 +19,6 @@
 
 package org.apache.hugegraph.controller.schema;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableMap;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.controller.BaseController;
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.schema.*;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.exception.HugeException;
-import org.apache.hugegraph.exception.InternalException;
-import org.apache.hugegraph.service.schema.PropertyKeyService;
-import org.apache.hugegraph.service.schema.SchemaService;
-import org.apache.hugegraph.util.Ex;
-import org.apache.hugegraph.util.Log;
-import org.apache.hugegraph.util.PageUtil;
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -53,6 +28,45 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.HugeException;
+import org.apache.hugegraph.service.schema.SchemaService;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
+
+import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.controller.BaseController;
+import org.apache.hugegraph.entity.schema.LabelUpdateEntity;
+import org.apache.hugegraph.entity.schema.Property;
+import org.apache.hugegraph.entity.schema.PropertyIndex;
+import org.apache.hugegraph.entity.schema.SchemaEntity;
+import org.apache.hugegraph.entity.schema.SchemaLabelEntity;
+import org.apache.hugegraph.entity.schema.Timefiable;
+import org.apache.hugegraph.exception.InternalException;
+import org.apache.hugegraph.service.schema.PropertyKeyService;
+import org.apache.hugegraph.util.Ex;
+import org.apache.hugegraph.util.PageUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+
+import javax.servlet.http.HttpServletResponse;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @RestController
 @RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +

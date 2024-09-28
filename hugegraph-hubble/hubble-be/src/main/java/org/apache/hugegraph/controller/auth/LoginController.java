@@ -19,16 +19,21 @@
 
 package org.apache.hugegraph.controller.auth;
 
+import org.apache.hugegraph.entity.auth.UserEntity;
 import com.google.common.collect.ImmutableMap;
+import org.apache.hugegraph.service.auth.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.auth.UserEntity;
-import org.apache.hugegraph.service.auth.UserService;
-import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(Constant.API_VERSION + "auth")

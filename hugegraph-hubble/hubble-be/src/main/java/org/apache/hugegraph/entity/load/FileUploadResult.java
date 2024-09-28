@@ -19,13 +19,14 @@
 
 package org.apache.hugegraph.entity.load;
 
+import org.apache.hugegraph.util.SerializeUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.hugegraph.util.SerializeUtil;
 
 @Data
 @NoArgsConstructor

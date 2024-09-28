@@ -19,22 +19,27 @@
 
 package org.apache.hugegraph.service.auth;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.hugegraph.structure.auth.HugePermission;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
-import lombok.extern.log4j.Log4j2;
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.auth.AccessEntity;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.structure.auth.Access;
-import org.apache.hugegraph.structure.auth.HugePermission;
-import org.apache.hugegraph.structure.auth.Role;
-import org.apache.hugegraph.structure.auth.Target;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import lombok.extern.log4j.Log4j2;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.auth.AccessEntity;
+import org.apache.hugegraph.structure.auth.Role;
+import org.apache.hugegraph.structure.auth.Target;
+import org.apache.hugegraph.structure.auth.Access;
+import org.apache.hugegraph.exception.ExternalException;
 
 @Log4j2
 @Service

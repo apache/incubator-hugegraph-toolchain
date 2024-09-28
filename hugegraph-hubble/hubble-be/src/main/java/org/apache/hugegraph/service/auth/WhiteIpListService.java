@@ -1,9 +1,9 @@
 package org.apache.hugegraph.service.auth;
 
-import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.WhiteIpListManager;
 import org.apache.hugegraph.entity.auth.WhiteIpListEntity;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;

@@ -19,17 +19,18 @@
 
 package org.apache.hugegraph.entity.schema;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.hugegraph.structure.constant.IdStrategy;
+import org.apache.hugegraph.util.HubbleUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.hugegraph.structure.constant.IdStrategy;
-import org.apache.hugegraph.util.HubbleUtil;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor

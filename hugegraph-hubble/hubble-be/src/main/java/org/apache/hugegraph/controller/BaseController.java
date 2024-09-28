@@ -19,27 +19,28 @@
 
 package org.apache.hugegraph.controller;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.common.Identifiable;
-import org.apache.hugegraph.common.Mergeable;
-import org.apache.hugegraph.config.HugeConfig;
+import java.util.List;
+import java.util.function.Function;
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.factory.PDHugeClientFactory;
-import org.apache.hugegraph.exception.ParameterizedException;
-import org.apache.hugegraph.service.HugeClientPoolService;
 import org.apache.hugegraph.service.auth.UserService;
-import org.apache.hugegraph.util.EntityUtil;
-import org.apache.hugegraph.util.Ex;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.hugegraph.config.HugeConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.function.Function;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.exception.ParameterizedException;
+import org.apache.hugegraph.service.HugeClientPoolService;
+import org.apache.hugegraph.common.Identifiable;
+import org.apache.hugegraph.common.Mergeable;
+import org.apache.hugegraph.util.EntityUtil;
+import org.apache.hugegraph.util.Ex;
 
 @Component
 public abstract class BaseController {

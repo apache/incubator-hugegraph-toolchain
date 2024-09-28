@@ -19,23 +19,25 @@
 
 package org.apache.hugegraph.license;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.schlichtherle.license.LicenseContent;
-import de.schlichtherle.license.LicenseContentException;
-import de.schlichtherle.license.LicenseParam;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.exception.ExternalException;
-import org.apache.hugegraph.exception.InternalException;
-import org.apache.hugegraph.util.Log;
-import org.apache.hugegraph.util.VersionUtil;
-import org.apache.hugegraph.version.HubbleVersion;
-import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.InternalException;
+import org.apache.hugegraph.version.HubbleVersion;
+import org.slf4j.Logger;
+
+import org.apache.hugegraph.util.Log;
+import org.apache.hugegraph.util.VersionUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.schlichtherle.license.LicenseContent;
+import de.schlichtherle.license.LicenseContentException;
+import de.schlichtherle.license.LicenseParam;
 
 public class LicenseVerifyManager extends CommonLicenseManager {
 

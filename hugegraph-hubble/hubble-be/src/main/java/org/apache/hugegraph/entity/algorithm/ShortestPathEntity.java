@@ -19,13 +19,14 @@
 
 package org.apache.hugegraph.entity.algorithm;
 
+import org.apache.hugegraph.structure.constant.Direction;
+import org.apache.hugegraph.structure.constant.Traverser;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.constant.Traverser;
 
 @Data
 @NoArgsConstructor

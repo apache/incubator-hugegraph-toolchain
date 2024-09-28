@@ -19,26 +19,33 @@
 
 package org.apache.hugegraph.service.auth;
 
-import com.csvreader.CsvReader;
-import lombok.extern.log4j.Log4j2;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.common.Response;
+import org.apache.hugegraph.structure.auth.Login;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.AuthManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.auth.UserEntity;
 import org.apache.hugegraph.exception.InternalException;
-import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.util.PageUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.nio.charset.Charset;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.csvreader.CsvReader;
+
+import org.springframework.web.multipart.MultipartFile;
 
 @Log4j2
 @Service

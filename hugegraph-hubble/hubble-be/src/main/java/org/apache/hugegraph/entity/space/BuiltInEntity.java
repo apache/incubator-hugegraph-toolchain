@@ -1,6 +1,7 @@
 package org.apache.hugegraph.entity.space;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

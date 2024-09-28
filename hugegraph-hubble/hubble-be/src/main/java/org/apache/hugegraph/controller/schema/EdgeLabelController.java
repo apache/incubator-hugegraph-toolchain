@@ -19,11 +19,31 @@
 
 package org.apache.hugegraph.controller.schema;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.google.common.collect.ImmutableList;
-import org.apache.hugegraph.common.Constant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.schema.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
+import org.apache.hugegraph.entity.schema.ConflictDetail;
+import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
+import org.apache.hugegraph.entity.schema.EdgeLabelStyle;
+import org.apache.hugegraph.entity.schema.EdgeLabelUpdateEntity;
+import org.apache.hugegraph.entity.schema.VertexLabelEntity;
 import org.apache.hugegraph.service.schema.EdgeLabelService;
 import org.apache.hugegraph.service.schema.PropertyIndexService;
 import org.apache.hugegraph.service.schema.PropertyKeyService;
@@ -32,14 +52,8 @@ import org.apache.hugegraph.structure.constant.EdgeLabelType;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.HubbleUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.google.common.collect.ImmutableList;
 
 @RestController
 @RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +

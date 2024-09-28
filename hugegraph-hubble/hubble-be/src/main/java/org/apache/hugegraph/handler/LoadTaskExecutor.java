@@ -19,10 +19,11 @@
 
 package org.apache.hugegraph.handler;
 
-import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.entity.load.LoadTask;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Component

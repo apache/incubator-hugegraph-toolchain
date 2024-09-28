@@ -19,26 +19,28 @@
 
 package org.apache.hugegraph.service.auth;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import lombok.extern.log4j.Log4j2;
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.auth.BelongEntity;
-import org.apache.hugegraph.entity.auth.RoleEntity;
-import org.apache.hugegraph.entity.auth.UserView;
-import org.apache.hugegraph.structure.auth.Belong;
-import org.apache.hugegraph.structure.auth.User;
-import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.PageUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.hugegraph.entity.auth.RoleEntity;
+import org.apache.hugegraph.structure.auth.User;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.auth.BelongEntity;
+import org.apache.hugegraph.entity.auth.UserView;
+import org.apache.hugegraph.structure.auth.Belong;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.PageUtil;
 
 @Log4j2
 @Service

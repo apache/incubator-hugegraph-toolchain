@@ -19,22 +19,35 @@
 
 package org.apache.hugegraph.service.schema;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import lombok.extern.log4j.Log4j2;
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.schema.*;
-import org.apache.hugegraph.exception.ServerException;
-import org.apache.hugegraph.structure.constant.HugeType;
-import org.apache.hugegraph.structure.schema.IndexLabel;
-import org.apache.hugegraph.util.PageUtil;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.entity.schema.ConflictDetail;
+import org.apache.hugegraph.entity.schema.ConflictStatus;
+import org.apache.hugegraph.entity.schema.PropertyIndex;
+import org.apache.hugegraph.entity.schema.SchemaConflict;
+import org.apache.hugegraph.entity.schema.SchemaEntity;
+import org.apache.hugegraph.entity.schema.SchemaType;
+import org.apache.hugegraph.exception.ServerException;
+import org.apache.hugegraph.structure.constant.HugeType;
+import org.apache.hugegraph.structure.schema.IndexLabel;
+import org.apache.hugegraph.util.PageUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service

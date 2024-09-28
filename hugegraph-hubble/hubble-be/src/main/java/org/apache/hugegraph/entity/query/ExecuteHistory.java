@@ -19,15 +19,8 @@
 
 package org.apache.hugegraph.entity.query;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.Date;
+
 import org.apache.hugegraph.annotation.MergeProperty;
 import org.apache.hugegraph.common.Identifiable;
 import org.apache.hugegraph.common.Mergeable;
@@ -35,8 +28,16 @@ import org.apache.hugegraph.entity.enums.AsyncTaskStatus;
 import org.apache.hugegraph.entity.enums.ExecuteStatus;
 import org.apache.hugegraph.entity.enums.ExecuteType;
 import org.apache.hugegraph.util.SerializeUtil;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import java.util.Date;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor

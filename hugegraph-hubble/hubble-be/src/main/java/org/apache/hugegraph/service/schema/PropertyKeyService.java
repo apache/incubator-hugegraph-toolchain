@@ -19,22 +19,35 @@
 
 package org.apache.hugegraph.service.schema;
 
-import lombok.extern.log4j.Log4j2;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.entity.schema.*;
+import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
+import org.apache.hugegraph.entity.schema.ConflictDetail;
+import org.apache.hugegraph.entity.schema.ConflictStatus;
+import org.apache.hugegraph.entity.schema.PropertyKeyEntity;
+import org.apache.hugegraph.entity.schema.SchemaConflict;
+import org.apache.hugegraph.entity.schema.SchemaEntity;
+import org.apache.hugegraph.entity.schema.SchemaType;
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.Ex;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
-import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service

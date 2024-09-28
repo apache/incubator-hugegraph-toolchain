@@ -1,11 +1,11 @@
 package org.apache.hugegraph.service.algorithm;
 
-import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.algorithm.OlapEntity;
 import org.apache.hugegraph.entity.query.OlapView;
 import org.apache.hugegraph.service.query.ExecuteHistoryService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

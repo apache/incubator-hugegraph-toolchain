@@ -19,17 +19,22 @@
 
 package org.apache.hugegraph.handler;
 
-import lombok.extern.log4j.Log4j2;
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.driver.HugeClient;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+//import org.apache.hugegraph.license.LicenseVerifier; // TODO C Remove Licence
 import org.apache.hugegraph.service.HugeClientPoolService;
+//import org.apache.hugegraph.service.license.LicenseService;// TODO C Remove Licence
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.regex.Pattern;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.driver.HugeClient;
+
+import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Component

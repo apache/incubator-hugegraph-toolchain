@@ -19,15 +19,16 @@
 
 package org.apache.hugegraph.util;
 
-import com.google.common.collect.ImmutableSet;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.collect.ImmutableSet;
 
 public final class GremlinUtil {
 

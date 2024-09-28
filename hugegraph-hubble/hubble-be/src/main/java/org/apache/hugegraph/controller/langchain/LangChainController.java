@@ -1,35 +1,46 @@
 package org.apache.hugegraph.controller.langchain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.controller.BaseController;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.HashMap;
+
 import org.apache.hugegraph.controller.query.GremlinController;
-import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.entity.query.GremlinQuery;
 import org.apache.hugegraph.entity.query.JsonView;
 import org.apache.hugegraph.service.query.QueryService;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
-import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Ex;
 import org.apache.hugegraph.util.JsonUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.util.E;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.*;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.controller.BaseController;
+import org.apache.hugegraph.driver.HugeClient;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * langchain controller

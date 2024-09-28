@@ -19,16 +19,20 @@
 
 package org.apache.hugegraph.util;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.collections.CollectionUtils;
-
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.TimeZone;
+import java.util.Date;
+import java.util.UUID;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.regex.Pattern;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 public final class HubbleUtil {
     static {

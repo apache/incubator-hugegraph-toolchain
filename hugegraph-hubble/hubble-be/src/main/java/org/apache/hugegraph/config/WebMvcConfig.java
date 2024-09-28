@@ -19,13 +19,14 @@
 
 package org.apache.hugegraph.config;
 
-import org.apache.hugegraph.handler.CustomInterceptor;
 import org.apache.hugegraph.handler.LoginInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import org.apache.hugegraph.handler.CustomInterceptor;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {

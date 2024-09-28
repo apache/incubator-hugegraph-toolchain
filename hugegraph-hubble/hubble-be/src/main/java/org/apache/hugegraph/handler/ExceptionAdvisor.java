@@ -19,13 +19,14 @@
 
 package org.apache.hugegraph.handler;
 
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.common.Response;
 import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.exception.*;
-import org.apache.hugegraph.util.JsonUtil;
+import org.apache.hugegraph.exception.ServerException;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.exception.ExternalException;
+import org.apache.hugegraph.exception.IllegalGremlinException;
+import org.apache.hugegraph.exception.InternalException;
+import org.apache.hugegraph.exception.ParameterizedException;
+import org.apache.hugegraph.exception.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -34,9 +35,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.common.Response;
+import org.apache.hugegraph.util.JsonUtil;
+
+import lombok.extern.log4j.Log4j2;
+
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Log4j2
 @RestControllerAdvice

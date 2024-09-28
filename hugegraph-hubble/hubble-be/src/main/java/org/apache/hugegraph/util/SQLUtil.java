@@ -20,6 +20,7 @@
 package org.apache.hugegraph.util;
 
 import org.apache.commons.lang3.StringUtils;
+
 import org.apache.hugegraph.common.Constant;
 
 public final class SQLUtil {

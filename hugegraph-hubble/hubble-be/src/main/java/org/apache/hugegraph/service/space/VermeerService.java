@@ -75,7 +75,7 @@ public class VermeerService {
         Map<String, Object> sertMap = ImmutableMap.of("sertype", "vermeer");
         boolean enable = false;
         try {
-            Map<String, Object> result =client.post(GET_SYS_CFG, sertMap).readObject(Map.class);
+            Map<String, Object> result = client.post(GET_SYS_CFG, sertMap).readObject(Map.class);
             Map<String, String> data = (Map<String, String>) result.get("data");
             if (data == null || data.isEmpty()) {
                 enable = false;

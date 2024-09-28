@@ -19,14 +19,18 @@
 
 package org.apache.hugegraph.options;
 
+import static org.apache.hugegraph.config.OptionChecker.allowValues;
+import static org.apache.hugegraph.config.OptionChecker.disallowEmpty;
+import static org.apache.hugegraph.config.OptionChecker.positiveInt;
+import static org.apache.hugegraph.config.OptionChecker.rangeInt;
+
+import org.springframework.util.CollectionUtils;
+
 import org.apache.hugegraph.config.ConfigListOption;
 import org.apache.hugegraph.config.ConfigOption;
 import org.apache.hugegraph.config.OptionHolder;
 import org.apache.hugegraph.util.Bytes;
 import org.apache.hugegraph.util.HubbleUtil;
-import org.springframework.util.CollectionUtils;
-
-import static org.apache.hugegraph.config.OptionChecker.*;
 
 public class HubbleOptions extends OptionHolder {
 

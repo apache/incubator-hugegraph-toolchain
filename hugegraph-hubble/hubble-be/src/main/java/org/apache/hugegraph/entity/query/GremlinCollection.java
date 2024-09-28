@@ -19,20 +19,21 @@
 
 package org.apache.hugegraph.entity.query;
 
+import java.util.Date;
+
+import org.apache.hugegraph.annotation.MergeProperty;
+import org.apache.hugegraph.common.Identifiable;
+import org.apache.hugegraph.common.Mergeable;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.hugegraph.annotation.MergeProperty;
-import org.apache.hugegraph.common.Identifiable;
-import org.apache.hugegraph.common.Mergeable;
-
-import java.util.Date;
 
 @Data
 @NoArgsConstructor
