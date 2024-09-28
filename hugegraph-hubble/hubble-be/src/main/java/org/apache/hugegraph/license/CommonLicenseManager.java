@@ -21,8 +21,6 @@ package org.apache.hugegraph.license;
 import de.schlichtherle.license.LicenseManager;
 import de.schlichtherle.license.*;
 import de.schlichtherle.xml.GenericCertificate;
-import org.apache.hugegraph.logger.HugeGraphLogger;
-import org.apache.hugegraph.util.Log;
 
 import java.beans.XMLDecoder;
 import java.io.BufferedInputStream;
@@ -31,9 +29,6 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 public class CommonLicenseManager extends LicenseManager {
-
-    private static final HugeGraphLogger LOGGER
-            = Log.getLogger(CommonLicenseManager.class);
 
     private static final String CHARSET = "UTF-8";
     private static final int BUF_SIZE = 8 * 1024;
@@ -117,7 +112,7 @@ public class CommonLicenseManager extends LicenseManager {
                     bis.close();
                 }
             } catch (Exception e) {
-                LOGGER.getCommonLogger().logCloseStreamFailed(e);
+
             }
         }
     }

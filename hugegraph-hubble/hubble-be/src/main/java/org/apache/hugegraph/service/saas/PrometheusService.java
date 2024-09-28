@@ -168,8 +168,9 @@ public class PrometheusService {
         }
 
         @Override
-        protected void checkStatus(Response response,
-                                   Response.Status... statuses) {
+        protected void checkStatus(Response response, Response.Status... statuses) {
+
         }
+
     }
 }
