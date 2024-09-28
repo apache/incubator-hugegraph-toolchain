@@ -261,7 +261,13 @@
             <version>4.2</version>
             <scope>compile</scope>
         </dependency>
-        <!-- TODO X Evaluate the adding of dependency (common, protobuf, exclusion on hive)-->
+        <!-- TODO X Evaluate the adding of dependency (common, protobuf, exclusion on hive,jakarta)-->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>3.0.0</version>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>

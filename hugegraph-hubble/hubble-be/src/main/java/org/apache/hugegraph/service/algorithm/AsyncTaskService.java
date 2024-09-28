@@ -19,18 +19,16 @@
 
 package org.apache.hugegraph.service.algorithm;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import lombok.extern.log4j.Log4j2;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.util.PageUtil;
-import com.baomidou.mybatisplus.core.metadata.IPage;
+import org.springframework.stereotype.Service;
 
-import lombok.extern.log4j.Log4j2;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Log4j2
 @Service
