@@ -17,7 +17,12 @@
 
 package org.apache.hugegraph.structure.schema;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.hugegraph.structure.constant.EdgeLabelType;
@@ -39,10 +44,10 @@ public class EdgeLabel extends SchemaLabel {
     private String parentLabel;
     @JsonProperty("frequency")
     private Frequency frequency;
-    @JsonProperty("source_label")
-    private String sourceLabel;
-    @JsonProperty("target_label")
-    private String targetLabel;
+//    @JsonProperty("source_label")
+//    private String sourceLabel;
+//    @JsonProperty("target_label")
+//    private String targetLabel;
     @JsonProperty("links")
     private Set<Map<String, String>> links;
     @JsonProperty("sort_keys")
@@ -87,11 +92,19 @@ public class EdgeLabel extends SchemaLabel {
     }
 
     public String sourceLabel() {
-        return this.sourceLabel;
+        E.checkState(this.links.size() == 1,
+                "Only edge label has single vertex label pair can call " +
+                        "sourceLabelName(), but current edge label got %s",
+                this.links.size());
+        return this.links.iterator().next().keySet().iterator().next();
     }
 
     public String targetLabel() {
-        return this.targetLabel;
+        E.checkState(this.links.size() == 1,
+                "Only edge label has single vertex label pair can call " +
+                        "targetLabelName(), but current edge label got %s",
+                this.links.size());
+        return this.links.iterator().next().values().iterator().next();
     }
 
     public Set<Map<String, String>> links() {
@@ -127,12 +140,12 @@ public class EdgeLabel extends SchemaLabel {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
+        return String.format("{name=%s, " +
                              "edgeLabel_type=%s, " + "parent_label=%s" +
                              "links=%s, sortKeys=%s, indexLabels=%s, " +
                              "nullableKeys=%s, properties=%s, ttl=%s, " +
                              "ttlStartTime=%s, status=%s}",
-                             this.name, this.sourceLabel, this.targetLabel,
+                             this.name,
                              this.edgeLabelType, this.parentLabel,
                              this.links, this.sortKeys, this.indexLabels,
                              this.nullableKeys, this.properties, this.ttl,
@@ -183,10 +196,14 @@ public class EdgeLabel extends SchemaLabel {
     public static class BuilderImpl implements Builder {
 
         private EdgeLabel edgeLabel;
+        private String sourceLabel;
+        private String targetLabel;
         private SchemaManager manager;
 
         public BuilderImpl(String name, SchemaManager manager) {
             this.edgeLabel = new EdgeLabel(name);
+            this.sourceLabel = null;
+            this.targetLabel = null;
             this.manager = manager;
         }
 
@@ -197,6 +214,7 @@ public class EdgeLabel extends SchemaLabel {
 
         @Override
         public EdgeLabel create() {
+            this.checkThenLinkSourceAndTarget();
             return this.manager.addEdgeLabel(this.edgeLabel);
         }
 
@@ -243,8 +261,8 @@ public class EdgeLabel extends SchemaLabel {
         public Builder link(String sourceLabel, String targetLabel) {
             if (this.edgeLabel.links == null) {
                 this.edgeLabel.links = new HashSet<>();
-                this.edgeLabel.sourceLabel = sourceLabel;
-                this.edgeLabel.targetLabel = targetLabel;
+                this.sourceLabel = sourceLabel;
+                this.targetLabel = targetLabel;
             }
             HashMap<String, String> map = new HashMap<>();
             map.put(sourceLabel, targetLabel);
@@ -278,7 +296,7 @@ public class EdgeLabel extends SchemaLabel {
                             this.edgeLabel.links.isEmpty(),
                             "Not allowed add source label to an edge label which " +
                             "already has links");
-            this.edgeLabel.sourceLabel = label;
+            this.sourceLabel = label;
             return this;
         }
 
@@ -288,10 +306,10 @@ public class EdgeLabel extends SchemaLabel {
                             this.edgeLabel.links.isEmpty(),
                             "Not allowed add source label to an edge label which " +
                             "already has links");
-            E.checkArgument(this.edgeLabel.sourceLabel != null,
+            E.checkArgument(this.sourceLabel != null,
                             "Not allowed add target label to an edge label which " +
                             "not has source label yet");
-            this.edgeLabel.targetLabel = label;
+            this.targetLabel = label;
             return this;
         }
 
@@ -354,6 +372,14 @@ public class EdgeLabel extends SchemaLabel {
                             "Not allowed to change frequency for " +
                             "edge label '%s'", this.edgeLabel.name);
         }
+
+        private void checkThenLinkSourceAndTarget() {
+            E.checkArgument((this.sourceLabel != null && this.targetLabel != null) ||
+                            (this.sourceLabel == null && this.targetLabel == null),
+                            "Not allowed to add edge label with only one " +
+                            "source/target label");
+            this.link(this.sourceLabel, this.targetLabel);
+        }
     }
 
     public static class EdgeLabelV53 extends SchemaLabel {
@@ -378,8 +404,8 @@ public class EdgeLabel extends SchemaLabel {
             super(edgeLabel.name);
             this.frequency = edgeLabel.frequency;
             this.sortKeys = edgeLabel.sortKeys;
-            this.sourceLabel = edgeLabel.sourceLabel;
-            this.targetLabel = edgeLabel.targetLabel;
+            this.sourceLabel = edgeLabel.sourceLabel();
+            this.targetLabel = edgeLabel.targetLabel();
             this.id = edgeLabel.id();
             this.properties = edgeLabel.properties();
             this.userdata = edgeLabel.userdata();
