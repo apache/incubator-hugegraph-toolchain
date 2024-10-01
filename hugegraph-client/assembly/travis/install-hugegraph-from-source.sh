@@ -28,7 +28,7 @@ GIT_DIR=hugegraph
 # download code and compile
 git clone --depth 150 ${HUGEGRAPH_GIT_URL} -b father-sub-edge
 cd "${GIT_DIR}"
-git checkout "${COMMIT_ID}"
+#git checkout "${COMMIT_ID}"
 mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
 
 # TODO: lack incubator after apache package release (update it later)
