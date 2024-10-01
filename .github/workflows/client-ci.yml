@@ -68,7 +68,7 @@ jobs:
           cd hugegraph-client && ls *
           mvn test -Dtest=UnitTestSuite -ntp || true
           mvn test -Dtest=ApiTestSuite || true
-          mvn test -Dtest=FuncTestSuite || true
+          mvn test -Dtest=FuncTestSuite
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

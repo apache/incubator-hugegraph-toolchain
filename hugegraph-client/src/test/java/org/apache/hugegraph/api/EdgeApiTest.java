@@ -670,7 +670,7 @@ public class EdgeApiTest extends BaseApiTest {
             // TODO: id to be modified
             edgeAPI.get(edgeId);
         }, e -> {
-            Assert.assertContains("Edge id must be formatted as 4~5 parts, " +
+            Assert.assertContains("Edge id must be formatted as 5~6 parts, " +
                                   "but got 1 parts: 'not-exist-edge-id'",
                                   e.getMessage());
             Assert.assertInstanceOf(ServerException.class, e);
