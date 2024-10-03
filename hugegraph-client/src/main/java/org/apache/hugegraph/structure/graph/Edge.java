@@ -145,8 +145,7 @@ public class Edge extends GraphElement {
             E.checkState(idParts.length == 5 || idParts.length == 6,
                          "The edge id must be formatted by 5~6 parts, " +
                          "actual is %s", idParts.length);
-            // TODO(Thespica): how to get the name of the edge?
-            this.name = idParts[2];
+            this.name = idParts[idParts.length - 2];
         }
         return this.name;
     }

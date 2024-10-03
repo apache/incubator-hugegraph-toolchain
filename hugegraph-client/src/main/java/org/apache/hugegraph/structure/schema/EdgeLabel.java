@@ -44,6 +44,7 @@ public class EdgeLabel extends SchemaLabel {
     private String parentLabel;
     @JsonProperty("frequency")
     private Frequency frequency;
+    // TODO(@Thespica): remove unused documented code
 //    @JsonProperty("source_label")
 //    private String sourceLabel;
 //    @JsonProperty("target_label")
