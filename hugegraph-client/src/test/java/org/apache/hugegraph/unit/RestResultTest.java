@@ -228,16 +228,21 @@ public class RestResultTest extends BaseUnitTest {
     @SneakyThrows
     @Test
     public void testReadEdgeLabel() {
-        String json = "{"
-                      + "\"id\": 2,"
-                      + "\"source_label\": \"person\","
-                      + "\"index_labels\": [\"createdByDate\"],"
-                      + "\"name\": \"created\","
-                      + "\"target_label\": \"software\","
-                      + "\"sort_keys\": [],"
-                      + "\"properties\": [\"date\"],"
-                      + "\"frequency\": \"SINGLE\""
-                      + "}";
+        String json = "{\n" +
+                "  \"id\" : 14,\n" +
+                "  \"name\" : \"created\",\n" +
+                "  \"edgelabel_type\" : \"NORMAL\",\n" +
+                "  \"links\" : [ {\n" +
+                "    \"person\" : \"software\"\n" +
+                "  } ],\n" +
+                "  \"frequency\" : \"SINGLE\",\n" +
+                "  \"sort_keys\" : [ ],\n" +
+                "  \"nullable_keys\" : [ ],\n" +
+                "  \"index_labels\" : [ ],\n" +
+                "  \"properties\" : [ \"date\" ],\n" +
+                "  \"status\" : \"CREATED\",\n" +
+                "  \"enable_label_index\" : true,\n" +
+                "}";
 
         Mockito.when(this.mockResponse.code()).thenReturn(200);
         Mockito.when(this.mockResponse.headers()).thenReturn(null);
@@ -259,27 +264,45 @@ public class RestResultTest extends BaseUnitTest {
     @SneakyThrows
     @Test
     public void testReadEdgeLabels() {
-        String json = "{\"edgelabels\": ["
-                      + "{"
-                      + "\"id\": 2,"
-                      + "\"source_label\": \"person\","
-                      + "\"index_labels\": [\"createdByDate\"],"
-                      + "\"name\": \"created\","
-                      + "\"target_label\": \"software\","
-                      + "\"sort_keys\": [],"
-                      + "\"properties\": [\"date\"],"
-                      + "\"frequency\": \"SINGLE\""
-                      + "},"
-                      + "{\"id\": 3,"
-                      + "\"source_label\": \"person\","
-                      + "\"index_labels\": [],"
-                      + "\"name\": \"knows\","
-                      + "\"target_label\": \"person\","
-                      + "\"sort_keys\": [],"
-                      + "\"properties\": [\"date\", \"city\"],"
-                      + "\"frequency\": \"SINGLE\""
-                      + "}"
-                      + "]}";
+        String json = "{\n" +
+                "  \"edgelabels\" : [ {\n" +
+                "    \"id\" : 32,\n" +
+                "    \"name\" : \"created\",\n" +
+                "    \"edgelabel_type\" : \"NORMAL\",\n" +
+                "    \"links\" : [ {\n" +
+                "      \"person\" : \"software\"\n" +
+                "    } ],\n" +
+                "    \"frequency\" : \"SINGLE\",\n" +
+                "    \"sort_keys\" : [ ],\n" +
+                "    \"nullable_keys\" : [ ],\n" +
+                "    \"index_labels\" : [ ],\n" +
+                "    \"properties\" : [ \"date\" ],\n" +
+                "    \"status\" : \"CREATED\",\n" +
+                "    \"ttl\" : 0,\n" +
+                "    \"enable_label_index\" : true,\n" +
+                "    \"user_data\" : {\n" +
+                "      \"~create_time\" : \"2024-10-04 15:17:10.061\"\n" +
+                "    }\n" +
+                "  }, {\n" +
+                "    \"id\" : 31,\n" +
+                "    \"name\" : \"knows\",\n" +
+                "    \"edgelabel_type\" : \"NORMAL\",\n" +
+                "    \"links\" : [ {\n" +
+                "      \"person\" : \"person\"\n" +
+                "    } ],\n" +
+                "    \"frequency\" : \"SINGLE\",\n" +
+                "    \"sort_keys\" : [ ],\n" +
+                "    \"nullable_keys\" : [ ],\n" +
+                "    \"index_labels\" : [ ],\n" +
+                "    \"properties\" : [ \"city\", \"date\" ],\n" +
+                "    \"status\" : \"CREATED\",\n" +
+                "    \"ttl\" : 0,\n" +
+                "    \"enable_label_index\" : true,\n" +
+                "    \"user_data\" : {\n" +
+                "      \"~create_time\" : \"2024-10-04 15:17:10.053\"\n" +
+                "    }\n" +
+                "  } ]\n" +
+                "}";
 
         Mockito.when(this.mockResponse.code()).thenReturn(200);
         Mockito.when(this.mockResponse.headers()).thenReturn(null);

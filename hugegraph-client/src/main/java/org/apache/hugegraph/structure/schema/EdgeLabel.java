@@ -286,6 +286,7 @@ public class EdgeLabel extends SchemaLabel {
         }
 
 
+        // TODO(@Thespcia): should be marked as @Deprecated?
         @Override
         public Builder sourceLabel(String label) {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
@@ -295,6 +296,7 @@ public class EdgeLabel extends SchemaLabel {
             return this;
         }
 
+        // TODO(@Thespcia): should be marked as @Deprecated?
         @Override
         public Builder targetLabel(String label) {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
