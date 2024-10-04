@@ -241,7 +241,7 @@ public class RestResultTest extends BaseUnitTest {
                 "  \"index_labels\" : [ ],\n" +
                 "  \"properties\" : [ \"date\" ],\n" +
                 "  \"status\" : \"CREATED\",\n" +
-                "  \"enable_label_index\" : true,\n" +
+                "  \"enable_label_index\" : true\n" +
                 "}";
 
         Mockito.when(this.mockResponse.code()).thenReturn(200);
