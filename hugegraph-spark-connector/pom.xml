@@ -94,7 +94,7 @@
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>${revision}</version>
+            <version>${hugegraph.client.version}</version>
         </dependency>
 
         <!-- jackson version override -->
