@@ -57,7 +57,7 @@ jobs:
 
       - name: Prepare env and service
         run: |
-          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
+          hugegraph-client/assembly/travis/install-hugegraph-from-source.sh
 
       - name: Run test
         run: |

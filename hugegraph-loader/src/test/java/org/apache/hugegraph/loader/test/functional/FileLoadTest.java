@@ -2474,7 +2474,7 @@ public class FileLoadTest extends LoadTest {
         String v1Id = String.format("%s:%s", 1, LongEncoding.encodeNumber(100));
         java.util.Date date = DateUtil.parse("2000-02-01", "yyyy-MM-dd");
         String v2Id = String.format("%s:%s", 2, LongEncoding.encodeNumber(date));
-        String eId = String.format("S1:21_>1>1>>S2:7Dp8kLl0",
+        String eId = String.format("S1:%s>1>1>>S2:%s",
                                    LongEncoding.encodeNumber(100),
                                    LongEncoding.encodeNumber(date));
         Assert.assertEquals(v1Id, v1.id());
