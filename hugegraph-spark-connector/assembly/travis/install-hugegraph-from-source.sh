@@ -17,6 +17,7 @@
 #
 set -ev
 
+# TODO(@Thespica): restore the script while server is ready
 #if [[ $# -ne 1 ]]; then
 #    echo "Must input an existing commit id of hugegraph server" && exit 1
 #fi

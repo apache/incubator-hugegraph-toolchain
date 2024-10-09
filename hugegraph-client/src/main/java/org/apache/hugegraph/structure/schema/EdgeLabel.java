@@ -44,11 +44,6 @@ public class EdgeLabel extends SchemaLabel {
     private String parentLabel;
     @JsonProperty("frequency")
     private Frequency frequency;
-    // TODO(@Thespica): remove unused documented code
-//    @JsonProperty("source_label")
-//    private String sourceLabel;
-//    @JsonProperty("target_label")
-//    private String targetLabel;
     @JsonProperty("links")
     private Set<Map<String, String>> links;
     @JsonProperty("sort_keys")
@@ -263,6 +258,8 @@ public class EdgeLabel extends SchemaLabel {
             HashMap<String, String> map = new HashMap<>();
             map.put(sourceLabel, targetLabel);
             this.edgeLabel.links.add(map);
+            this.sourceLabel = null;
+            this.targetLabel = null;
             return this;
         }
 
@@ -286,7 +283,12 @@ public class EdgeLabel extends SchemaLabel {
         }
 
 
-        // TODO(@Thespcia): should be marked as @Deprecated?
+        /**
+         * Set the source label of the edge label
+         * @deprecated
+         * Suggested use {@link #link(String, String)} to set the source and target label pair
+         */
+        @Deprecated
         @Override
         public Builder sourceLabel(String label) {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
@@ -296,7 +298,12 @@ public class EdgeLabel extends SchemaLabel {
             return this;
         }
 
-        // TODO(@Thespcia): should be marked as @Deprecated?
+        /**
+         * Set the target label of the edge label
+         * @deprecated
+         * Suggested use {@link #link(String, String)} to set the source and target label pair
+         */
+        @Deprecated
         @Override
         public Builder targetLabel(String label) {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
