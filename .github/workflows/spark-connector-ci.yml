@@ -57,8 +57,8 @@ jobs:
 
       - name: Prepare env and service
         run: |
-#          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
-#          TODO(@Thespica): Replace the script while server is ready
+          # $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
+          # TODO(@Thespica): Replace the script while server is ready
           $TRAVIS_DIR/install-hugegraph-from-source.sh
 
       - name: Run test
