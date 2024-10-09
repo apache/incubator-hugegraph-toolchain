@@ -27,7 +27,7 @@
     </parent>
 
     <artifactId>hugegraph-client</artifactId>
-    <version>${hugegraph.client.version}</version>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
