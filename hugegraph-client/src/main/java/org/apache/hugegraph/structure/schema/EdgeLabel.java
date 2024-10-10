@@ -109,7 +109,8 @@ public class EdgeLabel extends SchemaLabel {
     }
 
     public boolean linkedVertexLabel(String vertexLabel) {
-         if (this.edgeLabelType.parent() || this.links == null || this.links.isEmpty()) {
+         if (this.edgeLabelType.parent() || this.links == null ||
+                 this.links.isEmpty()) {
              return false;
          }
 
