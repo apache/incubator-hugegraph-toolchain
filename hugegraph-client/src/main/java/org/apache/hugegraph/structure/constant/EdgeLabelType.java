@@ -23,11 +23,7 @@ public enum EdgeLabelType {
 
     PARENT(1, "PARENT"),
 
-    SUB(2, "SUB"),
-
-    GENERAL(3, "GENERAL"),
-
-    ;
+    SUB(2, "SUB");
 
     private byte code = 0;
     private String name = null;
@@ -48,10 +44,6 @@ public enum EdgeLabelType {
 
     public boolean normal() {
         return this == NORMAL;
-    }
-
-    public boolean general(){
-        return this == GENERAL;
     }
 
     public byte code() {

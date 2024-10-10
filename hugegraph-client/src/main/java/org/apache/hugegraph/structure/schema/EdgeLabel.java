@@ -161,8 +161,6 @@ public class EdgeLabel extends SchemaLabel {
 
         Builder withBase(String fatherLabel);
 
-        Builder asGeneral();
-
         /**
          * Set the source label of the edge label
          *
@@ -281,13 +279,6 @@ public class EdgeLabel extends SchemaLabel {
             this.edgeLabel.parentLabel = parentLabel;
             return this;
         }
-
-        @Override
-        public Builder asGeneral() {
-            this.edgeLabel.edgeLabelType = EdgeLabelType.GENERAL;
-            return this;
-        }
-
 
         /**
          * Set the source label of the edge label
