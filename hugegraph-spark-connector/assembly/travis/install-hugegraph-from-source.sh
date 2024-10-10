@@ -17,17 +17,16 @@
 #
 set -ev
 
-# TODO(@Thespica): restore the script while server is ready
-#if [[ $# -ne 1 ]]; then
-#    echo "Must input an existing commit id of hugegraph server" && exit 1
-#fi
+if [[ $# -ne 1 ]]; then
+    echo "Must input an existing commit id of hugegraph server" && exit 1
+fi
 
-#COMMIT_ID=$1
+COMMIT_ID=$1
 HUGEGRAPH_GIT_URL="https://github.com/apache/hugegraph.git"
 
-git clone --depth 150 ${HUGEGRAPH_GIT_URL} -b father-sub-edge hugegraph
+git clone --depth 150 ${HUGEGRAPH_GIT_URL} hugegraph
 cd hugegraph
-#git checkout "${COMMIT_ID}"
+git checkout "${COMMIT_ID}"
 mvn package -DskipTests -Dmaven.javadoc.skip=true -ntp
 # TODO: lack incubator after apache package release (update it later)
 cd hugegraph-server
