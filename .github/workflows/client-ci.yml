@@ -25,29 +25,44 @@ jobs:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
       # TODO: replace it with the (latest - n) commit id (n >= 15)
-      COMMIT_ID: f6f3708
+      # hugegraph commit date: 2024-10-10
+      COMMIT_ID: 29ecc0
     strategy:
       fail-fast: false
       matrix:
         JAVA_VERSION: [ '8' ]
+
     steps:
-      - name: Install JDK 11 for server environment
-        uses: actions/setup-java@v3
-        with:
-          java-version: 11
-          distribution: 'zulu'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Fetch code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
+
+      # TODO: do we need it? (need test)
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Install JDK 11 for graph server
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+          cache: 'maven'
+
+      - name: Prepare env and service
+        run: |
+          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
+
+      - name: Install Java ${{ matrix.JAVA_VERSION }} for client
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.JAVA_VERSION }}
+          distribution: 'zulu'
+          cache: 'maven'
 
       - name: Use staged maven repo
         if: ${{ env.USE_STAGE == 'true' }}
@@ -58,16 +73,6 @@ jobs:
       - name: Compile
         run: |
           mvn -e compile -pl hugegraph-client -Dmaven.javadoc.skip=true -ntp
-
-      - name: Prepare env and service
-        run: |
-          $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
-
-      - name: Install Java ${{ matrix.JAVA_VERSION }} for client
-        uses: actions/setup-java@v3
-        with:
-          java-version: ${{ matrix.JAVA_VERSION }}
-          distribution: 'zulu'
 
       - name: Run test
         run: |
