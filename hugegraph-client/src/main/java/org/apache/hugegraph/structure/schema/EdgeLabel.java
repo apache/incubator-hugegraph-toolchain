@@ -26,7 +26,12 @@ import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.E;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EdgeLabel extends SchemaLabel {
