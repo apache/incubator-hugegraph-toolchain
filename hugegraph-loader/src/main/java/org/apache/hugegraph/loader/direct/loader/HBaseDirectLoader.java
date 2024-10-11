@@ -41,6 +41,7 @@ import org.apache.hugegraph.loader.direct.util.SinkToHBase;
 import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.metrics.DistributedLoadMetrics;
 import org.apache.hugegraph.loader.metrics.LoadDistributeMetrics;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.apache.hugegraph.serializer.direct.HBaseSerializer;
@@ -60,7 +61,7 @@ import scala.Tuple2;
 public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyValue> {
 
     private SinkToHBase sinkToHBase;
-    private LoadDistributeMetrics loadDistributeMetrics;
+    private DistributedLoadMetrics loadDistributeMetrics;
 
     private static final int RANDOM_VALUE1;
     private static final short RANDOM_VALUE2;
@@ -127,7 +128,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
 
     public HBaseDirectLoader(LoadOptions loadOptions,
                              InputStruct struct,
-                             LoadDistributeMetrics loadDistributeMetrics) {
+                             DistributedLoadMetrics loadDistributeMetrics) {
         super(loadOptions, struct);
         this.loadDistributeMetrics = loadDistributeMetrics;
         this.sinkToHBase = new SinkToHBase(loadOptions);
@@ -270,7 +271,8 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                     LOG.debug("vertex already build done {} ", vertex.toString());
                     Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
                             vertexSerialize(serializer, vertex);
-                    loadDistributeMetrics.increaseDisVertexInsertSuccess(builder.mapping());
+                    loadDistributeMetrics.vertexMetrics().get(builder.mapping().label()).plusDisParseSuccess(1L);
+                    loadDistributeMetrics.vertexMetrics().get(builder.mapping().label()).plusDisInsertSuccess(1L);
                     result.add(tuple2);
                 }
             } else {
@@ -278,7 +280,8 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
                     LOG.debug("edge already build done {}", edge.toString());
                     Tuple2<ImmutableBytesWritable, KeyValue> tuple2 =
                             edgeSerialize(serializer, edge);
-                    loadDistributeMetrics.increaseDisEdgeInsertSuccess(builder.mapping());
+                    loadDistributeMetrics.edgeMetrics().get(builder.mapping().label()).plusDisParseSuccess(1L);
+                    loadDistributeMetrics.edgeMetrics().get(builder.mapping().label()).plusDisInsertSuccess(1L);
                     result.add(tuple2);
 
                 }
@@ -290,7 +293,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
     private Tuple2<ImmutableBytesWritable, KeyValue> edgeSerialize(HBaseSerializer serializer,
                                                                    Edge edge) {
         LOG.debug("edge start serialize {}", edge.toString());
-        byte[] rowkey = serializer.getKeyBytes(edge);
+        byte[] rowkey = serializer.getKeyBytes(edge)._1;
         byte[] values = serializer.getValueBytes(edge);
         ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
         rowKey.set(rowkey);
@@ -302,7 +305,7 @@ public class HBaseDirectLoader extends DirectLoader<ImmutableBytesWritable, KeyV
     private Tuple2<ImmutableBytesWritable, KeyValue> vertexSerialize(HBaseSerializer serializer,
                                                                      Vertex vertex) {
         LOG.debug("vertex start serialize {}", vertex.toString());
-        byte[] rowkey = serializer.getKeyBytes(vertex);
+        byte[] rowkey = serializer.getKeyBytes(vertex)._1;
         byte[] values = serializer.getValueBytes(vertex);
         ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
         rowKey.set(rowkey);

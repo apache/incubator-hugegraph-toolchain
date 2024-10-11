@@ -19,13 +19,24 @@ package org.apache.hugegraph.loader.executor;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.hugegraph.loader.builder.EdgeBuilder;
+import org.apache.hugegraph.loader.builder.ElementBuilder;
+import org.apache.hugegraph.loader.builder.VertexBuilder;
 import org.apache.hugegraph.loader.exception.LoadException;
+import org.apache.hugegraph.loader.mapping.EdgeMapping;
+import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.loader.util.DateUtil;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
+import org.apache.hugegraph.serializer.GraphElementSerializer;
+import org.apache.hugegraph.serializer.SerializerFactory;
+import org.apache.hugegraph.serializer.config.SerializerConfig;
+import org.apache.hugegraph.structure.GraphElement;
 import org.slf4j.Logger;
 
 import org.apache.hugegraph.driver.HugeClient;
@@ -57,6 +68,12 @@ public final class LoadContext implements Serializable {
 
     private final HugeClient client;
     private final SchemaCache schemaCache;
+    private  Map<ElementBuilder, List<GraphElement>> builders;
+
+
+
+    private  GraphElementSerializer serializer;
+
 
     public LoadContext(LoadOptions options) {
         this.timestamp = DateUtil.now("yyyyMMdd-HHmmss");
@@ -70,6 +87,9 @@ public final class LoadContext implements Serializable {
         this.loggers = new ConcurrentHashMap<>();
         this.client = HugeClientHolder.create(options);
         this.schemaCache = new SchemaCache(this.client);
+        SerializerConfig config = new SerializerConfig();
+        initSerializerConfig(config);
+        this.serializer= SerializerFactory.getSerializer(client,config);
     }
 
     public LoadContext(ComputerLoadOptions options) {
@@ -84,6 +104,15 @@ public final class LoadContext implements Serializable {
         this.loggers = new ConcurrentHashMap<>();
         this.client = null;
         this.schemaCache = options.schemaCache();
+    }
+
+    public void initSerializerConfig(SerializerConfig config){
+        config.setBackendStoreType(options.backendStoreType);
+        config.setGraphName(options.graph);
+        config.setEdgePartitions(options.edgePartitions);
+        config.setPdAddress(options.pdAddress);
+        config.setPdRestPort(options.pdRestPort);
+        config.setEdgePartitions(options.edgePartitions);
     }
 
     public String timestamp() {
@@ -131,6 +160,9 @@ public final class LoadContext implements Serializable {
             LOG.info("Create failure logger for mapping '{}'", struct);
             return new FailLogger(this, struct);
         });
+    }
+    public GraphElementSerializer getSerializer() {
+        return serializer;
     }
 
     public HugeClient client() {
@@ -193,5 +225,13 @@ public final class LoadContext implements Serializable {
         this.client.close();
         LOG.info("Close HugeClient successfully");
         this.closed = true;
+    }
+
+    public void init( InputStruct struct) {
+        for (VertexMapping vertexMapping : struct.vertices())
+            this.builders.put(new VertexBuilder(this, struct, vertexMapping), new ArrayList<>());
+        for (EdgeMapping edgeMapping : struct.edges())
+            this.builders.put(new EdgeBuilder(this, struct, edgeMapping), new ArrayList<>());
+        this.updateSchemaCache();
     }
 }

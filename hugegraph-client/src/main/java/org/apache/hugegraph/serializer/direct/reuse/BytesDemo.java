@@ -146,13 +146,13 @@ public class BytesDemo {
      * */
     void writeDirectly(List<Vertex> vertices, List<Edge> edges) {
         for (Vertex vertex : vertices) {
-            byte[] rowkey = hBaseSer.getKeyBytes(vertex);
+            byte[] rowkey = hBaseSer.getKeyBytes(vertex)._1;
             byte[] values = hBaseSer.getValueBytes(vertex);
             sendRpcToHBase("vertex", rowkey, values);
         }
 
         for (Edge edge : edges) {
-            byte[] rowkey = hBaseSer.getKeyBytes(edge);
+            byte[] rowkey = hBaseSer.getKeyBytes(edge)._1;
             byte[] values = hBaseSer.getValueBytes(edge);
             sendRpcToHBase("edge", rowkey, values);
         }

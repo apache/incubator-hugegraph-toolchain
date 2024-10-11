@@ -29,6 +29,7 @@ import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.LoadMapping;
 import org.apache.hugegraph.util.InsertionOrderUtil;
+import org.apache.spark.SparkContext;
 
 public final class LoadSummary {
 
@@ -43,6 +44,8 @@ public final class LoadSummary {
     private final RangesTimer loadRangesTimer;
     // Every input struct has a metric
     private final Map<String, LoadMetrics> inputMetricsMap;
+    private final Map<String, DistributedLoadMetrics> inputDistributedMetricsMap ;
+
 
     public LoadSummary() {
         this.vertexLoaded = new LongAdder();
@@ -55,12 +58,18 @@ public final class LoadSummary {
         this.edgeRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
         this.loadRangesTimer = new RangesTimer(Constants.TIME_RANGE_CAPACITY);
         this.inputMetricsMap = InsertionOrderUtil.newMap();
+        this.inputDistributedMetricsMap = InsertionOrderUtil.newMap();
     }
 
     public void initMetrics(LoadMapping mapping) {
         for (InputStruct struct : mapping.structs()) {
             this.inputMetricsMap.put(struct.id(), new LoadMetrics(struct));
         }
+    }
+
+    public void initMetrics(LoadMapping mapping, SparkContext sc) {
+        for (InputStruct struct : mapping.structs())
+            this.inputDistributedMetricsMap.put(struct.id(), new DistributedLoadMetrics(struct, sc));
     }
 
     public Map<String, LoadMetrics> inputMetricsMap() {
@@ -176,4 +185,13 @@ public final class LoadSummary {
         long success = isVertex ? this.vertexLoaded() : this.edgeLoaded();
         return success * 1000 / totalTime;
     }
+
+    public DistributedLoadMetrics distributedLoadMetrics(InputStruct struct) {
+        return this.inputDistributedMetricsMap.get(struct.id());
+    }
+
+    public Map<String, DistributedLoadMetrics> inputDistributedMetricsMap() {
+        return this.inputDistributedMetricsMap;
+    }
+
 }

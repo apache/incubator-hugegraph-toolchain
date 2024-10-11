@@ -99,4 +99,26 @@ public final class LoadReport {
         }
         return report;
     }
+
+    public static LoadReport collectDistributed(LoadSummary summary) {
+        LoadReport report = new LoadReport();
+        report.totalTime = summary.totalTime();
+        for (DistributedLoadMetrics metrics : summary.inputDistributedMetricsMap().values()) {
+            report.readSuccess += metrics.readSuccess();
+            report.readFailure += metrics.readFailure();
+            for (DistributedLoadMetrics.DistributedMetrics labelMetrics : metrics.vertexMetrics().values()) {
+                report.vertexParseSuccess += labelMetrics.parseSuccess();
+                report.vertexParseFailure += labelMetrics.parseFailure();
+                report.vertexInsertSuccess += labelMetrics.insertSuccess();
+                report.vertexInsertFailure += labelMetrics.insertFailure();
+            }
+            for (DistributedLoadMetrics.DistributedMetrics labelMetrics : metrics.edgeMetrics().values()) {
+                report.edgeParseSuccess += labelMetrics.parseSuccess();
+                report.edgeParseFailure += labelMetrics.parseFailure();
+                report.edgeInsertSuccess += labelMetrics.insertSuccess();
+                report.edgeInsertFailure += labelMetrics.insertFailure();
+            }
+        }
+        return report;
+    }
 }

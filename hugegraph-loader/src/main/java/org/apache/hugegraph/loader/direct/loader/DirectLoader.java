@@ -64,6 +64,19 @@ public abstract class DirectLoader<T, R> implements Serializable {
         return buildersForGraphElement;
     }
 
+    protected List<ElementBuilder> getElementBuilders(LoadContext context) {
+        context.schemaCache().updateAll();
+        List<ElementBuilder> buildersForGraphElement = new LinkedList<>();
+        for (VertexMapping vertexMapping : struct.vertices()) {
+            buildersForGraphElement.add(new VertexBuilder(context, struct, vertexMapping));
+        }
+        for (EdgeMapping edgeMapping : struct.edges()) {
+            buildersForGraphElement.add(new EdgeBuilder(context, struct, edgeMapping));
+        }
+        context.close();// 关闭了hugeclient
+        return buildersForGraphElement;
+    }
+
     abstract JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds);
 
     abstract String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
