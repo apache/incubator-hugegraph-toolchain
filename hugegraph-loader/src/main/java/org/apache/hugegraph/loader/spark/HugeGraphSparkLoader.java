@@ -25,9 +25,9 @@ import org.apache.hugegraph.loader.builder.EdgeBuilder;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
 import org.apache.hugegraph.loader.builder.VertexBuilder;
 
-import org.apache.hugegraph.loader.direct.loaders.AbstractDirectLoader;
-import org.apache.hugegraph.loader.direct.loaders.HBaseDirectLoader;
-import org.apache.hugegraph.loader.direct.loaders.HStoreDirectLoader;
+import org.apache.hugegraph.loader.direct.loader.AbstractDirectLoader;
+import org.apache.hugegraph.loader.direct.loader.HBaseDirectLoader;
+import org.apache.hugegraph.loader.direct.loader.HStoreDirectLoader;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
@@ -64,7 +64,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructField;
-import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 
 import java.io.Serializable;
@@ -144,93 +143,115 @@ public class HugeGraphSparkLoader implements Serializable {
             this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         }
 
-        SparkConf conf = new SparkConf();
-        registerKryoClasses(conf);
-        SparkSession session = SparkSession.builder().config(conf).getOrCreate();
+        SparkSession session = initializeSparkSession();
         SparkContext sc = session.sparkContext();
 
-        LoadSummary summary = new LoadSummary();
-        summary.initMetrics(mapping, sc);
-        summary.startTotalTimer();
-
+        LoadSummary summary = initializeLoadSummary(mapping, sc);
 
         List<Future<?>> futures = new ArrayList<>(structs.size());
-
-
-        Object[] dstArray  = new JavaPairRDD[structs.size()];
-
-
-
+        Object[] dstArray = new JavaPairRDD[structs.size()];
 
         for (int i = 0; i < structs.size(); i++) {
-            InputStruct struct = (InputStruct)structs.get(i);
+            InputStruct struct = structs.get(i);
             DistributedLoadMetrics distributedLoadMetrics = summary.distributedLoadMetrics(struct);
             int finalI = i;
 
             Future<?> future = this.executor.submit(() -> {
-                LOG.info("\n Initializes the accumulator corresponding to the  {} ",
-                         struct.input().asFileSource().path());
-
-                LOG.info("\n  Start to load data, data info is: \t {} ",
-                         struct.input().asFileSource().path());
-                Dataset<Row> ds = read(session, struct);
                 if (sinkType) {
-                    LOG.info("\n  Start to load data using spark apis  \n");
-                    ds.foreachPartition((Iterator<Row> p) -> {
-                        LoadContext context = initPartition(this.loadOptions, struct);
-                        p.forEachRemaining((Row row) -> {
-                            loadRow(struct, row, p, context, distributedLoadMetrics);
-                        });
-                        context.close();
-                    });
-
+                    processWithSparkAPI(session, struct, distributedLoadMetrics);
                 } else {
-                    LOG.info("\n Start to load data using spark bulkload \n");
-                    processDirectLoader(struct, distributedLoadMetrics, ds, dstArray, finalI);
+                    processWithBulkLoad(session, struct, distributedLoadMetrics, dstArray, finalI);
                 }
             });
             futures.add(future);
         }
-        for (Future<?> future : futures) {
-            future.get();
+
+        waitForFutures(futures);
+        if (!sinkType) {
+            handleUnionAndLoad(dstArray, structs);
         }
-
-        JavaPairRDD unionRDD = null;
-        String path = null;
-        switch (loadOptions.backendStoreType) {
-            case "hbase":
-                 unionRDD = ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) dstArray)[0];
-                for (int i = 1; i < dstArray.length; i++) {
-                    unionRDD = unionRDD.union(((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) dstArray)[i]);
-                }
-                HBaseDirectLoader hbaseDirectLoader = new HBaseDirectLoader(this.loadOptions,structs.get(0));
-                path = hbaseDirectLoader.generateFiles(unionRDD);
-               hbaseDirectLoader.loadFiles(path);
-
-
-                break;
-            case "hstore":
-                unionRDD = ((JavaPairRDD<Tuple2<byte[], Integer>, byte[]>[]) dstArray)[0];
-                for (int i = 1; i < dstArray.length; i++) {
-                    unionRDD = unionRDD.union(((JavaPairRDD<Tuple2<byte[], Integer>, byte[]>[]) dstArray)[i]);
-                }
-                HStoreDirectLoader hstoreDirectLoader = new HStoreDirectLoader(this.loadOptions,structs.get(0));
-                path = hstoreDirectLoader.generateFiles(unionRDD);
-                hstoreDirectLoader.loadFiles(path);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported backend store type: " + loadOptions.backendStoreType);
-        }
-
-
-
-
         summary.stopTotalTimer();
         printDistributedSummary(summary);
         sc.stop();
         session.close();
         session.stop();
     }
+
+    private void waitForFutures(List<Future<?>> futures) throws ExecutionException, InterruptedException {
+        for (Future<?> future : futures) {
+            future.get();
+        }
+    }
+    private SparkSession initializeSparkSession() {
+        SparkConf conf = new SparkConf();
+        registerKryoClasses(conf);
+        return SparkSession.builder().config(conf).getOrCreate();
+    }
+
+    private LoadSummary initializeLoadSummary(LoadMapping mapping, SparkContext sc) {
+        LoadSummary summary = new LoadSummary();
+        summary.initMetrics(mapping, sc);
+        summary.startTotalTimer();
+        return summary;
+    }
+    private void processWithSparkAPI(SparkSession session, InputStruct struct, DistributedLoadMetrics distributedLoadMetrics) {
+        LOG.info("\n Initializes the accumulator corresponding to the  {} ",
+                struct.input().asFileSource().path());
+
+        LOG.info("\n  Start to load data, data info is: \t {} ",
+                struct.input().asFileSource().path());
+        Dataset<Row> ds = read(session, struct);
+        LOG.info("\n  Start to load data using spark apis  \n");
+        ds.foreachPartition((Iterator<Row> p) -> {
+            LoadContext context = initPartition(this.loadOptions, struct);
+            p.forEachRemaining((Row row) -> {
+                loadRow(struct, row, p, context, distributedLoadMetrics);
+            });
+            context.close();
+        });
+    }
+
+    private void processWithBulkLoad(SparkSession session, InputStruct struct, DistributedLoadMetrics distributedLoadMetrics, Object[] dstArray, int index) {
+        LOG.info("\n Initializes the accumulator corresponding to the  {} ",
+                struct.input().asFileSource().path());
+
+        LOG.info("\n  Start to load data, data info is: \t {} ",
+                struct.input().asFileSource().path());
+        Dataset<Row> ds = read(session, struct);
+        LOG.info("\n Start to load data using spark bulkload \n");
+        processDirectLoader(struct, distributedLoadMetrics, ds, dstArray, index);
+    }
+
+    private void handleUnionAndLoad(Object[] dstArray, List<InputStruct> structs) throws ExecutionException, InterruptedException {
+        JavaPairRDD unionRDD = null;
+        String path = null;
+        switch (loadOptions.backendStoreType) {
+            case "hbase":
+                unionRDD = unionRDDs((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) dstArray);
+                HBaseDirectLoader hbaseDirectLoader = new HBaseDirectLoader(this.loadOptions, structs.get(0));
+                path = hbaseDirectLoader.generateFiles(unionRDD);
+                hbaseDirectLoader.loadFiles(path);
+                break;
+            case "hstore":
+                unionRDD = unionRDDs((JavaPairRDD<Tuple2<byte[], Integer>, byte[]>[]) dstArray);
+                HStoreDirectLoader hstoreDirectLoader = new HStoreDirectLoader(this.loadOptions, structs.get(0));
+                path = hstoreDirectLoader.generateFiles(unionRDD);
+                hstoreDirectLoader.loadFiles(path);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported backend store type: " + loadOptions.backendStoreType);
+        }
+    }
+
+    private <T> JavaPairRDD unionRDDs(JavaPairRDD<T, ?>[] rdds) {
+        JavaPairRDD unionRDD = rdds[0];
+        for (int i = 1; i < rdds.length; i++) {
+            unionRDD = unionRDD.union(rdds[i]);
+        }
+        return unionRDD;
+    }
+
+
 
     private static void log(String message) {
         LOG.info(message);

@@ -1,5 +1,4 @@
-package org.apache.hugegraph.loader.direct.loaders;
-
+package org.apache.hugegraph.loader.direct.loader;
 
 
 import org.apache.hadoop.conf.Configuration;
@@ -31,23 +30,23 @@ import java.util.List;
 
 public abstract class AbstractDirectLoader<T, R> implements DirectLoader<T, R>, Serializable {
 
+    public static final Logger LOG = Log.logger(AbstractDirectLoader.class);
     protected LoadOptions loadOptions;
     protected InputStruct struct;
     protected DistributedLoadMetrics loadDistributeMetrics;
-
-    public static final Logger LOG = Log.logger(AbstractDirectLoader.class);
 
     public AbstractDirectLoader(LoadOptions loadOptions, InputStruct struct, DistributedLoadMetrics loadDistributeMetrics) {
         this.loadOptions = loadOptions;
         this.struct = struct;
         this.loadDistributeMetrics = loadDistributeMetrics;
     }
-    public AbstractDirectLoader(LoadOptions loadOptions,InputStruct struct) {
+
+    public AbstractDirectLoader(LoadOptions loadOptions, InputStruct struct) {
         this.loadOptions = loadOptions;
         this.struct = struct;
     }
 
-    public  void flushPermission(Configuration conf, String path){
+    public void flushPermission(Configuration conf, String path) {
         FsShell shell = new FsShell(conf);
         try {
             LOG.info("shell start execute");

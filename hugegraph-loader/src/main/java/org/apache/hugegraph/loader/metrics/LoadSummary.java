@@ -44,7 +44,7 @@ public final class LoadSummary {
     private final RangesTimer loadRangesTimer;
     // Every input struct has a metric
     private final Map<String, LoadMetrics> inputMetricsMap;
-    private final Map<String, DistributedLoadMetrics> inputDistributedMetricsMap ;
+    private final Map<String, DistributedLoadMetrics> inputDistributedMetricsMap;
 
 
     public LoadSummary() {
@@ -108,38 +108,38 @@ public final class LoadSummary {
 
     public long totalReadSuccess() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::readSuccess)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::readSuccess)
+                .reduce(0L, Long::sum);
     }
 
     public long totalReadFailures() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::readFailure)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::readFailure)
+                .reduce(0L, Long::sum);
     }
 
     public long totalParseFailures() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::totalParseFailures)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::totalParseFailures)
+                .reduce(0L, Long::sum);
     }
 
     public long totalInsertFailures() {
         return this.inputMetricsMap.values().stream()
-                                   .map(LoadMetrics::totalInsertFailures)
-                                   .reduce(0L, Long::sum);
+                .map(LoadMetrics::totalInsertFailures)
+                .reduce(0L, Long::sum);
     }
 
     public void addTimeRange(ElemType type, long start, long end) {
         RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
-                            this.edgeRangesTimer;
+                this.edgeRangesTimer;
         timer.addTimeRange(start, end);
         this.loadRangesTimer.addTimeRange(start, end);
     }
 
     public void calculateTotalTime(ElemType type) {
         RangesTimer timer = type.isVertex() ? this.vertexRangesTimer :
-                            this.edgeRangesTimer;
+                this.edgeRangesTimer;
         AtomicLong elemTime = type.isVertex() ? this.vertexTime : this.edgeTime;
         elemTime.set(timer.totalTime());
         loadTime.set(this.loadRangesTimer.totalTime());

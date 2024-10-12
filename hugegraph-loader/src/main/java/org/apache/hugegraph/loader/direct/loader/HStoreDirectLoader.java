@@ -1,71 +1,51 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements. See the NOTICE file distributed with this
- * work for additional information regarding copyright ownership. The ASF
- * licenses this file to You under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
 package org.apache.hugegraph.loader.direct.loader;
 
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
+import org.apache.hugegraph.loader.direct.outputformat.SSTFileOutputFormat;
+import org.apache.hugegraph.loader.direct.partitioner.HstorePartitioner;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
-import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.DistributedLoadMetrics;
+import org.apache.hugegraph.rest.RestClientConfig;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.serializer.GraphElementSerializer;
-import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
-import org.apache.hugegraph.util.Log;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.slf4j.Logger;
 import scala.Tuple2;
 
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
-public class HStoreDirectLoader extends DirectLoader<Tuple2<byte[], Integer>,byte[]> {
+import static org.apache.hugegraph.serializer.direct.HStoreSerializer.processAddresses;
 
-    private DistributedLoadMetrics loadDistributeMetrics;
+public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Integer>, byte[]> {
 
-
-    public static final Logger LOG = Log.logger(HStoreDirectLoader.class);
-
-
-    public HStoreDirectLoader(LoadOptions loadOptions,
-                              InputStruct struct,
-                              DistributedLoadMetrics loadDistributeMetrics) {
-        super(loadOptions, struct);
-        this.loadDistributeMetrics = loadDistributeMetrics;
+    public HStoreDirectLoader(LoadOptions loadOptions, InputStruct struct, DistributedLoadMetrics loadDistributeMetrics) {
+        super(loadOptions, struct, loadDistributeMetrics);
     }
 
+    public HStoreDirectLoader(LoadOptions loadOptions, InputStruct struct) {
+        super(loadOptions, struct);
+    }
 
     @Override
     public JavaPairRDD<Tuple2<byte[], Integer>, byte[]> buildVertexAndEdge(Dataset<Row> ds) {
-
         LOG.info("Start build vertexes and edges");
-        JavaPairRDD<Tuple2<byte[], Integer>, byte[]> tuple2JavaPairRDD = ds.toJavaRDD().mapPartitionsToPair(
+        return ds.toJavaRDD().mapPartitionsToPair(
                 (PairFlatMapFunction<Iterator<Row>, Tuple2<byte[], Integer>, byte[]>) rowIter -> {
-                    // 完成了schema数据的准备，以及pdclient的每个分区的创建
                     LoadContext loaderContext = new LoadContext(super.loadOptions);
-                    loaderContext.init(struct);// 准备好elementBuilder以及schema数据的更新
+                    loaderContext.init(struct);
                     List<ElementBuilder> buildersForGraphElement = getElementBuilders(loaderContext);
                     List<Tuple2<Tuple2<byte[], Integer>, byte[]>> result = new LinkedList<>();
                     while (rowIter.hasNext()) {
@@ -77,90 +57,115 @@ public class HStoreDirectLoader extends DirectLoader<Tuple2<byte[], Integer>,byt
                     return result.iterator();
                 }
         );
-
-        return tuple2JavaPairRDD;
     }
 
     @Override
-    protected String generateFiles(JavaPairRDD<Tuple2<byte[], Integer>, byte[]> buildAndSerRdd) {
-        return "";
+    public String generateFiles(JavaPairRDD<Tuple2<byte[], Integer>, byte[]> buildAndSerRdd) {
+        LOG.info("bulkload start execute>>>");
+        try {
+            // 自定义分区,
+            JavaPairRDD<Tuple2<byte[], Integer>, byte[]> tuple2JavaPairRDD = buildAndSerRdd.partitionBy(new HstorePartitioner(loadOptions.vertexPartitions));
+            // 丢弃partId
+            JavaPairRDD<byte[], byte[]> javaPairRDD = tuple2JavaPairRDD.mapToPair(tuple2 -> new Tuple2<>(tuple2._1._1, tuple2._2));
+            JavaPairRDD<byte[], byte[]> sortedRdd = javaPairRDD.mapPartitionsToPair(iterator -> {
+                List<Tuple2<byte[], byte[]>> partitionData = new ArrayList<>();
+                iterator.forEachRemaining(partitionData::add);
+                Collections.sort(partitionData, new HStoreDirectLoader.TupleComparator());
+                return partitionData.iterator();
+            });
+
+
+            Configuration hadoopConf = new Configuration();
+            String sstFilePath = getSSTFilePath(hadoopConf);
+            LOG.info("SSTFile生成的hdfs路径:{}", sstFilePath);
+            sortedRdd.saveAsNewAPIHadoopFile(
+                    sstFilePath,
+                    byte[].class,
+                    byte[].class,
+                    SSTFileOutputFormat.class,
+                    hadoopConf
+            );
+            flushPermission(hadoopConf, sstFilePath);
+            return sstFilePath;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        return null;
     }
-
-
-
-
 
     @Override
-    protected void loadFiles(String path) {
+    public void loadFiles(String sstFilePath) {
+        RestClientConfig config = RestClientConfig.builder()
+                .connectTimeout(5 * 1000)  // 连接超时时间 5s
+                .readTimeout(60 * 60 * 1000) // 读取超时时间 1h
+                .maxConns(10) // 最大连接数
+                .build();
 
-    }
+        BulkloadInfo bulkloadInfo = new BulkloadInfo(loadOptions.graph, sstFilePath.replace("TXY-HDP11", "txy-hn1-bigdata-hdp11-nn-prd-02.myhll.cn:8020"), getBulkloadType());
+        String[] urls = processAddresses(loadOptions.pdAddress, loadOptions.pdRestPort);
 
-
-    List<Tuple2<Tuple2<byte[], Integer>, byte[]>> buildAndSer(GraphElementSerializer serializer, Row row,
-                                                              List<ElementBuilder> builders) {
-        List<GraphElement> elementsElement;
-        List<Tuple2<Tuple2<byte[], Integer>, byte[]>> result = new LinkedList<>();
-
-        for (ElementBuilder builder : builders) {
-            ElementMapping elementMapping = builder.mapping();
-            if (elementMapping.skip()) {
-                continue;
-            }
-            if ("".equals(row.mkString())) {
+        for (String url : urls) {
+            LOG.info("submit bulkload task to {}, bulkloadInfo:{}", url, bulkloadInfo);
+            RestClient client = null;
+            try {
+                // 创建RestClient对象
+                client = new RestClient(url, config);
+                // 获取响应状态码
+                RestResult restResult = client.post("v1/task/bulkload", bulkloadInfo);
+                Map resMap = restResult.readObject(Map.class);
+                LOG.info("Response :{} ", resMap);
+                // 如果成功，退出循环
                 break;
-            }
-            switch (struct.input().type()) {
-                case FILE:
-                case HDFS:
-                    elementsElement = builder.build(row);
-                    break;
-                default:
-                    throw new AssertionError(String.format("Unsupported input source '%s'",
-                            struct.input().type()));
-            }
-
-            boolean isVertex = builder.mapping().type().isVertex();
-            if (isVertex) {
-                for (Vertex vertex : (List<Vertex>) (Object) elementsElement) {
-                    LOG.debug("vertex already build done {} ", vertex.toString());
-                    Tuple2<Tuple2<byte[], Integer>, byte[]> tuple2 =vertexSerialize(serializer, vertex);
-                    //mapping.label();
-                    String label = builder.mapping().label();
-                    loadDistributeMetrics.vertexMetrics().get(builder.mapping().label()).plusDisParseSuccess(1L);
-                    loadDistributeMetrics.vertexMetrics().get(builder.mapping().label()).plusDisInsertSuccess(1L);
-
-                    result.add(tuple2);
-                }
-            } else {
-                for (Edge edge : (List<Edge>) (Object) elementsElement) {
-                    LOG.debug("edge already build done {}", edge.toString());
-                    Tuple2<Tuple2<byte[], Integer>, byte[]> tuple2 =edgeSerialize(serializer, edge);
-                    loadDistributeMetrics.edgeMetrics().get(builder.mapping().label()).plusDisParseSuccess(1L);
-                    loadDistributeMetrics.edgeMetrics().get(builder.mapping().label()).plusDisInsertSuccess(1L);
-                    result.add(tuple2);
-
+            } catch (Exception e) {
+                LOG.error("Failed to submit bulkload task", e);
+                break;
+            } finally {
+                // 确保RestClient被关闭
+                if (client != null) {
+                    try {
+                        client.close();
+                    } catch (Exception e) {
+                        LOG.error("Failed to close RestClient", e);
+                    }
                 }
             }
         }
-        return result;
     }
 
-    private Tuple2<Tuple2<byte[], Integer>, byte[]> edgeSerialize(GraphElementSerializer serializer, Edge edge) {
-        LOG.debug("edge start serialize {}", edge.toString());
-        Tuple2<byte[], Integer> keyBytes = serializer.getKeyBytes(edge);
-        byte[] values = serializer.getValueBytes(edge);
-
-        return new Tuple2<>(keyBytes, values);
-    }
-
-    private Tuple2<Tuple2<byte[], Integer>, byte[]> vertexSerialize(GraphElementSerializer serializer,
-                                                                     Vertex vertex) {
+    @Override
+    protected Tuple2<Tuple2<byte[], Integer>, byte[]> vertexSerialize(GraphElementSerializer serializer, Vertex vertex) {
         LOG.debug("vertex start serialize {}", vertex.toString());
         Tuple2<byte[], Integer> keyBytes = serializer.getKeyBytes(vertex);
         byte[] values = serializer.getValueBytes(vertex);
         return new Tuple2<>(keyBytes, values);
     }
 
+    @Override
+    protected Tuple2<Tuple2<byte[], Integer>, byte[]> edgeSerialize(GraphElementSerializer serializer, Edge edge) {
+        LOG.debug("edge start serialize {}", edge.toString());
+        Tuple2<byte[], Integer> keyBytes = serializer.getKeyBytes(edge);
+        byte[] values = serializer.getValueBytes(edge);
+        return new Tuple2<>(keyBytes, values);
+    }
+
+    private BulkloadInfo.LoadType getBulkloadType() {
+        return struct.edges().size() > 0 ? BulkloadInfo.LoadType.EDGE : BulkloadInfo.LoadType.VERTEX;
+    }
+
+    private String getSSTFilePath(Configuration conf) throws IOException {
+        FileSystem fs = FileSystem.get(conf);
+        long timeStr = System.currentTimeMillis();
+        String pathStr = fs.getWorkingDirectory().toString() + "/hg-1_5/gen-sstfile" + "/" + timeStr + "/";//sstFile 存储路径
+        org.apache.hadoop.fs.Path hfileGenPath = new Path(pathStr);
+        if (fs.exists(hfileGenPath)) {
+            LOG.info("\n delete sstFile path \n");
+            fs.delete(hfileGenPath, true);
+        }
+//        fs.close();
+        return pathStr;
+    }
 
     static class TupleComparator implements Comparator<Tuple2<byte[], byte[]>>, Serializable {
         @Override
@@ -178,4 +183,47 @@ public class HStoreDirectLoader extends DirectLoader<Tuple2<byte[], Integer>,byt
             return Integer.compare(a.length, b.length);
         }
     }
+
+    static class BulkloadInfo {
+        String graphName;
+        String tableName;
+        String hdfsPath;
+
+        public BulkloadInfo(String graphName, String path, LoadType loadType) {
+            this.graphName = processGraphName(graphName);
+            this.tableName = processTableName(graphName, loadType);
+            this.hdfsPath = path;
+        }
+
+        private String processGraphName(String graphName) {
+            return graphName + "/g";
+        }
+
+        private String processTableName(String graphName, LoadType loadType) {
+            if (loadType == LoadType.VERTEX) {
+                return "g+v";
+            } else if (loadType == LoadType.EDGE) {
+                return "g+oe";
+            } else {
+                throw new IllegalArgumentException("Invalid loadType: " + loadType);
+            }
+        }
+
+
+        @Override
+        public String toString() {
+            return "BulkloadInfo{" +
+                    "graphName='" + graphName + '\'' +
+                    ", tableName='" + tableName + '\'' +
+                    ", hdfsPath='" + hdfsPath + '\'' +
+                    '}';
+        }
+
+        enum LoadType {
+            VERTEX,
+            EDGE
+        }
+
+    }
+
 }

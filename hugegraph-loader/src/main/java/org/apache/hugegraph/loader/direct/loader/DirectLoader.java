@@ -17,69 +17,16 @@
 
 package org.apache.hugegraph.loader.direct.loader;
 
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.apache.hugegraph.loader.builder.EdgeBuilder;
-import org.apache.hugegraph.loader.builder.ElementBuilder;
-import org.apache.hugegraph.loader.builder.VertexBuilder;
-import org.apache.hugegraph.loader.executor.LoadContext;
-import org.apache.hugegraph.loader.executor.LoadOptions;
-import org.apache.hugegraph.loader.mapping.EdgeMapping;
-import org.apache.hugegraph.loader.mapping.InputStruct;
-import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
-public abstract class DirectLoader<T, R> implements Serializable {
+public interface DirectLoader<T, R> {
+    JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds);
 
-    LoadOptions loadOptions;
-    InputStruct struct;
+    String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
 
-    public DirectLoader(LoadOptions loadOptions,
-                        InputStruct struct) {
-        this.loadOptions = loadOptions;
-        this.struct = struct;
-    }
+    void loadFiles(String path);
 
-    public final void bulkload(Dataset<Row> ds) {
-        JavaPairRDD<T, R> javaPairRDD = buildVertexAndEdge(ds);
-        String path = generateFiles(javaPairRDD);
-        loadFiles(path);
-    }
-
-    protected List<ElementBuilder> getElementBuilders() {
-        LoadContext context = new LoadContext(loadOptions);
-        context.schemaCache().updateAll();
-        List<ElementBuilder> buildersForGraphElement = new LinkedList<>();
-        for (VertexMapping vertexMapping : struct.vertices()) {
-            buildersForGraphElement.add(new VertexBuilder(context, struct, vertexMapping));
-        }
-        for (EdgeMapping edgeMapping : struct.edges()) {
-            buildersForGraphElement.add(new EdgeBuilder(context, struct, edgeMapping));
-        }
-        context.close();
-        return buildersForGraphElement;
-    }
-
-    protected List<ElementBuilder> getElementBuilders(LoadContext context) {
-        context.schemaCache().updateAll();
-        List<ElementBuilder> buildersForGraphElement = new LinkedList<>();
-        for (VertexMapping vertexMapping : struct.vertices()) {
-            buildersForGraphElement.add(new VertexBuilder(context, struct, vertexMapping));
-        }
-        for (EdgeMapping edgeMapping : struct.edges()) {
-            buildersForGraphElement.add(new EdgeBuilder(context, struct, edgeMapping));
-        }
-        context.close();// 关闭了hugeclient
-        return buildersForGraphElement;
-    }
-
-    abstract JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds);
-
-    abstract String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
-
-    abstract void loadFiles(String path);
+    void bulkload(Dataset<Row> ds);
 }

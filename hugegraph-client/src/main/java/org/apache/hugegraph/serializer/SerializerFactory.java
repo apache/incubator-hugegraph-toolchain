@@ -24,12 +24,12 @@ import org.apache.hugegraph.serializer.direct.HStoreSerializer;
 
 public class SerializerFactory {
 
-    public static GraphElementSerializer getSerializer(HugeClient client, SerializerConfig config) {
+    public static AbstractGraphElementSerializer getSerializer(HugeClient client, SerializerConfig config) {
         switch (config.getBackendStoreType()) {
             case "hstore":
-                return new HStoreSerializer(client, config.getVertexPartitions(),config.getGraphName(),config.getPdAddress(),config.getPdRestPort());
+                return new HStoreSerializer(client, config.getVertexPartitions(), config.getGraphName(), config.getPdAddress(), config.getPdRestPort());
             case "hbase":
-                return new HBaseSerializer(client, config.getVertexPartitions(),config.getEdgePartitions());
+                return new HBaseSerializer(client, config.getVertexPartitions(), config.getEdgePartitions());
             default:
                 throw new IllegalArgumentException("Unsupported serializer backend type: " + config.getBackendStoreType());
         }

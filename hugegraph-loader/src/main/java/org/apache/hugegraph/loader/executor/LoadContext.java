@@ -33,6 +33,7 @@ import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.loader.util.DateUtil;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
+import org.apache.hugegraph.serializer.AbstractGraphElementSerializer;
 import org.apache.hugegraph.serializer.GraphElementSerializer;
 import org.apache.hugegraph.serializer.SerializerFactory;
 import org.apache.hugegraph.serializer.config.SerializerConfig;
@@ -72,7 +73,7 @@ public final class LoadContext implements Serializable {
 
 
 
-    private  GraphElementSerializer serializer;
+    private AbstractGraphElementSerializer serializer;
 
 
     public LoadContext(LoadOptions options) {
@@ -87,9 +88,7 @@ public final class LoadContext implements Serializable {
         this.loggers = new ConcurrentHashMap<>();
         this.client = HugeClientHolder.create(options);
         this.schemaCache = new SchemaCache(this.client);
-        SerializerConfig config = new SerializerConfig();
-        initSerializerConfig(config);
-        this.serializer= SerializerFactory.getSerializer(client,config);
+        this.serializer = initSerializer();
     }
 
     public LoadContext(ComputerLoadOptions options) {
@@ -106,13 +105,15 @@ public final class LoadContext implements Serializable {
         this.schemaCache = options.schemaCache();
     }
 
-    public void initSerializerConfig(SerializerConfig config){
+    public AbstractGraphElementSerializer initSerializer(){
+        SerializerConfig config = new SerializerConfig();
         config.setBackendStoreType(options.backendStoreType);
         config.setGraphName(options.graph);
         config.setEdgePartitions(options.edgePartitions);
         config.setPdAddress(options.pdAddress);
         config.setPdRestPort(options.pdRestPort);
-        config.setEdgePartitions(options.edgePartitions);
+        config.setVertexPartitions(options.edgePartitions);
+        return SerializerFactory.getSerializer(client,config);
     }
 
     public String timestamp() {

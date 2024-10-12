@@ -47,19 +47,15 @@ import java.util.Map;
 public class HStoreSerializer extends AbstractGraphElementSerializer {
 
 
-
-
     private static final Logger log = LoggerFactory.getLogger(HStoreSerializer.class);
-    // 准备好treeRangeMap
 
-    // 准备好partGraphIdMap
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
 
-    private Map<Long,Long> partGraphIdMap;
+    private Map<Long, Long> partGraphIdMap;
     private TreeRangeMap<Long, Integer> rangeMap;
 
-    public HStoreSerializer(HugeClient client, int numPartitions,String graphName,String pdAddress,String pdRestPort) {
+    public HStoreSerializer(HugeClient client, int numPartitions, String graphName, String pdAddress, String pdRestPort) {
         super(client);
         rangeMap = TreeRangeMap.create();
         int partitionSize = PartitionUtils.MAX_VALUE / numPartitions;
@@ -108,9 +104,9 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
 //        System.out.println(graphId);
     }
 
-    private    Map<Long,Long>  getGraphId(String graphName,String[] urls) {
+    private Map<Long, Long> getGraphId(String graphName, String[] urls) {
         RestClientConfig config = RestClientConfig.builder()
-                .connectTimeout(5*1000)  // 连接超时时间 5s
+                .connectTimeout(5 * 1000)  // 连接超时时间 5s
 //                .readTimeout(60*60 * 1000) // 读取超时时间 1h
                 .maxConns(10) // 最大连接数
                 .build();
@@ -122,7 +118,7 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
             try {
                 // 创建RestClient对象
                 client = new RestClient(url, config);
-                RestResult restResult = client.get("v1/partitionsAndGraphId" , Collections.singletonMap("graphName", graphName));
+                RestResult restResult = client.get("v1/partitionsAndGraphId", Collections.singletonMap("graphName", graphName));
                 // 获取响应状态码
                 String content = restResult.content();
                 Map<Long, Long> resMap = MAPPER.readValue(content, new TypeReference<HashMap<Long, Long>>() {
@@ -152,7 +148,7 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
         byte[] array = null;
         if (e.type() == "vertex" && e.id() != null) {
 
-            BytesBuffer buffer = BytesBuffer.allocate( 2+1 + e.id().toString().length());
+            BytesBuffer buffer = BytesBuffer.allocate(2 + 1 + e.id().toString().length());
             Id id = IdGenerator.of(e.id());
             buffer.writeId(id);
             array = buffer.bytes();
@@ -171,7 +167,7 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
             return new Tuple2<>(buf, partId);
         } else if (e.type() == "edge") {
             BytesBuffer buffer = BytesBuffer.allocate(BytesBuffer.BUF_EDGE_ID);
-            Edge edge = (Edge)e;
+            Edge edge = (Edge) e;
 //            buffer.writeShort();
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_OUT.code());
@@ -206,25 +202,21 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
             for (Map.Entry<String, Object> entry : e.properties().entrySet()) {
                 PropertyKey propertyKey = graphSchema.getPropertyKey(entry.getKey());
                 buffer.writeVInt(propertyKey.id().intValue());
-                buffer.writeProperty(propertyKey.dataType(),entry.getValue());
+                buffer.writeProperty(propertyKey.dataType(), entry.getValue());
             }
             array = buffer.bytes();
         } else if (e.type() == "edge") {
-            int propsCount =  e.properties().size();
+            int propsCount = e.properties().size();
             BytesBuffer buffer = BytesBuffer.allocate(4 + 16 * propsCount);
             buffer.writeVInt(propsCount);
             for (Map.Entry<String, Object> entry : e.properties().entrySet()) {
                 PropertyKey propertyKey = graphSchema.getPropertyKey(entry.getKey());
                 buffer.writeVInt(propertyKey.id().intValue());
-                buffer.writeProperty(propertyKey.dataType(),entry.getValue());
+                buffer.writeProperty(propertyKey.dataType(), entry.getValue());
             }
             array = buffer.bytes();
         }
 
         return array;
     }
-
-
-
-
 }

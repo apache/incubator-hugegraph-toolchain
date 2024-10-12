@@ -34,50 +34,6 @@ public final class LoadReport {
     private long edgeInsertSuccess;
     private long edgeInsertFailure;
 
-    public long totalTime() {
-        return this.totalTime;
-    }
-
-    public long readSuccess() {
-        return this.readSuccess;
-    }
-
-    public long readFailure() {
-        return this.readFailure;
-    }
-
-    public long vertexParseSuccess() {
-        return this.vertexParseSuccess;
-    }
-
-    public long vertexParseFailure() {
-        return this.vertexParseFailure;
-    }
-
-    public long vertexInsertSuccess() {
-        return this.vertexInsertSuccess;
-    }
-
-    public long vertexInsertFailure() {
-        return this.vertexInsertFailure;
-    }
-
-    public long edgeParseSuccess() {
-        return this.edgeParseSuccess;
-    }
-
-    public long edgeParseFailure() {
-        return this.edgeParseFailure;
-    }
-
-    public long edgeInsertSuccess() {
-        return this.edgeInsertSuccess;
-    }
-
-    public long edgeInsertFailure() {
-        return this.edgeInsertFailure;
-    }
-
     public static LoadReport collect(LoadSummary summary) {
         LoadReport report = new LoadReport();
         report.totalTime = summary.totalTime();
@@ -120,5 +76,49 @@ public final class LoadReport {
             }
         }
         return report;
+    }
+
+    public long totalTime() {
+        return this.totalTime;
+    }
+
+    public long readSuccess() {
+        return this.readSuccess;
+    }
+
+    public long readFailure() {
+        return this.readFailure;
+    }
+
+    public long vertexParseSuccess() {
+        return this.vertexParseSuccess;
+    }
+
+    public long vertexParseFailure() {
+        return this.vertexParseFailure;
+    }
+
+    public long vertexInsertSuccess() {
+        return this.vertexInsertSuccess;
+    }
+
+    public long vertexInsertFailure() {
+        return this.vertexInsertFailure;
+    }
+
+    public long edgeParseSuccess() {
+        return this.edgeParseSuccess;
+    }
+
+    public long edgeParseFailure() {
+        return this.edgeParseFailure;
+    }
+
+    public long edgeInsertSuccess() {
+        return this.edgeInsertSuccess;
+    }
+
+    public long edgeInsertFailure() {
+        return this.edgeInsertFailure;
     }
 }
