@@ -18,8 +18,8 @@
 
 package org.apache.hugegraph.service.saas;
 
-import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Response;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.rest.AbstractRestClient;
@@ -161,16 +161,26 @@ public class PrometheusService {
                         .replaceAll("%29", ")")
                         .replaceAll("\\+", "%20");
     }
+// TODO re-evaluate this change
+//    private static class MetricsClient extends AbstractRestClient {
+//        public MetricsClient(String url, int timeout) {
+//            super(url, timeout);
+//        }
+//
+//        @Override
+//        protected void checkStatus(Response response, Response.Status... statuses) {
+//
+//        }
+//
+//    }
 
     private static class MetricsClient extends AbstractRestClient {
         public MetricsClient(String url, int timeout) {
             super(url, timeout);
         }
-
         @Override
-        protected void checkStatus(Response response, Response.Status... statuses) {
+        protected void checkStatus(Response response, int... ints) {
 
         }
-
     }
 }
