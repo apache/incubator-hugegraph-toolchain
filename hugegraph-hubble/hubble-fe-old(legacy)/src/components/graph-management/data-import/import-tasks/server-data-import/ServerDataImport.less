@@ -1,0 +1,107 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+.import-tasks {
+  &-server-data-import {
+    &-configs-wrapper {
+      width: 100%;
+      margin-bottom: 30px;
+    }
+
+    &-configs {
+      display: flex;
+      width: 100%;
+    }
+
+    &-config {
+      height: 128px;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+      flex-basis: 50%;
+
+      &:first-child {
+        align-items: flex-end;
+        // margin-right: 87px;
+      }
+
+      &:last-child {
+        align-items: flex-start;
+      }
+    }
+
+    &-config-option {
+      display: flex;
+      align-items: center;
+
+      & > div:first-child,
+      & > span:first-child {
+        width: 200.7px;
+        margin-right: 44px;
+        text-align: right;
+        color: #333;
+        font-size: 14px;
+      }
+
+      &-readonly-data {
+        width: 100px;
+        font-size: 14px;
+        color: #333;
+        line-height: 20px;
+      }
+    }
+
+    &-manipulations {
+      width: 100%;
+      margin: 40px 0 6px;
+      display: flex;
+      justify-content: center;
+    }
+
+    &-table-wrapper {
+      & table {
+        table-layout: fixed;
+      }
+    }
+
+    &-table-tooltip-title {
+      width: 234px;
+    }
+
+    &-table-progress {
+      position: relative;
+      width: 80%;
+      height: 8px;
+      background: #eee;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    &-table-manipulations {
+      display: flex;
+      // justify-content: space-between;
+    }
+  }
+}
+
+/* override */
+
+.import-tasks-server-data-import-config-option .new-fc-one-input-error.new-fc-one-input-error-layer {
+  // safari bug
+  // width: max-content;
+  word-break: keep-all;
+}

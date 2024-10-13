@@ -1,0 +1,343 @@
+{
+  "breadcrumb": {
+    "first": "导入任务",
+    "second": "任务详情"
+  },
+  "import-manager": {
+    "hint": {
+      "empty-task": "您暂时还没有任何任务，立即创建",
+      "no-result": "无结果",
+      "creation-succeed": "创建成功",
+      "update-succeed": "编辑成功"
+    },
+    "manipulation": {
+      "create": "创建"
+    },
+    "placeholder": {
+      "input-job-name": "请输入任务名称搜索",
+      "input-valid-job-name": "允许出现中英文、数字、下划线",
+      "input-job-description": "请输入任务备注"
+    },
+    "list-column-title": {
+      "job-name": "任务名称",
+      "size": "大小",
+      "create-time": "创建时间",
+      "status": "状态",
+      "time-consuming": "任务耗时",
+      "manipulation": "操作"
+    },
+    "list-column-status": {
+      "DEFAULT": "未开始",
+      "UPLOADING": "未开始",
+      "MAPPING": "设置中",
+      "SETTING": "导入中",
+      "LOADING": "导入中",
+      "FAILED": "失败",
+      "SUCCESS": "成功"
+    },
+    "list-column-manipulations": {
+      "start": "开始任务",
+      "resume-setting": "继续设置",
+      "resume-importing": "继续导入",
+      "check-error-log": "查看原因",
+      "delete": "删除"
+    },
+    "modal": {
+      "create-job": {
+        "title": "创建导入任务",
+        "job-name": "任务名称：",
+        "job-description": "任务备注："
+      },
+      "delete-job": {
+        "title": "删除任务",
+        "hint": "确认删除任务{{name}}吗?",
+        "sub-hint": "删除后该任务不可恢复"
+      },
+      "manipulations": {
+        "create": "创建",
+        "delete": "删除",
+        "cancel": "取消"
+      }
+    },
+    "validator": {
+      "no-empty": "此项为必填项",
+      "over-limit-size": "已超出字数限制",
+      "invalid-format": "请输入中英文、数字、下划线"
+    }
+  },
+  "import-job-details": {
+    "tabs": {
+      "basic-settings": "基础设置",
+      "uploaded-files": "上传文件",
+      "data-maps": "映射文件",
+      "import-details": "导入详情"
+    },
+    "basic": {
+      "job-name": "任务名称：",
+      "job-description": "任务备注：",
+      "modal": {
+        "edit-job": {
+          "title": "编辑导入任务",
+          "job-name": "任务名称：",
+          "job-description": "任务备注："
+        },
+        "manipulations": {
+          "save": "保存",
+          "cancel": "取消"
+        }
+      }
+    },
+    "manipulations": {
+      "edit": "编辑",
+      "resume-task": "继续任务"
+    }
+  },
+  "step": {
+    "first": "上传文件",
+    "second": "设置数据映射",
+    "third": "导入数据",
+    "fourth": "完成"
+  },
+  "upload-files": {
+    "click": "点击",
+    "description": "点击或将文件拖拽到此处上传，可同时上传多个支持csv文件，单个1G以内，单次累计10G以内",
+    "drag": "拖拽",
+    "description-1": "或将文件",
+    "description-2": "到此处上传，可同时上传多个支持csv文件，单个1G以内，单次累计10G以内",
+    "cancel": "取消上传",
+    "next": "下一步",
+    "wrong-format": "仅支持 csv 格式文件",
+    "over-single-size-limit": "容量已超过 1 GB",
+    "over-all-size-limit": "总容量已超过 10 GB",
+    "empty-file": "文件为空，请重新上传",
+    "no-duplicate": "下列上传的文件已存在："
+  },
+  "data-configs": {
+    "file": {
+      "title": "文件设置",
+      "include-header": "包含表头",
+      "delimiter": {
+        "title": "分隔符",
+        "comma": "逗号",
+        "semicolon": "分号",
+        "tab": "制表符",
+        "space": "空格",
+        "custom": "自定义"
+      },
+      "code-type": {
+        "title": "编码格式",
+        "UTF-8": "UTF-8",
+        "GBK": "GBK",
+        "ISO-8859-1": "ISO-8859-1",
+        "US-ASCII": "US-ASCII",
+        "custom": "自定义"
+      },
+      "date-type": {
+        "title": "日期格式",
+        "custom": "自定义"
+      },
+      "skipped-line": "跳过行",
+      "timezone": "时区",
+      "save": "保存",
+      "placeholder": {
+        "input-delimiter": "请输入分隔符",
+        "input-charset": "请输入编码格式",
+        "input-date-format": "请输入日期格式"
+      },
+      "hint": {
+        "save-succeed": "已保存文件设置"
+      }
+    },
+    "type": {
+      "title": "类型设置",
+      "basic-settings": "基础设置",
+      "manipulation": {
+        "create": "创建",
+        "save": "保存",
+        "cancel": "取消",
+        "create-vertex": "创建顶点映射",
+        "create-edge": "创建边映射"
+      },
+      "info": {
+        "type": "类型",
+        "name": "名称",
+        "ID-strategy": "ID策略",
+        "edit": "编辑",
+        "delete": "删除"
+      },
+      "ID-strategy": {
+        "PRIMARY_KEY": "主键ID",
+        "AUTOMATIC": "自动生成",
+        "CUSTOMIZE_STRING": "自定义字符串",
+        "CUSTOMIZE_NUMBER": "自定义数字",
+        "CUSTOMIZE_UUID": "自定义UUID"
+      },
+      "vertex": {
+        "title": "创建顶点映射",
+        "type": "顶点类型",
+        "ID-strategy": "ID策略",
+        "ID-column": "ID列",
+        "map-settings": "映射设置",
+        "add-map": {
+          "title": "添加映射",
+          "name": "列名",
+          "sample": "数据样例",
+          "property": "映射属性",
+          "clear": "清空"
+        },
+        "select-all": "全选",
+        "advance": {
+          "title": "高级设置",
+          "nullable-list": {
+            "title": "空值列表",
+            "empty": "空值",
+            "custom": "自定义"
+          },
+          "map-property-value": {
+            "title": "属性值映射",
+            "add-value": "添加属性值映射",
+            "fields": {
+              "property": "属性",
+              "value-map": "值映射",
+              "add-value-map": "添加值映射"
+            }
+          },
+          "placeholder": {
+            "input": "请选择",
+            "input-property": "请选择输入属性",
+            "input-file-value": "请输入文件值",
+            "input-graph-value": "请输入图导入值"
+          }
+        }
+      },
+      "edge": {
+        "title": "创建边映射",
+        "type": "边类型",
+        "source-ID-strategy": "起点ID策略",
+        "target-ID-strategy": "终点ID策略",
+        "ID-column": "ID列",
+        "map-settings": "映射设置",
+        "add-map": {
+          "title": "添加映射",
+          "name": "列名",
+          "sample": "数据样例",
+          "property": "映射属性",
+          "clear": "清空"
+        },
+        "select-all": "全选",
+        "advance": {
+          "title": "高级设置",
+          "nullable-list": {
+            "title": "空值列表",
+            "empty": "空值",
+            "custom": "自定义"
+          },
+          "map-property-value": {
+            "title": "属性值映射",
+            "add-value": "添加  属性值映射",
+            "fields": {
+              "property": "属性",
+              "value-map": "值映射",
+              "add-value-map": "添加值映射"
+            }
+          },
+          "placeholder": {
+            "input": "请选择映射属性",
+            "input-property": "请选择输入属性",
+            "input-file-value": "请输入文件值",
+            "input-graph-value": "请输入图导入值"
+          }
+        }
+      },
+      "hint": {
+        "lack-support-for-automatic": "自动生成的ID策略不支持可视化导入，请调用API实现",
+        "no-vertex-or-edge-mapping": "如下文件未设置顶点类型或边类型映射："
+      },
+      "placeholder": {
+        "select-vertex-type": "请选择顶点类型",
+        "select-edge-type": "请选择边类型",
+        "select-id-column": "请选择 ID 列",
+        "empty-value": "空"
+      }
+    },
+    "manipulations": {
+      "previous": "上一步",
+      "next": "下一步",
+      "add": "添加",
+      "edit": "编辑",
+      "delete": "删除",
+      "cancel": "取消",
+      "hints": {
+        "delete-confirm": "确认删除？",
+        "warning": "删除后无法恢复，请谨慎操作"
+      }
+    },
+    "validator": {
+      "no-empty": "该项不能为空"
+    }
+  },
+  "server-data-import": {
+    "import-settings": {
+      "title": "导入设置",
+      "checkIfExist": "检查边连接的顶点是否存在",
+      "requestTimesWhenInterpolationFailed": "插入失败重试次数",
+      "maximumAnalyzedErrorRow": "允许最大解析错误行数",
+      "requestTicksWhenInterpolationFailed": "插入失败重试间隔/s",
+      "maxiumInterpolateErrorRow": "允许最大插入错误行数",
+      "InterpolationTimeout": "插入超时时间/s"
+    },
+    "import-details": {
+      "title": "导入详情",
+      "column-titles": {
+        "file-name": "文件名称",
+        "type": "类型",
+        "import-speed": "导入速度",
+        "import-progress": "导入进度",
+        "status": "状态",
+        "time-consumed": "耗时",
+        "manipulations": "操作"
+      },
+      "content": {
+        "vertex": "顶点",
+        "edge": "边"
+      },
+      "status": {
+        "RUNNING": "运行中",
+        "SUCCEED": "成功",
+        "FAILED": "失败",
+        "PAUSED": "已暂停",
+        "STOPPED": "已终止"
+      },
+      "manipulations": {
+        "pause": "暂停",
+        "resume": "继续",
+        "retry": "重试",
+        "abort": "终止",
+        "failed-cause": "查看原因"
+      }
+    },
+    "hint": {
+      "check-vertex": "开启检查会影响导入性能，请按需开启",
+      "no-data": "正在请求导入",
+      "confirm-navigation": "确认跳转到任务列表？正在上传的文件可能会丢失"
+    },
+    "validator": {
+      "no-empty": "该项不能为空",
+      "need-integer-with-negative": "请输入-1或大于0的整数",
+      "need-integer": "请输入大于0的整数"
+    },
+    "manipulations": {
+      "previous": "上一步",
+      "start": "开始导入",
+      "cancel": "取消导入",
+      "finished": "完成"
+    }
+  },
+  "data-import-status": {
+    "finished": "导入完成",
+    "success": "已成功导入 {{number}} 个文件",
+    "pause": "{{number}} 个文件暂停",
+    "abort": "{{number}} 个文件终止",
+    "move-to-import-manager": "返回导入任务列表"
+  }
+}

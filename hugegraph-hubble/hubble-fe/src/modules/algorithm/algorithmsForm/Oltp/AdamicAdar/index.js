@@ -38,7 +38,7 @@ import {
     TEXT_PATH,
 } from '../../../../../utils/constants';
 import {useTranslation} from 'react-i18next';
-
+1;
 const {LOADING, SUCCESS, FAILED} = GRAPH_STATUS;
 const {ADAMIC_ADAR} = ALGORITHM_NAME;
 
