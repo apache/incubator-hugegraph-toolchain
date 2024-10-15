@@ -27,6 +27,8 @@ import scala.Tuple2;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.apache.hugegraph.serializer.direct.HStoreSerializer.processAddresses;
 
@@ -101,8 +103,8 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
                 .readTimeout(60 * 60 * 1000) // 读取超时时间 1h
                 .maxConns(10) // 最大连接数
                 .build();
-
-        BulkloadInfo bulkloadInfo = new BulkloadInfo(loadOptions.graph, sstFilePath.replace("TXY-HDP11", "txy-hn1-bigdata-hdp11-nn-prd-02.myhll.cn:8020"), getBulkloadType());
+        // hdfs 路径最好是使用nd 的ip+port的形式，否则store侧下载时需要依赖hdfs配置文件，使用nd 的ip+port的形式 不需要依赖hdfs配置文件
+        BulkloadInfo bulkloadInfo = new BulkloadInfo(loadOptions.graph, replaceClusterName(sstFilePath, loadOptions.hdfsUri), getBulkloadType());
         String[] urls = processAddresses(loadOptions.pdAddress, loadOptions.pdRestPort);
 
         for (String url : urls) {
@@ -226,4 +228,18 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
 
     }
 
+
+    public static String replaceClusterName(String originalPath, String replacement) {
+        // 正则表达式匹配 // 和 / 之间的部分
+        String regex = "(hdfs://)([^/]+)(/.*)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(originalPath);
+
+        if (matcher.matches()) {
+            // 构建新的路径
+            return matcher.group(1) + replacement + matcher.group(3);
+        } else {
+            throw new IllegalArgumentException("The path does not match the expected format.");
+        }
+    }
 }

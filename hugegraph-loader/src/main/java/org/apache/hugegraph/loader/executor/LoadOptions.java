@@ -252,6 +252,10 @@ public class LoadOptions implements Serializable {
             description = "pd-rest-port")
     public String pdRestPort="8620";
 
+    @Parameter(names = {"--hdfs-uri"}, arity = 1,
+            description = "--hdfs-uri")
+    public String hdfsUri;
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";
