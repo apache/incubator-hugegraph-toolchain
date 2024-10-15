@@ -72,9 +72,13 @@ public class SSTFileOutputFormat extends FileOutputFormat<byte[], byte[]> {
                             out.write(buffer, 0, bytesRead);
                         }
                     }
+                    out.close();
+                } else {
+                    // 没有数据写入时删除临时文件
+                    localSSTFile.delete();
+                    out.close();
+                    fs.delete(outputPath, false);
                 }
-                out.close();
-                localSSTFile.delete();
             } catch (Exception e) {
                 throw new IOException(e);
             }
