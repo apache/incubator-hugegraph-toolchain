@@ -31,6 +31,7 @@ public class SSTFileOutputFormat extends FileOutputFormat<byte[], byte[]> {
         private final Path outputPath;
         private final FileSystem fs;
         private final File localSSTFile;
+        private boolean hasData = false; // 标记是否有数据写入
 
         public RocksDBSSTFileRecordWriter(FSDataOutputStream out, Path outputPath, FileSystem fs) throws IOException {
             this.out = out;
@@ -51,6 +52,9 @@ public class SSTFileOutputFormat extends FileOutputFormat<byte[], byte[]> {
         public void write(byte[] key, byte[] value) throws IOException {
             try {
                 sstFileWriter.put(key, value);
+                if (!hasData) {
+                    hasData = true; // 仅在第一次写入时设置
+                }
             } catch (Exception e) {
                 throw new IOException(e);
             }
@@ -59,12 +63,14 @@ public class SSTFileOutputFormat extends FileOutputFormat<byte[], byte[]> {
         @Override
         public void close(TaskAttemptContext context) throws IOException {
             try {
-                sstFileWriter.finish();
-                try (InputStream in = new FileInputStream(localSSTFile)) {
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = in.read(buffer)) != -1) {
-                        out.write(buffer, 0, bytesRead);
+                if (hasData) { // 只有在有数据写入时才进行后续操作
+                    sstFileWriter.finish();
+                    try (InputStream in = new FileInputStream(localSSTFile)) {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = in.read(buffer)) != -1) {
+                            out.write(buffer, 0, bytesRead);
+                        }
                     }
                 }
                 out.close();
@@ -75,5 +81,3 @@ public class SSTFileOutputFormat extends FileOutputFormat<byte[], byte[]> {
         }
     }
 }
-
-

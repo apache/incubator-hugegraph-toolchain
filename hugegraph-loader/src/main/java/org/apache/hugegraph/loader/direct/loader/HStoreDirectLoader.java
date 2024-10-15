@@ -1,6 +1,7 @@
 package org.apache.hugegraph.loader.direct.loader;
 
 
+import lombok.Data;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -73,8 +74,6 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
                 Collections.sort(partitionData, new HStoreDirectLoader.TupleComparator());
                 return partitionData.iterator();
             });
-
-
             Configuration hadoopConf = new Configuration();
             String sstFilePath = getSSTFilePath(hadoopConf);
             LOG.info("SSTFile生成的hdfs路径:{}", sstFilePath);
@@ -184,7 +183,8 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
         }
     }
 
-    static class BulkloadInfo {
+    @Data
+    static class BulkloadInfo implements Serializable {
         String graphName;
         String tableName;
         String hdfsPath;

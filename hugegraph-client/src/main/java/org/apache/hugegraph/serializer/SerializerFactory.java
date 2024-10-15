@@ -24,7 +24,7 @@ import org.apache.hugegraph.serializer.direct.HStoreSerializer;
 
 public class SerializerFactory {
 
-    public static AbstractGraphElementSerializer getSerializer(HugeClient client, SerializerConfig config) {
+    public static GraphElementSerializer getSerializer(HugeClient client, SerializerConfig config) {
         switch (config.getBackendStoreType()) {
             case "hstore":
                 return new HStoreSerializer(client, config.getVertexPartitions(), config.getGraphName(), config.getPdAddress(), config.getPdRestPort());

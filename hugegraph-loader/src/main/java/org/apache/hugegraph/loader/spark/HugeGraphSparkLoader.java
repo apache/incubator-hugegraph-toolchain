@@ -168,7 +168,7 @@ public class HugeGraphSparkLoader implements Serializable {
 
         waitForFutures(futures);
         if (!sinkType) {
-            handleUnionAndLoad(dstArray, structs);
+            unifyAndLoad(dstArray, structs);
         }
         summary.stopTotalTimer();
         printDistributedSummary(summary);
@@ -222,10 +222,10 @@ public class HugeGraphSparkLoader implements Serializable {
         processDirectLoader(struct, distributedLoadMetrics, ds, dstArray, index);
     }
 
-    private void handleUnionAndLoad(Object[] dstArray, List<InputStruct> structs) throws ExecutionException, InterruptedException {
+    private void unifyAndLoad(Object[] dstArray, List<InputStruct> structs) throws ExecutionException, InterruptedException {
         JavaPairRDD unionRDD = null;
         String path = null;
-        switch (loadOptions.backendStoreType) {
+        switch (loadOptions.backendStoreType.toLowerCase()) {
             case "hbase":
                 unionRDD = unionRDDs((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) dstArray);
                 HBaseDirectLoader hbaseDirectLoader = new HBaseDirectLoader(this.loadOptions, structs.get(0));
@@ -280,18 +280,12 @@ public class HugeGraphSparkLoader implements Serializable {
 
     private static void printMeterReport(LoadSummary summary, LoadReport report) {
         long totalTime = summary.totalTime();
-        long vertexTime = summary.vertexTime();
-        long edgeTime = summary.edgeTime();
-        long loadTime = totalTime;
-        long readTime = totalTime - loadTime;
         log("meter metrics");
         log("total time", TimeUtil.readableTime(totalTime));
-        log("read time", TimeUtil.readableTime(readTime));
-        log("load time", TimeUtil.readableTime(loadTime));
-        log("vertex load time", TimeUtil.readableTime(vertexTime));
+        log("vertex load time", TimeUtil.readableTime(report.vertexInsertSuccess() == 0L?0L:totalTime));
         log("vertex load rate(vertices/s)",
                 (report.vertexInsertSuccess() == 0L) ? "0.0" : String.format("%.2f", new Object[] { Double.valueOf(report.vertexInsertSuccess() * 1000.0D / totalTime) }));
-        log("edge load time", TimeUtil.readableTime(edgeTime));
+        log("edge load time", TimeUtil.readableTime(report.edgeInsertSuccess() == 0L?0L:totalTime ));
         log("edge load rate(edges/s)",
                 (report.edgeInsertSuccess() == 0L) ? "0.0" : String.format("%.2f", new Object[] { Double.valueOf(report.edgeInsertSuccess() * 1000.0D / totalTime) }));
     }

@@ -20,6 +20,7 @@ package org.apache.hugegraph.loader.executor;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,11 +70,8 @@ public final class LoadContext implements Serializable {
 
     private final HugeClient client;
     private final SchemaCache schemaCache;
-    private  Map<ElementBuilder, List<GraphElement>> builders;
-
-
-
-    private AbstractGraphElementSerializer serializer;
+    private final Map<ElementBuilder, List<GraphElement>> builders;
+    private GraphElementSerializer serializer;
 
 
     public LoadContext(LoadOptions options) {
@@ -88,6 +86,7 @@ public final class LoadContext implements Serializable {
         this.loggers = new ConcurrentHashMap<>();
         this.client = HugeClientHolder.create(options);
         this.schemaCache = new SchemaCache(this.client);
+        builders=new HashMap<>();
         this.serializer = initSerializer();
     }
 
@@ -102,10 +101,11 @@ public final class LoadContext implements Serializable {
         this.newProgress = new LoadProgress();
         this.loggers = new ConcurrentHashMap<>();
         this.client = null;
+        builders=new HashMap<>();
         this.schemaCache = options.schemaCache();
     }
 
-    public AbstractGraphElementSerializer initSerializer(){
+    public GraphElementSerializer initSerializer(){
         SerializerConfig config = new SerializerConfig();
         config.setBackendStoreType(options.backendStoreType);
         config.setGraphName(options.graph);
