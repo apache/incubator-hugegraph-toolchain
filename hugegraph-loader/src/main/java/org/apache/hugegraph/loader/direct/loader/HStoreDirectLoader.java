@@ -193,7 +193,7 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
 
         public BulkloadInfo(String graphName, String path, LoadType loadType) {
             this.graphName = processGraphName(graphName);
-            this.tableName = processTableName(graphName, loadType);
+            this.tableName = processTableName(loadType);
             this.hdfsPath = path;
         }
 
@@ -201,7 +201,7 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
             return graphName + "/g";
         }
 
-        private String processTableName(String graphName, LoadType loadType) {
+        private String processTableName( LoadType loadType) {
             if (loadType == LoadType.VERTEX) {
                 return "g+v";
             } else if (loadType == LoadType.EDGE) {
