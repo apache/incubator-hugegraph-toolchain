@@ -41,7 +41,8 @@ public class HugeGraphHubble extends SpringBootServletInitializer {
     }
 
     public static void initEnv() {
-        Ex.check(Charset.defaultCharset().equals(StandardCharsets.UTF_8),"Charset must be UTF-8");
+        System.setProperty("file.encoding", "UTF-8");
+        Ex.check(Charset.defaultCharset().equals(StandardCharsets.UTF_8),"Charset must be UTF-8, current:"+Charset.defaultCharset());
         String hubbleHomePath = System.getProperty("hubble.home.path");
         Ex.check(StringUtils.isNotEmpty(hubbleHomePath),
                  "The system property 'hubble.home.path' must be set");
