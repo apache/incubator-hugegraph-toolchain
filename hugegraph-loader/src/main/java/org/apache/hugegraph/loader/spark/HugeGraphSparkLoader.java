@@ -47,6 +47,7 @@ import org.apache.hugegraph.loader.source.file.FileFilter;
 import org.apache.hugegraph.loader.source.file.FileFormat;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.SkippedLine;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
@@ -149,7 +150,9 @@ public class HugeGraphSparkLoader implements Serializable {
         LoadSummary summary = initializeLoadSummary(mapping, sc);
 
         List<Future<?>> futures = new ArrayList<>(structs.size());
-        Object[] dstArray = new JavaPairRDD[structs.size()];
+        Object[] outEArray = new JavaPairRDD[structs.size()];
+        Object[] inEArray = new JavaPairRDD[structs.size()];
+
 
         for (int i = 0; i < structs.size(); i++) {
             InputStruct struct = structs.get(i);
@@ -158,9 +161,9 @@ public class HugeGraphSparkLoader implements Serializable {
 
             Future<?> future = this.executor.submit(() -> {
                 if (sinkType) {
-                    processWithSparkAPI(session, struct, distributedLoadMetrics);
+                    processWithAPI(session, struct, distributedLoadMetrics);
                 } else {
-                    processWithBulkLoad(session, struct, distributedLoadMetrics, dstArray, finalI);
+                    processWithBulkLoad(session, struct, distributedLoadMetrics, outEArray,inEArray, finalI);
                 }
             });
             futures.add(future);
@@ -168,7 +171,10 @@ public class HugeGraphSparkLoader implements Serializable {
 
         waitForFutures(futures);
         if (!sinkType) {
-            unifyAndLoad(dstArray, structs);
+            unifyAndLoad(outEArray, structs,null);
+            if(arrayHasData(inEArray)){
+                unifyAndLoad(inEArray, structs, Directions.IN);
+            }
         }
         summary.stopTotalTimer();
         printDistributedSummary(summary);
@@ -182,6 +188,17 @@ public class HugeGraphSparkLoader implements Serializable {
             future.get();
         }
     }
+    public static boolean arrayHasData(Object[] array) {
+        if (array == null || array.length == 0) {
+            return false;
+        }
+        for (Object element : array) {
+            if (element != null) {
+                return true;
+            }
+        }
+        return false;
+    }
     private SparkSession initializeSparkSession() {
         SparkConf conf = new SparkConf();
         registerKryoClasses(conf);
@@ -194,7 +211,7 @@ public class HugeGraphSparkLoader implements Serializable {
         summary.startTotalTimer();
         return summary;
     }
-    private void processWithSparkAPI(SparkSession session, InputStruct struct, DistributedLoadMetrics distributedLoadMetrics) {
+    private void processWithAPI(SparkSession session, InputStruct struct, DistributedLoadMetrics distributedLoadMetrics) {
         LOG.info("\n Initializes the accumulator corresponding to the  {} ",
                 struct.input().asFileSource().path());
 
@@ -211,18 +228,16 @@ public class HugeGraphSparkLoader implements Serializable {
         });
     }
 
-    private void processWithBulkLoad(SparkSession session, InputStruct struct, DistributedLoadMetrics distributedLoadMetrics, Object[] dstArray, int index) {
-        LOG.info("\n Initializes the accumulator corresponding to the  {} ",
-                struct.input().asFileSource().path());
-
+    private void processWithBulkLoad(SparkSession session, InputStruct struct,
+                                     DistributedLoadMetrics distributedLoadMetrics, Object[] outEArray, Object[] inEArray,int index) {
         LOG.info("\n  Start to load data, data info is: \t {} ",
                 struct.input().asFileSource().path());
         Dataset<Row> ds = read(session, struct);
         LOG.info("\n Start to load data using spark bulkload \n");
-        processDirectLoader(struct, distributedLoadMetrics, ds, dstArray, index);
+        processDirectLoader(struct, distributedLoadMetrics, ds, outEArray,inEArray, index);
     }
 
-    private void unifyAndLoad(Object[] dstArray, List<InputStruct> structs) throws ExecutionException, InterruptedException {
+    private void unifyAndLoad(Object[] dstArray, List<InputStruct> structs, Directions directions) {
         JavaPairRDD unionRDD = null;
         String path = null;
         switch (loadOptions.backendStoreType.toLowerCase()) {
@@ -230,13 +245,22 @@ public class HugeGraphSparkLoader implements Serializable {
                 unionRDD = unionRDDs((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) dstArray);
                 HBaseDirectLoader hbaseDirectLoader = new HBaseDirectLoader(this.loadOptions, structs.get(0));
                 path = hbaseDirectLoader.generateFiles(unionRDD);
-                hbaseDirectLoader.loadFiles(path);
+                if(null==directions){
+                    hbaseDirectLoader.loadFiles(path,null);
+                }else{
+                    hbaseDirectLoader.loadFiles(path,Directions.IN);
+                }
                 break;
             case "hstore":
                 unionRDD = unionRDDs((JavaPairRDD<Tuple2<byte[], Integer>, byte[]>[]) dstArray);
                 HStoreDirectLoader hstoreDirectLoader = new HStoreDirectLoader(this.loadOptions, structs.get(0));
                 path = hstoreDirectLoader.generateFiles(unionRDD);
-                hstoreDirectLoader.loadFiles(path);
+
+                if(null ==directions){
+                    hstoreDirectLoader.loadFiles(path,null);
+                }else {
+                    hstoreDirectLoader.loadFiles(path, Directions.IN);
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported backend store type: " + loadOptions.backendStoreType);
@@ -479,16 +503,23 @@ public class HugeGraphSparkLoader implements Serializable {
     }
 
 
-    private void processDirectLoader(InputStruct struct, DistributedLoadMetrics distributedLoadMetrics, Dataset<Row> ds, Object[] dstArray, int index) {
+    private void processDirectLoader(InputStruct struct, DistributedLoadMetrics distributedLoadMetrics, Dataset<Row> ds, Object[] outEArray, Object[] inEArray,int index) {
         AbstractDirectLoader directLoader;
         switch (loadOptions.backendStoreType) {
             case "hbase":
                 directLoader = new HBaseDirectLoader(this.loadOptions, struct, distributedLoadMetrics);
-                ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) dstArray)[index] = directLoader.buildVertexAndEdge(ds);
+                ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) outEArray)[index] = directLoader.buildVertexAndEdge(ds,null);
+                if(struct.edges().size()>0){
+                    ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) inEArray)[index] = directLoader.buildVertexAndEdge(ds, Directions.IN);
+                }
+
                 break;
             case "hstore":
                 directLoader = new HStoreDirectLoader(this.loadOptions, struct, distributedLoadMetrics);
-                ((JavaPairRDD<Tuple2<byte[], Integer>, byte[]>[]) dstArray)[index] = directLoader.buildVertexAndEdge(ds);
+                ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) outEArray)[index] = directLoader.buildVertexAndEdge(ds,null);
+                if(struct.edges().size()>0){
+                  ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) inEArray)[index] = directLoader.buildVertexAndEdge(ds, Directions.IN);
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported backend store type: " + loadOptions.backendStoreType);

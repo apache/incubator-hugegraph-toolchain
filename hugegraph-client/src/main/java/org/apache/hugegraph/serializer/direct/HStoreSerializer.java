@@ -26,6 +26,7 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.rest.RestClientConfig;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.serializer.AbstractGraphElementSerializer;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.serializer.direct.struct.HugeType;
 
 import org.apache.hugegraph.serializer.direct.util.*;
@@ -41,9 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 序列化器，需要明确的是点边的序列化中是不带有分区信息的？
- */
+
 public class HStoreSerializer extends AbstractGraphElementSerializer {
 
 
@@ -60,7 +59,6 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
         rangeMap = TreeRangeMap.create();
         int partitionSize = PartitionUtils.MAX_VALUE / numPartitions;
         if (PartitionUtils.MAX_VALUE % numPartitions != 0) {
-            // 有余数，分区除不尽
             partitionSize++;
         }
 
@@ -75,23 +73,15 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
 
     }
     public static String[] processAddresses(String addresses, String newPort) {
-        // 使用逗号分割字符串
         String[] addressArray = addresses.split(",");
-
-        // 创建一个新的数组来存储处理后的地址
         String[] processedArray = new String[addressArray.length];
-
-        // 遍历数组并替换端口
         for (int i = 0; i < addressArray.length; i++) {
             String address = addressArray[i];
-            // 找到冒号的位置
             int colonIndex = address.indexOf(":");
             if (colonIndex != -1) {
-                // 替换端口部分
                 String newAddress = "http://"+address.substring(0, colonIndex + 1) + newPort;
                 processedArray[i] = newAddress;
             } else {
-                // 如果没有冒号，直接使用原地址
                 processedArray[i] = address;
             }
         }
@@ -99,39 +89,29 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
         return processedArray;
     }
 
-    public static void main(String[] args) {
-//        Map graphId = getGraphId("hugegraph", new String[]{"http://10.150.17.39:8620"});
-//        System.out.println(graphId);
-    }
+
 
     private Map<Long, Long> getGraphId(String graphName, String[] urls) {
         RestClientConfig config = RestClientConfig.builder()
                 .connectTimeout(5 * 1000)  // 连接超时时间 5s
-//                .readTimeout(60*60 * 1000) // 读取超时时间 1h
                 .maxConns(10) // 最大连接数
                 .build();
 
 
         for (String url : urls) {
-            log.info("getGraphId from {}, graphName:{}", url, graphName);
             RestClient client = null;
             try {
-                // 创建RestClient对象
                 client = new RestClient(url, config);
                 RestResult restResult = client.get("v1/partitionsAndGraphId", Collections.singletonMap("graphName", graphName));
-                // 获取响应状态码
                 String content = restResult.content();
                 Map<Long, Long> resMap = MAPPER.readValue(content, new TypeReference<HashMap<Long, Long>>() {
                 });
                 log.info("Response :{} ", resMap);
-                // 如果成功，退出循环
                 return resMap;
             } catch (Exception e) {
                 log.error("Failed to get graphId", e);
-                System.out.println(e);
                 break;
             } finally {
-                // 确保RestClient被关闭
                 if (client != null) {
                     try {
                         client.close();
@@ -144,7 +124,7 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
         return Collections.emptyMap();
     }
 
-    public Tuple2<byte[], Integer> getKeyBytes(GraphElement e) {
+    public Tuple2<byte[], Integer> getKeyBytes(GraphElement e, Directions direction) {
         byte[] array = null;
         if (e.type() == "vertex" && e.id() != null) {
 
@@ -153,40 +133,47 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
             buffer.writeId(id);
             array = buffer.bytes();
             int code = PartitionUtils.calcHashcode(id.asBytes());
-            log.info("code:{}", code);
             byte[] buf = new byte[Short.BYTES + array.length + Short.BYTES];
-            // 基于code先拿到partId，然后再基于partId 获取到graphId
             Integer partId = rangeMap.get((long) code);
-            log.info("partId:{}", partId);
             Long partGraphId = partGraphIdMap.get((long) partId);
-            // 此处需要加入一个graphId 先默认给 0
             Bits.putShort(buf, 0, Math.toIntExact(partGraphId));
             Bits.put(buf, Short.BYTES, array);
-            // code是基于key计算的一个hash值？  code
             Bits.putShort(buf, array.length + Short.BYTES, code);
             return new Tuple2<>(buf, partId);
-        } else if (e.type() == "edge") {
+        } else if (e.type() == "edge" && direction == null) {
             BytesBuffer buffer = BytesBuffer.allocate(BytesBuffer.BUF_EDGE_ID);
             Edge edge = (Edge) e;
-//            buffer.writeShort();
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_OUT.code());
             buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
             buffer.writeStringWithEnding("");
             buffer.writeId(IdGenerator.of(edge.targetId()));
             array = buffer.bytes();
-
-            // 基于code先拿到partId，然后再基于partId 获取到graphId
             int code = PartitionUtils.calcHashcode(IdGenerator.of(edge.sourceId()).asBytes());
             Integer partId = rangeMap.get((long) code);
             Long partGraphId = partGraphIdMap.get((long) partId);
             byte[] buf = new byte[Short.BYTES + array.length + Short.BYTES];
-            // 此处需要加入一个graphId 先默认给 0
             Bits.putShort(buf, 0, Math.toIntExact(partGraphId));
             Bits.put(buf, Short.BYTES, array);
-            // code是基于key计算的一个hash值？  code
             Bits.putShort(buf, array.length + Short.BYTES, code);
-            return new Tuple2<>(buf, code);
+            return new Tuple2<>(buf, partId);
+        }else if(e.type() == "edge" && direction == Directions.IN){
+            BytesBuffer buffer = BytesBuffer.allocate(BytesBuffer.BUF_EDGE_ID);
+            Edge edge = (Edge) e;
+            buffer.writeId(IdGenerator.of(edge.sourceId()));
+            buffer.write(HugeType.EDGE_IN.code());
+            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
+            buffer.writeStringWithEnding("");
+            buffer.writeId(IdGenerator.of(edge.targetId()));
+            array = buffer.bytes();
+            int code = PartitionUtils.calcHashcode(IdGenerator.of(edge.sourceId()).asBytes());
+            Integer partId = rangeMap.get((long) code);
+            Long partGraphId = partGraphIdMap.get((long) partId);
+            byte[] buf = new byte[Short.BYTES + array.length + Short.BYTES];
+            Bits.putShort(buf, 0, Math.toIntExact(partGraphId));
+            Bits.put(buf, Short.BYTES, array);
+            Bits.putShort(buf, array.length + Short.BYTES, code);
+            return new Tuple2<>(buf, partId);
         }
         return new Tuple2<>(array, 0);
     }

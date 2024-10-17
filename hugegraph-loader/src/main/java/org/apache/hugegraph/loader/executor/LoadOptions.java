@@ -256,6 +256,10 @@ public class LoadOptions implements Serializable {
             description = "--hdfs-uri")
     public String hdfsUri;
 
+    @Parameter(names = {"--max-download-rate"}, arity = 1,
+            description = "store download rate limit per second")
+    public int maxDownloadRate = 1024;
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";

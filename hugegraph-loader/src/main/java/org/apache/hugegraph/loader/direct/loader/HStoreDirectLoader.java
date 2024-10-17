@@ -16,6 +16,7 @@ import org.apache.hugegraph.loader.metrics.DistributedLoadMetrics;
 import org.apache.hugegraph.rest.RestClientConfig;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.serializer.GraphElementSerializer;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -43,7 +44,7 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
     }
 
     @Override
-    public JavaPairRDD<Tuple2<byte[], Integer>, byte[]> buildVertexAndEdge(Dataset<Row> ds) {
+    public JavaPairRDD<Tuple2<byte[], Integer>, byte[]> buildVertexAndEdge(Dataset<Row> ds, Directions directions) {
         LOG.info("Start build vertexes and edges");
         return ds.toJavaRDD().mapPartitionsToPair(
                 (PairFlatMapFunction<Iterator<Row>, Tuple2<byte[], Integer>, byte[]>) rowIter -> {
@@ -54,7 +55,7 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
                     while (rowIter.hasNext()) {
                         Row row = rowIter.next();
                         List<Tuple2<Tuple2<byte[], Integer>, byte[]>> serList;
-                        serList = buildAndSer(loaderContext.getSerializer(), row, buildersForGraphElement);
+                        serList = buildAndSer(loaderContext.getSerializer(), row, buildersForGraphElement,directions);
                         result.addAll(serList);
                     }
                     return result.iterator();
@@ -66,9 +67,8 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
     public String generateFiles(JavaPairRDD<Tuple2<byte[], Integer>, byte[]> buildAndSerRdd) {
         LOG.info("bulkload start execute>>>");
         try {
-            // 自定义分区,
             JavaPairRDD<Tuple2<byte[], Integer>, byte[]> tuple2JavaPairRDD = buildAndSerRdd.partitionBy(new HstorePartitioner(loadOptions.vertexPartitions));
-            // 丢弃partId
+            // abort partId
             JavaPairRDD<byte[], byte[]> javaPairRDD = tuple2JavaPairRDD.mapToPair(tuple2 -> new Tuple2<>(tuple2._1._1, tuple2._2));
             JavaPairRDD<byte[], byte[]> sortedRdd = javaPairRDD.mapPartitionsToPair(iterator -> {
                 List<Tuple2<byte[], byte[]>> partitionData = new ArrayList<>();
@@ -97,33 +97,33 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
     }
 
     @Override
-    public void loadFiles(String sstFilePath) {
+    public void loadFiles(String sstFilePath,Directions directions) {
         RestClientConfig config = RestClientConfig.builder()
                 .connectTimeout(5 * 1000)  // 连接超时时间 5s
                 .readTimeout(60 * 60 * 1000) // 读取超时时间 1h
                 .maxConns(10) // 最大连接数
                 .build();
-        // hdfs 路径最好是使用nd 的ip+port的形式，否则store侧下载时需要依赖hdfs配置文件，使用nd 的ip+port的形式 不需要依赖hdfs配置文件
-        BulkloadInfo bulkloadInfo = new BulkloadInfo(loadOptions.graph, replaceClusterName(sstFilePath, loadOptions.hdfsUri), getBulkloadType());
+        BulkloadInfo bulkloadInfo = new BulkloadInfo(loadOptions.graph,
+                replaceClusterName(sstFilePath, loadOptions.hdfsUri),
+                getBulkloadType(),
+                directions,
+                loadOptions.maxDownloadRate
+        );
         String[] urls = processAddresses(loadOptions.pdAddress, loadOptions.pdRestPort);
 
         for (String url : urls) {
             LOG.info("submit bulkload task to {}, bulkloadInfo:{}", url, bulkloadInfo);
             RestClient client = null;
             try {
-                // 创建RestClient对象
                 client = new RestClient(url, config);
-                // 获取响应状态码
                 RestResult restResult = client.post("v1/task/bulkload", bulkloadInfo);
                 Map resMap = restResult.readObject(Map.class);
                 LOG.info("Response :{} ", resMap);
-                // 如果成功，退出循环
                 break;
             } catch (Exception e) {
                 LOG.error("Failed to submit bulkload task", e);
                 break;
             } finally {
-                // 确保RestClient被关闭
                 if (client != null) {
                     try {
                         client.close();
@@ -138,15 +138,14 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
     @Override
     protected Tuple2<Tuple2<byte[], Integer>, byte[]> vertexSerialize(GraphElementSerializer serializer, Vertex vertex) {
         LOG.debug("vertex start serialize {}", vertex.toString());
-        Tuple2<byte[], Integer> keyBytes = serializer.getKeyBytes(vertex);
+        Tuple2<byte[], Integer> keyBytes = serializer.getKeyBytes(vertex, null);
         byte[] values = serializer.getValueBytes(vertex);
         return new Tuple2<>(keyBytes, values);
     }
 
     @Override
-    protected Tuple2<Tuple2<byte[], Integer>, byte[]> edgeSerialize(GraphElementSerializer serializer, Edge edge) {
-        LOG.debug("edge start serialize {}", edge.toString());
-        Tuple2<byte[], Integer> keyBytes = serializer.getKeyBytes(edge);
+    protected Tuple2<Tuple2<byte[], Integer>, byte[]> edgeSerialize(GraphElementSerializer serializer, Edge edge,Directions direction) {
+        Tuple2<byte[], Integer> keyBytes = serializer.getKeyBytes(edge,direction);
         byte[] values = serializer.getValueBytes(edge);
         return new Tuple2<>(keyBytes, values);
     }
@@ -190,23 +189,27 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
         String graphName;
         String tableName;
         String hdfsPath;
+        Integer maxDownloadRate;
 
-        public BulkloadInfo(String graphName, String path, LoadType loadType) {
+        public BulkloadInfo(String graphName, String path, LoadType loadType,Directions directions,int maxDownloadRate) {
             this.graphName = processGraphName(graphName);
-            this.tableName = processTableName(loadType);
+            this.tableName = processTableName(loadType,directions);
             this.hdfsPath = path;
+            this.maxDownloadRate = maxDownloadRate;
         }
 
         private String processGraphName(String graphName) {
             return graphName + "/g";
         }
 
-        private String processTableName( LoadType loadType) {
+        private String processTableName( LoadType loadType,Directions directions) {
             if (loadType == LoadType.VERTEX) {
                 return "g+v";
-            } else if (loadType == LoadType.EDGE) {
+            } else if ( null ==directions && loadType == LoadType.EDGE ) {
                 return "g+oe";
-            } else {
+            } else if ( directions == Directions.IN && loadType == LoadType.EDGE ) {
+                return "g+ie";
+            }else {
                 throw new IllegalArgumentException("Invalid loadType: " + loadType);
             }
         }
@@ -230,13 +233,11 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
 
 
     public static String replaceClusterName(String originalPath, String replacement) {
-        // 正则表达式匹配 // 和 / 之间的部分
         String regex = "(hdfs://)([^/]+)(/.*)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(originalPath);
 
         if (matcher.matches()) {
-            // 构建新的路径
             return matcher.group(1) + replacement + matcher.group(3);
         } else {
             throw new IllegalArgumentException("The path does not match the expected format.");

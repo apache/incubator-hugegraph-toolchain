@@ -20,6 +20,7 @@ import org.apache.hugegraph.loader.metrics.DistributedLoadMetrics;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.apache.hugegraph.serializer.GraphElementSerializer;
 import org.apache.hugegraph.serializer.direct.HBaseSerializer;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.util.Log;
@@ -105,7 +106,7 @@ public class HBaseDirectLoader extends AbstractDirectLoader<ImmutableBytesWritab
     }
 
     @Override
-    public JavaPairRDD<ImmutableBytesWritable, KeyValue> buildVertexAndEdge(Dataset<Row> ds) {
+    public JavaPairRDD<ImmutableBytesWritable, KeyValue> buildVertexAndEdge(Dataset<Row> ds, Directions directions) {
         LOG.info("Start build vertexes and edges");
         return ds.toJavaRDD().mapPartitionsToPair(
                 (PairFlatMapFunction<Iterator<Row>, ImmutableBytesWritable, KeyValue>) rowIter -> {
@@ -117,7 +118,7 @@ public class HBaseDirectLoader extends AbstractDirectLoader<ImmutableBytesWritab
                     while (rowIter.hasNext()) {
                         Row row = rowIter.next();
                         List<Tuple2<ImmutableBytesWritable, KeyValue>> serList;
-                        serList = buildAndSer(ser, row, buildersForGraphElement);
+                        serList = buildAndSer(ser, row, buildersForGraphElement,directions);
                         result.addAll(serList);
                     }
                     ser.close();
@@ -151,7 +152,7 @@ public class HBaseDirectLoader extends AbstractDirectLoader<ImmutableBytesWritab
     }
 
     @Override
-    public void loadFiles(String path) {
+    public void loadFiles(String path,Directions directions) {
         try {
             sinkToHBase.loadHfiles(path, getTableName());
         } catch (Exception e) {
@@ -192,7 +193,7 @@ public class HBaseDirectLoader extends AbstractDirectLoader<ImmutableBytesWritab
     @Override
     protected Tuple2<ImmutableBytesWritable, KeyValue> vertexSerialize(GraphElementSerializer serializer, Vertex vertex) {
         LOG.debug("vertex start serialize {}", vertex.toString());
-        byte[] rowkey = serializer.getKeyBytes(vertex)._1;
+        byte[] rowkey = serializer.getKeyBytes(vertex, null)._1;
         byte[] values = serializer.getValueBytes(vertex);
         ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
         rowKey.set(rowkey);
@@ -201,9 +202,9 @@ public class HBaseDirectLoader extends AbstractDirectLoader<ImmutableBytesWritab
     }
 
     @Override
-    protected Tuple2<ImmutableBytesWritable, KeyValue> edgeSerialize(GraphElementSerializer serializer, Edge edge) {
+    protected Tuple2<ImmutableBytesWritable, KeyValue> edgeSerialize(GraphElementSerializer serializer, Edge edge,Directions direction) {
         LOG.debug("edge start serialize {}", edge.toString());
-        byte[] rowkey = serializer.getKeyBytes(edge)._1;
+        byte[] rowkey = serializer.getKeyBytes(edge, direction)._1;
         byte[] values = serializer.getValueBytes(edge);
         ImmutableBytesWritable rowKey = new ImmutableBytesWritable();
         rowKey.set(rowkey);

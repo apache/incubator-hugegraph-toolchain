@@ -14,6 +14,7 @@ import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.hugegraph.loader.metrics.DistributedLoadMetrics;
 import org.apache.hugegraph.serializer.GraphElementSerializer;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
@@ -64,9 +65,9 @@ public abstract class AbstractDirectLoader<T, R> implements DirectLoader<T, R>, 
 
     @Override
     public void bulkload(Dataset<Row> ds) {
-        JavaPairRDD<T, R> javaPairRDD = buildVertexAndEdge(ds);
+        JavaPairRDD<T, R> javaPairRDD = buildVertexAndEdge(ds, null);
         String path = generateFiles(javaPairRDD);
-        loadFiles(path);
+        loadFiles(path,null);
     }
 
     protected List<ElementBuilder> getElementBuilders(LoadContext context) {
@@ -81,7 +82,9 @@ public abstract class AbstractDirectLoader<T, R> implements DirectLoader<T, R>, 
         return buildersForGraphElement;
     }
 
-    protected List<Tuple2<T, R>> buildAndSer(GraphElementSerializer serializer, Row row, List<ElementBuilder> builders) {
+    protected List<Tuple2<T, R>> buildAndSer(GraphElementSerializer serializer,
+                                             Row row,
+                                             List<ElementBuilder> builders, Directions directions) {
         List<GraphElement> elementsElement;
         List<Tuple2<T, R>> result = new LinkedList<>();
 
@@ -96,7 +99,7 @@ public abstract class AbstractDirectLoader<T, R> implements DirectLoader<T, R>, 
             switch (struct.input().type()) {
                 case FILE:
                 case HDFS:
-                    elementsElement = builder.build(row);
+                     elementsElement = builder.build(row);
                     break;
                 default:
                     throw new AssertionError(String.format("Unsupported input source '%s'", struct.input().type()));
@@ -105,7 +108,6 @@ public abstract class AbstractDirectLoader<T, R> implements DirectLoader<T, R>, 
             boolean isVertex = builder.mapping().type().isVertex();
             if (isVertex) {
                 for (Vertex vertex : (List<Vertex>) (Object) elementsElement) {
-                    LOG.debug("vertex already build done {} ", vertex.toString());
                     Tuple2<T, R> tuple2 = vertexSerialize(serializer, vertex);
                     loadDistributeMetrics.vertexMetrics().get(builder.mapping().label()).plusDisParseSuccess(1L);
                     loadDistributeMetrics.vertexMetrics().get(builder.mapping().label()).plusDisInsertSuccess(1L);
@@ -113,8 +115,7 @@ public abstract class AbstractDirectLoader<T, R> implements DirectLoader<T, R>, 
                 }
             } else {
                 for (Edge edge : (List<Edge>) (Object) elementsElement) {
-                    LOG.debug("edge already build done {}", edge.toString());
-                    Tuple2<T, R> tuple2 = edgeSerialize(serializer, edge);
+                    Tuple2<T, R> tuple2 = edgeSerialize(serializer, edge,directions);
                     loadDistributeMetrics.edgeMetrics().get(builder.mapping().label()).plusDisParseSuccess(1L);
                     loadDistributeMetrics.edgeMetrics().get(builder.mapping().label()).plusDisInsertSuccess(1L);
                     result.add(tuple2);
@@ -126,5 +127,5 @@ public abstract class AbstractDirectLoader<T, R> implements DirectLoader<T, R>, 
 
     protected abstract Tuple2<T, R> vertexSerialize(GraphElementSerializer serializer, Vertex vertex);
 
-    protected abstract Tuple2<T, R> edgeSerialize(GraphElementSerializer serializer, Edge edge);
+    protected abstract Tuple2<T, R> edgeSerialize(GraphElementSerializer serializer, Edge edge, Directions direction);
 }

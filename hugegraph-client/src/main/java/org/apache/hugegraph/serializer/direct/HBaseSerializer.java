@@ -22,9 +22,9 @@ import java.util.Map;
 
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.serializer.AbstractGraphElementSerializer;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.serializer.direct.struct.HugeType;
 import org.apache.hugegraph.serializer.direct.util.BytesBuffer;
-import org.apache.hugegraph.serializer.direct.util.GraphSchema;
 import org.apache.hugegraph.serializer.direct.util.Id;
 import org.apache.hugegraph.serializer.direct.util.IdGenerator;
 import org.apache.hugegraph.structure.GraphElement;
@@ -48,7 +48,7 @@ public class HBaseSerializer extends AbstractGraphElementSerializer {
     }
 
     @Override
-    public Tuple2<byte[], Integer> getKeyBytes(GraphElement e) {
+    public Tuple2<byte[], Integer> getKeyBytes(GraphElement e, Directions direction) {
         byte[] array = null;
         if (e.type() == "vertex" && e.id() != null) {
             BytesBuffer buffer = BytesBuffer.allocate(2 + 1 + e.id().toString().length());

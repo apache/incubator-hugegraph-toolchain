@@ -17,16 +17,17 @@
 
 package org.apache.hugegraph.loader.direct.loader;
 
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
 public interface DirectLoader<T, R> {
-    JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds);
+    JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds, Directions directions);
 
     String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
 
-    void loadFiles(String path);
+    void loadFiles(String path,Directions directions);
 
     void bulkload(Dataset<Row> ds);
 }
