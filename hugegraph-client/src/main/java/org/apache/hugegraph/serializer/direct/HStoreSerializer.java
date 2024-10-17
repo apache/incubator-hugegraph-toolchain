@@ -93,8 +93,8 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
 
     private Map<Long, Long> getGraphId(String graphName, String[] urls) {
         RestClientConfig config = RestClientConfig.builder()
-                .connectTimeout(5 * 1000)  // 连接超时时间 5s
-                .maxConns(10) // 最大连接数
+                .connectTimeout(5 * 1000)
+                .maxConns(10)
                 .build();
 
 
@@ -145,7 +145,7 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
             Edge edge = (Edge) e;
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_OUT.code());
-            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
+            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id()));
             buffer.writeStringWithEnding("");
             buffer.writeId(IdGenerator.of(edge.targetId()));
             array = buffer.bytes();
@@ -162,7 +162,7 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
             Edge edge = (Edge) e;
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_IN.code());
-            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
+            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id()));
             buffer.writeStringWithEnding("");
             buffer.writeId(IdGenerator.of(edge.targetId()));
             array = buffer.bytes();

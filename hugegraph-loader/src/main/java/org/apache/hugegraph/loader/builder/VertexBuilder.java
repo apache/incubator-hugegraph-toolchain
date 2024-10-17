@@ -18,7 +18,6 @@
 package org.apache.hugegraph.loader.builder;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.hugegraph.loader.executor.LoadContext;
@@ -72,11 +71,6 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
         kvPairs.extractFromVertex(names, values);
         return kvPairs.buildVertices(true);
     }
-
-//    @Override
-//    public List<Vertex> build(Row row, Directions directions) {
-//        return Collections.emptyList();
-//    }
 
     @Override
     public SchemaLabel schemaLabel() {
