@@ -163,7 +163,6 @@ public class HStoreDirectLoader extends AbstractDirectLoader<Tuple2<byte[], Inte
             LOG.info("\n delete sstFile path \n");
             fs.delete(hfileGenPath, true);
         }
-//        fs.close();
         return pathStr;
     }
 

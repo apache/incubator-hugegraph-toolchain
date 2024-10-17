@@ -28,7 +28,7 @@ function get_params() {
       --max-conn | --max-conn-per-route | --batch-size | --max-parse-errors | --max-insert-errors | \
       --timeout | --shutdown-timeout | --retry-times | --retry-interval | --check-vertex | \
       --print-progress | --dry-run | --sink-type | --vertex-partitions | --edge-partitions |  --backend | \
-      --pd-address | --pd-rest-port | --hdfs-uri \
+      --pd-address | --pd-rest-port | --hdfs-uri |--max-download-rate \
       | --help )
         HUGEGRAPH_PARAMS="$HUGEGRAPH_PARAMS $1 $2"
         shift 2
