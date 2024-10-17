@@ -43,6 +43,10 @@ public class EdgeLabel extends SchemaLabel {
     private String parentLabel;
     @JsonProperty("frequency")
     private Frequency frequency;
+    @JsonProperty("source_label")
+    private String sourceLabel;
+    @JsonProperty("target_label")
+    private String targetLabel;
     @JsonProperty("links")
     private Set<Map<String, String>> links;
     @JsonProperty("sort_keys")
@@ -108,7 +112,7 @@ public class EdgeLabel extends SchemaLabel {
 
     public boolean linkedVertexLabel(String vertexLabel) {
         if (this.edgeLabelType.parent() || this.links == null ||
-                this.links.isEmpty()) {
+            this.links.isEmpty()) {
             return false;
         }
 
@@ -136,15 +140,15 @@ public class EdgeLabel extends SchemaLabel {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, " + "edgeLabel_type=%s, " + "parent_label=%s" +
-                             "links=%s, sortKeys=%s, indexLabels=%s, " +
-                             "nullableKeys=%s, properties=%s, ttl=%s, " +
-                             "ttlStartTime=%s, status=%s}",
-                this.name,
-                this.edgeLabelType, this.parentLabel,
-                this.links, this.sortKeys, this.indexLabels,
-                this.nullableKeys, this.properties, this.ttl,
-                this.ttlStartTime, this.status);
+        return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " + "edgeLabel_type=%s, " +
+                             "parent_label=%s, links=%s, sortKeys=%s, indexLabels=%s, " +
+                             "nullableKeys=%s, properties=%s, ttl=%s, ttlStartTime=%s, status=%s}",
+                             // TODO(@Thespica): call field or call method?
+                             this.name, this.sourceLabel(), this.targetLabel(),
+                             this.edgeLabelType, this.parentLabel,
+                             this.links, this.sortKeys, this.indexLabels,
+                             this.nullableKeys, this.properties, this.ttl,
+                             this.ttlStartTime, this.status);
     }
 
     public EdgeLabelV53 switchV53() {
@@ -167,18 +171,12 @@ public class EdgeLabel extends SchemaLabel {
 
         /**
          * Set the source label of the edge label
-         *
-         * @deprecated Suggested use {@link #link(String, String)} to set the source and target label pair
          */
-        @Deprecated
         Builder sourceLabel(String label);
 
         /**
          * Set the target label of the edge label
-         *
-         * @deprecated Suggested use {@link #link(String, String)} to set the source and target label pair
          */
-        @Deprecated
         Builder targetLabel(String label);
 
         Builder frequency(Frequency frequency);
@@ -246,10 +244,10 @@ public class EdgeLabel extends SchemaLabel {
         @Override
         public Builder sortKeys(String... keys) {
             E.checkArgument(this.edgeLabel.sortKeys.isEmpty(),
-                    "Not allowed to assign sort keys multi times");
+                            "Not allowed to assign sort keys multi times");
             List<String> sortKeys = Arrays.asList(keys);
             E.checkArgument(CollectionUtil.allUnique(sortKeys),
-                    "Invalid sort keys %s, which contains some " +
+                            "Invalid sort keys %s, which contains some " +
                             "duplicate properties", sortKeys);
             this.edgeLabel.sortKeys.addAll(sortKeys);
             return this;
@@ -286,14 +284,11 @@ public class EdgeLabel extends SchemaLabel {
 
         /**
          * Set the source label of the edge label
-         *
-         * @deprecated Suggested use {@link #link(String, String)} to set the source and target label pair
          */
-        @Deprecated
         @Override
         public Builder sourceLabel(String label) {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
-                    "Not allowed add source label to an edge label which " +
+                            "Not allowed add source label to an edge label which " +
                             "already has links");
             if (this.targetLabel != null) {
                 link(label, this.targetLabel);
@@ -306,10 +301,7 @@ public class EdgeLabel extends SchemaLabel {
 
         /**
          * Set the target label of the edge label
-         *
-         * @deprecated Suggested use {@link #link(String, String)} to set the source and target label pair
          */
-        @Deprecated
         @Override
         public Builder targetLabel(String label) {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
