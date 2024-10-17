@@ -17,14 +17,8 @@
 
 package org.apache.hugegraph.structure.schema;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.structure.constant.EdgeLabelType;
 import org.apache.hugegraph.structure.constant.Frequency;
@@ -32,8 +26,13 @@ import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.CollectionUtil;
 import org.apache.hugegraph.util.E;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EdgeLabel extends SchemaLabel {
 
@@ -43,6 +42,10 @@ public class EdgeLabel extends SchemaLabel {
     private String parentLabel;
     @JsonProperty("frequency")
     private Frequency frequency;
+    @JsonProperty("source_label")
+    private String sourceLabel;
+    @JsonProperty("target_label")
+    private String targetLabel;
     @JsonProperty("links")
     private Set<Map<String, String>> links;
     @JsonProperty("sort_keys")
@@ -89,16 +92,16 @@ public class EdgeLabel extends SchemaLabel {
 
     public String sourceLabel() {
         E.checkState(this.links.size() == 1,
-                     "Only edge label has single vertex label pair can call " +
-                     "sourceLabelName(), but current edge label got %s",
-                     this.links.size());
+                "Only edge label has single vertex label pair can call " +
+                        "sourceLabelName(), but current edge label got %s",
+                this.links.size());
         return this.links.iterator().next().keySet().iterator().next();
     }
 
     public String targetLabel() {
         E.checkState(this.links.size() == 1,
-                     "Only edge label has single vertex label pair can call " +
-                     "targetLabelName(), but current edge label got %s", this.links.size());
+                "Only edge label has single vertex label pair can call " +
+                        "targetLabelName(), but current edge label got %s", this.links.size());
         return this.links.iterator().next().values().iterator().next();
     }
 
@@ -136,11 +139,12 @@ public class EdgeLabel extends SchemaLabel {
 
     @Override
     public String toString() {
-        return String.format("{name=%s, " + "edgeLabel_type=%s, " + "parent_label=%s" +
-                             "links=%s, sortKeys=%s, indexLabels=%s, " +
-                             "nullableKeys=%s, properties=%s, ttl=%s, " +
-                             "ttlStartTime=%s, status=%s}",
-                this.name,
+        return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " + "edgeLabel_type=%s, " + "parent_label=%s" +
+                        "links=%s, sortKeys=%s, indexLabels=%s, " +
+                        "nullableKeys=%s, properties=%s, ttl=%s, " +
+                        "ttlStartTime=%s, status=%s}",
+                // TODO(@Thespica): call field or call method?
+                this.name, this.sourceLabel(), this.targetLabel(),
                 this.edgeLabelType, this.parentLabel,
                 this.links, this.sortKeys, this.indexLabels,
                 this.nullableKeys, this.properties, this.ttl,
@@ -313,7 +317,7 @@ public class EdgeLabel extends SchemaLabel {
         @Override
         public Builder targetLabel(String label) {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
-                            "Not allowed add source label to an edge label " +
+                    "Not allowed add source label to an edge label " +
                             "which already has links");
             if (this.sourceLabel != null) {
                 link(this.sourceLabel, label);
@@ -380,8 +384,8 @@ public class EdgeLabel extends SchemaLabel {
 
         private void checkFrequency() {
             E.checkArgument(this.edgeLabel.frequency == Frequency.DEFAULT,
-                            "Not allowed to change frequency for edge label '%s'",
-                            this.edgeLabel.name);
+                    "Not allowed to change frequency for edge label '%s'",
+                    this.edgeLabel.name);
         }
     }
 
@@ -436,10 +440,10 @@ public class EdgeLabel extends SchemaLabel {
         @Override
         public String toString() {
             return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " +
-                                 "sortKeys=%s, nullableKeys=%s, properties=%s}",
-                                 this.name, this.sourceLabel, this.targetLabel,
-                                 this.sortKeys, this.nullableKeys,
-                                 this.properties);
+                            "sortKeys=%s, nullableKeys=%s, properties=%s}",
+                    this.name, this.sourceLabel, this.targetLabel,
+                    this.sortKeys, this.nullableKeys,
+                    this.properties);
         }
 
         @Override
