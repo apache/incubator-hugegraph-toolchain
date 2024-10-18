@@ -1,64 +1,64 @@
 {
-  "async-tasks": {
-    "title": "任务管理",
-    "placeholders": {
-      "search": "请输入任务ID或名称搜索"
-    },
-    "table-column-title": {
-      "task-id": "任务ID",
-      "task-name": "任务名称",
-      "task-type": "任务类型",
-      "create-time": "创建时间",
-      "time-consuming": "耗时",
-      "status": "状态",
-      "manipulation": "操作"
-    },
-    "table-filters": {
-      "task-type": {
-        "all": "全部",
-        "gremlin": "Gremlin任务",
-        "algorithm": "算法任务",
-        "remove-schema": "删除元数据",
-        "create-index": "创建索引",
-        "rebuild-index": "重建索引"
-      },
-      "status": {
-        "all": "全部",
-        "scheduling": "调度中",
-        "scheduled": "排队中",
-        "queued": "排队中",
-        "running": "运行中",
-        "restoring": "恢复中",
-        "success": "成功",
-        "failed": "失败",
-        "cancelling": "已取消",
-        "cancelled": "已取消"
-      }
-    },
-    "table-selection": {
-      "selected": "已选{{number}}项",
-      "delete-batch": "批量删除"
-    },
-    "manipulations": {
-      "abort": "终止",
-      "aborting": "终止中",
-      "delete": "删除",
-      "check-result": "查看结果",
-      "check-reason": "查看原因"
-    },
-    "hint": {
-      "delete-confirm": "删除确认",
-      "delete-description": "是否确认删除该任务？删除后无法恢复，请谨慎操作",
-      "delete-succeed": "删除成功",
-      "delete-batch-confirm": "批量删除",
-      "delete-batch-description": "确认删除以下任务？删除后无法恢复，请谨慎操作",
-      "delete": "删除",
-      "cancel": "取消",
-      "no-data": "暂无数据",
-      "empty": "您暂时还没有任何任务",
-      "select-disabled": "任务{{id}}无法被选中删除",
-      "check-details": "查看详情",
-      "creation-failed": "创建失败"
+    "async-tasks": {
+        "title": "Task Management",
+        "placeholders": {
+            "search": "Enter task ID or name to search"
+        },
+        "table-column-title": {
+            "task-id": "Task ID",
+            "task-name": "Task Name",
+            "task-type": "Task Type",
+            "create-time": "Create Time",
+            "time-consuming": "Time Consuming",
+            "status": "Status",
+            "manipulation": "Operation"
+        },
+        "table-filters": {
+            "task-type": {
+                "all": "All",
+                "gremlin": "Gremlin Task",
+                "algorithm": "Algorithm Task",
+                "remove-schema": "Remove Metadata",
+                "create-index": "Create Index",
+                "rebuild-index": "Rebuild Index"
+            },
+            "status": {
+                "all": "All",
+                "scheduling": "Scheduling",
+                "scheduled": "Queued",
+                "queued": "Queued",
+                "running": "Running",
+                "restoring": "Restoring",
+                "success": "Success",
+                "failed": "Failed",
+                "cancelling": "Cancelled",
+                "cancelled": "Cancelled"
+            }
+        },
+        "table-selection": {
+            "selected": "Selected {{number}} items",
+            "delete-batch": "Batch Delete"
+        },
+        "manipulations": {
+            "abort": "Abort",
+            "aborting": "Aborting",
+            "delete": "Delete",
+            "check-result": "Check Result",
+            "check-reason": "Check Reason"
+        },
+        "hint": {
+            "delete-confirm": "Delete Confirmation",
+            "delete-description": "Are you sure you want to delete this task? Deletion is irreversible, please proceed with caution",
+            "delete-succeed": "Delete Successful",
+            "delete-batch-confirm": "Batch Delete",
+            "delete-batch-description": "Confirm deletion of the following tasks? Deletion is irreversible, please proceed with caution",
+            "delete": "Delete",
+            "cancel": "Cancel",
+            "no-data": "No Data Available",
+            "empty": "You currently have no tasks",
+            "select-disabled": "Task {{id}} cannot be selected for deletion",
+            "check-details": "Check Details",
+            "creation-failed": "Creation Failed"
+        }
     }
-  }
 }
