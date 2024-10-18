@@ -110,7 +110,6 @@ public class HStoreSerializer extends AbstractGraphElementSerializer {
                 return resMap;
             } catch (Exception e) {
                 log.error("Failed to get graphId", e);
-                break;
             } finally {
                 if (client != null) {
                     try {
