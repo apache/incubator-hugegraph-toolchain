@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+export LANG=zh_CN.UTF-8
 set -ev
 
 TRAVIS_DIR="hubble-dist/assembly/travis"

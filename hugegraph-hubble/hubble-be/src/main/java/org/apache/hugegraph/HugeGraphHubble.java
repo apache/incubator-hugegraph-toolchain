@@ -27,6 +27,9 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
 @SpringBootApplication
 @EnableScheduling
 @MapperScan("org.apache.hugegraph.mapper")
@@ -38,6 +41,8 @@ public class HugeGraphHubble extends SpringBootServletInitializer {
     }
 
     public static void initEnv() {
+        Ex.check(Charset.defaultCharset().equals(StandardCharsets.UTF_8),
+                "Charset must be UTF-8, current:" + Charset.defaultCharset());
         String hubbleHomePath = System.getProperty("hubble.home.path");
         Ex.check(StringUtils.isNotEmpty(hubbleHomePath),
                  "The system property 'hubble.home.path' must be set");

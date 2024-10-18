@@ -80,7 +80,7 @@ args=${CONF_PATH}/hugegraph-hubble.properties
 log=${LOG_PATH}/hugegraph-hubble.log
 
 echo -n "starting HugeGraphHubble "
-nohup nice -n 0 java -server "${java_opts}" "${agent_opts}" -Dhubble.home.path="${HOME_PATH}" -cp "${class_path}" ${main_class} "${args}" > "${log}" 2>&1 < /dev/null &
+nohup nice -n 0 java -server -Dfile.encoding=UTF-8 "${java_opts}" "${agent_opts}" -Dhubble.home.path="${HOME_PATH}" -cp "${class_path}" ${main_class} "${args}" > "${log}" 2>&1 < /dev/null &
 pid=$!
 echo ${pid} > "${PID_FILE}"
 
