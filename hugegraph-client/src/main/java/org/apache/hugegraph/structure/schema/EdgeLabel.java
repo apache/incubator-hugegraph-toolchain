@@ -60,6 +60,8 @@ public class EdgeLabel extends SchemaLabel {
     public EdgeLabel(@JsonProperty("name") String name) {
         super(name);
         this.frequency = Frequency.DEFAULT;
+        sourceLabel = null;
+        targetLabel = null;
         this.links = new HashSet<>();
         this.sortKeys = new CopyOnWriteArrayList<>();
         this.ttl = 0L;
@@ -200,13 +202,9 @@ public class EdgeLabel extends SchemaLabel {
 
         private final EdgeLabel edgeLabel;
         private final SchemaManager manager;
-        private String sourceLabel;
-        private String targetLabel;
 
         public BuilderImpl(String name, SchemaManager manager) {
             this.edgeLabel = new EdgeLabel(name);
-            this.sourceLabel = null;
-            this.targetLabel = null;
             this.manager = manager;
         }
 
@@ -264,8 +262,6 @@ public class EdgeLabel extends SchemaLabel {
             HashMap<String, String> map = new HashMap<>();
             map.put(sourceLabel, targetLabel);
             this.edgeLabel.links.add(map);
-            this.sourceLabel = null;
-            this.targetLabel = null;
             return this;
         }
 
@@ -290,11 +286,11 @@ public class EdgeLabel extends SchemaLabel {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
                             "Not allowed add source label to an edge label which " +
                             "already has links");
-            if (this.targetLabel != null) {
-                link(label, this.targetLabel);
-                this.targetLabel = null;
+            if (this.edgeLabel.targetLabel != null) {
+                link(label, this.edgeLabel.targetLabel);
+                this.edgeLabel.targetLabel = null;
             } else {
-                this.sourceLabel = label;
+                this.edgeLabel.sourceLabel = label;
             }
             return this;
         }
@@ -307,11 +303,11 @@ public class EdgeLabel extends SchemaLabel {
             E.checkArgument(this.edgeLabel.links.isEmpty(),
                             "Not allowed add source label to an edge label " +
                             "which already has links");
-            if (this.sourceLabel != null) {
-                link(this.sourceLabel, label);
-                this.sourceLabel = null;
+            if (this.edgeLabel.sourceLabel != null) {
+                link(this.edgeLabel.sourceLabel, label);
+                this.edgeLabel.sourceLabel = null;
             } else {
-                this.targetLabel = label;
+                this.edgeLabel.targetLabel = label;
             }
             return this;
         }
