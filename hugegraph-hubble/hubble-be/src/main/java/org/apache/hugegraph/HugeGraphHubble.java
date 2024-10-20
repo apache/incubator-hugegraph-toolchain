@@ -27,20 +27,25 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.time.ZoneOffset;
+import java.util.TimeZone;
+
 @SpringBootApplication
 @EnableScheduling
 @MapperScan("org.apache.hugegraph.mapper")
 public class HugeGraphHubble extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
+        System.out.println("user.dir ==> " + System.getProperty("user.dir"));
         initEnv();
+        TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.of("+8")));
         SpringApplication.run(HugeGraphHubble.class, args);
     }
 
     public static void initEnv() {
         String hubbleHomePath = System.getProperty("hubble.home.path");
         Ex.check(StringUtils.isNotEmpty(hubbleHomePath),
-                 "The system property 'hubble.home.path' must be set");
+                "The system property 'hubble.home.path' must be set");
         String loaderHomePath = System.getProperty("loader.home.path");
         if (StringUtils.isEmpty(loaderHomePath)) {
             System.setProperty("loader.home.path", hubbleHomePath);
@@ -48,7 +53,8 @@ public class HugeGraphHubble extends SpringBootServletInitializer {
     }
 
     @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+    protected SpringApplicationBuilder configure(
+            SpringApplicationBuilder builder) {
         return builder.sources(this.getClass());
     }
 }

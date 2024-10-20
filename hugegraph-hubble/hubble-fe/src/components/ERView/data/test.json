@@ -1,0 +1,295 @@
+[
+    {
+      "id": "1",
+      "shape": "er-rect",
+      "label": "男人",
+      "width": 150,
+      "height": 24,
+      "position": {
+        "x": 24,
+        "y": 150
+      },
+      "ports": [
+        {
+            "id": "1",
+            "group": "list",
+            "attrs": {
+              "portNameLabel": {
+                "text": "ID"
+              },
+              "portTypeLabel": {
+                "text": ""
+              },
+              "rect": {
+                "fill": "#FAFAFA"
+              }
+            }
+          },
+        {
+          "id": "1-1",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "ID"
+            },
+            "portTypeLabel": {
+              "text": ""
+            }
+          }
+        },
+        {
+          "id": "1-2",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Property"
+            },
+            "portTypeLabel": {
+              "text": "特点"
+            }
+          }
+        },
+        {
+          "id": "1-3",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Property"
+            },
+            "portTypeLabel": {
+              "text": "亲疏"
+            }
+          }
+        },
+        {
+          "id": "1-4",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Property"
+            },
+            "portTypeLabel": {
+              "text": "性别"
+            }
+          }
+        },
+        {
+            "id": "1-5",
+            "group": "list",
+            "attrs": {
+              "portNameLabel": {
+                "text": "Property"
+              },
+              "portTypeLabel": {
+                "text": "年龄"
+              }
+            }
+        },
+        {
+            "id": "1-6",
+            "group": "list",
+            "attrs": {
+              "portNameLabel": {
+                "text": "Value"
+              },
+              "portTypeLabel": {
+                "text": "aa->bb"
+              }
+            }
+        },
+        {
+            "id": "1-7",
+            "group": "list",
+            "attrs": {
+              "portNameLabel": {
+                "text": "Value"
+              },
+              "portTypeLabel": {
+                "text": "aa1->bb1"
+              }
+            },
+            "tools": [{
+                "name": "node-editor"
+            }]
+        },
+        {
+            "id": "1-8",
+            "group": "list",
+            "attrs": {
+              "portNameLabel": {
+                "text": "Value"
+              },
+              "portTypeLabel": {
+                "text": "aa2->bb2"
+              }
+            }
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "shape": "er-head-rect",
+      "label": "head",
+      "width": 150,
+      "height": 24,
+      "position": {
+        "x": 250,
+        "y": 210
+      },
+      "ports": [
+        {
+          "id": "2-1",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Col-1"
+            },
+            "portTypeLabel": {
+                "text": "STRING"
+            }
+          }
+        },
+        {
+          "id": "2-2",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Col-2"
+            },
+            "portTypeLabel": {
+              "text": "STRING"
+            }
+          }
+        },
+        {
+          "id": "2-3",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Col-3"
+            },
+            "portTypeLabel": {
+              "text": "STRING"
+            }
+          }
+        },
+        {
+          "id": "2-4",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Col-4"
+            },
+            "portTypeLabel": {
+              "text": "STRING"
+            }
+          }
+        },
+        {
+          "id": "2-5",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Col-5"
+            },
+            "portTypeLabel": {
+              "text": "STRING"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "shape": "er-rect",
+      "label": "父子",
+      "width": 150,
+      "height": 24,
+      "position": {
+        "x": 480,
+        "y": 350
+      },
+      "ports": [
+        {
+          "id": "3-1",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "起点ID"
+            }
+          }
+        },
+        {
+          "id": "3-2",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "终点ID"
+            }
+          }
+        },
+        {
+          "id": "3-3",
+          "group": "list",
+          "attrs": {
+            "portNameLabel": {
+              "text": "Property"
+            },
+            "portTypeLabel": {
+              "text": "年龄"
+            }
+          }
+        },
+        {
+            "id": "3-4",
+            "group": "list",
+            "attrs": {
+              "portNameLabel": {
+                "text": "Value"
+              },
+              "portTypeLabel": {
+                "text": "ede1->nn1"
+              }
+            }
+          }
+      ]
+    },
+    {
+      "id": "4",
+      "shape": "edge",
+      "source": {
+        "cell": "1",
+        "port": "1-1"
+      },
+      "target": {
+        "cell": "2",
+        "port": "2-3"
+      },
+      "attrs": {
+        "line": {
+          "stroke": "#A2B1C3",
+          "strokeWidth": 2
+        }
+      },
+      "zIndex": 0
+    },
+    {
+      "id": "5",
+      "shape": "edge",
+      "source": {
+        "cell": "3",
+        "port": "3-1"
+      },
+      "target": {
+        "cell": "2",
+        "port": "2-4"
+      },
+      "attrs": {
+        "line": {
+          "stroke": "#A2B1C3",
+          "strokeWidth": 2
+        }
+      },
+      "zIndex": 0
+    }
+]

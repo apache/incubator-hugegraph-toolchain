@@ -19,5 +19,4 @@
 package org.apache.hugegraph.common;
 
 public interface Mergeable {
-
 }

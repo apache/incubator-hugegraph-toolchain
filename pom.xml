@@ -90,7 +90,7 @@
 
     <modules>
         <module>hugegraph-client</module>
-        <module>hugegraph-loader</module>
+<!--        <module>hugegraph-loader</module>--><!-- TODO RECOVER-->
         <module>hugegraph-spark-connector</module>
         <module>hugegraph-tools</module>
         <module>hugegraph-hubble</module>

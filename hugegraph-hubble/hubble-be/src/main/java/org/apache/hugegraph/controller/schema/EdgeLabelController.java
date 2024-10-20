@@ -22,20 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.hugegraph.common.Constant;
-import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
-import org.apache.hugegraph.entity.schema.ConflictDetail;
-import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
-import org.apache.hugegraph.entity.schema.EdgeLabelStyle;
-import org.apache.hugegraph.entity.schema.EdgeLabelUpdateEntity;
-import org.apache.hugegraph.entity.schema.VertexLabelEntity;
-import org.apache.hugegraph.service.schema.EdgeLabelService;
-import org.apache.hugegraph.service.schema.PropertyIndexService;
-import org.apache.hugegraph.service.schema.PropertyKeyService;
-import org.apache.hugegraph.service.schema.VertexLabelService;
-import org.apache.hugegraph.util.CollectionUtil;
-import org.apache.hugegraph.util.Ex;
-import org.apache.hugegraph.util.HubbleUtil;
+import org.apache.hugegraph.driver.HugeClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -49,11 +36,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.apache.hugegraph.common.Constant;
+import org.apache.hugegraph.entity.schema.ConflictCheckEntity;
+import org.apache.hugegraph.entity.schema.ConflictDetail;
+import org.apache.hugegraph.entity.schema.EdgeLabelEntity;
+import org.apache.hugegraph.entity.schema.EdgeLabelStyle;
+import org.apache.hugegraph.entity.schema.EdgeLabelUpdateEntity;
+import org.apache.hugegraph.entity.schema.VertexLabelEntity;
+import org.apache.hugegraph.service.schema.EdgeLabelService;
+import org.apache.hugegraph.service.schema.PropertyIndexService;
+import org.apache.hugegraph.service.schema.PropertyKeyService;
+import org.apache.hugegraph.service.schema.VertexLabelService;
+import org.apache.hugegraph.structure.constant.EdgeLabelType;
+import org.apache.hugegraph.util.CollectionUtil;
+import org.apache.hugegraph.util.Ex;
+import org.apache.hugegraph.util.HubbleUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.google.common.collect.ImmutableList;
 
 @RestController
-@RequestMapping(Constant.API_VERSION + "graph-connections/{connId}/schema/edgelabels")
+@RequestMapping(Constant.API_VERSION + "graphspaces/{graphspace}/graphs" +
+        "/{graph}/schema/edgelabels")
 public class EdgeLabelController extends SchemaController {
 
     private static final List<String> PRESET_COLORS = ImmutableList.of(
@@ -75,12 +78,17 @@ public class EdgeLabelController extends SchemaController {
     private EdgeLabelService elService;
 
     @GetMapping("optional-colors")
-    public List<String> getOptionalColors(@PathVariable("connId") int connId) {
+    public List<String> getOptionalColors() {
         return PRESET_COLORS;
     }
 
     @GetMapping
-    public IPage<EdgeLabelEntity> list(@PathVariable("connId") int connId,
+    public IPage<EdgeLabelEntity> list(@PathVariable("graphspace")
+                                                   String graphSpace,
+                                       @PathVariable("graph") String graph,
+                                       @RequestParam(name = "edgelabel_type",
+                                                     required = false)
+                                                   String type,
                                        @RequestParam(name = "content",
                                                      required = false)
                                        String content,
@@ -95,30 +103,37 @@ public class EdgeLabelController extends SchemaController {
                                                      required = false,
                                                      defaultValue = "10")
                                        int pageSize) {
-        return this.listInPage(id -> this.elService.list(id),
-                               connId, content, nameOrder, pageNo, pageSize);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.listInPage(id -> this.elService.list(null, id, true, type),
+                               client, content, nameOrder, pageNo, pageSize);
     }
 
     @GetMapping("{name}")
-    public EdgeLabelEntity get(@PathVariable("connId") int connId,
+    public EdgeLabelEntity get(@PathVariable("graphspace") String graphSpace,
+                               @PathVariable("graph") String graph,
                                @PathVariable("name") String name) {
-        return this.elService.get(name, connId);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.elService.get(name, client);
     }
 
     @PostMapping
-    public void create(@PathVariable("connId") int connId,
+    public void create(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @RequestBody EdgeLabelEntity entity) {
-        this.checkParamsValid(entity, connId, true);
-        this.checkEntityUnique(entity, connId, true);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.checkParamsValid(entity, client, true);
+        this.checkEntityUnique(entity, client, true);
         entity.setCreateTime(HubbleUtil.nowDate());
-        this.elService.add(entity, connId);
+        this.elService.add(entity, client);
     }
 
     @PostMapping("check_conflict")
     public ConflictDetail checkConflict(
-            @PathVariable("connId") int connId,
-            @RequestParam("reused_conn_id") int reusedConnId,
-            @RequestBody ConflictCheckEntity entity) {
+                          @PathVariable("graphspace") String graphSpace,
+                          @PathVariable("graph") String graph,
+                          @RequestParam("reused_graphspace") String reusedGraphSpace,
+                          @RequestParam("reused_graph") String reusedGraph,
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getElEntities()),
                  "common.param.cannot-be-empty", "edgelabels");
         Ex.check(CollectionUtils.isEmpty(entity.getPkEntities()),
@@ -127,7 +142,8 @@ public class EdgeLabelController extends SchemaController {
                  "common.param.must-be-null", "propertyindexes");
         Ex.check(CollectionUtils.isEmpty(entity.getVlEntities()),
                  "common.param.must-be-null", "vertexlabels");
-        Ex.check(connId != reusedConnId, "schema.conn.cannot-reuse-self");
+        Ex.check(graphSpace != reusedGraphSpace && graph != reusedGraph,
+                 "schema.conn.cannot-reuse-self");
 
         Set<String> pkNames = new HashSet<>();
         Set<String> piNames = new HashSet<>();
@@ -138,59 +154,70 @@ public class EdgeLabelController extends SchemaController {
             vlNames.addAll(e.getLinkLabels());
         }
         List<VertexLabelEntity> vlEntities;
-        vlEntities = this.vlService.list(vlNames, reusedConnId, false);
+        HugeClient client = this.authClient(graphSpace, graph);
+        HugeClient reusedClient = this.authClient(reusedGraphSpace,
+                                                  reusedGraph);
+        vlEntities = this.vlService.list(vlNames, reusedClient, false);
         for (VertexLabelEntity e : vlEntities) {
             pkNames.addAll(e.getPropNames());
             piNames.addAll(e.getIndexProps());
         }
 
-        entity.setPkEntities(this.pkService.list(pkNames, reusedConnId, false));
-        entity.setPiEntities(this.piService.list(piNames, reusedConnId, false));
+        entity.setPkEntities(this.pkService.list(pkNames, reusedClient, false));
+        entity.setPiEntities(this.piService.list(piNames, reusedClient, false));
         entity.setVlEntities(vlEntities);
-        return this.elService.checkConflict(entity, connId, false);
+        return this.elService.checkConflict(entity, client, false);
     }
 
     @PostMapping("recheck_conflict")
     public ConflictDetail recheckConflict(
-            @PathVariable("connId") int connId,
-            @RequestBody ConflictCheckEntity entity) {
+                          @PathVariable("graphspace") String graphSpace,
+                          @PathVariable("graph") String graph,
+                          @RequestBody ConflictCheckEntity entity) {
         Ex.check(!CollectionUtils.isEmpty(entity.getElEntities()),
                  "common.param.cannot-be-empty", "edgelabels");
-        return this.elService.checkConflict(entity, connId, true);
+        HugeClient client = this.authClient(graphSpace, graph);
+        return this.elService.checkConflict(entity, client, true);
     }
 
     @PostMapping("reuse")
-    public void reuse(@PathVariable("connId") int connId,
+    public void reuse(@PathVariable("graphspace") String graphSpace,
+                      @PathVariable("graph") String graph,
                       @RequestBody ConflictDetail detail) {
-        this.elService.reuse(detail, connId);
+        HugeClient client = this.authClient(graphSpace, graph);
+        this.elService.reuse(detail, client);
     }
 
     @PutMapping("{name}")
-    public void update(@PathVariable("connId") int connId,
+    public void update(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @PathVariable("name") String name,
                        @RequestBody EdgeLabelUpdateEntity entity) {
         Ex.check(!StringUtils.isEmpty(name),
                  "common.param.cannot-be-null-or-empty", name);
         entity.setName(name);
+        HugeClient client = this.authClient(graphSpace, graph);
 
-        this.elService.checkExist(name, connId);
-        checkParamsValid(this.pkService, entity, connId);
-        this.elService.update(entity, connId);
+        this.elService.checkExist(name, client);
+        checkParamsValid(this.pkService, entity, client);
+        this.elService.update(entity, client);
     }
 
     /**
      * Delete edge label doesn't need check checkUsing
      */
     @DeleteMapping
-    public void delete(@PathVariable("connId") int connId,
+    public void delete(@PathVariable("graphspace") String graphSpace,
+                       @PathVariable("graph") String graph,
                        @RequestParam("names") List<String> names) {
+        HugeClient client = this.authClient(graphSpace, graph);
         for (String name : names) {
-            this.elService.checkExist(name, connId);
-            this.elService.remove(name, connId);
+            this.elService.checkExist(name, client);
+            this.elService.remove(name, client);
         }
     }
 
-    private void checkParamsValid(EdgeLabelEntity entity, int connId,
+    private void checkParamsValid(EdgeLabelEntity entity, HugeClient client,
                                   boolean checkCreateTime) {
         String name = entity.getName();
         Ex.check(name != null, "common.param.cannot-be-null", "name");
@@ -198,19 +225,25 @@ public class EdgeLabelController extends SchemaController {
                  "schema.edgelabel.unmatch-regex");
         Ex.check(checkCreateTime, () -> entity.getCreateTime() == null,
                  "common.param.must-be-null", "create_time");
+
+        EdgeLabelType type = EdgeLabelType.valueOf(entity.getEdgeLabelType());
+        // skip check for PARENT type
+        if (type.parent()) {
+            return ;
+        }
         // Check source label and target label
-        checkRelation(entity, connId);
+        checkRelation(entity, client);
         // Check properties
-        checkProperties(this.pkService, entity.getProperties(), false, connId);
+        checkProperties(this.pkService, entity.getProperties(), false, client);
         // Check sort keys
         checkSortKeys(entity);
         // Check property index
-        checkPropertyIndexes(entity, connId);
+        checkPropertyIndexes(entity, client);
         // Check display fields and join symbols
         checkDisplayFields(entity);
     }
 
-    private void checkRelation(EdgeLabelEntity entity, int connId) {
+    private void checkRelation(EdgeLabelEntity entity, HugeClient client) {
         String sourceLabel = entity.getSourceLabel();
         String targetLabel = entity.getTargetLabel();
         Ex.check(!StringUtils.isEmpty(sourceLabel),
@@ -220,8 +253,8 @@ public class EdgeLabelController extends SchemaController {
                  "common.param.cannot-be-null-or-empty",
                  "edgelabel.target_label");
 
-        this.vlService.checkExist(sourceLabel, connId);
-        this.vlService.checkExist(targetLabel, connId);
+        this.vlService.checkExist(sourceLabel, client);
+        this.vlService.checkExist(targetLabel, client);
     }
 
     private void checkSortKeys(EdgeLabelEntity entity) {
@@ -264,10 +297,10 @@ public class EdgeLabelController extends SchemaController {
         }
     }
 
-    private void checkEntityUnique(EdgeLabelEntity newEntity, int connId,
+    private void checkEntityUnique(EdgeLabelEntity newEntity, HugeClient client,
                                    boolean creating) {
         // The name must be unique
         String name = newEntity.getName();
-        this.elService.checkNotExist(name, connId);
+        this.elService.checkNotExist(name, client);
     }
 }

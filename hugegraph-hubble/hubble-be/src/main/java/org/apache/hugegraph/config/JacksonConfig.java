@@ -18,21 +18,21 @@
 
 package org.apache.hugegraph.config;
 
-import java.io.IOException;
-import java.util.Map;
-
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.hugegraph.common.Response;
+import org.apache.hugegraph.entity.graph.VertexQueryEntity;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.springframework.boot.jackson.JsonComponent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
+import java.util.Map;
 
 @JsonComponent
 public class JacksonConfig {
@@ -75,6 +75,11 @@ public class JacksonConfig {
             writeIdField("id", vertex.id(), generator);
             generator.writeStringField("label", vertex.label());
             writePropertiesField(vertex.properties(), generator, provider);
+            if (vertex instanceof VertexQueryEntity) {
+                writeStatisticsField(
+                        ((VertexQueryEntity) vertex).getStatistics(),
+                        generator, provider);
+            }
             generator.writeEndObject();
         }
     }
@@ -98,7 +103,7 @@ public class JacksonConfig {
 
     private static void writeIdField(String fieldName, Object id,
                                      JsonGenerator generator)
-            throws IOException {
+                                     throws IOException {
         // Serialize id to string
         generator.writeStringField(fieldName, id.toString());
     }
@@ -106,7 +111,7 @@ public class JacksonConfig {
     private static void writePropertiesField(Map<String, Object> properties,
                                              JsonGenerator generator,
                                              SerializerProvider provider)
-            throws IOException {
+                                             throws IOException {
         // Start write properties
         generator.writeFieldName("properties");
         generator.writeStartObject();
@@ -128,6 +133,34 @@ public class JacksonConfig {
             }
         }
         // End wirte properties
+        generator.writeEndObject();
+    }
+
+    private static void writeStatisticsField(Map<String, Object> statistics,
+                                             JsonGenerator generator,
+                                             SerializerProvider provider)
+            throws IOException {
+        // Start write statistics
+        generator.writeFieldName("statistics");
+        generator.writeStartObject();
+        for (Map.Entry<String, Object> entry : statistics.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            generator.writeFieldName(key);
+            if (value != null) {
+                if (value instanceof Long) {
+                    // To avoid javascript loss of long precision
+                    generator.writeString(String.valueOf(value));
+                } else {
+                    JsonSerializer<Object> serializer;
+                    serializer = provider.findValueSerializer(value.getClass());
+                    serializer.serialize(value, generator, provider);
+                }
+            } else {
+                generator.writeNull();
+            }
+        }
+        // End wirte statistics
         generator.writeEndObject();
     }
 }

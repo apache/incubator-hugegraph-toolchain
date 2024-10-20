@@ -18,10 +18,10 @@
 
 package org.apache.hugegraph.util;
 
-import java.util.concurrent.Callable;
-
 import org.apache.hugegraph.exception.ExternalException;
 import org.apache.hugegraph.exception.InternalException;
+
+import java.util.concurrent.Callable;
 
 public final class Ex {
 

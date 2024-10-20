@@ -18,11 +18,14 @@
 
 package org.apache.hugegraph.config;
 
-import org.apache.hugegraph.handler.CustomInterceptor;
+import org.apache.hugegraph.handler.LoginInterceptor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import org.apache.hugegraph.handler.CustomInterceptor;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -39,9 +42,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(this.customInterceptor())
                 .addPathPatterns("/**");
+        registry.addInterceptor(this.loginInterceptor())
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/**/auth/login")
+                .excludePathPatterns("/logout")
+                .excludePathPatterns("/api/**/auth/logout");
     }
 
+    @Bean
     public CustomInterceptor customInterceptor() {
         return new CustomInterceptor();
+    }
+
+    @Bean
+    public LoginInterceptor loginInterceptor() {
+        return new LoginInterceptor();
     }
 }
