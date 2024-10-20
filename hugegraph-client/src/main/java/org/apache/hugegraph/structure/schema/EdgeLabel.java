@@ -145,7 +145,6 @@ public class EdgeLabel extends SchemaLabel {
         return String.format("{name=%s, sourceLabel=%s, targetLabel=%s, " + "edgeLabel_type=%s, " +
                              "parent_label=%s, links=%s, sortKeys=%s, indexLabels=%s, " +
                              "nullableKeys=%s, properties=%s, ttl=%s, ttlStartTime=%s, status=%s}",
-                             // TODO(@Thespica): call field or call method?
                              this.name, this.sourceLabel(), this.targetLabel(),
                              this.edgeLabelType, this.parentLabel,
                              this.links, this.sortKeys, this.indexLabels,
