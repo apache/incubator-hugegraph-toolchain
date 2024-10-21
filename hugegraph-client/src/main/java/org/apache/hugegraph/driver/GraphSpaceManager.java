@@ -1,14 +1,14 @@
 package org.apache.hugegraph.driver;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.client.api.space.GraphSpaceAPI;
-import org.apache.hugegraph.structure.space.GraphSpace;
-
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hugegraph.api.space.GraphSpaceAPI;
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.space.GraphSpace;
 
 public class GraphSpaceManager {
+
     private final GraphSpaceAPI graphSpaceAPI;
 
     public GraphSpaceManager(RestClient client) {

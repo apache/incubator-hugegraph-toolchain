@@ -42,7 +42,9 @@ public class HugeClient implements Closeable {
 
     private final RestClient client;
     private final boolean borrowedClient;
-
+    protected String graphSpaceName;
+    protected String graphName;
+    protected GraphSpaceManager graphSpace;
     private VersionManager version;
     private GraphsManager graphs;
     private SchemaManager schema;
@@ -53,8 +55,15 @@ public class HugeClient implements Closeable {
     private VariablesManager variable;
     private JobManager job;
     private TaskManager task;
+    //protected ComputerManager computer;
     private AuthManager auth;
     private MetricsManager metrics;
+    //protected ServiceManager serviceManager;
+    //protected SchemaTemplateManager schemaTemplageManager;
+    //protected PDManager pdManager;
+    //protected HStoreManager hStoreManager;
+    //protected WhiteIpListManager whiteIpListManager;
+    //protected VermeerManager vermeerManager;
 
     /**
      * Constructs a new HugeClient using the provided builder.
@@ -63,9 +72,12 @@ public class HugeClient implements Closeable {
      */
     public HugeClient(HugeClientBuilder builder) {
         this.borrowedClient = false;
+        this.graphSpaceName = builder.graphSpace();
+        this.graphName = builder.graph();
         RestClientConfig config;
         try {
             config = RestClientConfig.builder()
+                                     //.token(builder.token())
                                      .user(builder.username())
                                      .password(builder.password())
                                      .timeout(builder.timeout())
@@ -84,7 +96,7 @@ public class HugeClient implements Closeable {
         }
 
         try {
-            this.initManagers(this.client, builder.graph());
+            this.initManagers(this.client, builder.graphSpace(), builder.graph());
         } catch (Throwable e) {
             // TODO: catch some exception(like IO/Network related) rather than throw Throwable
             this.client.close();
@@ -92,14 +104,22 @@ public class HugeClient implements Closeable {
         }
     }
 
-    public HugeClient(HugeClient client, String graph) {
+    // QUESTION: add gs to method param?
+    public HugeClient(HugeClient client, String graphSpace, String graph) {
         this.borrowedClient = true;
         this.client = client.client;
-        this.initManagers(this.client, graph);
+        this.initManagers(this.client, graphSpace, graph);
     }
 
-    public static HugeClientBuilder builder(String url, String graph) {
-        return new HugeClientBuilder(url, graph);
+    public static HugeClientBuilder builder(String url, String graphSpace, String graph) {
+        return new HugeClientBuilder(url, graphSpace, graph);
+    }
+
+    public HugeClient assignGraph(String graphSpace, String graph) {
+        this.graphSpaceName = graphSpace;
+        this.graphName = graph;
+        this.initManagers(this.client, this.graphSpaceName, this.graphName);
+        return this;
     }
 
     @Override
@@ -109,7 +129,8 @@ public class HugeClient implements Closeable {
         }
     }
 
-    private void initManagers(RestClient client, String graph) {
+    public void initManagers(RestClient client, String graphSpace,
+                             String graph) {
         assert client != null;
         // Check hugegraph-server api version
         this.version = new VersionManager(client);
@@ -126,6 +147,13 @@ public class HugeClient implements Closeable {
         this.task = new TaskManager(client, graph);
         this.auth = new AuthManager(client, graph);
         this.metrics = new MetricsManager(client);
+        this.graphSpace = new GraphSpaceManager(client);
+        //this.schemaTemplageManager = new SchemaTemplateManager(client, graphSpace);
+        //this.serviceManager = new ServiceManager(client, graphSpace);
+        //this.pdManager = new PDManager(client);
+        //this.hStoreManager = new HStoreManager(client);
+        //this.whiteIpListManager = new WhiteIpListManager(client);
+        //this.vermeerManager = new VermeerManager(client);
     }
 
     private void checkServerApiVersion() {
@@ -134,6 +162,14 @@ public class HugeClient implements Closeable {
         //       0.81 equals to the {latest_api_version} +10
         VersionUtil.check(apiVersion, "0.38", "0.81", "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
+    }
+
+    public String getGraphSpaceName() {
+        return graphSpaceName;
+    }
+
+    public String getGraphName() {
+        return graphName;
     }
 
     public GraphsManager graphs() {
@@ -168,6 +204,10 @@ public class HugeClient implements Closeable {
         return this.job;
     }
 
+    //public ComputerManager computer() {
+    //    return this.computer;
+    //}
+
     public TaskManager task() {
         return this.task;
     }
@@ -180,12 +220,44 @@ public class HugeClient implements Closeable {
         return this.metrics;
     }
 
-    public void setAuthContext(String auth) {
-        this.client.setAuthContext(auth);
+    public GraphSpaceManager graphSpace() {
+        return this.graphSpace;
+    }
+
+    //public WhiteIpListManager whiteIpListManager(){
+    //    return this.whiteIpListManager;
+    //}
+    //
+    //public VermeerManager vermeer(){
+    //    return this.vermeerManager;
+    //}
+    //
+    //public SchemaTemplateManager schemaTemplateManager() {
+    //    return this.schemaTemplageManager;
+    //}
+    //
+    //public ServiceManager serviceManager() {
+    //    return this.serviceManager;
+    //}
+    //
+    //public PDManager pdManager() {
+    //    return pdManager;
+    //}
+    //
+    //public HStoreManager hStoreManager() {
+    //    return hStoreManager;
+    //}
+
+    public VersionManager versionManager() {
+        return version;
     }
 
     public String getAuthContext() {
         return this.client.getAuthContext();
+    }
+
+    public void setAuthContext(String auth) {
+        this.client.setAuthContext(auth);
     }
 
     public void resetAuthContext() {
