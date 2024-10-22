@@ -60,8 +60,8 @@ public class EdgeLabel extends SchemaLabel {
     public EdgeLabel(@JsonProperty("name") String name) {
         super(name);
         this.frequency = Frequency.DEFAULT;
-        sourceLabel = null;
-        targetLabel = null;
+        this.sourceLabel = null;
+        this.targetLabel = null;
         this.links = new HashSet<>();
         this.sortKeys = new CopyOnWriteArrayList<>();
         this.ttl = 0L;
