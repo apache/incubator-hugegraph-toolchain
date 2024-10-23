@@ -28,11 +28,11 @@ import org.apache.hugegraph.structure.SchemaElement;
 
 public class SchemaAPI extends API {
 
-    private static final String PATH = "graphs/%s/%s";
+    private static final String PATH = "graphspaces/%s/graphs/%s/%s";
 
-    public SchemaAPI(RestClient client, String graph) {
+    public SchemaAPI(RestClient client, String graphSpace, String graph) {
         super(client);
-        this.path(PATH, graph, this.type());
+        this.path(PATH, graphSpace, graph, this.type());
     }
 
     @SuppressWarnings("unchecked")
