@@ -72,7 +72,7 @@ public class HugeClient implements Closeable {
         RestClientConfig config;
         try {
             config = RestClientConfig.builder()
-                                     //.token(builder.token())
+                                     .token(builder.token())
                                      .user(builder.username())
                                      .password(builder.password())
                                      .timeout(builder.timeout())
