@@ -1,6 +1,24 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.hugegraph.api.space;
 
 import com.google.common.collect.ImmutableMap;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
@@ -14,7 +32,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 
 public class GraphSpaceAPI extends API {
 
@@ -102,7 +119,7 @@ public class GraphSpaceAPI extends API {
         }
         RestResult result = this.client.get(path, params);
         return (boolean) result.readObject(Map.class).getOrDefault("check",
-                false);
+                                                                   false);
     }
 
     public Map<String, String> deleteDefaultRole(String name, String user,
@@ -120,16 +137,16 @@ public class GraphSpaceAPI extends API {
 
     public void delete(String name) {
         this.client.delete(joinPath(this.path(), name),
-                ImmutableMap.of());
+                           ImmutableMap.of());
     }
 
     public GraphSpace update(GraphSpace graphSpace) {
         Object obj = graphSpace.convertReq();
         RestResult result = this.client.put(this.path(),
-                graphSpace.getName(),
-                ImmutableMap.of("action", "update",
-                        "update",
-                        obj));
+                                            graphSpace.getName(),
+                                            ImmutableMap.of("action", "update",
+                                                            "update",
+                                                            obj));
 
         return result.readObject(GraphSpace.class);
     }

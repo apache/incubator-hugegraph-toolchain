@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -24,6 +22,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class HStoreNodeInfo {
+
+    // partitions
+    @JsonProperty("partitions")
+    List<HStorePartitionInfo> hStorePartitionInfoList;
     // Node id
     @JsonProperty("id")
     private String id;
@@ -33,49 +35,12 @@ public class HStoreNodeInfo {
     // 已使用空间
     @JsonProperty("used")
     private long used;
-
     // 节点状态
     @JsonProperty("state")
     private String state;
-
     // grpc ip:port
     @JsonProperty("address")
     private String address;
-
-    // partitions
-    @JsonProperty("partitions")
-    List<HStorePartitionInfo> hStorePartitionInfoList;
-
-    public static class HStorePartitionInfo {
-        @JsonProperty("id")
-        private int id;
-        @JsonProperty("graph_name")
-        private String graphName;
-
-        public HStorePartitionInfo() {
-        }
-
-        public HStorePartitionInfo(int id, String graphName) {
-            this.id = id;
-            this.graphName = graphName;
-        }
-
-        public int id() {
-            return id;
-        }
-
-        public void id(int id) {
-            this.id = id;
-        }
-
-        public String graphName() {
-            return graphName;
-        }
-
-        public void graphName(String graphName) {
-            this.graphName = graphName;
-        }
-    }
 
     public String id() {
         return id;
@@ -116,5 +81,37 @@ public class HStoreNodeInfo {
     public void hStorePartitionInfoList(
             List<HStorePartitionInfo> hStorePartitionInfoList) {
         this.hStorePartitionInfoList = hStorePartitionInfoList;
+    }
+
+    public static class HStorePartitionInfo {
+
+        @JsonProperty("id")
+        private int id;
+        @JsonProperty("graph_name")
+        private String graphName;
+
+        public HStorePartitionInfo() {
+        }
+
+        public HStorePartitionInfo(int id, String graphName) {
+            this.id = id;
+            this.graphName = graphName;
+        }
+
+        public int id() {
+            return id;
+        }
+
+        public void id(int id) {
+            this.id = id;
+        }
+
+        public String graphName() {
+            return graphName;
+        }
+
+        public void graphName(String graphName) {
+            this.graphName = graphName;
+        }
     }
 }

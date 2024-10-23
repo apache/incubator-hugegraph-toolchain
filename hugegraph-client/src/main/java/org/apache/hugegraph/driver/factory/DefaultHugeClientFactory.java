@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -55,10 +53,10 @@ public class DefaultHugeClientFactory {
         String url = this.urls[r];
 
         HugeClient client = HugeClient.builder(url, graphSpace, graph)
-                .configToken(token)
-                .configUser(username, password)
-                .configTimeout(timeout)
-                .build();
+                                      .configToken(token)
+                                      .configUser(username, password)
+                                      .configTimeout(timeout)
+                                      .build();
 
         return client;
     }

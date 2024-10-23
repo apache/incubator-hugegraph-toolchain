@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -29,6 +27,7 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OLTPService {
+
     @JsonProperty("name")
     private String name;
     @JsonProperty("description")
@@ -70,18 +69,6 @@ public class OLTPService {
 
     @JsonProperty
     private ServiceStatus status = ServiceStatus.UNKNOWN;
-
-    public enum DepleymentType {
-        K8S,
-        MANUAL;
-    }
-
-    public enum ServiceStatus {
-        UNKNOWN,  // 未知
-        STARTING, // 启动中
-        RUNNING,  // 运行中
-        STOPPED   // 停止
-    }
 
     public String getName() {
         return name;
@@ -217,9 +204,22 @@ public class OLTPService {
         return DepleymentType.K8S.equals(this.depleymentType);
     }
 
-    @JsonIgnoreProperties(value={"configs", "create_time", "update_time",
-            "running", "status"}, ignoreUnknown = true)
+    public enum DepleymentType {
+        K8S,
+        MANUAL;
+    }
+
+    public enum ServiceStatus {
+        UNKNOWN,  // 未知
+        STARTING, // 启动中
+        RUNNING,  // 运行中
+        STOPPED   // 停止
+    }
+
+    @JsonIgnoreProperties(value = {"configs", "create_time", "update_time",
+                                   "running", "status"}, ignoreUnknown = true)
     public static class OLTPServiceReq extends OLTPService {
+
         public static OLTPServiceReq fromBase(OLTPService service) {
             OLTPServiceReq req = new OLTPServiceReq();
 

@@ -1,6 +1,4 @@
 /*
- * Copyright 2017 HugeGraph Authors
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -337,9 +335,10 @@ public class GraphSpace {
     }
 
     @JsonIgnoreProperties({"cpu_used", "memory_used", "storage_used",
-            "storage_percent", "graph_number_used", "role_number_used",
-            "create_time", "update_time"})
+                           "storage_percent", "graph_number_used", "role_number_used",
+                           "create_time", "update_time"})
     public static class GraphSpaceReq extends GraphSpace {
+
         public GraphSpaceReq(GraphSpace graphSpace) {
             this.setName(graphSpace.getName());
             this.setNickname(graphSpace.getNickname());
