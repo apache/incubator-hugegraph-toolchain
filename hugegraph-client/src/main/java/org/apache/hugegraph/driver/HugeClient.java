@@ -27,6 +27,8 @@ import org.apache.hugegraph.version.ClientVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
+
 /**
  * The HugeClient class is the main entry point for interacting with a HugeGraph server.
  * It provides methods for managing graphs, schemas, jobs, tasks, and other resources.
@@ -55,15 +57,8 @@ public class HugeClient implements Closeable {
     private VariablesManager variable;
     private JobManager job;
     private TaskManager task;
-    //protected ComputerManager computer;
     private AuthManager auth;
     private MetricsManager metrics;
-    //protected ServiceManager serviceManager;
-    //protected SchemaTemplateManager schemaTemplageManager;
-    //protected PDManager pdManager;
-    //protected HStoreManager hStoreManager;
-    //protected WhiteIpListManager whiteIpListManager;
-    //protected VermeerManager vermeerManager;
 
     /**
      * Constructs a new HugeClient using the provided builder.
@@ -136,24 +131,22 @@ public class HugeClient implements Closeable {
         this.version = new VersionManager(client);
         this.checkServerApiVersion();
 
-        this.graphs = new GraphsManager(client);
-        this.schema = new SchemaManager(client, graph);
-        this.graph = new GraphManager(client, graph);
-        this.gremlin = new GremlinManager(client, graph, this.graph);
-        this.cypher = new CypherManager(client, graph, this.graph);
-        this.traverser = new TraverserManager(client, this.graph);
-        this.variable = new VariablesManager(client, graph);
-        this.job = new JobManager(client, graph);
-        this.task = new TaskManager(client, graph);
+        this.graphs = new GraphsManager(client, graphSpace);
         this.auth = new AuthManager(client, graph);
         this.metrics = new MetricsManager(client);
         this.graphSpace = new GraphSpaceManager(client);
-        //this.schemaTemplageManager = new SchemaTemplateManager(client, graphSpace);
-        //this.serviceManager = new ServiceManager(client, graphSpace);
-        //this.pdManager = new PDManager(client);
-        //this.hStoreManager = new HStoreManager(client);
-        //this.whiteIpListManager = new WhiteIpListManager(client);
-        //this.vermeerManager = new VermeerManager(client);
+        if (!Strings.isNullOrEmpty(graph)) {
+            this.schema = new SchemaManager(client, graphSpace, graph);
+            this.graph = new GraphManager(client, graphSpace, graph);
+            this.gremlin = new GremlinManager(client, graphSpace,
+                                              graph, this.graph);
+            this.cypher = new CypherManager(client, graphSpace,
+                                            graph, this.graph);
+            this.traverser = new TraverserManager(client, this.graph);
+            this.variable = new VariablesManager(client, graphSpace, graph);
+            this.job = new JobManager(client, graphSpace, graph);
+            this.task = new TaskManager(client, graphSpace, graph);
+        }
     }
 
     private void checkServerApiVersion() {
@@ -204,10 +197,6 @@ public class HugeClient implements Closeable {
         return this.job;
     }
 
-    //public ComputerManager computer() {
-    //    return this.computer;
-    //}
-
     public TaskManager task() {
         return this.task;
     }
@@ -223,30 +212,6 @@ public class HugeClient implements Closeable {
     public GraphSpaceManager graphSpace() {
         return this.graphSpace;
     }
-
-    //public WhiteIpListManager whiteIpListManager(){
-    //    return this.whiteIpListManager;
-    //}
-    //
-    //public VermeerManager vermeer(){
-    //    return this.vermeerManager;
-    //}
-    //
-    //public SchemaTemplateManager schemaTemplateManager() {
-    //    return this.schemaTemplageManager;
-    //}
-    //
-    //public ServiceManager serviceManager() {
-    //    return this.serviceManager;
-    //}
-    //
-    //public PDManager pdManager() {
-    //    return pdManager;
-    //}
-    //
-    //public HStoreManager hStoreManager() {
-    //    return hStoreManager;
-    //}
 
     public VersionManager versionManager() {
         return version;

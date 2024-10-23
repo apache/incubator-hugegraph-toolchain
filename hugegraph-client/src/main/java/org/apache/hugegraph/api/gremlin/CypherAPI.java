@@ -20,24 +20,23 @@ package org.apache.hugegraph.api.gremlin;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.structure.gremlin.Response;
 
 public class CypherAPI extends API {
 
-    private static final String PATH = "graphs/%s/cypher";
+    private static final String PATH = "graphspaces/%s/graphs/%s/cypher";
 
-    public CypherAPI(RestClient client, String graph) {
+    public CypherAPI(RestClient client) {
         super(client);
-        this.path(PATH, graph);
     }
 
     @Override
     protected String type() {
-        return HugeType.CYPHER.string();
+        return PATH;
     }
 
-    public Response post(String cypher) {
+    public Response post(String graphSpace, String graph, String cypher) {
+        this.path(type(), graphSpace, graph);
         RestResult result = this.client.post(this.path(), cypher);
         return result.readObject(Response.class);
     }

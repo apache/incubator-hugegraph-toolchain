@@ -19,11 +19,11 @@
 
 package org.apache.hugegraph.api.job;
 
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.client.api.task.TaskAPI;
-import org.apache.hugegraph.rest.RestResult;
-
 import java.util.Map;
+
+import org.apache.hugegraph.api.task.TaskAPI;
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.rest.RestResult;
 
 public class CypherJobAPI extends JobAPI {
 

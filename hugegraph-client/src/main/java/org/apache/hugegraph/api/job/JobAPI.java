@@ -24,11 +24,11 @@ import org.apache.hugegraph.structure.constant.HugeType;
 public abstract class JobAPI extends API {
 
     // For example: graphs/hugegraph/jobs/gremlin
-    private static final String PATH = "graphs/%s/%s/%s";
+    private static final String PATH = "graphspaces/%s/graphs/%s/%s/%s";
 
-    public JobAPI(RestClient client, String graph) {
+    public JobAPI(RestClient client, String graphSpace, String graph) {
         super(client);
-        this.path(String.format(PATH, graph, this.type(), this.jobType()));
+        this.path(String.format(PATH, graphSpace, graph, this.type(), this.jobType()));
     }
 
     @Override
