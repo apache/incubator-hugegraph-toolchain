@@ -58,6 +58,8 @@ jobs:
           # TODO(@Thespica): test both servers of supporting gs and not supporting gs
           #                  when the server supports gs
           $TRAVIS_DIR/install-hugegraph-from-source.sh $COMMIT_ID
+          hugegraph/hugegraph-server/apache-hugegraph-server-incubating-1.5.0/ \
+          conf/rest-server.properties << restserver.enable_graphspaces_filter=true
 
       - name: Install Java ${{ matrix.JAVA_VERSION }} for client
         uses: actions/setup-java@v4
