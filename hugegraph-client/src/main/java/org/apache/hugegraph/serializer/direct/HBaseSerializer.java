@@ -21,51 +21,52 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.serializer.AbstractGraphElementSerializer;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.serializer.direct.struct.HugeType;
 import org.apache.hugegraph.serializer.direct.util.BytesBuffer;
-import org.apache.hugegraph.serializer.direct.util.GraphSchema;
 import org.apache.hugegraph.serializer.direct.util.Id;
 import org.apache.hugegraph.serializer.direct.util.IdGenerator;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.schema.PropertyKey;
+import scala.Tuple2;
 
 /**
  * TODO: review later
  */
-public class HBaseSerializer {
+public class HBaseSerializer extends AbstractGraphElementSerializer {
 
     private int edgeLogicPartitions;
     private int vertexLogicPartitions;
-    private HugeClient client;
-    private GraphSchema graphSchema;
+
 
     public HBaseSerializer(HugeClient client, int vertexPartitions, int edgePartitions) {
-        this.client = client;
-        this.graphSchema = new GraphSchema(client);
+        super(client);
         this.edgeLogicPartitions = edgePartitions;
         this.vertexLogicPartitions = vertexPartitions;
     }
 
-    public byte[] getKeyBytes(GraphElement e) {
+    @Override
+    public Tuple2<byte[], Integer> getKeyBytes(GraphElement e, Directions direction) {
         byte[] array = null;
         if (e.type() == "vertex" && e.id() != null) {
             BytesBuffer buffer = BytesBuffer.allocate(2 + 1 + e.id().toString().length());
-            buffer.writeShort(getPartition(HugeType.VERTEX,  IdGenerator.of(e.id())));
+            buffer.writeShort(getPartition(HugeType.VERTEX, IdGenerator.of(e.id())));
             buffer.writeId(IdGenerator.of(e.id()));
             array = buffer.bytes();
         } else if (e.type() == "edge") {
             BytesBuffer buffer = BytesBuffer.allocate(BytesBuffer.BUF_EDGE_ID);
-            Edge edge = (Edge)e;
+            Edge edge = (Edge) e;
             buffer.writeShort(getPartition(HugeType.EDGE, IdGenerator.of(edge.sourceId())));
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_OUT.code());
-            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
+            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id()));
             buffer.writeStringWithEnding("");
             buffer.writeId(IdGenerator.of(edge.targetId()));
             array = buffer.bytes();
         }
-        return array;
+        return new Tuple2<>(array, 0);
     }
 
     public byte[] getValueBytes(GraphElement e) {

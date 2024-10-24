@@ -15,19 +15,23 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.direct.loader;
+package org.apache.hugegraph.serializer;
 
-import org.apache.hugegraph.serializer.direct.struct.Directions;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.serializer.direct.util.GraphSchema;
 
-public interface DirectLoader<T, R> {
-    JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds, Directions directions);
+public abstract class AbstractGraphElementSerializer implements GraphElementSerializer {
+    protected HugeClient client;
+    protected GraphSchema graphSchema;
 
-    String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
+    public AbstractGraphElementSerializer(HugeClient client) {
+        this.client = client;
+        this.graphSchema = new GraphSchema(client);
+    }
 
-    void loadFiles(String path,Directions directions);
+    public void close() {
+        this.client.close();
+    }
 
-    void bulkload(Dataset<Row> ds);
 }
+
