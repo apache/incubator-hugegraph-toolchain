@@ -20,31 +20,33 @@ package org.apache.hugegraph.driver;
 import org.apache.hugegraph.api.gremlin.GremlinAPI;
 import org.apache.hugegraph.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.api.job.GremlinJobAPI;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.gremlin.Response;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
-import org.apache.hugegraph.client.RestClient;
 
 public class GremlinManager {
 
     private final GraphManager graphManager;
 
-    private GremlinAPI gremlinAPI;
-    private GremlinJobAPI gremlinJobAPI;
-    private String graph;
+    private final GremlinAPI gremlinAPI;
+    private final GremlinJobAPI gremlinJobAPI;
+    private final String graphSpace;
+    private final String graph;
 
-    public GremlinManager(RestClient client, String graph,
+    public GremlinManager(RestClient client, String graphSpace, String graph,
                           GraphManager graphManager) {
         this.graphManager = graphManager;
         this.gremlinAPI = new GremlinAPI(client);
-        this.gremlinJobAPI = new GremlinJobAPI(client, graph);
+        this.gremlinJobAPI = new GremlinJobAPI(client, graphSpace, graph);
+        this.graphSpace = graphSpace;
         this.graph = graph;
     }
 
     public ResultSet execute(GremlinRequest request) {
         // Bind "graph" to all graphs
-        request.aliases.put("graph", this.graph);
+        request.aliases.put("graph", this.graphSpace + "-" + this.graph);
         // Bind "g" to all graphs by custom rule which define in gremlin server.
-        request.aliases.put("g", "__g_" + this.graph);
+        request.aliases.put("g", "__g_" + this.graphSpace + "-" + this.graph);
 
         Response response = this.gremlinAPI.post(request);
         response.graphManager(this.graphManager);

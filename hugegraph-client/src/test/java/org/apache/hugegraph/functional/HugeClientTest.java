@@ -30,7 +30,7 @@ public class HugeClientTest {
 
     @Test
     public void testContext() {
-        HugeClient client = HugeClient.builder(BASE_URL, GRAPH)
+        HugeClient client = HugeClient.builder(BASE_URL, "DEFAULT", GRAPH)
                                       .configUser(USERNAME, PASSWORD)
                                       .configHttpBuilder(builder -> builder.followRedirects(false))
                                       .build();

@@ -15,29 +15,34 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.gremlin;
+package org.apache.hugegraph.structure.space;
 
-import org.apache.hugegraph.api.API;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.gremlin.Response;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CypherAPI extends API {
+import java.util.HashMap;
+import java.util.Map;
 
-    private static final String PATH = "graphspaces/%s/graphs/%s/cypher";
+public class OLTPServiceConfig {
 
-    public CypherAPI(RestClient client) {
-        super(client);
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("configs")
+    private Map<String, Object> configs = new HashMap();
+
+    public String getName() {
+        return name;
     }
 
-    @Override
-    protected String type() {
-        return PATH;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public Response post(String graphSpace, String graph, String cypher) {
-        this.path(type(), graphSpace, graph);
-        RestResult result = this.client.post(this.path(), cypher);
-        return result.readObject(Response.class);
+    public Map<String, Object> getConfigs() {
+        return configs;
+    }
+
+    public void setConfigs(Map<String, Object> configs) {
+        this.configs = configs;
     }
 }

@@ -34,8 +34,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class PropertyKeyAPI extends SchemaElementAPI {
 
-    public PropertyKeyAPI(RestClient client, String graph) {
-        super(client, graph);
+    public PropertyKeyAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

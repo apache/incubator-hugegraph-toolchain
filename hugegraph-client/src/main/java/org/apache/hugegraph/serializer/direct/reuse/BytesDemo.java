@@ -50,7 +50,7 @@ public class BytesDemo {
         int edgeLogicPartitions = 16;
         int vertexLogicPartitions = 8;
         // If connect failed will throw an exception.
-        client = HugeClient.builder("http://localhost:8081", "hugegraph").build();
+        client = HugeClient.builder("http://localhost:8081", "DEFAULT", "hugegraph").build();
 
         SchemaManager schema = client.schema();
 

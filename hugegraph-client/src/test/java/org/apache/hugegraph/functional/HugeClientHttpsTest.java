@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 
-public class HugeClientHttpsTest {
+public class HugeClientHttpsTest extends BaseFuncTest {
 
     private static final String BASE_URL = "https://127.0.0.1:8443";
     private static final String GRAPH = "hugegraph";
@@ -48,7 +48,7 @@ public class HugeClientHttpsTest {
     private static HugeClient client;
 
     @Before
-    public void init() {
+    public void initBaseFuncTest() {
         CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "hugegraph.truststore", TRUST_STORE_PATH);
     }
 
@@ -60,7 +60,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientBuilderWithConnection() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
                            .build();
@@ -70,7 +70,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientWithConnectionPoolNoUserParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                            .configConnectTimeout(3)
                            .configReadTimeout(10)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
@@ -82,7 +82,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientWithConnectionPoolNoTimeOutParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
@@ -93,7 +93,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientNewBuilderWithConnectionNoPoolParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configSSL(TRUST_STORE_PATH, TRUST_STORE_PASSWORD)
@@ -104,7 +104,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientNewBuilderWithConnectionPool() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
@@ -117,7 +117,7 @@ public class HugeClientHttpsTest {
 
     @Test
     public void testHttpsClientNewBuilderZeroPoolParam() {
-        client = HugeClient.builder(BASE_URL, GRAPH)
+        client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                            .configUser(USERNAME, PASSWORD)
                            .configTimeout(TIMEOUT)
                            .configPool(0, 0)
@@ -130,7 +130,7 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientBuilderWithConnectionPoolNoParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            HugeClient.builder(BASE_URL, GRAPH)
+            HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                       .configUrl(null)
                       .configGraph(null)
                       .configSSL("", "")
@@ -144,7 +144,7 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientBuilderWithConnectionPoolNoGraphParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            HugeClient.builder(BASE_URL, GRAPH)
+            HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                       .configGraph(null)
                       .configSSL("", "")
                       .build();
@@ -157,7 +157,7 @@ public class HugeClientHttpsTest {
     @Test
     public void testHttpsClientBuilderWithConnectionPoolZeroIdleTimeParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            HugeClient.builder(BASE_URL, GRAPH)
+            HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE, GRAPH)
                       .configIdleTime(0)
                       .build();
         }, e -> {
