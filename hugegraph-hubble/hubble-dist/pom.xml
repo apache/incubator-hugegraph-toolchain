@@ -90,7 +90,9 @@
                             <yarnVersion>${build.yarn.version}</yarnVersion>
                             <nodeDownloadRoot>https://mirrors.aliyun.com/nodejs-release/</nodeDownloadRoot>
                             <yarnDownloadRoot>https://repo.huaweicloud.com/yarn/</yarnDownloadRoot>
-                            <npmRegistryURL>https://registry.npmmirror.com</npmRegistryURL>
+                            <!--WARNING: CHANGED TO USE NPM SOURCE FROM HUAWEI-->
+                            <npmRegistryURL>https://mirrors.huaweicloud.com/repository/npm/</npmRegistryURL>
+<!--                            <npmRegistryURL>https://registry.npmmirror.com</npmRegistryURL>-->
                         </configuration>
                     </execution>
 
@@ -100,7 +102,7 @@
                             <goal>yarn</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --network-timeout 600000</arguments>
+                            <arguments>install --network-timeout 600000 --verbose</arguments>
                         </configuration>
                     </execution>
 
