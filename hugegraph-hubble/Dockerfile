@@ -17,6 +17,7 @@
 
 FROM maven:3.9.0-eclipse-temurin-11 AS build
 
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
 
 ARG MAVEN_ARGS
 
