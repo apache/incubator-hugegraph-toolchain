@@ -17,6 +17,7 @@ it includes 5+ main modules.
 - [hugegraph-tools](./hugegraph-tools): Command line tool for deploying, managing and backing-up/restoring graphs from HugeGraph.
 - [hugegraph-client](./hugegraph-client): A Java-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc.
 - [hugegraph-client-go](./hugegraph-client-go): A Go-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc. (WIP)
+- [hugegraph-spark-connector](./hugegraph-spark-connector): A Spark connector for reading & writing HugeGraph data in Spark standard format.
 
 ## Usage
 
