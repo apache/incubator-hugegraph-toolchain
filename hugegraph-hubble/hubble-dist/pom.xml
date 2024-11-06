@@ -100,7 +100,7 @@
                             <goal>yarn</goal>
                         </goals>
                         <configuration>
-                            <arguments>install --network-timeout 600000 --verbose --network-concurrency 1</arguments>
+                            <arguments>install --network-timeout 600000</arguments>
                         </configuration>
                     </execution>
 
