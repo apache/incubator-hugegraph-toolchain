@@ -15,19 +15,15 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.direct.loader;
+package org.apache.hugegraph.serializer;
 
 import org.apache.hugegraph.serializer.direct.struct.Directions;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
+import org.apache.hugegraph.structure.GraphElement;
+import scala.Tuple2;
 
-public interface DirectLoader<T, R> {
-    JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds, Directions directions);
+public interface GraphElementSerializer {
 
-    String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
+    Tuple2<byte[], Integer> getKeyBytes(GraphElement e, Directions direction);
+    byte[] getValueBytes(GraphElement e);
 
-    void loadFiles(String path,Directions directions);
-
-    void bulkload(Dataset<Row> ds);
 }

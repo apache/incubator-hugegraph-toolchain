@@ -116,6 +116,7 @@
         <spark.scope>provided</spark.scope>
         <flink.scope>provided</flink.scope>
         <scala.version>2.12</scala.version>
+        <scala-lang.version>2.12.11</scala-lang.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <docker.build.skip>true</docker.build.skip>
         <docker.push.skip>true</docker.push.skip>
@@ -298,6 +299,11 @@
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala-lang.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
