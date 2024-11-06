@@ -43,6 +43,12 @@ You could use import the dependencies in `maven` like this:
   </dependency>
 ```
 
+And here are links of other **HugeGraph** component/repositories:
+1. [hugegraph](https://github.com/apache/hugegraph) (**[pd](https://github.com/apache/hugegraph/tree/master/hugegraph-pd)/[store](https://github.com/apache/hugegraph/tree/master/hugegraph-store)/[server](https://github.com/apache/hugegraph/tree/master/hugegraph-server)/[commons](https://github.com/apache/hugegraph/tree/master/hugegraph-commons)**)
+2. [hugegraph-computer](https://github.com/apache/hugegraph-computer) (integrated **graph computing** system)
+3. [hugegraph-website](https://github.com/apache/hugegraph-doc) (**doc & website** code)
+4. [hugegraph-ai](https://github.com/apache/incubator-hugegraph-ai) (integrated **Graph AI/LLM/KG** system)
+
 ## Doc
 
 The [project homepage](https://hugegraph.apache.org/docs/quickstart/) contains more information about `hugegraph-toolchain`. 
