@@ -112,27 +112,27 @@ public class RestClient extends AbstractRestClient {
 
     @Override
     public RestResult post(String path, Object object, RestHeaders headers) {
-        return super.post(filter ? path : removeDefaultGsPrefix(path), object, headers, null);
+        return super.post(filter ? path : removeDefaultGsPrefix(path), object, headers);
     }
 
     @Override
     public RestResult post(String path, Object object, Map<String, Object> params) {
-        return super.post(filter ? path : removeDefaultGsPrefix(path), object, null, params);
+        return super.post(filter ? path : removeDefaultGsPrefix(path), object, params);
     }
 
     @Override
     public RestResult put(String path, String id, Object object) {
-        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object, null, null);
+        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object);
     }
 
     @Override
     public RestResult put(String path, String id, Object object, RestHeaders headers) {
-        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object, headers, null);
+        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object, headers);
     }
 
     @Override
     public RestResult put(String path, String id, Object object, Map<String, Object> params) {
-        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object, null, params);
+        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object, params);
     }
 
     @Override
