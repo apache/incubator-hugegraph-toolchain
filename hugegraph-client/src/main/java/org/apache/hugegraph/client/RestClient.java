@@ -37,8 +37,6 @@ public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
 
-    private static boolean filter = false;
-
     static {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
@@ -46,6 +44,7 @@ public class RestClient extends AbstractRestClient {
     }
 
     private Version apiVersion = null;
+    private String coreVersion = null;
 
     public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);
@@ -65,12 +64,18 @@ public class RestClient extends AbstractRestClient {
 
     private static String removeDefaultGsPrefix(String path) {
         final String DEFAULT_GS_PATH_PREFIX = "graphspaces/DEFAULT/";
-        return path.replaceFirst(DEFAULT_GS_PATH_PREFIX, "");
+        final String EMPTY = "";
+        return path.replaceFirst(DEFAULT_GS_PATH_PREFIX, EMPTY);
     }
 
     public void apiVersion(Version version) {
         E.checkNotNull(version, "api version");
         this.apiVersion = version;
+    }
+
+    public void coreVersion(String version) {
+        E.checkNotNull(version, "core version");
+        this.coreVersion = version;
     }
 
     public Version apiVersion() {
@@ -85,6 +90,10 @@ public class RestClient extends AbstractRestClient {
         }
     }
 
+    public boolean isSupportGs() {
+        return VersionUtil.gte(this.coreVersion, "2.0");
+    }
+
     public boolean apiVersionLt(String minVersion) {
         String apiVersion = this.apiVersion == null ? null : this.apiVersion.get();
         return apiVersion != null && !VersionUtil.gte(apiVersion, minVersion);
@@ -92,62 +101,64 @@ public class RestClient extends AbstractRestClient {
 
     @Override
     public RestResult post(String path, Object object) {
-        return super.post(filter ? path : removeDefaultGsPrefix(path), object);
+        return super.post(this.isSupportGs() ? path : removeDefaultGsPrefix(path), object);
     }
 
     @Override
     public RestResult get(String path, String id) {
-        return super.get(filter ? path : removeDefaultGsPrefix(path), id);
+        return super.get(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id);
     }
 
     @Override
     public RestResult delete(String path, Map<String, Object> params) {
-        return super.delete(filter ? path : removeDefaultGsPrefix(path), params);
+        return super.delete(this.isSupportGs() ? path : removeDefaultGsPrefix(path), params);
     }
 
     @Override
     public RestResult delete(String path, String id) {
-        return super.delete(filter ? path : removeDefaultGsPrefix(path), id);
+        return super.delete(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id);
     }
 
     @Override
     public RestResult post(String path, Object object, RestHeaders headers) {
-        return super.post(filter ? path : removeDefaultGsPrefix(path), object, headers);
+        return super.post(this.isSupportGs() ? path : removeDefaultGsPrefix(path), object, headers);
     }
 
     @Override
     public RestResult post(String path, Object object, Map<String, Object> params) {
-        return super.post(filter ? path : removeDefaultGsPrefix(path), object, params);
+        return super.post(this.isSupportGs() ? path : removeDefaultGsPrefix(path), object, params);
     }
 
     @Override
     public RestResult put(String path, String id, Object object) {
-        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object);
+        return super.put(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id, object);
     }
 
     @Override
     public RestResult put(String path, String id, Object object, RestHeaders headers) {
-        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object, headers);
+        return super.put(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id, object,
+                         headers);
     }
 
     @Override
     public RestResult put(String path, String id, Object object, Map<String, Object> params) {
-        return super.put(filter ? path : removeDefaultGsPrefix(path), id, object, params);
+        return super.put(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id, object,
+                         params);
     }
 
     @Override
     public RestResult get(String path) {
-        return super.get(filter ? path : removeDefaultGsPrefix(path));
+        return super.get(this.isSupportGs() ? path : removeDefaultGsPrefix(path));
     }
 
     @Override
     public RestResult get(String path, Map<String, Object> params) {
-        return super.get(filter ? path : removeDefaultGsPrefix(path), params);
+        return super.get(this.isSupportGs() ? path : removeDefaultGsPrefix(path), params);
     }
 
     @Override
     protected void checkStatus(okhttp3.Response response, int... statuses) {
-        boolean match = filter;
+        boolean match = false;
         for (int status : statuses) {
             if (status == response.code()) {
                 match = true;
