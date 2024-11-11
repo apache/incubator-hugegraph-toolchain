@@ -274,10 +274,11 @@ public class GraphsApiTest extends BaseApiTest {
 
         Assert.assertEquals(initialGraphNumber + 1, graphsAPI.list().size());
 
-        HugeClient client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE,
-                                               GRAPH)
-                                      .configUser(USERNAME, PASSWORD)
-                                      .build();
+        HugeClient client = new HugeClient(baseClient(), GRAPH3, DEFAULT_GRAPHSPACE);
+        //HugeClient client = HugeClient.builder(BASE_URL, DEFAULT_GRAPHSPACE,
+        //                                       GRAPH)
+        //                              .configUser(USERNAME, PASSWORD)
+        //                              .build();
         // Insert graph schema and data
         initPropertyKey(client);
         initVertexLabel(client);
