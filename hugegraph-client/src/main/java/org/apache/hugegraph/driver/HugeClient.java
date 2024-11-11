@@ -155,7 +155,8 @@ public class HugeClient implements Closeable {
         //       0.81 equals to the {latest_api_version} +10
         VersionUtil.check(apiVersion, "0.38", "0.81", "hugegraph-api in server");
         this.client.apiVersion(apiVersion);
-        this.client.coreVersion(this.version.getCoreVersion());
+        boolean supportGs = VersionUtil.gte(this.version.getCoreVersion(), "2.0");
+        this.client.setSupportGs(supportGs);
     }
 
     public String getGraphSpaceName() {

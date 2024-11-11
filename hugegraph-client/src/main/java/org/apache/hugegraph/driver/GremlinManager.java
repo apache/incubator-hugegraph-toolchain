@@ -43,10 +43,17 @@ public class GremlinManager {
     }
 
     public ResultSet execute(GremlinRequest request) {
-        // Bind "graph" to all graphs
-        request.aliases.put("graph", this.graphSpace + "-" + this.graph);
-        // Bind "g" to all graphs by custom rule which define in gremlin server.
-        request.aliases.put("g", "__g_" + this.graphSpace + "-" + this.graph);
+        if (this.gremlinAPI.isSupportGs()) {
+            // Bind "graph" and graph space to all graphs
+            request.aliases.put("graph", this.graphSpace + "-" + this.graph);
+            // Bind "g" and graph space to all graphs by custom rule which define in gremlin server.
+            request.aliases.put("g", "__g_" + this.graphSpace + "-" + this.graph);
+        } else {
+            // Bind "graph" to all graphs
+            request.aliases.put("graph", this.graph);
+            // Bind "g" to all graphs by custom rule which define in gremlin server.
+            request.aliases.put("g", "__g_" + this.graph);
+        }
 
         Response response = this.gremlinAPI.post(request);
         response.graphManager(this.graphManager);

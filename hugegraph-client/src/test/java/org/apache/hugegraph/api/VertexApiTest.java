@@ -50,6 +50,11 @@ public class VertexApiTest extends BaseApiTest {
         BaseApiTest.initEdgeLabel();
     }
 
+    @SuppressWarnings("unused")
+    private static void assertContains(List<Vertex> vertices, Vertex vertex) {
+        Assert.assertTrue(Utils.contains(vertices, vertex));
+    }
+
     @Override
     @After
     public void teardown() {
@@ -664,10 +669,5 @@ public class VertexApiTest extends BaseApiTest {
         Utils.assertResponseError(400, () -> {
             vertexAPI.delete("not-exist-v");
         });
-    }
-
-    @SuppressWarnings("unused")
-    private static void assertContains(List<Vertex> vertices, Vertex vertex) {
-        Assert.assertTrue(Utils.contains(vertices, vertex));
     }
 }

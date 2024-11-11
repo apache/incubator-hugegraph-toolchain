@@ -33,6 +33,9 @@ import org.apache.hugegraph.util.VersionUtil.Version;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
@@ -44,7 +47,9 @@ public class RestClient extends AbstractRestClient {
     }
 
     private Version apiVersion = null;
-    private String coreVersion = null;
+    @Setter
+    @Getter
+    private boolean supportGs = false;
 
     public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);
@@ -73,11 +78,6 @@ public class RestClient extends AbstractRestClient {
         this.apiVersion = version;
     }
 
-    public void coreVersion(String version) {
-        E.checkNotNull(version, "core version");
-        this.coreVersion = version;
-    }
-
     public Version apiVersion() {
         return this.apiVersion;
     }
@@ -90,10 +90,6 @@ public class RestClient extends AbstractRestClient {
         }
     }
 
-    public boolean isSupportGs() {
-        return VersionUtil.gte(this.coreVersion, "2.0");
-    }
-
     public boolean apiVersionLt(String minVersion) {
         String apiVersion = this.apiVersion == null ? null : this.apiVersion.get();
         return apiVersion != null && !VersionUtil.gte(apiVersion, minVersion);
@@ -101,59 +97,77 @@ public class RestClient extends AbstractRestClient {
 
     @Override
     public RestResult post(String path, Object object) {
-        return super.post(this.isSupportGs() ? path : removeDefaultGsPrefix(path), object);
+        return super.post(supportGs ? path : removeDefaultGsPrefix(path), object);
     }
 
     @Override
     public RestResult get(String path, String id) {
-        return super.get(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id);
+        return super.get(supportGs ? path : removeDefaultGsPrefix(path), id);
+    }
+
+    public RestResult getVersions(String path) {
+        return super.get(path);
     }
 
     @Override
     public RestResult delete(String path, Map<String, Object> params) {
-        return super.delete(this.isSupportGs() ? path : removeDefaultGsPrefix(path), params);
+        return super.delete(supportGs ? path : removeDefaultGsPrefix(path), params);
     }
 
     @Override
     public RestResult delete(String path, String id) {
-        return super.delete(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id);
+        return super.delete(supportGs ? path : removeDefaultGsPrefix(path), id);
     }
 
     @Override
     public RestResult post(String path, Object object, RestHeaders headers) {
-        return super.post(this.isSupportGs() ? path : removeDefaultGsPrefix(path), object, headers);
+        return super.post(supportGs ? path : removeDefaultGsPrefix(path), object, headers);
     }
 
     @Override
     public RestResult post(String path, Object object, Map<String, Object> params) {
-        return super.post(this.isSupportGs() ? path : removeDefaultGsPrefix(path), object, params);
+        return super.post(supportGs ? path : removeDefaultGsPrefix(path), object, params);
+    }
+
+    @Override
+    public RestResult post(String path, Object object, RestHeaders headers,
+                           Map<String, Object> params) {
+        return super.post(supportGs ? path : removeDefaultGsPrefix(path), object, headers, params);
     }
 
     @Override
     public RestResult put(String path, String id, Object object) {
-        return super.put(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id, object);
+        return super.put(supportGs ? path : removeDefaultGsPrefix(path), id, object);
     }
 
     @Override
     public RestResult put(String path, String id, Object object, RestHeaders headers) {
-        return super.put(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id, object,
+        return super.put(supportGs ? path : removeDefaultGsPrefix(path), id, object,
                          headers);
     }
 
     @Override
     public RestResult put(String path, String id, Object object, Map<String, Object> params) {
-        return super.put(this.isSupportGs() ? path : removeDefaultGsPrefix(path), id, object,
+        return super.put(supportGs ? path : removeDefaultGsPrefix(path), id, object,
+                         params);
+    }
+
+    @Override
+    public RestResult put(String path, String id, Object object,
+                          RestHeaders headers,
+                          Map<String, Object> params) {
+        return super.put(supportGs ? path : removeDefaultGsPrefix(path), id, object, headers,
                          params);
     }
 
     @Override
     public RestResult get(String path) {
-        return super.get(this.isSupportGs() ? path : removeDefaultGsPrefix(path));
+        return super.get(supportGs ? path : removeDefaultGsPrefix(path));
     }
 
     @Override
     public RestResult get(String path, Map<String, Object> params) {
-        return super.get(this.isSupportGs() ? path : removeDefaultGsPrefix(path), params);
+        return super.get(supportGs ? path : removeDefaultGsPrefix(path), params);
     }
 
     @Override
