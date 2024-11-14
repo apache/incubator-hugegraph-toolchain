@@ -25,11 +25,12 @@ import okhttp3.OkHttpClient;
 
 public class HugeClientBuilder {
 
+    static final String DEFAULT_GRAPHSPACE = "default";
+
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
     private static final int DEFAULT_MAX_CONNS = 4 * CPUS;
     private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 2 * CPUS;
     private static final int DEFAULT_IDLE_TIME = 30;
-    private static final String DEFAULT_GRAPHSPACE = "default";
     private static final int SECOND = 1000;
     private static final int DEFAULT_TIMEOUT = 20 * SECOND;
 

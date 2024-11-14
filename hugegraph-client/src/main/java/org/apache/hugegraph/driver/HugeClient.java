@@ -110,6 +110,10 @@ public class HugeClient implements Closeable {
         return new HugeClientBuilder(url, graphSpace, graph);
     }
 
+    public static HugeClientBuilder builder(String url, String graph) {
+        return new HugeClientBuilder(url, HugeClientBuilder.DEFAULT_GRAPHSPACE, graph);
+    }
+
     public HugeClient assignGraph(String graphSpace, String graph) {
         this.graphSpaceName = graphSpace;
         this.graphName = graph;
