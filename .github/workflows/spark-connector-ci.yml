@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         JAVA_VERSION: [ '11' ]
-      
+
     steps:
       - name: Fetch Code
         uses: actions/checkout@v4
