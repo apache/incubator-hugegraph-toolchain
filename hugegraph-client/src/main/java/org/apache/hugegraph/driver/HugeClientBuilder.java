@@ -25,7 +25,7 @@ import okhttp3.OkHttpClient;
 
 public class HugeClientBuilder {
 
-    static final String DEFAULT_GRAPHSPACE = "default";
+    static final String DEFAULT_GRAPHSPACE = "DEFAULT";
 
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
     private static final int DEFAULT_MAX_CONNS = 4 * CPUS;
