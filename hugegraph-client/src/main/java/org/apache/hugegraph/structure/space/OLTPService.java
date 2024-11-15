@@ -17,13 +17,13 @@
 
 package org.apache.hugegraph.structure.space;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class OLTPService {
@@ -39,7 +39,7 @@ public class OLTPService {
     private String type = "OLTP";
 
     @JsonProperty("count")
-    private int count = 1; // 最大可运行节点
+    private int count = 1; // maximum number of runnable nodes
     @JsonProperty("running")
     private int running;
 
@@ -206,14 +206,14 @@ public class OLTPService {
 
     public enum DepleymentType {
         K8S,
-        MANUAL;
+        MANUAL
     }
 
     public enum ServiceStatus {
-        UNKNOWN,  // 未知
-        STARTING, // 启动中
-        RUNNING,  // 运行中
-        STOPPED   // 停止
+        UNKNOWN,
+        STARTING,
+        RUNNING,
+        STOPPED
     }
 
     @JsonIgnoreProperties(value = {"configs", "create_time", "update_time",
