@@ -32,8 +32,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class VertexLabelAPI extends SchemaElementAPI {
 
-    public VertexLabelAPI(RestClient client, String graph) {
-        super(client, graph);
+    public VertexLabelAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

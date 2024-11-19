@@ -36,7 +36,7 @@ public class VersionAPI extends API {
     }
 
     public Versions get() {
-        RestResult result = this.client.get(this.path());
+        RestResult result = this.client.getVersions(this.path());
         return result.readObject(Versions.class);
     }
 }

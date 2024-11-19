@@ -27,18 +27,14 @@ import org.apache.hugegraph.util.JsonUtil;
 
 public abstract class GraphAPI extends API {
 
-    private static final String PATH = "graphs/%s/graph/%s";
+    private static final String PATH = "graphspaces/%s/graphs/%s/graph/%s";
 
     private final String batchPath;
 
-    public GraphAPI(RestClient client, String graph) {
+    public GraphAPI(RestClient client, String graphSpace, String graph) {
         super(client);
-        this.path(PATH, graph, this.type());
+        this.path(PATH, graphSpace, graph, this.type());
         this.batchPath = String.join("/", this.path(), "batch");
-    }
-
-    public String batchPath() {
-        return this.batchPath;
     }
 
     public static String formatVertexId(Object id) {
@@ -67,5 +63,9 @@ public abstract class GraphAPI extends API {
             return null;
         }
         return JsonUtil.toJson(properties);
+    }
+
+    public String batchPath() {
+        return this.batchPath;
     }
 }

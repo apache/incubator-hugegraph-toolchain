@@ -17,17 +17,17 @@
 
 package org.apache.hugegraph.driver;
 
+import java.util.Map;
+
 import org.apache.hugegraph.api.variables.VariablesAPI;
 import org.apache.hugegraph.client.RestClient;
 
-import java.util.Map;
-
 public class VariablesManager {
 
-    private VariablesAPI variablesAPI;
+    private final VariablesAPI variablesAPI;
 
-    public VariablesManager(RestClient client, String graph) {
-        this.variablesAPI = new VariablesAPI(client, graph);
+    public VariablesManager(RestClient client, String graphSpace, String graph) {
+        this.variablesAPI = new VariablesAPI(client, graphSpace, graph);
     }
 
     public Map<String, Object> get(String key) {

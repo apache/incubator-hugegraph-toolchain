@@ -15,37 +15,31 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.schema;
+package org.apache.hugegraph.api.job;
 
-import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.api.API;
+import org.apache.hugegraph.api.task.TaskAPI;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.exception.NotSupportException;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.SchemaElement;
 
-public class SchemaAPI extends API {
+public class CypherJobAPI extends JobAPI {
 
-    private static final String PATH = "graphspaces/%s/graphs/%s/%s";
+    private static final String JOB_TYPE = "cypher";
 
-    public SchemaAPI(RestClient client, String graphSpace, String graph) {
-        super(client);
-        this.path(PATH, graphSpace, graph, this.type());
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, List<SchemaElement>> list() {
-        if (this.client.apiVersionLt("0.66")) {
-            throw new NotSupportException("schema get api");
-        }
-        RestResult result = this.client.get(this.path());
-        return result.readObject(Map.class);
+    public CypherJobAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
-    protected String type() {
-        return "schema";
+    protected String jobType() {
+        return JOB_TYPE;
+    }
+
+    public long execute(String cypher) {
+        RestResult result = this.client.post(this.path(), cypher);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> task = result.readObject(Map.class);
+        return TaskAPI.parseTaskId(task);
     }
 }

@@ -25,17 +25,21 @@ import okhttp3.OkHttpClient;
 
 public class HugeClientBuilder {
 
+    static final String DEFAULT_GRAPHSPACE = "DEFAULT";
+
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
-    private static final int DEFAULT_TIMEOUT = 20;
     private static final int DEFAULT_MAX_CONNS = 4 * CPUS;
     private static final int DEFAULT_MAX_CONNS_PER_ROUTE = 2 * CPUS;
     private static final int DEFAULT_IDLE_TIME = 30;
     private static final int SECOND = 1000;
+    private static final int DEFAULT_TIMEOUT = 20 * SECOND;
 
     private String url;
+    private String graphSpace;
     private String graph;
     private String username;
     private String password;
+    private String token;
     private int timeout;
     private int maxConns;
     private int maxConnsPerRoute;
@@ -47,17 +51,19 @@ public class HugeClientBuilder {
     private Integer connectTimeout;
     private Integer readTimeout;
 
-    public HugeClientBuilder(String url, String graph) {
+    public HugeClientBuilder(String url, String graphSpace, String graph) {
         E.checkArgument(url != null && !url.isEmpty(),
                         "Expect a string value as the url parameter argument, but got: %s", url);
         E.checkArgument(graph != null && !graph.isEmpty(),
                         "Expect a string value as the graph name parameter argument, but got: %s",
                         graph);
         this.url = url;
+        this.graphSpace = graphSpace;
         this.graph = graph;
         this.username = "";
         this.password = "";
-        this.timeout = DEFAULT_TIMEOUT * SECOND;
+        this.token = "";
+        this.timeout = DEFAULT_TIMEOUT;
 
         this.maxConns = DEFAULT_MAX_CONNS;
         this.maxConnsPerRoute = DEFAULT_MAX_CONNS_PER_ROUTE;
@@ -73,6 +79,11 @@ public class HugeClientBuilder {
         E.checkArgument(this.url != null, "The url parameter can't be null");
         E.checkArgument(this.graph != null, "The graph parameter can't be null");
         return new HugeClient(this);
+    }
+
+    public HugeClientBuilder configGraphSpace(String graphSpace) {
+        this.graphSpace = graphSpace;
+        return this;
     }
 
     public HugeClientBuilder configGraph(String graph) {
@@ -149,8 +160,20 @@ public class HugeClientBuilder {
         return this;
     }
 
+    public HugeClientBuilder configToken(String token) {
+        if (token != null) {
+            this.token = token;
+        }
+
+        return this;
+    }
+
     public String url() {
         return this.url;
+    }
+
+    public String graphSpace() {
+        return this.graphSpace;
     }
 
     public String graph() {
@@ -163,6 +186,10 @@ public class HugeClientBuilder {
 
     public String password() {
         return this.password;
+    }
+
+    public String token() {
+        return this.token;
     }
 
     public int timeout() {

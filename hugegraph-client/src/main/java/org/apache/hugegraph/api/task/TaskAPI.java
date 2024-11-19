@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.util.TaskCache;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
@@ -29,22 +28,35 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.Task;
 import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.TaskCache;
 
 import com.google.common.collect.ImmutableMap;
 
 public class TaskAPI extends API {
 
-    private static final String PATH = "graphs/%s/tasks";
-    private String graph;
     public static final String TASKS = "tasks";
     public static final String TASK_ID = "task_id";
     public static final long TASK_TIMEOUT = 60L;
+    private static final String PATH = "graphspaces/%s/graphs/%s/tasks";
     private static final long QUERY_INTERVAL = 500L;
+    private final String graphSpace;
+    private final String graph;
 
-    public TaskAPI(RestClient client, String graph) {
+    public TaskAPI(RestClient client, String graphSpace, String graph) {
         super(client);
-        this.path(String.format(PATH, graph));
+        this.path(String.format(PATH, graphSpace, graph));
+        this.graphSpace = graphSpace;
         this.graph = graph;
+    }
+
+    public static long parseTaskId(Map<String, Object> task) {
+        E.checkState(task.size() == 1 && task.containsKey(TASK_ID),
+                     "Task must be formatted to {\"%s\" : id}, but got %s",
+                     TASK_ID, task);
+        Object taskId = task.get(TASK_ID);
+        E.checkState(taskId instanceof Number,
+                     "Task id must be number, but got '%s'", taskId);
+        return ((Number) taskId).longValue();
     }
 
     @Override
@@ -141,15 +153,5 @@ public class TaskAPI extends API {
 
     private void removeFromCache(long taskId) {
         TaskCache.instance().remove(this, taskId);
-    }
-
-    public static long parseTaskId(Map<String, Object> task) {
-        E.checkState(task.size() == 1 && task.containsKey(TASK_ID),
-                     "Task must be formatted to {\"%s\" : id}, but got %s",
-                     TASK_ID, task);
-        Object taskId = task.get(TASK_ID);
-        E.checkState(taskId instanceof Number,
-                     "Task id must be number, but got '%s'", taskId);
-        return ((Number) taskId).longValue();
     }
 }
