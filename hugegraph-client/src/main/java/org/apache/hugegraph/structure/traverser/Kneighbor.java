@@ -37,7 +37,7 @@ public class Kneighbor {
     @JsonProperty
     private Set<Vertex> vertices;
     @JsonProperty
-    private Set<Edge> edges;
+    private Set<?> edges;
     @JsonProperty
     private ApiMeasure measure;
 
@@ -57,7 +57,7 @@ public class Kneighbor {
         return this.vertices;
     }
 
-    public Set<Edge> edges() {
+    public Set<?> edges() {
         return this.edges;
     }
 
