@@ -15,53 +15,54 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.variables;
-
-import java.util.Map;
+package org.apache.hugegraph.api.space;
 
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.HugeType;
+import org.apache.hugegraph.structure.space.SchemaTemplate;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.List;
+import java.util.Map;
 
-public class VariablesAPI extends API {
+public class SchemaTemplateAPI extends API {
 
-    private static final String PATH = "graphspaces/%s/graphs/%s/%s";
-    private static String batchPath = "";
+    private static final String PATH = "graphspaces/%s/schematemplates";
 
-    public VariablesAPI(RestClient client, String graphSpace, String graph) {
+    public SchemaTemplateAPI(RestClient client, String graphSpace) {
         super(client);
-        this.path(PATH, graphSpace, graph, this.type());
-        batchPath = String.join("/", this.path(), "batch");
+        this.path(String.format(PATH, graphSpace));
     }
 
     @Override
     protected String type() {
-        return HugeType.VARIABLES.string();
+        return HugeType.SCHEMATEMPLATES.string();
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> get(String key) {
-        RestResult result = this.client.get(path(), key);
+    public Map create(SchemaTemplate template) {
+        RestResult result = this.client.post(this.path(), template);
         return result.readObject(Map.class);
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> set(String key, Object value) {
-        value = ImmutableMap.of("data", value);
-        RestResult result = this.client.put(this.path(), key, value);
+    public List<String> list() {
+        RestResult result = this.client.get(this.path());
+        return result.readList(this.type(), String.class);
+    }
+
+    public Map get(String name) {
+        RestResult result = this.client.get(this.path(), name);
         return result.readObject(Map.class);
     }
 
-    public void remove(String key) {
-        this.client.delete(path(), key);
+    public void delete(String name) {
+        this.client.delete(this.path(), name);
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> all() {
-        RestResult result = this.client.get(path());
+    public Map update(SchemaTemplate template) {
+        RestResult result = this.client.put(this.path(), template.name(),
+                                            template);
+
         return result.readObject(Map.class);
     }
 }

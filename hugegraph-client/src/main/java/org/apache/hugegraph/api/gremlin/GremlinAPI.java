@@ -39,4 +39,8 @@ public class GremlinAPI extends API {
         RestResult result = this.client.post(this.path(), request);
         return result.readObject(Response.class);
     }
+
+    public boolean isSupportGs() {
+        return client.isSupportGs();
+    }
 }

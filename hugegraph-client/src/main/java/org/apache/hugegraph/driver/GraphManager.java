@@ -39,14 +39,20 @@ import org.apache.hugegraph.util.E;
 
 public class GraphManager {
 
+    private final String graphSpace;
     private final String graph;
     private final VertexAPI vertexAPI;
     private final EdgeAPI edgeAPI;
 
-    public GraphManager(RestClient client, String graph) {
+    public GraphManager(RestClient client, String graphSpace, String graph) {
+        this.graphSpace = graphSpace;
         this.graph = graph;
-        this.vertexAPI = new VertexAPI(client, graph);
-        this.edgeAPI = new EdgeAPI(client, graph);
+        this.vertexAPI = new VertexAPI(client, graphSpace, graph);
+        this.edgeAPI = new EdgeAPI(client, graphSpace, graph);
+    }
+
+    public String graphSpace() {
+        return this.graphSpace;
     }
 
     public String graph() {

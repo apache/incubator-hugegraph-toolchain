@@ -43,13 +43,13 @@ public class SchemaManager {
     private SchemaAPI schemaAPI;
     private TaskAPI taskAPI;
 
-    public SchemaManager(RestClient client, String graph) {
-        this.propertyKeyAPI = new PropertyKeyAPI(client, graph);
-        this.vertexLabelAPI = new VertexLabelAPI(client, graph);
-        this.edgeLabelAPI = new EdgeLabelAPI(client, graph);
-        this.indexLabelAPI = new IndexLabelAPI(client, graph);
-        this.schemaAPI = new SchemaAPI(client, graph);
-        this.taskAPI = new TaskAPI(client, graph);
+    public SchemaManager(RestClient client, String graphSpace, String graph) {
+        this.propertyKeyAPI = new PropertyKeyAPI(client, graphSpace, graph);
+        this.vertexLabelAPI = new VertexLabelAPI(client, graphSpace, graph);
+        this.edgeLabelAPI = new EdgeLabelAPI(client, graphSpace, graph);
+        this.indexLabelAPI = new IndexLabelAPI(client, graphSpace, graph);
+        this.schemaAPI = new SchemaAPI(client, graphSpace, graph);
+        this.taskAPI = new TaskAPI(client, graphSpace, graph);
     }
 
     public PropertyKey.Builder propertyKey(String name) {

@@ -15,37 +15,32 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.schema;
-
-import java.util.List;
-import java.util.Map;
+package org.apache.hugegraph.api.space;
 
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.exception.NotSupportException;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.SchemaElement;
+import org.apache.hugegraph.structure.constant.HugeType;
+import org.apache.hugegraph.structure.space.PDNodeInfo;
 
-public class SchemaAPI extends API {
+import java.util.List;
 
-    private static final String PATH = "graphspaces/%s/graphs/%s/%s";
+public class PDAPI extends API {
 
-    public SchemaAPI(RestClient client, String graphSpace, String graph) {
+    private static final String PATH = "pd";
+
+    public PDAPI(RestClient client) {
         super(client);
-        this.path(PATH, graphSpace, graph, this.type());
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, List<SchemaElement>> list() {
-        if (this.client.apiVersionLt("0.66")) {
-            throw new NotSupportException("schema get api");
-        }
-        RestResult result = this.client.get(this.path());
-        return result.readObject(Map.class);
+        this.path(this.type());
     }
 
     @Override
     protected String type() {
-        return "schema";
+        return HugeType.PD.string();
+    }
+
+    public List<PDNodeInfo> list() {
+        RestResult result = this.client.get(this.path());
+        return result.readList("members", PDNodeInfo.class);
     }
 }
