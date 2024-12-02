@@ -46,6 +46,13 @@
         </license>
     </licenses>
 
+    <repositories>
+        <repository>
+            <id>apache-staging</id>
+            <url>https://repository.apache.org/content/repositories/staging/</url>
+        </repository>
+    </repositories>
+
     <developers>
         <developer>
             <id>Apache HugeGraph(Incubating)</id>
@@ -99,8 +106,7 @@
 
     <properties>
         <revision>1.5.0</revision>
-        <!-- TODO: Update to 1.5.0 later -->
-        <hugegraph.common.version>1.3.0</hugegraph.common.version>
+        <hugegraph.common.version>1.5.0</hugegraph.common.version>
         <release.name>${project.artifactId}</release.name>
         <final.name>apache-${release.name}-incubating-${project.version}</final.name>
         <assembly.dir>${project.basedir}/assembly</assembly.dir>

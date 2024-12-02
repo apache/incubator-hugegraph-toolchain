@@ -25,8 +25,8 @@ public enum EdgeLabelType {
 
     SUB(2, "SUB");
 
-    private byte code = 0;
-    private String name = null;
+    private final byte code;
+    private final String name;
 
     EdgeLabelType(int code, String name) {
         assert code < 256;

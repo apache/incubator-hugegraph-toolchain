@@ -42,7 +42,7 @@ for jar in "${LIB_PATH}"/*.jar; do
     class_path=${class_path}:${jar}
 done
 
-JAVA_OPTS="-Xms512m"
+JAVA_OPTS="-Xms512m -Dfile.encoding=UTF-8"
 JAVA_DEBUG_OPTS=""
 FOREGROUND="false"
 
