@@ -21,19 +21,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.constant.Traverser;
-import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.util.E;
 
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.constant.Direction;
+import org.apache.hugegraph.structure.constant.Traverser;
+import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class NeighborRankAPI extends TraversersAPI {
 
-    public NeighborRankAPI(RestClient client, String graph) {
-        super(client, graph);
+    public NeighborRankAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -41,9 +41,9 @@ public class NeighborRankAPI extends TraversersAPI {
         return "neighborrank";
     }
 
-    public List<Ranks> post(Request request) {
+    public RanksWithMeasure post(Request request) {
         RestResult result = this.client.post(this.path(), request);
-        return result.readList("ranks", Ranks.class);
+        return result.readObject(RanksWithMeasure.class);
     }
 
     public static class Request {
@@ -86,8 +86,8 @@ public class NeighborRankAPI extends TraversersAPI {
             }
 
             public Builder source(Object source) {
-                E.checkArgument(source != null,
-                                "The label of request for neighbor rank can't be null");
+                E.checkArgument(source != null, "The label of request " +
+                                "for neighbor rank can't be null");
                 this.request.source = source;
                 return this;
             }
@@ -99,13 +99,13 @@ public class NeighborRankAPI extends TraversersAPI {
             }
 
             public Builder alpha(double alpha) {
-                TraversersAPI.checkAlpha(alpha);
+                checkAlpha(alpha);
                 this.request.alpha = alpha;
                 return this;
             }
 
             public Builder capacity(long capacity) {
-                TraversersAPI.checkCapacity(capacity);
+                checkCapacity(capacity);
                 this.request.capacity = capacity;
                 return this;
             }
@@ -119,8 +119,8 @@ public class NeighborRankAPI extends TraversersAPI {
                 E.checkArgument(this.request.steps != null &&
                                 !this.request.steps.isEmpty(),
                                 "Steps can't be null or empty");
-                TraversersAPI.checkCapacity(this.request.capacity);
-                TraversersAPI.checkAlpha(this.request.alpha);
+                checkCapacity(this.request.capacity);
+                checkAlpha(this.request.alpha);
                 return this.request;
             }
         }
@@ -174,7 +174,7 @@ public class NeighborRankAPI extends TraversersAPI {
                 }
 
                 public Step.Builder degree(long degree) {
-                    TraversersAPI.checkDegree(degree);
+                    checkDegree(degree);
                     this.step.degree = degree;
                     return this;
                 }
@@ -188,7 +188,7 @@ public class NeighborRankAPI extends TraversersAPI {
                 }
 
                 private Step build() {
-                    TraversersAPI.checkDegree(this.step.degree);
+                    checkDegree(this.step.degree);
                     E.checkArgument(this.step.top > 0 &&
                                     this.step.top <= Traverser.DEFAULT_MAX_TOP,
                                     "The top of each layer can't exceed %s",

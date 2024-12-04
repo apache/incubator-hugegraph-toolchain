@@ -17,18 +17,18 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.constant.Traverser;
-import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.util.E;
 
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.constant.Traverser;
+import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PersonalRankAPI extends TraversersAPI {
 
-    public PersonalRankAPI(RestClient client, String graph) {
-        super(client, graph);
+    public PersonalRankAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -36,9 +36,9 @@ public class PersonalRankAPI extends TraversersAPI {
         return "personalrank";
     }
 
-    public Ranks post(Request request) {
+    public RanksWithMeasure post(Request request) {
         RestResult result = this.client.post(this.path(), request);
-        return result.readObject(Ranks.class);
+        return result.readObject(RanksWithMeasure.class);
     }
 
     public static class Request {
@@ -52,7 +52,7 @@ public class PersonalRankAPI extends TraversersAPI {
         @JsonProperty("max_degree")
         public long degree = Traverser.DEFAULT_MAX_DEGREE;
         @JsonProperty("limit")
-        private int limit = Traverser.DEFAULT_LIMIT;
+        private long limit = Traverser.DEFAULT_LIMIT;
         @JsonProperty("max_depth")
         private int maxDepth = 5;
         @JsonProperty("with_label")
@@ -89,33 +89,33 @@ public class PersonalRankAPI extends TraversersAPI {
             }
 
             public Builder source(Object source) {
-                E.checkArgument(source != null,
-                                "The source of request for personal rank can't be null");
+                E.checkArgument(source != null, "The source of request " +
+                                "for personal rank can't be null");
                 this.request.source = source;
                 return this;
             }
 
             public Builder label(String label) {
-                E.checkArgument(label != null,
-                                "The label of request for personal rank can't be null");
+                E.checkArgument(label != null, "The label of request " +
+                                "for personal rank can't be null");
                 this.request.label = label;
                 return this;
             }
 
             public Builder alpha(double alpha) {
-                TraversersAPI.checkAlpha(alpha);
+                checkAlpha(alpha);
                 this.request.alpha = alpha;
                 return this;
             }
 
             public Builder degree(long degree) {
-                TraversersAPI.checkDegree(degree);
+                checkDegree(degree);
                 this.request.degree = degree;
                 return this;
             }
 
-            public Builder limit(int limit) {
-                TraversersAPI.checkLimit(limit);
+            public Builder limit(long limit) {
+                checkLimit(limit);
                 this.request.limit = limit;
                 return this;
             }
@@ -123,7 +123,8 @@ public class PersonalRankAPI extends TraversersAPI {
             public Builder maxDepth(int maxDepth) {
                 E.checkArgument(maxDepth > 0 &&
                                 maxDepth <= Traverser.DEFAULT_MAX_DEPTH,
-                                "The max depth must be in range (0, %s], but got: %s",
+                                "The max depth must be in range (0, %s], " +
+                                "but got: %s",
                                 Traverser.DEFAULT_MAX_DEPTH, maxDepth);
                 this.request.maxDepth = maxDepth;
                 return this;
@@ -145,13 +146,16 @@ public class PersonalRankAPI extends TraversersAPI {
                 E.checkArgument(this.request.label != null,
                                 "The label of rank request " +
                                 "for personal rank can't be null");
-                TraversersAPI.checkAlpha(this.request.alpha);
-                TraversersAPI.checkDegree(this.request.degree);
-                TraversersAPI.checkLimit(this.request.limit);
+                checkAlpha(this.request.alpha);
+                checkDegree(this.request.degree);
+                checkLimit(this.request.limit);
                 E.checkArgument(this.request.maxDepth > 0 &&
-                                this.request.maxDepth <= Traverser.DEFAULT_MAX_DEPTH,
-                                "The max depth must be in range (0, %s], but got: %s",
-                                Traverser.DEFAULT_MAX_DEPTH, this.request.maxDepth);
+                                this.request.maxDepth <=
+                                Traverser.DEFAULT_MAX_DEPTH,
+                                "The max depth must be in range (0, %s], " +
+                                "but got: %s",
+                                Traverser.DEFAULT_MAX_DEPTH,
+                                this.request.maxDepth);
                 return this.request;
             }
         }
