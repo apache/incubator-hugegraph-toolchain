@@ -30,8 +30,8 @@ public class SameNeighborsAPI extends TraversersAPI {
 
     private static final String SAME_NEIGHBORS = "same_neighbors";
 
-    public SameNeighborsAPI(RestClient client, String graph) {
-        super(client, graph);
+    public SameNeighborsAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

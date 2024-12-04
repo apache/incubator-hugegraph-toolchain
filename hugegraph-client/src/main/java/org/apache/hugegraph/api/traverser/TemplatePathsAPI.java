@@ -24,8 +24,8 @@ import org.apache.hugegraph.structure.traverser.TemplatePathsRequest;
 
 public class TemplatePathsAPI extends TraversersAPI {
 
-    public TemplatePathsAPI(RestClient client, String graph) {
-        super(client, graph);
+    public TemplatePathsAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

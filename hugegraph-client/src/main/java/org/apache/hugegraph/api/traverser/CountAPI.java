@@ -28,8 +28,8 @@ public class CountAPI extends TraversersAPI {
 
     private static final String COUNT = "count";
 
-    public CountAPI(RestClient client, String graph) {
-        super(client, graph);
+    public CountAPI(RestClient client,  String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
