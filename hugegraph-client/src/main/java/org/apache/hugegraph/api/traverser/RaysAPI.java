@@ -29,8 +29,8 @@ import org.apache.hugegraph.structure.graph.Path;
 
 public class RaysAPI extends TraversersAPI {
 
-    public RaysAPI(RestClient client, String graph) {
-        super(client, graph);
+    public RaysAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

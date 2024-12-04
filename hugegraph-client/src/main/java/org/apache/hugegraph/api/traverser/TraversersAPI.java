@@ -23,11 +23,11 @@ import org.apache.hugegraph.util.E;
 
 public class TraversersAPI extends API {
 
-    private static final String PATH = "graphs/%s/traversers/%s";
+    private static final String PATH = "graphspaces/%s/graphs/%s/traversers/%s";
 
-    public TraversersAPI(RestClient client, String graph) {
+    public TraversersAPI(RestClient client, String graphSpace, String graph) {
         super(client);
-        this.path(PATH, graph, this.type());
+        this.path(PATH, graphSpace, graph, this.type());
     }
 
     @Override

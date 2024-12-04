@@ -30,8 +30,8 @@ import org.apache.hugegraph.structure.traverser.KoutRequest;
 
 public class KoutAPI extends TraversersAPI {
 
-    public KoutAPI(RestClient client, String graph) {
-        super(client, graph);
+    public KoutAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
