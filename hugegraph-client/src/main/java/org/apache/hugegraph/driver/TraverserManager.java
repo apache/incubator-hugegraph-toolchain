@@ -68,6 +68,7 @@ import org.apache.hugegraph.structure.traverser.MultiNodeShortestPathRequest;
 import org.apache.hugegraph.structure.traverser.PathsRequest;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.Ranks;
+import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
 import org.apache.hugegraph.structure.traverser.TemplatePathsRequest;
 import org.apache.hugegraph.structure.traverser.WeightedPath;
@@ -460,11 +461,11 @@ public class TraverserManager {
         return this.fusiformSimilarityAPI.post(request);
     }
 
-    public List<Ranks> neighborRank(NeighborRankAPI.Request request) {
+    public RanksWithMeasure neighborRank(NeighborRankAPI.Request request) {
         return this.neighborRankAPI.post(request);
     }
 
-    public Ranks personalRank(PersonalRankAPI.Request request) {
+    public RanksWithMeasure personalRank(PersonalRankAPI.Request request) {
         return this.personalRankAPI.post(request);
     }
 
