@@ -42,11 +42,10 @@ public class HugeClient implements Closeable {
         ClientVersion.check();
     }
 
-    private final RestClient client;
-    private final boolean borrowedClient;
     protected String graphSpaceName;
     protected String graphName;
-    protected GraphSpaceManager graphSpace;
+    private final boolean borrowedClient;
+    private final RestClient client;
     private VersionManager version;
     private GraphsManager graphs;
     private SchemaManager schema;
@@ -59,6 +58,8 @@ public class HugeClient implements Closeable {
     private TaskManager task;
     private AuthManager auth;
     private MetricsManager metrics;
+    private GraphSpaceManager graphSpace;
+    private WhiteIpListManager whiteIpListManager;
 
     /**
      * Constructs a new HugeClient using the provided builder.
@@ -139,6 +140,7 @@ public class HugeClient implements Closeable {
         this.auth = new AuthManager(client, graph);
         this.metrics = new MetricsManager(client);
         this.graphSpace = new GraphSpaceManager(client);
+        this.whiteIpListManager = new WhiteIpListManager(client);
         if (!Strings.isNullOrEmpty(graph)) {
             this.schema = new SchemaManager(client, graphSpace, graph);
             this.graph = new GraphManager(client, graphSpace, graph);
@@ -217,6 +219,10 @@ public class HugeClient implements Closeable {
 
     public GraphSpaceManager graphSpace() {
         return this.graphSpace;
+    }
+
+    public WhiteIpListManager whiteIpListManager(){
+        return this.whiteIpListManager;
     }
 
     public VersionManager versionManager() {
