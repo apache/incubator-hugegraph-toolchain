@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.hugegraph.util.E;
 
-import org.apache.hugegraph.client.api.traverser.TraversersAPI;
+import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
 import com.fasterxml.jackson.annotation.JsonProperty;
