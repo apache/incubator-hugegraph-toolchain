@@ -20,7 +20,7 @@
 package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.client.api.ip.WhiteIpListAPI;
+import org.apache.hugegraph.api.ip.WhiteIpListAPI;
 
 import java.util.Map;
 

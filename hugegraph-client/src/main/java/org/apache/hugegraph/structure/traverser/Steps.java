@@ -19,8 +19,8 @@
 
 package org.apache.hugegraph.structure.traverser;
 
-import org.apache.hugegraph.client.api.API;
-import org.apache.hugegraph.client.api.traverser.TraversersAPI;
+import org.apache.hugegraph.api.API;
+import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
 import com.fasterxml.jackson.annotation.JsonProperty;
