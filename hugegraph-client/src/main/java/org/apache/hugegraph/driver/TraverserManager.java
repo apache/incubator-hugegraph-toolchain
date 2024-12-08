@@ -132,7 +132,7 @@ public class TraverserManager {
         this.personalRankAPI = new PersonalRankAPI(client, graphSpace, graph);
         this.verticesAPI = new VerticesAPI(client, graphSpace, graph);
         this.edgesAPI = new EdgesAPI(client, graphSpace, graph);
-        this.edgeExistenceAPI = new EdgeExistenceAPI(client, graph);
+        this.edgeExistenceAPI = new EdgeExistenceAPI(client, graphSpace, graph);
     }
 
     public double jaccardSimilarity(Object vertexId, Object otherId) {
