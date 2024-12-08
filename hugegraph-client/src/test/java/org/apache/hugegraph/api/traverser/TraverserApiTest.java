@@ -84,6 +84,6 @@ public class TraverserApiTest extends BaseApiTest {
         verticesAPI = new VerticesAPI(client, GRAPHSPACE, GRAPH);
         edgesAPI = new EdgesAPI(client, GRAPHSPACE, GRAPH);
 
-        edgeExistenceAPI = new EdgeExistenceAPI(client, GRAPH);
+        edgeExistenceAPI = new EdgeExistenceAPI(client, GRAPHSPACE, GRAPH);
     }
 }
