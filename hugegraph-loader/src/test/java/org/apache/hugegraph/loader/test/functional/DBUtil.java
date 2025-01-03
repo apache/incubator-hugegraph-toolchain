@@ -57,7 +57,7 @@ public class DBUtil {
     public void connect(String database) {
         this.close();
         String url = String.format("%s/%s?%s", this.url, database,
-                                   "useSSL=false");
+                "useSSL=false");
         try {
             Class.forName(this.driver);
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
