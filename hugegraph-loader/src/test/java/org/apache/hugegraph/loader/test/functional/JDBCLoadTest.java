@@ -17,19 +17,13 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
-import java.util.List;
-
 import org.apache.hugegraph.loader.HugeGraphLoader;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
-
 import org.apache.hugegraph.testutil.Assert;
+import org.junit.*;
+
+import java.util.List;
 
 /**
  * TODO: add more test cases
@@ -45,17 +39,18 @@ public class JDBCLoadTest extends LoadTest {
     private static final String PASS = "root";
 
     private static final DBUtil dbUtil = new DBUtil(DRIVER, DB_URL, USER, PASS);
+    private static final boolean USE_SSL = false;
 
     @BeforeClass
     public static void setUp() {
         clearServerData();
 
-        dbUtil.connect();
+        dbUtil.connect(USE_SSL);
         // create database
         dbUtil.execute(String.format("CREATE DATABASE IF NOT EXISTS `%s`;",
-                                     DATABASE));
+                DATABASE));
         // create tables
-        dbUtil.connect(DATABASE);
+        dbUtil.connect(DATABASE, USE_SSL);
         // vertex person
         dbUtil.execute("CREATE TABLE IF NOT EXISTS `person` (" +
                        "`id` int(10) unsigned NOT NULL," +
