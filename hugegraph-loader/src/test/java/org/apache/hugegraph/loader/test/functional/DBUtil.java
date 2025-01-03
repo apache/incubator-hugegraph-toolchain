@@ -17,12 +17,12 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
+import org.apache.hugegraph.loader.exception.LoadException;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import org.apache.hugegraph.loader.exception.LoadException;
 
 public class DBUtil {
 
@@ -57,7 +57,7 @@ public class DBUtil {
     public void connect(String database) {
         this.close();
         String url = String.format("%s/%s?%s", this.url, database,
-                                   "useSSL=false");
+                "useSSL=false");
         try {
             Class.forName(this.driver);
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
