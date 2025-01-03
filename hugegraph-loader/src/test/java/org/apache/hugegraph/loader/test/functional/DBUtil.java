@@ -17,12 +17,12 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
+import org.apache.hugegraph.loader.exception.LoadException;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import org.apache.hugegraph.loader.exception.LoadException;
 
 public class DBUtil {
 
@@ -43,7 +43,7 @@ public class DBUtil {
     public void connect() {
         try {
             Class.forName(this.driver);
-            String url = String.format("%s?%s", this.url, "useSSL=false");
+            String url = String.format("%s?%s", this.url, "useSSL=true");
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
         } catch (ClassNotFoundException e) {
             throw new LoadException("Invalid driver class '%s'",
@@ -57,7 +57,7 @@ public class DBUtil {
     public void connect(String database) {
         this.close();
         String url = String.format("%s/%s?%s", this.url, database,
-                                   "useSSL=false");
+                "useSSL=true");
         try {
             Class.forName(this.driver);
             this.conn = DriverManager.getConnection(url, this.user, this.pass);

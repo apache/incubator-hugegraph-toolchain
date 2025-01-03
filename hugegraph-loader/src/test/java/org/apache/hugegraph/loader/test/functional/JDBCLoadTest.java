@@ -17,19 +17,18 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
-import java.util.List;
-
 import org.apache.hugegraph.loader.HugeGraphLoader;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
-
 import org.apache.hugegraph.testutil.Assert;
+import org.junit.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Year;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * TODO: add more test cases
@@ -41,8 +40,8 @@ public class JDBCLoadTest extends LoadTest {
     private static final String DATABASE = "load_test";
     private static final String DB_URL = "jdbc:mysql://127.0.0.1:3306";
     // Database credentials
-    private static final String USER = "root";
-    private static final String PASS = "root";
+    private static final String USER = "MuLei";
+    private static final String PASS = "030704";
 
     private static final DBUtil dbUtil = new DBUtil(DRIVER, DB_URL, USER, PASS);
 
@@ -72,6 +71,17 @@ public class JDBCLoadTest extends LoadTest {
                        "`price` double(10,2) NOT NULL," +
                        "PRIMARY KEY (`id`)" +
                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+        // vertex date
+        dbUtil.execute("CREATE TABLE IF NOT EXISTS `date_test` (" +
+                "`id` int(10) unsigned NOT NULL," +
+                "`calendar_date` DATE NOT NULL," +
+                "`calendar_datetime` DATETIME NOT NULL," +
+                "`calendar_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+                "`calendar_time` TIME NOT NULL," +
+                "`calendar_year` YEAR NOT NULL," +
+                "PRIMARY KEY (`id`)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
         // edge knows
         dbUtil.execute("CREATE TABLE IF NOT EXISTS `knows` (" +
                        "`id` int(10) unsigned NOT NULL," +
@@ -90,6 +100,8 @@ public class JDBCLoadTest extends LoadTest {
                        "`weight` double(10,2) NOT NULL," +
                        "PRIMARY KEY (`id`)" +
                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8;");
+
+
     }
 
     @AfterClass
@@ -99,6 +111,7 @@ public class JDBCLoadTest extends LoadTest {
         dbUtil.execute("DROP TABLE IF EXISTS `software`");
         dbUtil.execute("DROP TABLE IF EXISTS `knows`");
         dbUtil.execute("DROP TABLE IF EXISTS `created`");
+        dbUtil.execute("DROP TABLE IF EXISTS `date_test`");
         // drop database
         dbUtil.execute(String.format("DROP DATABASE `%s`", DATABASE));
 
@@ -117,6 +130,7 @@ public class JDBCLoadTest extends LoadTest {
         dbUtil.execute("TRUNCATE TABLE `software`");
         dbUtil.execute("TRUNCATE TABLE `knows`");
         dbUtil.execute("TRUNCATE TABLE `created`");
+        dbUtil.execute("TRUNCATE TABLE `date_test`");
     }
 
     @Test
@@ -242,5 +256,56 @@ public class JDBCLoadTest extends LoadTest {
         Assert.assertEquals(8, vertices.size());
         assertContains(vertices, "person", "age", "29");
         assertContains(vertices, "software", "price", "199.67");
+    }
+
+    @Test
+    public void testStringToDateInJDBCSource() {
+        dbUtil.execute("INSERT INTO `date_test` VALUES " +
+                "(1, '2017-12-10', '2017-12-10 15:30:45', '2017-12-10 15:30:45', '15:30:45', '2017')," +
+                "(2, '2009-11-11', '2009-11-11 08:15:30', '2009-11-11 08:15:30', '08:15:30', '2009')," +
+                "(3, '2017-03-24', '2017-03-24 12:00:00', '2017-03-24 12:00:00', '12:00:00', '2017');");
+
+        String[] args = new String[]{
+                "-f", configPath("jdbc_sql_date_convert/struct.json"),
+                "-s", configPath("jdbc_sql_date_convert/schema.groovy"),
+                "-g", GRAPH,
+                "-h", SERVER,
+                "-p", String.valueOf(PORT),
+                "--batch-insert-threads", "2",
+                "--test-mode", "true"
+        };
+        HugeGraphLoader.main(args);
+
+        List<Vertex> vertices = CLIENT.graph().listVertices();
+
+        Assert.assertEquals(3, vertices.size());
+        // Define formatters
+        DateTimeFormatter serverDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
+
+        // DATE check
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDateTime date = LocalDate.parse("2017-12-10", dateFormatter).atStartOfDay();
+
+        DateTimeFormatter datetimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime datetime = LocalDateTime.parse("2017-12-10 15:30:45", datetimeFormatter);
+
+        DateTimeFormatter timestampFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime timestamp = LocalDateTime.parse("2017-12-10 15:30:45", timestampFormatter);
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        LocalTime time = LocalTime.parse("15:30:45", timeFormatter);
+        LocalDateTime timeWithDate = time.atDate(LocalDate.of(1970, 1, 1)); // 补充日期为 Epoch 起点
+
+        DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("yyyy");
+        Year year = Year.parse("2017", yearFormatter);
+        LocalDateTime yearStart = year.atDay(1).atStartOfDay(); // 补充日期为该年的第一天
+
+        assertContains(vertices, "date_test",
+                "calendar_date", date.format(serverDateFormatter),
+                "calendar_datetime", datetime.format(serverDateFormatter),
+                "calendar_timestamp", timestamp.format(serverDateFormatter),
+                "calendar_time", timeWithDate.format(serverDateFormatter),
+                "calendar_year", yearStart.format(serverDateFormatter));
     }
 }
