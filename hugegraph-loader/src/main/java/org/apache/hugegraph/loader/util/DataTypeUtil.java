@@ -17,14 +17,8 @@
 
 package org.apache.hugegraph.loader.util;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.source.AbstractSource;
 import org.apache.hugegraph.loader.source.InputSource;
@@ -38,8 +32,7 @@ import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.InsertionOrderUtil;
 import org.apache.hugegraph.util.ReflectionUtil;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableSet;
+import java.util.*;
 
 public final class DataTypeUtil {
 
@@ -138,8 +131,8 @@ public final class DataTypeUtil {
             return parseBoolean(key, value);
         } else if (dataType.isDate()) {
             E.checkState(source instanceof FileSource,
-                         "Only accept FileSource when convert String value " +
-                         "to Date, but got '%s'", source.getClass().getName());
+                    "Only accept FileSource when convert String value " +
+                            "to Date, but got '%s'", source.getClass().getName());
             String dateFormat = ((FileSource) source).dateFormat();
             String timeZone = ((FileSource) source).timeZone();
 
