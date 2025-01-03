@@ -17,12 +17,12 @@
 
 package org.apache.hugegraph.loader.test.functional;
 
-import org.apache.hugegraph.loader.exception.LoadException;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import org.apache.hugegraph.loader.exception.LoadException;
 
 public class DBUtil {
 
@@ -47,10 +47,10 @@ public class DBUtil {
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
         } catch (ClassNotFoundException e) {
             throw new LoadException("Invalid driver class '%s'",
-                    e, this.driver);
+                                    e, this.driver);
         } catch (SQLException e) {
             throw new LoadException("Failed to connect database via '%s'",
-                    e, this.url);
+                                    e, this.url);
         }
     }
 
@@ -63,10 +63,10 @@ public class DBUtil {
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
         } catch (ClassNotFoundException e) {
             throw new LoadException("Invalid driver class '%s'",
-                    e, this.driver);
+                                    e, this.driver);
         } catch (SQLException e) {
             throw new LoadException("Failed to connect database via '%s'",
-                    e, this.url);
+                                    e, this.url);
         }
     }
 
