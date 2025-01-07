@@ -163,6 +163,11 @@ public final class DataTypeUtil {
                 FileSource fileSource = (FileSource) source;
                 dateFormat = fileSource.dateFormat();
                 timeZone = fileSource.timeZone();
+            } else {
+                throw new IllegalArgumentException(
+                        "Date format source " +
+                        source.getClass().getName() +
+                        " not supported");
             }
 
             if (extraDateFormats == null || extraDateFormats.isEmpty()) {
