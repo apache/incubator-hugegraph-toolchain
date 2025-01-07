@@ -32,7 +32,6 @@ import org.apache.hugegraph.loader.source.AbstractSource;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.ListFormat;
-import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 import org.apache.hugegraph.structure.constant.Cardinality;
 import org.apache.hugegraph.structure.constant.DataType;
@@ -126,27 +125,31 @@ public final class DataTypeUtil {
                                            InputSource source) {
         // Trim space if raw value is string
         Object value = rawValue;
-        if (rawValue instanceof String) {
+        boolean isString = rawValue instanceof String;
+        if (isString) {
             value = ((String) rawValue).trim();
         }
         if (dataType.isNumber()) {
             return parseNumber(key, value, dataType);
-        } else if (dataType.isBoolean()) {
-            return parseBoolean(key, value);
-        } else if (dataType.isDate()) {
-            return parseDate(key, source, value);
-        } else if (dataType.isUUID()) {
-            return parseUUID(key, value);
-        } else if (dataType.isText()) {
-            if (!(rawValue instanceof String)) {
-                value = rawValue.toString();
-            }
         }
-        E.checkArgument(checkDataType(key, value, dataType),
-                        "The value(key='%s') '%s'(%s) is not match with " +
-                        "data type %s and can't convert to it",
-                        key, value, value.getClass(), dataType);
-
+        switch (dataType) {
+            case TEXT:
+                if (!isString) {
+                    value = rawValue.toString();
+                }
+                return value;
+            case BOOLEAN:
+                return parseBoolean(key, value);
+            case DATE:
+                return parseDate(key, source, value);
+            case UUID:
+                return parseUUID(key, value);
+            default:
+                E.checkArgument(checkDataType(key, value, dataType),
+                                "The value(key='%s') '%s'(%s) is not match with " +
+                                "data type %s and can't convert to it",
+                                key, value, value.getClass(), dataType);
+        }
         return value;
     }
 
@@ -155,47 +158,49 @@ public final class DataTypeUtil {
         String dateFormat = null;
         String timeZone = null;
 
-        if (source instanceof KafkaSource) {
-            KafkaSource kafkaSource = (KafkaSource) source;
-            extraDateFormats = kafkaSource.getExtraDateFormats();
-            dateFormat = kafkaSource.getDateFormat();
-            timeZone = kafkaSource.getTimeZone();
-        } else if (source instanceof JDBCSource) {
-            /* Warn: it uses system default timezone,
-             * should we think a better way to compatible differ timezone people?
-             */
-            long timestamp = 0L;
-            if (value instanceof Date) {
-                timestamp = ((Date) value).getTime();
-            } else if (value instanceof LocalDateTime) {
-                timestamp = ((LocalDateTime) value).atZone(ZoneId.systemDefault())
-                                                   .toInstant()
-                                                   .toEpochMilli();
-            }
-            value = new Date(timestamp);
-        } else if (source instanceof FileSource) {
-            FileSource fileSource = (FileSource) source;
-            dateFormat = fileSource.dateFormat();
-            timeZone = fileSource.timeZone();
-        } else {
-            throw new IllegalArgumentException("Date format source " +
-                                               source.getClass().getName() + " not supported");
+        switch (source.type()) {
+            case KAFKA:
+                KafkaSource kafkaSource = (KafkaSource) source;
+                extraDateFormats = kafkaSource.getExtraDateFormats();
+                dateFormat = kafkaSource.getDateFormat();
+                timeZone = kafkaSource.getTimeZone();
+                break;
+            case JDBC:
+                /*Warn:it uses system default timezone,
+                should we thought a better way to compatible differ timezone people?*/
+                long timestamp = 0L;
+                if (value instanceof Date) {
+                    timestamp = ((Date) value).getTime();
+                } else if (value instanceof LocalDateTime) {
+                    timestamp = ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                }
+                value = new Date(timestamp);
+                break;
+            case FILE:
+                FileSource fileSource = (FileSource) source;
+                dateFormat = fileSource.dateFormat();
+                timeZone = fileSource.timeZone();
+                break;
+
+            case HDFS:
+            default:
+                throw new IllegalArgumentException("Date format source " + source.getClass().getName() + " not supported");
         }
 
         if (extraDateFormats == null || extraDateFormats.isEmpty()) {
             return parseDate(key, value, dateFormat, timeZone);
-        } else {
-            HashSet<String> allDateFormats = new HashSet<>();
-            allDateFormats.add(dateFormat);
-            allDateFormats.addAll(extraDateFormats);
-            int size = allDateFormats.size();
-            for (String df : allDateFormats) {
-                try {
-                    return parseDate(key, value, df, timeZone);
-                } catch (Exception e) {
-                    if (--size <= 0) {
-                        throw e;
-                    }
+        }
+
+        HashSet<String> allDateFormats = new HashSet<>();
+        allDateFormats.add(dateFormat);
+        allDateFormats.addAll(extraDateFormats);
+        int size = allDateFormats.size();
+        for (String df : allDateFormats) {
+            try {
+                return parseDate(key, value, df, timeZone);
+            } catch (Exception e) {
+                if (--size <= 0) {
+                    throw e;
                 }
             }
         }
