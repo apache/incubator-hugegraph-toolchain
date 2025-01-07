@@ -54,9 +54,8 @@ public class JDBCLoadTest extends LoadTest {
         clearServerData();
 
         dbUtil.connect();
-        // create database
-        dbUtil.execute(String.format("CREATE DATABASE IF NOT EXISTS `%s`;",
-                                     DATABASE));
+        // create the database
+        dbUtil.execute(String.format("CREATE DATABASE IF NOT EXISTS `%s`;", DATABASE));
         // create tables
         dbUtil.connect(DATABASE);
         // vertex person
@@ -301,11 +300,13 @@ public class JDBCLoadTest extends LoadTest {
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
         LocalTime time = LocalTime.parse("15:30:45", timeFormatter);
-        LocalDateTime timeWithDate = time.atDate(LocalDate.of(1970, 1, 1)); // 补充日期为 Epoch 起点
+        // Supplement the date as the Epoch start
+        LocalDateTime timeWithDate = time.atDate(LocalDate.of(1970, 1, 1));
 
         DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("yyyy");
         Year year = Year.parse("2017", yearFormatter);
-        LocalDateTime yearStart = year.atDay(1).atStartOfDay(); // 补充日期为该年的第一天
+        // Supplement the date as the first day of the year
+        LocalDateTime yearStart = year.atDay(1).atStartOfDay();
 
         assertContains(vertices, "date_test",
                        "calendar_date", date.format(serverDateFormatter),

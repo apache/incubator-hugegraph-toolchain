@@ -60,10 +60,8 @@ public final class DataTypeUtil {
         return ReflectionUtil.isSimpleType(value.getClass());
     }
 
-    public static Object convert(Object value, PropertyKey propertyKey,
-                                 InputSource source) {
-        E.checkArgumentNotNull(value,
-                               "The value to be converted can't be null");
+    public static Object convert(Object value, PropertyKey propertyKey, InputSource source) {
+        E.checkArgumentNotNull(value, "The value to be converted can't be null");
 
         String key = propertyKey.name();
         DataType dataType = propertyKey.dataType();
@@ -73,8 +71,7 @@ public final class DataTypeUtil {
                 return parseSingleValue(key, value, dataType, source);
             case SET:
             case LIST:
-                return parseMultiValues(key, value, dataType,
-                                        cardinality, source);
+                return parseMultiValues(key, value, dataType, cardinality, source);
             default:
                 throw new AssertionError(String.format("Unsupported cardinality: '%s'",
                                                        cardinality));
@@ -82,10 +79,8 @@ public final class DataTypeUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<Object> splitField(String key, Object rawColumnValue,
-                                          InputSource source) {
-        E.checkArgument(rawColumnValue != null,
-                        "The value to be split can't be null");
+    public static List<Object> splitField(String key, Object rawColumnValue, InputSource source) {
+        E.checkArgument(rawColumnValue != null, "The value to be split can't be null");
         if (rawColumnValue instanceof Collection) {
             return (List<Object>) rawColumnValue;
         }
@@ -127,8 +122,7 @@ public final class DataTypeUtil {
                                                          rawValue.getClass()));
     }
 
-    private static Object parseSingleValue(String key, Object rawValue,
-                                           DataType dataType,
+    private static Object parseSingleValue(String key, Object rawValue, DataType dataType,
                                            InputSource source) {
         // Trim space if raw value is string
         Object value = rawValue;
@@ -140,54 +134,7 @@ public final class DataTypeUtil {
         } else if (dataType.isBoolean()) {
             return parseBoolean(key, value);
         } else if (dataType.isDate()) {
-            List<String> extraDateFormats = null;
-            String dateFormat = null;
-            String timeZone = null;
-            if (source instanceof KafkaSource) {
-                KafkaSource kafkaSource = (KafkaSource) source;
-                extraDateFormats = kafkaSource.getExtraDateFormats();
-                dateFormat = kafkaSource.getDateFormat();
-                timeZone = kafkaSource.getTimeZone();
-            } else if (source instanceof JDBCSource) {
-                /*Warn:it uses system default timezone,
-                       should we thought a better way to compatible differ timezone people?*/
-                long timestamp = 0L;
-                if (value instanceof Date) {
-                    timestamp = ((Date) value).getTime();
-                } else if (value instanceof LocalDateTime) {
-                    timestamp = ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-                }
-                value = new Date(timestamp);
-
-            } else if (source instanceof FileSource) {
-                FileSource fileSource = (FileSource) source;
-                dateFormat = fileSource.dateFormat();
-                timeZone = fileSource.timeZone();
-            } else {
-                throw new IllegalArgumentException(
-                        "Date format source " +
-                        source.getClass().getName() +
-                        " not supported");
-            }
-
-            if (extraDateFormats == null || extraDateFormats.isEmpty()) {
-                return parseDate(key, value, dateFormat, timeZone);
-            } else {
-                HashSet<String> allDateFormats = new HashSet<>();
-                allDateFormats.add(dateFormat);
-                allDateFormats.addAll(extraDateFormats);
-                int size = allDateFormats.size();
-                for (String df : allDateFormats) {
-                    try {
-                        return parseDate(key, value, df, timeZone);
-                    } catch (Exception e) {
-                        if (--size <= 0) {
-                            throw e;
-                        }
-                    }
-                }
-            }
-            return parseDate(key, value, dateFormat, timeZone);
+            return parseDate(key, source, value);
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
         } else if (dataType.isText()) {
@@ -201,6 +148,58 @@ public final class DataTypeUtil {
                         key, value, value.getClass(), dataType);
 
         return value;
+    }
+
+    private static Date parseDate(String key, InputSource source, Object value) {
+        List<String> extraDateFormats = null;
+        String dateFormat = null;
+        String timeZone = null;
+
+        if (source instanceof KafkaSource) {
+            KafkaSource kafkaSource = (KafkaSource) source;
+            extraDateFormats = kafkaSource.getExtraDateFormats();
+            dateFormat = kafkaSource.getDateFormat();
+            timeZone = kafkaSource.getTimeZone();
+        } else if (source instanceof JDBCSource) {
+            /* Warn: it uses system default timezone,
+             * should we think a better way to compatible differ timezone people?
+             */
+            long timestamp = 0L;
+            if (value instanceof Date) {
+                timestamp = ((Date) value).getTime();
+            } else if (value instanceof LocalDateTime) {
+                timestamp = ((LocalDateTime) value).atZone(ZoneId.systemDefault())
+                                                   .toInstant()
+                                                   .toEpochMilli();
+            }
+            value = new Date(timestamp);
+        } else if (source instanceof FileSource) {
+            FileSource fileSource = (FileSource) source;
+            dateFormat = fileSource.dateFormat();
+            timeZone = fileSource.timeZone();
+        } else {
+            throw new IllegalArgumentException("Date format source " +
+                                               source.getClass().getName() + " not supported");
+        }
+
+        if (extraDateFormats == null || extraDateFormats.isEmpty()) {
+            return parseDate(key, value, dateFormat, timeZone);
+        } else {
+            HashSet<String> allDateFormats = new HashSet<>();
+            allDateFormats.add(dateFormat);
+            allDateFormats.addAll(extraDateFormats);
+            int size = allDateFormats.size();
+            for (String df : allDateFormats) {
+                try {
+                    return parseDate(key, value, df, timeZone);
+                } catch (Exception e) {
+                    if (--size <= 0) {
+                        throw e;
+                    }
+                }
+            }
+        }
+        return parseDate(key, value, dateFormat, timeZone);
     }
 
     /**
@@ -360,7 +359,7 @@ public final class DataTypeUtil {
     }
 
     /**
-     * Check type of the value valid
+     * Check the type of the value valid
      */
     private static boolean checkDataType(String key, Object value,
                                          DataType dataType) {
@@ -371,7 +370,7 @@ public final class DataTypeUtil {
     }
 
     /**
-     * Check type of all the values(maybe some list properties) valid
+     * Check the type of all the values (maybe some list properties) valid
      */
     private static boolean checkCollectionDataType(String key,
                                                    Collection<?> values,
