@@ -17,13 +17,22 @@
 
 package org.apache.hugegraph.loader.util;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableSet;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.source.AbstractSource;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.ListFormat;
+import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 import org.apache.hugegraph.structure.constant.Cardinality;
 import org.apache.hugegraph.structure.constant.DataType;
@@ -32,7 +41,8 @@ import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.InsertionOrderUtil;
 import org.apache.hugegraph.util.ReflectionUtil;
 
-import java.util.*;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 
 public final class DataTypeUtil {
 
@@ -130,36 +140,48 @@ public final class DataTypeUtil {
         } else if (dataType.isBoolean()) {
             return parseBoolean(key, value);
         } else if (dataType.isDate()) {
-            E.checkState(source instanceof FileSource,
-                    "Only accept FileSource when convert String value " +
-                            "to Date, but got '%s'", source.getClass().getName());
-            String dateFormat = ((FileSource) source).dateFormat();
-            String timeZone = ((FileSource) source).timeZone();
-
+            List<String> extraDateFormats = null;
+            String dateFormat = null;
+            String timeZone = null;
             if (source instanceof KafkaSource) {
-                List<String> extraDateFormats =
-                        ((KafkaSource) source).getExtraDateFormats();
-                dateFormat = ((KafkaSource) source).getDateFormat();
-                timeZone = ((KafkaSource) source).getTimeZone();
-                if (extraDateFormats == null || extraDateFormats.isEmpty()) {
-                    return parseDate(key, value, dateFormat, timeZone);
-                } else {
-                    HashSet<String> allDateFormats = new HashSet<>();
-                    allDateFormats.add(dateFormat);
-                    allDateFormats.addAll(extraDateFormats);
-                    int size = allDateFormats.size();
-                    for (String df : allDateFormats) {
-                        try {
-                            return parseDate(key, value, df, timeZone);
-                        } catch (Exception e) {
-                            if (--size <= 0) {
-                                throw e;
-                            }
+                KafkaSource kafkaSource = (KafkaSource) source;
+                extraDateFormats = kafkaSource.getExtraDateFormats();
+                dateFormat = kafkaSource.getDateFormat();
+                timeZone = kafkaSource.getTimeZone();
+            } else if (source instanceof JDBCSource) {
+                /*Warn:it uses system default timezone,
+                       should we thought a better way to compatible differ timezone people?*/
+                long timestamp = 0L;
+                if (value instanceof Date) {
+                    timestamp = ((Date) value).getTime();
+                } else if (value instanceof LocalDateTime) {
+                    timestamp = ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                }
+                value = new Date(timestamp);
+
+            } else if (source instanceof FileSource) {
+                FileSource fileSource = (FileSource) source;
+                dateFormat = fileSource.dateFormat();
+                timeZone = fileSource.timeZone();
+            }
+
+            if (extraDateFormats == null || extraDateFormats.isEmpty()) {
+                return parseDate(key, value, dateFormat, timeZone);
+            } else {
+                HashSet<String> allDateFormats = new HashSet<>();
+                allDateFormats.add(dateFormat);
+                allDateFormats.addAll(extraDateFormats);
+                int size = allDateFormats.size();
+                for (String df : allDateFormats) {
+                    try {
+                        return parseDate(key, value, df, timeZone);
+                    } catch (Exception e) {
+                        if (--size <= 0) {
+                            throw e;
                         }
                     }
                 }
             }
-
             return parseDate(key, value, dateFormat, timeZone);
         } else if (dataType.isUUID()) {
             return parseUUID(key, value);
@@ -220,9 +242,9 @@ public final class DataTypeUtil {
                 return false;
             } else {
                 throw new IllegalArgumentException(String.format(
-                          "Failed to convert '%s'(key='%s') to Boolean, " +
-                          "the acceptable boolean strings are %s or %s",
-                          key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
+                        "Failed to convert '%s'(key='%s') to Boolean, " +
+                        "the acceptable boolean strings are %s or %s",
+                        key, rawValue, ACCEPTABLE_TRUE, ACCEPTABLE_FALSE));
             }
         }
         throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
