@@ -35,7 +35,7 @@ jobs:
     strategy:
       matrix:
         JAVA_VERSION: ['11']
-        python-version: ["3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - name: Fetch Code
