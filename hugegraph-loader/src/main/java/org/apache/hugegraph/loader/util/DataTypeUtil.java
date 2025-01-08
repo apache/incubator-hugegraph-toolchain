@@ -176,13 +176,13 @@ public final class DataTypeUtil {
                 }
                 value = new Date(timestamp);
                 break;
+            case HDFS:
             case FILE:
                 FileSource fileSource = (FileSource) source;
                 dateFormat = fileSource.dateFormat();
                 timeZone = fileSource.timeZone();
                 break;
 
-            case HDFS:
             default:
                 throw new IllegalArgumentException("Date format source " + source.getClass().getName() + " not supported");
         }
