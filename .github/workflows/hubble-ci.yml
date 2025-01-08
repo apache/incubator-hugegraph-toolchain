@@ -52,7 +52,7 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.python-version }}
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
       # we also should cache python & yarn & downloads to avoid useless work
