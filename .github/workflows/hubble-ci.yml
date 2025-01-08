@@ -29,6 +29,9 @@ env:
 jobs:
   hubble-ci:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       STATIC_DIR: hugegraph-hubble/hubble-dist/assembly/static
@@ -38,6 +41,11 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
       # we also should cache python & yarn & downloads to avoid useless work
       - name: Cache Maven packages
         uses: actions/cache@v3
