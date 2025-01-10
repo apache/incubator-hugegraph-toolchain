@@ -109,12 +109,10 @@ public final class DataTypeUtil {
                 return UUID.fromString(value);
             }
             // UUID represented by hex string
-            E.checkArgument(value.length() == 32,
-                            "Invalid UUID value(key='%s') '%s'", key, value);
+            E.checkArgument(value.length() == 32, "Invalid UUID value(key='%s') '%s'", key, value);
             String high = value.substring(0, 16);
             String low = value.substring(16);
-            return new UUID(Long.parseUnsignedLong(high, 16),
-                            Long.parseUnsignedLong(low, 16));
+            return new UUID(Long.parseUnsignedLong(high, 16), Long.parseUnsignedLong(low, 16));
         }
         throw new IllegalArgumentException(String.format("Failed to convert value(key='%s') " +
                                                          "'%s'(%s) to UUID", key, rawValue,
@@ -123,21 +121,14 @@ public final class DataTypeUtil {
 
     private static Object parseSingleValue(String key, Object rawValue, DataType dataType,
                                            InputSource source) {
-        // Trim space if raw value is string
-        Object value = rawValue;
-        boolean isString = rawValue instanceof String;
-        if (isString) {
-            value = ((String) rawValue).trim();
-        }
+        Object value = trimString(rawValue);
         if (dataType.isNumber()) {
             return parseNumber(key, value, dataType);
         }
+
         switch (dataType) {
             case TEXT:
-                if (!isString) {
-                    value = rawValue.toString();
-                }
-                return value;
+                return value.toString();
             case BOOLEAN:
                 return parseBoolean(key, value);
             case DATE:
@@ -146,11 +137,17 @@ public final class DataTypeUtil {
                 return parseUUID(key, value);
             default:
                 E.checkArgument(checkDataType(key, value, dataType),
-                                "The value(key='%s') '%s'(%s) is not match with " +
-                                "data type %s and can't convert to it",
-                                key, value, value.getClass(), dataType);
+                                "The value(key='%s') '%s'(%s) is not match with data type %s and " +
+                                "can't convert to it", key, value, value.getClass(), dataType);
         }
         return value;
+    }
+
+    private static Object trimString(Object rawValue) {
+        if (rawValue instanceof String) {
+            return ((String) rawValue).trim();
+        }
+        return rawValue;
     }
 
     private static Date parseDate(String key, InputSource source, Object value) {
@@ -166,13 +163,17 @@ public final class DataTypeUtil {
                 timeZone = kafkaSource.getTimeZone();
                 break;
             case JDBC:
-                /*Warn:it uses system default timezone,
-                should we thought a better way to compatible differ timezone people?*/
+                /*
+                 * Warn: it uses system default timezone,
+                 * should we think a better way to compatible differ timezone people?
+                 */
                 long timestamp = 0L;
                 if (value instanceof Date) {
                     timestamp = ((Date) value).getTime();
                 } else if (value instanceof LocalDateTime) {
-                    timestamp = ((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                    timestamp = ((LocalDateTime) value).atZone(ZoneId.systemDefault())
+                                                       .toInstant()
+                                                       .toEpochMilli();
                 }
                 value = new Date(timestamp);
                 break;
@@ -184,7 +185,8 @@ public final class DataTypeUtil {
                 break;
 
             default:
-                throw new IllegalArgumentException("Date format source " + source.getClass().getName() + " not supported");
+                throw new IllegalArgumentException("Date format source " +
+                                                   source.getClass().getName() + " not supported");
         }
 
         if (extraDateFormats == null || extraDateFormats.isEmpty()) {
@@ -212,10 +214,8 @@ public final class DataTypeUtil {
      * TODO: After parsing to json, the order of the collection changed
      * in some cases (such as list<date>)
      **/
-    private static Object parseMultiValues(String key, Object values,
-                                           DataType dataType,
-                                           Cardinality cardinality,
-                                           InputSource source) {
+    private static Object parseMultiValues(String key, Object values, DataType dataType,
+                                           Cardinality cardinality, InputSource source) {
         // JSON file should not parse again
         if (values instanceof Collection &&
             checkCollectionDataType(key, (Collection<?>) values, dataType)) {
@@ -228,14 +228,12 @@ public final class DataTypeUtil {
         String rawValue = (String) values;
         List<Object> valueColl = split(key, rawValue, source);
         Collection<Object> results = cardinality == Cardinality.LIST ?
-                                     InsertionOrderUtil.newList() :
-                                     InsertionOrderUtil.newSet();
+                                     InsertionOrderUtil.newList() : InsertionOrderUtil.newSet();
         valueColl.forEach(value -> {
             results.add(parseSingleValue(key, value, dataType, source));
         });
         E.checkArgument(checkCollectionDataType(key, results, dataType),
-                        "Not all collection elems %s match with data type %s",
-                        results, dataType);
+                        "Not all collection elems %s match with data type %s", results, dataType);
         return results;
     }
 
@@ -261,10 +259,8 @@ public final class DataTypeUtil {
                                                          rawValue.getClass()));
     }
 
-    private static Number parseNumber(String key, Object value,
-                                      DataType dataType) {
-        E.checkState(dataType.isNumber(),
-                     "The target data type must be number");
+    private static Number parseNumber(String key, Object value, DataType dataType) {
+        E.checkState(dataType.isNumber(), "The target data type must be number");
 
         if (dataType.clazz().isInstance(value)) {
             return (Number) value;
@@ -366,8 +362,7 @@ public final class DataTypeUtil {
     /**
      * Check the type of the value valid
      */
-    private static boolean checkDataType(String key, Object value,
-                                         DataType dataType) {
+    private static boolean checkDataType(String key, Object value, DataType dataType) {
         if (value instanceof Number && dataType.isNumber()) {
             return parseNumber(key, value, dataType) != null;
         }
@@ -377,8 +372,7 @@ public final class DataTypeUtil {
     /**
      * Check the type of all the values (maybe some list properties) valid
      */
-    private static boolean checkCollectionDataType(String key,
-                                                   Collection<?> values,
+    private static boolean checkCollectionDataType(String key, Collection<?> values,
                                                    DataType dataType) {
         for (Object value : values) {
             if (!checkDataType(key, value, dataType)) {
