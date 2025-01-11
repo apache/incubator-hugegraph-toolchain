@@ -18,6 +18,7 @@
 package org.apache.hugegraph.api.traverser;
 
 import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.util.E;
 
 import org.apache.hugegraph.client.RestClient;
@@ -38,7 +39,16 @@ public class PersonalRankAPI extends TraversersAPI {
 
     public RanksWithMeasure post(Request request) {
         RestResult result = this.client.post(this.path(), request);
-        return result.readObject(RanksWithMeasure.class);
+        // to compatible with the old version, the result may be Ranks or RanksWithMeasure
+        // so we need to check the content of result to decide which class to use
+        if (result.content().contains("personal_rank")) {
+            return result.readObject(RanksWithMeasure.class);
+        } else {
+            Ranks personalRanks = result.readObject(Ranks.class);
+            RanksWithMeasure ranksWithMeasure = new RanksWithMeasure();
+            ranksWithMeasure.setPersonalRank(personalRanks);
+            return ranksWithMeasure;
+        }
     }
 
     public static class Request {
