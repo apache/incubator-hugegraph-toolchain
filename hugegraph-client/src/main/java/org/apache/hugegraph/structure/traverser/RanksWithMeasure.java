@@ -33,6 +33,9 @@ public class RanksWithMeasure {
     @JsonProperty
     private Map<String, Object> measure;
 
+    public RanksWithMeasure() {
+    }
+
     public Ranks personalRanks() {
         return this.personalRank;
     }
@@ -43,5 +46,11 @@ public class RanksWithMeasure {
 
     public Map<String, Object> measure() {
         return this.measure;
+    }
+
+    public void setPersonalRank(Ranks personalRank) {
+        if (this.personalRank == null) {
+            this.personalRank = personalRank;
+        }
     }
 }
