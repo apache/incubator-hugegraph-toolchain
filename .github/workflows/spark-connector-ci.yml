@@ -25,11 +25,12 @@ jobs:
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-spark-connector/assembly/travis
-      COMMIT_ID: f6f3708
+      # hugegraph commit date: 2024-12-09
+      COMMIT_ID: f838897
     strategy:
       matrix:
         JAVA_VERSION: [ '11' ]
-
+      
     steps:
       - name: Fetch Code
         uses: actions/checkout@v4

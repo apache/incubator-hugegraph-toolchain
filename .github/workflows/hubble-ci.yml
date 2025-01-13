@@ -24,7 +24,8 @@ on:
 env:
   TRAVIS_DIR: hugegraph-hubble/hubble-dist/assembly/travis
   # TODO: replace it with the (latest - n) commit id (n >= 15)
-  COMMIT_ID: 6a4041e
+  # hugegraph commit date: 2024-12-09
+  COMMIT_ID: f838897
 
 jobs:
   hubble-ci:
