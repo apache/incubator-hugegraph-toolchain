@@ -150,6 +150,7 @@ public final class DataTypeUtil {
         return rawValue;
     }
 
+    // TODO: could extract some steps to a method
     private static Date parseDate(String key, InputSource source, Object value) {
         List<String> extraDateFormats = null;
         String dateFormat = null;
@@ -183,7 +184,6 @@ public final class DataTypeUtil {
                 dateFormat = fileSource.dateFormat();
                 timeZone = fileSource.timeZone();
                 break;
-
             default:
                 throw new IllegalArgumentException("Date format source " +
                                                    source.getClass().getName() + " not supported");
@@ -193,9 +193,9 @@ public final class DataTypeUtil {
             return parseDate(key, value, dateFormat, timeZone);
         }
 
-        HashSet<String> allDateFormats = new HashSet<>();
+        Set<String> allDateFormats = new HashSet<>(extraDateFormats);
         allDateFormats.add(dateFormat);
-        allDateFormats.addAll(extraDateFormats);
+
         int size = allDateFormats.size();
         for (String df : allDateFormats) {
             try {
@@ -297,11 +297,11 @@ public final class DataTypeUtil {
         }
     }
 
-    private static Date parseDate(String key, Object value,
-                                  String dateFormat, String timeZone) {
+    private static Date parseDate(String key, Object value, String dateFormat, String timeZone) {
         if (value instanceof Date) {
             return (Date) value;
         }
+
         if (value instanceof Number) {
             return new Date(((Number) value).longValue());
         } else if (value instanceof String) {
@@ -322,8 +322,7 @@ public final class DataTypeUtil {
                                                          value.getClass()));
     }
 
-    private static List<Object> split(String key, String rawValue,
-                                      InputSource source) {
+    private static List<Object> split(String key, String rawValue, InputSource source) {
         List<Object> valueColl = new ArrayList<>();
         if (rawValue.isEmpty()) {
             return valueColl;
