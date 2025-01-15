@@ -43,7 +43,7 @@ public class DBUtil {
     public void connect(boolean useSSL) {
         try {
             Class.forName(this.driver);
-            String url = String.format("%s?%s", this.url, String.format("useSSL=%s", useSSL));
+            String url = String.format("%s?%suseSSL=%s", this.url, useSSL);
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
         } catch (ClassNotFoundException e) {
             throw new LoadException("Invalid driver class '%s'",
@@ -56,8 +56,7 @@ public class DBUtil {
 
     public void connect(String database, boolean useSSL) {
         this.close();
-        String url = String.format("%s/%s?%s", this.url, database,
-                String.format("useSSL=%s", useSSL));
+        String url = String.format("%s/%s?useSSL=%s", this.url, database, useSSL);
         try {
             Class.forName(this.driver);
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
