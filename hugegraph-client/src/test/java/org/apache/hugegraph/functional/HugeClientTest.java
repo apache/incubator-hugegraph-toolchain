@@ -24,13 +24,14 @@ import org.junit.Test;
 public class HugeClientTest {
 
     protected static final String BASE_URL = "http://127.0.0.1:8080";
+    protected static final String GRAPHSPACE = "DEFAULT";
     protected static final String GRAPH = "hugegraph";
     protected static final String USERNAME = "admin";
     protected static final String PASSWORD = "pa";
 
     @Test
     public void testContext() {
-        HugeClient client = HugeClient.builder(BASE_URL, GRAPH)
+        HugeClient client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
                                       .configUser(USERNAME, PASSWORD)
                                       .configHttpBuilder(builder -> builder.followRedirects(false))
                                       .build();

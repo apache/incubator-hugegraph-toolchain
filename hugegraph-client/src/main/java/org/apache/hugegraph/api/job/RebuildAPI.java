@@ -32,8 +32,8 @@ public class RebuildAPI extends JobAPI {
 
     private static final String JOB_TYPE = "rebuild";
 
-    public RebuildAPI(RestClient client, String graph) {
-        super(client, graph);
+    public RebuildAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

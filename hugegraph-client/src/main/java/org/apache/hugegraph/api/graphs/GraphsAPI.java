@@ -39,10 +39,19 @@ public class GraphsAPI extends API {
     private static final String GRAPH_READ_MODE = "graph_read_mode";
     private static final String CLEAR = "clear";
     private static final String CONFIRM_MESSAGE = "confirm_message";
+    private static final String PATH = "graphspaces/%s/graphs";
 
-    public GraphsAPI(RestClient client) {
+    public GraphsAPI(RestClient client, String graphSpace) {
         super(client);
-        this.path(this.type());
+        this.path(String.format(PATH, graphSpace));
+    }
+
+    private static String joinPath(String path, String graph) {
+        return String.join(DELIMITER, path, graph);
+    }
+
+    private static String joinPath(String path, String graph, String action) {
+        return String.join(DELIMITER, path, graph, action);
     }
 
     @Override
@@ -129,13 +138,5 @@ public class GraphsAPI extends API {
         } catch (IllegalArgumentException e) {
             throw new InvalidResponseException("Invalid GraphReadMode value '%s'", value);
         }
-    }
-
-    private static String joinPath(String path, String graph) {
-        return String.join(DELIMITER, path, graph);
-    }
-
-    private static String joinPath(String path, String graph, String action) {
-        return String.join(DELIMITER, path, graph, action);
     }
 }

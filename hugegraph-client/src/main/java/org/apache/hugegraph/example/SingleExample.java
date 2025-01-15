@@ -21,23 +21,26 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.hugegraph.driver.GraphManager;
+import org.apache.hugegraph.driver.GremlinManager;
+import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.gremlin.Result;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
-import org.apache.hugegraph.driver.GraphManager;
-import org.apache.hugegraph.driver.GremlinManager;
-import org.apache.hugegraph.driver.HugeClient;
-import org.apache.hugegraph.driver.SchemaManager;
 
 public class SingleExample {
 
     public static void main(String[] args) throws IOException {
         // If connect failed will throw a exception.
-        HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
-                                                   "hugegraph").build();
+        HugeClient hugeClient = HugeClient.builder("http://127.0.0.1:8080",
+                                                   "DEFAULT",
+                                                   "hugegraph")
+                                          .configUser("admin", "admin")
+                                          .build();
 
         SchemaManager schema = hugeClient.schema();
 
