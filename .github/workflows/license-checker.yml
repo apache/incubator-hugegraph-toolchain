@@ -30,7 +30,8 @@ jobs:
   check-license-header:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Fetch Code
+        uses: actions/checkout@v4
       # More info could refer to: https://github.com/apache/skywalking-eyes
       - name: Check License Header
         uses: apache/skywalking-eyes@main
