@@ -15,19 +15,31 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.direct.loader;
+package org.apache.hugegraph.serializer.config;
 
-import org.apache.hugegraph.serializer.direct.struct.Directions;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
 
-public interface DirectLoader<T, R> {
-    JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds, Directions directions);
+import lombok.Data;
 
-    String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
+@Data
+public class SerializerConfig {
+    private int vertexPartitions;
+    private int edgePartitions;
+    private String pdAddress;
+    private String pdRestPort;
+    private String graphName;
 
-    void loadFiles(String path,Directions directions);
 
-    void bulkload(Dataset<Row> ds);
+    private String backendStoreType;
+
+    public SerializerConfig(int vertexPartitions, int edgePartitions, String pdAddress, String pdRestPort, String graphName) {
+        this.vertexPartitions = vertexPartitions;
+        this.edgePartitions = edgePartitions;
+        this.pdAddress = pdAddress;
+        this.pdRestPort = pdRestPort;
+        this.graphName = graphName;
+    }
+
+    public SerializerConfig() {
+    }
+
 }

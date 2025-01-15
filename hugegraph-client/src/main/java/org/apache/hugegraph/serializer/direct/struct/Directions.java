@@ -15,19 +15,23 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.direct.loader;
+package org.apache.hugegraph.serializer.direct.struct;
 
-import org.apache.hugegraph.serializer.direct.struct.Directions;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
+public enum Directions  {
 
-public interface DirectLoader<T, R> {
-    JavaPairRDD<T, R> buildVertexAndEdge(Dataset<Row> ds, Directions directions);
+    // TODO: add NONE enum for non-directional edges
 
-    String generateFiles(JavaPairRDD<T, R> buildAndSerRdd);
+    BOTH(0, "both"),
 
-    void loadFiles(String path,Directions directions);
+    OUT(1, "out"),
 
-    void bulkload(Dataset<Row> ds);
+    IN(2, "in");
+    private byte code = 0;
+    private String name = null;
+
+    Directions(int code, String name) {
+        assert code < 256;
+        this.code = (byte) code;
+        this.name = name;
+    }
 }

@@ -34,6 +34,50 @@ public final class LoadReport {
     private long edgeInsertSuccess;
     private long edgeInsertFailure;
 
+    public static LoadReport collect(LoadSummary summary) {
+        LoadReport report = new LoadReport();
+        report.totalTime = summary.totalTime();
+        for (LoadMetrics metrics : summary.inputMetricsMap().values()) {
+            report.readSuccess += metrics.readSuccess();
+            report.readFailure += metrics.readFailure();
+            for (LoadMetrics.Metrics labelMetrics : metrics.vertexMetrics().values()) {
+                report.vertexParseSuccess += labelMetrics.parseSuccess();
+                report.vertexParseFailure += labelMetrics.parseFailure();
+                report.vertexInsertSuccess += labelMetrics.insertSuccess();
+                report.vertexInsertFailure += labelMetrics.insertFailure();
+            }
+            for (LoadMetrics.Metrics labelMetrics : metrics.edgeMetrics().values()) {
+                report.edgeParseSuccess += labelMetrics.parseSuccess();
+                report.edgeParseFailure += labelMetrics.parseFailure();
+                report.edgeInsertSuccess += labelMetrics.insertSuccess();
+                report.edgeInsertFailure += labelMetrics.insertFailure();
+            }
+        }
+        return report;
+    }
+
+    public static LoadReport collectDistributed(LoadSummary summary) {
+        LoadReport report = new LoadReport();
+        report.totalTime = summary.totalTime();
+        for (DistributedLoadMetrics metrics : summary.inputDistributedMetricsMap().values()) {
+            report.readSuccess += metrics.readSuccess();
+            report.readFailure += metrics.readFailure();
+            for (DistributedLoadMetrics.DistributedMetrics labelMetrics : metrics.vertexMetrics().values()) {
+                report.vertexParseSuccess += labelMetrics.parseSuccess();
+                report.vertexParseFailure += labelMetrics.parseFailure();
+                report.vertexInsertSuccess += labelMetrics.insertSuccess();
+                report.vertexInsertFailure += labelMetrics.insertFailure();
+            }
+            for (DistributedLoadMetrics.DistributedMetrics labelMetrics : metrics.edgeMetrics().values()) {
+                report.edgeParseSuccess += labelMetrics.parseSuccess();
+                report.edgeParseFailure += labelMetrics.parseFailure();
+                report.edgeInsertSuccess += labelMetrics.insertSuccess();
+                report.edgeInsertFailure += labelMetrics.insertFailure();
+            }
+        }
+        return report;
+    }
+
     public long totalTime() {
         return this.totalTime;
     }
@@ -76,27 +120,5 @@ public final class LoadReport {
 
     public long edgeInsertFailure() {
         return this.edgeInsertFailure;
-    }
-
-    public static LoadReport collect(LoadSummary summary) {
-        LoadReport report = new LoadReport();
-        report.totalTime = summary.totalTime();
-        for (LoadMetrics metrics : summary.inputMetricsMap().values()) {
-            report.readSuccess += metrics.readSuccess();
-            report.readFailure += metrics.readFailure();
-            for (LoadMetrics.Metrics labelMetrics : metrics.vertexMetrics().values()) {
-                report.vertexParseSuccess += labelMetrics.parseSuccess();
-                report.vertexParseFailure += labelMetrics.parseFailure();
-                report.vertexInsertSuccess += labelMetrics.insertSuccess();
-                report.vertexInsertFailure += labelMetrics.insertFailure();
-            }
-            for (LoadMetrics.Metrics labelMetrics : metrics.edgeMetrics().values()) {
-                report.edgeParseSuccess += labelMetrics.parseSuccess();
-                report.edgeParseFailure += labelMetrics.parseFailure();
-                report.edgeInsertSuccess += labelMetrics.insertSuccess();
-                report.edgeInsertFailure += labelMetrics.insertFailure();
-            }
-        }
-        return report;
     }
 }

@@ -26,6 +26,7 @@ import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.serializer.direct.HBaseSerializer;
 import org.apache.hugegraph.serializer.direct.RocksDBSerializer;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 
@@ -135,7 +136,7 @@ public class BytesDemo {
 
         // Old way: encode to json then send to server
         if (bypassServer) {
-            writeDirectly(vertices, edges);
+            writeDirectly(vertices, edges,null);
         } else {
             writeByServer(graph, vertices, edges);
         }
@@ -144,15 +145,15 @@ public class BytesDemo {
     /* we transfer the vertex & edge into bytes array
      * TODO: use a batch and send them together
      * */
-    void writeDirectly(List<Vertex> vertices, List<Edge> edges) {
+    void writeDirectly(List<Vertex> vertices, List<Edge> edges, Directions direction) {
         for (Vertex vertex : vertices) {
-            byte[] rowkey = hBaseSer.getKeyBytes(vertex);
+            byte[] rowkey = hBaseSer.getKeyBytes(vertex, direction)._1;
             byte[] values = hBaseSer.getValueBytes(vertex);
             sendRpcToHBase("vertex", rowkey, values);
         }
 
         for (Edge edge : edges) {
-            byte[] rowkey = hBaseSer.getKeyBytes(edge);
+            byte[] rowkey = hBaseSer.getKeyBytes(edge, direction)._1;
             byte[] values = hBaseSer.getValueBytes(edge);
             sendRpcToHBase("edge", rowkey, values);
         }

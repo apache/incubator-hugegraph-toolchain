@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.mapping.EdgeMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.EdgeLabel;

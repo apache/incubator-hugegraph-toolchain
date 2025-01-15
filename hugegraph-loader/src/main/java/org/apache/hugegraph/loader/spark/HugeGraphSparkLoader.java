@@ -17,17 +17,23 @@
 
 package org.apache.hugegraph.loader.spark;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.loader.builder.EdgeBuilder;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
 import org.apache.hugegraph.loader.builder.VertexBuilder;
+
+import org.apache.hugegraph.loader.direct.loader.AbstractDirectLoader;
 import org.apache.hugegraph.loader.direct.loader.HBaseDirectLoader;
+import org.apache.hugegraph.loader.direct.loader.HStoreDirectLoader;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
-import org.apache.hugegraph.loader.metrics.LoadDistributeMetrics;
+import org.apache.hugegraph.loader.metrics.DistributedLoadMetrics;
+import org.apache.hugegraph.loader.metrics.LoadReport;
+import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 import org.apache.hugegraph.loader.util.Printer;
@@ -41,6 +47,7 @@ import org.apache.hugegraph.loader.source.file.FileFilter;
 import org.apache.hugegraph.loader.source.file.FileFormat;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.file.SkippedLine;
+import org.apache.hugegraph.serializer.direct.struct.Directions;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
@@ -49,14 +56,15 @@ import org.apache.hugegraph.structure.graph.UpdateStrategy;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.util.Log;
 
+import org.apache.hugegraph.util.TimeUtil;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.sql.DataFrameReader;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructField;
-import org.apache.spark.util.LongAccumulator;
 import org.slf4j.Logger;
 
 import java.io.Serializable;
@@ -72,6 +80,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import scala.Tuple2;
 import scala.collection.JavaConverters;
 
 public class HugeGraphSparkLoader implements Serializable {
@@ -82,6 +91,8 @@ public class HugeGraphSparkLoader implements Serializable {
     private final Map<ElementBuilder, List<GraphElement>> builders;
 
     private final transient ExecutorService executor;
+    private static final String DIVIDE_LINE = StringUtils.repeat('-', 50);
+
 
     public static void main(String[] args) {
         HugeGraphSparkLoader loader;
@@ -133,66 +144,197 @@ public class HugeGraphSparkLoader implements Serializable {
             this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
         }
 
-        SparkConf conf = new SparkConf();
-        registerKryoClasses(conf);
-        SparkSession session = SparkSession.builder().config(conf).getOrCreate();
+        SparkSession session = initializeSparkSession();
         SparkContext sc = session.sparkContext();
 
-        LongAccumulator totalInsertSuccess = sc.longAccumulator("totalInsertSuccess");
+        LoadSummary summary = initializeLoadSummary(mapping, sc);
+
         List<Future<?>> futures = new ArrayList<>(structs.size());
+        Object[] outEArray = new JavaPairRDD[structs.size()];
+        Object[] inEArray = new JavaPairRDD[structs.size()];
 
-        for (InputStruct struct : structs) {
+
+        for (int i = 0; i < structs.size(); i++) {
+            InputStruct struct = structs.get(i);
+            DistributedLoadMetrics distributedLoadMetrics = summary.distributedLoadMetrics(struct);
+            int finalI = i;
+
             Future<?> future = this.executor.submit(() -> {
-                LOG.info("\n Initializes the accumulator corresponding to the  {} ",
-                         struct.input().asFileSource().path());
-                LoadDistributeMetrics loadDistributeMetrics = new LoadDistributeMetrics(struct);
-                loadDistributeMetrics.init(sc);
-                LOG.info("\n  Start to load data, data info is: \t {} ",
-                         struct.input().asFileSource().path());
-                Dataset<Row> ds = read(session, struct);
                 if (sinkType) {
-                    LOG.info("\n  Start to load data using spark apis  \n");
-                    ds.foreachPartition((Iterator<Row> p) -> {
-                        LoadContext context = initPartition(this.loadOptions, struct);
-                        p.forEachRemaining((Row row) -> {
-                            loadRow(struct, row, p, context);
-                        });
-                        context.close();
-                    });
-
+                    processWithAPI(session, struct, distributedLoadMetrics);
                 } else {
-                    LOG.info("\n Start to load data using spark bulkload \n");
-                    // gen-hfile
-                    HBaseDirectLoader directLoader = new HBaseDirectLoader(loadOptions, struct,
-                                                                           loadDistributeMetrics);
-                    directLoader.bulkload(ds);
-
+                    processWithBulkLoad(session, struct, distributedLoadMetrics, outEArray,inEArray, finalI);
                 }
-                collectLoadMetrics(loadDistributeMetrics, totalInsertSuccess);
-                LOG.info("\n Finished  load {}  data ", struct.input().asFileSource().path());
             });
             futures.add(future);
         }
-        for (Future<?> future : futures) {
-            future.get();
+
+        waitForFutures(futures);
+        if (!sinkType) {
+            unifyAndLoad(outEArray, structs,null);
+            if(arrayHasData(inEArray)){
+                unifyAndLoad(inEArray, structs, Directions.IN);
+            }
         }
-
-        Long totalInsertSuccessCnt = totalInsertSuccess.value();
-        LOG.info("\n ------------The data load task is complete-------------------\n" +
-                 "\n insertSuccessCnt:\t {} \n ---------------------------------------------\n",
-                 totalInsertSuccessCnt);
-
+        summary.stopTotalTimer();
+        printDistributedSummary(summary);
         sc.stop();
         session.close();
         session.stop();
     }
 
-    private void collectLoadMetrics(LoadDistributeMetrics loadMetrics,
-                                    LongAccumulator totalInsertSuccess) {
-        Long edgeInsertSuccess = loadMetrics.readEdgeInsertSuccess();
-        Long vertexInsertSuccess = loadMetrics.readVertexInsertSuccess();
-        totalInsertSuccess.add(edgeInsertSuccess);
-        totalInsertSuccess.add(vertexInsertSuccess);
+    private void waitForFutures(List<Future<?>> futures) throws ExecutionException, InterruptedException {
+        for (Future<?> future : futures) {
+            future.get();
+        }
+    }
+    public static boolean arrayHasData(Object[] array) {
+        if (array == null || array.length == 0) {
+            return false;
+        }
+        for (Object element : array) {
+            if (element != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private SparkSession initializeSparkSession() {
+        SparkConf conf = new SparkConf();
+        registerKryoClasses(conf);
+        return SparkSession.builder().config(conf).getOrCreate();
+    }
+
+    private LoadSummary initializeLoadSummary(LoadMapping mapping, SparkContext sc) {
+        LoadSummary summary = new LoadSummary();
+        summary.initMetrics(mapping, sc);
+        summary.startTotalTimer();
+        return summary;
+    }
+    private void processWithAPI(SparkSession session, InputStruct struct, DistributedLoadMetrics distributedLoadMetrics) {
+        LOG.info("\n Initializes the accumulator corresponding to the  {} ",
+                struct.input().asFileSource().path());
+
+        LOG.info("\n  Start to load data, data info is: \t {} ",
+                struct.input().asFileSource().path());
+        Dataset<Row> ds = read(session, struct);
+        LOG.info("\n  Start to load data using spark apis  \n");
+        ds.foreachPartition((Iterator<Row> p) -> {
+            LoadContext context = initPartition(this.loadOptions, struct);
+            p.forEachRemaining((Row row) -> {
+                loadRow(struct, row, p, context, distributedLoadMetrics);
+            });
+            context.close();
+        });
+    }
+
+    private void processWithBulkLoad(SparkSession session, InputStruct struct,
+                                     DistributedLoadMetrics distributedLoadMetrics, Object[] outEArray, Object[] inEArray,int index) {
+        LOG.info("\n  Start to load data, data info is: \t {} ",
+                struct.input().asFileSource().path());
+        Dataset<Row> ds = read(session, struct);
+        LOG.info("\n Start to load data using spark bulkload \n");
+        processDirectLoader(struct, distributedLoadMetrics, ds, outEArray,inEArray, index);
+    }
+
+    private void unifyAndLoad(Object[] dstArray, List<InputStruct> structs, Directions directions) {
+        JavaPairRDD unionRDD = null;
+        String path = null;
+        switch (loadOptions.backendStoreType.toLowerCase()) {
+            case "hbase":
+                unionRDD = unionRDDs((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) dstArray);
+                HBaseDirectLoader hbaseDirectLoader = new HBaseDirectLoader(this.loadOptions, structs.get(0));
+                path = hbaseDirectLoader.generateFiles(unionRDD);
+                if(null==directions){
+                    hbaseDirectLoader.loadFiles(path,null);
+                }else{
+                    hbaseDirectLoader.loadFiles(path,Directions.IN);
+                }
+                break;
+            case "hstore":
+                unionRDD = unionRDDs((JavaPairRDD<Tuple2<byte[], Integer>, byte[]>[]) dstArray);
+                HStoreDirectLoader hstoreDirectLoader = new HStoreDirectLoader(this.loadOptions, structs.get(0));
+                path = hstoreDirectLoader.generateFiles(unionRDD);
+
+                if(null ==directions){
+                    hstoreDirectLoader.loadFiles(path,null);
+                }else {
+                    hstoreDirectLoader.loadFiles(path, Directions.IN);
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported backend store type: " + loadOptions.backendStoreType);
+        }
+    }
+
+    private <T> JavaPairRDD unionRDDs(JavaPairRDD<T, ?>[] rdds) {
+        JavaPairRDD unionRDD = rdds[0];
+        for (int i = 1; i < rdds.length; i++) {
+            unionRDD = unionRDD.union(rdds[i]);
+        }
+        return unionRDD;
+    }
+
+
+
+    private static void log(String message) {
+        LOG.info(message);
+    }
+    public static void printDistributedSummary(LoadSummary summary) {
+        log(DIVIDE_LINE);
+        log("detail metrics");
+        summary.inputDistributedMetricsMap().forEach((id, metrics) -> {
+            log("");
+            log(String.format("input-struct '%s'", new Object[] { id }));
+            metrics.vertexMetrics().forEach((name,distributedMetrics)->{
+                log(String.format("vertex '%s'", new Object[] { name }));
+                log(distributedMetrics.toString());
+            });
+            metrics.edgeMetrics().forEach((name,distributedMetrics)->{
+                log(String.format("edge '%s'", new Object[] { name }));
+                log(distributedMetrics.toString());
+            });
+        });
+        log(DIVIDE_LINE);
+        LoadReport loadReport = LoadReport.collectDistributed(summary);
+        printCountReport(loadReport);
+        log(DIVIDE_LINE);
+        printMeterReport(summary, loadReport);
+    }
+
+    private static void printMeterReport(LoadSummary summary, LoadReport report) {
+        long totalTime = summary.totalTime();
+        log("meter metrics");
+        log("total time", TimeUtil.readableTime(totalTime));
+        log("vertex load time", TimeUtil.readableTime(report.vertexInsertSuccess() == 0L?0L:totalTime));
+        log("vertex load rate(vertices/s)",
+                (report.vertexInsertSuccess() == 0L) ? "0.0" : String.format("%.2f", new Object[] { Double.valueOf(report.vertexInsertSuccess() * 1000.0D / totalTime) }));
+        log("edge load time", TimeUtil.readableTime(report.edgeInsertSuccess() == 0L?0L:totalTime ));
+        log("edge load rate(edges/s)",
+                (report.edgeInsertSuccess() == 0L) ? "0.0" : String.format("%.2f", new Object[] { Double.valueOf(report.edgeInsertSuccess() * 1000.0D / totalTime) }));
+    }
+
+    private static void log(String key, String value) {
+        log(String.format("    %-30s: %-20s", new Object[] { key, value }));
+    }
+    private static void printCountReport(LoadReport report) {
+        log("count metrics");
+        log("input read success", report.readSuccess());
+        log("input read failure", report.readFailure());
+        log("vertex parse success", report.vertexParseSuccess());
+        log("vertex parse failure", report.vertexParseFailure());
+        log("vertex insert success", report.vertexInsertSuccess());
+        log("vertex insert failure", report.vertexInsertFailure());
+        log("edge parse success", report.edgeParseSuccess());
+        log("edge parse failure", report.edgeParseFailure());
+        log("edge insert success", report.edgeInsertSuccess());
+        log("edge insert failure", report.edgeInsertFailure());
+        log("total insert success", report.vertexInsertSuccess() + report.edgeInsertSuccess());
+        log("total insert failure", report.vertexInsertFailure() + report.edgeInsertFailure());
+    }
+
+    private static void log(String key, long value) {
+        LOG.info(String.format("    %-30s: %-20d", new Object[] { key, Long.valueOf(value) }));
     }
 
     private LoadContext initPartition(
@@ -211,7 +353,7 @@ public class HugeGraphSparkLoader implements Serializable {
     }
 
     private void loadRow(InputStruct struct, Row row, Iterator<Row> p,
-                         LoadContext context) {
+                         LoadContext context,DistributedLoadMetrics distributedLoadMetrics) {
         for (Map.Entry<ElementBuilder, List<GraphElement>> builderMap :
                 this.builders.entrySet()) {
             ElementMapping elementMapping = builderMap.getKey().mapping();
@@ -219,13 +361,13 @@ public class HugeGraphSparkLoader implements Serializable {
             if (elementMapping.skip()) {
                 continue;
             }
-            parse(row, builderMap, struct);
+            parse(row, builderMap, struct,distributedLoadMetrics);
 
             // Insert
             List<GraphElement> graphElements = builderMap.getValue();
             if (graphElements.size() >= elementMapping.batchSize() ||
                 (!p.hasNext() && graphElements.size() > 0)) {
-                flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
+                flush(builderMap, context.client().graph(), this.loadOptions.checkVertex,distributedLoadMetrics);
             }
         }
     }
@@ -282,7 +424,7 @@ public class HugeGraphSparkLoader implements Serializable {
     }
 
     private void parse(Row row, Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
-                       InputStruct struct) {
+                       InputStruct struct,DistributedLoadMetrics loadDistributeMetrics) {
         ElementBuilder builder = builderMap.getKey();
         List<GraphElement> graphElements = builderMap.getValue();
         if ("".equals(row.mkString())) {
@@ -300,6 +442,7 @@ public class HugeGraphSparkLoader implements Serializable {
                 } else {
                     elements = builder.build(row);
                 }
+                loadDistributeMetrics.plusParseSuccess(builder.mapping(),elements.size());
                 break;
             case JDBC:
                 Object[] structFields = JavaConverters.asJavaCollection(row.schema().toList())
@@ -312,6 +455,7 @@ public class HugeGraphSparkLoader implements Serializable {
                     values[i] = row.get(i);
                 }
                 elements = builder.build(headers, values);
+                loadDistributeMetrics.plusParseSuccess(builder.mapping(),elements.size());
                 break;
             default:
                 throw new AssertionError(String.format("Unsupported input source '%s'",
@@ -321,7 +465,7 @@ public class HugeGraphSparkLoader implements Serializable {
     }
 
     private void flush(Map.Entry<ElementBuilder, List<GraphElement>> builderMap,
-                       GraphManager g, boolean isCheckVertex) {
+                       GraphManager g, boolean isCheckVertex,DistributedLoadMetrics loadDistributeMetrics) {
         ElementBuilder builder = builderMap.getKey();
         ElementMapping elementMapping = builder.mapping();
         List<GraphElement> graphElements = builderMap.getValue();
@@ -329,9 +473,11 @@ public class HugeGraphSparkLoader implements Serializable {
         Map<String, UpdateStrategy> updateStrategyMap = elementMapping.updateStrategies();
         if (updateStrategyMap.isEmpty()) {
             if (isVertex) {
-                g.addVertices((List<Vertex>) (Object) graphElements);
+                List<Vertex> vertices = g.addVertices((List<Vertex>) (Object) graphElements);
+                loadDistributeMetrics.plusInsertSuccess(elementMapping, vertices.size());
             } else {
-                g.addEdges((List<Edge>) (Object) graphElements);
+                List<Edge> edges = g.addEdges((List<Edge>) (Object) graphElements);
+                loadDistributeMetrics.plusInsertSuccess(elementMapping, edges.size());
             }
         } else {
             // CreateIfNotExist doesn't support false now
@@ -341,16 +487,44 @@ public class HugeGraphSparkLoader implements Serializable {
                 req.vertices((List<Vertex>) (Object) graphElements)
                     .updatingStrategies(updateStrategyMap)
                     .createIfNotExist(true);
-                g.updateVertices(req.build());
+                List<Vertex> vertices = g.updateVertices(req.build());
+                loadDistributeMetrics.plusInsertSuccess(elementMapping, vertices.size());
             } else {
                 BatchEdgeRequest.Builder req = new BatchEdgeRequest.Builder();
                 req.edges((List<Edge>) (Object) graphElements)
                     .updatingStrategies(updateStrategyMap)
                     .checkVertex(isCheckVertex)
                     .createIfNotExist(true);
-                g.updateEdges(req.build());
+                List<Edge> edges = g.updateEdges(req.build());
+                loadDistributeMetrics.plusInsertSuccess(elementMapping, edges.size());
             }
         }
         graphElements.clear();
     }
+
+
+    private void processDirectLoader(InputStruct struct, DistributedLoadMetrics distributedLoadMetrics, Dataset<Row> ds, Object[] outEArray, Object[] inEArray,int index) {
+        AbstractDirectLoader directLoader;
+        switch (loadOptions.backendStoreType) {
+            case "hbase":
+                directLoader = new HBaseDirectLoader(this.loadOptions, struct, distributedLoadMetrics);
+                ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) outEArray)[index] = directLoader.buildVertexAndEdge(ds,null);
+                if(struct.edges().size()>0){
+                    ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) inEArray)[index] = directLoader.buildVertexAndEdge(ds, Directions.IN);
+                }
+
+                break;
+            case "hstore":
+                directLoader = new HStoreDirectLoader(this.loadOptions, struct, distributedLoadMetrics);
+                ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) outEArray)[index] = directLoader.buildVertexAndEdge(ds,null);
+                if(struct.edges().size()>0){
+                  ((JavaPairRDD<ImmutableBytesWritable, KeyValue>[]) inEArray)[index] = directLoader.buildVertexAndEdge(ds, Directions.IN);
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported backend store type: " + loadOptions.backendStoreType);
+        }
+    }
+
+
 }

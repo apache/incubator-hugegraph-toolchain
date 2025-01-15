@@ -239,6 +239,27 @@ public class LoadOptions implements Serializable {
                description = "HBase zookeeper parent")
     public String hbaseZKParent;
 
+    @Parameter(names = {"--backend"}, arity = 1,
+            description = "backend store type")
+    public String backendStoreType = "hstore";
+
+    @Parameter(names = {"--pd-address"}, arity = 1,
+            description = "pd-address")
+    public String pdAddress  ;
+
+
+    @Parameter(names = {"--pd-rest-port"}, arity = 1,
+            description = "pd-rest-port")
+    public String pdRestPort="8620";
+
+    @Parameter(names = {"--hdfs-uri"}, arity = 1,
+            description = "--hdfs-uri")
+    public String hdfsUri;
+
+    @Parameter(names = {"--max-download-rate"}, arity = 1,
+            description = "store download rate limit per second")
+    public int maxDownloadRate = 1024;
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";
