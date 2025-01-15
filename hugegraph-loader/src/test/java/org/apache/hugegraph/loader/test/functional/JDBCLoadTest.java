@@ -48,16 +48,17 @@ public class JDBCLoadTest extends LoadTest {
     private static final String PASS = "root";
 
     private static final DBUtil dbUtil = new DBUtil(DRIVER, DB_URL, USER, PASS);
+    private static final boolean USE_SSL = false;
 
     @BeforeClass
     public static void setUp() {
         clearServerData();
 
-        dbUtil.connect();
-        // create the database
+        dbUtil.connect(USE_SSL);
+        // create database
         dbUtil.execute(String.format("CREATE DATABASE IF NOT EXISTS `%s`;", DATABASE));
         // create tables
-        dbUtil.connect(DATABASE);
+        dbUtil.connect(DATABASE, USE_SSL);
         // vertex person
         dbUtil.execute("CREATE TABLE IF NOT EXISTS `person` (" +
                        "`id` int(10) unsigned NOT NULL," +
