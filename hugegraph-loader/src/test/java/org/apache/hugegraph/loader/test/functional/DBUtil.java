@@ -46,11 +46,9 @@ public class DBUtil {
             String url = String.format("%s?useSSL=%s", this.url, useSSL);
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
         } catch (ClassNotFoundException e) {
-            throw new LoadException("Invalid driver class '%s'",
-                    e, this.driver);
+            throw new LoadException("Invalid driver class '%s'", e, this.driver);
         } catch (SQLException e) {
-            throw new LoadException("Failed to connect database via '%s'",
-                    e, this.url);
+            throw new LoadException("Failed to connect database via '%s'", e, this.url);
         }
     }
 
@@ -61,11 +59,9 @@ public class DBUtil {
             Class.forName(this.driver);
             this.conn = DriverManager.getConnection(url, this.user, this.pass);
         } catch (ClassNotFoundException e) {
-            throw new LoadException("Invalid driver class '%s'",
-                    e, this.driver);
+            throw new LoadException("Invalid driver class '%s'", e, this.driver);
         } catch (SQLException e) {
-            throw new LoadException("Failed to connect database via '%s'",
-                    e, this.url);
+            throw new LoadException("Failed to connect database via '%s'", e, this.url);
         }
     }
 
