@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -19,38 +21,16 @@ package org.apache.hugegraph.structure.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Login {
+public class KGLoginResult {
 
-    @JsonProperty("user_name")
-    private String name;
+    @JsonProperty("token")
+    private String token;
 
-    @JsonProperty("user_password")
-    private String password;
-
-    @JsonProperty("token_expire")
-    private long expire;
-
-    public void name(String name) {
-        this.name = name;
+    public void token(String token) {
+        this.token = token;
     }
 
-    public String name() {
-        return this.name;
-    }
-
-    public void password(String password) {
-        this.password = password;
-    }
-
-    public String password() {
-        return this.password;
-    }
-
-    public void expire(long expire) {
-        this.expire = expire;
-    }
-
-    public long expire() {
-        return this.expire;
+    public String token() {
+        return this.token;
     }
 }

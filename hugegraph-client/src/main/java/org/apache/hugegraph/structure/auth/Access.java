@@ -19,6 +19,8 @@ package org.apache.hugegraph.structure.auth;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -26,20 +28,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Access extends AuthElement {
 
-    @JsonProperty("group")
-    private Object group;
+    @JsonProperty("graphspace")
+    protected String graphSpace;
+    @JsonProperty("role")
+    protected Object role;
     @JsonProperty("target")
-    private Object target;
+    protected Object target;
     @JsonProperty("access_permission")
-    private HugePermission permission;
+    protected HugePermission permission;
     @JsonProperty("access_description")
-    private String description;
+    protected String description;
 
     @JsonProperty("access_create")
-    @JsonFormat(pattern = DATE_FORMAT)
+    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
     protected Date create;
     @JsonProperty("access_update")
-    @JsonFormat(pattern = DATE_FORMAT)
+    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
     protected Date update;
     @JsonProperty("access_creator")
     protected String creator;
@@ -64,15 +68,23 @@ public class Access extends AuthElement {
         return this.creator;
     }
 
-    public Object group() {
-        return this.group;
+    public String graphSpace() {
+        return this.graphSpace;
     }
 
-    public void group(Object group) {
-        if (group instanceof Group) {
-            group = ((Group) group).id();
+    public void graphSpace(String graphSpace) {
+        this.graphSpace = graphSpace;
+    }
+
+    public Object role() {
+        return this.role;
+    }
+
+    public void role(Object role) {
+        if (role instanceof Role) {
+            role = ((Role) role).id();
         }
-        this.group = group;
+        this.role = role;
     }
 
     public Object target() {
@@ -100,5 +112,24 @@ public class Access extends AuthElement {
 
     public void description(String description) {
         this.description = description;
+    }
+
+    public AccessReq switchReq() {
+        return new AccessReq(this);
+    }
+
+    @JsonIgnoreProperties({"graphspace"})
+    public static class AccessReq extends Access {
+
+        public AccessReq(Access access) {
+            this.id = access.id();
+            this.role = access.role();
+            this.target = access.target();
+            this.permission = access.permission();
+            this.description = access.description();
+            this.create = access.createTime();
+            this.update = access.updateTime();
+            this.creator = access.creator();
+        }
     }
 }
