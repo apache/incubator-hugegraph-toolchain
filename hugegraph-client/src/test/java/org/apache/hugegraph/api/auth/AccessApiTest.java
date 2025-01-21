@@ -24,6 +24,7 @@ import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.auth.Group;
 import org.apache.hugegraph.structure.auth.HugePermission;
 import org.apache.hugegraph.structure.auth.HugeResourceType;
+import org.apache.hugegraph.structure.auth.Role;
 import org.apache.hugegraph.structure.auth.Target;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
@@ -42,10 +43,10 @@ public class AccessApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        api = new AccessAPI(initClient(), GRAPH);
+        api = new AccessAPI(initClient(), DEFAULT_GRAPHSPACE);
 
         TargetApiTest.init();
-        GroupApiTest.init();
+        RoleApiTest.init();
     }
 
     @AfterClass
@@ -56,7 +57,7 @@ public class AccessApiTest extends AuthApiTest {
         }
 
         TargetApiTest.clear();
-        GroupApiTest.clear();
+        RoleApiTest.clear();
     }
 
     @Before
@@ -74,57 +75,67 @@ public class AccessApiTest extends AuthApiTest {
 
     @Test
     public void testCreate() {
+        Target gremlin = TargetApiTest.createTarget("gremlinc",
+                                                    HugeResourceType.GREMLIN);
+        Role role = RoleApiTest.createRole("rolec", "role for beijing");
+
         Access access1 = new Access();
-        access1.group(group);
+        access1.role(role);
         access1.target(gremlin);
         access1.permission(HugePermission.EXECUTE);
-        access1.description("group beijing execute gremlin");
+        access1.description("role beijing execute gremlin");
 
         Access access2 = new Access();
-        access2.group(group);
+        access2.role(role);
         access2.target(gremlin);
         access2.permission(HugePermission.READ);
-        access2.description("group beijing read gremlin");
+        access2.description("role beijing read gremlin");
 
         Access result1 = api.create(access1);
         Access result2 = api.create(access2);
 
-        Assert.assertEquals(group.id(), result1.group());
+        Assert.assertEquals(role.id(), result1.role());
         Assert.assertEquals(gremlin.id(), result1.target());
         Assert.assertEquals(HugePermission.EXECUTE, result1.permission());
-        Assert.assertEquals("group beijing execute gremlin",
+        Assert.assertEquals("role beijing execute gremlin",
                             result1.description());
 
-        Assert.assertEquals(group.id(), result2.group());
+        Assert.assertEquals(role.id(), result2.role());
         Assert.assertEquals(gremlin.id(), result2.target());
         Assert.assertEquals(HugePermission.READ, result2.permission());
-        Assert.assertEquals("group beijing read gremlin",
+        Assert.assertEquals("role beijing read gremlin",
                             result2.description());
 
         Assert.assertThrows(ServerException.class, () -> {
             api.create(access1);
         }, e -> {
-            Assert.assertContains("Can't save access", e.getMessage());
-            Assert.assertContains("that already exists", e.getMessage());
+            Assert.assertContains("The access name", e.getMessage());
+            Assert.assertContains("has existed", e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
             Access access3 = new Access();
-            access3.group(group);
+            access3.role(role);
             access3.target(gremlin);
             access3.permission(HugePermission.READ);
-            access3.description("group beijing read gremlin");
+            access3.description("role beijing read gremlin");
             api.create(access3);
         }, e -> {
-            Assert.assertContains("Can't save access", e.getMessage());
-            Assert.assertContains("that already exists", e.getMessage());
+            Assert.assertContains("The access name", e.getMessage());
+            Assert.assertContains("has existed", e.getMessage());
         });
     }
 
     @Test
     public void testGet() {
-        Access access1 = createAccess(HugePermission.WRITE, "description 1");
-        Access access2 = createAccess(HugePermission.READ, "description 2");
+        Target gremlin = TargetApiTest.createTarget("gremling",
+                                                    HugeResourceType.GREMLIN);
+        Role role = RoleApiTest.createRole("roleg", "role for beijing");
+
+        Access access1 = createAccess(role, gremlin, HugePermission.WRITE,
+                                      "description 1");
+        Access access2 = createAccess(role, gremlin, HugePermission.READ,
+                                      "description 2");
 
         Assert.assertEquals("description 1", access1.description());
         Assert.assertEquals("description 2", access2.description());
@@ -132,12 +143,12 @@ public class AccessApiTest extends AuthApiTest {
         access1 = api.get(access1.id());
         access2 = api.get(access2.id());
 
-        Assert.assertEquals(group.id(), access1.group());
+        Assert.assertEquals(role.id(), access1.role());
         Assert.assertEquals(gremlin.id(), access1.target());
         Assert.assertEquals(HugePermission.WRITE, access1.permission());
         Assert.assertEquals("description 1", access1.description());
 
-        Assert.assertEquals(group.id(), access2.group());
+        Assert.assertEquals(role.id(), access2.role());
         Assert.assertEquals(gremlin.id(), access2.target());
         Assert.assertEquals(HugePermission.READ, access2.permission());
         Assert.assertEquals("description 2", access2.description());
@@ -145,9 +156,13 @@ public class AccessApiTest extends AuthApiTest {
 
     @Test
     public void testList() {
-        createAccess(HugePermission.READ, "description 1");
-        createAccess(HugePermission.WRITE, "description 2");
-        createAccess(HugePermission.EXECUTE, "description 3");
+        Target gremlin = TargetApiTest.createTarget("gremlinlist",
+                                                    HugeResourceType.GREMLIN);
+        Role role = RoleApiTest.createRole("rolelist", "role for beijing");
+
+        createAccess(role, gremlin, HugePermission.READ, "description 1");
+        createAccess(role, gremlin, HugePermission.WRITE, "description 2");
+        createAccess(role, gremlin, HugePermission.EXECUTE, "description 3");
 
         List<Access> accesss = api.list(null, null, -1);
         Assert.assertEquals(3, accesss.size());
@@ -171,12 +186,17 @@ public class AccessApiTest extends AuthApiTest {
     }
 
     @Test
-    public void testListByGroup() {
-        createAccess(HugePermission.READ, "description 1");
-        createAccess(HugePermission.WRITE, "description 2");
-        createAccess(HugePermission.EXECUTE, "description 3");
+    public void testListByRole() {
+        Target gremlin = TargetApiTest.createTarget("gremlinlbg",
+                                                    HugeResourceType.GREMLIN);
+        Role role = RoleApiTest.createRole("rolelbg",
+                                               "role for beijing");
 
-        Group hk = GroupApiTest.createGroup("group-hk", "group for hongkong");
+        createAccess(role, gremlin, HugePermission.READ, "description 1");
+        createAccess(role, gremlin, HugePermission.WRITE, "description 2");
+        createAccess(role, gremlin, HugePermission.EXECUTE, "description 3");
+
+        Role hk = RoleApiTest.createRole("role-hk", "role for hongkong");
         createAccess(hk, gremlin, HugePermission.READ, "description 4");
         createAccess(hk, gremlin, HugePermission.WRITE, "description 5");
 
@@ -189,40 +209,45 @@ public class AccessApiTest extends AuthApiTest {
         Assert.assertEquals("description 4", accesss.get(0).description());
         Assert.assertEquals("description 5", accesss.get(1).description());
 
-        accesss = api.list(group, null, -1);
+        accesss = api.list(role, null, -1);
         Assert.assertEquals(3, accesss.size());
         accesss.sort((t1, t2) -> t1.permission().compareTo(t2.permission()));
         Assert.assertEquals("description 1", accesss.get(0).description());
         Assert.assertEquals("description 2", accesss.get(1).description());
         Assert.assertEquals("description 3", accesss.get(2).description());
 
-        accesss = api.list(group, null, 1);
+        accesss = api.list(role, null, 1);
         Assert.assertEquals(1, accesss.size());
 
-        accesss = api.list(group, null, 2);
+        accesss = api.list(role, null, 2);
         Assert.assertEquals(2, accesss.size());
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {
-            api.list(group, null, 0);
+            api.list(role, null, 0);
         }, e -> {
             Assert.assertContains("Limit must be > 0 or == -1", e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
-            api.list(group, gremlin, -1);
+            api.list(role, gremlin, -1);
         }, e -> {
-            Assert.assertContains("Can't pass both group and target " +
+            Assert.assertContains("Can't pass both role and target " +
                                   "at the same time", e.getMessage());
         });
     }
 
     @Test
     public void testListByTarget() {
-        createAccess(HugePermission.READ, "description 1");
-        createAccess(HugePermission.WRITE, "description 2");
-        createAccess(HugePermission.EXECUTE, "description 3");
+        Target gremlin = TargetApiTest.createTarget("gremlinlbg",
+                                                    HugeResourceType.GREMLIN);
+        Role role = RoleApiTest.createRole("rolelbg",
+                                               "role for beijing");
 
-        Group hk = GroupApiTest.createGroup("group-hk", "group for hongkong");
+        createAccess(role, gremlin, HugePermission.READ, "description 1");
+        createAccess(role, gremlin, HugePermission.WRITE, "description 2");
+        createAccess(role, gremlin, HugePermission.EXECUTE, "description 3");
+
+        Role hk = RoleApiTest.createRole("role-hk", "role for hongkong");
         createAccess(hk, gremlin, HugePermission.READ, "description 4");
         createAccess(hk, gremlin, HugePermission.WRITE, "description 5");
 
@@ -242,8 +267,8 @@ public class AccessApiTest extends AuthApiTest {
         accesss = api.list(null, gremlin, -1);
         Assert.assertEquals(5, accesss.size());
         accesss.sort((t1, t2) -> {
-            String s1 = "" + t1.group() + t1.permission().ordinal();
-            String s2 = "" + t2.group() + t2.permission().ordinal();
+            String s1 = "" + t1.role() + t1.permission().ordinal();
+            String s2 = "" + t2.role() + t2.permission().ordinal();
             return s1.compareTo(s2);
         });
         Assert.assertEquals("description 1", accesss.get(0).description());
@@ -274,8 +299,14 @@ public class AccessApiTest extends AuthApiTest {
 
     @Test
     public void testUpdate() {
-        Access access1 = createAccess(HugePermission.WRITE, "description 1");
-        Access access2 = createAccess(HugePermission.READ, "description 2");
+        Target gremlin = TargetApiTest.createTarget("gremlinup",
+                                                    HugeResourceType.GREMLIN);
+        Role role = RoleApiTest.createRole("roleup", "role for beijing");
+
+        Access access1 = createAccess(role, gremlin, HugePermission.WRITE,
+                                      "description 1");
+        Access access2 = createAccess(role, gremlin, HugePermission.READ,
+                                      "description 2");
 
         Assert.assertEquals("description 1", access1.description());
         Assert.assertEquals("description 2", access2.description());
@@ -286,18 +317,18 @@ public class AccessApiTest extends AuthApiTest {
         Assert.assertNotEquals(access1.updateTime(), updated.updateTime());
 
         Assert.assertThrows(ServerException.class, () -> {
-            Group hk = GroupApiTest.createGroup("group-hk", "");
-            access2.group(hk);
+            Role hk = RoleApiTest.createRole("role-hk", "");
+            access2.role(hk);
             api.update(access2);
         }, e -> {
-            Assert.assertContains("The group of access can't be updated",
+            Assert.assertContains("The role of access can't be updated",
                                   e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
             Target task = TargetApiTest.createTarget("task",
                                                      HugeResourceType.TASK);
-            access2.group(group);
+            access2.role(role);
             access2.target(task);
             api.update(access2);
         }, e -> {
@@ -316,8 +347,15 @@ public class AccessApiTest extends AuthApiTest {
 
     @Test
     public void testDelete() {
-        Access access1 = createAccess(HugePermission.WRITE, "description 1");
-        Access access2 = createAccess(HugePermission.READ, "description 2");
+        Target gremlin = TargetApiTest.createTarget("gremlindel",
+                                                    HugeResourceType.GREMLIN);
+        Role role = RoleApiTest.createRole("roledel",
+                                               "role for beijing");
+
+        Access access1 = createAccess(role, gremlin, HugePermission.WRITE,
+                                      "description 1");
+        Access access2 = createAccess(role, gremlin, HugePermission.READ,
+                                      "description 2");
 
         Assert.assertEquals(2, api.list(null, null, -1).size());
         api.delete(access1.id());
@@ -342,14 +380,10 @@ public class AccessApiTest extends AuthApiTest {
         });
     }
 
-    private Access createAccess(HugePermission perm, String description) {
-        return createAccess(group, gremlin, perm, description);
-    }
-
-    private Access createAccess(Group group, Target target,
+    private Access createAccess(Role role, Target target,
                                 HugePermission perm, String description) {
         Access access = new Access();
-        access.group(group);
+        access.role(role);
         access.target(target);
         access.permission(perm);
         access.description(description);
