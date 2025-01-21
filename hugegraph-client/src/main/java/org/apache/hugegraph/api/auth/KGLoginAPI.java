@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -22,29 +24,28 @@ import org.apache.hugegraph.rest.RestResult;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.auth.AuthElement;
-import org.apache.hugegraph.structure.auth.Login;
-import org.apache.hugegraph.structure.auth.LoginResult;
+import org.apache.hugegraph.structure.auth.KGLogin;
+import org.apache.hugegraph.structure.auth.KGLoginResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
-public class LoginAPI extends AuthAPI {
+public class KGLoginAPI extends AuthAPI {
 
-    public LoginAPI(RestClient client) {
+    public KGLoginAPI(RestClient client) {
         super(client);
     }
 
     @Override
     protected String type() {
-        return HugeType.LOGIN.string();
+        return HugeType.KG_LOGIN.string();
     }
 
-    public LoginResult login(Login login) {
+    public KGLoginResult kgLogin(KGLogin login) {
         RestResult result = this.client.post(this.path(), login);
-        return result.readObject(LoginResult.class);
+        return result.readObject(KGLoginResult.class);
     }
 
     @Override
     protected Object checkCreateOrUpdate(AuthElement authElement) {
-
         return null;
     }
 }

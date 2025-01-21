@@ -24,12 +24,13 @@ import java.util.Map;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.auth.Access;
+import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class AccessAPI extends AuthAPI {
 
-    public AccessAPI(RestClient client, String graph) {
-        super(client, graph);
+    public AccessAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override
@@ -38,7 +39,8 @@ public class AccessAPI extends AuthAPI {
     }
 
     public Access create(Access access) {
-        RestResult result = this.client.post(this.path(), access);
+        Object obj = this.checkCreateOrUpdate(access);
+        RestResult result = this.client.post(this.path(), obj);
         return result.readObject(Access.class);
     }
 
@@ -47,11 +49,11 @@ public class AccessAPI extends AuthAPI {
         return result.readObject(Access.class);
     }
 
-    public List<Access> list(Object group, Object target, int limit) {
+    public List<Access> list(Object role, Object target, int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("limit", limit);
-        params.put("group", formatEntityId(group));
+        params.put("role", formatEntityId(role));
         params.put("target", formatEntityId(target));
         RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Access.class);
@@ -59,11 +61,19 @@ public class AccessAPI extends AuthAPI {
 
     public Access update(Access access) {
         String id = formatRelationId(access.id());
-        RestResult result = this.client.put(this.path(), id, access);
+        Object obj = this.checkCreateOrUpdate(access);
+        RestResult result = this.client.put(this.path(), id, obj);
         return result.readObject(Access.class);
     }
 
     public void delete(Object id) {
         this.client.delete(this.path(), formatRelationId(id));
+    }
+
+    @Override
+    protected Object checkCreateOrUpdate(AuthElement authElement) {
+        Access access = (Access) authElement;
+        return access.switchReq();
+
     }
 }

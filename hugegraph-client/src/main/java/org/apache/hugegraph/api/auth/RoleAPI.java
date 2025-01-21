@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -17,62 +19,63 @@
 
 package org.apache.hugegraph.api.auth;
 
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.ImmutableMap;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-
-import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.auth.AuthElement;
-import org.apache.hugegraph.structure.auth.Target;
+import org.apache.hugegraph.structure.auth.Role;
 import org.apache.hugegraph.structure.constant.HugeType;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.List;
+import java.util.Map;
 
-public class TargetAPI extends AuthAPI {
 
-    public TargetAPI(RestClient client, String graphSpace) {
+public class RoleAPI extends AuthAPI {
+
+
+    public RoleAPI(RestClient client, String graphSpace) {
         super(client, graphSpace);
     }
 
     @Override
     protected String type() {
-        return HugeType.TARGET.string();
+        return (HugeType.ROLE.string());
     }
 
-    public Target create(Target target) {
-        Object obj = this.checkCreateOrUpdate(target);
+    public Role create(Role role){
+        Object obj = this.checkCreateOrUpdate(role);
         RestResult result = this.client.post(this.path(), obj);
-        return result.readObject(Target.class);
+        return result.readObject(Role.class);
     }
 
-    public Target get(Object id) {
+    public Role update(Role role) {
+        String id = formatEntityId(role.id());
+        Object obj = this.checkCreateOrUpdate(role);
+        RestResult result = this.client.put(this.path(), id, obj);
+        return result.readObject(Role.class);
+    }
+
+    public Role get(Object id) {
         RestResult result = this.client.get(this.path(), formatEntityId(id));
-        return result.readObject(Target.class);
+        return result.readObject(Role.class);
     }
 
-    public List<Target> list(int limit) {
+    public List<Role> list(int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = ImmutableMap.of("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList(this.type(), Target.class);
-    }
-
-    public Target update(Target target) {
-        String id = formatEntityId(target.id());
-        Object obj = this.checkCreateOrUpdate(target);
-        RestResult result = this.client.put(this.path(), id, obj);
-        return result.readObject(Target.class);
+        return result.readList(this.type(), Role.class);
     }
 
     public void delete(Object id) {
         this.client.delete(this.path(), formatEntityId(id));
     }
 
+
     @Override
     protected Object checkCreateOrUpdate(AuthElement authElement) {
-        Target target = (Target) authElement;
-        return target.switchReq();
+        Role role = (Role) authElement;
+        return role.switchReq();
     }
 }
