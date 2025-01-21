@@ -22,6 +22,9 @@ import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
+
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.structure.auth.User.UserRole;
 import org.apache.hugegraph.structure.constant.HugeType;
@@ -30,8 +33,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class UserAPI extends AuthAPI {
 
-    public UserAPI(RestClient client, String graph) {
-        super(client, graph);
+    public UserAPI(RestClient client) {
+        super(client);
     }
 
     @Override
@@ -42,6 +45,15 @@ public class UserAPI extends AuthAPI {
     public User create(User user) {
         RestResult result = this.client.post(this.path(), user);
         return result.readObject(User.class);
+    }
+
+    public Map<String, List<Map<String, String>>> createBatch(List<Map<String,
+            String>> data) {
+        String path = String.join("/", this.path(), "batch");
+        RestResult result = this.client.post(path, data);
+        Map<String, List<Map<String, String>>> resultList =
+                (Map<String, List<Map<String, String>>>) result.readObject(Map.class);
+        return resultList;
     }
 
     public User get(Object id) {
@@ -56,9 +68,23 @@ public class UserAPI extends AuthAPI {
         return result.readObject(UserRole.class);
     }
 
+    public Map<String, Object> getUserRoleTable(Object id) {
+        String idEncoded = RestClient.encode(formatEntityId(id));
+        String path = String.join("/", this.path(), idEncoded, "role/table");
+        RestResult result = this.client.get(path);
+        return result.readObject(Map.class);
+    }
+
     public List<User> list(int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = ImmutableMap.of("limit", limit);
+        RestResult result = this.client.get(this.path(), params);
+        return result.readList(this.type(), User.class);
+    }
+
+    public List<User> list(int limit, String group) {
+        checkLimit(limit, "Limit");
+        Map<String, Object> params = ImmutableMap.of("limit", limit, "group", group);
         RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), User.class);
     }
@@ -71,5 +97,11 @@ public class UserAPI extends AuthAPI {
 
     public void delete(Object id) {
         this.client.delete(this.path(), formatEntityId(id));
+    }
+
+    @Override
+    protected Object checkCreateOrUpdate(AuthElement authElement) {
+
+        return null;
     }
 }

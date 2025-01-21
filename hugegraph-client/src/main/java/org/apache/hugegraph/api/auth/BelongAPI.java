@@ -23,13 +23,16 @@ import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
+
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.auth.Belong;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class BelongAPI extends AuthAPI {
 
-    public BelongAPI(RestClient client, String graph) {
-        super(client, graph);
+    public BelongAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override
@@ -38,7 +41,8 @@ public class BelongAPI extends AuthAPI {
     }
 
     public Belong create(Belong belong) {
-        RestResult result = this.client.post(this.path(), belong);
+        Object obj = this.checkCreateOrUpdate(belong);
+        RestResult result = this.client.post(this.path(), obj);
         return result.readObject(Belong.class);
     }
 
@@ -47,23 +51,30 @@ public class BelongAPI extends AuthAPI {
         return result.readObject(Belong.class);
     }
 
-    public List<Belong> list(Object user, Object group, int limit) {
+    public List<Belong> list(Object user, Object role, int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("limit", limit);
         params.put("user", formatEntityId(user));
-        params.put("group", formatEntityId(group));
+        params.put("role", formatEntityId(role));
         RestResult result = this.client.get(this.path(), params);
         return result.readList(this.type(), Belong.class);
     }
 
     public Belong update(Belong belong) {
         String id = formatRelationId(belong.id());
-        RestResult result = this.client.put(this.path(), id, belong);
+        Object obj = this.checkCreateOrUpdate(belong);
+        RestResult result = this.client.put(this.path(), id, obj);
         return result.readObject(Belong.class);
     }
 
     public void delete(Object id) {
         this.client.delete(this.path(), formatRelationId(id));
+    }
+
+    @Override
+    protected Object checkCreateOrUpdate(AuthElement authElement) {
+        Belong belong = (Belong) authElement;
+        return belong.switchReq();
     }
 }

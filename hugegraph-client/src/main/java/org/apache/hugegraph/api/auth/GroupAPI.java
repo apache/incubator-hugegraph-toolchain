@@ -22,6 +22,9 @@ import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
+
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.auth.Group;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -29,8 +32,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class GroupAPI extends AuthAPI {
 
-    public GroupAPI(RestClient client, String graph) {
-        super(client, graph);
+    public GroupAPI(RestClient client) {
+        super(client);
     }
 
     @Override
@@ -39,7 +42,8 @@ public class GroupAPI extends AuthAPI {
     }
 
     public Group create(Group group) {
-        RestResult result = this.client.post(this.path(), group);
+        Object obj = this.checkCreateOrUpdate(group);
+        RestResult result = this.client.post(this.path(), obj);
         return result.readObject(Group.class);
     }
 
@@ -48,6 +52,19 @@ public class GroupAPI extends AuthAPI {
         return result.readObject(Group.class);
     }
 
+    public Map<String, Object> getGroupRoleTable(Object id) {
+        String path = String.join("/", this.path(), formatEntityId(id), "role/table");
+        RestResult result = this.client.get(path);
+        return result.readObject(Map.class);
+    }
+
+    public Map<String, Object> batch(String id, Map<String, Object> action) {
+        String batchPath = String.join("/", this.path(), "batch", id);
+        RestResult result = this.client.post(batchPath, action);
+        return result.readObject(Map.class);
+    }
+
+
     public List<Group> list(int limit) {
         checkLimit(limit, "Limit");
         Map<String, Object> params = ImmutableMap.of("limit", limit);
@@ -55,13 +72,28 @@ public class GroupAPI extends AuthAPI {
         return result.readList(this.type(), Group.class);
     }
 
+    public List<Group> list(int limit, String user) {
+        checkLimit(limit, "Limit");
+        Map<String, Object> params = ImmutableMap.of("limit", limit, "user", user);
+        RestResult result = this.client.get(this.path(), params);
+        return result.readList(this.type(), Group.class);
+    }
+
     public Group update(Group group) {
         String id = formatEntityId(group.id());
-        RestResult result = this.client.put(this.path(), id, group);
+        Object obj = this.checkCreateOrUpdate(group);
+        RestResult result = this.client.put(this.path(), id, obj);
         return result.readObject(Group.class);
     }
 
     public void delete(Object id) {
         this.client.delete(this.path(), formatEntityId(id));
     }
+
+    @Override
+    protected Object checkCreateOrUpdate(AuthElement authElement) {
+        Group group = (Group) authElement;
+        return group.switchReq();
+    }
+
 }
