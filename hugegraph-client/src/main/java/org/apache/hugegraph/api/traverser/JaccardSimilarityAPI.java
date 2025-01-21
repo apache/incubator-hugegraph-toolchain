@@ -35,8 +35,8 @@ public class JaccardSimilarityAPI extends TraversersAPI {
 
     private static final String JACCARD_SIMILARITY = "jaccard_similarity";
 
-    public JaccardSimilarityAPI(RestClient client, String graph) {
-        super(client, graph);
+    public JaccardSimilarityAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

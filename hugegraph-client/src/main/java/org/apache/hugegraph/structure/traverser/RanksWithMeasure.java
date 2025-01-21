@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -15,25 +17,40 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.task;
+package org.apache.hugegraph.structure.traverser;
 
 import java.util.List;
+import java.util.Map;
 
-import org.apache.hugegraph.structure.Task;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class TasksWithPage {
+public class RanksWithMeasure {
 
+    @JsonProperty("personal_rank")
+    private Ranks personalRank;
     @JsonProperty
-    private String page;
+    private List<Ranks> ranks;
     @JsonProperty
-    private List<Task> tasks;
+    private Map<String, Object> measure;
 
-    public String page() {
-        return this.page;
+    public RanksWithMeasure() {
     }
 
-    public List<Task> tasks() {
-        return this.tasks;
+    public Ranks personalRanks() {
+        return this.personalRank;
+    }
+
+    public List<Ranks> ranks() {
+        return this.ranks;
+    }
+
+    public Map<String, Object> measure() {
+        return this.measure;
+    }
+
+    public void setPersonalRank(Ranks personalRank) {
+        if (this.personalRank == null) {
+            this.personalRank = personalRank;
+        }
     }
 }

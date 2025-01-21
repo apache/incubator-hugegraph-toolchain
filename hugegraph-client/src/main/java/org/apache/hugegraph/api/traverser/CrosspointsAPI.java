@@ -29,8 +29,8 @@ import org.apache.hugegraph.structure.graph.Path;
 
 public class CrosspointsAPI extends TraversersAPI {
 
-    public CrosspointsAPI(RestClient client, String graph) {
-        super(client, graph);
+    public CrosspointsAPI(RestClient client,  String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

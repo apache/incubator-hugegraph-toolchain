@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -15,25 +17,30 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.task;
+package org.apache.hugegraph.structure.traverser;
 
-import java.util.List;
+import java.util.Map;
 
-import org.apache.hugegraph.structure.Task;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class TasksWithPage {
+public class Prediction {
 
+    @JsonProperty("adamic_adar")
+    private Double adamicAdar;
+    @JsonProperty("resource_allocation")
+    private Double resourceAllocation;
     @JsonProperty
-    private String page;
-    @JsonProperty
-    private List<Task> tasks;
+    private Map<String, Object> measure;
 
-    public String page() {
-        return this.page;
+    public Double getAdamicAdar() {
+        return this.adamicAdar;
     }
 
-    public List<Task> tasks() {
-        return this.tasks;
+    public Double getResourceAllocation() {
+        return this.resourceAllocation;
+    }
+
+    public Map<String, Object> measure() {
+        return this.measure;
     }
 }

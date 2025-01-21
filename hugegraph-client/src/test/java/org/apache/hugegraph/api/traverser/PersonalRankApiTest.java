@@ -26,6 +26,7 @@ import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.driver.SchemaManager;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -99,7 +100,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
         builder.source("A").label("like").alpha(0.9).maxDepth(50);
         PersonalRankAPI.Request request = builder.build();
 
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         Map<Object, Double> expectedRanks = ImmutableMap.of(
                 "B", 0.2065750574989044D,
                 "C", 0.09839507219265439D,
@@ -117,7 +119,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
                .withLabel(PersonalRankAPI.Request.WithLabel.SAME_LABEL);
         PersonalRankAPI.Request request = builder.build();
 
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         Map<Object, Double> expectedRanks = ImmutableMap.of(
                 "B", 0.2065750574989044D,
                 "C", 0.09839507219265439D
@@ -129,7 +132,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
                .withLabel(PersonalRankAPI.Request.WithLabel.OTHER_LABEL);
         request = builder.build();
 
-        ranks = personalRankAPI.post(request);
+        res = personalRankAPI.post(request);
+        ranks = res.personalRanks();
         expectedRanks = ImmutableMap.of(
                 "d", 0.08959757100230095D,
                 "b", 0.04589958822642998D
@@ -144,7 +148,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
         builder.source("A").label("like").alpha(1).maxDepth(50);
         PersonalRankAPI.Request request = builder.build();
 
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         Map<Object, Double> expectedRanks = ImmutableMap.of(
                 "B", 0.5D,
                 "C", 0.24999999999999956D,
@@ -163,25 +168,29 @@ public class PersonalRankApiTest extends TraverserApiTest {
         PersonalRankAPI.Request request = builder.build();
 
         // Removed root and direct neighbors of root
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         assertDoublesEquals(ImmutableMap.of(), ranks);
 
         builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(3);
         request = builder.build();
 
-        ranks = personalRankAPI.post(request);
+        res = personalRankAPI.post(request);
+        ranks = res.personalRanks();
         assertDoublesEquals(ImmutableMap.of(), ranks);
 
         builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(2);
         request = builder.build();
 
-        ranks = personalRankAPI.post(request);
+        res = personalRankAPI.post(request);
+        ranks = res.personalRanks();
         assertDoublesEquals(ImmutableMap.of("B", 0.405D), ranks);
 
         builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(3);
         request = builder.build();
 
-        ranks = personalRankAPI.post(request);
+        res = personalRankAPI.post(request);
+        ranks = res.personalRanks();
         Assert.assertEquals(2, ranks.size());
     }
 
@@ -192,7 +201,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
         builder.source("A").label("like").alpha(0.9).limit(3).maxDepth(50);
         PersonalRankAPI.Request request = builder.build();
 
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         Map<Object, Double> expectedRanks = ImmutableMap.of(
                 "B", 0.2065750574989044D,
                 "C", 0.09839507219265439D,
@@ -208,7 +218,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
         builder.source("A").label("like").alpha(0.9).maxDepth(20);
         PersonalRankAPI.Request request = builder.build();
 
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         Map<Object, Double> expectedRanks = ImmutableMap.of(
                 "B", 0.23414889646372697D,
                 "C", 0.11218194186115384D,
@@ -225,7 +236,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
         builder.source("A").label("like").alpha(0.9).maxDepth(50).sorted(false);
         PersonalRankAPI.Request request = builder.build();
 
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         Map<Object, Double> expectedRanks = ImmutableMap.of(
                 "b", 0.04589958822642998D,
                 "B", 0.2065750574989044D,
@@ -245,7 +257,8 @@ public class PersonalRankApiTest extends TraverserApiTest {
         builder.source("isolate").label("like").alpha(0.9).maxDepth(50);
         PersonalRankAPI.Request request = builder.build();
 
-        Map<Object, Double> ranks = personalRankAPI.post(request);
+        RanksWithMeasure res = personalRankAPI.post(request);
+        Map<Object, Double> ranks = res.personalRanks();
         assertDoublesEquals(ImmutableMap.of(), ranks);
 
         graph().removeVertex(isolate.id());

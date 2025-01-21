@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -15,25 +17,24 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.task;
+package org.apache.hugegraph.structure.traverser;
 
-import java.util.List;
-
-import org.apache.hugegraph.structure.Task;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class TasksWithPage {
+import java.util.List;
+import java.util.Map;
 
+public class SameNeighborsBatch {
+    @JsonProperty("same_neighbors")
+    public List<List<Object>> sameNeighbors;
     @JsonProperty
-    private String page;
-    @JsonProperty
-    private List<Task> tasks;
+    private Map<String, Object> measure;
 
-    public String page() {
-        return this.page;
+    public List<List<Object>> getSameNeighbors() {
+        return this.sameNeighbors;
     }
 
-    public List<Task> tasks() {
-        return this.tasks;
+    public Map<String, Object> measure() {
+        return this.measure;
     }
 }

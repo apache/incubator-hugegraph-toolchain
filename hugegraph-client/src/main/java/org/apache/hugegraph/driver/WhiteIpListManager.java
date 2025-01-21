@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -15,27 +17,30 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.traverser;
+package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.traverser.MultiNodeShortestPathRequest;
-import org.apache.hugegraph.structure.traverser.PathsWithVertices;
+import org.apache.hugegraph.api.ip.WhiteIpListAPI;
 
-public class MultiNodeShortestPathAPI extends TraversersAPI {
+import java.util.Map;
 
-    public MultiNodeShortestPathAPI(RestClient client, String graphSpace, String graph) {
-        super(client, graphSpace, graph);
+public class WhiteIpListManager {
+    private WhiteIpListAPI whiteIpListAPI;
+
+    public  WhiteIpListManager (RestClient client){
+        this.whiteIpListAPI = new WhiteIpListAPI(client);
     }
 
-    @Override
-    protected String type() {
-        return "multinodeshortestpath";
+    public Map<String, Object> list() {
+        return this.whiteIpListAPI.list();
     }
 
-    public PathsWithVertices post(MultiNodeShortestPathRequest request) {
-        this.client.checkApiVersion("0.58", "multi node shortest path");
-        RestResult result = this.client.post(this.path(), request);
-        return result.readObject(PathsWithVertices.class);
+    public Map<String, Object> batch(Map<String, Object> action) {
+        return this.whiteIpListAPI.batch(action);
     }
+
+    public Map<String, Object> update(boolean status) {
+        return this.whiteIpListAPI.update(status);
+    }
+
 }

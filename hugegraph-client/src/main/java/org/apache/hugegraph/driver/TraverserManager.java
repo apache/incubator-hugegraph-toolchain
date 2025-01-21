@@ -68,6 +68,7 @@ import org.apache.hugegraph.structure.traverser.MultiNodeShortestPathRequest;
 import org.apache.hugegraph.structure.traverser.PathsRequest;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.Ranks;
+import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
 import org.apache.hugegraph.structure.traverser.TemplatePathsRequest;
 import org.apache.hugegraph.structure.traverser.WeightedPath;
@@ -103,30 +104,35 @@ public class TraverserManager {
 
     public TraverserManager(RestClient client, GraphManager graphManager) {
         this.graphManager = graphManager;
+        String graphSpace = graphManager.graphSpace();
         String graph = graphManager.graph();
-        this.jaccardSimilarityAPI = new JaccardSimilarityAPI(client, graph);
-        this.sameNeighborsAPI = new SameNeighborsAPI(client, graph);
-        this.shortestPathAPI = new ShortestPathAPI(client, graph);
-        this.allShortestPathsAPI = new AllShortestPathsAPI(client, graph);
-        this.singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(client, graph);
-        this.weightedShortestPathAPI = new WeightedShortestPathAPI(client, graph);
-        this.multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(client, graph);
-        this.pathsAPI = new PathsAPI(client, graph);
-        this.crosspointsAPI = new CrosspointsAPI(client, graph);
-        this.koutAPI = new KoutAPI(client, graph);
-        this.kneighborAPI = new KneighborAPI(client, graph);
-        this.countAPI = new CountAPI(client, graph);
-        this.ringsAPI = new RingsAPI(client, graph);
-        this.raysAPI = new RaysAPI(client, graph);
-        this.customizedPathsAPI = new CustomizedPathsAPI(client, graph);
-        this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(client, graph);
-        this.templatePathsAPI = new TemplatePathsAPI(client, graph);
-        this.fusiformSimilarityAPI = new FusiformSimilarityAPI(client, graph);
-        this.neighborRankAPI = new NeighborRankAPI(client, graph);
-        this.personalRankAPI = new PersonalRankAPI(client, graph);
-        this.verticesAPI = new VerticesAPI(client, graph);
-        this.edgesAPI = new EdgesAPI(client, graph);
-        this.edgeExistenceAPI = new EdgeExistenceAPI(client, graph);
+        this.jaccardSimilarityAPI = new JaccardSimilarityAPI(client, graphSpace, graph);
+        this.sameNeighborsAPI = new SameNeighborsAPI(client, graphSpace, graph);
+        this.shortestPathAPI = new ShortestPathAPI(client, graphSpace, graph);
+        this.allShortestPathsAPI = new AllShortestPathsAPI(client, graphSpace, graph);
+        this.singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(
+                client, graphSpace, graph);
+        this.weightedShortestPathAPI = new WeightedShortestPathAPI(
+                client, graphSpace, graph);
+        this.multiNodeShortestPathAPI = new MultiNodeShortestPathAPI(
+                client, graphSpace, graph);
+        this.pathsAPI = new PathsAPI(client, graphSpace, graph);
+        this.crosspointsAPI = new CrosspointsAPI(client, graphSpace, graph);
+        this.koutAPI = new KoutAPI(client, graphSpace, graph);
+        this.kneighborAPI = new KneighborAPI(client, graphSpace, graph);
+        this.countAPI = new CountAPI(client, graphSpace, graph);
+        this.ringsAPI = new RingsAPI(client, graphSpace, graph);
+        this.raysAPI = new RaysAPI(client, graphSpace, graph);
+        this.customizedPathsAPI = new CustomizedPathsAPI(client, graphSpace, graph);
+        this.customizedCrosspointsAPI = new CustomizedCrosspointsAPI(
+                client, graphSpace, graph);
+        this.templatePathsAPI = new TemplatePathsAPI(client, graphSpace, graph);
+        this.fusiformSimilarityAPI = new FusiformSimilarityAPI(client, graphSpace, graph);
+        this.neighborRankAPI = new NeighborRankAPI(client, graphSpace, graph);
+        this.personalRankAPI = new PersonalRankAPI(client, graphSpace, graph);
+        this.verticesAPI = new VerticesAPI(client, graphSpace, graph);
+        this.edgesAPI = new EdgesAPI(client, graphSpace, graph);
+        this.edgeExistenceAPI = new EdgeExistenceAPI(client, graphSpace, graph);
     }
 
     public double jaccardSimilarity(Object vertexId, Object otherId) {
@@ -455,11 +461,11 @@ public class TraverserManager {
         return this.fusiformSimilarityAPI.post(request);
     }
 
-    public List<Ranks> neighborRank(NeighborRankAPI.Request request) {
+    public RanksWithMeasure neighborRank(NeighborRankAPI.Request request) {
         return this.neighborRankAPI.post(request);
     }
 
-    public Ranks personalRank(PersonalRankAPI.Request request) {
+    public RanksWithMeasure personalRank(PersonalRankAPI.Request request) {
         return this.personalRankAPI.post(request);
     }
 

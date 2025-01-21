@@ -29,8 +29,8 @@ import org.apache.hugegraph.util.E;
 
 public class SingleSourceShortestPathAPI extends TraversersAPI {
 
-    public SingleSourceShortestPathAPI(RestClient client, String graph) {
-        super(client, graph);
+    public SingleSourceShortestPathAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

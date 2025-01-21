@@ -29,8 +29,8 @@ import org.apache.hugegraph.structure.graph.Path;
 
 public class RingsAPI extends TraversersAPI {
 
-    public RingsAPI(RestClient client, String graph) {
-        super(client, graph);
+    public RingsAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
