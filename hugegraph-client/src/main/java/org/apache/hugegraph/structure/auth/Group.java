@@ -22,20 +22,23 @@ import java.util.Date;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Group extends AuthElement {
 
     @JsonProperty("group_name")
-    private String name;
+    protected String name;
+    @JsonProperty("group_nickname")
+    protected String nickname;
     @JsonProperty("group_description")
-    private String description;
+    protected String description;
 
     @JsonProperty("group_create")
-    @JsonFormat(pattern = DATE_FORMAT)
+    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
     protected Date create;
     @JsonProperty("group_update")
-    @JsonFormat(pattern = DATE_FORMAT)
+    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
     protected Date update;
     @JsonProperty("group_creator")
     protected String creator;
@@ -68,11 +71,37 @@ public class Group extends AuthElement {
         this.name = name;
     }
 
+    public String nickname() {
+        return this.nickname;
+    }
+
+    public void nickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     public String description() {
         return this.description;
     }
 
     public void description(String description) {
         this.description = description;
+    }
+
+    public GroupReq switchReq() {
+        return new GroupReq(this);
+    }
+
+    @JsonIgnoreProperties({"graphspace"})
+    public static class GroupReq extends Group {
+
+        public GroupReq(Group group) {
+            this.id = group.id();
+            this.name = group.name();
+            this.nickname = group.nickname;
+            this.description = group.description();
+            this.update = group.updateTime();
+            this.create = group.createTime();
+            this.creator = group.creator();
+        }
     }
 }
