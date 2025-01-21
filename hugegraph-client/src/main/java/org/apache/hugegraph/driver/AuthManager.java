@@ -18,6 +18,7 @@
 package org.apache.hugegraph.driver;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -25,9 +26,13 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.hugegraph.api.auth.AccessAPI;
 import org.apache.hugegraph.api.auth.BelongAPI;
 import org.apache.hugegraph.api.auth.GroupAPI;
+import org.apache.hugegraph.api.auth.KGLoginAPI;
 import org.apache.hugegraph.api.auth.LoginAPI;
 import org.apache.hugegraph.api.auth.LogoutAPI;
+import org.apache.hugegraph.api.auth.ManagerAPI;
 import org.apache.hugegraph.api.auth.ProjectAPI;
+import org.apache.hugegraph.api.auth.RoleAPI;
+import org.apache.hugegraph.api.auth.SaasLoginAPI;
 import org.apache.hugegraph.api.auth.TargetAPI;
 import org.apache.hugegraph.api.auth.TokenAPI;
 import org.apache.hugegraph.api.auth.UserAPI;
@@ -35,35 +40,48 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.auth.Belong;
 import org.apache.hugegraph.structure.auth.Group;
+import org.apache.hugegraph.structure.auth.HugePermission;
+import org.apache.hugegraph.structure.auth.KGLogin;
+import org.apache.hugegraph.structure.auth.KGLoginResult;
 import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
 import org.apache.hugegraph.structure.auth.Project;
+import org.apache.hugegraph.structure.auth.Role;
 import org.apache.hugegraph.structure.auth.Target;
 import org.apache.hugegraph.structure.auth.TokenPayload;
 import org.apache.hugegraph.structure.auth.User;
+import org.apache.hugegraph.structure.auth.UserManager;
 
 public class AuthManager {
 
     private final TargetAPI targetAPI;
     private final GroupAPI groupAPI;
     private final UserAPI userAPI;
+    private final RoleAPI roleAPI;
     private final AccessAPI accessAPI;
     private final BelongAPI belongAPI;
     private final ProjectAPI projectAPI;
     private final LoginAPI loginAPI;
+    private final SaasLoginAPI saasLoginAPI;
     private final LogoutAPI logoutAPI;
     private final TokenAPI tokenAPI;
+    private final KGLoginAPI kgLoginAPI;
+    private final ManagerAPI managerAPI;
 
-    public AuthManager(RestClient client, String graph) {
-        this.targetAPI = new TargetAPI(client, graph);
-        this.groupAPI = new GroupAPI(client, graph);
-        this.userAPI = new UserAPI(client, graph);
-        this.accessAPI = new AccessAPI(client, graph);
-        this.belongAPI = new BelongAPI(client, graph);
-        this.projectAPI = new ProjectAPI(client, graph);
-        this.loginAPI = new LoginAPI(client, graph);
-        this.logoutAPI = new LogoutAPI(client, graph);
-        this.tokenAPI = new TokenAPI(client, graph);
+    public AuthManager(RestClient client, String graphSpace) {
+        this.targetAPI = new TargetAPI(client, graphSpace);
+        this.groupAPI = new GroupAPI(client);
+        this.userAPI = new UserAPI(client);
+        this.roleAPI = new RoleAPI(client, graphSpace);
+        this.accessAPI = new AccessAPI(client, graphSpace);
+        this.belongAPI = new BelongAPI(client, graphSpace);
+        this.projectAPI = new ProjectAPI(client, graphSpace);
+        this.loginAPI = new LoginAPI(client);
+        this.saasLoginAPI = new SaasLoginAPI(client);
+        this.logoutAPI = new LogoutAPI(client);
+        this.tokenAPI = new TokenAPI(client);
+        this.kgLoginAPI = new KGLoginAPI(client);
+        this.managerAPI = new ManagerAPI(client);
     }
 
     public List<Target> listTargets() {
@@ -102,6 +120,10 @@ public class AuthManager {
         return this.groupAPI.get(id);
     }
 
+    public Map<String, Object> getGroupRoleTable(Object id) {
+        return this.groupAPI.getGroupRoleTable(id);
+    }
+
     public Group createGroup(Group group) {
         return this.groupAPI.create(group);
     }
@@ -114,12 +136,43 @@ public class AuthManager {
         this.groupAPI.delete(id);
     }
 
+    public Map<String,Object> batchGroup(String id, Map<String, Object> action){
+        return this.groupAPI.batch(id, action);
+    }
+
+    public List<Role> listRoles(int limit){
+        return this.roleAPI.list(limit);
+    }
+
+    public List<Role> listRoles(){
+        return this.listRoles(-1);
+    }
+
+    public Role getRole(Object id){
+        return this.roleAPI.get(id);
+    }
+    public Role createRole(Role role) {
+        return this.roleAPI.create(role);
+    }
+
+    public Role updateRole(Role role) {
+        return this.roleAPI.update(role);
+    }
+
+    public void deleteRole(Object id) {
+        this.roleAPI.delete(id);
+    }
+
     public List<User> listUsers() {
         return this.listUsers(-1);
     }
 
     public List<User> listUsers(int limit) {
         return this.userAPI.list(limit);
+    }
+
+    public List<User> listUsers(int limit, String group) {
+        return this.userAPI.list(limit, group);
     }
 
     public User getUser(Object id) {
@@ -130,8 +183,16 @@ public class AuthManager {
         return this.userAPI.getUserRole(id);
     }
 
+    public Map<String, Object> getUserRoleTable(Object id) {
+        return this.userAPI.getUserRoleTable(id);
+    }
+
     public User createUser(User user) {
         return this.userAPI.create(user);
+    }
+
+    public Map<String, List<Map<String, String>>> createBatch(List<Map<String, String>> data) {
+        return this.userAPI.createBatch(data);
     }
 
     public User updateUser(User user) {
@@ -223,6 +284,9 @@ public class AuthManager {
         for (Group group : this.listGroups()) {
             this.deleteGroup(group.id());
         }
+        for (Role role : this.listRoles()) {
+            this.deleteRole(role.id());
+        }
         for (Target target : this.listTargets()) {
             this.deleteTarget(target.id());
         }
@@ -271,11 +335,71 @@ public class AuthManager {
         return this.loginAPI.login(login);
     }
 
+    public LoginResult saasLogin(SaasLoginAPI.SaasLogin login) {
+        return this.saasLoginAPI.saasLogin(login);
+    }
+
     public void logout() {
         this.logoutAPI.logout();
     }
 
     public TokenPayload verifyToken() {
         return this.tokenAPI.verifyToken();
+    }
+
+    public KGLoginResult kgLogin(KGLogin kgLogin) {
+        return this.kgLoginAPI.kgLogin(kgLogin);
+    }
+
+    public UserManager addSuperAdmin(String user) {
+
+        UserManager userManager = new UserManager();
+        userManager.type(HugePermission.ADMIN);
+        userManager.user(user);
+
+        return this.managerAPI.create(userManager);
+    }
+
+    public UserManager addSpaceAdmin(String user, String graphSpace) {
+
+        UserManager userManager = new UserManager();
+        userManager.type(HugePermission.SPACE);
+        userManager.graphSpace(graphSpace);
+        userManager.user(user);
+
+        return this.managerAPI.create(userManager);
+    }
+
+    public void delSuperAdmin(String user) {
+        this.managerAPI.delete(user, HugePermission.ADMIN, null);
+    }
+
+    public void delSpaceAdmin(String user, String graphSpace) {
+        this.managerAPI.delete(user, HugePermission.SPACE, graphSpace);
+    }
+
+    public List<String> listSpaceAdmin(String graphSpace) {
+        return this.managerAPI.list(HugePermission.SPACE, graphSpace);
+    }
+
+    public List<String> listSuperAdmin() {
+        return this.managerAPI.list(HugePermission.ADMIN, null);
+    }
+
+    public boolean isSuperAdmin() {
+        return this.managerAPI.checkPermission(HugePermission.ADMIN, null);
+    }
+
+    public boolean isSpaceAdmin(String graphSpace) {
+        return this.managerAPI.checkPermission(HugePermission.SPACE, graphSpace);
+    }
+
+    public boolean checkDefaultRole(String graphSpace, String role) {
+        return this.managerAPI.checkDefaultRole(graphSpace, role, "");
+    }
+
+    public boolean checkDefaultRole(String graphSpace, String role,
+                                    String graph) {
+        return this.managerAPI.checkDefaultRole(graphSpace, role, graph);
     }
 }
