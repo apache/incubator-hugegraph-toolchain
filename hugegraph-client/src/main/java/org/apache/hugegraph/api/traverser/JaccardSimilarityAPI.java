@@ -44,8 +44,9 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         return "jaccardsimilarity";
     }
 
-    public double get(Object vertexId, Object otherId, Direction direction,
-                      String label, long degree) {
+    public JaccardSimilarity get(Object vertexId, Object otherId,
+                                 Direction direction, String label,
+                                 long degree) {
         this.client.checkApiVersion("0.51", "jaccard similarity");
         String vertex = GraphAPI.formatVertexId(vertexId, false);
         String other = GraphAPI.formatVertexId(otherId, false);
@@ -58,10 +59,10 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         params.put("max_degree", degree);
         RestResult result = this.client.get(this.path(), params);
         @SuppressWarnings("unchecked")
-        Map<String, Double> jaccard = result.readObject(Map.class);
-        E.checkState(jaccard.containsKey(JACCARD_SIMILARITY),
+        JaccardSimilarity jaccard = result.readObject(JaccardSimilarity.class);
+        E.checkState(jaccard.similarsMap() != null,
                      "The result doesn't have key '%s'", JACCARD_SIMILARITY);
-        return jaccard.get(JACCARD_SIMILARITY);
+        return jaccard;
     }
 
     @SuppressWarnings("unchecked")

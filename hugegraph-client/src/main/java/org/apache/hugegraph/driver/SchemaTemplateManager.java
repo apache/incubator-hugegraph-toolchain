@@ -3,7 +3,7 @@ package org.apache.hugegraph.driver;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.client.api.space.SchemaTemplateAPI;
+import org.apache.hugegraph.api.space.SchemaTemplateAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.space.SchemaTemplate;
 

@@ -17,6 +17,9 @@
 
 package org.apache.hugegraph.client;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.apache.hugegraph.exception.ServerException;
@@ -71,6 +74,15 @@ public class RestClient extends AbstractRestClient {
         final String DEFAULT_GS_PATH_PREFIX = "graphspaces/DEFAULT/";
         final String EMPTY = "";
         return path.replaceFirst(DEFAULT_GS_PATH_PREFIX, EMPTY);
+    }
+
+    // TODO: remove temporary solution, implemented by hugegraph-common: https://github.com/apache/incubator-hugegraph-commons/pull/146
+    public static String encode(String raw) {
+        try {
+            return URLEncoder.encode(raw, StandardCharsets.UTF_8.toString()).replace("+", "%2B");
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalArgumentException("Failed to encode string: " + raw, e);
+        }
     }
 
     public void apiVersion(Version version) {

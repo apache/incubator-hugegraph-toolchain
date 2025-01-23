@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.hugegraph.client.api.auth;
+package org.apache.hugegraph.api.auth;
 
 import java.util.List;
 

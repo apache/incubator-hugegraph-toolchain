@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -18,57 +20,58 @@
 package org.apache.hugegraph.api.traverser;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.traverser.Kout;
-import org.apache.hugegraph.structure.traverser.KoutRequest;
+import org.apache.hugegraph.structure.traverser.Prediction;
+import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
+import org.apache.hugegraph.util.E;
 
-public class KoutAPI extends TraversersAPI {
+public class AdamicAdarAPI extends TraversersAPI {
 
-    public KoutAPI(RestClient client, String graphSpace, String graph) {
+    private static final String AA = "adamic_adar";
+
+    public AdamicAdarAPI(RestClient client, String graphSpace, String graph) {
         super(client, graphSpace, graph);
     }
 
     @Override
     protected String type() {
-        return "kout";
+        return "adamicadar";
     }
 
-    public Map<String, Object> get(Object sourceId, Direction direction,
-                                   String label, int depth, boolean nearest,
-                                   long degree, long capacity, long limit) {
-        String source = GraphAPI.formatVertexId(sourceId, false);
-
-        checkPositive(depth, "Depth of k-out");
+    public Prediction get(Object vertexId, Object otherId, Direction direction,
+                          String label, long degree) {
+        this.client.checkApiVersion("0.67", AA);
+        String vertex = GraphAPI.formatVertexId(vertexId, false);
+        String other = GraphAPI.formatVertexId(otherId, false);
         checkDegree(degree);
-        checkCapacity(capacity);
-        checkLimit(limit);
-
         Map<String, Object> params = new LinkedHashMap<>();
-        params.put("source", source);
+        params.put("vertex", vertex);
+        params.put("other", other);
         params.put("direction", direction);
         params.put("label", label);
-        params.put("max_depth", depth);
-        params.put("nearest", nearest);
         params.put("max_degree", degree);
-        params.put("capacity", capacity);
-        params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        Map<String, Object> resMap = result.readObject(Map.class);
-        List<Object> ids = (List<Object>) resMap.get("vertices");
-        resMap.put("vertices", ids);
-        return resMap;
+        @SuppressWarnings("unchecked")
+        Prediction res = result.readObject(Prediction.class);
+        E.checkState(res.getAdamicAdar() != null,
+                     "The result doesn't have key '%s'", AA);
+        return res;
     }
 
-    public Kout post(KoutRequest request) {
-        this.client.checkApiVersion("0.58", "customized kout");
+    /*
+    * 20221122 张广旭
+    * 未发现 server 有对应接口
+    * */
+    @SuppressWarnings("unchecked")
+    public Map<Object, Double> post(SingleSourceJaccardSimilarityRequest
+                                    request) {
+        this.client.checkApiVersion("0.67", AA);
         RestResult result = this.client.post(this.path(), request);
-        return result.readObject(Kout.class);
+        return result.readObject(Map.class);
     }
 }
-

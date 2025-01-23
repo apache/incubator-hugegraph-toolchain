@@ -17,21 +17,24 @@
  * under the License.
  */
 
-package org.apache.hugegraph.driver;
+package org.apache.hugegraph.structure.traverser;
 
-import java.util.List;
+import java.util.Map;
 
-import org.apache.hugegraph.api.space.PDAPI;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.structure.space.PDNodeInfo;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class PDManager {
-    private PDAPI pdAPI;
-    public PDManager(RestClient client) {
-        this.pdAPI = new PDAPI(client);
+public class CountResponse {
+
+    @JsonProperty
+    private Map<String, Number> countMap;
+    @JsonProperty
+    private Map<String, Object> measure;
+
+    public Map<String, Number> countMap() {
+        return this.countMap;
     }
 
-    public List<PDNodeInfo> status() {
-        return this.pdAPI.list();
+    public Map<String, Object> measure() {
+        return this.measure;
     }
 }

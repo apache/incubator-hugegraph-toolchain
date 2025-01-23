@@ -113,19 +113,19 @@ public class PersonalRankAPI extends TraversersAPI {
             }
 
             public Builder alpha(double alpha) {
-                checkAlpha(alpha);
+                TraversersAPI.checkAlpha(alpha);
                 this.request.alpha = alpha;
                 return this;
             }
 
             public Builder degree(long degree) {
-                checkDegree(degree);
+                TraversersAPI.checkDegree(degree);
                 this.request.degree = degree;
                 return this;
             }
 
             public Builder limit(long limit) {
-                checkLimit(limit);
+                TraversersAPI.checkLimit(limit);
                 this.request.limit = limit;
                 return this;
             }
@@ -156,9 +156,9 @@ public class PersonalRankAPI extends TraversersAPI {
                 E.checkArgument(this.request.label != null,
                                 "The label of rank request " +
                                 "for personal rank can't be null");
-                checkAlpha(this.request.alpha);
-                checkDegree(this.request.degree);
-                checkLimit(this.request.limit);
+                TraversersAPI.checkAlpha(this.request.alpha);
+                TraversersAPI.checkDegree(this.request.degree);
+                TraversersAPI.checkLimit(this.request.limit);
                 E.checkArgument(this.request.maxDepth > 0 &&
                                 this.request.maxDepth <=
                                 Traverser.DEFAULT_MAX_DEPTH,
