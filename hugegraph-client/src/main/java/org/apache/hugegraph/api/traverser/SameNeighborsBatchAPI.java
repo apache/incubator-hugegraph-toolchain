@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -17,34 +19,25 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import java.util.Map;
-
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.traverser.CountRequest;
-import org.apache.hugegraph.structure.traverser.CountResponse;
-import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.structure.traverser.SameNeighborsBatch;
+import org.apache.hugegraph.structure.traverser.SameNeighborsBatchRequest;
 
-public class CountAPI extends TraversersAPI {
+public class SameNeighborsBatchAPI extends TraversersAPI {
 
-    private static final String COUNT = "count";
-
-    public CountAPI(RestClient client,  String graphSpace, String graph) {
+    public SameNeighborsBatchAPI(RestClient client, String graphSpace, String graph) {
         super(client, graphSpace, graph);
     }
 
     @Override
     protected String type() {
-        return "count";
+        return "sameneighborsbatch";
     }
 
-    public CountResponse post(CountRequest request) {
-        this.client.checkApiVersion("0.55", "count");
+    public SameNeighborsBatch post(SameNeighborsBatchRequest request) {
+        this.client.checkApiVersion("0.66", "same neighbors batch");
         RestResult result = this.client.post(this.path(), request);
-        @SuppressWarnings("unchecked")
-        CountResponse resp = result.readObject(CountResponse.class);
-        E.checkState(resp.countMap().containsKey(COUNT),
-                     "The result doesn't have key '%s'", COUNT);
-        return resp;
+        return result.readObject(SameNeighborsBatch.class);
     }
 }

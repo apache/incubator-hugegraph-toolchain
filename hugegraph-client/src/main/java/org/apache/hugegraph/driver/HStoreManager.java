@@ -21,7 +21,7 @@ package org.apache.hugegraph.driver;
 
 import java.util.List;
 
-import org.apache.hugegraph.client.api.space.HStoreAPI;
+import org.apache.hugegraph.api.space.HStoreAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.space.HStoreNodeInfo;
 

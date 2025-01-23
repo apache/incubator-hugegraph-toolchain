@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -17,33 +19,34 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.traverser.SameNeighbors;
+import org.apache.hugegraph.structure.traverser.Prediction;
+import org.apache.hugegraph.util.E;
 
-public class SameNeighborsAPI extends TraversersAPI {
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-    private static final String SAME_NEIGHBORS = "same_neighbors";
+public class ResourceAllocationAPI extends TraversersAPI {
 
-    public SameNeighborsAPI(RestClient client, String graphSpace, String graph) {
+    private static final String RESOURCE_ALLOCATION = "resource_allocation";
+
+    public ResourceAllocationAPI(RestClient client,
+                                 String graphSpace,
+                                 String graph) {
         super(client, graphSpace, graph);
     }
 
     @Override
     protected String type() {
-        return "sameneighbors";
+        return "resourceallocation";
     }
 
-    public SameNeighbors get(Object vertexId, Object otherId,
-                             Direction direction, String label,
-                             long degree, long limit) {
-        this.client.checkApiVersion("0.51", "same neighbors");
+    public Prediction get(Object vertexId, Object otherId, Direction direction,
+                          String label, long degree) {
+        this.client.checkApiVersion("0.67", RESOURCE_ALLOCATION);
         String vertex = GraphAPI.formatVertexId(vertexId, false);
         String other = GraphAPI.formatVertexId(otherId, false);
         checkDegree(degree);
@@ -53,8 +56,12 @@ public class SameNeighborsAPI extends TraversersAPI {
         params.put("direction", direction);
         params.put("label", label);
         params.put("max_degree", degree);
-        params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        return result.readObject(SameNeighbors.class);
+        @SuppressWarnings("unchecked")
+        Prediction res = result.readObject(Prediction.class);
+        Map<String, Double> resourceAllocation = result.readObject(Map.class);
+        E.checkState(res.getResourceAllocation() != null,
+                     "The result doesn't have key '%s'", RESOURCE_ALLOCATION);
+        return res;
     }
 }

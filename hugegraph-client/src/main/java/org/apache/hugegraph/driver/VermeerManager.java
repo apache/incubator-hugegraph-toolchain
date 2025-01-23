@@ -22,7 +22,7 @@ package org.apache.hugegraph.driver;
 import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.client.api.vermeer.VermeerAPI;
+import org.apache.hugegraph.api.vermeer.VermeerAPI;
 
 public class VermeerManager {
     private VermeerAPI vermeerAPI;

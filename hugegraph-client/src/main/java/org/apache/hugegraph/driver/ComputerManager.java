@@ -19,8 +19,8 @@
 
 package org.apache.hugegraph.driver;
 
-import org.apache.hugegraph.client.api.task.ComputerDisAPI;
-import org.apache.hugegraph.client.api.task.TasksWithPage;
+import org.apache.hugegraph.api.task.ComputerDisAPI;
+import org.apache.hugegraph.api.task.TasksWithPage;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.Task;
 
