@@ -388,6 +388,7 @@ public class CountApiTest extends TraverserApiTest {
         request = builder.build();
 
         res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(7L, count);
     }
 

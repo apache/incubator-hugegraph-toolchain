@@ -37,7 +37,7 @@ public class TargetApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        api = new TargetAPI(initClient(), GRAPH);
+        api = new TargetAPI(initClient(), DEFAULT_GRAPHSPACE);
     }
 
     @AfterClass

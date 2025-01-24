@@ -44,6 +44,20 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         return "jaccardsimilarity";
     }
 
+    private static JaccardSimilarity deserializeJaccardSimilarity(RestResult result) {
+        if (result.content().contains("similarsMap")) {
+            JaccardSimilarity jaccard = result.readObject(JaccardSimilarity.class);
+            E.checkState(jaccard.similarsMap() != null,
+                         "The result doesn't have key '%s'", JACCARD_SIMILARITY);
+            return jaccard;
+        } else {
+            JaccardSimilarity jaccard = new JaccardSimilarity();
+            Map<Object, Double> map = result.readObject(Map.class);
+            jaccard.setSimilarsMap(map);
+            return jaccard;
+        }
+    }
+
     public JaccardSimilarity get(Object vertexId, Object otherId,
                                  Direction direction, String label,
                                  long degree) {
@@ -59,7 +73,8 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         params.put("max_degree", degree);
         RestResult result = this.client.get(this.path(), params);
         @SuppressWarnings("unchecked")
-        JaccardSimilarity jaccard = result.readObject(JaccardSimilarity.class);
+        //JaccardSimilarity jaccard = result.readObject(JaccardSimilarity.class);
+        JaccardSimilarity jaccard = deserializeJaccardSimilarity(result);
         E.checkState(jaccard.similarsMap() != null,
                      "The result doesn't have key '%s'", JACCARD_SIMILARITY);
         return jaccard;
@@ -69,6 +84,7 @@ public class JaccardSimilarityAPI extends TraversersAPI {
     public JaccardSimilarity post(SingleSourceJaccardSimilarityRequest request) {
         this.client.checkApiVersion("0.58", "jaccard similar");
         RestResult result = this.client.post(this.path(), request);
-        return result.readObject(JaccardSimilarity.class);
+        //return result.readObject(JaccardSimilarity.class);
+        return deserializeJaccardSimilarity(result);
     }
 }

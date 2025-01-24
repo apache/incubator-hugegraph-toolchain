@@ -41,10 +41,21 @@ public class CountAPI extends TraversersAPI {
     public CountResponse post(CountRequest request) {
         this.client.checkApiVersion("0.55", "count");
         RestResult result = this.client.post(this.path(), request);
-        @SuppressWarnings("unchecked")
-        CountResponse resp = result.readObject(CountResponse.class);
-        E.checkState(resp.countMap().containsKey(COUNT),
-                     "The result doesn't have key '%s'", COUNT);
-        return resp;
+        // TODO: temp implementation
+        if (!result.content().contains("countMap")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Number> countMap = result.readObject(Map.class);
+            E.checkState(countMap.containsKey(COUNT),
+                         "The result doesn't have key '%s'", COUNT);
+            CountResponse resp = new CountResponse();
+            resp.setCountMap(countMap);
+            return resp;
+        } else {
+            @SuppressWarnings("unchecked")
+            CountResponse resp = result.readObject(CountResponse.class);
+            E.checkState(resp.countMap().containsKey(COUNT),
+                         "The result doesn't have key '%s'", COUNT);
+            return resp;
+        }
     }
 }
