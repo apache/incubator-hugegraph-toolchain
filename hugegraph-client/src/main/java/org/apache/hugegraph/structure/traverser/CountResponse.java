@@ -23,9 +23,12 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Setter;
+
 public class CountResponse {
 
     @JsonProperty
+    @Setter
     private Map<String, Number> countMap;
     @JsonProperty
     private Map<String, Object> measure;
