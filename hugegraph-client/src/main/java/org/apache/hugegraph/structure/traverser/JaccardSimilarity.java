@@ -33,6 +33,12 @@ public class JaccardSimilarity {
         return this.similarsMap;
     }
 
+    // TODO: Temp implementation?
+    public Object getJaccardSimilarity() {
+        // get first element from the map
+        return this.similarsMap.entrySet().iterator().next().getValue();
+    }
+
     public ApiMeasure measure() {
         return this.measure;
     }
