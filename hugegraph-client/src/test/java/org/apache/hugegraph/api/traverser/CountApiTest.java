@@ -22,6 +22,7 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.CountRequest;
+import org.apache.hugegraph.structure.traverser.CountResponse;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -164,7 +165,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         CountRequest request = builder.build();
 
-        long count = countAPI.post(request);
+        CountResponse res = countAPI.post(request);
+        long count = res.countMap().get("count").longValue();
         Assert.assertEquals(8L, count);
     }
 
@@ -177,7 +179,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         CountRequest request = builder.build();
 
-        long count = countAPI.post(request);
+        CountResponse res = countAPI.post(request);
+        long count = res.countMap().get("count").longValue();
         Assert.assertEquals(19L, count);
     }
 
@@ -190,7 +193,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         CountRequest request = builder.build();
 
-        long count = countAPI.post(request);
+        CountResponse res = countAPI.post(request);
+        long count = res.countMap().get("count").longValue();
         Assert.assertEquals(19L, count);
 
         builder = CountRequest.builder();
@@ -200,7 +204,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(8L, count);
 
         builder = CountRequest.builder();
@@ -210,7 +215,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.IN);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(3L, count);
 
         builder = CountRequest.builder();
@@ -220,7 +226,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.IN);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(8L, count);
     }
 
@@ -236,7 +243,8 @@ public class CountApiTest extends TraverserApiTest {
                .labels(ImmutableList.of("link"));
         CountRequest request = builder.build();
 
-        long count = countAPI.post(request);
+        CountResponse res = countAPI.post(request);
+        long count = res.countMap().get("count").longValue();
         Assert.assertEquals(3L, count);
 
         builder = CountRequest.builder();
@@ -249,7 +257,8 @@ public class CountApiTest extends TraverserApiTest {
                .labels(ImmutableList.of("link"));
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(8L, count);
     }
 
@@ -269,7 +278,8 @@ public class CountApiTest extends TraverserApiTest {
                .properties("time", "P.lt(\"2020-01-06\")");
         CountRequest request = builder.build();
 
-        long count = countAPI.post(request);
+        CountResponse res = countAPI.post(request);
+        long count = res.countMap().get("count").longValue();
         Assert.assertEquals(1L, count);
 
         builder = CountRequest.builder();
@@ -285,7 +295,8 @@ public class CountApiTest extends TraverserApiTest {
                .properties("time", "P.lt(\"2020-01-06\")");
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(6L, count);
 
         builder = CountRequest.builder();
@@ -299,7 +310,8 @@ public class CountApiTest extends TraverserApiTest {
                .labels(ImmutableList.of("link"));
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(1L, count);
 
         builder = CountRequest.builder();
@@ -313,7 +325,8 @@ public class CountApiTest extends TraverserApiTest {
                .labels(ImmutableList.of("link"));
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(4L, count);
 
         builder = CountRequest.builder();
@@ -327,7 +340,8 @@ public class CountApiTest extends TraverserApiTest {
                .properties("time", "2020-01-07");
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(1L, count);
     }
 
@@ -340,7 +354,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         CountRequest request = builder.build();
 
-        long count = countAPI.post(request);
+        CountResponse res = countAPI.post(request);
+        long count = res.countMap().get("count").longValue();
         Assert.assertEquals(8L, count);
 
         builder = CountRequest.builder();
@@ -350,7 +365,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(3L, count);
 
         builder = CountRequest.builder();
@@ -360,7 +376,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(4L, count);
 
         builder = CountRequest.builder();
@@ -370,7 +387,7 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
         Assert.assertEquals(7L, count);
     }
 
@@ -383,7 +400,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         CountRequest request = builder.build();
 
-        long count = countAPI.post(request);
+        CountResponse res = countAPI.post(request);
+        long count = res.countMap().get("count").longValue();
         Assert.assertEquals(8L, count);
 
         builder = CountRequest.builder();
@@ -393,7 +411,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(3L, count);
 
         builder = CountRequest.builder();
@@ -403,7 +422,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(0L, count);
 
         builder = CountRequest.builder();
@@ -412,7 +432,8 @@ public class CountApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.OUT).degree(3).skipDegree(4);
         request = builder.build();
 
-        count = countAPI.post(request);
+        res = countAPI.post(request);
+        count = res.countMap().get("count").longValue();
         Assert.assertEquals(3L, count);
     }
 
@@ -429,8 +450,8 @@ public class CountApiTest extends TraverserApiTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             builder.dedupSize(-5);
         }, e -> {
-            Assert.assertContains("The dedup size must be >= 0 or == -1, but got: ",
-                                  e.getMessage());
+            Assert.assertContains("The dedup size must be >= 0 or == -1, " +
+                                  "but got: ", e.getMessage());
         });
 
         Assert.assertThrows(IllegalArgumentException.class, () -> {

@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -23,15 +25,16 @@ import java.util.Set;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Vertex;
-import org.apache.hugegraph.structure.traverser.JaccardSimilarity;
+import org.apache.hugegraph.structure.traverser.Prediction;
 import org.apache.hugegraph.structure.traverser.SingleSourceJaccardSimilarityRequest;
-import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import org.apache.hugegraph.testutil.Assert;
 import com.google.common.collect.ImmutableSet;
 
-public class JaccardSimilarityApiTest extends TraverserApiTest {
+public class AdamicAdarAPITest extends TraverserApiTest {
 
     @BeforeClass
     public static void initShortestPathGraph() {
@@ -49,16 +52,16 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
                 .ifNotExist()
                 .create();
 
-        Vertex v1 = graph().addVertex(T.LABEL, "node", T.ID, 1);
-        Vertex v2 = graph().addVertex(T.LABEL, "node", T.ID, 2);
-        Vertex v3 = graph().addVertex(T.LABEL, "node", T.ID, 3);
-        Vertex v4 = graph().addVertex(T.LABEL, "node", T.ID, 4);
-        Vertex v5 = graph().addVertex(T.LABEL, "node", T.ID, 5);
-        Vertex v6 = graph().addVertex(T.LABEL, "node", T.ID, 6);
-        Vertex v7 = graph().addVertex(T.LABEL, "node", T.ID, 7);
-        Vertex v8 = graph().addVertex(T.LABEL, "node", T.ID, 8);
-        Vertex v9 = graph().addVertex(T.LABEL, "node", T.ID, 9);
-        Vertex v10 = graph().addVertex(T.LABEL, "node", T.ID, 10);
+        Vertex v1 = graph().addVertex(T.label, "node", T.id, 1);
+        Vertex v2 = graph().addVertex(T.label, "node", T.id, 2);
+        Vertex v3 = graph().addVertex(T.label, "node", T.id, 3);
+        Vertex v4 = graph().addVertex(T.label, "node", T.id, 4);
+        Vertex v5 = graph().addVertex(T.label, "node", T.id, 5);
+        Vertex v6 = graph().addVertex(T.label, "node", T.id, 6);
+        Vertex v7 = graph().addVertex(T.label, "node", T.id, 7);
+        Vertex v8 = graph().addVertex(T.label, "node", T.id, 8);
+        Vertex v9 = graph().addVertex(T.label, "node", T.id, 9);
+        Vertex v10 = graph().addVertex(T.label, "node", T.id, 10);
 
         v1.addEdge("link", v3);
         v2.addEdge("link", v3);
@@ -77,83 +80,80 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
     }
 
     @Test
-    public void testJaccardSimilarity() {
-        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2,
-                                                         Direction.BOTH,
-                                                         null, -1);
-        double jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(0.5D, jaccard, Double.MIN_VALUE);
+    public void testAdamicAdar() {
+        Prediction res = adamicAdarAPI.get(1, 2, Direction.BOTH,
+                                       null, -1);
+        double aa = res.getAdamicAdar();
+        Assert.assertEquals(5.7707801635558535D, aa, Double.MIN_VALUE);
     }
 
     @Test
-    public void testJaccardSimilarityWithDirection() {
-        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
-                                                      null, -1);
-        double jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(0.5, jaccard, Double.MIN_VALUE);
+    public void testJAdamicAdarWithDirection() {
+        Prediction res = adamicAdarAPI.get(1, 2, Direction.OUT,
+                                           null, -1);
+        double aa = res.getAdamicAdar();
+        Assert.assertEquals(0.0D, aa, Double.MIN_VALUE);
 
-        res = jaccardSimilarityAPI.get(1, 2, Direction.IN,
-                                         null, -1);
-        jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(0.5, jaccard, Double.MIN_VALUE);
+        res = adamicAdarAPI.get(4, 8, Direction.OUT, null, -1);
+        aa = res.getAdamicAdar();
+        Assert.assertEquals(0.9102392266268373D, aa, Double.MIN_VALUE);
     }
 
     @Test
-    public void testJaccardSimilarityWithLabel() {
-        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2, Direction.BOTH,
-                                                  "link", -1);
-        double jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(0.3333333333333333D, jaccard, Double.MIN_VALUE);
-
-        res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
+    public void testAdamicAdarWithLabel() {
+        Prediction res = adamicAdarAPI.get(1, 2, Direction.BOTH,
                                            "link", -1);
-        jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(0.3333333333333333D, jaccard, Double.MIN_VALUE);
+        double aa = res.getAdamicAdar();
+        Assert.assertEquals(2.8853900817779268D, aa, Double.MIN_VALUE);
 
-        res = jaccardSimilarityAPI.get(1, 2, Direction.IN,
-                                         "link", -1);
-        jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(0.3333333333333333D, jaccard, Double.MIN_VALUE);
+        res = adamicAdarAPI.get(1, 2, Direction.OUT,
+                                    "link", -1);
+        aa = res.getAdamicAdar();
+        Assert.assertEquals(0.0D, aa, Double.MIN_VALUE);
 
-        res = jaccardSimilarityAPI.get(1, 2, Direction.BOTH,
-                                         "relateTo", -1);
-        jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(1.0D, jaccard, Double.MIN_VALUE);
+        res = adamicAdarAPI.get(4, 7, Direction.BOTH,
+                                    "link", -1);
+        aa = res.getAdamicAdar();
+        Assert.assertEquals(0.7213475204444817D, aa, Double.MIN_VALUE);
 
-        res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
-                                         "relateTo", -1);
-        jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(1.0D, jaccard, Double.MIN_VALUE);
+        res = adamicAdarAPI.get(1, 2, Direction.BOTH,
+                                    "relateTo", -1);
+        aa = res.getAdamicAdar();
+        Assert.assertEquals(2.8853900817779268D, aa, Double.MIN_VALUE);
 
-        res = jaccardSimilarityAPI.get(1, 2, Direction.IN,
-                                         "relateTo", -1);
-        jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(1.0D, jaccard, Double.MIN_VALUE);
+        res = adamicAdarAPI.get(1, 2, Direction.OUT,
+                                    "relateTo", -1);
+        aa = res.getAdamicAdar();
+        Assert.assertEquals(0.0D, aa, Double.MIN_VALUE);
+
+        res = adamicAdarAPI.get(1, 2, Direction.IN,
+                                    "relateTo", -1);
+        aa = res.getAdamicAdar();
+        Assert.assertEquals(0.0D, aa, Double.MIN_VALUE);
     }
 
     @Test
-    public void testJaccardSimilarityWithDegree() {
-        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
-                                                  null, 6);
-        double jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(0.5D, jaccard, Double.MIN_VALUE);
+    public void testAdamicAdarWithDegree() {
+        Prediction res = adamicAdarAPI.get(1, 2, Direction.BOTH,
+                                           null, 3);
+        double aa = res.getAdamicAdar();
+        Assert.assertEquals(2.8853900817779268D, aa, Double.MIN_VALUE);
 
-        res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
-                                         null, 1);
-        jaccard = (Double) res.getJaccardSimilarity();
-        Assert.assertEquals(1D, jaccard, Double.MIN_VALUE);
+        res = adamicAdarAPI.get(1, 2, Direction.BOTH,
+                                    null, 1);
+        aa = res.getAdamicAdar();
+        Assert.assertEquals(1.4426950408889634D, aa, Double.MIN_VALUE);
     }
 
-    @Test
-    public void testJaccardSimilar() {
+    // Test until support post method in adamic adar
+    @Ignore
+    public void testJAdamicAdar() {
         SingleSourceJaccardSimilarityRequest.Builder builder =
                 SingleSourceJaccardSimilarityRequest.builder();
         builder.vertex(4);
         builder.step().direction(Direction.BOTH);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results =
-                (Map<Object, Double>) res.getJaccardSimilarity();
+        Map<Object, Double> results = adamicAdarAPI.post(request);
 
         Assert.assertEquals(9, results.size());
         Set<Object> expected = ImmutableSet.of("1", "2", "3", "5", "6",
@@ -171,17 +171,15 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         Assert.assertEquals(0.0, results.get("2"));
     }
 
-    @Test
-    public void testJaccardSimilarWithTop() {
+    @Ignore
+    public void testAdamicAdarWithTop() {
         SingleSourceJaccardSimilarityRequest.Builder builder =
                 SingleSourceJaccardSimilarityRequest.builder();
         builder.vertex(4);
         builder.step().direction(Direction.BOTH);
         builder.top(5);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results =
-                (Map<Object, Double>) res.getJaccardSimilarity();
+        Map<Object, Double> results = adamicAdarAPI.post(request);
 
         Assert.assertEquals(5, results.size());
         Set<Object> expected = ImmutableSet.of("3", "5", "6", "7", "8");
@@ -194,16 +192,14 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         Assert.assertEquals(0.5, results.get("8"));
     }
 
-    @Test
-    public void testJaccardSimilarWithLabel() {
+    @Ignore
+    public void testAdamicAdarWithLabelPost() {
         SingleSourceJaccardSimilarityRequest.Builder builder =
                 SingleSourceJaccardSimilarityRequest.builder();
         builder.vertex(4);
         builder.step().direction(Direction.BOTH).labels("link");
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results =
-                (Map<Object, Double>) res.getJaccardSimilarity();
+        Map<Object, Double> results = adamicAdarAPI.post(request);
 
         Assert.assertEquals(7, results.size());
         Set<Object> expected = ImmutableSet.of("3", "7", "8", "9",
@@ -219,16 +215,14 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         Assert.assertEquals(0.0, results.get("2"));
     }
 
-    @Test
-    public void testJaccardSimilarWithDirection() {
+    @Ignore
+    public void testAdamicAdarWithDirection() {
         SingleSourceJaccardSimilarityRequest.Builder builder =
                 SingleSourceJaccardSimilarityRequest.builder();
         builder.vertex(4);
         builder.step().direction(Direction.OUT);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
-        Map<Object, Double> results =
-                (Map<Object, Double>) res.getJaccardSimilarity();
+        Map<Object, Double> results = adamicAdarAPI.post(request);
 
         Assert.assertEquals(6, results.size());
         Set<Object> expected = ImmutableSet.of("1", "2", "3",

@@ -61,7 +61,8 @@ public class WeightedShortestPathAPI extends TraversersAPI {
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
         params.put("with_vertex", withVertex);
-        params.put("with_edge", withEdge);
+        // TODO
+        //params.put("with_edge", withEdge);
         RestResult result = this.client.get(this.path(), params);
         return result.readObject(WeightedPath.class);
     }

@@ -25,6 +25,7 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -66,8 +67,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
     @Test
     public void testRings() {
         Object markoId = getVertexId("person", "name", "marko");
-        List<Path> paths = ringsAPI.get(markoId, Direction.BOTH, null,
-                                        2, false, -1L, -1L, -1);
+        PathWithMeasure res = ringsAPI.get(markoId, Direction.BOTH, null,
+                                           2, false, -1L, -1L, -1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(0, paths.size());
     }
 
@@ -77,8 +79,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
 
-        List<Path> paths = ringsAPI.get(markoId, Direction.BOTH, null,
-                                        3, false, -1L, -1L, 1);
+        PathWithMeasure res = ringsAPI.get(markoId, Direction.BOTH, null,
+                                        3, false, -1L, -1L, 1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(1, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, joshId, lopId, markoId);
         List<Object> path2 = ImmutableList.of(markoId, lopId, joshId, markoId);
@@ -92,16 +95,19 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
 
-        List<Path> paths = ringsAPI.get(markoId, Direction.BOTH, null,
-                                        1, false, -1L, -1L, -1);
+        PathWithMeasure res = ringsAPI.get(markoId, Direction.BOTH, null,
+                                        1, false, -1L, -1L, -1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(0, paths.size());
 
-        paths = ringsAPI.get(markoId, Direction.BOTH, null,
-                             2, false, -1L, -1L, -1);
+        res = ringsAPI.get(markoId, Direction.BOTH, null,
+                             2, false, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(0, paths.size());
 
-        paths = ringsAPI.get(markoId, Direction.BOTH, null,
-                             3, false, -1L, -1L, -1);
+        res = ringsAPI.get(markoId, Direction.BOTH, null,
+                             3, false, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(1, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, joshId, lopId, markoId);
         List<Object> path2 = ImmutableList.of(markoId, lopId, joshId, markoId);
@@ -115,7 +121,7 @@ public class RingsRaysApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             ringsAPI.get(markoId, Direction.BOTH, null,
-                         2, false, -1L, 1L, -1);
+                         2, false, -1L, 1L, -1L);
         }, e -> {
             String expect = "Exceed capacity '1' while finding rings";
             Assert.assertContains(expect, e.getMessage());
@@ -124,30 +130,34 @@ public class RingsRaysApiTest extends TraverserApiTest {
 
     @Test
     public void testRingsSourceInRing() {
-        List<Path> paths = ringsAPI.get(1, Direction.BOTH, null,
-                                        3, true, -1L, -1L, -1);
+        PathWithMeasure res = ringsAPI.get(1, Direction.BOTH, null,
+                                        3, true, -1L, -1L, -1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(1, paths.size());
         List<Object> path1 = ImmutableList.of(1, 3, 2, 1);
         List<Object> path2 = ImmutableList.of(1, 2, 3, 1);
         List<List<Object>> expectedPaths = ImmutableList.of(path1, path2);
         Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
 
-        paths = ringsAPI.get(2, Direction.OUT, null,
-                             2, true, -1L, -1L, -1);
+        res = ringsAPI.get(2, Direction.OUT, null,
+                             2, true, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(1, paths.size());
         List<Object> path3 = ImmutableList.of(2, 3, 2);
         Assert.assertEquals(path3, paths.get(0).objects());
 
-        paths = ringsAPI.get(2, Direction.BOTH, null,
-                             2, true, -1L, -1L, -1);
+        res = ringsAPI.get(2, Direction.BOTH, null,
+                             2, true, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(1, paths.size());
         Assert.assertEquals(path3, paths.get(0).objects());
     }
 
     @Test
     public void testRingsWithoutSourceInRing() {
-        List<Path> paths = ringsAPI.get(1, Direction.BOTH, null,
-                                        3, false, -1L, -1L, -1);
+        PathWithMeasure res = ringsAPI.get(1, Direction.BOTH, null,
+                                        3, false, -1L, -1L, -1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(3, paths.size());
         List<Object> path1 = ImmutableList.of(1, 3, 2, 3);
         List<Object> path2 = ImmutableList.of(1, 3, 2, 1);
@@ -159,8 +169,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(2).objects()));
 
-        paths = ringsAPI.get(2, Direction.OUT, null,
-                             3, false, -1L, -1L, -1);
+        res = ringsAPI.get(2, Direction.OUT, null,
+                             3, false, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(2, paths.size());
         List<Object> path5 = ImmutableList.of(2, 3, 2);
         List<Object> path6 = ImmutableList.of(2, 3, 1, 2);
@@ -168,8 +179,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
 
-        paths = ringsAPI.get(2, Direction.BOTH, null,
-                             3, false, -1L, -1L, -1);
+        res = ringsAPI.get(2, Direction.BOTH, null,
+                             3, false, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(2, paths.size());
         List<Object> path7 = ImmutableList.of(2, 3, 1, 2);
         List<Object> path8 = ImmutableList.of(2, 1, 3, 2);
@@ -186,8 +198,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        List<Path> paths = raysAPI.get(markoId, Direction.OUT, null,
-                                       2, -1L, -1L, -1);
+        PathWithMeasure res = raysAPI.get(markoId, Direction.OUT, null,
+                                       2, -1L, -1L, -1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(4, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, lopId);
         List<Object> path2 = ImmutableList.of(markoId, vadasId);
@@ -207,8 +220,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Object vadasId = getVertexId("person", "name", "vadas");
         Object lopId = getVertexId("software", "name", "lop");
 
-        List<Path> paths = raysAPI.get(markoId, Direction.OUT, null,
-                                       2, -1L, -1L, 2);
+        PathWithMeasure res = raysAPI.get(markoId, Direction.OUT, null,
+                                       2, -1L, -1L, 2L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(2, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, lopId);
         List<Object> path2 = ImmutableList.of(markoId, vadasId);
@@ -225,8 +239,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        List<Path> paths = raysAPI.get(markoId, Direction.OUT, null,
-                                       1, -1L, -1L, -1);
+        PathWithMeasure res = raysAPI.get(markoId, Direction.OUT, null,
+                                       1, -1L, -1L, -1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(3, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, lopId);
         List<Object> path2 = ImmutableList.of(markoId, vadasId);
@@ -237,8 +252,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(2).objects()));
 
-        paths = raysAPI.get(markoId, Direction.OUT, null,
-                            2, -1L, -1L, -1);
+        res = raysAPI.get(markoId, Direction.OUT, null,
+                            2, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(4, paths.size());
         List<Object> path4 = ImmutableList.of(markoId, joshId, rippleId);
         List<Object> path5 = ImmutableList.of(markoId, joshId, lopId);
@@ -248,8 +264,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Assert.assertTrue(expectedPaths.contains(paths.get(2).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(3).objects()));
 
-        paths = raysAPI.get(markoId, Direction.OUT, null,
-                            3, -1L, -1L, -1);
+        res = raysAPI.get(markoId, Direction.OUT, null,
+                            3, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(4, paths.size());
         Assert.assertTrue(expectedPaths.contains(paths.get(0).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
@@ -263,7 +280,7 @@ public class RingsRaysApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             raysAPI.get(markoId, Direction.OUT, null,
-                        2, -1L, 1L, -1);
+                        2, -1L, 1L, -1L);
         }, e -> {
             String expect = "Exceed capacity '1' while finding rays";
             Assert.assertContains(expect, e.getMessage());
@@ -279,8 +296,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object rippleId = getVertexId("software", "name", "ripple");
 
-        List<Path> paths = raysAPI.get(markoId, Direction.BOTH, null,
-                                       1, -1L, -1L, -1);
+        PathWithMeasure res = raysAPI.get(markoId, Direction.BOTH, null,
+                                       1, -1L, -1L, -1L);
+        List<Path> paths = res.getRings();
         Assert.assertEquals(3, paths.size());
         List<Object> path1 = ImmutableList.of(markoId, lopId);
         List<Object> path2 = ImmutableList.of(markoId, vadasId);
@@ -291,8 +309,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Assert.assertTrue(expectedPaths.contains(paths.get(1).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(2).objects()));
 
-        paths = raysAPI.get(markoId, Direction.BOTH, null,
-                            2, -1L, -1L, -1);
+        res = raysAPI.get(markoId, Direction.BOTH, null,
+                            2, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(5, paths.size());
         List<Object> path4 = ImmutableList.of(markoId, vadasId);
         List<Object> path5 = ImmutableList.of(markoId, lopId, joshId);
@@ -306,8 +325,9 @@ public class RingsRaysApiTest extends TraverserApiTest {
         Assert.assertTrue(expectedPaths.contains(paths.get(3).objects()));
         Assert.assertTrue(expectedPaths.contains(paths.get(4).objects()));
 
-        paths = raysAPI.get(markoId, Direction.BOTH, null,
-                            3, -1L, -1L, -1);
+        res = raysAPI.get(markoId, Direction.BOTH, null,
+                            3, -1L, -1L, -1L);
+        paths = res.getRings();
         Assert.assertEquals(5, paths.size());
         List<Object> path9 = ImmutableList.of(markoId, vadasId);
         List<Object> path10 = ImmutableList.of(markoId, joshId, rippleId);
