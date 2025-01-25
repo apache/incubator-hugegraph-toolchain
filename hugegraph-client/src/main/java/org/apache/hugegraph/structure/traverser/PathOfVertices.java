@@ -29,12 +29,24 @@ public class PathOfVertices {
 
     // AllShortestPathsAPI
     @JsonProperty("path")
-    private List<Object> vertices;
+    private List<Object> path;
+    @JsonProperty("vertices")
+    private List<String> vertices;
+    @JsonProperty("edges")
+    private List<String> edges;
     @JsonProperty
     private Map<String, Object> measure;
 
     public Path getPath() {
-        return new Path(this.vertices);
+        return new Path(this.path);
+    }
+
+    public List<String> getVertices() {
+        return this.vertices;
+    }
+
+    public List<String> getEdges() {
+        return this.edges;
     }
 
     public Map<String, Object> measure() {
