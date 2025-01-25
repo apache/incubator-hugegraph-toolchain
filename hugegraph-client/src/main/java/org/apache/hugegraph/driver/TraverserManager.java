@@ -286,19 +286,19 @@ public class TraverserManager {
 
     public WeightedPaths singleSourceShortestPath(Object sourceId,
                                                   String weight,
-                                                  boolean withVertex) {
+                                                  boolean withVertex, boolean withEdge) {
         return this.singleSourceShortestPath(sourceId, Direction.BOTH, null,
-                                             weight, withVertex);
+                                             weight, withVertex, withEdge);
     }
 
     public WeightedPaths singleSourceShortestPath(Object sourceId,
                                                   Direction direction,
                                                   String label, String weight,
-                                                  boolean withVertex) {
+                                                  boolean withVertex, boolean withEdge) {
         return this.singleSourceShortestPath(sourceId, direction, label, weight,
                                              Traverser.DEFAULT_MAX_DEGREE, 0L,
                                              Traverser.DEFAULT_CAPACITY,
-                                             Traverser.DEFAULT_PATHS_LIMIT, withVertex);
+                                             Traverser.DEFAULT_PATHS_LIMIT, withVertex, withEdge);
     }
 
     public WeightedPaths singleSourceShortestPath(Object sourceId,
@@ -306,11 +306,11 @@ public class TraverserManager {
                                                   String label, String weight,
                                                   long degree, long skipDegree,
                                                   long capacity, long limit,
-                                                  boolean withVertex) {
+                                                  boolean withVertex, boolean withEdge) {
         return this.singleSourceShortestPathAPI.get(sourceId, direction, label,
                                                     weight, degree, skipDegree,
                                                     capacity, limit,
-                                                    withVertex);
+                                                    withVertex, withEdge);
     }
 
     public WeightedPath weightedShortestPath(Object sourceId, Object targetId,

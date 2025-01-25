@@ -41,7 +41,7 @@ public class PersonalRankAPI extends TraversersAPI {
         RestResult result = this.client.post(this.path(), request);
         // to compatible with the old version, the result may be Ranks or RanksWithMeasure
         // so we need to check the content of result to decide which class to use
-        if (result.content().contains("personal_rank")) {
+        if (result.content().contains("measure")) {
             return result.readObject(RanksWithMeasure.class);
         } else {
             Ranks personalRanks = result.readObject(Ranks.class);
@@ -99,15 +99,15 @@ public class PersonalRankAPI extends TraversersAPI {
             }
 
             public Builder source(Object source) {
-                E.checkArgument(source != null, "The source of request " +
-                                "for personal rank can't be null");
+                E.checkArgument(source != null,
+                                "The source of request for personal rank can't be null");
                 this.request.source = source;
                 return this;
             }
 
             public Builder label(String label) {
-                E.checkArgument(label != null, "The label of request " +
-                                "for personal rank can't be null");
+                E.checkArgument(label != null,
+                                "The label of request for personal rank can't be null");
                 this.request.label = label;
                 return this;
             }
@@ -133,8 +133,7 @@ public class PersonalRankAPI extends TraversersAPI {
             public Builder maxDepth(int maxDepth) {
                 E.checkArgument(maxDepth > 0 &&
                                 maxDepth <= Traverser.DEFAULT_MAX_DEPTH,
-                                "The max depth must be in range (0, %s], " +
-                                "but got: %s",
+                                "The max depth must be in range (0, %s], but got: %s",
                                 Traverser.DEFAULT_MAX_DEPTH, maxDepth);
                 this.request.maxDepth = maxDepth;
                 return this;
@@ -160,12 +159,9 @@ public class PersonalRankAPI extends TraversersAPI {
                 TraversersAPI.checkDegree(this.request.degree);
                 TraversersAPI.checkLimit(this.request.limit);
                 E.checkArgument(this.request.maxDepth > 0 &&
-                                this.request.maxDepth <=
-                                Traverser.DEFAULT_MAX_DEPTH,
-                                "The max depth must be in range (0, %s], " +
-                                "but got: %s",
-                                Traverser.DEFAULT_MAX_DEPTH,
-                                this.request.maxDepth);
+                                this.request.maxDepth <= Traverser.DEFAULT_MAX_DEPTH,
+                                "The max depth must be in range (0, %s], but got: %s",
+                                Traverser.DEFAULT_MAX_DEPTH, this.request.maxDepth);
                 return this.request;
             }
         }
