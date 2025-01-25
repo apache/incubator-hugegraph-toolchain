@@ -314,29 +314,29 @@ public class TraverserManager {
     }
 
     public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
-                                             String weight, boolean withVertex) {
+                                             String weight, boolean withVertex, boolean withEdge) {
         return this.weightedShortestPath(sourceId, targetId, Direction.BOTH,
-                                         null, weight, withVertex);
+                                         null, weight, withVertex, withEdge);
     }
 
     public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
                                              Direction direction, String label,
                                              String weight,
-                                             boolean withVertex) {
+                                             boolean withVertex, boolean withEdge) {
         return this.weightedShortestPath(sourceId, targetId, direction, label,
                                          weight, Traverser.DEFAULT_MAX_DEGREE, 0L,
-                                         Traverser.DEFAULT_CAPACITY, withVertex);
+                                         Traverser.DEFAULT_CAPACITY, withVertex, withEdge);
     }
 
     public WeightedPath weightedShortestPath(Object sourceId, Object targetId,
                                              Direction direction,
                                              String label, String weight,
                                              long degree, long skipDegree,
-                                             long capacity, boolean withVertex) {
+                                             long capacity, boolean withVertex, boolean withEdge) {
         return this.weightedShortestPathAPI.get(sourceId, targetId,direction,
                                                 label, weight, degree,
                                                 skipDegree, capacity,
-                                                withVertex);
+                                                withVertex, withEdge);
     }
 
     public PathsWithVertices multiNodeShortestPath(

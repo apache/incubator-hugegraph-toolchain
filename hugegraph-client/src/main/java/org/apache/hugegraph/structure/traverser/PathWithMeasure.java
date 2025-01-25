@@ -20,6 +20,9 @@
 package org.apache.hugegraph.structure.traverser;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import lombok.Setter;
+
 import org.apache.hugegraph.structure.graph.Path;
 
 import java.util.List;
@@ -29,9 +32,14 @@ public class PathWithMeasure {
 
     // AllShortestPathsAPI
     @JsonProperty("paths")
+    @Setter
     private List<Path> paths;
     @JsonProperty("crosspoints")
     private List<Path> crosspoints;
+    @JsonProperty("vertices")
+    private List<String> vertices;
+    @JsonProperty("edges")
+    private List<String> edges;
     @JsonProperty("rays")
     private List<Path> rays;
     @JsonProperty("rings")
@@ -45,6 +53,14 @@ public class PathWithMeasure {
 
     public List<Path> getCrosspoints() {
         return this.crosspoints;
+    }
+
+    public List<String> getVertices() {
+        return this.vertices;
+    }
+
+    public List<String> getEdges() {
+        return this.edges;
     }
 
     public List<Path> getRays() {

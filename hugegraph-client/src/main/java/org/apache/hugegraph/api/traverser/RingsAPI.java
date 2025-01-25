@@ -65,5 +65,10 @@ public class RingsAPI extends TraversersAPI {
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readObject(PathWithMeasure.class);
+        //if (result.content().contains("measure")) {
+        //    return result.readObject(PathWithMeasure.class);
+        //} else {
+        //
+        //}
     }
 }
