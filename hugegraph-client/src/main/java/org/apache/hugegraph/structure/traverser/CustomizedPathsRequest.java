@@ -42,9 +42,9 @@ public class CustomizedPathsRequest {
     @JsonProperty("capacity")
     private long capacity;
     @JsonProperty("limit")
-    private int limit;
+    private long limit;
     @JsonProperty("with_vertex")
-    private boolean withVertex;
+    public boolean withVertex;
     @JsonProperty("with_edge")
     private boolean withEdge;
 
@@ -104,7 +104,7 @@ public class CustomizedPathsRequest {
             return this;
         }
 
-        public Builder limit(int limit) {
+        public Builder limit(long limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
