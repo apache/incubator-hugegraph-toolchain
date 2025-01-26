@@ -42,7 +42,7 @@ public class GraphManagerTest extends BaseFuncTest {
 
     @After
     public void teardown() throws Exception {
-        clearData();
+        BaseFuncTest.clearData();
     }
 
     @Test
