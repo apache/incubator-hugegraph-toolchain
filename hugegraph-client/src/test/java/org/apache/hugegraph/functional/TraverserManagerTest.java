@@ -43,7 +43,7 @@ public class TraverserManagerTest extends BaseFuncTest {
 
     @After
     public void teardown() throws Exception {
-        clearData();
+        BaseFuncTest.clearData();
     }
 
     @Test
