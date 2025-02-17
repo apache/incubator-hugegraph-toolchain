@@ -26,16 +26,12 @@ import org.apache.hugegraph.structure.constant.HugeType;
 import org.apache.hugegraph.util.JsonUtil;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class User extends AuthElement {
 
     @JsonProperty("user_name")
     private String name;
-    @JsonProperty("user_nickname")
-    private String nickname;
     @JsonProperty("user_password")
     private String password;
     @JsonProperty("user_phone")
@@ -46,17 +42,12 @@ public class User extends AuthElement {
     private String avatar;
     @JsonProperty("user_description")
     private String description;
-    @JsonProperty("department") // 用户所属部门
-    private String department;
-    @JsonProperty("image_url") // 用户头像url
-    private String imageUrl;
-
 
     @JsonProperty("user_create")
-    @JsonFormat(pattern = DATE_FORMAT, timezone="GMT+8")
+    @JsonFormat(pattern = DATE_FORMAT)
     protected Date create;
     @JsonProperty("user_update")
-    @JsonFormat(pattern = DATE_FORMAT, timezone="GMT+8")
+    @JsonFormat(pattern = DATE_FORMAT)
     protected Date update;
     @JsonProperty("user_creator")
     protected String creator;
@@ -87,23 +78,6 @@ public class User extends AuthElement {
 
     public void name(String name) {
         this.name = name;
-    }
-
-    public String nickname() {
-        return this.nickname;
-    }
-
-
-    public void nickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    public String imageUrl() {
-        return imageUrl;
-    }
-
-    public void imageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
     }
 
     public String password() {
@@ -142,13 +116,6 @@ public class User extends AuthElement {
         return this.description;
     }
 
-    public String department() {
-        return this.department;
-    }
-
-    public String department(String department) {
-        return this.department = department;
-    }
     public void description(String description) {
         this.description = description;
     }
@@ -156,11 +123,9 @@ public class User extends AuthElement {
     public static class UserRole {
 
         @JsonProperty("roles")
-        private Map<String, Map<String, Map<HugePermission,
-                                            List<HugeResource>>>> roles;
+        private Map<String, Map<HugePermission, List<HugeResource>>> roles;
 
-        public Map<String, Map<String, Map<HugePermission,
-                                           List<HugeResource>>>> roles() {
+        public Map<String, Map<HugePermission, List<HugeResource>>> roles() {
             return Collections.unmodifiableMap(this.roles);
         }
 

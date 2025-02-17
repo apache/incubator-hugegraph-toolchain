@@ -516,14 +516,13 @@ public class KoutApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
         Object peterId = getVertexId("person", "name", "peter");
-        Object vadasId = getVertexId("person", "name", "vadas");
 
         KoutRequest.Builder builder = KoutRequest.builder();
         builder.source(markoId);
-        Map<String, Object> properties = new HashMap<>();
-        properties.put("date", "P.gt(\"2012-05-01 00:00:00\")");
-        builder.steps().direction(Direction.OUT)
-               .edgeSteps(new Steps.StepEntity("knows", properties));
+        builder.steps()
+               .direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                  "-01 00:00:00\")")));
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -531,37 +530,39 @@ public class KoutApiTest extends TraverserApiTest {
         Kout koutResult = koutAPI.post(request);
 
         Assert.assertEquals(1, koutResult.size());
-        Set<Object> expected = ImmutableSet.of(joshId);
+        Set<Object> expected = ImmutableSet.of(lopId);
         Assert.assertEquals(expected, koutResult.ids());
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        properties = new HashMap<>();
-        properties.put("date", "P.gt(\"2014-01-01 00:00:00\")");
-        builder.steps().direction(Direction.OUT)
-               .edgeSteps(new Steps.StepEntity("knows", properties));
+        builder.steps()
+               .direction(Direction.BOTH)
+                       .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                  "-01 00:00:00\")")));
+
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
 
         koutResult = koutAPI.post(request);
 
-        Assert.assertEquals(0, koutResult.size());
+        Assert.assertEquals(2, koutResult.size());
         expected = ImmutableSet.of(peterId, joshId);
         Assert.assertEquals(expected, koutResult.ids());
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        properties = new HashMap<>();
-        properties.put("date", "P.lt(\"2014-01-01 00:00:00\")");
-        builder.steps().direction(Direction.OUT)
-               .edgeSteps(new Steps.StepEntity("knows", properties));
-        builder.maxDepth(1);
+        builder.steps()
+               .direction(Direction.BOTH)
+                .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                     "-01 00:00:00\")")));
+        builder.maxDepth(3);
+        builder.withVertex(true);
         request = builder.build();
 
         koutResult = koutAPI.post(request);
 
-        Assert.assertEquals(2, koutResult.size());
+        Assert.assertEquals(1, koutResult.size());
         expected = ImmutableSet.of(rippleId);
         Assert.assertEquals(expected, koutResult.ids());
     }

@@ -25,27 +25,24 @@ import java.util.List;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Target extends AuthElement {
 
     @JsonProperty("target_name")
-    protected String name;
-    @JsonProperty("graphspace")
-    protected String graphSpace;
+    private String name;
     @JsonProperty("target_graph")
-    protected String graph;
+    private String graph;
     @JsonProperty("target_url")
-    protected String rul;
+    private String url;
     @JsonProperty("target_resources")
-    protected List<HugeResource> resources;
+    private List<HugeResource> resources;
 
     @JsonProperty("target_create")
-    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
+    @JsonFormat(pattern = DATE_FORMAT)
     protected Date create;
     @JsonProperty("target_update")
-    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
+    @JsonFormat(pattern = DATE_FORMAT)
     protected Date update;
     @JsonProperty("target_creator")
     protected String creator;
@@ -78,14 +75,6 @@ public class Target extends AuthElement {
         this.name = name;
     }
 
-    public String graphSpace() {
-        return this.graphSpace;
-    }
-
-    public void graphSpace(String graphSpace) {
-        this.graphSpace = graphSpace;
-    }
-
     public String graph() {
         return this.graph;
     }
@@ -95,11 +84,11 @@ public class Target extends AuthElement {
     }
 
     public String url() {
-        return this.rul;
+        return this.url;
     }
 
-    public void url(String description) {
-        this.rul = description;
+    public void url(String url) {
+        this.url = url;
     }
 
     public HugeResource resource() {
@@ -122,24 +111,5 @@ public class Target extends AuthElement {
 
     public void resources(HugeResource... resources) {
         this.resources = Arrays.asList(resources);
-    }
-
-    public TargetReq switchReq() {
-        return new TargetReq(this);
-    }
-
-    @JsonIgnoreProperties({"graphspace"})
-    public static class TargetReq extends Target {
-
-        public TargetReq(Target target) {
-            this.id = target.id();
-            this.name = target.name();
-            this.graph = target.graph();
-            this.rul = target.url();
-            this.resources = target.resources();
-            this.create = target.createTime();
-            this.update = target.updateTime();
-            this.creator = target.creator();
-        }
     }
 }

@@ -19,17 +19,14 @@ package org.apache.hugegraph.api.auth;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class LoginAPI extends AuthAPI {
 
-    public LoginAPI(RestClient client) {
-        super(client);
+    public LoginAPI(RestClient client, String graph) {
+        super(client, graph);
     }
 
     @Override
@@ -40,11 +37,5 @@ public class LoginAPI extends AuthAPI {
     public LoginResult login(Login login) {
         RestResult result = this.client.post(this.path(), login);
         return result.readObject(LoginResult.class);
-    }
-
-    @Override
-    protected Object checkCreateOrUpdate(AuthElement authElement) {
-
-        return null;
     }
 }

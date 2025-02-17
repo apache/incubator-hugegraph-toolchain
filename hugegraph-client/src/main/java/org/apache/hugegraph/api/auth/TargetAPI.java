@@ -22,9 +22,6 @@ import java.util.Map;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.auth.Target;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -32,8 +29,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class TargetAPI extends AuthAPI {
 
-    public TargetAPI(RestClient client, String graphSpace) {
-        super(client, graphSpace);
+    public TargetAPI(RestClient client, String graph) {
+        super(client, graph);
     }
 
     @Override
@@ -42,8 +39,7 @@ public class TargetAPI extends AuthAPI {
     }
 
     public Target create(Target target) {
-        Object obj = this.checkCreateOrUpdate(target);
-        RestResult result = this.client.post(this.path(), obj);
+        RestResult result = this.client.post(this.path(), target);
         return result.readObject(Target.class);
     }
 
@@ -61,18 +57,11 @@ public class TargetAPI extends AuthAPI {
 
     public Target update(Target target) {
         String id = formatEntityId(target.id());
-        Object obj = this.checkCreateOrUpdate(target);
-        RestResult result = this.client.put(this.path(), id, obj);
+        RestResult result = this.client.put(this.path(), id, target);
         return result.readObject(Target.class);
     }
 
     public void delete(Object id) {
         this.client.delete(this.path(), formatEntityId(id));
-    }
-
-    @Override
-    protected Object checkCreateOrUpdate(AuthElement authElement) {
-        Target target = (Target) authElement;
-        return target.switchReq();
     }
 }

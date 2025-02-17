@@ -35,7 +35,7 @@ public class UserApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        api = new UserAPI(initClient());
+        api = new UserAPI(initClient(), GRAPH);
     }
 
     @AfterClass
@@ -69,14 +69,14 @@ public class UserApiTest extends AuthApiTest {
     public void testCreate() {
         User user1 = new User();
         user1.name("user1");
-        user1.password("password1");
+        user1.password("p1");
         user1.email("user1@hugegraph.com");
         user1.phone("123456789");
         user1.avatar("image1.jpg");
 
         User user2 = new User();
         user2.name("user2");
-        user2.password("password1");
+        user2.password("p2");
         user2.email("user2@hugegraph.com");
         user2.phone("1357924680");
         user2.avatar("image2.jpg");
@@ -85,13 +85,13 @@ public class UserApiTest extends AuthApiTest {
         User result2 = api.create(user2);
 
         Assert.assertEquals("user1", result1.name());
-        Assert.assertNotEquals("password1", result1.password());
+        Assert.assertNotEquals("p1", result1.password());
         Assert.assertEquals("user1@hugegraph.com", result1.email());
         Assert.assertEquals("123456789", result1.phone());
         Assert.assertEquals("image1.jpg", result1.avatar());
 
         Assert.assertEquals("user2", result2.name());
-        Assert.assertNotEquals("password1", result2.password());
+        Assert.assertNotEquals("p2", result2.password());
         Assert.assertEquals("user2@hugegraph.com", result2.email());
         Assert.assertEquals("1357924680", result2.phone());
         Assert.assertEquals("image2.jpg", result2.avatar());
@@ -99,31 +99,31 @@ public class UserApiTest extends AuthApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             api.create(new User());
         }, e -> {
-            Assert.assertContains("The name is 5-16 characters and can only contain letters, numbers or underscores",
+            Assert.assertContains("The name of user can't be null",
                                   e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
             User user3 = new User();
-            user3.name("test4");
+            user3.name("test");
             api.create(user3);
         }, e -> {
-            Assert.assertContains("The password is 5-16 characters, which can be letters, numbers or special symbols",
+            Assert.assertContains("The password of user can't be null",
                                   e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
             api.create(user1);
         }, e -> {
-            Assert.assertContains("The user name", e.getMessage());
-            Assert.assertContains("has existed", e.getMessage());
+            Assert.assertContains("Can't save user", e.getMessage());
+            Assert.assertContains("that already exists", e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
             user1.name("admin");
             api.create(user1);
         }, e -> {
-            Assert.assertContains("The user name 'admin' has existed", e.getMessage());
+            Assert.assertContains("Invalid user name 'admin'", e.getMessage());
         });
     }
 
@@ -217,9 +217,7 @@ public class UserApiTest extends AuthApiTest {
             user2.name("test2-updated");
             api.update(user2);
         }, e -> {
-            Assert.assertContains("The password is 5-16 characters," +
-                                  " which can be letters, numbers or" +
-                                  " special symbols",
+            Assert.assertContains("The name of user can't be updated",
                                   e.getMessage());
         });
 
@@ -227,9 +225,7 @@ public class UserApiTest extends AuthApiTest {
             Whitebox.setInternalState(user2, "id", "fake-id");
             api.update(user2);
         }, e -> {
-            Assert.assertContains("The password is 5-16 characters," +
-                                  " which can be letters, numbers or" +
-                                  " special symbols",
+            Assert.assertContains("Invalid user id: fake-id",
                                   e.getMessage());
         });
     }
@@ -259,19 +255,19 @@ public class UserApiTest extends AuthApiTest {
         Assert.assertThrows(ServerException.class, () -> {
             api.delete(admin.id());
         }, e -> {
-            Assert.assertContains("admin could not be removed", e.getMessage());
+            Assert.assertContains("Can't delete user 'admin'", e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
             api.delete(user2.id());
         }, e -> {
-            Assert.assertContains("not existed", e.getMessage());
+            Assert.assertContains("Invalid user id:", e.getMessage());
         });
 
         Assert.assertThrows(ServerException.class, () -> {
             api.delete("fake-id");
         }, e -> {
-            Assert.assertContains("not existed", e.getMessage());
+            Assert.assertContains("Invalid user id: fake-id", e.getMessage());
         });
     }
 }

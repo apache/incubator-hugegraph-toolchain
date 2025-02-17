@@ -18,15 +18,14 @@
 package org.apache.hugegraph.api.auth;
 
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.google.common.collect.ImmutableMap;
 
 public class LogoutAPI extends AuthAPI {
 
-    public LogoutAPI(RestClient client) {
-        super(client);
+    public LogoutAPI(RestClient client, String graph) {
+        super(client, graph);
     }
 
     @Override
@@ -36,11 +35,5 @@ public class LogoutAPI extends AuthAPI {
 
     public void logout() {
         this.client.delete(this.path(), ImmutableMap.of());
-    }
-
-    @Override
-    protected Object checkCreateOrUpdate(AuthElement authElement) {
-
-        return null;
     }
 }

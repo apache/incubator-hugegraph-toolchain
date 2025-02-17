@@ -19,16 +19,13 @@ package org.apache.hugegraph.api.auth;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.auth.TokenPayload;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 public class TokenAPI extends AuthAPI {
 
-    public TokenAPI(RestClient client) {
-        super(client);
+    public TokenAPI(RestClient client, String graph) {
+        super(client, graph);
     }
 
     @Override
@@ -39,11 +36,5 @@ public class TokenAPI extends AuthAPI {
     public TokenPayload verifyToken() {
         RestResult result = this.client.get(this.path());
         return result.readObject(TokenPayload.class);
-    }
-
-    @Override
-    protected Object checkCreateOrUpdate(AuthElement authElement) {
-
-        return null;
     }
 }
