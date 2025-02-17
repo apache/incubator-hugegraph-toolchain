@@ -38,9 +38,9 @@ public class LogoutApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        logoutAPI = new LogoutAPI(initClient());
-        loginAPI = new LoginAPI(initClient());
-        userAPI = new UserAPI(initClient());
+        logoutAPI = new LogoutAPI(initClient(), GRAPH);
+        loginAPI = new LoginAPI(initClient(), GRAPH);
+        userAPI = new UserAPI(initClient(), GRAPH);
     }
 
     @AfterClass
@@ -57,13 +57,13 @@ public class LogoutApiTest extends AuthApiTest {
     @Test
     public void testLogout() {
         User user1 = new User();
-        user1.name("userlogout1");
-        user1.password("password1");
-        User user = userAPI.create(user1);
+        user1.name("user1");
+        user1.password("p1");
+        userAPI.create(user1);
 
         Login login = new Login();
-        login.name("userlogout1");
-        login.password("password1");
+        login.name("user1");
+        login.password("p1");
         LoginResult result = loginAPI.login(login);
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.token());

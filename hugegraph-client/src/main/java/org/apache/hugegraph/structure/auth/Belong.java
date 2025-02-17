@@ -22,29 +22,22 @@ import java.util.Date;
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Belong extends AuthElement {
 
-    @JsonProperty("graphspace")
-    protected String graphSpace;
     @JsonProperty("user")
-    protected Object user;
+    private Object user;
     @JsonProperty("group")
-    protected Object group;
-    @JsonProperty("role")
-    protected Object role;
+    private Object group;
     @JsonProperty("belong_description")
-    protected String description;
-    @JsonProperty("link")
-    protected String link;
+    private String description;
 
     @JsonProperty("belong_create")
-    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
+    @JsonFormat(pattern = DATE_FORMAT)
     protected Date create;
     @JsonProperty("belong_update")
-    @JsonFormat(pattern = DATE_FORMAT, timezone = "GMT+8")
+    @JsonFormat(pattern = DATE_FORMAT)
     protected Date update;
     @JsonProperty("belong_creator")
     protected String creator;
@@ -69,18 +62,6 @@ public class Belong extends AuthElement {
         return this.creator;
     }
 
-    public String graphSpace() {
-        return this.graphSpace;
-    }
-
-    public String link() {
-        return this.link;
-    }
-
-    public void graphSpace(String graphSpace) {
-        this.graphSpace = graphSpace;
-    }
-
     public Object user() {
         return this.user;
     }
@@ -103,41 +84,11 @@ public class Belong extends AuthElement {
         this.group = group;
     }
 
-    public Object role() {
-        return this.role;
-    }
-
-    public void role(Object role) {
-        if (role instanceof Role) {
-            role = ((Role) role).id();
-        }
-        this.role = role;
-    }
-
     public String description() {
         return this.description;
     }
 
     public void description(String description) {
         this.description = description;
-    }
-
-    public BelongReq switchReq() {
-        return new BelongReq(this);
-    }
-
-    @JsonIgnoreProperties({"graphspace"})
-    public static class BelongReq extends Belong {
-
-        public BelongReq(Belong belong) {
-            this.id = belong.id();
-            this.user = belong.user();
-            this.group = belong.group();
-            this.role = belong.role();
-            this.description = belong.description();
-            this.update = belong.updateTime();
-            this.create = belong.createTime();
-            this.creator = belong.creator();
-        }
     }
 }

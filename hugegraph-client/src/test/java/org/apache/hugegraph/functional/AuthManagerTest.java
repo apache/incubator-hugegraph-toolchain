@@ -31,7 +31,6 @@ import org.apache.hugegraph.structure.auth.HugeResourceType;
 import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
 import org.apache.hugegraph.structure.auth.Project;
-import org.apache.hugegraph.structure.auth.Role;
 import org.apache.hugegraph.structure.auth.Target;
 import org.apache.hugegraph.structure.auth.TokenPayload;
 import org.apache.hugegraph.structure.auth.User;
@@ -63,9 +62,9 @@ public class AuthManagerTest extends BaseFuncTest {
         user.password("123456");
         user = auth().createUser(user);
 
-        Role role = new Role();
-        role.name("managers");
-        role = auth().createRole(role);
+        Group group = new Group();
+        group.name("managers");
+        group = auth().createGroup(group);
 
         Target gremlin = new Target();
         gremlin.name("gremlin");
@@ -83,17 +82,17 @@ public class AuthManagerTest extends BaseFuncTest {
 
         Belong belong = new Belong();
         belong.user(user);
-        belong.role(role);
+        belong.group(group);
         belong = auth().createBelong(belong);
 
         Access access1 = new Access();
-        access1.role(role);
+        access1.group(group);
         access1.target(gremlin);
         access1.permission(HugePermission.EXECUTE);
         access1 = auth().createAccess(access1);
 
         Access access2 = new Access();
-        access2.role(role);
+        access2.group(group);
         access2.target(task);
         access2.permission(HugePermission.READ);
         access2 = auth().createAccess(access2);
@@ -136,16 +135,15 @@ public class AuthManagerTest extends BaseFuncTest {
         List<Project> newProjects = auth().listProjects();
         Assert.assertEquals(newProjects, projects);
 
-        User.UserRole userRole = auth().getUserRole(user);
+        UserRole role = auth().getUserRole(user);
         String r = "{\"roles\":{\"hugegraph\":" +
                    "{\"READ\":[{\"type\":\"TASK\",\"label\":\"*\",\"properties\":null}]," +
                    "\"EXECUTE\":[{\"type\":\"GREMLIN\",\"label\":\"*\",\"properties\":null}]}}}";
-        Assert.assertEquals(r, userRole.toString());
+        Assert.assertEquals(r, role.toString());
 
         Login login = new Login();
         login.name("bob");
         login.password("123456");
-        login.expire(10080);
         LoginResult result = auth().login(login);
 
         String token = result.token();

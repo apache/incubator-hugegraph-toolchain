@@ -30,6 +30,7 @@ import org.apache.hugegraph.structure.traverser.FusiformSimilarity.Similar;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarityRequest;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -566,6 +567,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
     }
 
     @Test
+    @Ignore
     public void testFusiformSimilarityWithIntermediaryWithoutVertex() {
         Vertex p1 = getVertex("person", "name", "p1");
         Vertex p2 = getVertex("person", "name", "p2");

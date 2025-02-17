@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.auth.AuthElement;
 import org.apache.hugegraph.structure.auth.Project;
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -34,8 +33,8 @@ public class ProjectAPI extends AuthAPI {
     private static final String ACTION_ADD_GRAPH = "add_graph";
     private static final String ACTION_REMOVE_GRAPH = "remove_graph";
 
-    public ProjectAPI(RestClient client, String graphSpace) {
-        super(client, graphSpace);
+    public ProjectAPI(RestClient client, String graph) {
+        super(client, graph);
     }
 
     @Override
@@ -90,10 +89,5 @@ public class ProjectAPI extends AuthAPI {
                                             ImmutableMap.of("action",
                                                             ACTION_REMOVE_GRAPH));
         return result.readObject(Project.class);
-    }
-
-    @Override
-    protected Object checkCreateOrUpdate(AuthElement authElement) {
-        return null;
     }
 }

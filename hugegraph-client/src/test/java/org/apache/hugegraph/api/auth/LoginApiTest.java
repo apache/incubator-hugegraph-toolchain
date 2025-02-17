@@ -35,8 +35,8 @@ public class LoginApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        loginAPI = new LoginAPI(initClient());
-        userAPI = new UserAPI(initClient());
+        loginAPI = new LoginAPI(initClient(), GRAPH);
+        userAPI = new UserAPI(initClient(), GRAPH);
     }
 
     @AfterClass
@@ -54,8 +54,7 @@ public class LoginApiTest extends AuthApiTest {
     public void testLogin() {
         Login login = new Login();
         login.name("user1");
-        login.password("password1");
-        login.expire(10080);
+        login.password("p1");
         Assert.assertThrows(ServerException.class, () -> {
             loginAPI.login(login);
         }, e -> {
@@ -65,8 +64,8 @@ public class LoginApiTest extends AuthApiTest {
 
         User user1 = new User();
         user1.name("user1");
-        user1.password("password1");
-        User user = userAPI.create(user1);
+        user1.password("p1");
+        userAPI.create(user1);
 
         LoginResult result = loginAPI.login(login);
         Assert.assertNotNull(result);
