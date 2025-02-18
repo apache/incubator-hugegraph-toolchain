@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.mapping.EdgeMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
@@ -55,10 +56,19 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         super(context, struct);
         this.mapping = mapping;
         this.edgeLabel = this.getEdgeLabel(this.mapping.label());
-        this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
-        this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
         this.nonNullKeys = this.nonNullableKeys(this.edgeLabel);
-        // Ensure that the source/target id fields are matched with id strategy
+        if (this.edgeLabel.edgeLabelType().general()) {
+            // If creating a general type edge, the loader cannot obtain the vertexLabel information of both ends
+            // Therefore, the IdStrategy of both ends is uniformly set to CUSTOMIZE_STRING
+            this.sourceLabel = new VertexLabel("~general");
+            this.targetLabel = new VertexLabel("~general");
+            this.sourceLabel.idStrategy(IdStrategy.CUSTOMIZE_STRING);
+            this.targetLabel.idStrategy(IdStrategy.CUSTOMIZE_STRING);
+        } else {
+            this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
+            this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
+        }
+        // Ensure that the source/target id fileds are matched with id strategy
         this.checkIdFields(this.sourceLabel, this.mapping.sourceFields());
         this.checkIdFields(this.targetLabel, this.mapping.targetFields());
 
@@ -189,7 +199,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         } else if (vertexLabel.idStrategy().isPrimaryKey()) {
             E.checkArgument(fields.size() >= 1,
                             "The source/target field must contains some " +
-                            "columns when id strategy is PrimaryKey");
+                            "columns when id strategy is CUSTOMIZE");
         } else {
             throw new IllegalArgumentException("Unsupported AUTOMATIC id strategy " +
                                                "for hugegraph-loader");
