@@ -81,6 +81,14 @@ public class EdgeLabel extends SchemaLabel {
         return this.edgeLabelType.sub();
     }
 
+    public boolean normal() {
+        return this.edgeLabelType.normal();
+    }
+
+    public boolean general() {
+        return this.edgeLabelType.general();
+    }
+
     public String parentLabel() {
         return this.parentLabel;
     }

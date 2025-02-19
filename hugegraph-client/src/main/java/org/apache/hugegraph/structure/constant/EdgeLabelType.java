@@ -25,9 +25,7 @@ public enum EdgeLabelType {
 
     SUB(2, "SUB"),
 
-    GENERAL(3, "GENERAL"),
-
-    ;
+    GENERAL(3, "GENERAL");
 
     private byte code = 0;
     private String name = null;
