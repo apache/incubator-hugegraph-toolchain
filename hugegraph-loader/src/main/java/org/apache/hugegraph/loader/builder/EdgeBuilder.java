@@ -58,7 +58,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         this.edgeLabel = this.getEdgeLabel(this.mapping.label());
         this.nonNullKeys = this.nonNullableKeys(this.edgeLabel);
         if (this.edgeLabel.edgeLabelType().general()) {
-            // If creating a general type edge, the loader cannot obtain the vertexLabel information of both ends
+            // If create a general type edge, the loader can't obtain the vertexlabel info of both ends
             // Therefore, the IdStrategy of both ends is uniformly set to CUSTOMIZE_STRING
             this.sourceLabel = new VertexLabel("~general");
             this.targetLabel = new VertexLabel("~general");
