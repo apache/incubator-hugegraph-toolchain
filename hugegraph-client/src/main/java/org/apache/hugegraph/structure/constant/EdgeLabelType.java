@@ -48,7 +48,7 @@ public enum EdgeLabelType {
         return this == NORMAL;
     }
 
-    public boolean general(){
+    public boolean general() {
         return this == GENERAL;
     }
 
