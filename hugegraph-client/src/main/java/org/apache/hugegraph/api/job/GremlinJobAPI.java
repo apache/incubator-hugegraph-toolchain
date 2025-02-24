@@ -28,8 +28,8 @@ public class GremlinJobAPI extends JobAPI {
 
     private static final String JOB_TYPE = "gremlin";
 
-    public GremlinJobAPI(RestClient client, String graph) {
-        super(client, graph);
+    public GremlinJobAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

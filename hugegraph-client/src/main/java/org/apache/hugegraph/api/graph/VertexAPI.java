@@ -36,8 +36,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class VertexAPI extends GraphAPI {
 
-    public VertexAPI(RestClient client, String graph) {
-        super(client, graph);
+    public VertexAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -83,21 +83,21 @@ public class VertexAPI extends GraphAPI {
     }
 
     public Vertex append(Vertex vertex) {
-        String id = formatVertexId(vertex.id());
+        String id = GraphAPI.formatVertexId(vertex.id());
         Map<String, Object> params = ImmutableMap.of("action", "append");
         RestResult result = this.client.put(this.path(), id, vertex, params);
         return result.readObject(Vertex.class);
     }
 
     public Vertex eliminate(Vertex vertex) {
-        String id = formatVertexId(vertex.id());
+        String id = GraphAPI.formatVertexId(vertex.id());
         Map<String, Object> params = ImmutableMap.of("action", "eliminate");
         RestResult result = this.client.put(this.path(), id, vertex, params);
         return result.readObject(Vertex.class);
     }
 
     public Vertex get(Object id) {
-        String vertexId = formatVertexId(id);
+        String vertexId = GraphAPI.formatVertexId(id);
         RestResult result = this.client.get(this.path(), vertexId);
         return result.readObject(Vertex.class);
     }
@@ -115,7 +115,7 @@ public class VertexAPI extends GraphAPI {
                          boolean keepP, int offset, String page, int limit) {
         checkOffset(offset);
         checkLimit(limit, "Limit");
-        String props = formatProperties(properties);
+        String props = GraphAPI.formatProperties(properties);
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("label", label);
         params.put("properties", props);
@@ -128,7 +128,7 @@ public class VertexAPI extends GraphAPI {
     }
 
     public void delete(Object id) {
-        String vertexId = formatVertexId(id);
+        String vertexId = GraphAPI.formatVertexId(id);
         this.client.delete(this.path(), vertexId);
     }
 }

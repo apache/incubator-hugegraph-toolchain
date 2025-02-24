@@ -29,8 +29,8 @@ public class GraphsManager {
 
     private GraphsAPI graphsAPI;
 
-    public GraphsManager(RestClient client) {
-        this.graphsAPI = new GraphsAPI(client);
+    public GraphsManager(RestClient client, String graphSpace) {
+        this.graphsAPI = new GraphsAPI(client, graphSpace);
     }
 
     public Map<String, String> createGraph(String name, String configText) {

@@ -15,37 +15,31 @@
  * under the License.
  */
 
-package org.apache.hugegraph.api.schema;
-
-import java.util.List;
-import java.util.Map;
+package org.apache.hugegraph.api.space;
 
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.exception.NotSupportException;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.SchemaElement;
+import org.apache.hugegraph.structure.constant.HugeType;
 
-public class SchemaAPI extends API {
+import java.util.List;
 
-    private static final String PATH = "graphspaces/%s/graphs/%s/%s";
+public class ServiceOptionAPI extends API {
 
-    public SchemaAPI(RestClient client, String graphSpace, String graph) {
+    private static final String PATH = "";
+
+    public ServiceOptionAPI(RestClient client) {
         super(client);
-        this.path(PATH, graphSpace, graph, this.type());
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, List<SchemaElement>> list() {
-        if (this.client.apiVersionLt("0.66")) {
-            throw new NotSupportException("schema get api");
-        }
-        RestResult result = this.client.get(this.path());
-        return result.readObject(Map.class);
     }
 
     @Override
     protected String type() {
-        return "schema";
+        return HugeType.SERVICEOPTIONS.string();
+    }
+
+    public Object get() {
+        RestResult result = this.client.get(this.path());
+
+        return result.readObject(List.class);
     }
 }

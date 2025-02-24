@@ -17,17 +17,18 @@
 
 package org.apache.hugegraph.example;
 
-import org.apache.hugegraph.structure.constant.T;
-import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.driver.GraphManager;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.SchemaManager;
+import org.apache.hugegraph.structure.constant.T;
+import org.apache.hugegraph.structure.graph.Vertex;
 
 public class MovieExample {
 
     public static void main(String[] args) {
         // If connect failed will throw a exception.
         HugeClient hugeClient = HugeClient.builder("http://localhost:8080",
+                                                   "DEFAULT",
                                                    "hugegraph").build();
 
         SchemaManager schema = hugeClient.schema();

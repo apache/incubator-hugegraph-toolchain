@@ -32,8 +32,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class EdgeLabelAPI extends SchemaElementAPI {
 
-    public EdgeLabelAPI(RestClient client, String graph) {
-        super(client, graph);
+    public EdgeLabelAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
