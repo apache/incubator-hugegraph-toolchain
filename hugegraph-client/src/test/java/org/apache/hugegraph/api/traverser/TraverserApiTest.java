@@ -23,7 +23,11 @@ import org.junit.BeforeClass;
 public class TraverserApiTest extends BaseApiTest {
 
     protected static SameNeighborsAPI sameNeighborsAPI;
+    protected static SameNeighborsBatchAPI sameNeighborsBatchAPI;
     protected static JaccardSimilarityAPI jaccardSimilarityAPI;
+    protected static AdamicAdarAPI adamicAdarAPI;
+    protected static ResourceAllocationAPI resouceAllocationAPI;
+
     protected static ShortestPathAPI shortestPathAPI;
     protected static AllShortestPathsAPI allShortestPathsAPI;
     protected static SingleSourceShortestPathAPI singleSourceShortestPathAPI;
@@ -56,7 +60,11 @@ public class TraverserApiTest extends BaseApiTest {
         BaseApiTest.init();
 
         sameNeighborsAPI = new SameNeighborsAPI(client, GRAPHSPACE, GRAPH);
+        sameNeighborsBatchAPI = new SameNeighborsBatchAPI(client, GRAPHSPACE, GRAPH);
         jaccardSimilarityAPI = new JaccardSimilarityAPI(client, GRAPHSPACE, GRAPH);
+        adamicAdarAPI = new AdamicAdarAPI(client, GRAPHSPACE, GRAPH);
+        resouceAllocationAPI = new ResourceAllocationAPI(client, GRAPHSPACE, GRAPH);
+
         shortestPathAPI = new ShortestPathAPI(client, GRAPHSPACE, GRAPH);
         allShortestPathsAPI = new AllShortestPathsAPI(client, GRAPHSPACE, GRAPH);
         singleSourceShortestPathAPI = new SingleSourceShortestPathAPI(client, GRAPHSPACE,

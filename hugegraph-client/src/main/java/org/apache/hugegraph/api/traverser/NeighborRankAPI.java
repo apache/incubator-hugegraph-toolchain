@@ -99,13 +99,13 @@ public class NeighborRankAPI extends TraversersAPI {
             }
 
             public Builder alpha(double alpha) {
-                checkAlpha(alpha);
+                TraversersAPI.checkAlpha(alpha);
                 this.request.alpha = alpha;
                 return this;
             }
 
             public Builder capacity(long capacity) {
-                checkCapacity(capacity);
+                TraversersAPI.checkCapacity(capacity);
                 this.request.capacity = capacity;
                 return this;
             }
@@ -119,8 +119,8 @@ public class NeighborRankAPI extends TraversersAPI {
                 E.checkArgument(this.request.steps != null &&
                                 !this.request.steps.isEmpty(),
                                 "Steps can't be null or empty");
-                checkCapacity(this.request.capacity);
-                checkAlpha(this.request.alpha);
+                TraversersAPI.checkCapacity(this.request.capacity);
+                TraversersAPI.checkAlpha(this.request.alpha);
                 return this.request;
             }
         }
@@ -174,7 +174,7 @@ public class NeighborRankAPI extends TraversersAPI {
                 }
 
                 public Step.Builder degree(long degree) {
-                    checkDegree(degree);
+                    TraversersAPI.checkDegree(degree);
                     this.step.degree = degree;
                     return this;
                 }
@@ -188,7 +188,7 @@ public class NeighborRankAPI extends TraversersAPI {
                 }
 
                 private Step build() {
-                    checkDegree(this.step.degree);
+                    TraversersAPI.checkDegree(this.step.degree);
                     E.checkArgument(this.step.top > 0 &&
                                     this.step.top <= Traverser.DEFAULT_MAX_TOP,
                                     "The top of each layer can't exceed %s",

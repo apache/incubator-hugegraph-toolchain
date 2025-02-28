@@ -24,6 +24,7 @@ import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -123,8 +124,10 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
 
     @Test
     public void testAllShortestPath() {
-        List<Path> paths = allShortestPathsAPI.get(1, 6, Direction.BOTH,
-                                                   null, 6, -1L, 0L, -1L);
+        PathWithMeasure res = allShortestPathsAPI.get(1, 6,
+                                                      Direction.BOTH, null,
+                                                      6, -1L, 0L, -1L);
+        List<Path> paths = res.getPaths();
         Assert.assertEquals(4, paths.size());
         List<List<Object>> expected = ImmutableList.of(
                 ImmutableList.of(1, 10, 11, 6),
@@ -139,9 +142,10 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
 
     @Test
     public void testAllShortestPathWithLabel() {
-        List<Path> paths = allShortestPathsAPI.get(1, 6, Direction.BOTH,
-                                                   "link", 6, -1L, 0L,
-                                                   -1L);
+        PathWithMeasure res = allShortestPathsAPI.get(1, 6, Direction.BOTH,
+                                                      "link", 6, -1L, 0L,
+                                                      -1L);
+        List<Path> paths = res.getPaths();
         Assert.assertEquals(4, paths.size());
         List<List<Object>> expected = ImmutableList.of(
                 ImmutableList.of(1, 10, 11, 6),
@@ -156,8 +160,9 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
 
     @Test
     public void testAllShortestPathWithDegree() {
-        List<Path> paths = allShortestPathsAPI.get(1, 6, Direction.OUT,
-                                                   null, 6, 1L, 0L, -1L);
+        PathWithMeasure res = allShortestPathsAPI.get(1, 6, Direction.OUT,
+                                                      null, 6, 1L, 0L, -1L);
+        List<Path> paths = res.getPaths();
         /*
          * Following results can be guaranteed in RocksDB backend,
          * but different results exist in table type backend(like Cassandra).
@@ -169,8 +174,9 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
 
     @Test
     public void testAllShortestPathWithCapacity() {
-        List<Path> paths = allShortestPathsAPI.get(1, 6, Direction.BOTH,
-                                                   null, 6, -1L, 0L, -1L);
+        PathWithMeasure res = allShortestPathsAPI.get(1, 6, Direction.BOTH,
+                                                      null, 6, -1L, 0L, -1L);
+        List<Path> paths = res.getPaths();
         Assert.assertEquals(4, paths.size());
         List<List<Object>> expected = ImmutableList.of(
                 ImmutableList.of(1, 10, 11, 6),
@@ -192,14 +198,16 @@ public class AllShortestPathsApiTest extends TraverserApiTest {
 
     @Test
     public void testAllShortestPathWithMaxDepth() {
-        List<Path> paths = allShortestPathsAPI.get(14, 6, Direction.BOTH,
-                                                   null, 4, 5L, 0L, 19L);
+        PathWithMeasure res = allShortestPathsAPI.get(14, 6, Direction.BOTH,
+                                                      null, 4, 5L, 0L, 19L);
+        List<Path> paths = res.getPaths();
         Assert.assertEquals(1, paths.size());
         Path path = paths.get(0);
         Assert.assertEquals(ImmutableList.of(14, 7, 8, 9, 6), path.objects());
 
-        paths = allShortestPathsAPI.get(14, 6, Direction.BOTH,
-                                        null, 3, 5L, 0L, 19L);
+        res = allShortestPathsAPI.get(14, 6, Direction.BOTH,
+                                      null, 3, 5L, 0L, 19L);
+        paths = res.getPaths();
         Assert.assertEquals(0, paths.size());
     }
 

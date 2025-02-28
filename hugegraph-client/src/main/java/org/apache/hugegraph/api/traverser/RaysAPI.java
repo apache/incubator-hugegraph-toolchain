@@ -26,6 +26,7 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.graph.Path;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 
 public class RaysAPI extends TraversersAPI {
 
@@ -38,8 +39,8 @@ public class RaysAPI extends TraversersAPI {
         return "rays";
     }
 
-    public List<Path> get(Object sourceId, Direction direction, String label,
-                          int depth, long degree, long capacity, int limit) {
+    public PathWithMeasure get(Object sourceId, Direction direction, String label,
+                               int depth, long degree, long capacity, long limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
 
         checkPositive(depth, "Max depth of path");
@@ -56,6 +57,6 @@ public class RaysAPI extends TraversersAPI {
         params.put("capacity", capacity);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList(this.type(), Path.class);
+        return result.readObject(PathWithMeasure.class);
     }
 }

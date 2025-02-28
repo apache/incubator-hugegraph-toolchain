@@ -26,6 +26,7 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.graph.Path;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 
 public class AllShortestPathsAPI extends TraversersAPI {
 
@@ -38,9 +39,9 @@ public class AllShortestPathsAPI extends TraversersAPI {
         return "allshortestpaths";
     }
 
-    public List<Path> get(Object sourceId, Object targetId,
-                          Direction direction, String label, int maxDepth,
-                          long degree, long skipDegree, long capacity) {
+    public PathWithMeasure get(Object sourceId, Object targetId,
+                               Direction direction, String label, int maxDepth,
+                               long degree, long skipDegree, long capacity) {
         this.client.checkApiVersion("0.51", "all shortest path");
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
@@ -60,6 +61,6 @@ public class AllShortestPathsAPI extends TraversersAPI {
         params.put("skip_degree", skipDegree);
         params.put("capacity", capacity);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList("paths", Path.class);
+        return result.readObject(PathWithMeasure.class);
     }
 }

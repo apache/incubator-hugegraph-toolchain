@@ -39,8 +39,9 @@ public class KneighborAPI extends TraversersAPI {
         return "kneighbor";
     }
 
-    public List<Object> get(Object sourceId, Direction direction,
-                            String label, int depth, long degree, int limit) {
+    public Map<String, Object> get(Object sourceId, Direction direction,
+                                   String label, int depth, long degree,
+                                   long limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
 
         checkPositive(depth, "Depth of k-neighbor");
@@ -55,7 +56,10 @@ public class KneighborAPI extends TraversersAPI {
         params.put("max_degree", degree);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList("vertices", Object.class);
+        Map<String, Object> resMap = result.readObject(Map.class);
+        List<Object> ids = (List<Object>) resMap.get("vertices");
+        resMap.put("vertices", ids);
+        return resMap;
     }
 
     public Kneighbor post(KneighborRequest request) {

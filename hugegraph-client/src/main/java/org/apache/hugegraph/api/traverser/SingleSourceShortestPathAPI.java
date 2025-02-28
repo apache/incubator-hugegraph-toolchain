@@ -40,7 +40,7 @@ public class SingleSourceShortestPathAPI extends TraversersAPI {
 
     public WeightedPaths get(Object sourceId, Direction direction, String label,
                              String weight, long degree, long skipDegree,
-                             long capacity, int limit, boolean withVertex, boolean withEdge) {
+                             long capacity, long limit, boolean withVertex, boolean withEdge) {
         this.client.checkApiVersion("0.51", "single source shortest path");
         String source = GraphAPI.formatVertexId(sourceId, false);
 

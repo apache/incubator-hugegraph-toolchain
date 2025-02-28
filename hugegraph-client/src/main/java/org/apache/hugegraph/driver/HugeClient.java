@@ -19,6 +19,7 @@ package org.apache.hugegraph.driver;
 
 import java.io.Closeable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.rest.RestClientConfig;
@@ -56,10 +57,16 @@ public class HugeClient implements Closeable {
     private VariablesManager variable;
     private JobManager job;
     private TaskManager task;
+    private ComputerManager computer;
     private AuthManager auth;
     private MetricsManager metrics;
     private GraphSpaceManager graphSpace;
+    private ServiceManager serviceManager;
+    private SchemaTemplateManager schemaTemplageManager;
+    private PDManager pdManager;
+    private HStoreManager hStoreManager;
     private WhiteIpListManager whiteIpListManager;
+    private VermeerManager vermeerManager;
 
     /**
      * Constructs a new HugeClient using the provided builder.
@@ -140,7 +147,14 @@ public class HugeClient implements Closeable {
         this.auth = new AuthManager(client, graph);
         this.metrics = new MetricsManager(client);
         this.graphSpace = new GraphSpaceManager(client);
+        this.schemaTemplageManager = new SchemaTemplateManager(client, graphSpace);
+        this.serviceManager = new ServiceManager(client, graphSpace);
+        this.pdManager = new PDManager(client);
+        this.hStoreManager = new HStoreManager(client);
         this.whiteIpListManager = new WhiteIpListManager(client);
+        this.vermeerManager = new VermeerManager(client);
+
+
         if (!Strings.isNullOrEmpty(graph)) {
             this.schema = new SchemaManager(client, graphSpace, graph);
             this.graph = new GraphManager(client, graphSpace, graph);
@@ -205,6 +219,10 @@ public class HugeClient implements Closeable {
         return this.job;
     }
 
+    public ComputerManager computer() {
+        return this.computer;
+    }
+
     public TaskManager task() {
         return this.task;
     }
@@ -223,6 +241,26 @@ public class HugeClient implements Closeable {
 
     public WhiteIpListManager whiteIpListManager(){
         return this.whiteIpListManager;
+    }
+
+    public VermeerManager vermeer(){
+        return this.vermeerManager;
+    }
+
+    public SchemaTemplateManager schemaTemplateManager() {
+        return this.schemaTemplageManager;
+    }
+
+    public ServiceManager serviceManager() {
+        return this.serviceManager;
+    }
+
+    public PDManager pdManager() {
+        return pdManager;
+    }
+
+    public HStoreManager hStoreManager() {
+        return hStoreManager;
     }
 
     public VersionManager versionManager() {

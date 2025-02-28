@@ -17,7 +17,9 @@
 
 package org.apache.hugegraph.api.traverser;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.api.BaseApiTest;
@@ -27,6 +29,7 @@ import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.Kout;
 import org.apache.hugegraph.structure.traverser.KoutRequest;
+import org.apache.hugegraph.structure.traverser.Steps;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,8 +56,10 @@ public class KoutApiTest extends TraverserApiTest {
 
         long softwareId = vertexLabelAPI.get("software").id();
 
-        List<Object> vertices = koutAPI.get(markoId, Direction.OUT,
-                                            null, 2, true, -1L, -1L, -1);
+         Map<String, Object> koutRes = koutAPI.get(markoId, Direction.OUT,
+                                                   null, 2, true,
+                                                   -1L, -1L, -1L);
+        List<Object> vertices = (List<Object>) koutRes.get("vertices");
         Assert.assertEquals(1, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
     }
@@ -65,8 +70,9 @@ public class KoutApiTest extends TraverserApiTest {
 
         long softwareId = vertexLabelAPI.get("software").id();
 
-        List<Object> vertices = koutAPI.get(markoId, Direction.OUT, null,
-                                            2, false, -1L, -1L, -1);
+        Map<String, Object> koutRes = koutAPI.get(markoId, Direction.OUT, null,
+                                            2, false, -1L, -1L, -1L);
+        List<Object> vertices = (List<Object>) koutRes.get("vertices");
         Assert.assertEquals(2, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -79,8 +85,9 @@ public class KoutApiTest extends TraverserApiTest {
         long personId = vertexLabelAPI.get("person").id();
         long softwareId = vertexLabelAPI.get("software").id();
 
-        List<Object> vertices = koutAPI.get(markoId, Direction.BOTH,
-                                            null, 2, true, -1L, -1L, -1);
+        Map<String, Object> koutRes = koutAPI.get(markoId, Direction.BOTH, null,
+                                                  2, true, -1L, -1L, -1L);
+        List<Object> vertices = (List<Object>) koutRes.get("vertices");
         Assert.assertEquals(2, vertices.size());
         Assert.assertTrue(vertices.contains(personId + ":peter"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -93,8 +100,9 @@ public class KoutApiTest extends TraverserApiTest {
         long personId = vertexLabelAPI.get("person").id();
         long softwareId = vertexLabelAPI.get("software").id();
 
-        List<Object> vertices = koutAPI.get(markoId, Direction.BOTH, null,
-                                            2, false, -1L, -1L, -1);
+        Map<String, Object> koutRes = koutAPI.get(markoId, Direction.BOTH, null,
+                                                  2, false, -1L, -1L, -1L);
+        List<Object> vertices = (List<Object>) koutRes.get("vertices");
         Assert.assertEquals(4, vertices.size());
         Assert.assertTrue(vertices.contains(personId + ":josh"));
         Assert.assertTrue(vertices.contains(personId + ":peter"));
@@ -108,7 +116,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             koutAPI.get(markoId, Direction.BOTH, null,
-                        2, false, -1L, 1L, 2);
+                        2, false, -1L, 1L, 2L);
         }, e -> {
             String expect = "Capacity can't be less than limit, " +
                             "but got capacity '1' and limit '2'";
@@ -122,7 +130,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             koutAPI.get(markoId, Direction.BOTH, null,
-                        2, false, -1L, 1L, -1);
+                    2, false, -1L, 1L, -1L);
         }, e -> {
             String expect = "Capacity can't be less than limit, " +
                             "but got capacity '1' and limit '-1'";
@@ -373,7 +381,8 @@ public class KoutApiTest extends TraverserApiTest {
 
         KoutRequest.Builder builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("created");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("created"));
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -386,7 +395,8 @@ public class KoutApiTest extends TraverserApiTest {
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("created");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("created"));
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -399,7 +409,8 @@ public class KoutApiTest extends TraverserApiTest {
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("knows");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("knows"));
         builder.maxDepth(1);
         builder.withVertex(true);
         request = builder.build();
@@ -412,7 +423,8 @@ public class KoutApiTest extends TraverserApiTest {
 
         builder = KoutRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("knows");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("knows"));
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -434,8 +446,8 @@ public class KoutApiTest extends TraverserApiTest {
         KoutRequest.Builder builder = KoutRequest.builder();
         builder.source(markoId);
         builder.steps().direction(Direction.BOTH)
-               .addEStep("knows")
-               .addEStep("created");
+               .edgeSteps(new Steps.StepEntity("knows"))
+               .edgeSteps(new Steps.StepEntity("created"));
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -449,8 +461,8 @@ public class KoutApiTest extends TraverserApiTest {
         builder = KoutRequest.builder();
         builder.source(markoId);
         builder.steps().direction(Direction.BOTH)
-               .addEStep("knows")
-               .addEStep("created");
+               .edgeSteps(new Steps.StepEntity("knows"))
+               .edgeSteps(new Steps.StepEntity("created"));
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -509,7 +521,8 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
+               .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                  "-01 00:00:00\")")));
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -524,7 +537,8 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
+                       .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                  "-01 00:00:00\")")));
 
         builder.maxDepth(2);
         builder.withVertex(true);
@@ -540,7 +554,8 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
+                .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                     "-01 00:00:00\")")));
         builder.maxDepth(3);
         builder.withVertex(true);
         request = builder.build();

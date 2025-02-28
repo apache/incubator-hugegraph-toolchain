@@ -39,9 +39,9 @@ public class KoutAPI extends TraversersAPI {
         return "kout";
     }
 
-    public List<Object> get(Object sourceId, Direction direction,
-                            String label, int depth, boolean nearest,
-                            long degree, long capacity, int limit) {
+    public Map<String, Object> get(Object sourceId, Direction direction,
+                                   String label, int depth, boolean nearest,
+                                   long degree, long capacity, long limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
 
         checkPositive(depth, "Depth of k-out");
@@ -59,7 +59,10 @@ public class KoutAPI extends TraversersAPI {
         params.put("capacity", capacity);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList("vertices", Object.class);
+        Map<String, Object> resMap = result.readObject(Map.class);
+        List<Object> ids = (List<Object>) resMap.get("vertices");
+        resMap.put("vertices", ids);
+        return resMap;
     }
 
     public Kout post(KoutRequest request) {

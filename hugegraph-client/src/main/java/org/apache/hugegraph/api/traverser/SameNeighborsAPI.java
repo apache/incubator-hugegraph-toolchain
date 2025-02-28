@@ -25,6 +25,7 @@ import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
+import org.apache.hugegraph.structure.traverser.SameNeighbors;
 
 public class SameNeighborsAPI extends TraversersAPI {
 
@@ -39,9 +40,9 @@ public class SameNeighborsAPI extends TraversersAPI {
         return "sameneighbors";
     }
 
-    public List<Object> get(Object vertexId, Object otherId,
-                            Direction direction, String label,
-                            long degree, int limit) {
+    public SameNeighbors get(Object vertexId, Object otherId,
+                             Direction direction, String label,
+                             long degree, long limit) {
         this.client.checkApiVersion("0.51", "same neighbors");
         String vertex = GraphAPI.formatVertexId(vertexId, false);
         String other = GraphAPI.formatVertexId(otherId, false);
@@ -54,6 +55,6 @@ public class SameNeighborsAPI extends TraversersAPI {
         params.put("max_degree", degree);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList(SAME_NEIGHBORS, Object.class);
+        return result.readObject(SameNeighbors.class);
     }
 }

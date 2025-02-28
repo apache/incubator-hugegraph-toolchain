@@ -28,23 +28,23 @@ public class KoutRequest {
     @JsonProperty("source")
     private Object source;
     @JsonProperty("steps")
-    public VESteps steps;
+    public Steps steps;
     @JsonProperty("max_depth")
     public int maxDepth;
     @JsonProperty("nearest")
-    public boolean nearest;
+    public boolean nearest = true;
     @JsonProperty("count_only")
-    public boolean countOnly;
+    public boolean countOnly = false;
     @JsonProperty("capacity")
-    public long capacity;
+    public long capacity = Traverser.DEFAULT_CAPACITY;
     @JsonProperty("limit")
-    public int limit;
+    public long limit = Traverser.DEFAULT_LIMIT;
     @JsonProperty("with_vertex")
-    public boolean withVertex;
+    public boolean withVertex = false;
     @JsonProperty("with_path")
-    public boolean withPath;
+    public boolean withPath = false;
     @JsonProperty("with_edge")
-    public boolean withEdge;
+    public boolean withEdge = false;
     @JsonProperty("traverse_mode")
     public String traverseMode;
 
@@ -80,12 +80,12 @@ public class KoutRequest {
 
     public static class Builder {
 
-        private final KoutRequest request;
-        private VESteps.Builder stepBuilder;
+        private KoutRequest request;
+        private Steps.Builder stepsBuilder;
 
         private Builder() {
-            this.request = new KoutRequest();
-            this.stepBuilder = VESteps.builder();
+                this.request = new KoutRequest();
+                this.stepsBuilder = Steps.builder();
         }
 
         public Builder source(Object source) {
@@ -94,9 +94,9 @@ public class KoutRequest {
             return this;
         }
 
-        public VESteps.Builder steps() {
-            VESteps.Builder builder = VESteps.builder();
-            this.stepBuilder = builder;
+        public Steps.Builder steps() {
+            Steps.Builder builder = Steps.builder();
+            this.stepsBuilder = builder;
             return builder;
         }
 
@@ -122,7 +122,7 @@ public class KoutRequest {
             return this;
         }
 
-        public Builder limit(int limit) {
+        public Builder limit(long limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
@@ -145,15 +145,15 @@ public class KoutRequest {
 
         public KoutRequest build() {
             E.checkNotNull(this.request.source, "The source can't be null");
-            this.request.steps = this.stepBuilder.build();
-            E.checkNotNull(this.request.steps, "step");
+            this.request.steps = this.stepsBuilder.build();
+            E.checkNotNull(this.request.steps, "steps");
             TraversersAPI.checkPositive(this.request.maxDepth, "max depth");
             TraversersAPI.checkCapacity(this.request.capacity);
             TraversersAPI.checkLimit(this.request.limit);
             if (this.request.countOnly) {
                 E.checkArgument(!this.request.withVertex &&
                                 !this.request.withPath && !this.request.withEdge,
-                                "Can't return vertex or path or edge " +
+                                "Can't return vertex or path or edge" +
                                 "when count only is true");
             }
             return this.request;

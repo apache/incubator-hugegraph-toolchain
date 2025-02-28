@@ -17,7 +17,9 @@
 
 package org.apache.hugegraph.api.traverser;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.api.BaseApiTest;
@@ -26,6 +28,7 @@ import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.traverser.Kneighbor;
 import org.apache.hugegraph.structure.traverser.KneighborRequest;
+import org.apache.hugegraph.structure.traverser.Steps;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,8 +56,9 @@ public class KneighborApiTest extends TraverserApiTest {
         long personId = vertexLabelAPI.get("person").id();
         long softwareId = vertexLabelAPI.get("software").id();
 
-        List<Object> vertices = kneighborAPI.get(markoId, Direction.OUT,
-                                                 null, 2, -1L, 100000);
+        Map<String, Object> res = kneighborAPI.get(markoId, Direction.OUT,
+                                                   null, 2, -1L, -1L);
+        List<Object> vertices = (List<Object>) res.get("vertices");
         Assert.assertEquals(4, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -273,7 +277,8 @@ public class KneighborApiTest extends TraverserApiTest {
 
         KneighborRequest.Builder builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("created");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("created"));
         builder.maxDepth(1);
         builder.withVertex(true);
         KneighborRequest request = builder.build();
@@ -286,7 +291,8 @@ public class KneighborApiTest extends TraverserApiTest {
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("created");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("created"));
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -299,7 +305,8 @@ public class KneighborApiTest extends TraverserApiTest {
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("knows");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("knows"));
         builder.maxDepth(1);
         builder.withVertex(true);
         request = builder.build();
@@ -312,7 +319,8 @@ public class KneighborApiTest extends TraverserApiTest {
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps().direction(Direction.BOTH).addEStep("knows");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("knows"));
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
@@ -366,49 +374,53 @@ public class KneighborApiTest extends TraverserApiTest {
         Object joshId = getVertexId("person", "name", "josh");
         Object lopId = getVertexId("software", "name", "lop");
         Object peterId = getVertexId("person", "name", "peter");
+        Object vadasId = getVertexId("person", "name", "vadas");
 
         KneighborRequest.Builder builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps()
-               .direction(Direction.BOTH)
-               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("date", "P.lte(\"2014-01-01 00:00:00\")");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("knows", properties));
         builder.maxDepth(1);
         builder.withVertex(true);
         KneighborRequest request = builder.build();
 
         Kneighbor kneighborResult = kneighborAPI.post(request);
 
-        Assert.assertEquals(1, kneighborResult.size());
-        Set<Object> expected = ImmutableSet.of(lopId);
+        Assert.assertEquals(2, kneighborResult.size());
+        Set<Object> expected = ImmutableSet.of(joshId, vadasId);
         Assert.assertEquals(expected, kneighborResult.ids());
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps()
-               .direction(Direction.BOTH)
-               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
+        properties = new HashMap<>();
+        properties.put("date", "P.gt(\"2014-01-01 00:00:00\")");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("knows", properties));
         builder.maxDepth(2);
         builder.withVertex(true);
         request = builder.build();
 
         kneighborResult = kneighborAPI.post(request);
 
-        Assert.assertEquals(3, kneighborResult.size());
+        Assert.assertEquals(0, kneighborResult.size());
         expected = ImmutableSet.of(lopId, peterId, joshId);
         Assert.assertEquals(expected, kneighborResult.ids());
 
         builder = KneighborRequest.builder();
         builder.source(markoId);
-        builder.steps()
-               .direction(Direction.BOTH)
-               .addEStep("created", ImmutableMap.of("date", "P.gt(\"2014-01-01 00:00:00\")"));
+        properties = new HashMap<>();
+        properties.put("date", "P.gt(\"2014-01-01 00:00:00\")");
+        builder.steps().direction(Direction.BOTH)
+               .edgeSteps(new Steps.StepEntity("knows", properties));
         builder.maxDepth(3);
         builder.withVertex(true);
         request = builder.build();
 
         kneighborResult = kneighborAPI.post(request);
 
-        Assert.assertEquals(4, kneighborResult.size());
+        Assert.assertEquals(0, kneighborResult.size());
         expected = ImmutableSet.of(lopId, peterId, joshId, rippleId);
         Assert.assertEquals(expected, kneighborResult.ids());
     }

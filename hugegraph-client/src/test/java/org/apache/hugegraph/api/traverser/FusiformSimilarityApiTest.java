@@ -30,6 +30,7 @@ import org.apache.hugegraph.structure.traverser.FusiformSimilarity.Similar;
 import org.apache.hugegraph.structure.traverser.FusiformSimilarityRequest;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
@@ -151,11 +152,11 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
 
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(p1, entry.getKey());
         Assert.assertEquals(2, entry.getValue().size());
         Set<Object> expected = ImmutableSet.of(p2, p3);
-        Set<Object> actual = entry.getValue().stream().map(Similar::id)
+        Set<Object> actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
     }
@@ -234,11 +235,11 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
 
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(p1, entry.getKey());
         Assert.assertEquals(2, entry.getValue().size());
         Set<Object> expected = ImmutableSet.of(p2, p3);
-        Set<Object> actual = entry.getValue().stream().map(Similar::id)
+        Set<Object> actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
@@ -255,7 +256,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Assert.assertEquals(p1, entry.getKey());
         Assert.assertEquals(1, entry.getValue().size());
         expected = ImmutableSet.of(p2);
-        actual = entry.getValue().stream().map(Similar::id)
+        actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                       .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
     }
@@ -288,11 +289,11 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
 
         results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(p1, entry.getKey());
         Assert.assertEquals(2, entry.getValue().size());
         Set<Object> expected = ImmutableSet.of(p2, p3);
-        Set<Object> actual = entry.getValue().stream().map(Similar::id)
+        Set<Object> actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
@@ -332,11 +333,11 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
 
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(p1, entry.getKey());
         Assert.assertEquals(2, entry.getValue().size());
         Set<Object> expected = ImmutableSet.of(p2, p3);
-        Set<Object> actual = entry.getValue().stream().map(Similar::id)
+        Set<Object> actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
@@ -353,7 +354,7 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         Assert.assertEquals(p1, entry.getKey());
         Assert.assertEquals(1, entry.getValue().size());
         expected = ImmutableSet.of(p2);
-        actual = entry.getValue().stream().map(Similar::id)
+        actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                       .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
     }
@@ -374,11 +375,11 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
 
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(p1, entry.getKey());
         Assert.assertEquals(2, entry.getValue().size());
         Set<Object> expected = ImmutableSet.of(p2, p3);
-        Set<Object> actual = entry.getValue().stream().map(Similar::id)
+        Set<Object> actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());
         Assert.assertEquals(expected, actual);
 
@@ -465,10 +466,10 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         FusiformSimilarityRequest request = builder.build();
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(id1, entry.getKey());
         Assert.assertEquals(1, entry.getValue().size());
-        Set<Object> actual = entry.getValue().stream().map(Similar::id)
+        Set<Object> actual = entry.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());
         Assert.assertEquals(ImmutableSet.of(id3), actual);
     }
@@ -495,10 +496,10 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
                 p3, ImmutableSet.of(p1, p2)
         );
 
-        for (Map.Entry<Object, Set<Similar>> e : results.similarsMap()
+        for (Map.Entry<Object, Set<FusiformSimilarity.Similar>> e : results.similarsMap()
                                                         .entrySet()) {
             Object key = e.getKey();
-            Set<Object> actual = e.getValue().stream().map(Similar::id)
+            Set<Object> actual = e.getValue().stream().map(FusiformSimilarity.Similar::id)
                                   .collect(Collectors.toSet());
             Assert.assertEquals(expected.get(key), actual);
         }
@@ -543,16 +544,16 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
 
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(p1Id, entry.getKey());
 
         Assert.assertEquals(2, entry.getValue().size());
-        Set<Similar> similars = entry.getValue();
+        Set<FusiformSimilarity.Similar> similars = entry.getValue();
         Set<Object> p2Inter = ImmutableSet.of(b2Id, b3Id, b4Id, b5Id,
                                               b6Id, b7Id, b8Id, b9Id);
         Set<Object> p3Inter = ImmutableSet.of(b3Id, b4Id, b5Id, b6Id,
                                               b7Id, b8Id, b9Id);
-        for (Similar similar : similars) {
+        for (FusiformSimilarity.Similar similar : similars) {
             if (similar.id().equals(p2Id)) {
                 Assert.assertEquals(p2Inter, similar.intermediaries());
             } else {
@@ -562,6 +563,67 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
         }
         Set<Vertex> vertices = ImmutableSet.of(p1, p2, p3, b2, b3, b4,
                                                b5, b6, b7, b8, b9);
+        Assert.assertEquals(vertices, results.vertices());
+    }
+
+    @Test
+    @Ignore
+    public void testFusiformSimilarityWithIntermediaryWithoutVertex() {
+        Vertex p1 = getVertex("person", "name", "p1");
+        Vertex p2 = getVertex("person", "name", "p2");
+        Vertex p3 = getVertex("person", "name", "p3");
+
+        Vertex b2 = getVertex("book", "name", "b2");
+        Vertex b3 = getVertex("book", "name", "b3");
+        Vertex b4 = getVertex("book", "name", "b4");
+        Vertex b5 = getVertex("book", "name", "b5");
+        Vertex b6 = getVertex("book", "name", "b6");
+        Vertex b7 = getVertex("book", "name", "b7");
+        Vertex b8 = getVertex("book", "name", "b8");
+        Vertex b9 = getVertex("book", "name", "b9");
+
+        Object p1Id = p1.id();
+        Object p2Id = p2.id();
+        Object p3Id = p3.id();
+
+        Object b2Id = b2.id();
+        Object b3Id = b3.id();
+        Object b4Id = b4.id();
+        Object b5Id = b5.id();
+        Object b6Id = b6.id();
+        Object b7Id = b7.id();
+        Object b8Id = b8.id();
+        Object b9Id = b9.id();
+
+        FusiformSimilarityRequest.Builder builder =
+                FusiformSimilarityRequest.builder();
+        builder.sources().label("person").property("name", "p1");
+        builder.label("read").direction(Direction.OUT).minNeighbors(8)
+               .alpha(0.75D).groupProperty("city").minGroups(2)
+               .withIntermediary(true).withVertex(false);
+        builder.capacity(-1).limit(-1);
+        FusiformSimilarityRequest request = builder.build();
+
+        FusiformSimilarity results = fusiformSimilarityAPI.post(request);
+        Assert.assertEquals(1, results.size());
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
+        Assert.assertEquals(p1Id, entry.getKey());
+
+        Assert.assertEquals(2, entry.getValue().size());
+        Set<FusiformSimilarity.Similar> similars = entry.getValue();
+        Set<Object> p2Inter = ImmutableSet.of(b2Id, b3Id, b4Id, b5Id,
+                                              b6Id, b7Id, b8Id, b9Id);
+        Set<Object> p3Inter = ImmutableSet.of(b3Id, b4Id, b5Id, b6Id,
+                                              b7Id, b8Id, b9Id);
+        for (FusiformSimilarity.Similar similar : similars) {
+            if (similar.id().equals(p2Id)) {
+                Assert.assertEquals(p2Inter, similar.intermediaries());
+            } else {
+                Assert.assertEquals(p3Id, similar.id());
+                Assert.assertEquals(p3Inter, similar.intermediaries());
+            }
+        }
+        Set<Vertex> vertices = ImmutableSet.of();
         Assert.assertEquals(vertices, results.vertices());
     }
 
@@ -582,12 +644,12 @@ public class FusiformSimilarityApiTest extends TraverserApiTest {
 
         FusiformSimilarity results = fusiformSimilarityAPI.post(request);
         Assert.assertEquals(1, results.size());
-        Map.Entry<Object, Set<Similar>> entry = results.first();
+        Map.Entry<Object, Set<FusiformSimilarity.Similar>> entry = results.first();
         Assert.assertEquals(p1.id(), entry.getKey());
 
         Assert.assertEquals(2, entry.getValue().size());
-        Set<Similar> similars = entry.getValue();
-        for (Similar similar : similars) {
+        Set<FusiformSimilarity.Similar> similars = entry.getValue();
+        for (FusiformSimilarity.Similar similar : similars) {
             if (similar.id().equals(p2.id())) {
                 Assert.assertEquals(ImmutableSet.of(),
                                     similar.intermediaries());

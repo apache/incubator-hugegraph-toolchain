@@ -172,7 +172,7 @@ public class PersonalRankApiTest extends TraverserApiTest {
         Map<Object, Double> ranks = res.personalRanks();
         assertDoublesEquals(ImmutableMap.of(), ranks);
 
-        builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(3);
+        builder.source("A").label("like").alpha(0.9).degree(1).maxDepth(2);
         request = builder.build();
 
         res = personalRankAPI.post(request);
@@ -186,12 +186,12 @@ public class PersonalRankApiTest extends TraverserApiTest {
         ranks = res.personalRanks();
         assertDoublesEquals(ImmutableMap.of("B", 0.405D), ranks);
 
-        builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(3);
+        builder.source("A").label("like").alpha(0.9).degree(2).maxDepth(2);
         request = builder.build();
 
         res = personalRankAPI.post(request);
         ranks = res.personalRanks();
-        Assert.assertEquals(2, ranks.size());
+        assertDoublesEquals(ImmutableMap.of("B", 0.405D), ranks);
     }
 
     @Test

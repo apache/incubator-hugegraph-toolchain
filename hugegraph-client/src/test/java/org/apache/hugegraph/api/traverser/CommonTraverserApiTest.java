@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import org.apache.hugegraph.api.BaseApiTest;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.structure.constant.Direction;
+import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
 import org.apache.hugegraph.structure.graph.Path;
@@ -36,6 +37,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.graph.Vertices;
 import org.apache.hugegraph.structure.traverser.CrosspointsRequest;
 import org.apache.hugegraph.structure.traverser.CustomizedCrosspoints;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Utils;
 import org.junit.BeforeClass;
@@ -63,8 +65,10 @@ public class CommonTraverserApiTest extends TraverserApiTest {
         Object lopId = getVertexId("software", "name", "lop");
         Object peterId = getVertexId("person", "name", "peter");
 
-        List<Path> paths = crosspointsAPI.get(markoId, peterId, Direction.OUT,
-                                              null, 3, -1L, -1L, 10);
+        PathWithMeasure pathWithMeasure =
+                crosspointsAPI.get(markoId, peterId, Direction.OUT,
+                                   null, 3, -1L, -1L, 10);
+        List<Path> paths = pathWithMeasure.getCrosspoints();
         Assert.assertEquals(2, paths.size());
         Path crosspoint1 = new Path(lopId,
                                     ImmutableList.of(markoId, lopId, peterId));
@@ -200,7 +204,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
         for (Shard shard : shards) {
             String page = "";
             while (page != null) {
-                Vertices results = verticesAPI.scan(shard, page, DEFAULT_PAGE_LIMIT);
+                Vertices results = verticesAPI.scan(shard, page, Traverser.DEFAULT_PAGE_LIMIT);
                 vertices.addAll(ImmutableList.copyOf(results.results()));
                 page = results.page();
             }
@@ -251,7 +255,7 @@ public class CommonTraverserApiTest extends TraverserApiTest {
         for (Shard shard : shards) {
             String page = "";
             while (page != null) {
-                Edges results = edgesAPI.scan(shard, page, DEFAULT_PAGE_LIMIT);
+                Edges results = edgesAPI.scan(shard, page, Traverser.DEFAULT_PAGE_LIMIT);
                 edges.addAll(ImmutableList.copyOf(results.results()));
                 page = results.page();
             }

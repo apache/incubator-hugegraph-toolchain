@@ -26,6 +26,7 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.graph.Path;
+import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 
 public class CrosspointsAPI extends TraversersAPI {
 
@@ -38,10 +39,10 @@ public class CrosspointsAPI extends TraversersAPI {
         return "crosspoints";
     }
 
-    public List<Path> get(Object sourceId, Object targetId,
-                          Direction direction, String label,
-                          int maxDepth, long degree,
-                          long capacity, int limit) {
+    public PathWithMeasure get(Object sourceId, Object targetId,
+                               Direction direction, String label,
+                               int maxDepth, long degree,
+                               long capacity, long limit) {
         String source = GraphAPI.formatVertexId(sourceId, false);
         String target = GraphAPI.formatVertexId(targetId, false);
 
@@ -60,6 +61,6 @@ public class CrosspointsAPI extends TraversersAPI {
         params.put("capacity", capacity);
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
-        return result.readList("crosspoints", Path.class);
+        return result.readObject(PathWithMeasure.class);
     }
 }
