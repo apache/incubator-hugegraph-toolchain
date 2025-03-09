@@ -58,8 +58,22 @@ public class SchemaManager {
         return proxy.proxy();
     }
 
+    public PropertyKey.Builder propertyKey(Long id, String name) {
+        PropertyKey.Builder builder =
+                new PropertyKey.BuilderImpl(name, this).id(id);
+        BuilderProxy<PropertyKey.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
     public VertexLabel.Builder vertexLabel(String name) {
         VertexLabel.Builder builder = new VertexLabel.BuilderImpl(name, this);
+        BuilderProxy<VertexLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
+    public VertexLabel.Builder vertexLabel(Long id, String name) {
+        VertexLabel.Builder builder =
+                new VertexLabel.BuilderImpl(name, this).id(id);
         BuilderProxy<VertexLabel.Builder> proxy = new BuilderProxy<>(builder);
         return proxy.proxy();
     }
@@ -70,8 +84,22 @@ public class SchemaManager {
         return proxy.proxy();
     }
 
+    public EdgeLabel.Builder edgeLabel(Long id, String name) {
+        EdgeLabel.Builder builder =
+                new EdgeLabel.BuilderImpl(name, this).id(id);
+        BuilderProxy<EdgeLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
     public IndexLabel.Builder indexLabel(String name) {
         IndexLabel.Builder builder = new IndexLabel.BuilderImpl(name, this);
+        BuilderProxy<IndexLabel.Builder> proxy = new BuilderProxy<>(builder);
+        return proxy.proxy();
+    }
+
+    public IndexLabel.Builder indexLabel(Long id, String name) {
+        IndexLabel.Builder builder =
+                new IndexLabel.BuilderImpl(name, this).id(id);
         BuilderProxy<IndexLabel.Builder> proxy = new BuilderProxy<>(builder);
         return proxy.proxy();
     }
