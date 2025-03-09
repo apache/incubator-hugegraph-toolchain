@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.hugegraph.annotation.UnimplementedFeature;
 import org.apache.hugegraph.api.graph.EdgeAPI;
+import org.apache.hugegraph.api.graph.GraphMetricsAPI;
 import org.apache.hugegraph.api.graph.VertexAPI;
 import org.apache.hugegraph.exception.InvalidOperationException;
 import org.apache.hugegraph.structure.GraphElement;
@@ -43,12 +44,14 @@ public class GraphManager {
     private final String graph;
     private final VertexAPI vertexAPI;
     private final EdgeAPI edgeAPI;
+    private final GraphMetricsAPI graphMetricsAPI;
 
     public GraphManager(RestClient client, String graphSpace, String graph) {
         this.graphSpace = graphSpace;
         this.graph = graph;
         this.vertexAPI = new VertexAPI(client, graphSpace, graph);
         this.edgeAPI = new EdgeAPI(client, graphSpace, graph);
+        this.graphMetricsAPI = new GraphMetricsAPI(client, graphSpace, graph);
     }
 
     public String graphSpace() {
@@ -94,6 +97,10 @@ public class GraphManager {
         Vertex vertex = this.vertexAPI.get(vertexId);
         this.attachManager(vertex);
         return vertex;
+    }
+
+    public void deleteVertex(Object vertexId) {
+        this.vertexAPI.delete(vertexId);
     }
 
     public List<Vertex> addVertices(List<Vertex> vertices) {
@@ -254,6 +261,10 @@ public class GraphManager {
         Edge edge = this.edgeAPI.get(edgeId);
         this.attachManager(edge);
         return edge;
+    }
+
+    public void deleteEdge(String edgeId) {
+        this.edgeAPI.delete(edgeId);
     }
 
     public List<Edge> addEdges(List<Edge> edges) {
@@ -451,6 +462,34 @@ public class GraphManager {
         edge = this.edgeAPI.eliminate(edge);
         this.attachManager(edge);
         return edge;
+    }
+
+    public long createEVCountJob() {
+        return this.graphMetricsAPI.createEVCountJob();
+    }
+
+    public GraphMetricsAPI.ElementCount getEVCount(String strDate) {
+        return this.graphMetricsAPI.getEVCount(strDate);
+    }
+
+    public Map<String, GraphMetricsAPI.ElementCount> getEVCountByMonth(String strMonth) {
+        return this.graphMetricsAPI.getEVCountByMonth(strMonth);
+    }
+
+    public long createTypeCountJob() {
+        return this.graphMetricsAPI.createTypeCountJob();
+    }
+
+    public GraphMetricsAPI.TypeCount getTypeCount(String strDate) {
+        return this.graphMetricsAPI.getTypeCount(strDate);
+    }
+
+    public GraphMetricsAPI.TypeCounts getTypeCounts(String from, String to) {
+        return this.graphMetricsAPI.getTypeCounts(from, to);
+    }
+
+    public Map<String, GraphMetricsAPI.TypeCount> getTypeCountByMonth(String strMonth) {
+        return this.graphMetricsAPI.getTypeCountByMonth(strMonth);
     }
 
     private Object getValue(String key, Object... keyValues) {
