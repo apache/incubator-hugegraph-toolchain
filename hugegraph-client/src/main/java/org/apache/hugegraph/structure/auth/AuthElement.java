@@ -37,6 +37,10 @@ public abstract class AuthElement extends Element {
         return this.id;
     }
 
+    public void setId(Object id) {
+        this.id = id;
+    }
+
     public abstract Date createTime();
 
     public abstract Date updateTime();
