@@ -464,6 +464,12 @@ public class GraphManager {
         return edge;
     }
 
+    public Edge updateEdgeProperty(String edgeid, Edge edge) {
+        edge = this.edgeAPI.update(edgeid, edge);
+        this.attachManager(edge);
+        return edge;
+    }
+
     public Edge eliminateEdgeProperty(Edge edge) {
         edge = this.edgeAPI.eliminate(edge);
         this.attachManager(edge);
