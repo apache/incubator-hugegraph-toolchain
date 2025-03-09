@@ -214,6 +214,12 @@ public class GraphManager {
         return vertex;
     }
 
+    public Vertex updateVertexProperty(String vertexid, Vertex vertex) {
+        vertex = this.vertexAPI.update(vertexid, vertex);
+        this.attachManager(vertex);
+        return vertex;
+    }
+
     public Vertex eliminateVertexProperty(Vertex vertex) {
         vertex = this.vertexAPI.eliminate(vertex);
         this.attachManager(vertex);
