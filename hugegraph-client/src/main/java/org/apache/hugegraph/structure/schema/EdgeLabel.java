@@ -205,6 +205,8 @@ public class EdgeLabel extends SchemaLabel {
         Builder userdata(String key, Object val);
 
         Builder ifNotExist();
+
+        Builder id(long id);
     }
 
     public static class BuilderImpl implements Builder {
@@ -378,6 +380,12 @@ public class EdgeLabel extends SchemaLabel {
         @Override
         public Builder ifNotExist() {
             this.edgeLabel.checkExist = false;
+            return this;
+        }
+
+        @Override
+        public Builder id(long id) {
+            this.edgeLabel.id = id;
             return this;
         }
 
