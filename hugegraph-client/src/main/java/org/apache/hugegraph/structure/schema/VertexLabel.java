@@ -123,6 +123,8 @@ public class VertexLabel extends SchemaLabel {
         Builder userdata(String key, Object val);
 
         Builder ifNotExist();
+
+        Builder id(long id);
     }
 
     public static class BuilderImpl implements Builder {
@@ -256,6 +258,12 @@ public class VertexLabel extends SchemaLabel {
         @Override
         public Builder ifNotExist() {
             this.vertexLabel.checkExist = false;
+            return this;
+        }
+
+        @Override
+        public Builder id(long id) {
+            this.vertexLabel.id = id;
             return this;
         }
 
