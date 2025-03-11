@@ -39,7 +39,7 @@ public class GraphsManager {
     }
 
     public Map<String, String> createGraph(String name, String config) {
-        return this.graphsAPI.create(name, config);
+        return this.graphsAPI.create(name, null, config);
     }
 
     public Map<String, String> createGraph(String name, File file) {
@@ -49,7 +49,16 @@ public class GraphsManager {
         } catch (IOException e) {
             throw new ClientException("Failed to read config file: %s", file);
         }
-        return this.graphsAPI.create(name, config);
+        return this.graphsAPI.create(name, null, config);
+    }
+
+    public Map<String, String> cloneGraph(String name, String cloneGraphName) {
+        return this.graphsAPI.create(name, cloneGraphName, null);
+    }
+
+    public Map<String, String> cloneGraph(String name, String cloneGraphName,
+                                          String configText) {
+        return this.graphsAPI.create(name, cloneGraphName, configText);
     }
 
     public Map<String, String> getGraph(String graph) {
@@ -80,20 +89,18 @@ public class GraphsManager {
         return this.graphsAPI.getDefault();
     }
 
-    public void clear(String graph) {
-        this.graphsAPI.clear(graph);
-    }
-
-    public void clear(String graph, boolean clearSchema) {
-        this.graphsAPI.clear(graph, clearSchema);
+    // TODO(@Thespica): see org.apache.hugegraph.api.graphs.GraphsAPI.clear
+    public void clearGraph(String graph, String message) {
+        this.graphsAPI.clear(graph, message);
     }
 
     public void update(String graph, String nickname) {
         this.graphsAPI.update(graph, nickname);
     }
 
-    public void remove(String graph) {
-        this.graphsAPI.delete(graph);
+    // TODO(@Thespica): see org.apache.hugegraph.api.graphs.GraphsAPI.drop
+    public void dropGraph(String graph, String message) {
+        this.graphsAPI.drop(graph, message);
     }
 
     public void reload(String graph) {
