@@ -30,7 +30,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        JAVA_VERSION: [ '8' ]
+        # released pd package is compiled in version 55.0, which requires java 11 to use
+        JAVA_VERSION: [ '11' ]
 
     steps:
       - name: Fetch code

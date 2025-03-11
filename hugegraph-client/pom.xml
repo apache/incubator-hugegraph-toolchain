@@ -60,7 +60,7 @@
             <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
-	<dependency>
+	    <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hg-pd-client</artifactId>
             <version>1.5.0</version>
