@@ -35,6 +35,8 @@ public class Target extends AuthElement {
     protected String graphSpace;
     @JsonProperty("target_graph")
     protected String graph;
+    @JsonProperty("target_url")
+    protected String url;
     @JsonProperty("target_description")
     protected String description;
     @JsonProperty("target_resources")
@@ -91,6 +93,14 @@ public class Target extends AuthElement {
 
     public void graph(String graph) {
         this.graph = graph;
+    }
+
+    public String url() {
+        return this.url;
+    }
+
+    public void url(String url) {
+        this.url = url;
     }
 
     public String description() {
