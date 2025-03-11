@@ -67,7 +67,7 @@ public class OltpAlgoService {
         Path result = traverser.shortestPath(body.getSource(), body.getTarget(),
                                              body.getDirection(), body.getLabel(),
                                              body.getMaxDepth(), body.getMaxDegree(),
-                                             body.getSkipDegree(), body.getCapacity());
+                                             body.getSkipDegree(), body.getCapacity()).getPath();
         JsonView jsonView = new JsonView();
         jsonView.setData(result.objects());
         Date createTime = HubbleUtil.nowDate();
