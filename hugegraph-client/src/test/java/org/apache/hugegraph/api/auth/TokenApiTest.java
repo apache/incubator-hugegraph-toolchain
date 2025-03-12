@@ -29,6 +29,7 @@ import org.apache.hugegraph.testutil.Assert;
 import org.apache.hugegraph.testutil.Whitebox;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class TokenApiTest extends AuthApiTest {
@@ -57,6 +58,7 @@ public class TokenApiTest extends AuthApiTest {
         }
     }
 
+    @Ignore("server doesn't support token_expire field to login now")
     @Test
     public void testVerify() {
         User user1 = new User();
