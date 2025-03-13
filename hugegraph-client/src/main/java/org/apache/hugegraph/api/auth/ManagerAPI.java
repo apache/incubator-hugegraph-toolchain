@@ -89,9 +89,4 @@ public class ManagerAPI extends AuthAPI {
     protected String type() {
         return HugeType.MANAGER.string();
     }
-
-    @Override
-    protected Object checkCreateOrUpdate(AuthElement authElement) {
-        return null;
-    }
 }
