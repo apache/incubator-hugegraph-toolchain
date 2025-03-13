@@ -27,6 +27,7 @@ import org.apache.hugegraph.api.auth.BelongAPI;
 import org.apache.hugegraph.api.auth.GroupAPI;
 import org.apache.hugegraph.api.auth.LoginAPI;
 import org.apache.hugegraph.api.auth.LogoutAPI;
+import org.apache.hugegraph.api.auth.ManagerAPI;
 import org.apache.hugegraph.api.auth.ProjectAPI;
 import org.apache.hugegraph.api.auth.TargetAPI;
 import org.apache.hugegraph.api.auth.TokenAPI;
@@ -35,12 +36,14 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.auth.Access;
 import org.apache.hugegraph.structure.auth.Belong;
 import org.apache.hugegraph.structure.auth.Group;
+import org.apache.hugegraph.structure.auth.HugePermission;
 import org.apache.hugegraph.structure.auth.Login;
 import org.apache.hugegraph.structure.auth.LoginResult;
 import org.apache.hugegraph.structure.auth.Project;
 import org.apache.hugegraph.structure.auth.Target;
 import org.apache.hugegraph.structure.auth.TokenPayload;
 import org.apache.hugegraph.structure.auth.User;
+import org.apache.hugegraph.structure.auth.UserManager;
 
 public class AuthManager {
 
@@ -53,6 +56,7 @@ public class AuthManager {
     private final LoginAPI loginAPI;
     private final LogoutAPI logoutAPI;
     private final TokenAPI tokenAPI;
+    private final ManagerAPI managerAPI;
 
     public AuthManager(RestClient client, String graph) {
         this.targetAPI = new TargetAPI(client, graph);
@@ -64,6 +68,7 @@ public class AuthManager {
         this.loginAPI = new LoginAPI(client, graph);
         this.logoutAPI = new LogoutAPI(client, graph);
         this.tokenAPI = new TokenAPI(client, graph);
+        this.managerAPI = new ManagerAPI(client, graph);
     }
 
     public List<Target> listTargets() {
@@ -277,5 +282,57 @@ public class AuthManager {
 
     public TokenPayload verifyToken() {
         return this.tokenAPI.verifyToken();
+    }
+
+    public UserManager addSuperAdmin(String user) {
+
+        UserManager userManager = new UserManager();
+        userManager.type(HugePermission.ADMIN);
+        userManager.user(user);
+
+        return this.managerAPI.create(userManager);
+    }
+
+    public UserManager addSpaceAdmin(String user, String graphSpace) {
+
+        UserManager userManager = new UserManager();
+        userManager.type(HugePermission.SPACE);
+        userManager.graphSpace(graphSpace);
+        userManager.user(user);
+
+        return this.managerAPI.create(userManager);
+    }
+
+    public void delSuperAdmin(String user) {
+        this.managerAPI.delete(user, HugePermission.ADMIN, null);
+    }
+
+    public void delSpaceAdmin(String user, String graphSpace) {
+        this.managerAPI.delete(user, HugePermission.SPACE, graphSpace);
+    }
+
+    public List<String> listSpaceAdmin(String graphSpace) {
+        return this.managerAPI.list(HugePermission.SPACE, graphSpace);
+    }
+
+    public List<String> listSuperAdmin() {
+        return this.managerAPI.list(HugePermission.ADMIN, null);
+    }
+
+    public boolean isSuperAdmin() {
+        return this.managerAPI.checkPermission(HugePermission.ADMIN, null);
+    }
+
+    public boolean isSpaceAdmin(String graphSpace) {
+        return this.managerAPI.checkPermission(HugePermission.SPACE, graphSpace);
+    }
+
+    public boolean checkDefaultRole(String graphSpace, String role) {
+        return this.managerAPI.checkDefaultRole(graphSpace, role, "");
+    }
+
+    public boolean checkDefaultRole(String graphSpace, String role,
+                                    String graph) {
+        return this.managerAPI.checkDefaultRole(graphSpace, role, graph);
     }
 }
