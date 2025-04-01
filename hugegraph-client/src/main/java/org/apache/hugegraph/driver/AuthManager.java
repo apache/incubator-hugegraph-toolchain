@@ -285,21 +285,17 @@ public class AuthManager {
     }
 
     public UserManager addSuperAdmin(String user) {
-
         UserManager userManager = new UserManager();
         userManager.type(HugePermission.ADMIN);
         userManager.user(user);
-
         return this.managerAPI.create(userManager);
     }
 
     public UserManager addSpaceAdmin(String user, String graphSpace) {
-
         UserManager userManager = new UserManager();
         userManager.type(HugePermission.SPACE);
         userManager.graphSpace(graphSpace);
         userManager.user(user);
-
         return this.managerAPI.create(userManager);
     }
 
@@ -331,8 +327,7 @@ public class AuthManager {
         return this.managerAPI.checkDefaultRole(graphSpace, role, "");
     }
 
-    public boolean checkDefaultRole(String graphSpace, String role,
-                                    String graph) {
+    public boolean checkDefaultRole(String graphSpace, String role, String graph) {
         return this.managerAPI.checkDefaultRole(graphSpace, role, graph);
     }
 }
