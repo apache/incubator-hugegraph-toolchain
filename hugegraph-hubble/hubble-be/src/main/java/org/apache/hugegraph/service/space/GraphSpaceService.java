@@ -19,9 +19,9 @@
 package org.apache.hugegraph.service.space;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-//import org.apache.hugegraph.api.task.TasksWithPage;
+import org.apache.hugegraph.api.task.TasksWithPage;
 // TODO fix import
-import org.apache.hugegraph.client.api.task.TasksWithPage;
+//import org.apache.hugegraph.client.api.task.TasksWithPage;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.entity.space.GraphSpaceEntity;

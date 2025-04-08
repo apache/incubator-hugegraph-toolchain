@@ -18,10 +18,10 @@
 
 package org.apache.hugegraph.service.algorithm;
 // TODO import difference
-//import org.apache.hugegraph.api.traverser.NeighborRankAPI;
-//import org.apache.hugegraph.api.traverser.PersonalRankAPI;
-import org.apache.hugegraph.client.api.traverser.PersonalRankAPI;
-import org.apache.hugegraph.client.api.traverser.NeighborRankAPI;
+import org.apache.hugegraph.api.traverser.NeighborRankAPI;
+import org.apache.hugegraph.api.traverser.PersonalRankAPI;
+//import org.apache.hugegraph.client.api.traverser.PersonalRankAPI;
+//import org.apache.hugegraph.client.api.traverser.NeighborRankAPI;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.TraverserManager;
