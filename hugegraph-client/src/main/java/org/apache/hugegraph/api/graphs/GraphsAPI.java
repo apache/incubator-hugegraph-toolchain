@@ -43,6 +43,8 @@ public class GraphsAPI extends API {
     private static final String DELIMITER = "/";
     private static final String MODE = "mode";
     private static final String GRAPH_READ_MODE = "graph_read_mode";
+    private static final String CLEAR = "clear";
+    private static final String CONFIRM_MESSAGE = "confirm_message";
     private static final String CLEARED = "cleared";
     private static final String RELOADED = "reloaded";
     private static final String UPDATED = "updated";
@@ -68,12 +70,18 @@ public class GraphsAPI extends API {
         return HugeType.GRAPHS.string();
     }
 
+    // TODO(@Thespcia): in inner version, clone is split into a single method, and doesn't have
+    // this parameter
     @SuppressWarnings("unchecked")
-    public Map<String, String> create(String name, String configText) {
+    public Map<String, String> create(String name, String cloneGraphName, String configText) {
         this.client.checkApiVersion("0.67", "dynamic graph add");
         RestHeaders headers = new RestHeaders().add(RestHeaders.CONTENT_TYPE, "text/plain");
+        Map<String, Object> params = null;
+        if (StringUtils.isNotEmpty(cloneGraphName)) {
+            params = ImmutableMap.of("clone_graph_name", cloneGraphName);
+        }
         RestResult result = this.client.post(joinPath(this.path(), name),
-                                             configText, headers);
+                                             configText, headers, params);
         return result.readObject(Map.class);
     }
 
@@ -119,26 +127,11 @@ public class GraphsAPI extends API {
         return result.readObject(Map.class);
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, String> clear(String name) {
-        return clear(name, true);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, String> clear(String name, boolean clearSchema) {
-        RestResult result = this.client.put(this.path(), name,
-                                            ImmutableMap.of("action", "clear",
-                                                            "clear_schema",
-                                                            clearSchema));
-        Map<String, String> response = result.readObject(Map.class);
-
-        E.checkState(response.size() == 1 && response.containsKey(name),
-                     "Response must be formatted to {\"%s\" : status}, " +
-                             "but got %s", name, response);
-        String status = response.get(name);
-        E.checkState(CLEARED.equals(status),
-                     "Graph %s status must be %s, but got '%s'", name, status);
-        return response;
+    // TODO(@Thespcia): in inner version, called by clear(String name) or
+    //  clear(String name, boolean clearSchema)
+    public void clear(String graph, String message) {
+        this.client.delete(joinPath(this.path(), graph, CLEAR),
+                           ImmutableMap.of(CONFIRM_MESSAGE, message));
     }
 
     public Map<String, String> update(String name, String nickname) {
@@ -161,9 +154,13 @@ public class GraphsAPI extends API {
         return response;
     }
 
-    public void delete(String graph) {
+    // TODO(@Thespcia): in inner version, this method called delete, and doesn't need confirm
+    //  message.
+    // community version server don't support now(3/11/2025), so we still need to keep this format.
+    public void drop(String graph, String message) {
         this.client.checkApiVersion("0.67", "dynamic graph delete");
-        this.client.delete(joinPath(this.path(), graph), ImmutableMap.of());
+        this.client.delete(joinPath(this.path(), graph),
+                           ImmutableMap.of(CONFIRM_MESSAGE, message));
     }
 
     public Map<String, String> reload(String name) {

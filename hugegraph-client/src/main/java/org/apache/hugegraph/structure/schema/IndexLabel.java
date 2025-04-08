@@ -123,6 +123,8 @@ public class IndexLabel extends SchemaElement {
         Builder ifNotExist();
 
         Builder rebuild(boolean rebuild);
+
+        Builder id(long id);
     }
 
     public static class BuilderImpl implements Builder {
@@ -244,6 +246,12 @@ public class IndexLabel extends SchemaElement {
         @Override
         public Builder rebuild(boolean rebuild) {
             this.indexLabel.rebuild = rebuild;
+            return this;
+        }
+
+        @Override
+        public Builder id(long id) {
+            this.indexLabel.id = id;
             return this;
         }
     }

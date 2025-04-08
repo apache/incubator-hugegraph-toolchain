@@ -30,6 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # released pd package is compiled in version 55.0, which requires java 11 to use
         JAVA_VERSION: [ '11' ]
 
     steps:
@@ -79,9 +80,9 @@ jobs:
       - name: Run test
         run: |
           cd hugegraph-client && ls *
-          mvn test -Dtest=UnitTestSuite -ntp || true
-          mvn test -Dtest=ApiTestSuite || true
-          mvn test -Dtest=FuncTestSuite || true
+          mvn test -Dtest=UnitTestSuite -ntp
+          mvn test -Dtest=ApiTestSuite
+          mvn test -Dtest=FuncTestSuite
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
