@@ -178,8 +178,10 @@ public class PrometheusService {
         public MetricsClient(String url, int timeout) {
             super(url, timeout);
         }
+
         @Override
-        protected void checkStatus(Response response, int... ints) {
+        protected void checkStatus(jakarta.ws.rs.core.Response response,
+                                   jakarta.ws.rs.core.Response.Status... statuses) {
 
         }
     }
