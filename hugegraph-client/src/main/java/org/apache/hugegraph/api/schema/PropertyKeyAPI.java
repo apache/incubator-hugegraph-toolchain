@@ -68,6 +68,14 @@ public class PropertyKeyAPI extends SchemaElementAPI {
         return result.readObject(PropertyKey.PropertyKeyWithTask.class);
     }
 
+    public PropertyKey update(String oldPk, PropertyKey newPk) {
+        String id = oldPk;
+        Map<String, Object> params = ImmutableMap.of("action", "update");
+        Object pkey = this.checkCreateOrUpdate(newPk);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
+        return result.readObject(PropertyKey.class);
+    }
+
     public PropertyKey.PropertyKeyWithTask clear(PropertyKey propertyKey) {
         if (this.client.apiVersionLt("0.65")) {
             throw new NotSupportException("action clear on property key");
