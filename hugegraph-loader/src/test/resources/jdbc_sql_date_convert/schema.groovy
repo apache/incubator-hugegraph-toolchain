@@ -14,49 +14,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+// Define schema
+schema.propertyKey("calendar_date").asDate().ifNotExist().create()
+schema.propertyKey("calendar_datetime").asDate().ifNotExist().create()
+schema.propertyKey("calendar_timestamp").asDate().ifNotExist().create()
+schema.propertyKey("calendar_time").asDate().ifNotExist().create()
+schema.propertyKey("calendar_year").asDate().ifNotExist().create()
 
-package org.apache.hugegraph.structure.constant;
-
-public enum EdgeLabelType {
-
-    NORMAL(0, "NORMAL"),
-
-    PARENT(1, "PARENT"),
-
-    SUB(2, "SUB"),
-
-    GENERAL(3, "GENERAL");
-
-    private byte code = 0;
-    private String name = null;
-
-    EdgeLabelType(int code, String name) {
-        assert code < 256;
-        this.code = (byte) code;
-        this.name = name;
-    }
-
-    public boolean parent() {
-        return this == PARENT;
-    }
-
-    public boolean sub() {
-        return this == SUB;
-    }
-
-    public boolean normal() {
-        return this == NORMAL;
-    }
-
-    public boolean general() {
-        return this == GENERAL;
-    }
-
-    public byte code() {
-        return this.code;
-    }
-
-    public String string() {
-        return this.name;
-    }
-}
+schema.vertexLabel("date_test")
+        .useCustomizeNumberId()
+        .properties("calendar_date", "calendar_datetime", "calendar_timestamp", "calendar_time", "calendar_year")
+        .nullableKeys("calendar_date", "calendar_datetime", "calendar_timestamp", "calendar_time", "calendar_year")
+        .ifNotExist()
+        .create()

@@ -59,8 +59,16 @@ public class VertexLabel extends SchemaLabel {
         return this.idStrategy;
     }
 
+    public void idStrategy(IdStrategy idStrategy) {
+        this.idStrategy = idStrategy;
+    }
+
     public List<String> primaryKeys() {
         return this.primaryKeys;
+    }
+
+    public void primaryKeys(List<String> primaryKeys) {
+        this.primaryKeys = primaryKeys;
     }
 
     public long ttl() {

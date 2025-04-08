@@ -56,7 +56,7 @@
             "manipulations": {
                 "create": "create",
                 "delete": "delete",
-                "cancel": "becel"
+                "cancel": "cancel"
             }
         },
         "validator": {
@@ -83,7 +83,7 @@
                 },
                 "manipulations": {
                     "save": "save",
-                    "cancel": "becel"
+                    "cancel": "cancel"
                 }
             }
         },
@@ -154,7 +154,7 @@
             "manipulation": {
                 "create": "create",
                 "save": "save",
-                "cancel": "becel",
+                "cancel": "cancel",
                 "create-vertex": "create vertex mapping",
                 "create-edge": "Create EDGE MAPPING"
             },
@@ -266,7 +266,7 @@
             "add": "ADD",
             "edit": "edit",
             "delete": "delete",
-            "cancel": "becel",
+            "cancel": "cancel",
             "hints": {
                 "delete-confirm": "Confirm delete?",
                 "warning": "Cannot be recovered after deletion, please openly carefully"
