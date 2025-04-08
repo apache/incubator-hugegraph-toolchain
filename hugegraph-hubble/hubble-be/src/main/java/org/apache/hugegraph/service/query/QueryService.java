@@ -23,6 +23,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+//import org.apache.hugegraph.api.gremlin.GremlinRequest;
+// TODO fix import
 import org.apache.hugegraph.client.api.gremlin.GremlinRequest;
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.driver.HugeClient;

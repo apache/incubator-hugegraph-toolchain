@@ -19,6 +19,10 @@
 package org.apache.hugegraph.controller.algorithm;
 
 import lombok.extern.log4j.Log4j2;
+import org.apache.hugegraph.client.RestClient;
+//import org.apache.hugegraph.api.traverser.NeighborRankAPI;
+//import org.apache.hugegraph.api.traverser.PersonalRankAPI;
+// TODO fix import
 import org.apache.hugegraph.client.api.traverser.NeighborRankAPI;
 import org.apache.hugegraph.client.api.traverser.PersonalRankAPI;
 import org.apache.hugegraph.common.Constant;
