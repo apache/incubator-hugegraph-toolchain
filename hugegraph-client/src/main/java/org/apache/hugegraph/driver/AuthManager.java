@@ -18,6 +18,7 @@
 package org.apache.hugegraph.driver;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -137,6 +138,10 @@ public class AuthManager {
 
     public User createUser(User user) {
         return this.userAPI.create(user);
+    }
+
+    public Map<String, List<Map<String, String>>> createBatch(List<Map<String, String>> data) {
+        return this.userAPI.createBatch(data);
     }
 
     public User updateUser(User user) {

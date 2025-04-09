@@ -44,6 +44,15 @@ public class UserAPI extends AuthAPI {
         return result.readObject(User.class);
     }
 
+    public Map<String, List<Map<String, String>>> createBatch(List<Map<String,
+            String>> data) {
+        String path = String.join("/", this.path(), "batch");
+        RestResult result = this.client.post(path, data);
+        Map<String, List<Map<String, String>>> resultList =
+                (Map<String, List<Map<String, String>>>) result.readObject(Map.class);
+        return resultList;
+    }
+
     public User get(Object id) {
         RestResult result = this.client.get(this.path(), formatEntityId(id));
         return result.readObject(User.class);
