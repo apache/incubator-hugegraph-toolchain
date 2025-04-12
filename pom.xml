@@ -46,13 +46,6 @@
         </license>
     </licenses>
 
-    <repositories>
-        <repository>
-            <id>apache-staging</id>
-            <url>https://repository.apache.org/content/repositories/staging/</url>
-        </repository>
-    </repositories>
-
     <developers>
         <developer>
             <id>Apache HugeGraph(Incubating)</id>
@@ -97,7 +90,7 @@
 
     <modules>
         <module>hugegraph-client</module>
-<!--        <module>hugegraph-loader</module>--><!-- TODO RECOVER-->
+        <module>hugegraph-loader</module>
         <module>hugegraph-spark-connector</module>
         <module>hugegraph-tools</module>
         <module>hugegraph-hubble</module>

@@ -20,6 +20,7 @@ package org.apache.hugegraph.service.saas;
 
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
+
 import org.apache.hugegraph.config.HugeConfig;
 import org.apache.hugegraph.options.HubbleOptions;
 import org.apache.hugegraph.rest.AbstractRestClient;
@@ -67,15 +68,14 @@ public class PrometheusService {
         return client;
     }
 
-
     public long queryByDelta(String query, long start, long end) {
         log.info("queryByDelta: query=[{}] start=[{}], end=[{}]", query, start, end);
         return queryByTimestamp(query, end) - queryByTimestamp(query, start);
     }
 
-
     /**
      * 根据时间戳查询当前的统计数据
+     *
      * @param query     promSQL查询语句
      * @param timestamp 时间戳
      * @return 返回查询结果的Map对象
@@ -90,6 +90,7 @@ public class PrometheusService {
 
     /**
      * 根据指定范围查询数据
+     *
      * @param query 查询条件
      * @param from  起始时间戳
      * @param to    结束时间戳
@@ -123,6 +124,7 @@ public class PrometheusService {
 
     /**
      * 统计当前日期往前一天的请求量
+     *
      * @param lastDay eg: 2023-12-06 23:59:59
      * @return
      */
@@ -174,14 +176,25 @@ public class PrometheusService {
 //
 //    }
 
+    //private static class MetricsClient extends AbstractRestClient {
+    //    public MetricsClient(String url, int timeout) {
+    //        super(url, timeout);
+    //    }
+    //
+    //    @Override
+    //    protected void checkStatus(jakarta.ws.rs.core.Response response,
+    //                               jakarta.ws.rs.core.Response.Status... statuses) {
+    //
+    //    }
+    //}
     private static class MetricsClient extends AbstractRestClient {
+
         public MetricsClient(String url, int timeout) {
             super(url, timeout);
         }
 
         @Override
-        protected void checkStatus(jakarta.ws.rs.core.Response response,
-                                   jakarta.ws.rs.core.Response.Status... statuses) {
+        protected void checkStatus(Response response, int... ints) {
 
         }
     }

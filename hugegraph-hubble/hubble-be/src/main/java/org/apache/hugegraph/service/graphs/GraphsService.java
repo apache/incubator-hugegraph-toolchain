@@ -247,11 +247,12 @@ public class GraphsService {
 
     public void truncate(HugeClient client, String graph,
                          boolean isClearSchema, boolean isClearData) {
+        // TODO client do not support clear Schema field. Check here
         if (isClearSchema) {
-            client.graphs().clear(graph, true);
+            client.graphs().clearGraph(graph,"I'm sure to delete all data");
         }
         else if (isClearData) {
-            client.graphs().clear(graph, false);
+            client.graphs().clearGraph(graph, "I'm sure to delete all data");
         }
     }
 
@@ -268,8 +269,8 @@ public class GraphsService {
     }
 
     public void delete(HugeClient client, String graph, String confirmMessage) {
-
-        client.graphs().remove(graph);
+        // TODO check if frontend support passing confirm message.
+        client.graphs().dropGraph(graph,confirmMessage);
     }
 
     public GraphReadMode graphReadMode(HugeClient client, String graph) {
