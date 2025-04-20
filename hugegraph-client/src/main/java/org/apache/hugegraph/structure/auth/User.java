@@ -44,9 +44,9 @@ public class User extends AuthElement {
     private String avatar;
     @JsonProperty("user_description")
     private String description;
-    @JsonProperty("department") // 用户所属部门
+    @JsonProperty("department") // User's department
     private String department;
-    @JsonProperty("image_url") // 用户头像url
+    @JsonProperty("image_url") // User's avatar url
     private String imageUrl;
 
 

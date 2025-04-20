@@ -117,8 +117,8 @@ public class GraphMetricsAPI extends API {
     }
 
     /**
-     * @param from 起始时间
-     * @param to   终止时间
+     * @param from start time
+     * @param to   end time
      */
     public TypeCounts getTypeCounts(String from, String to) {
         try {
@@ -152,7 +152,7 @@ public class GraphMetricsAPI extends API {
 
     @Data
     public static class ElementCount {
-        // 结果统计时间
+        // statistics time
         String datetime;
         long vertices;
         long edges;
@@ -172,7 +172,7 @@ public class GraphMetricsAPI extends API {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class TypeCount {
-        // 结果统计时间
+        // statistics time
         @JsonProperty("datetime")
         String datetime;
         @JsonProperty("vertices")
