@@ -30,6 +30,7 @@ import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.metrics.LoadMetrics;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
+import org.apache.hugegraph.loader.writer.MeTTaWriter;
 import org.apache.hugegraph.structure.GraphElement;
 import org.apache.hugegraph.structure.graph.BatchEdgeRequest;
 import org.apache.hugegraph.structure.graph.BatchVertexRequest;
@@ -56,6 +57,7 @@ public abstract class InsertTask implements Runnable {
     protected final InputStruct struct;
     protected final ElementMapping mapping;
     protected final List<Record> batch;
+    protected final MeTTaWriter mettaWriter;
 
     public InsertTask(LoadContext context, InputStruct struct,
                       ElementMapping mapping, List<Record> batch) {
@@ -64,6 +66,7 @@ public abstract class InsertTask implements Runnable {
         this.struct = struct;
         this.mapping = mapping;
         this.batch = batch;
+        this.mettaWriter = new MeTTaWriter();
     }
 
     public ElemType type() {
@@ -111,10 +114,12 @@ public abstract class InsertTask implements Runnable {
         List<GraphElement> elements = new ArrayList<>(batch.size());
         batch.forEach(r -> elements.add(r.element()));
         if (this.type().isVertex()) {
-            client.graph().addVertices((List<Vertex>) (Object) elements);
+            // client.graph().addVertices((List<Vertex>) (Object) elements);
+            this.mettaWriter.writeNodes(batch);
         } else {
-            client.graph().addEdges((List<Edge>) (Object) elements,
-                                    checkVertex);
+            // client.graph().addEdges((List<Edge>) (Object) elements,
+                                    // checkVertex);
+            this.mettaWriter.writeEdges(batch);
         }
     }
 
