@@ -56,7 +56,6 @@ public class AuthManagerTest extends BaseFuncTest {
         auth().deleteAll();
     }
 
-    @Ignore("server doesn't support token_expire field to login now")
     @Test
     public void testAuth() {
         User user = new User();
