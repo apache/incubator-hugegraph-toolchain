@@ -28,7 +28,7 @@ HUGEGRAPH_LOADER_PATH = "./hugegraph-loader/apache-hugegraph-loader-incubating-1
 HUGEGRAPH_HOST = "localhost"
 HUGEGRAPH_PORT = "8080"
 HUGEGRAPH_GRAPH = "hugegraph"
-BASE_OUTPUT_DIR = "./output"
+BASE_OUTPUT_DIR = os.path.abspath("./output")
 
 
 # Schema Models
@@ -70,6 +70,8 @@ class HugeGraphLoadResponse(BaseModel):
     details: Optional[Dict[str, Any]] = None
     # schema_groovy: Optional[str] = None
     output_files: Optional[List[str]] = None
+    output_dir: Optional[str] = None
+    schema_path: Optional[str] = None
 
 
 def json_to_groovy(schema_json: Union[Dict, SchemaDefinition]) -> str:
@@ -226,9 +228,9 @@ def update_file_paths_in_config(config, file_mapping):
     return updated_config
 
 
-def create_job_output_dir(job_id):
+def get_job_output_dir(job_id):
     """
-    Create a job-specific output directory
+    Get a job-specific output directory
     
     Args:
         job_id: Unique job identifier
@@ -237,7 +239,7 @@ def create_job_output_dir(job_id):
         Path to the output directory
     """
     output_dir = os.path.join(BASE_OUTPUT_DIR, job_id)
-    os.makedirs(output_dir, exist_ok=True)
+    # os.makedirs(output_dir, exist_ok=True)
     return output_dir
 
 
@@ -326,6 +328,8 @@ async def load_data(
                 schema_path = os.path.join(tmpdir, f"schema-{job_id}.groovy")
                 with open(schema_path, "w") as f:
                     f.write(schema_groovy)
+            else:
+                raise HTTPException(status_code=400, detail="Schema JSON is required")
             
             # Update the paths in the config to point to the temp files
             updated_config = update_file_paths_in_config(config_data, file_mapping)
@@ -335,8 +339,8 @@ async def load_data(
             with open(config_path, "w") as f:
                 json.dump(updated_config, f, indent=2)
             
-            # Create job-specific output directory
-            output_dir = create_job_output_dir(job_id)
+            # Get job-specific output directory
+            output_dir = get_job_output_dir(job_id)
             
             # Build the HugeGraph loader command
             cmd = [
@@ -368,10 +372,25 @@ async def load_data(
                         "stdout": result.stdout,
                         "stderr": result.stderr
                     },
-                    schema_groovy=schema_groovy,
                     output_files=output_filenames
                 )
+            if len(output_files) == 0:
+                return HugeGraphLoadResponse(
+                    job_id=job_id,
+                    status="error",
+                    message="No output files generated",
+                    details={
+                        "stdout": result.stdout,
+                        "stderr": result.stderr
+                    },
+                )
             
+            # save the schema json to the output directory
+            schema_json_path = os.path.join(output_dir, f"schema.json")
+            with open(schema_json_path, "w") as f:
+                json.dump(schema_data, f, indent=2)
+            output_filenames.append(os.path.basename(schema_json_path))
+
             return HugeGraphLoadResponse(
                 job_id=job_id,
                 status="success",
@@ -379,8 +398,9 @@ async def load_data(
                 details={
                     "stdout": result.stdout
                 },
-                # schema_groovy=schema_groovy,
-                output_files=output_filenames
+                output_files=output_filenames,
+                output_dir=output_dir,
+                schema_path=schema_json_path
             )
             
     except json.JSONDecodeError as e:
