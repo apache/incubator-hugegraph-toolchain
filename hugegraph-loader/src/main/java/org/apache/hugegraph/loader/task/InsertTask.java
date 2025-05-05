@@ -66,7 +66,7 @@ public abstract class InsertTask implements Runnable {
         this.struct = struct;
         this.mapping = mapping;
         this.batch = batch;
-        this.mettaWriter = new MeTTaWriter();
+        this.mettaWriter = new MeTTaWriter(this.context.options().output);
     }
 
     public ElemType type() {

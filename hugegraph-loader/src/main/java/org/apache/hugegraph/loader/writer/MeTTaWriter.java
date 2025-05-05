@@ -16,12 +16,13 @@ import org.apache.hugegraph.structure.graph.Vertex;
 
 public class MeTTaWriter {
     
-    private static final String OUTPUT_DIR = "/home/developer/Desktop/metta_output";
+    private final String output_dir;
     
-    public MeTTaWriter() {
+    public MeTTaWriter(String outputDir) {
         // Create output directory if it doesn't exist
+        this.output_dir = outputDir;
         try {
-            Files.createDirectories(Paths.get(OUTPUT_DIR));
+            Files.createDirectories(Paths.get(outputDir));
         } catch (IOException e) {
             throw new RuntimeException("Failed to create output directory", e);
         }
@@ -37,7 +38,7 @@ public class MeTTaWriter {
             String label = entry.getKey();
             List<Vertex> vertices = entry.getValue();
             
-            String filePath = OUTPUT_DIR + "/" + label +"_nodes"+ ".metta";
+            String filePath = this.output_dir + "/" + label +"_nodes"+ ".metta";
             
             try (FileWriter writer = new FileWriter(filePath, true)) {
                 for (Vertex vertex : vertices) {
@@ -102,7 +103,7 @@ public class MeTTaWriter {
             String label = entry.getKey();
             List<Edge> edges = entry.getValue();
             
-            String filePath = OUTPUT_DIR + "/" + label +"_edges"+ ".metta";
+            String filePath = this.output_dir + "/" + label +"_edges"+ ".metta";
             
             try (FileWriter writer = new FileWriter(filePath, true)) {
                 for (Edge edge : edges) {

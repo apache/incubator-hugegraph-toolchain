@@ -57,6 +57,10 @@ public class LoadOptions implements Serializable {
                description = "The namespace of the graph to load into")
     public String graph;
 
+    @Parameter(names = {"-o", "--output"}, required = true, arity = 1,
+               description = "The path of the output directory")
+    public String output;
+
     @Parameter(names = {"-h", "--host"}, arity = 1,
                validateWith = {UrlValidator.class},
                description = "The host/IP of HugeGraphServer")
@@ -275,6 +279,9 @@ public class LoadOptions implements Serializable {
         // Check option "-g"
         E.checkArgument(!StringUtils.isEmpty(options.graph),
                         "The graph must be specified");
+        // Check option "-o"
+        E.checkArgument(!StringUtils.isEmpty(options.output),
+                        "The output directory must be specified");
         // Check option "-h"
         if (!options.host.startsWith(Constants.HTTP_PREFIX)) {
             if (options.protocol.equals(HTTP_SCHEMA)) {
