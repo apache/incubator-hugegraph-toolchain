@@ -287,6 +287,21 @@ def create_zip_file(files):
     memory_file.seek(0)
     return memory_file
 
+def load_metadata(output_dir):
+    metadata_file = os.path.join(output_dir, "graph_metadata.json")
+    metadata = {}  # Default empty dictionary
+    
+    try:
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+    except FileNotFoundError:
+        print(f"Metadata file not found: {metadata_file}")
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON in metadata file: {e}")
+    except Exception as e:
+        print(f"Unexpected error loading metadata: {e}")
+    
+    return metadata
 
 @app.post("/api/load", response_model=HugeGraphLoadResponse)
 async def load_data(
@@ -363,10 +378,7 @@ async def load_data(
             # Get output files
             output_files = get_output_files(output_dir)
             output_filenames = [os.path.basename(f) for f in output_files]
-            metadata_file = os.path.join(output_dir, "metadata.json")
-
-            with open(metadata_file, 'r') as f:
-                metadata = json.load(f)
+            metadata = load_metadata(output_dir)
 
             if result.returncode != 0:
                 return HugeGraphLoadResponse(
