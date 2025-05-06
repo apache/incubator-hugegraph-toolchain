@@ -65,6 +65,11 @@ public final class Printer {
 
     public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
+        // Create a JSON structure to hold our metadata
+        JsonObject metadataJson = new JsonObject();
+        JsonObject vertexCountsByLabel = new JsonObject();
+        JsonObject edgeCountsByLabel = new JsonObject();
+        
         // Just log vertices/edges metrics
         log(DIVIDE_LINE);
         log("detail metrics");
@@ -79,6 +84,9 @@ public final class Printer {
                 log("parse failure", labelMetrics.parseFailure());
                 log("insert success", labelMetrics.insertSuccess());
                 log("insert failure", labelMetrics.insertFailure());
+                
+                // Add vertex counts by label to our JSON
+                vertexCountsByLabel.addProperty(label, labelMetrics.insertSuccess());
             });
             metrics.edgeMetrics().forEach((label, labelMetrics) -> {
                 log(String.format("edge '%s'", label));
@@ -86,14 +94,57 @@ public final class Printer {
                 log("parse failure", labelMetrics.parseFailure());
                 log("insert success", labelMetrics.insertSuccess());
                 log("insert failure", labelMetrics.insertFailure());
+                
+                // Add edge counts by label to our JSON
+                edgeCountsByLabel.addProperty(label, labelMetrics.insertSuccess());
             });
         });
 
+        // Get total counts
+        LoadReport report = LoadReport.collect(summary);
+        long totalVertices = report.vertices();
+        long totalEdges = report.edges();
+        
+        // Add totals to our metadata JSON
+        metadataJson.addProperty("totalVertices", totalVertices);
+        metadataJson.addProperty("totalEdges", totalEdges);
+        metadataJson.add("verticesByLabel", vertexCountsByLabel);
+        metadataJson.add("edgesByLabel", edgeCountsByLabel);
+        
         // Print and log total vertices/edges metrics
         printAndLog(DIVIDE_LINE);
-        printCountReport(LoadReport.collect(summary));
+        printCountReport(report);
         printAndLog(DIVIDE_LINE);
         printMeterReport(summary);
+        
+        // Save metadata to output file
+        saveMetadataToFile(metadataJson, context);
+    }
+
+    private static void saveMetadataToFile(JsonObject metadata, LoadContext context) {
+        // Determine output directory - use the option if available or default to current directory
+        String outputDir = context.options().output;
+        
+        // Create the output directory if it doesn't exist
+        File directory = new File(outputDir);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        
+        // Create a timestamped filename for the metadata
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        // String filename = String.format("hugegraph_metadata_%s.json", timestamp);
+        String filename = "hugegraph_metadata.json";
+        File outputFile = new File(directory, filename);
+        
+        try (FileWriter writer = new FileWriter(outputFile)) {
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            gson.toJson(metadata, writer);
+            log("Metadata saved to: " + outputFile.getAbsolutePath());
+        } catch (IOException e) {
+            log("Failed to save metadata to file: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private static void printCountReport(LoadReport report) {
