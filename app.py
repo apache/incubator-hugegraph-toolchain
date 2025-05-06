@@ -72,6 +72,7 @@ class HugeGraphLoadResponse(BaseModel):
     output_files: Optional[List[str]] = None
     output_dir: Optional[str] = None
     schema_path: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 def json_to_groovy(schema_json: Union[Dict, SchemaDefinition]) -> str:
@@ -362,7 +363,11 @@ async def load_data(
             # Get output files
             output_files = get_output_files(output_dir)
             output_filenames = [os.path.basename(f) for f in output_files]
-            
+            metadata_file = os.path.join(output_dir, "metadata.json")
+
+            with open(metadata_file, 'r') as f:
+                metadata = json.load(f)
+
             if result.returncode != 0:
                 return HugeGraphLoadResponse(
                     job_id=job_id,
@@ -395,6 +400,7 @@ async def load_data(
                 job_id=job_id,
                 status="success",
                 message="Graph generated successfully",
+                metadata=metadata,
                 details={
                     "stdout": result.stdout
                 },
