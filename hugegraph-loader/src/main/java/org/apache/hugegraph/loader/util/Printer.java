@@ -29,6 +29,19 @@ import org.apache.hugegraph.loader.progress.LoadProgress;
 import org.apache.hugegraph.util.Log;
 import org.apache.hugegraph.util.TimeUtil;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+
 public final class Printer {
 
     private static final Logger LOG = Log.logger(Printer.class);
@@ -65,6 +78,11 @@ public final class Printer {
 
     public static void printSummary(LoadContext context) {
         LoadSummary summary = context.summary();
+        // Create a JSON structure to hold our metadata
+        JsonObjectBuilder metadataJson = Json.createObjectBuilder();
+        JsonObjectBuilder vertexCountsByLabel = Json.createObjectBuilder();
+        JsonObjectBuilder edgeCountsByLabel = Json.createObjectBuilder();
+        
         // Just log vertices/edges metrics
         log(DIVIDE_LINE);
         log("detail metrics");
@@ -79,6 +97,9 @@ public final class Printer {
                 log("parse failure", labelMetrics.parseFailure());
                 log("insert success", labelMetrics.insertSuccess());
                 log("insert failure", labelMetrics.insertFailure());
+                
+                // Add vertex counts by label to our JSON
+                vertexCountsByLabel.add(label, labelMetrics.insertSuccess());
             });
             metrics.edgeMetrics().forEach((label, labelMetrics) -> {
                 log(String.format("edge '%s'", label));
@@ -86,15 +107,71 @@ public final class Printer {
                 log("parse failure", labelMetrics.parseFailure());
                 log("insert success", labelMetrics.insertSuccess());
                 log("insert failure", labelMetrics.insertFailure());
+                
+                // Add edge counts by label to our JSON
+                edgeCountsByLabel.add(label, labelMetrics.insertSuccess());
             });
         });
 
+        // Get total counts
+        LoadReport report = LoadReport.collect(summary);
+        long totalVertices = report.vertexInsertSuccess();
+        long totalEdges = report.edgeInsertSuccess();
+        
+        // Add totals to our metadata JSON
+        metadataJson.add("totalVertices", totalVertices);
+        metadataJson.add("totalEdges", totalEdges);
+        metadataJson.add("verticesByLabel", vertexCountsByLabel);
+        metadataJson.add("edgesByLabel", edgeCountsByLabel);
+        
         // Print and log total vertices/edges metrics
         printAndLog(DIVIDE_LINE);
-        printCountReport(LoadReport.collect(summary));
+        printCountReport(report);
         printAndLog(DIVIDE_LINE);
         printMeterReport(summary);
+        
+        // Save metadata to output file
+        saveMetadataToFile(metadataJson, context);
     }
+
+    private static void saveMetadataToFile(JsonObjectBuilder metadata, LoadContext context) {
+        // Determine output directory - use the option if available or default to current directory
+        String outputDir = context.options().output;
+        
+        // Create the output directory if it doesn't exist
+        File directory = new File(outputDir);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        
+        // Create filename
+        String filename = "graph_metadata.json";
+        File outputFile = new File(outputDir, filename);
+        
+        try (FileWriter writer = new FileWriter(outputFile)) {
+            // Build the complete JSON object
+            JsonObject metadataJson = metadata.build();
+            
+            // Extract just the valueMap if it exists
+            JsonObject valueMap = metadataJson.getJsonObject("valueMap");
+            
+            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            
+            if (valueMap != null) {
+                // Write only the valueMap content
+                gson.toJson(valueMap, writer);
+            } else {
+                // Fallback to writing entire metadata if valueMap doesn't exist
+                gson.toJson(metadataJson, writer);
+            }
+            
+            log("Metadata saved to: " + outputFile.getAbsolutePath());
+        } catch (IOException e) {
+            log("Failed to save metadata to file: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 
     private static void printCountReport(LoadReport report) {
         printAndLog("count metrics");

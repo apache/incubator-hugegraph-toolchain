@@ -11,6 +11,7 @@ import os
 import uuid
 import zipfile
 import io
+import humanize
 
 app = FastAPI(title="HugeGraph Loader API")
 
@@ -72,6 +73,7 @@ class HugeGraphLoadResponse(BaseModel):
     output_files: Optional[List[str]] = None
     output_dir: Optional[str] = None
     schema_path: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 def json_to_groovy(schema_json: Union[Dict, SchemaDefinition]) -> str:
@@ -286,6 +288,143 @@ def create_zip_file(files):
     memory_file.seek(0)
     return memory_file
 
+def load_metadata(output_dir):
+    metadata_file = os.path.join(output_dir, "graph_metadata.json")
+    metadata = {}  # Default empty dictionary
+    
+    try:
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+    except FileNotFoundError:
+        print(f"Metadata file not found: {metadata_file}")
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON in metadata file: {e}")
+    except Exception as e:
+        print(f"Unexpected error loading metadata: {e}")
+    
+    return metadata
+
+def save_graph_info(job_id: str, graph_info: dict):
+    """Save graph info to a JSON file for caching"""
+    output_dir = get_job_output_dir(job_id)
+    info_path = os.path.join(output_dir, "graph_info.json")
+    with open(info_path, 'w') as f:
+        json.dump(graph_info, f, indent=2)
+
+def get_directory_size(directory: str) -> int:
+    """Calculate total size of a directory in bytes"""
+    total = 0
+    for dirpath, _, filenames in os.walk(directory):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # Skip if it's a symbolic link
+            if not os.path.islink(fp):
+                total += os.path.getsize(fp)
+    return total
+
+def count_files_in_directory(directory: str) -> int:
+    """Count the number of files in a directory (non-recursively)"""
+    if not os.path.exists(directory):
+        return 0
+    
+    if not os.path.isdir(directory):
+        return 0
+    
+    try:
+        # List all entries in directory that are files (not directories)
+        return len([
+            entry for entry in os.listdir(directory)
+            if os.path.isfile(os.path.join(directory, entry))
+        ])
+    except Exception:
+        return 0
+    
+async def generate_graph_info(job_id: str) -> dict:
+    """Generate the graph info structure from schema and metadata"""
+    output_dir = get_job_output_dir(job_id)
+    dataset_count = max(count_files_in_directory(output_dir) - 2, 0)
+
+    schema_path = os.path.join(output_dir, "schema.json")
+    metadata_path = os.path.join(output_dir, "graph_metadata.json")
+
+    with open(schema_path, 'r') as f:
+        schema = json.load(f)
+    with open(metadata_path, 'r') as f:
+        metadata = json.load(f)
+    
+    # Rest of the generation logic from the original endpoint...
+    total_vertices = metadata.get("totalVertices", {}).get("num", 0)
+    total_edges = metadata.get("totalEdges", {}).get("num", 0)
+
+    # Calculate directory size
+    dir_size = get_directory_size(output_dir)
+    
+    vertices_by_label = metadata.get("verticesByLabel", {})
+    top_entities = [
+        {"count": details["num"], "name": label}
+        for label, details in vertices_by_label.items()
+    ]
+    top_entities.sort(key=lambda x: x["count"], reverse=True)
+    
+    edges_by_label = metadata.get("edgesByLabel", {})
+    top_connections = [
+        {"count": details["num"], "name": label}
+        for label, details in edges_by_label.items()
+    ]
+    top_connections.sort(key=lambda x: x["count"], reverse=True)
+    
+    frequent_relationships = []
+    edge_labels = schema.get("edge_labels", [])
+    for edge in edge_labels:
+        source = edge.get("source_label")
+        target = edge.get("target_label")
+        edge_name = edge.get("name")
+        if source and target and edge_name:
+            count = edges_by_label.get(edge_name, {}).get("num", 0)
+            if count > 0:
+                frequent_relationships.append({
+                    "count": count,
+                    "entities": [source, target],
+                    "relationship": edge_name
+                })
+    frequent_relationships.sort(key=lambda x: x["count"], reverse=True)
+    
+    schema_nodes = []
+    vertex_labels = schema.get("vertex_labels", [])
+    for vertex in vertex_labels:
+        schema_nodes.append({
+            "data": {
+                "id": vertex["name"],
+                "properties": vertex.get("properties", [])
+            }
+        })
+    
+    schema_edges = []
+    for edge in edge_labels:
+        schema_edges.append({
+            "data": {
+                "source": edge["source_label"],
+                "target": edge["target_label"],
+                "possible_connections": [edge["name"]]
+            }
+        })
+    
+    return {
+        "node_count": total_vertices,
+        "edge_count": total_edges,
+        "dataset_count": dataset_count,
+        "data_size": humanize.naturalsize(dir_size),
+        "top_entities": top_entities[:5],
+        "top_connections": top_connections[:5],
+        "frequent_relationships": [
+            {"count": rel["count"], "entities": rel["entities"]}
+            for rel in frequent_relationships[:5]
+        ],
+        "schema": {
+            "nodes": schema_nodes,
+            "edges": schema_edges
+        }
+    }
 
 @app.post("/api/load", response_model=HugeGraphLoadResponse)
 async def load_data(
@@ -362,27 +501,28 @@ async def load_data(
             # Get output files
             output_files = get_output_files(output_dir)
             output_filenames = [os.path.basename(f) for f in output_files]
-            
+            metadata = load_metadata(output_dir)
+
             if result.returncode != 0:
-                return HugeGraphLoadResponse(
-                    job_id=job_id,
-                    status="error",
-                    message=f"HugeGraph loader failed with exit code {result.returncode}",
-                    details={
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "message": f"HugeGraph loader failed with exit code {result.returncode}",
+                        "job_id": job_id,
                         "stdout": result.stdout,
                         "stderr": result.stderr
-                    },
-                    output_files=output_filenames
+                    }
                 )
+                
             if len(output_files) == 0:
-                return HugeGraphLoadResponse(
-                    job_id=job_id,
-                    status="error",
-                    message="No output files generated",
-                    details={
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "message": "No output files generated",
+                        "job_id": job_id,
                         "stdout": result.stdout,
                         "stderr": result.stderr
-                    },
+                    }
                 )
             
             # save the schema json to the output directory
@@ -390,14 +530,17 @@ async def load_data(
             with open(schema_json_path, "w") as f:
                 json.dump(schema_data, f, indent=2)
             output_filenames.append(os.path.basename(schema_json_path))
+            
+            # Generate and save graph info
+            graph_info = await generate_graph_info(job_id) 
+            save_graph_info(job_id, graph_info)
+            output_filenames.append("graph_info.json")
 
             return HugeGraphLoadResponse(
                 job_id=job_id,
                 status="success",
                 message="Graph generated successfully",
-                details={
-                    "stdout": result.stdout
-                },
+                metadata=metadata,
                 output_files=output_filenames,
                 output_dir=output_dir,
                 schema_path=schema_json_path
@@ -483,6 +626,30 @@ async def convert_schema(schema_json: Dict = None):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error converting schema: {str(e)}")
 
+@app.get("/api/graph-info/{job_id}", response_class=JSONResponse)
+async def get_graph_info(job_id: str):
+    """
+    Get comprehensive graph information - uses cached version if available
+    """
+    output_dir = get_job_output_dir(job_id)
+    info_path = os.path.join(output_dir, "graph_info.json")
+    
+    # If cached version exists, return it
+    if os.path.exists(info_path):
+        try:
+            with open(info_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            # If there's an error reading the cached version, regenerate
+            print(f"Error reading cached graph info: {e}")
+    
+    # Otherwise generate fresh and cache it
+    try:
+        graph_info = await generate_graph_info(job_id)
+        save_graph_info(job_id, graph_info)
+        return graph_info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating graph info: {str(e)}")
 
 @app.get("/api/health")
 async def health_check():
