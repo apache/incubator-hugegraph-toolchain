@@ -427,6 +427,38 @@ async def generate_graph_info(job_id: str) -> dict:
         }
     }
 
+def generate_annotation_schema(schema_data: dict) -> dict:
+    """
+    Convert standard schema format to annotation schema format
+    """
+    annotation_schema = {
+        "nodes": [],
+        "edges": []
+    }
+    
+    # Generate nodes from vertex labels
+    for i, vertex in enumerate(schema_data.get("vertex_labels", []), 1):
+        annotation_schema["nodes"].append({
+            "id": str(i),
+            "name": vertex["name"],
+            "category": "entity",  # Default category, can be customized
+            "inputs": [
+                {"label": prop, "name": prop, "inputType": "input"}
+                for prop in vertex.get("properties", [])
+            ]
+        })
+    
+    # Generate edges from edge labels
+    for i, edge in enumerate(schema_data.get("edge_labels", []), 1):
+        annotation_schema["edges"].append({
+            "id": str(i),
+            "source": edge["source_label"],
+            "target": edge["target_label"],
+            "label": edge["name"]
+        })
+    
+    return annotation_schema
+
 @app.post("/api/load", response_model=HugeGraphLoadResponse)
 async def load_data(
     files: List[UploadFile] = File(...),
@@ -680,6 +712,56 @@ async def get_graph_info(job_id: str = None):
         raise HTTPException(
             status_code=500,
             detail=f"Error generating graph info: {str(e)}"
+        )
+
+
+@app.get("/api/schema/{job_id}", response_class=JSONResponse)
+@app.get("/api/schema/", response_class=JSONResponse)
+async def get_annotation_schema(job_id: str = None):
+    """Get annotation schema, optionally auto-detecting latest job"""
+    if not job_id:
+        latest_dir = get_latest_job_dir()
+        if not latest_dir:
+            raise HTTPException(
+                status_code=404,
+                detail="No job directories found"
+            )
+        job_id = os.path.basename(latest_dir)
+    output_dir = get_job_output_dir(job_id)
+    schema_path = os.path.join(output_dir, "schema.json")
+    annotation_path = os.path.join(output_dir, "annotation_schema.json")
+    
+    # Return cached version if exists
+    if os.path.exists(annotation_path):
+        try:
+            with open(annotation_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error reading cached annotation schema: {e}")
+    
+    # Generate fresh if no cache exists
+    try:
+        if not os.path.exists(schema_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Schema file not found for job {job_id}"
+            )
+            
+        with open(schema_path, 'r') as f:
+            schema_data = json.load(f)
+        
+        annotation_schema = generate_annotation_schema(schema_data)
+        
+        # Save for future requests
+        with open(annotation_path, 'w') as f:
+            json.dump(annotation_schema, f, indent=2)
+        
+        return annotation_schema
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating annotation schema: {str(e)}"
         )
 
 @app.get("/api/health")
