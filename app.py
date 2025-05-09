@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import subprocess
 import os
+import glob
 import uuid
 import zipfile
 import io
@@ -626,13 +627,41 @@ async def convert_schema(schema_json: Dict = None):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error converting schema: {str(e)}")
 
+def get_latest_job_dir(output_base_dir: str = BASE_OUTPUT_DIR) -> Optional[str]:
+    """Get the most recently created job directory"""
+    job_dirs = glob.glob(os.path.join(output_base_dir, "*"))
+    if not job_dirs:
+        return None
+    # Sort by creation time (newest first)
+    job_dirs.sort(key=os.path.getmtime, reverse=True)
+    return job_dirs[0]
+
 @app.get("/api/graph-info/{job_id}", response_class=JSONResponse)
-async def get_graph_info(job_id: str):
+@app.get("/api/graph-info/", response_class=JSONResponse)  # Add this route for empty job_id
+async def get_graph_info(job_id: str = None):
     """
-    Get comprehensive graph information - uses cached version if available
+    Get comprehensive graph information:
+    - If job_id provided: uses that specific job's data
+    - If no job_id: uses the most recently created job directory
     """
+    # Handle case where no job_id is provided
+    if not job_id:
+        latest_dir = get_latest_job_dir()
+        if not latest_dir:
+            raise HTTPException(
+                status_code=404,
+                detail="No job directories found in output folder"
+            )
+        job_id = os.path.basename(latest_dir)
+    
     output_dir = get_job_output_dir(job_id)
     info_path = os.path.join(output_dir, "graph_info.json")
+    
+    if not os.path.exists(output_dir):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Job directory not found: {job_id}"
+        )
     
     # If cached version exists, return it
     if os.path.exists(info_path):
@@ -640,7 +669,6 @@ async def get_graph_info(job_id: str):
             with open(info_path, 'r') as f:
                 return json.load(f)
         except Exception as e:
-            # If there's an error reading the cached version, regenerate
             print(f"Error reading cached graph info: {e}")
     
     # Otherwise generate fresh and cache it
@@ -649,7 +677,10 @@ async def get_graph_info(job_id: str):
         save_graph_info(job_id, graph_info)
         return graph_info
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating graph info: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating graph info: {str(e)}"
+        )
 
 @app.get("/api/health")
 async def health_check():
