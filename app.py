@@ -310,6 +310,87 @@ def save_graph_info(job_id: str, graph_info: dict):
     with open(info_path, 'w') as f:
         json.dump(graph_info, f, indent=2)
 
+async def generate_graph_info(job_id: str) -> dict:
+    """Generate the graph info structure from schema and metadata"""
+    output_dir = get_job_output_dir(job_id)
+    schema_path = os.path.join(output_dir, "schema.json")
+    metadata_path = os.path.join(output_dir, "graph_metadata.json")
+    
+    with open(schema_path, 'r') as f:
+        schema = json.load(f)
+    with open(metadata_path, 'r') as f:
+        metadata = json.load(f)
+    
+    # Rest of the generation logic from the original endpoint...
+    total_vertices = metadata.get("totalVertices", {}).get("num", 0)
+    total_edges = metadata.get("totalEdges", {}).get("num", 0)
+    
+    vertices_by_label = metadata.get("verticesByLabel", {})
+    top_entities = [
+        {"count": details["num"], "name": label}
+        for label, details in vertices_by_label.items()
+    ]
+    top_entities.sort(key=lambda x: x["count"], reverse=True)
+    
+    edges_by_label = metadata.get("edgesByLabel", {})
+    top_connections = [
+        {"count": details["num"], "name": label}
+        for label, details in edges_by_label.items()
+    ]
+    top_connections.sort(key=lambda x: x["count"], reverse=True)
+    
+    frequent_relationships = []
+    edge_labels = schema.get("edge_labels", [])
+    for edge in edge_labels:
+        source = edge.get("source_label")
+        target = edge.get("target_label")
+        edge_name = edge.get("name")
+        if source and target and edge_name:
+            count = edges_by_label.get(edge_name, {}).get("num", 0)
+            if count > 0:
+                frequent_relationships.append({
+                    "count": count,
+                    "entities": [source, target],
+                    "relationship": edge_name
+                })
+    frequent_relationships.sort(key=lambda x: x["count"], reverse=True)
+    
+    schema_nodes = []
+    vertex_labels = schema.get("vertex_labels", [])
+    for vertex in vertex_labels:
+        schema_nodes.append({
+            "data": {
+                "id": vertex["name"],
+                "properties": vertex.get("properties", [])
+            }
+        })
+    
+    schema_edges = []
+    for edge in edge_labels:
+        schema_edges.append({
+            "data": {
+                "source": edge["source_label"],
+                "target": edge["target_label"],
+                "possible_connections": [edge["name"]]
+            }
+        })
+    
+    return {
+        "node_count": total_vertices,
+        "edge_count": total_edges,
+        "dataset_count": 1,
+        "data_size": "N/A",
+        "top_entities": top_entities[:5],
+        "top_connections": top_connections[:5],
+        "frequent_relationships": [
+            {"count": rel["count"], "entities": rel["entities"]}
+            for rel in frequent_relationships[:5]
+        ],
+        "schema": {
+            "nodes": schema_nodes,
+            "edges": schema_edges
+        }
+    }
 
 @app.post("/api/load", response_model=HugeGraphLoadResponse)
 async def load_data(
