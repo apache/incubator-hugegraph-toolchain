@@ -496,6 +496,11 @@ async def load_data(
             with open(schema_json_path, "w") as f:
                 json.dump(schema_data, f, indent=2)
             output_filenames.append(os.path.basename(schema_json_path))
+            
+            # Generate and save graph info
+            graph_info = await generate_graph_info(job_id) 
+            save_graph_info(job_id, graph_info)
+            output_filenames.append("graph_info.json")
 
             return HugeGraphLoadResponse(
                 job_id=job_id,
@@ -587,6 +592,30 @@ async def convert_schema(schema_json: Dict = None):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error converting schema: {str(e)}")
 
+@app.get("/api/graph-info/{job_id}", response_class=JSONResponse)
+async def get_graph_info(job_id: str):
+    """
+    Get comprehensive graph information - uses cached version if available
+    """
+    output_dir = get_job_output_dir(job_id)
+    info_path = os.path.join(output_dir, "graph_info.json")
+    
+    # If cached version exists, return it
+    if os.path.exists(info_path):
+        try:
+            with open(info_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            # If there's an error reading the cached version, regenerate
+            print(f"Error reading cached graph info: {e}")
+    
+    # Otherwise generate fresh and cache it
+    try:
+        graph_info = await generate_graph_info(job_id)
+        save_graph_info(job_id, graph_info)
+        return graph_info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating graph info: {str(e)}")
 
 @app.get("/api/health")
 async def health_check():
