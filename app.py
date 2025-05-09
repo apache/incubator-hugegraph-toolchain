@@ -303,6 +303,14 @@ def load_metadata(output_dir):
     
     return metadata
 
+def save_graph_info(job_id: str, graph_info: dict):
+    """Save graph info to a JSON file for caching"""
+    output_dir = get_job_output_dir(job_id)
+    info_path = os.path.join(output_dir, "graph_info.json")
+    with open(info_path, 'w') as f:
+        json.dump(graph_info, f, indent=2)
+
+
 @app.post("/api/load", response_model=HugeGraphLoadResponse)
 async def load_data(
     files: List[UploadFile] = File(...),
@@ -413,9 +421,6 @@ async def load_data(
                 status="success",
                 message="Graph generated successfully",
                 metadata=metadata,
-                details={
-                    "stdout": result.stdout
-                },
                 output_files=output_filenames,
                 output_dir=output_dir,
                 schema_path=schema_json_path
