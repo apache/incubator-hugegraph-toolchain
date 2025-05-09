@@ -11,6 +11,7 @@ import os
 import uuid
 import zipfile
 import io
+import humanize
 
 app = FastAPI(title="HugeGraph Loader API")
 
@@ -310,12 +311,42 @@ def save_graph_info(job_id: str, graph_info: dict):
     with open(info_path, 'w') as f:
         json.dump(graph_info, f, indent=2)
 
+def get_directory_size(directory: str) -> int:
+    """Calculate total size of a directory in bytes"""
+    total = 0
+    for dirpath, _, filenames in os.walk(directory):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # Skip if it's a symbolic link
+            if not os.path.islink(fp):
+                total += os.path.getsize(fp)
+    return total
+
+def count_files_in_directory(directory: str) -> int:
+    """Count the number of files in a directory (non-recursively)"""
+    if not os.path.exists(directory):
+        return 0
+    
+    if not os.path.isdir(directory):
+        return 0
+    
+    try:
+        # List all entries in directory that are files (not directories)
+        return len([
+            entry for entry in os.listdir(directory)
+            if os.path.isfile(os.path.join(directory, entry))
+        ])
+    except Exception:
+        return 0
+    
 async def generate_graph_info(job_id: str) -> dict:
     """Generate the graph info structure from schema and metadata"""
     output_dir = get_job_output_dir(job_id)
+    dataset_count = max(count_files_in_directory(output_dir) - 2, 0)
+
     schema_path = os.path.join(output_dir, "schema.json")
     metadata_path = os.path.join(output_dir, "graph_metadata.json")
-    
+
     with open(schema_path, 'r') as f:
         schema = json.load(f)
     with open(metadata_path, 'r') as f:
@@ -324,6 +355,9 @@ async def generate_graph_info(job_id: str) -> dict:
     # Rest of the generation logic from the original endpoint...
     total_vertices = metadata.get("totalVertices", {}).get("num", 0)
     total_edges = metadata.get("totalEdges", {}).get("num", 0)
+
+    # Calculate directory size
+    dir_size = get_directory_size(output_dir)
     
     vertices_by_label = metadata.get("verticesByLabel", {})
     top_entities = [
@@ -378,8 +412,8 @@ async def generate_graph_info(job_id: str) -> dict:
     return {
         "node_count": total_vertices,
         "edge_count": total_edges,
-        "dataset_count": 1,
-        "data_size": "N/A",
+        "dataset_count": dataset_count,
+        "data_size": humanize.naturalsize(dir_size),
         "top_entities": top_entities[:5],
         "top_connections": top_connections[:5],
         "frequent_relationships": [
