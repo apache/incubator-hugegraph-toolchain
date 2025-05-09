@@ -504,25 +504,25 @@ async def load_data(
             metadata = load_metadata(output_dir)
 
             if result.returncode != 0:
-                return HugeGraphLoadResponse(
-                    job_id=job_id,
-                    status="error",
-                    message=f"HugeGraph loader failed with exit code {result.returncode}",
-                    details={
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "message": f"HugeGraph loader failed with exit code {result.returncode}",
+                        "job_id": job_id,
                         "stdout": result.stdout,
                         "stderr": result.stderr
-                    },
-                    output_files=output_filenames
+                    }
                 )
+                
             if len(output_files) == 0:
-                return HugeGraphLoadResponse(
-                    job_id=job_id,
-                    status="error",
-                    message="No output files generated",
-                    details={
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "message": "No output files generated",
+                        "job_id": job_id,
                         "stdout": result.stdout,
                         "stderr": result.stderr
-                    },
+                    }
                 )
             
             # save the schema json to the output directory
