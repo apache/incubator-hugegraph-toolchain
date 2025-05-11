@@ -20,7 +20,7 @@ on:
 
 jobs:
   client-ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
