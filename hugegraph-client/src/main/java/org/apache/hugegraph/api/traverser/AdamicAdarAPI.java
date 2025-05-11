@@ -62,7 +62,6 @@ public class AdamicAdarAPI extends TraversersAPI {
     }
 
     /**
-     * 20221122 Guangxu Zhang
      * No corresponding interface found in server
      */
     @SuppressWarnings("unchecked")
