@@ -52,6 +52,7 @@ public class JaccardSimilarityAPI extends TraversersAPI {
             return jaccard;
         } else {
             JaccardSimilarity jaccard = new JaccardSimilarity();
+            @SuppressWarnings("unchecked")
             Map<Object, Double> map = result.readObject(Map.class);
             jaccard.setSimilarsMap(map);
             return jaccard;
@@ -72,8 +73,6 @@ public class JaccardSimilarityAPI extends TraversersAPI {
         params.put("label", label);
         params.put("max_degree", degree);
         RestResult result = this.client.get(this.path(), params);
-        @SuppressWarnings("unchecked")
-        //JaccardSimilarity jaccard = result.readObject(JaccardSimilarity.class);
         JaccardSimilarity jaccard = deserializeJaccardSimilarity(result);
         E.checkState(jaccard.similarsMap() != null,
                      "The result doesn't have key '%s'", JACCARD_SIMILARITY);
@@ -84,7 +83,6 @@ public class JaccardSimilarityAPI extends TraversersAPI {
     public JaccardSimilarity post(SingleSourceJaccardSimilarityRequest request) {
         this.client.checkApiVersion("0.58", "jaccard similar");
         RestResult result = this.client.post(this.path(), request);
-        //return result.readObject(JaccardSimilarity.class);
         return deserializeJaccardSimilarity(result);
     }
 }
