@@ -66,14 +66,14 @@ public class ServiceManager {
 
     public OLTPService updateService(OLTPService service) {
         if (service.checkIsK8s()) {
-                // 只更新config即可
+                // Only update config
             this.configAPI.update(service.getName(), service.getConfigs());
-            // 删除服务，重建
+            // Delete and recreate service
             this.delService(service.getName(),
                             "I'm sure to delete the service");
             return addService(service);
         } else {
-            // 手动创建的服务
+            // Manually created service
             this.delService(service.getName(),
                             "I'm sure to delete the service");
             return addService(service);
@@ -89,7 +89,7 @@ public class ServiceManager {
     }
 
     /**
-     * 查看service修改是否需要重启k8s pod，通过判断
+     * Check if service modification requires k8s pod restart by comparing
      * @param service
      * @return
      */

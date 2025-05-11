@@ -61,10 +61,10 @@ public class AdamicAdarAPI extends TraversersAPI {
         return res;
     }
 
-    /*
-    * 20221122 张广旭
-    * 未发现 server 有对应接口
-    * */
+    /**
+     * 20221122 Guangxu Zhang
+     * No corresponding interface found in server
+     */
     @SuppressWarnings("unchecked")
     public Map<Object, Double> post(SingleSourceJaccardSimilarityRequest
                                     request) {
