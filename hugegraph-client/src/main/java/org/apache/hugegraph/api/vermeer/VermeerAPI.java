@@ -83,12 +83,4 @@ public class VermeerAPI extends API {
         RestResult results = this.client.get(this.path());
         return results.readObject(Map.class);
     }
-
-
-
-
-
-
-
-
 }

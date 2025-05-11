@@ -58,7 +58,6 @@ public class TokenApiTest extends AuthApiTest {
         }
     }
 
-    @Ignore("server doesn't support token_expire field to login now")
     @Test
     public void testVerify() {
         User user1 = new User();
