@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Any, Optional, Union
+from datetime import datetime
 import json
 import shutil
 import tempfile
@@ -415,11 +416,12 @@ async def generate_graph_info(job_id: str) -> dict:
         "edge_count": total_edges,
         "dataset_count": dataset_count,
         "data_size": humanize.naturalsize(dir_size),
-        "top_entities": top_entities[:5],
-        "top_connections": top_connections[:5],
+        "imported_on": datetime.now().strftime("%d-%B-%Y"),
+        "top_entities": top_entities,
+        "top_connections": top_connections,
         "frequent_relationships": [
             {"count": rel["count"], "entities": rel["entities"]}
-            for rel in frequent_relationships[:5]
+            for rel in frequent_relationships
         ],
         "schema": {
             "nodes": schema_nodes,
@@ -439,7 +441,7 @@ def generate_annotation_schema(schema_data: dict) -> dict:
     # Generate nodes from vertex labels
     for i, vertex in enumerate(schema_data.get("vertex_labels", []), 1):
         annotation_schema["nodes"].append({
-            "id": str(i),
+            "id": vertex["name"],
             "name": vertex["name"],
             "category": "entity",  # Default category, can be customized
             "inputs": [
