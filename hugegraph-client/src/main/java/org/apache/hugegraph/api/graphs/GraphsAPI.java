@@ -150,7 +150,7 @@ public class GraphsAPI extends API {
                      "but got %s", name, response);
         String status = response.get(name);
         E.checkState(UPDATED.equals(status),
-                     "Server status must be %s, but got '%s'", status);
+                     "Server status must be '%s', but got '%s'", UPDATED, status);
         return response;
     }
 
@@ -174,7 +174,7 @@ public class GraphsAPI extends API {
                      "but got %s", name, response);
         String status = response.get(name);
         E.checkState(RELOADED.equals(status),
-                     "Graph %s status must be %s, but got '%s'", name, status);
+                     "Graph %s status must be %s, but got '%s'", name, RELOADED,status);
         return response;
     }
 
