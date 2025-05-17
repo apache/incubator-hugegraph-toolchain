@@ -18,14 +18,12 @@
 package org.apache.hugegraph.api.traverser;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 
 public class RingsAPI extends TraversersAPI {
@@ -65,10 +63,5 @@ public class RingsAPI extends TraversersAPI {
         params.put("limit", limit);
         RestResult result = this.client.get(this.path(), params);
         return result.readObject(PathWithMeasure.class);
-        //if (result.content().contains("measure")) {
-        //    return result.readObject(PathWithMeasure.class);
-        //} else {
-        //
-        //}
     }
 }

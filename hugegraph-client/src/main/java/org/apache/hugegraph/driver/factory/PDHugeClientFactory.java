@@ -63,9 +63,9 @@ public class PDHugeClientFactory {
         this.type = type != null ? RouteType.valueOf(type) : RouteType.BOTH;
 
         PDConfig pdConfig = PDConfig.of(pdAddrs);
-        //pdConfig.setAuthority(NAME, TOKEN);
+        // TODO: Not suport now: pdConfig.setAuthority(NAME, TOKEN);
         this.client = DiscoveryClientImpl.newBuilder()
-                                                    //.setPdConfig(pdConfig)
+                                                    // TODO: Not suport now: .setPdConfig(pdConfig)
                                                     .setCenterAddress(pdAddrs)
                                                     .build();
     }

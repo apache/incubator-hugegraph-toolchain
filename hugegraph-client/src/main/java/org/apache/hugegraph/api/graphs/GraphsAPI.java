@@ -127,8 +127,15 @@ public class GraphsAPI extends API {
         return result.readObject(Map.class);
     }
 
-    // TODO(@Thespcia): in inner version, called by clear(String name) or
-    //  clear(String name, boolean clearSchema)
+    public void clear(String graph) {
+        this.clear(graph, "I'm sure to delete all data");
+    }
+
+    // TODO: clearSchema is not supported yet, will always be true
+    public void clear(String graph, boolean clearSchema) {
+        this.clear(graph, "I'm sure to delete all data");
+    }
+
     public void clear(String graph, String message) {
         this.client.delete(joinPath(this.path(), graph, CLEAR),
                            ImmutableMap.of(CONFIRM_MESSAGE, message));
@@ -150,13 +157,15 @@ public class GraphsAPI extends API {
                      "but got %s", name, response);
         String status = response.get(name);
         E.checkState(UPDATED.equals(status),
-                     "Server status must be %s, but got '%s'", status);
+                     "Server status must be '%s', but got '%s'", UPDATED, status);
         return response;
     }
 
-    // TODO(@Thespcia): in inner version, this method called delete, and doesn't need confirm
-    //  message.
-    // community version server don't support now(3/11/2025), so we still need to keep this format.
+    // wrapper for inner server
+    public void delete(String graph) {
+        this.drop(graph, "I'm sure to drop the graph");
+    }
+
     public void drop(String graph, String message) {
         this.client.checkApiVersion("0.67", "dynamic graph delete");
         this.client.delete(joinPath(this.path(), graph),
@@ -174,7 +183,7 @@ public class GraphsAPI extends API {
                      "but got %s", name, response);
         String status = response.get(name);
         E.checkState(RELOADED.equals(status),
-                     "Graph %s status must be %s, but got '%s'", name, status);
+                     "Graph %s status must be %s, but got '%s'", name, RELOADED,status);
         return response;
     }
 

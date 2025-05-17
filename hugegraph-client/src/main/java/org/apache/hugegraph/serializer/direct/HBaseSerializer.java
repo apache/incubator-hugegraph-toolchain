@@ -60,7 +60,7 @@ public class HBaseSerializer {
             buffer.writeShort(getPartition(HugeType.EDGE, IdGenerator.of(edge.sourceId())));
             buffer.writeId(IdGenerator.of(edge.sourceId()));
             buffer.write(HugeType.EDGE_OUT.code());
-            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); //出现错误
+            buffer.writeId(IdGenerator.of(graphSchema.getEdgeLabel(e.label()).id())); // Error occurred
             buffer.writeStringWithEnding("");
             buffer.writeId(IdGenerator.of(edge.targetId()));
             array = buffer.bytes();

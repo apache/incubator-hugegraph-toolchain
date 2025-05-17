@@ -41,7 +41,7 @@ public class CountAPI extends TraversersAPI {
     public CountResponse post(CountRequest request) {
         this.client.checkApiVersion("0.55", "count");
         RestResult result = this.client.post(this.path(), request);
-        // TODO: temp implementation
+        // old version response doesn't have key 'countMap'
         if (!result.content().contains("countMap")) {
             @SuppressWarnings("unchecked")
             Map<String, Number> countMap = result.readObject(Map.class);

@@ -20,13 +20,13 @@ on:
 
 jobs:
   client-ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       USE_STAGE: 'true' # Whether to include the stage repository.
       TRAVIS_DIR: hugegraph-client/assembly/travis
       # TODO: replace it with the (latest - n) commit id (n >= 15)
-      # hugegraph commit date: 2024-12-09
-      COMMIT_ID: f838897
+      # hugegraph commit date: 2025-05-05
+      COMMIT_ID: 8c1ee71
     strategy:
       fail-fast: false
       matrix:
