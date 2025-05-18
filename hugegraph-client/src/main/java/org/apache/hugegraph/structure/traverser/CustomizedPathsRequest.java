@@ -73,9 +73,9 @@ public class CustomizedPathsRequest {
 
     public static class Builder {
 
-        private CustomizedPathsRequest request;
-        private VerticesArgs.Builder sourcesBuilder;
-        private List<Step.Builder> stepBuilders;
+        private final CustomizedPathsRequest request;
+        private final VerticesArgs.Builder sourcesBuilder;
+        private final List<Step.Builder> stepBuilders;
 
         private Builder() {
             this.request = new CustomizedPathsRequest();
@@ -174,7 +174,7 @@ public class CustomizedPathsRequest {
 
         public static class Builder {
 
-            private Step step;
+            private final Step step;
 
             private Builder() {
                 this.step = new Step();

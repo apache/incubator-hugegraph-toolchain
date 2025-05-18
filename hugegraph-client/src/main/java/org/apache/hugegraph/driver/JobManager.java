@@ -26,8 +26,8 @@ import org.apache.hugegraph.client.RestClient;
 
 public class JobManager {
 
-    private RebuildAPI rebuildAPI;
-    private TaskAPI taskAPI;
+    private final RebuildAPI rebuildAPI;
+    private final TaskAPI taskAPI;
 
     public JobManager(RestClient client, String graphSpace, String graph) {
         this.rebuildAPI = new RebuildAPI(client, graphSpace, graph);

@@ -60,10 +60,10 @@ public class PathsRequest {
 
     public static class Builder {
 
-        private PathsRequest request;
+        private final PathsRequest request;
         private EdgeStep.Builder stepBuilder;
-        private VerticesArgs.Builder sourcesBuilder;
-        private VerticesArgs.Builder targetsBuilder;
+        private final VerticesArgs.Builder sourcesBuilder;
+        private final VerticesArgs.Builder targetsBuilder;
 
         private Builder() {
             this.request = new PathsRequest();

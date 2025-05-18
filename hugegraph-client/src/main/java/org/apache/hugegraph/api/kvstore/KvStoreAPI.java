@@ -37,7 +37,7 @@ public class KvStoreAPI extends API {
     public KvStoreAPI(RestClient client) {
         super(client);
         this.path(PATH);
-        this.batchPath = String.join("/", this.path(), "batch");
+        batchPath = String.join("/", this.path(), "batch");
     }
 
     @Override
@@ -65,7 +65,7 @@ public class KvStoreAPI extends API {
     }
 
     public Map<String, Object> setBatch(Map<String, Object> data) {
-        RestResult result = this.client.post(this.batchPath, data);
+        RestResult result = this.client.post(batchPath, data);
         return result.readObject(Map.class);
     }
 }

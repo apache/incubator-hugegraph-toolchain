@@ -26,7 +26,7 @@ import org.apache.hugegraph.structure.Task;
 
 public class TaskManager {
 
-    private TaskAPI taskAPI;
+    private final TaskAPI taskAPI;
 
     public TaskManager(RestClient client, String graphSpace, String graph) {
         this.taskAPI = new TaskAPI(client, graphSpace, graph);

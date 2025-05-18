@@ -25,6 +25,7 @@ import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SameNeighborsBatchRequest {
@@ -56,19 +57,19 @@ public class SameNeighborsBatchRequest {
     public String toString() {
 
         return String.format("SameNeighborsBatchRequest{vertex_list=%s,direction=%s,label=%s," +
-                        "max_degree=%d,limit=%d", this.vertexList, this.direction,
-                this.label, this.maxDegree, this.limit);
+                             "max_degree=%d,limit=%d", this.vertexList, this.direction,
+                             this.label, this.maxDegree, this.limit);
     }
 
     public static class Builder {
 
-        private SameNeighborsBatchRequest request;
+        private final SameNeighborsBatchRequest request;
 
         private Builder() {
             this.request = new SameNeighborsBatchRequest();
         }
 
-        public Builder vertex(Object vertexId, Object otherId ) {
+        public Builder vertex(Object vertexId, Object otherId) {
             List<Object> vertexPair = new ArrayList<>();
             vertexPair.add(vertexId);
             vertexPair.add(otherId);

@@ -80,7 +80,6 @@ public class KneighborApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.BOTH);
         builder.maxDepth(1);
         builder.withVertex(true);
-        ;
         KneighborRequest request = builder.build();
 
         Kneighbor kneighborResult = kneighborAPI.post(request);

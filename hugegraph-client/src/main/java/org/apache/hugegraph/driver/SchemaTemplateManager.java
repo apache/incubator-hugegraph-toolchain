@@ -24,9 +24,10 @@ import org.apache.hugegraph.api.space.SchemaTemplateAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.space.SchemaTemplate;
 
-
 public class SchemaTemplateManager {
-    private SchemaTemplateAPI schemaTemplateAPI;
+
+    private final SchemaTemplateAPI schemaTemplateAPI;
+
     public SchemaTemplateManager(RestClient client, String graphSpace) {
         this.schemaTemplateAPI = new SchemaTemplateAPI(client, graphSpace);
     }

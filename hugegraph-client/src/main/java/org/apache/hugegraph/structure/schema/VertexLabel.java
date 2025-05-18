@@ -129,8 +129,8 @@ public class VertexLabel extends SchemaLabel {
 
     public static class BuilderImpl implements Builder {
 
-        private VertexLabel vertexLabel;
-        private SchemaManager manager;
+        private final VertexLabel vertexLabel;
+        private final SchemaManager manager;
 
         public BuilderImpl(String name, SchemaManager manager) {
             this.vertexLabel = new VertexLabel(name);

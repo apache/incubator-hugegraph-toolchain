@@ -68,7 +68,7 @@ public class KneighborRequest {
 
     public static class Builder {
 
-        private KneighborRequest request;
+        private final KneighborRequest request;
         private Steps.Builder stepsBuilder;
 
         private Builder() {

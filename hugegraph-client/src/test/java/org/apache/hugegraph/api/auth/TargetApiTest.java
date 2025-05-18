@@ -18,6 +18,7 @@
 package org.apache.hugegraph.api.auth;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.hugegraph.exception.ServerException;
@@ -76,12 +77,12 @@ public class TargetApiTest extends AuthApiTest {
         Assert.assertEquals("gremlin", result1.name());
         Assert.assertEquals("hugegraph", result1.graph());
         Assert.assertEquals("127.0.0.1:8080", result1.url());
-        Assert.assertEquals(Arrays.asList(gremlin), result1.resources());
+        Assert.assertEquals(Collections.singletonList(gremlin), result1.resources());
 
         Assert.assertEquals("task", result2.name());
         Assert.assertEquals("hugegraph2", result2.graph());
         Assert.assertEquals("127.0.0.1:8081", result2.url());
-        Assert.assertEquals(Arrays.asList(task), result2.resources());
+        Assert.assertEquals(Collections.singletonList(task), result2.resources());
 
         Assert.assertThrows(ServerException.class, () -> {
             api.create(target1);

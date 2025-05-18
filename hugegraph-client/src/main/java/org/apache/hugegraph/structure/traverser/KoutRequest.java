@@ -80,12 +80,12 @@ public class KoutRequest {
 
     public static class Builder {
 
-        private KoutRequest request;
+        private final KoutRequest request;
         private Steps.Builder stepsBuilder;
 
         private Builder() {
-                this.request = new KoutRequest();
-                this.stepsBuilder = Steps.builder();
+            this.request = new KoutRequest();
+            this.stepsBuilder = Steps.builder();
         }
 
         public Builder source(Object source) {

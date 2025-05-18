@@ -23,6 +23,7 @@ import org.apache.hugegraph.util.E;
 
 import org.apache.hugegraph.api.traverser.TraversersAPI;
 import org.apache.hugegraph.structure.constant.Traverser;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class EgonetRequest {
@@ -71,7 +72,7 @@ public class EgonetRequest {
 
     public static class Builder {
 
-        private EgonetRequest request;
+        private final EgonetRequest request;
         private Steps.Builder stepsBuilder;
 
         private Builder() {

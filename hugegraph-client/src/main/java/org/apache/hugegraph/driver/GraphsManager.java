@@ -32,7 +32,7 @@ import org.apache.hugegraph.client.RestClient;
 
 public class GraphsManager {
 
-    private GraphsAPI graphsAPI;
+    private final GraphsAPI graphsAPI;
 
     public GraphsManager(RestClient client, String graphSpace) {
         this.graphsAPI = new GraphsAPI(client, graphSpace);
