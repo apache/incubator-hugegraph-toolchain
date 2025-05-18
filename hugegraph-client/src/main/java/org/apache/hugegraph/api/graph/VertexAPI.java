@@ -82,6 +82,13 @@ public class VertexAPI extends GraphAPI {
         return (int) size;
     }
 
+    public Vertex update(String vertexid, Vertex vertex) {
+        String id = GraphAPI.formatVertexId(vertexid);
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(this.path(), id, vertex, params);
+        return result.readObject(Vertex.class);
+    }
+
     public Vertex append(Vertex vertex) {
         String id = GraphAPI.formatVertexId(vertex.id());
         Map<String, Object> params = ImmutableMap.of("action", "append");

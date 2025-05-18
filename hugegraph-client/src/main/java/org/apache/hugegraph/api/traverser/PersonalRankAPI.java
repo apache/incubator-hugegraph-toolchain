@@ -17,18 +17,20 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.util.E;
+
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.structure.constant.Traverser;
+import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PersonalRankAPI extends TraversersAPI {
 
-    public PersonalRankAPI(RestClient client, String graph) {
-        super(client, graph);
+    public PersonalRankAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -36,9 +38,18 @@ public class PersonalRankAPI extends TraversersAPI {
         return "personalrank";
     }
 
-    public Ranks post(Request request) {
+    public RanksWithMeasure post(Request request) {
         RestResult result = this.client.post(this.path(), request);
-        return result.readObject(Ranks.class);
+        // to compatible with the old version, the result may be Ranks or RanksWithMeasure
+        // so we need to check the content of result to decide which class to use
+        if (result.content().contains("measure")) {
+            return result.readObject(RanksWithMeasure.class);
+        } else {
+            Ranks personalRanks = result.readObject(Ranks.class);
+            RanksWithMeasure ranksWithMeasure = new RanksWithMeasure();
+            ranksWithMeasure.setPersonalRank(personalRanks);
+            return ranksWithMeasure;
+        }
     }
 
     public static class Request {
@@ -52,7 +63,7 @@ public class PersonalRankAPI extends TraversersAPI {
         @JsonProperty("max_degree")
         public long degree = Traverser.DEFAULT_MAX_DEGREE;
         @JsonProperty("limit")
-        private int limit = Traverser.DEFAULT_LIMIT;
+        private long limit = Traverser.DEFAULT_LIMIT;
         @JsonProperty("max_depth")
         private int maxDepth = 5;
         @JsonProperty("with_label")
@@ -82,7 +93,7 @@ public class PersonalRankAPI extends TraversersAPI {
 
         public static class Builder {
 
-            private Request request;
+            private final Request request;
 
             private Builder() {
                 this.request = new Request();
@@ -114,7 +125,7 @@ public class PersonalRankAPI extends TraversersAPI {
                 return this;
             }
 
-            public Builder limit(int limit) {
+            public Builder limit(long limit) {
                 TraversersAPI.checkLimit(limit);
                 this.request.limit = limit;
                 return this;

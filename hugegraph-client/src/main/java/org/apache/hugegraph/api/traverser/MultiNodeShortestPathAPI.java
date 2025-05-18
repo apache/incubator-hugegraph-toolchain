@@ -24,8 +24,8 @@ import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 
 public class MultiNodeShortestPathAPI extends TraversersAPI {
 
-    public MultiNodeShortestPathAPI(RestClient client, String graph) {
-        super(client, graph);
+    public MultiNodeShortestPathAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

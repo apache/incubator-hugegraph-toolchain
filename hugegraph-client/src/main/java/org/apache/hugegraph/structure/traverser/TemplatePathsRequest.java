@@ -72,10 +72,10 @@ public class TemplatePathsRequest {
 
     public static class Builder {
 
-        private TemplatePathsRequest request;
-        private VerticesArgs.Builder sourcesBuilder;
-        private VerticesArgs.Builder targetsBuilder;
-        private List<RepeatEdgeStep.Builder> stepBuilders;
+        private final TemplatePathsRequest request;
+        private final VerticesArgs.Builder sourcesBuilder;
+        private final VerticesArgs.Builder targetsBuilder;
+        private final List<RepeatEdgeStep.Builder> stepBuilders;
 
         private Builder() {
             this.request = new TemplatePathsRequest();

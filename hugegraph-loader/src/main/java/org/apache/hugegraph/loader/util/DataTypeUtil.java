@@ -165,8 +165,8 @@ public final class DataTypeUtil {
                 break;
             case JDBC:
                 /*
-                 * Warn: it uses system default timezone,
-                 * should we think a better way to compatible differ timezone people?
+                 * Warn: it uses the system default timezone,
+                 * should we think of a better way to compatible differ timezone people?
                  */
                 long timestamp = 0L;
                 if (value instanceof Date) {

@@ -30,13 +30,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Target extends AuthElement {
 
     @JsonProperty("target_name")
-    private String name;
+    protected String name;
+    @JsonProperty("graphspace")
+    protected String graphSpace;
     @JsonProperty("target_graph")
-    private String graph;
+    protected String graph;
     @JsonProperty("target_url")
-    private String url;
+    protected String url;
+    @JsonProperty("target_description")
+    protected String description;
     @JsonProperty("target_resources")
-    private List<HugeResource> resources;
+    protected List<HugeResource> resources;
 
     @JsonProperty("target_create")
     @JsonFormat(pattern = DATE_FORMAT)
@@ -75,6 +79,14 @@ public class Target extends AuthElement {
         this.name = name;
     }
 
+    public String graphSpace() {
+        return this.graphSpace;
+    }
+
+    public void graphSpace(String graphSpace) {
+        this.graphSpace = graphSpace;
+    }
+
     public String graph() {
         return this.graph;
     }
@@ -89,6 +101,14 @@ public class Target extends AuthElement {
 
     public void url(String url) {
         this.url = url;
+    }
+
+    public String description() {
+        return this.description;
+    }
+
+    public void description(String description) {
+        this.description = description;
     }
 
     public HugeResource resource() {

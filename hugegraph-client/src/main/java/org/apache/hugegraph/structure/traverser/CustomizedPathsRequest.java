@@ -42,9 +42,9 @@ public class CustomizedPathsRequest {
     @JsonProperty("capacity")
     private long capacity;
     @JsonProperty("limit")
-    private int limit;
+    private long limit;
     @JsonProperty("with_vertex")
-    private boolean withVertex;
+    public boolean withVertex;
     @JsonProperty("with_edge")
     private boolean withEdge;
 
@@ -73,9 +73,9 @@ public class CustomizedPathsRequest {
 
     public static class Builder {
 
-        private CustomizedPathsRequest request;
-        private VerticesArgs.Builder sourcesBuilder;
-        private List<Step.Builder> stepBuilders;
+        private final CustomizedPathsRequest request;
+        private final VerticesArgs.Builder sourcesBuilder;
+        private final List<Step.Builder> stepBuilders;
 
         private Builder() {
             this.request = new CustomizedPathsRequest();
@@ -104,7 +104,7 @@ public class CustomizedPathsRequest {
             return this;
         }
 
-        public Builder limit(int limit) {
+        public Builder limit(long limit) {
             TraversersAPI.checkLimit(limit);
             this.request.limit = limit;
             return this;
@@ -174,7 +174,7 @@ public class CustomizedPathsRequest {
 
         public static class Builder {
 
-            private Step step;
+            private final Step step;
 
             private Builder() {
                 this.step = new Step();

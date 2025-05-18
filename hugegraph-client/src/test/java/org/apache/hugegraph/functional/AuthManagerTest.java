@@ -47,6 +47,7 @@ public class AuthManagerTest extends BaseFuncTest {
     @Override
     @Before
     public void setup() {
+        super.setup();
     }
 
     @Override

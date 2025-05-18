@@ -63,8 +63,19 @@ public class RestClient extends AbstractRestClient {
               maxConnsPerRoute, trustStoreFile, trustStorePassword);
     }
 
+    public RestClient(String url, String token, int timeout) {
+        this(url, RestClientConfig.builder().token(token).timeout(timeout * SECOND).build());
+    }
+
     public RestClient(String url, RestClientConfig config) {
         super(url, config);
+    }
+
+    public RestClient(String url, String token, int timeout, int maxConns,
+                      int maxConnsPerRoute, String trustStoreFile,
+                      String trustStorePassword) {
+        super(url, token, timeout * SECOND, maxConns,
+              maxConnsPerRoute, trustStoreFile, trustStorePassword);
     }
 
     private static String removeDefaultGsPrefix(String path) {

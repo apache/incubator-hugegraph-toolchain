@@ -54,7 +54,7 @@ public final class BytesBuffer extends OutputStream {
     public static final byte STRING_ENDING_BYTE = (byte) 0x00;
     public static final byte STRING_ENDING_BYTE_FF = (byte) 0xff;
     public static final int STRING_LEN_MAX = UINT16_MAX;
-    public static final long BLOB_LEN_MAX = 1 * Bytes.GB;
+    public static final long BLOB_LEN_MAX = Bytes.GB;
 
     // The value must be in range [8, ID_LEN_MAX]
     public static final int INDEX_HASH_ID_THRESHOLD = 32;
@@ -667,7 +667,7 @@ public final class BytesBuffer extends OutputStream {
                 value |= this.readUInt16();
                 break;
             case 2:
-                value |= this.readUInt8() << 16 | this.readUInt16();
+                value |= (long) this.readUInt8() << 16 | this.readUInt16();
                 break;
             case 3:
                 value |= this.readUInt32();
