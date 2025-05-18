@@ -17,7 +17,6 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,9 +55,9 @@ public class KoutApiTest extends TraverserApiTest {
 
         long softwareId = vertexLabelAPI.get("software").id();
 
-         Map<String, Object> koutRes = koutAPI.get(markoId, Direction.OUT,
-                                                   null, 2, true,
-                                                   -1L, -1L, -1L);
+        Map<String, Object> koutRes = koutAPI.get(markoId, Direction.OUT,
+                                                  null, 2, true,
+                                                  -1L, -1L, -1L);
         List<Object> vertices = (List<Object>) koutRes.get("vertices");
         Assert.assertEquals(1, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":ripple"));
@@ -71,7 +70,7 @@ public class KoutApiTest extends TraverserApiTest {
         long softwareId = vertexLabelAPI.get("software").id();
 
         Map<String, Object> koutRes = koutAPI.get(markoId, Direction.OUT, null,
-                                            2, false, -1L, -1L, -1L);
+                                                  2, false, -1L, -1L, -1L);
         List<Object> vertices = (List<Object>) koutRes.get("vertices");
         Assert.assertEquals(2, vertices.size());
         Assert.assertTrue(vertices.contains(softwareId + ":lop"));
@@ -130,7 +129,7 @@ public class KoutApiTest extends TraverserApiTest {
 
         Assert.assertThrows(ServerException.class, () -> {
             koutAPI.get(markoId, Direction.BOTH, null,
-                    2, false, -1L, 1L, -1L);
+                        2, false, -1L, 1L, -1L);
         }, e -> {
             String expect = "Capacity can't be less than limit, " +
                             "but got capacity '1' and limit '-1'";
@@ -522,7 +521,8 @@ public class KoutApiTest extends TraverserApiTest {
         builder.steps()
                .direction(Direction.BOTH)
                .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
-                                                                                  "-01 00:00:00\")")));
+                                                                                  "-01 00:00:00" +
+                                                                                  "\")")));
         builder.maxDepth(1);
         builder.withVertex(true);
         KoutRequest request = builder.build();
@@ -537,8 +537,9 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-                       .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
-                                                                                  "-01 00:00:00\")")));
+               .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                  "-01 00:00:00" +
+                                                                                  "\")")));
 
         builder.maxDepth(2);
         builder.withVertex(true);
@@ -554,8 +555,9 @@ public class KoutApiTest extends TraverserApiTest {
         builder.source(markoId);
         builder.steps()
                .direction(Direction.BOTH)
-                .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
-                                                                                     "-01 00:00:00\")")));
+               .edgeSteps(new Steps.StepEntity("created", ImmutableMap.of("date", "P.gt(\"2014-01" +
+                                                                                  "-01 00:00:00" +
+                                                                                  "\")")));
         builder.maxDepth(3);
         builder.withVertex(true);
         request = builder.build();

@@ -19,7 +19,6 @@ package org.apache.hugegraph.driver;
 
 import java.io.Closeable;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.ClientException;
 import org.apache.hugegraph.rest.RestClientConfig;
@@ -154,7 +153,6 @@ public class HugeClient implements Closeable {
         this.whiteIpListManager = new WhiteIpListManager(client);
         this.vermeerManager = new VermeerManager(client);
 
-
         if (!Strings.isNullOrEmpty(graph)) {
             this.schema = new SchemaManager(client, graphSpace, graph);
             this.graph = new GraphManager(client, graphSpace, graph);
@@ -239,11 +237,11 @@ public class HugeClient implements Closeable {
         return this.graphSpace;
     }
 
-    public WhiteIpListManager whiteIpListManager(){
+    public WhiteIpListManager whiteIpListManager() {
         return this.whiteIpListManager;
     }
 
-    public VermeerManager vermeer(){
+    public VermeerManager vermeer() {
         return this.vermeerManager;
     }
 

@@ -17,8 +17,6 @@
 
 package org.apache.hugegraph.api.traverser;
 
-import static org.apache.hugegraph.structure.constant.Traverser.DEFAULT_PAGE_LIMIT;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
