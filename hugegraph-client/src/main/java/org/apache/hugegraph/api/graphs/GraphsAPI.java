@@ -32,11 +32,10 @@ import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.GraphMode;
 import org.apache.hugegraph.structure.constant.GraphReadMode;
 import org.apache.hugegraph.structure.constant.HugeType;
-
-import com.google.common.collect.ImmutableMap;
-
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.JsonUtil;
+
+import com.google.common.collect.ImmutableMap;
 
 public class GraphsAPI extends API {
 
@@ -103,7 +102,7 @@ public class GraphsAPI extends API {
         RestResult result = this.client.get(profilePath, params);
         List<Map> results = result.readList(Map.class);
         List<Map<String, Object>> profiles = new ArrayList<>();
-        for (Object entry: results) {
+        for (Object entry : results) {
             profiles.add(JsonUtil.fromJson(JsonUtil.toJson(entry), Map.class));
         }
         return profiles;
@@ -121,7 +120,7 @@ public class GraphsAPI extends API {
         return result.readObject(Map.class);
     }
 
-    public Map<String, String> getDefault () {
+    public Map<String, String> getDefault() {
         String defaultPath = joinPath(this.path(), "default");
         RestResult result = this.client.get(defaultPath);
         return result.readObject(Map.class);
@@ -145,11 +144,9 @@ public class GraphsAPI extends API {
         Map<String, String> actionMap = new HashMap<>();
         actionMap.put("name", name);
         actionMap.put("nickname", nickname);
-        RestResult result = this.client.put(this.path(),
-                                            name,
+        RestResult result = this.client.put(this.path(), name,
                                             ImmutableMap.of("action", "update",
-                                                            "update",
-                                                            actionMap));
+                                                            "update", actionMap));
         Map<String, String> response = result.readObject(Map.class);
 
         E.checkState(response.size() == 1 && response.containsKey(name),
@@ -174,8 +171,7 @@ public class GraphsAPI extends API {
 
     public Map<String, String> reload(String name) {
         RestResult result = this.client.put(this.path(), name,
-                                            ImmutableMap.of("action",
-                                                            "reload"));
+                                            ImmutableMap.of("action", "reload"));
         Map<String, String> response = result.readObject(Map.class);
 
         E.checkState(response.size() == 1 && response.containsKey(name),
@@ -183,7 +179,7 @@ public class GraphsAPI extends API {
                      "but got %s", name, response);
         String status = response.get(name);
         E.checkState(RELOADED.equals(status),
-                     "Graph %s status must be %s, but got '%s'", name, RELOADED,status);
+                     "Graph %s status must be %s, but got '%s'", name, RELOADED, status);
         return response;
     }
 
@@ -197,7 +193,7 @@ public class GraphsAPI extends API {
                      "but got %s", GRAPHS, response);
         String status = response.get(GRAPHS);
         E.checkState(RELOADED.equals(status),
-                     "Server status must be %s, but got '%s'", status);
+                     "Server status must be '%s', but got '%s'", RELOADED, status);
         return response;
     }
 
@@ -248,8 +244,8 @@ public class GraphsAPI extends API {
     }
 
     public String clone(String graph, Map<String, Object> body) {
-        RestResult result =  this.client.post(joinPath(this.path(), graph,
-                                                       "clone"), body);
+        RestResult result = this.client.post(joinPath(this.path(), graph,
+                                                      "clone"), body);
         Map<String, Object> resultMap = result.readObject(Map.class);
         String taskId = (String) resultMap.get("task_id");
         return taskId;
