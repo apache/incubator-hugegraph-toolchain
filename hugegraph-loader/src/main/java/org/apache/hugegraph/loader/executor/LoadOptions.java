@@ -42,6 +42,7 @@ public class LoadOptions implements Serializable {
     public static final String HTTPS_SCHEMA = "https";
     public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
+    private static final int MINIMUM_REQUIRED_ARGS = 3;
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
@@ -55,8 +56,8 @@ public class LoadOptions implements Serializable {
 
     @Parameter(names = {"-g", "--graph"}, 
                arity = 1,
-               description = "The namespace of the graph to load into (default: hugegraph)")
-    public String graph = "hugegraph";
+               description = "The namespace of the graph to load into (default: DEFAULT)")
+    public String graph = "DEFAULT";
 
     @Parameter(names = {"-h", "-i", "--host"}, arity = 1,
                validateWith = {UrlValidator.class},
@@ -255,11 +256,10 @@ public class LoadOptions implements Serializable {
         JCommander commander = JCommander.newBuilder()
                                          .addObject(options)
                                          .build();
-        commander.parse(args);
         try {
             commander.parse(args);
             // Check param < 3 (required minimum num)
-            if (args.length < 3) {
+            if (args.length < MINIMUM_REQUIRED_ARGS) {
                 LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
             }
         } catch (ParameterException e) {
