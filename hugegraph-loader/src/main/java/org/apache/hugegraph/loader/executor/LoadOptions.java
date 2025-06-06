@@ -54,16 +54,20 @@ public class LoadOptions implements Serializable {
                description = "The schema file path which to create manually")
     public String schema;
 
+    @Parameter(names = {"-gs", "--graphspace"}, 
+    arity = 1,
+    description = "The namespace of the graphspace, if not specified, DEFAULT will be used")
+    public String graphspace = "DEFAULT";
+
     @Parameter(names = {"-g", "--graph"}, 
                arity = 1,
-               description = "The namespace of the graph to load into (default: DEFAULT)")
-    public String graph = "DEFAULT";
+               description = "The namespace of the graph to load into, if not specified, hugegraph will be used")
+    public String graph = "hugegraph";
 
     @Parameter(names = {"-h", "-i", "--host"}, arity = 1,
                validateWith = {UrlValidator.class},
                description = "The host/IP of HugeGraphServer")
     public String host = "localhost";
-
 
     @Parameter(names = {"-p", "--port"}, arity = 1,
                validateWith = {PositiveValidator.class},
