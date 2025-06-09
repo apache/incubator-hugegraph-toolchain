@@ -55,13 +55,13 @@ public class LoadOptions implements Serializable {
     public String schema;
 
     @Parameter(names = {"-gs", "--graphspace"}, 
-    arity = 1,
-    description = "The namespace of the graphspace, if not specified, DEFAULT will be used")
+               arity = 1,
+               description = "The graphspace value, if not specified, DEFAULT will be used")
     public String graphspace = "DEFAULT";
 
     @Parameter(names = {"-g", "--graph"}, 
                arity = 1,
-               description = "The namespace of the graph to load into, if not specified, hugegraph will be used")
+               description = "The name of the graph to load into, if not specified, hugegraph will be used")
     public String graph = "hugegraph";
 
     @Parameter(names = {"-h", "-i", "--host"}, arity = 1,
