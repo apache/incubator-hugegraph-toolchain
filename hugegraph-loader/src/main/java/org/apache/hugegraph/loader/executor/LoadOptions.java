@@ -42,6 +42,7 @@ public class LoadOptions implements Serializable {
     public static final String HTTPS_SCHEMA = "https";
     public static final String HTTP_SCHEMA = "http";
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
+    private static final int MINIMUM_REQUIRED_ARGS = 3;
 
     @Parameter(names = {"-f", "--file"}, required = true, arity = 1,
                validateWith = {FileValidator.class},
@@ -53,11 +54,17 @@ public class LoadOptions implements Serializable {
                description = "The schema file path which to create manually")
     public String schema;
 
-    @Parameter(names = {"-g", "--graph"}, required = true, arity = 1,
-               description = "The namespace of the graph to load into")
-    public String graph;
+    @Parameter(names = {"-gs", "--graphspace"}, 
+               arity = 1,
+               description = "The graphspace value, if not specified, DEFAULT will be used")
+    public String graphspace = "DEFAULT";
 
-    @Parameter(names = {"-h", "--host"}, arity = 1,
+    @Parameter(names = {"-g", "--graph"}, 
+               arity = 1,
+               description = "The name of the graph to load into, if not specified, hugegraph will be used")
+    public String graph = "hugegraph";
+
+    @Parameter(names = {"-h", "-i", "--host"}, arity = 1,
                validateWith = {UrlValidator.class},
                description = "The host/IP of HugeGraphServer")
     public String host = "localhost";
@@ -201,8 +208,7 @@ public class LoadOptions implements Serializable {
                description = "Whether the hugegraph-loader work in test mode")
     public boolean testMode = false;
 
-    @Parameter(names = {"--help"}, help = true,
-               description = "Print usage of HugeGraphLoader")
+    @Parameter(names = {"-help", "--help"}, help = true, description = "Print usage of HugeGraphLoader")
     public boolean help;
 
     @Parameter(names = {"--sink-type"}, arity = 1,
@@ -254,7 +260,16 @@ public class LoadOptions implements Serializable {
         JCommander commander = JCommander.newBuilder()
                                          .addObject(options)
                                          .build();
-        commander.parse(args);
+        try {
+            commander.parse(args);
+            // Check param < 3 (required minimum num)
+            if (args.length < MINIMUM_REQUIRED_ARGS) {
+                LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
+            }
+        } catch (ParameterException e) {
+            // Check input error
+            LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
+        }
         // Print usage and exit
         if (options.help) {
             LoadUtil.exitWithUsage(commander, Constants.EXIT_CODE_NORM);
