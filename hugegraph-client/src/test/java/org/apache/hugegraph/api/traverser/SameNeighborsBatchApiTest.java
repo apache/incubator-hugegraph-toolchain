@@ -25,11 +25,9 @@ import org.apache.hugegraph.structure.traverser.SameNeighborsBatchRequest;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Ignore;
 
 import com.google.common.collect.ImmutableList;
 
-@Ignore("Blocked by server: /traversers/sameneighborsbatch not implemented, see <https://github.com/apache/incubator-hugegraph/issues/2798>")
 public class SameNeighborsBatchApiTest extends TraverserApiTest {
 
     @BeforeClass
