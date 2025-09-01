@@ -99,6 +99,7 @@
 
     <properties>
         <revision>1.7.0</revision>
+        <!-- TODO: upgrade common later -->
         <hugegraph.common.version>1.5.0</hugegraph.common.version>
         <release.name>${project.artifactId}</release.name>
         <final.name>apache-${release.name}-incubating-${project.version}</final.name>
@@ -151,7 +152,6 @@
     <!-- submodules will not inherit the dependencies unless they address it -->
     <dependencyManagement>
         <dependencies>
-            <!-- TODO: upgrade common later -->
             <dependency>
                 <groupId>org.apache.hugegraph</groupId>
                 <artifactId>hugegraph-common</artifactId>
