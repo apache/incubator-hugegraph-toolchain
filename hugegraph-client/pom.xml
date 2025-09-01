@@ -38,6 +38,7 @@
     </description>
 
     <dependencies>
+        <!-- TODO: upgrade common later -->
         <dependency>
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
