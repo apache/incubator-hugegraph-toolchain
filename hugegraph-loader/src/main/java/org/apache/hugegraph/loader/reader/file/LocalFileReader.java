@@ -92,6 +92,10 @@ public class LocalFileReader extends FileReader {
         }
     }
 
+    public boolean multiReaders() {
+        return true;
+    }
+
     private static class LocalFile implements Readable {
 
         private final File file;

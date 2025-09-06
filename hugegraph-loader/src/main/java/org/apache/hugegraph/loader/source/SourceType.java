@@ -25,5 +25,7 @@ public enum SourceType {
 
     JDBC,
 
-    KAFKA
+    KAFKA,
+
+    GRAPH
 }

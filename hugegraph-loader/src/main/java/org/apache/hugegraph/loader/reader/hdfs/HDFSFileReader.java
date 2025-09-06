@@ -114,6 +114,11 @@ public class HDFSFileReader extends FileReader {
     }
 
     @Override
+    public boolean multiReaders() {
+        return true;
+    }
+
+    @Override
     protected List<Readable> scanReadables() throws IOException {
         Path path = new Path(input_path);
         FileFilter filter = this.source().filter();

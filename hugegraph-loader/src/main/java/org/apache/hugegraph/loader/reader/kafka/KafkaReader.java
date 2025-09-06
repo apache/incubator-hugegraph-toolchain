@@ -85,6 +85,11 @@ public class KafkaReader extends AbstractReader {
     }
 
     @Override
+    public boolean multiReaders() {
+        return false;
+    }
+
+    @Override
     public boolean hasNext() {
         return !this.earlyStop || !this.emptyPoll;
     }
