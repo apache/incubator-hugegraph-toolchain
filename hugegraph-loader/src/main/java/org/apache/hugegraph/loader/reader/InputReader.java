@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -19,7 +21,14 @@ package org.apache.hugegraph.loader.reader;
 
 import java.util.List;
 
+import org.apache.hugegraph.loader.reader.afs.AFSFileReader;
+import org.apache.hugegraph.loader.reader.graph.GraphReader;
+import org.apache.hugegraph.loader.reader.kafka.KafkaReader;
+import org.apache.hugegraph.loader.source.afs.AFSSource;
+import org.apache.hugegraph.loader.source.graph.GraphSource;
+import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 import org.apache.commons.lang.NotImplementedException;
+
 import org.apache.hugegraph.loader.constant.AutoCloseableIterator;
 import org.apache.hugegraph.loader.exception.InitException;
 import org.apache.hugegraph.loader.executor.LoadContext;
@@ -27,13 +36,11 @@ import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.reader.file.LocalFileReader;
 import org.apache.hugegraph.loader.reader.hdfs.HDFSFileReader;
 import org.apache.hugegraph.loader.reader.jdbc.JDBCReader;
-import org.apache.hugegraph.loader.reader.kafka.KafkaReader;
 import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
 import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
-import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 
 /**
  * Responsible for continuously reading the next batch of data lines
@@ -54,19 +61,23 @@ public interface InputReader extends AutoCloseableIterator<Line> {
                 return new LocalFileReader((FileSource) source);
             case HDFS:
                 return new HDFSFileReader((HDFSSource) source);
+            case AFS:
+                return new AFSFileReader((AFSSource) source);
             case JDBC:
                 return new JDBCReader((JDBCSource) source);
             case KAFKA:
                 return new KafkaReader((KafkaSource) source);
+            case GRAPH:
+                return new GraphReader((GraphSource) source);
             default:
-                throw new AssertionError(String.format("Unsupported input source '%s'",
-                                                       source.type()));
+                throw new AssertionError(String.format(
+                        "Unsupported input source '%s'", source.type()));
         }
     }
 
     boolean multiReaders();
 
-    default List<InputReader> split() {
+    public default List<InputReader> split() {
         throw new NotImplementedException("Not support multiple readers");
     }
 }

@@ -18,27 +18,41 @@
 package org.apache.hugegraph.loader.reader.file;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
+import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
 
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.progress.InputItemProgress;
+import org.apache.hugegraph.loader.reader.Readable;
+import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.file.Compression;
+import org.apache.hugegraph.loader.source.file.DirFilter;
 import org.apache.hugegraph.loader.source.file.FileFilter;
 import org.apache.hugegraph.loader.source.file.FileSource;
-import org.apache.hugegraph.loader.reader.Readable;
+import com.google.common.collect.ImmutableSet;
 
 public class LocalFileReader extends FileReader {
 
     public LocalFileReader(FileSource source) {
         super(source);
+    }
+
+    @Override
+    public FileReader newFileReader(InputSource source, Readable readable) {
+        LocalFileReader reader = new LocalFileReader((FileSource) source);
+        reader.readables(ImmutableSet.of(readable).iterator());
+        return reader;
     }
 
     @Override
@@ -120,7 +134,7 @@ public class LocalFileReader extends FileReader {
 
         @Override
         public InputStream open() throws IOException {
-            return Files.newInputStream(this.file.toPath());
+            return new FileInputStream(this.file);
         }
 
         @Override

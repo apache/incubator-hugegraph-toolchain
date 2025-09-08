@@ -264,7 +264,7 @@ public final class HugeGraphLoader {
                 }
                 // Confirm offset to avoid lost records
                 reader.confirmOffset();
-                this.context.newProgress().markLoaded(struct, finished);
+                this.context.newProgress().markLoaded(struct, reader, finished);
 
                 this.handleParseFailure();
                 if (reachedMaxReadLines) {
