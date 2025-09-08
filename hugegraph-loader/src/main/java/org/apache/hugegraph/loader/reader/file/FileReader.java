@@ -233,10 +233,10 @@ public abstract class FileReader extends AbstractReader {
     }
 
     private LoadStatus checkLastLoadStatus(Readable readable) {
-        // NOTE: calculate check sum is a bit time consuming
+        // NOTE: calculate check sum is a bit time-consuming
         InputItemProgress input = readable.inputItemProgress();
         InputItemProgress loaded = this.oldProgress.matchLoadedItem(input);
-        // The file has been loaded before and it is not changed
+        // The file has been loaded before, and it is not changed
         if (loaded != null) {
             this.newProgress.addLoadedItem(readable.name(), loaded);
             return LoadStatus.LOADED;
