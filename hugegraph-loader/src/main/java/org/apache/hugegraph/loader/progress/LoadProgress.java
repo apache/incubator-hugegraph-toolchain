@@ -83,7 +83,7 @@ public final class LoadProgress {
         return this.inputProgress;
     }
 
-    public long totalInputReaded() {
+    public long totalInputRead() {
         long count = 0L;
         for (InputProgress inputProgress : this.inputProgress.values()) {
             Map<String, InputItemProgress> itemProgresses =
