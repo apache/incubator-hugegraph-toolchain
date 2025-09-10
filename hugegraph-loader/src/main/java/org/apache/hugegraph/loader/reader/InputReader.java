@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.hugegraph.loader.reader.graph.GraphReader;
 import org.apache.hugegraph.loader.reader.kafka.KafkaReader;
-import org.apache.hugegraph.loader.source.afs.AFSSource;
 import org.apache.hugegraph.loader.source.graph.GraphSource;
 import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 import org.apache.commons.lang.NotImplementedException;

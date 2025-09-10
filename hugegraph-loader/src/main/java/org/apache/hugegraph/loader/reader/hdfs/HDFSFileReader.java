@@ -172,7 +172,8 @@ public class HDFSFileReader extends FileReader {
         Path path = new Path(this.source().path());
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
-        if (this.hdfs.getFileStatus(path).isFile()) {
+        FileStatus status = this.hdfs.getFileStatus(path);
+        if (status.isFile()) {
             if (!filter.reserved(path.getName())) {
                 throw new LoadException(
                           "Please check path name and extensions, ensure " +
@@ -180,7 +181,7 @@ public class HDFSFileReader extends FileReader {
             }
             paths.add(new HDFSFile(this.hdfs, path));
         } else {
-            assert this.hdfs.getFileStatus(path).isDirectory();
+            assert status.isDirectory();
             FileStatus[] statuses = this.hdfs.listStatus(path);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             for (Path subPath : subPaths) {
@@ -188,7 +189,7 @@ public class HDFSFileReader extends FileReader {
                     paths.add(new HDFSFile(this.hdfs, subPath,
                                            this.source().path()));
                 }
-                if (this.hdfs.getFileStatus(path).isDirectory()) {
+                if (status.isDirectory()) {
                     for (Path dirSubPath : this.listDirWithFilter(subPath)) {
                         if (this.isReservedFile(dirSubPath)) {
                             paths.add(new HDFSFile(this.hdfs, dirSubPath,
@@ -214,12 +215,13 @@ public class HDFSFileReader extends FileReader {
     private List<Path> listDirWithFilter(Path dir) throws IOException {
         DirFilter dirFilter = this.source().dirFilter();
         List<Path> files  = new ArrayList<>();
+        FileStatus status = this.hdfs.getFileStatus(dir);
 
-        if (this.hdfs.getFileStatus(dir).isFile()) {
+        if (status.isFile()) {
             files.add(dir);
         }
 
-        if (this.hdfs.getFileStatus(dir).isDirectory() && dirFilter.reserved(dir.getName())) {
+        if (status.isDirectory() && dirFilter.reserved(dir.getName())) {
             FileStatus[] statuses = this.hdfs.listStatus(dir);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             if (subPaths == null) {
