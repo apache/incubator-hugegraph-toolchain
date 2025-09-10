@@ -30,28 +30,30 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hugegraph.util.Log;
-import org.slf4j.Logger;
 
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.progress.FileItemProgress;
 import org.apache.hugegraph.loader.progress.InputItemProgress;
+import org.apache.hugegraph.loader.source.file.Compression;
+import org.apache.hugegraph.loader.source.InputSource;
+import org.apache.hugegraph.loader.source.file.DirFilter;
+import org.apache.hugegraph.loader.source.file.FileFilter;
+import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
+import org.apache.hugegraph.loader.source.hdfs.KerberosConfig;
+import org.slf4j.Logger;
+
 import org.apache.hugegraph.loader.reader.Readable;
 import org.apache.hugegraph.loader.reader.file.FileLineFetcher;
 import org.apache.hugegraph.loader.reader.file.FileReader;
 import org.apache.hugegraph.loader.reader.file.OrcFileLineFetcher;
 import org.apache.hugegraph.loader.reader.file.ParquetFileLineFetcher;
-import org.apache.hugegraph.loader.source.InputSource;
-import org.apache.hugegraph.loader.source.file.Compression;
-import org.apache.hugegraph.loader.source.file.DirFilter;
-import org.apache.hugegraph.loader.source.file.FileFilter;
-import org.apache.hugegraph.loader.source.hdfs.HDFSSource;
-import org.apache.hugegraph.loader.source.hdfs.KerberosConfig;
+import org.apache.hugegraph.util.Log;
 import com.google.common.collect.ImmutableSet;
 
 public class HDFSFileReader extends FileReader {
@@ -61,7 +63,7 @@ public class HDFSFileReader extends FileReader {
     private final FileSystem hdfs;
     private final Configuration conf;
 
-    /**
+        /**
      * 只支持单集群
      */
     private static boolean hasLogin = false;
@@ -146,7 +148,6 @@ public class HDFSFileReader extends FileReader {
         return reader;
     }
 
-    @Override
     public void close() {
         super.close();
         closeFileSystem(this.hdfs);
@@ -171,23 +172,23 @@ public class HDFSFileReader extends FileReader {
         Path path = new Path(this.source().path());
         FileFilter filter = this.source().filter();
         List<Readable> paths = new ArrayList<>();
-        if (this.hdfs.isFile(path)) {
+        if (this.hdfs.getFileStatus(path).isFile()) {
             if (!filter.reserved(path.getName())) {
                 throw new LoadException(
-                        "Please check path name and extensions, ensure " +
-                        "that at least one path is available for reading");
+                          "Please check path name and extensions, ensure " +
+                          "that at least one path is available for reading");
             }
             paths.add(new HDFSFile(this.hdfs, path));
         } else {
-            assert this.hdfs.isDirectory(path);
+            assert this.hdfs.getFileStatus(path).isDirectory();
             FileStatus[] statuses = this.hdfs.listStatus(path);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             for (Path subPath : subPaths) {
-                if (this.hdfs.isFile(subPath) && this.isReservedFile(subPath)) {
+                if (this.hdfs.getFileStatus(subPath).isFile() && this.isReservedFile(subPath)) {
                     paths.add(new HDFSFile(this.hdfs, subPath,
                                            this.source().path()));
                 }
-                if (this.hdfs.isDirectory(subPath)) {
+                if (this.hdfs.getFileStatus(path).isDirectory()) {
                     for (Path dirSubPath : this.listDirWithFilter(subPath)) {
                         if (this.isReservedFile(dirSubPath)) {
                             paths.add(new HDFSFile(this.hdfs, dirSubPath,
@@ -214,11 +215,11 @@ public class HDFSFileReader extends FileReader {
         DirFilter dirFilter = this.source().dirFilter();
         List<Path> files  = new ArrayList<>();
 
-        if (this.hdfs.isFile(dir)) {
+        if (this.hdfs.getFileStatus(dir).isFile()) {
             files.add(dir);
         }
 
-        if (this.hdfs.isDirectory(dir) && dirFilter.reserved(dir.getName())) {
+        if (this.hdfs.getFileStatus(dir).isDirectory() && dirFilter.reserved(dir.getName())) {
             FileStatus[] statuses = this.hdfs.listStatus(dir);
             Path[] subPaths = FileUtil.stat2Paths(statuses);
             if (subPaths == null) {
@@ -226,10 +227,10 @@ public class HDFSFileReader extends FileReader {
                                         "dir path '%s'", dir);
             }
             for (Path subFile : subPaths) {
-                if (this.hdfs.isFile(subFile)) {
+                if (this.hdfs.getFileStatus(subFile).isFile()) {
                     files.add(subFile);
                 }
-                if (this.hdfs.isDirectory(subFile)) {
+                if (this.hdfs.getFileStatus(subFile).isDirectory()) {
                     files.addAll(this.listDirWithFilter(subFile));
                 }
             }
@@ -255,7 +256,6 @@ public class HDFSFileReader extends FileReader {
         if (this.source().hdfsSitePath() != null) {
             conf.addResource(new Path(this.source().hdfsSitePath()));
         }
-        conf.setBoolean("fs.hdfs.impl.disable.cache", true);
         return conf;
     }
 

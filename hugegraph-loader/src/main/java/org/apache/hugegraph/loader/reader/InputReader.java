@@ -19,7 +19,6 @@ package org.apache.hugegraph.loader.reader;
 
 import java.util.List;
 
-import org.apache.hugegraph.loader.reader.afs.AFSFileReader;
 import org.apache.hugegraph.loader.reader.graph.GraphReader;
 import org.apache.hugegraph.loader.reader.kafka.KafkaReader;
 import org.apache.hugegraph.loader.source.afs.AFSSource;
@@ -59,8 +58,6 @@ public interface InputReader extends AutoCloseableIterator<Line> {
                 return new LocalFileReader((FileSource) source);
             case HDFS:
                 return new HDFSFileReader((HDFSSource) source);
-            case AFS:
-                return new AFSFileReader((AFSSource) source);
             case JDBC:
                 return new JDBCReader((JDBCSource) source);
             case KAFKA:
