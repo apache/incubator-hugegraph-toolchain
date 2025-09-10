@@ -57,15 +57,12 @@ public class KafkaReader extends AbstractReader {
 
     private static final String BASE_CONSUMER_GROUP = "kafka-reader-base";
     private final KafkaConsumer dataConsumer;
-    private final boolean earlyStop;
-    private boolean emptyPoll;
 
     public KafkaReader(KafkaSource source) {
         this.source = source;
 
         this.dataConsumer = createKafkaConsumer();
         this.parser = createLineParser();
-        this.earlyStop = source.isEarlyStop();
     }
 
     @Override
@@ -91,7 +88,7 @@ public class KafkaReader extends AbstractReader {
 
     @Override
     public boolean hasNext() {
-        return !this.earlyStop || !this.emptyPoll;
+        return true;
     }
 
     @Override
@@ -103,8 +100,6 @@ public class KafkaReader extends AbstractReader {
         String rawValue = batch.poll();
         if (rawValue != null) {
             return this.parser.parse(this.source.header(), rawValue);
-        } else {
-            this.emptyPoll = true;
         }
 
         return null;
