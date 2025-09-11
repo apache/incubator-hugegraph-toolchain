@@ -140,6 +140,22 @@ public class LoadOptions implements Serializable {
                description = "The number of lines in each submit")
     public int batchSize = 500;
 
+        @Parameter(names = {"--parallel-count"}, arity = 1,
+            description = "The number of parallel read pipelines")
+    public int parallelCount = 1;
+
+    @Parameter(names = {"--start-file"}, arity = 1,
+            description = "start file index for partial loading")
+    public int startFile = 0;
+
+    @Parameter(names = {"--end-file"}, arity = 1,
+            description = "end file index for partial loading")
+    public int endFile = -1;
+
+    @Parameter(names = {"--scatter-sources"}, arity = 1,
+            description = "scatter multiple sources for io optimize")
+    public boolean scatterSources = false;
+
     @Parameter(names = {"--cdc-flush-interval"}, arity = 1,
                description = "The flush interval for flink cdc")
     public int flushIntervalMs = 30000;

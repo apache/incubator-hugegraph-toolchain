@@ -21,7 +21,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -30,6 +33,7 @@ import org.apache.hugegraph.loader.task.ParseTaskBuilder;
 import org.apache.hugegraph.loader.task.TaskManager;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.apache.hugegraph.loader.util.LoadUtil;
+import org.apache.hugegraph.util.ExecutorUtil;
 import org.apache.hugegraph.loader.util.Printer;
 import org.slf4j.Logger;
 
@@ -51,6 +55,8 @@ import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.reader.InputReader;
 import org.apache.hugegraph.loader.reader.line.Line;
 import org.apache.hugegraph.util.Log;
+import com.google.common.collect.ImmutableList;
+
 
 public final class HugeGraphLoader {
 
@@ -59,6 +65,23 @@ public final class HugeGraphLoader {
     private final LoadContext context;
     private final LoadMapping mapping;
     private final TaskManager manager;
+
+        // load任务执行线程池
+    private ExecutorService loadService;
+
+    public static class InputTaskItem {
+        public final InputReader reader;
+        public final InputStruct struct;
+        public final int structIndex;
+        public final int seqNumber;
+        public InputTaskItem(InputStruct struct, InputReader reader,
+                             int structIndex, int seq) {
+            this.struct = struct;
+            this.reader = reader;
+            this.structIndex = structIndex;
+            this.seqNumber = seq;
+        }
+    }
 
     public static void main(String[] args) {
         HugeGraphLoader loader;
@@ -200,25 +223,123 @@ public final class HugeGraphLoader {
         }
     }
 
-    private void loadStructs(List<InputStruct> structs) {
-        // Load input structs one by one
+    private List<InputTaskItem> prepareTaskItems(List<InputStruct> structs,
+                                                 boolean scatter) {
+        ArrayList<InputTaskItem> tasks = new ArrayList<>();
+        int curFile = 0;
+        int curIndex = 0;
         for (InputStruct struct : structs) {
-            if (this.context.stopped()) {
-                break;
-            }
             if (struct.skip()) {
                 continue;
             }
-            // Create and init InputReader, fetch next batch lines
-            try (InputReader reader = InputReader.create(struct.input())) {
-                // Init reader
-                reader.init(this.context, struct);
-                // Load data from current input mapping
-                this.loadStruct(struct, reader);
+
+            // Create and init InputReader
+            try {
+                LOG.info("Start loading: '{}'", struct);
+
+                InputReader reader = InputReader.create(struct.input());
+                List<InputReader> readerList = reader.multiReaders() ?
+                        reader.split() :
+                        ImmutableList.of(reader);
+
+                LOG.info("total {} found in '{}'", readerList.size(), struct);
+                tasks.ensureCapacity(tasks.size() + readerList.size());
+                int seq = 0;
+                for (InputReader r : readerList) {
+                    if (curFile >= this.context.options().startFile &&
+                        (this.context.options().endFile == -1 ||
+                            curFile < this.context.options().endFile )) {
+                        // Load data from current input mapping
+                        tasks.add(new InputTaskItem(struct, r, seq, curIndex));
+                    } else {
+                        r.close();
+                    }
+                    seq += 1;
+                    curFile += 1;
+                }
+                if (this.context.options().endFile != -1 &&
+                        curFile >= this.context.options().endFile) {
+                    break;
+                }
             } catch (InitException e) {
                 throw new LoadException("Failed to init input reader", e);
             }
+            curIndex += 1;
         }
+        // sort by seqNumber to allow scatter loading from different sources
+        if (scatter) {
+            tasks.sort(new Comparator<InputTaskItem>() {
+                @Override
+                public int compare(InputTaskItem o1, InputTaskItem o2) {
+                    if (o1.structIndex == o2.structIndex) {
+                        return o1.seqNumber - o2.seqNumber;
+                    } else {
+                        return o1.structIndex - o2.structIndex;
+                    }
+                }
+            });
+        }
+
+        return tasks;
+    }
+
+    private void loadStructs(List<InputStruct> structs) {
+        int parallelCount = this.context.options().parallelCount;
+        if (structs.size() == 0) {
+            return;
+        }
+        if (parallelCount <= 0 ) {
+            parallelCount = structs.size();
+        }
+
+        boolean scatter = this.context.options().scatterSources;
+
+        LOG.info("{} threads for loading {} structs, from {} to {} in {} mode",
+                parallelCount, structs.size(), this.context.options().startFile,
+                this.context.options().endFile,
+                 scatter ? "scatter" : "sequencial");
+
+        this.loadService = ExecutorUtil.newFixedThreadPool(parallelCount,
+                                                           "loader");
+
+        List<InputTaskItem> taskItems = prepareTaskItems(structs, scatter);
+
+        List<CompletableFuture<Void>> loadTasks = new ArrayList<>();
+
+        for (InputTaskItem item : taskItems ) {
+            // Init reader
+            item.reader.init(this.context, item.struct);
+            // Load data from current input mapping
+            loadTasks.add(
+                    this.asyncLoadStruct(item.struct, item.reader,
+                                         this.loadService));
+        }
+
+        LOG.info("waiting for loading finish {}", loadTasks.size());
+        // wait for finish
+        try {
+            CompletableFuture.allOf(loadTasks.toArray(new CompletableFuture[0]))
+                             .join();
+        } catch (Throwable t) {
+            throw t;
+        } finally {
+            // 关闭service
+            this.loadService.shutdown();
+            LOG.info("load end");
+        }
+    }
+
+    private CompletableFuture<Void> asyncLoadStruct(
+            InputStruct struct, InputReader reader, ExecutorService service) {
+        return CompletableFuture.runAsync(() -> {
+                try {
+                    this.loadStruct(struct, reader);
+                } catch (Throwable t) {
+                    throw t;
+                } finally {
+                    reader.close();
+                }
+            }, service);
     }
 
     /**
