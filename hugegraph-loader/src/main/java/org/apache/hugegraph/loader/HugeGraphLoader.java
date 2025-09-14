@@ -20,24 +20,37 @@ package org.apache.hugegraph.loader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Comparator;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.loader.task.GlobalExecutorManager;
 import org.apache.hugegraph.loader.task.ParseTaskBuilder;
+import org.apache.hugegraph.loader.task.ParseTaskBuilder.ParseTask;
 import org.apache.hugegraph.loader.task.TaskManager;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.apache.hugegraph.loader.util.LoadUtil;
 import org.apache.hugegraph.util.ExecutorUtil;
 import org.apache.hugegraph.loader.util.Printer;
+import org.apache.hugegraph.structure.schema.EdgeLabel;
+import org.apache.hugegraph.structure.schema.IndexLabel;
+import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.slf4j.Logger;
 
 import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.builder.Record;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.constant.ElemType;
@@ -47,6 +60,8 @@ import org.apache.hugegraph.loader.exception.ReadException;
 import org.apache.hugegraph.loader.executor.GroovyExecutor;
 import org.apache.hugegraph.loader.executor.LoadContext;
 import org.apache.hugegraph.loader.executor.LoadOptions;
+import org.apache.hugegraph.loader.filter.util.SchemaManagerProxy;
+import org.apache.hugegraph.loader.filter.util.ShortIdConfig;
 import org.apache.hugegraph.loader.mapping.ElementMapping;
 import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.LoadMapping;
@@ -54,7 +69,16 @@ import org.apache.hugegraph.loader.metrics.LoadMetrics;
 import org.apache.hugegraph.loader.metrics.LoadSummary;
 import org.apache.hugegraph.loader.reader.InputReader;
 import org.apache.hugegraph.loader.reader.line.Line;
+import org.apache.hugegraph.loader.source.InputSource;
+import org.apache.hugegraph.loader.source.SourceType;
+import org.apache.hugegraph.loader.source.graph.GraphSource;
+import org.apache.hugegraph.structure.constant.HugeType;
+import org.apache.hugegraph.structure.schema.EdgeLabel;
+import org.apache.hugegraph.structure.schema.IndexLabel;
+import org.apache.hugegraph.structure.schema.PropertyKey;
+import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.Log;
+import org.apache.hugegraph.util.JsonUtil;
 import com.google.common.collect.ImmutableList;
 
 
@@ -65,6 +89,7 @@ public final class HugeGraphLoader {
     private final LoadContext context;
     private final LoadMapping mapping;
     private final TaskManager manager;
+    private final LoadOptions options;
 
         // load任务执行线程池
     private ExecutorService loadService;
@@ -83,16 +108,25 @@ public final class HugeGraphLoader {
         }
     }
 
-    public static void main(String[] args) {
-        HugeGraphLoader loader;
-        try {
-            loader = new HugeGraphLoader(args);
-        } catch (Throwable e) {
-            Printer.printError("Failed to start loading", LoadUtil.targetRuntimeException(e));
-            throw e;
-        }
-        loader.load();
+public static void main(String[] args) {
+    HugeGraphLoader loader;
+    try {
+        loader = new HugeGraphLoader(args);
+    } catch (Throwable e) {
+        Printer.printError("Failed to start loading", e);
+        return; // 不再抛出，直接返回
     }
+
+    try {
+        loader.load();
+    } finally {
+        loader.shutdown();  // 确保释放资源
+        GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
+        if (!loader.context.noError()) {
+            System.exit(1); // 根据 context 错误情况决定退出码
+        }
+    }
+}
 
     public HugeGraphLoader(String[] args) {
         this(LoadOptions.parseOptions(args));
@@ -100,10 +134,14 @@ public final class HugeGraphLoader {
 
     public HugeGraphLoader(LoadOptions options) {
         this(options, LoadMapping.of(options.file));
+        // 设置并发度
+        GlobalExecutorManager.setBatchThreadCount(options.batchInsertThreads);
+        GlobalExecutorManager.setSingleThreadCount(options.singleInsertThreads);
     }
 
     public HugeGraphLoader(LoadOptions options, LoadMapping mapping) {
         this.context = new LoadContext(options);
+        this.options = options;
         this.mapping = mapping;
         this.manager = new TaskManager(this.context);
         this.addShutdownHook();
@@ -120,10 +158,51 @@ public final class HugeGraphLoader {
         return this.context;
     }
 
+    private void checkGraphExists() {
+        HugeClient client = this.context.indirectClient();
+        String targetGraph = this.options.graph;
+        if (this.options.createGraph) {
+            if (!client.graphs().listGraph().contains(targetGraph)) {
+                Map<String, String> conf = new HashMap<>();
+                conf.put("store", targetGraph);
+                conf.put("backend", "hstore");
+                conf.put("serializer", "binary");
+                conf.put("task.scheduler_type", "distributed");
+                conf.put("nickname", targetGraph);
+                client.graphs().createGraph(targetGraph, JsonUtil.toJson(conf));
+                LOG.info("Create graph " + targetGraph + " ......");
+            }
+        }
+    }
+
+    private void setGraphMode() {
+        // 设置图的Mode
+        // 如果存在Graph数据源，则所有Input必须都是Graph数据源
+        Supplier<Stream<InputSource>> inputsSupplier =
+                () -> this.mapping.structs().stream().filter(struct -> !struct.skip())
+                                  .map(InputStruct::input);
+
+        if (inputsSupplier.get().anyMatch(input -> SourceType.GRAPH.equals(input.type()))) {
+            if (!inputsSupplier.get().allMatch(input -> SourceType.GRAPH.equals(input.type()))) {
+                throw new LoadException("All inputs must be of Graph Type");
+            }
+
+            this.context().setRestoreMode();
+        } else if (this.options.restore) {
+            this.context().setRestoreMode();
+        } else {
+            this.context().setLoadingMode();
+        }
+    }
+    
     public boolean load() {
+        this.options.dumpParams();
+
         try {
-            // Switch to loading mode
-            this.context.setLoadingMode();
+            // check graph exists
+            this.checkGraphExists();
+            // set GraphMode
+            this.setGraphMode();
             // Clear schema if needed
             this.clearAllDataIfNeeded();
             // Create schema
@@ -132,19 +211,35 @@ public final class HugeGraphLoader {
             // Print load summary
             Printer.printSummary(this.context);
         } catch (Throwable t) {
+            this.context.occurredError();
+
+            if (t instanceof ServerException) {
+                ServerException e = (ServerException) t;
+                String logMessage =
+                        "Log ServerException: \n" + e.exception() + "\n";
+                if (e.trace() != null) {
+                    logMessage += StringUtils.join((List<String>) e.trace(),
+                                                   "\n");
+                }
+                LOG.warn(logMessage);
+            }
+
             RuntimeException e = LoadUtil.targetRuntimeException(t);
             Printer.printError("Failed to load", e);
-            if (this.context.options().testMode) {
-                throw e;
-            }
-        } finally {
-            this.stopThenShutdown();
+            e.printStackTrace();
+
+            throw e;
         }
-        return this.context.noError();
+
+        // 任务执行成功
+        return true;
+    }
+
+    public void shutdown() {
+        this.stopThenShutdown();
     }
 
     private void clearAllDataIfNeeded() {
-        LoadOptions options = this.context.options();
         if (!options.clearAllData) {
             return;
         }
@@ -152,22 +247,26 @@ public final class HugeGraphLoader {
         int requestTimeout = options.timeout;
         options.timeout = options.clearTimeout;
         HugeClient client = HugeClientHolder.create(options);
-        String message = "I'm sure to delete all data";
-
-        LOG.info("Prepare to clear the data of graph '{}'", options.graph);
-        client.graphs().clearGraph(options.graph, message);
-        LOG.info("The graph '{}' has been cleared successfully", options.graph);
-
-        options.timeout = requestTimeout;
-        client.close();
+        
+        try {
+            LOG.info("Prepare to clear the data of graph '{}'", options.graph);
+            client.graphs().clearGraph(options.graph, "graph all cleared");
+            LOG.info("The graph '{}' has been cleared successfully",
+                     options.graph);
+            options.timeout = requestTimeout;
+        } catch (Throwable t) {
+            throw t;
+        }
     }
 
     private void createSchema() {
-        LoadOptions options = this.context.options();
         if (!StringUtils.isEmpty(options.schema)) {
             File file = FileUtils.getFile(options.schema);
             HugeClient client = this.context.client();
             GroovyExecutor groovyExecutor = new GroovyExecutor();
+            if (!options.shorterIDConfigs.isEmpty()) {
+                SchemaManagerProxy.proxy(client, options);
+            }
             groovyExecutor.bind(Constants.GROOVY_SCHEMA, client.schema());
             String script;
             try {
@@ -176,9 +275,287 @@ public final class HugeGraphLoader {
                 throw new LoadException("Failed to read schema file '%s'", e,
                                         options.schema);
             }
-            groovyExecutor.execute(script, client);
+
+            if (!options.shorterIDConfigs.isEmpty()) {
+                for (ShortIdConfig config : options.shorterIDConfigs){
+                    PropertyKey propertyKey = client.schema().propertyKey(config.getIdFieldName())
+                                                             .ifNotExist()
+                                                             .dataType(config.getIdFieldType())
+                                                             .build();
+                    client.schema().addPropertyKey(propertyKey);
+                }
+                groovyExecutor.execute(script, client);
+                List<VertexLabel> vertexLabels = client.schema().getVertexLabels();
+                for (VertexLabel vertexLabel: vertexLabels) {
+                    ShortIdConfig config;
+                    if ((config = options.getShortIdConfig(vertexLabel.name())) != null){
+                        config.setLabelID(vertexLabel.id());
+                        IndexLabel indexLabel = client.schema()
+                                .indexLabel(config.getVertexLabel() + "By" + config.getIdFieldName())
+                                .onV(config.getVertexLabel())
+                                .by(config.getIdFieldName())
+                                .secondary()
+                                .ifNotExist()
+                                .build();
+                        client.schema().addIndexLabel(indexLabel);
+                    }
+                }
+            } else {
+                groovyExecutor.execute(script, client);
+            }
         }
+
+        // create schema for Graph Source
+        List<InputStruct> structs = this.mapping.structs();
+        for (InputStruct struct : structs) {
+            if (SourceType.GRAPH.equals(struct.input().type())) {
+                GraphSource graphSouce = (GraphSource) struct.input();
+                if (StringUtils.isEmpty(graphSouce.getPdPeers())) {
+                    graphSouce.setPdPeers(this.options.pdPeers);
+                }
+                if (StringUtils.isEmpty(graphSouce.getMetaEndPoints())) {
+                    graphSouce.setMetaEndPoints(this.options.metaEndPoints);
+                }
+                if (StringUtils.isEmpty(graphSouce.getCluster())) {
+                    graphSouce.setCluster(this.options.cluster);
+                }
+                if (StringUtils.isEmpty(graphSouce.getUsername())) {
+                    graphSouce.setUsername(this.options.username);
+                }
+                if (StringUtils.isEmpty(graphSouce.getPassword())) {
+                    graphSouce.setPassword(this.options.password);
+                }
+
+                GraphSource graphSource = (GraphSource) struct.input();
+                createGraphSourceSchema(graphSource);
+            }
+        }
+
         this.context.updateSchemaCache();
+    }
+
+    /**
+     * create schema like graphdb when source is graphdb;
+     * @param graphSource
+     */
+    private void createGraphSourceSchema(GraphSource graphSource) {
+
+        try (HugeClient sourceClient = graphSource.createHugeClient();
+            // TODO support direct mode
+             HugeClient client = HugeClientHolder.create(this.options, false)) {
+
+            createGraphSourceVertexLabel(sourceClient, client, graphSource);
+
+            createGraphSourceEdgeLabel(sourceClient, client, graphSource);
+
+            createGraphSourceIndexLabel(sourceClient, client, graphSource);
+        }
+    }
+
+    private void createGraphSourceVertexLabel(HugeClient sourceClient,
+                                              HugeClient targetClient,
+                                              GraphSource graphSource) {
+
+        sourceClient.assignGraph(graphSource.getGraphSpace(),
+                                 graphSource.getGraph());
+
+        // 创建Vertex Schema
+        List<VertexLabel> vertexLabels = new ArrayList<>();
+        if (graphSource.getSelectedVertices() != null) {
+            List<String> selectedVertexLabels =
+                    graphSource.getSelectedVertices()
+                               .stream().map((des) -> des.getLabel())
+                               .collect(Collectors.toList());
+
+            if (!CollectionUtils.isEmpty(selectedVertexLabels)) {
+                vertexLabels =
+                        sourceClient.schema()
+                                    .getVertexLabels(selectedVertexLabels);
+            }
+        } else {
+            vertexLabels = sourceClient.schema().getVertexLabels();
+        }
+
+        Map<String, GraphSource.SeletedLabelDes> mapSelectedVertices
+                = new HashMap<>();
+        if (graphSource.getSelectedVertices() != null) {
+            for (GraphSource.SeletedLabelDes des :
+                    graphSource.getSelectedVertices()) {
+                mapSelectedVertices.put(des.getLabel(), des);
+            }
+        }
+
+        for (VertexLabel label : vertexLabels) {
+            if (mapSelectedVertices.getOrDefault(label.name(),
+                                                 null) != null) {
+                List<String> selectedProperties = mapSelectedVertices.get(
+                        label.name()).getProperties();
+
+                if (selectedProperties != null) {
+                    label.properties().clear();
+                    label.properties().addAll(selectedProperties);
+                }
+            }
+        }
+
+
+        Map<String, GraphSource.IgnoredLabelDes> mapIgnoredVertices
+                = new HashMap<>();
+        if (graphSource.getIgnoredVertices() != null) {
+            for (GraphSource.IgnoredLabelDes des :
+                    graphSource.getIgnoredVertices()) {
+                mapIgnoredVertices.put(des.getLabel(), des);
+            }
+        }
+
+        for (VertexLabel vertexLabel : vertexLabels) {
+            if (mapIgnoredVertices.containsKey(vertexLabel.name())) {
+                GraphSource.IgnoredLabelDes des
+                        = mapIgnoredVertices.get(vertexLabel.name());
+
+                if (des.getProperties() != null) {
+                    des.getProperties()
+                       .forEach((p) -> vertexLabel.properties().remove(p));
+                }
+            }
+
+            Set<String> existedPKs =
+                    targetClient.schema().getPropertyKeys().stream()
+                                .map(pk -> pk.name()).collect(Collectors.toSet());
+
+            for (String pkName : vertexLabel.properties()) {
+                PropertyKey pk = sourceClient.schema()
+                                             .getPropertyKey(pkName);
+                if (!existedPKs.contains(pk.name())) {
+                    targetClient.schema().addPropertyKey(pk);
+                }
+            }
+
+            targetClient.schema().addVertexLabel(vertexLabel);
+        }
+    }
+
+    private void createGraphSourceEdgeLabel(HugeClient sourceClient,
+                                            HugeClient targetClient,
+                                            GraphSource graphSource) {
+        // 创建Edge Schema
+        List<EdgeLabel> edgeLabels = new ArrayList<>();
+        if (graphSource.getSelectedEdges() != null) {
+            List<String> selectedEdgeLabels =
+                    graphSource.getSelectedEdges()
+                               .stream().map((des) -> des.getLabel())
+                               .collect(Collectors.toList());
+
+            if (!CollectionUtils.isEmpty(selectedEdgeLabels)) {
+                edgeLabels =
+                        sourceClient.schema()
+                                    .getEdgeLabels(selectedEdgeLabels);
+            }
+        } else {
+            edgeLabels = sourceClient.schema().getEdgeLabels();
+        }
+
+        Map<String, GraphSource.SeletedLabelDes> mapSelectedEdges
+                = new HashMap<>();
+        if (graphSource.getSelectedEdges() != null) {
+            for (GraphSource.SeletedLabelDes des :
+                    graphSource.getSelectedEdges()) {
+                mapSelectedEdges.put(des.getLabel(), des);
+            }
+        }
+
+        for (EdgeLabel label : edgeLabels) {
+            if (mapSelectedEdges.getOrDefault(label.name(), null) != null) {
+                List<String> selectedProperties = mapSelectedEdges.get(
+                        label.name()).getProperties();
+
+                if (selectedProperties != null) {
+                    label.properties().clear();
+                    label.properties().addAll(selectedProperties);
+                }
+            }
+        }
+
+        Map<String, GraphSource.IgnoredLabelDes> mapIgnoredEdges
+                = new HashMap<>();
+        if (graphSource.getIgnoredEdges() != null) {
+            for (GraphSource.IgnoredLabelDes des :
+                    graphSource.getIgnoredEdges()) {
+                mapIgnoredEdges.put(des.getLabel(), des);
+            }
+        }
+
+        for (EdgeLabel edgeLabel : edgeLabels) {
+            if (mapIgnoredEdges.containsKey(edgeLabel.name())) {
+                GraphSource.IgnoredLabelDes des
+                        = mapIgnoredEdges.get(edgeLabel.name());
+
+                if (des.getProperties() != null) {
+                    des.getProperties()
+                       .forEach((p) -> edgeLabel.properties().remove(p));
+                }
+            }
+
+            Set<String> existedPKs =
+                    targetClient.schema().getPropertyKeys().stream()
+                                .map(pk -> pk.name()).collect(Collectors.toSet());
+
+            for (String pkName : edgeLabel.properties()) {
+                PropertyKey pk = sourceClient.schema()
+                                             .getPropertyKey(pkName);
+                if (!existedPKs.contains(pk.name())) {
+                    targetClient.schema().addPropertyKey(pk);
+                }
+            }
+
+            targetClient.schema().addEdgeLabel(edgeLabel);
+        }
+    }
+
+    private void createGraphSourceIndexLabel(HugeClient sourceClient,
+                                             HugeClient targetClient,
+                                             GraphSource graphSource) {
+        Set<String> existedVertexLabels
+                = targetClient.schema().getVertexLabels().stream()
+                              .map(v -> v.name()).collect(Collectors.toSet());
+
+        Set<String> existedEdgeLabels
+                = targetClient.schema().getEdgeLabels().stream()
+                              .map(v -> v.name()).collect(Collectors.toSet());
+
+        List<IndexLabel> indexLabels = sourceClient.schema()
+                                                   .getIndexLabels();
+        for (IndexLabel indexLabel : indexLabels) {
+
+            HugeType baseType = indexLabel.baseType();
+            String baseValue = indexLabel.baseValue();
+            Set<String> sourceIndexFields =
+                    new HashSet(indexLabel.indexFields());
+
+
+            if (baseType.equals(HugeType.VERTEX_LABEL) &&
+                existedVertexLabels.contains(baseValue)) {
+                // Create Vertex Index
+
+                Set<String> curFields = targetClient.schema()
+                                                    .getVertexLabel(baseValue)
+                                                    .properties();
+                if (curFields.containsAll(sourceIndexFields)) {
+                    targetClient.schema().addIndexLabel(indexLabel);
+                }
+            }
+
+            if (baseType.equals(HugeType.EDGE_LABEL) &&
+                existedEdgeLabels.contains(baseValue)) {
+                // Create Edge Index
+                Set<String> curFields = targetClient.schema()
+                                                    .getEdgeLabel(baseValue)
+                                                    .properties();
+                if (curFields.containsAll(sourceIndexFields)) {
+                    targetClient.schema().addIndexLabel(indexLabel);
+                }
+            }
+        }
     }
 
     private void loadInputs() {
@@ -354,6 +731,8 @@ public final class HugeGraphLoader {
         ParseTaskBuilder taskBuilder = new ParseTaskBuilder(this.context, struct);
         final int batchSize = this.context.options().batchSize;
         List<Line> lines = new ArrayList<>(batchSize);
+        long batchStartTime = System.currentTimeMillis();
+
         for (boolean finished = false; !finished;) {
             if (this.context.stopped()) {
                 break;
@@ -362,7 +741,8 @@ public final class HugeGraphLoader {
                 // Read next line from data source
                 if (reader.hasNext()) {
                     Line next = reader.next();
-                    if (Objects.nonNull(next)) {
+                    // 如果数据源为kafka，存在获取数据为null的情况
+                    if (next != null) {
                         lines.add(next);
                         metrics.increaseReadSuccess();
                     }
@@ -378,9 +758,13 @@ public final class HugeGraphLoader {
             if (reachedMaxReadLines) {
                 finished = true;
             }
-            if (lines.size() >= batchSize || finished) {
-                List<ParseTaskBuilder.ParseTask> tasks = taskBuilder.build(lines);
-                for (ParseTaskBuilder.ParseTask task : tasks) {
+            if (lines.size() >= batchSize ||
+                // 5s内强制提交，主要影响kafka数据源
+                (lines.size() > 0 &&
+                        System.currentTimeMillis() > batchStartTime + 5000) ||
+                finished) {
+                List<ParseTask> tasks = taskBuilder.build(lines);
+                for (ParseTask task : tasks) {
                     this.executeParseTask(struct, task.mapping(), task);
                 }
                 // Confirm offset to avoid lost records
@@ -393,6 +777,7 @@ public final class HugeGraphLoader {
                     this.context.stopLoading();
                 }
                 lines = new ArrayList<>(batchSize);
+                batchStartTime = System.currentTimeMillis();
             }
         }
 
