@@ -84,6 +84,7 @@ public class FileLineFetcher extends LineFetcher {
 
     @Override
     public void resetReader() {
+        LOG.error("resetReader called, reader reset to null, offset={}", this.offset());
         this.reader = null;
     }
 

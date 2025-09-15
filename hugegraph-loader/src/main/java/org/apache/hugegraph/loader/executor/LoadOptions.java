@@ -263,6 +263,10 @@ public final class LoadOptions implements Cloneable {
     @Parameter(names = {"-help", "--help"}, help = true, description = "Print usage of HugeGraphLoader")
     public boolean help;
 
+    @Parameter(names = {"--use-prefilter"}, required = false, arity = 1,
+               description = "Whether filter vertex in advance.")
+    public boolean usePrefilter = false;
+
     @Parameter(names = "--short-id",
                description = "Mapping customized ID to shorter ID.",
                converter = ShortIdConfig.ShortIdConfigConverter.class)

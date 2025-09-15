@@ -309,7 +309,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        authmain(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -351,9 +351,9 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testVertexIdExceedLimitInBytes() {
         String pk = "ecommerce__color__极光银翻盖上盖+" +
-                    "琥珀啡翻盖下盖+咖啡金翻盖上盖装饰片+" +
-                    "香槟金主镜片+深咖啡色副镜片+琥珀>" +
-                    "啡前壳+极光银后壳+浅灰电池扣+极光银电池组件+深灰天线";
+                    "琥珀啡翻盖下盖 + 咖啡金翻盖上盖装饰片+" +
+                    "香槟金主镜片 + 深咖啡色副镜片 + 琥珀>" +
+                    "啡前壳 + 极光银后壳 + 浅灰电池扣 + 极光银电池组件 + 深灰天线";
         Assert.assertTrue(pk.length() < 128);
         String line = StringUtils.join(new String[]{pk, "中文", "328"}, ",");
         ioUtil.write("vertex_software.csv", GBK,
@@ -471,7 +471,7 @@ public class FileLoadTest extends LoadTest {
     public void testUnmatchedEncodingCharset() {
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop,中文,328");
+                     "lop，中文，328");
 
         String[] args = new String[]{
                 "-f", structPath("unmatched_encoding_charset/struct.json"),
@@ -495,7 +495,7 @@ public class FileLoadTest extends LoadTest {
     public void testMatchedEncodingCharset() {
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop,中文,328");
+                     "lop，中文，328");
 
         String[] args = new String[]{
                 "-f", structPath("matched_encoding_charset/struct.json"),
@@ -567,7 +567,7 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop,中文,328");
+                     "lop，中文，328");
         ioUtil.write("edge_use.json",
                      "{\"person_name\": \"marko\", \"software_name\": " +
                      "\"lop\", \"feel\": [\"so so\", \"good\", \"good\"]}");
@@ -743,7 +743,7 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop,中文,328");
+                     "lop，中文，328");
         ioUtil.write("edge_use.json",
                      "{\"person_name\": \"marko\", \"software_name\": " +
                      "\"lop\", \"time\": [\"20171210\", \"20180101\"]}");
@@ -1128,7 +1128,7 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testMappingIgnoreNullValueColumns() {
         ioUtil.write("vertex_person.csv",
-                     "姓名,年龄,城市",
+                     "姓名，年龄，城市",
                      "marko,NULL,--",
                      "vadas,-,Hongkong",
                      "josh,30,null");
@@ -2030,7 +2030,7 @@ public class FileLoadTest extends LoadTest {
            throws IOException, InterruptedException {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
-                     "marko,应该是数字,Beijing",
+                     "marko，应该是数字，Beijing",
                      "vadas,27,Hongkong",
                      "josh,32,Beijing",
                      "peter,35,Shanghai",
@@ -2038,7 +2038,7 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
                      "office,C#,999",
-                     "lop,java,应该是数字",
+                     "lop,java，应该是数字",
                      "ripple,java,199");
 
         // 1st time
@@ -2092,7 +2092,7 @@ public class FileLoadTest extends LoadTest {
         List<String> personFailureLines = FileUtils.readLines(personFailureFile,
                                                               Constants.CHARSET);
         Assert.assertEquals(2, personFailureLines.size());
-        Assert.assertEquals("marko,应该是数字,Beijing",
+        Assert.assertEquals("marko，应该是数字，Beijing",
                             personFailureLines.get(1));
 
         // 2nd time, incremental-mode
@@ -2154,14 +2154,14 @@ public class FileLoadTest extends LoadTest {
         personFailureLines = FileUtils.readLines(personFailureFile,
                                                  Constants.CHARSET);
         Assert.assertEquals(2, personFailureLines.size());
-        Assert.assertEquals("marko,应该是数字,Beijing",
+        Assert.assertEquals("marko，应该是数字，Beijing",
                             personFailureLines.get(1));
 
         File softwareFailureFile = files[2];
         List<String> softwareFailureLines = FileUtils.readLines(
                                             softwareFailureFile, GBK);
         Assert.assertEquals(2, softwareFailureLines.size());
-        Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(1));
+        Assert.assertEquals("lop,java，应该是数字", softwareFailureLines.get(1));
 
         // TODO: Change only one line first, and make the second line go wrong
         // modify person and software failure file

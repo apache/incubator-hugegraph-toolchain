@@ -91,7 +91,7 @@ public final class HugeGraphLoader {
     private final TaskManager manager;
     private final LoadOptions options;
 
-        // load任务执行线程池
+        // load 任务执行线程池
     private ExecutorService loadService;
 
     public static class InputTaskItem {
@@ -108,25 +108,26 @@ public final class HugeGraphLoader {
         }
     }
 
-public static void main(String[] args) {
-    HugeGraphLoader loader;
-    try {
-        loader = new HugeGraphLoader(args);
-    } catch (Throwable e) {
-        Printer.printError("Failed to start loading", e);
-        return; // 不再抛出，直接返回
-    }
-
-    try {
-        loader.load();
-    } finally {
-        loader.shutdown();  // 确保释放资源
-        GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
-        if (!loader.context.noError()) {
-            System.exit(1); // 根据 context 错误情况决定退出码
+    public static void main(String[] args) {
+        HugeGraphLoader loader;
+        try {
+            loader = new HugeGraphLoader(args);
+        } catch (Throwable e) {
+            Printer.printError("Failed to start loading", e);
+            return; // 不再抛出，直接返回
         }
+
+        //try {
+        //    loader.load();
+        //} finally {
+        //    loader.shutdown();  // 确保释放资源
+        //    GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
+        //    if (!loader.context.noError()) {
+        //        System.exit(1); // 根据 context 错误情况决定退出码
+        //    }
+        //}
+        loader.load();
     }
-}
 
     public HugeGraphLoader(String[] args) {
         this(LoadOptions.parseOptions(args));
@@ -176,8 +177,8 @@ public static void main(String[] args) {
     }
 
     private void setGraphMode() {
-        // 设置图的Mode
-        // 如果存在Graph数据源，则所有Input必须都是Graph数据源
+        // 设置图的 Mode
+        // 如果存在 Graph 数据源，则所有 Input 必须都是 Graph 数据源
         Supplier<Stream<InputSource>> inputsSupplier =
                 () -> this.mapping.structs().stream().filter(struct -> !struct.skip())
                                   .map(InputStruct::input);
@@ -194,7 +195,7 @@ public static void main(String[] args) {
             this.context().setLoadingMode();
         }
     }
-    
+
     public boolean load() {
         this.options.dumpParams();
 
@@ -247,7 +248,7 @@ public static void main(String[] args) {
         int requestTimeout = options.timeout;
         options.timeout = options.clearTimeout;
         HugeClient client = HugeClientHolder.create(options);
-        
+
         try {
             LOG.info("Prepare to clear the data of graph '{}'", options.graph);
             client.graphs().clearGraph(options.graph, "graph all cleared");
@@ -359,7 +360,7 @@ public static void main(String[] args) {
         sourceClient.assignGraph(graphSource.getGraphSpace(),
                                  graphSource.getGraph());
 
-        // 创建Vertex Schema
+        // 创建 Vertex Schema
         List<VertexLabel> vertexLabels = new ArrayList<>();
         if (graphSource.getSelectedVertices() != null) {
             List<String> selectedVertexLabels =
@@ -438,7 +439,7 @@ public static void main(String[] args) {
     private void createGraphSourceEdgeLabel(HugeClient sourceClient,
                                             HugeClient targetClient,
                                             GraphSource graphSource) {
-        // 创建Edge Schema
+        // 创建 Edge Schema
         List<EdgeLabel> edgeLabels = new ArrayList<>();
         if (graphSource.getSelectedEdges() != null) {
             List<String> selectedEdgeLabels =
@@ -700,7 +701,7 @@ public static void main(String[] args) {
         } catch (Throwable t) {
             throw t;
         } finally {
-            // 关闭service
+            // 关闭 service
             this.loadService.shutdown();
             LOG.info("load end");
         }
@@ -741,7 +742,7 @@ public static void main(String[] args) {
                 // Read next line from data source
                 if (reader.hasNext()) {
                     Line next = reader.next();
-                    // 如果数据源为kafka，存在获取数据为null的情况
+                    // 如果数据源为 kafka，存在获取数据为 null 的情况
                     if (next != null) {
                         lines.add(next);
                         metrics.increaseReadSuccess();
@@ -758,17 +759,34 @@ public static void main(String[] args) {
             if (reachedMaxReadLines) {
                 finished = true;
             }
-            if (lines.size() >= batchSize ||
-                // 5s内强制提交，主要影响kafka数据源
-                (lines.size() > 0 &&
-                        System.currentTimeMillis() > batchStartTime + 5000) ||
-                finished) {
-                List<ParseTask> tasks = taskBuilder.build(lines);
-                for (ParseTask task : tasks) {
+            //if (lines.size() >= batchSize ||
+            //    // 5s 内强制提交，主要影响 kafka 数据源
+            //    (lines.size() > 0 &&
+            //            System.currentTimeMillis() > batchStartTime + 5000) ||
+            //    finished) {
+            //    List<ParseTask> tasks = taskBuilder.build(lines);
+            //    for (ParseTask task : tasks) {
+            //        this.executeParseTask(struct, task.mapping(), task);
+            //    }
+            //    // Confirm offset to avoid lost records
+            //    reader.confirmOffset();
+            //    this.context.newProgress().markLoaded(struct, reader, finished);
+            //
+            //    this.handleParseFailure();
+            //    if (reachedMaxReadLines) {
+            //        LOG.warn("Read lines exceed limit, stopped loading tasks");
+            //        this.context.stopLoading();
+            //    }
+            //    lines = new ArrayList<>(batchSize);
+            //    batchStartTime = System.currentTimeMillis();
+            //}
+            if (lines.size() >= batchSize || finished) {
+                List<ParseTaskBuilder.ParseTask> tasks = taskBuilder.build(lines);
+                for (ParseTaskBuilder.ParseTask task : tasks) {
                     this.executeParseTask(struct, task.mapping(), task);
                 }
                 // Confirm offset to avoid lost records
-                reader.confirmOffset();
+                //reader.confirmOffset();
                 this.context.newProgress().markLoaded(struct, reader, finished);
 
                 this.handleParseFailure();
@@ -777,7 +795,6 @@ public static void main(String[] args) {
                     this.context.stopLoading();
                 }
                 lines = new ArrayList<>(batchSize);
-                batchStartTime = System.currentTimeMillis();
             }
         }
 
