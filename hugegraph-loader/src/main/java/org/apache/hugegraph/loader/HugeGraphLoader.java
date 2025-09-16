@@ -117,16 +117,16 @@ public final class HugeGraphLoader {
             return; // 不再抛出，直接返回
         }
 
-        try {
-            loader.load();
-        } finally {
-            loader.shutdown();  // 确保释放资源
-            GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
-            if (!loader.context.noError()) {
-                System.exit(1); // 根据 context 错误情况决定退出码
-            }
-        }
-        //loader.load();
+        // try {
+        //     loader.load();
+        // } finally {
+        //     loader.shutdown();  // 确保释放资源
+        //     GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
+        //     if (!loader.context.noError()) {
+        //         System.exit(1); // 根据 context 错误情况决定退出码
+        //     }
+        // }
+        loader.load();
     }
 
     public HugeGraphLoader(String[] args) {
