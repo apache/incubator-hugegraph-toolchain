@@ -1,4 +1,6 @@
 /*
+ * Copyright 2017 HugeGraph Authors
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -21,10 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.Log;
 import org.slf4j.Logger;
 
 import org.apache.hugegraph.loader.builder.EdgeBuilder;
 import org.apache.hugegraph.loader.builder.ElementBuilder;
+import org.apache.hugegraph.loader.builder.NopEdgeBuilder;
+import org.apache.hugegraph.loader.builder.NopVertexBuilder;
 import org.apache.hugegraph.loader.builder.Record;
 import org.apache.hugegraph.loader.builder.VertexBuilder;
 import org.apache.hugegraph.loader.exception.ParseException;
@@ -35,11 +41,8 @@ import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.loader.mapping.VertexMapping;
 import org.apache.hugegraph.loader.metrics.LoadMetrics;
 import org.apache.hugegraph.loader.reader.line.Line;
+import org.apache.hugegraph.loader.source.SourceType;
 import org.apache.hugegraph.structure.GraphElement;
-import org.apache.hugegraph.structure.graph.Vertex;
-import org.apache.hugegraph.structure.schema.VertexLabel;
-import org.apache.hugegraph.util.E;
-import org.apache.hugegraph.util.Log;
 
 public final class ParseTaskBuilder {
 
@@ -53,11 +56,20 @@ public final class ParseTaskBuilder {
         this.context = context;
         this.struct = struct;
         this.builders = new ArrayList<>();
-        for (VertexMapping mapping : struct.vertices()) {
-            this.builders.add(new VertexBuilder(this.context, struct, mapping));
-        }
-        for (EdgeMapping mapping : struct.edges()) {
-            this.builders.add(new EdgeBuilder(this.context, struct, mapping));
+
+        if (SourceType.GRAPH.equals(struct.input().type())) {
+            // 当数据源为 HugeGraph 时，不做任何转换。
+            this.builders.add(new NopVertexBuilder(this.context, struct));
+            this.builders.add(new NopEdgeBuilder(this.context, struct));
+        } else {
+            for (VertexMapping mapping : struct.vertices()) {
+                this.builders.add(
+                        new VertexBuilder(this.context, struct, mapping));
+            }
+            for (EdgeMapping mapping : struct.edges()) {
+                this.builders.add(
+                        new EdgeBuilder(this.context, struct, mapping));
+            }
         }
     }
 
@@ -81,9 +93,6 @@ public final class ParseTaskBuilder {
         final LoadMetrics metrics = this.context.summary().metrics(this.struct);
         final int batchSize = this.context.options().batchSize;
         final ElementMapping mapping = builder.mapping();
-        final boolean needRemoveId = builder instanceof VertexBuilder &&
-                                     ((VertexLabel) builder.schemaLabel())
-                                     .idStrategy().isPrimaryKey();
         return new ParseTask(mapping, () -> {
             List<List<Record>> batches = new ArrayList<>();
             // One batch record
@@ -106,13 +115,11 @@ public final class ParseTaskBuilder {
                         batches.add(records);
                         records = new ArrayList<>(batchSize);
                     }
-
                     for (GraphElement element : elements) {
-                        if (needRemoveId) {
-                            ((Vertex) element).id(null);
+                        if (this.context.filterGroup().filter(element)){
+                            records.add(new Record(line.rawLine(), element));
+                            count++;
                         }
-                        records.add(new Record(line.rawLine(), element));
-                        count++;
                     }
                 } catch (IllegalArgumentException e) {
                     metrics.increaseParseFailure(mapping);

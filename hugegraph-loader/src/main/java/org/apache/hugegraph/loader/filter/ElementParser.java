@@ -15,17 +15,22 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.source;
+package org.apache.hugegraph.loader.filter;
 
-public enum SourceType {
+import org.apache.hugegraph.structure.GraphElement;
 
-    FILE,
+public interface ElementParser {
 
-    HDFS,
-
-    JDBC,
-
-    KAFKA,
-
-    GRAPH
+    /*
+    * Returns false if the element shoud be removed.
+    * parse element: remove modify etc.
+    *
+    * Params:
+    * element: GraphElement to be parsed
+    *
+    * Returns:
+    * true: normal
+    * false: remove the element(do not insert to db)
+    */
+    boolean parse(GraphElement element);
 }

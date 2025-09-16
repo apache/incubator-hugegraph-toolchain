@@ -15,20 +15,37 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.executor;
+package org.apache.hugegraph.loader.filter.util;
 
-import org.apache.hugegraph.loader.builder.SchemaCache;
+public class SegmentIdGenerator {
 
-public class ComputerLoadOptions extends LoadOptions {
+    private static final int SEGMENT_SIZE = 10000;
 
-    private final SchemaCache schemaCache;
+    private volatile int currentId = -1;
 
-    public ComputerLoadOptions(SchemaCache schemaCache) {
-        super();
-        this.schemaCache = schemaCache;
+    public class Context{
+        public int maxId = 0;
+        public int lastId = 0;
+
+        public int next() {
+            return SegmentIdGenerator.this.next(this);
+        }
     }
 
-    public SchemaCache schemaCache() {
-        return this.schemaCache;
+    public int next(Context context) {
+        if (context.maxId == context.lastId) {
+            allocatingSegment(context);
+        }
+        return ++context.lastId;
+    }
+
+    public synchronized void allocatingSegment(Context context) {
+        context.lastId = currentId;
+        currentId += SEGMENT_SIZE;
+        context.maxId = currentId;
+    }
+
+    public Context genContext() {
+        return new Context();
     }
 }

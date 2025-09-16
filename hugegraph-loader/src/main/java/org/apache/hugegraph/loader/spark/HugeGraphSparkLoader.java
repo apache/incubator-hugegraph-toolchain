@@ -223,10 +223,11 @@ public class HugeGraphSparkLoader implements Serializable {
 
             // Insert
             List<GraphElement> graphElements = builderMap.getValue();
-            if (graphElements.size() >= elementMapping.batchSize() ||
-                (!p.hasNext() && graphElements.size() > 0)) {
-                flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
-            }
+            //if (graphElements.size() >= elementMapping.batchSize() ||
+            //    (!p.hasNext() && graphElements.size() > 0)) {
+            //    flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
+            //}
+            flush(builderMap, context.client().graph(), this.loadOptions.checkVertex);
         }
     }
 
@@ -298,7 +299,13 @@ public class HugeGraphSparkLoader implements Serializable {
                     elements = builder.build(fileSource.header(),
                                row.mkString(delimiter).split(delimiter));
                 } else {
-                    elements = builder.build(row);
+                    //elements = builder.build(row);
+                    String[] names = row.schema().fieldNames();
+                    Object[] values = new Object[row.size()];
+                    for (int i = 0; i < row.size(); i++) {
+                        values[i] = row.get(i);
+                    }
+                    elements = builder.build(names, values);
                 }
                 break;
             case JDBC:

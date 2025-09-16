@@ -15,17 +15,12 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.source;
+package org.apache.hugegraph.loader.constant;
 
-public enum SourceType {
+public class LoaderStruct {
 
-    FILE,
-
-    HDFS,
-
-    JDBC,
-
-    KAFKA,
-
-    GRAPH
+    /**
+     * 标识Vertex OLAP属性解析
+     */
+    public static final String OLAP_VERTEX_ID = "__OLAP_VERTEX_ID__";
 }
