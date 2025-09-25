@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Supplier;
@@ -36,6 +37,7 @@ import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.loader.exception.ParseException;
 import org.apache.hugegraph.loader.task.GlobalExecutorManager;
 import org.apache.hugegraph.loader.task.ParseTaskBuilder;
 import org.apache.hugegraph.loader.task.ParseTaskBuilder.ParseTask;
@@ -698,8 +700,16 @@ public final class HugeGraphLoader {
         try {
             CompletableFuture.allOf(loadTasks.toArray(new CompletableFuture[0]))
                              .join();
-        } catch (Throwable t) {
-            throw t;
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof ParseException) {
+                throw (ParseException) e.getCause();
+            } else if (e.getCause() instanceof LoadException) {
+                throw (LoadException) e.getCause();
+            } else if (e.getCause() != null) {
+                throw new RuntimeException(e.getCause());
+            } else {
+                throw e;
+            }
         } finally {
             // 关闭 service
             this.loadService.shutdown();
