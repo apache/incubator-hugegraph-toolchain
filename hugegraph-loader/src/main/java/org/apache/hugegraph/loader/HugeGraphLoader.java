@@ -119,16 +119,16 @@ public final class HugeGraphLoader {
             return; // 不再抛出，直接返回
         }
 
-        // try {
-        //     loader.load();
-        // } finally {
-        //     loader.shutdown();  // 确保释放资源
-        //     GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
-        //     if (!loader.context.noError()) {
-        //         System.exit(1); // 根据 context 错误情况决定退出码
-        //     }
-        // }
-        loader.load();
+         try {
+             loader.load();
+         } finally {
+             loader.shutdown();  // 确保释放资源
+             GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
+             if (!loader.context.noError()) {
+                 System.exit(1); // 根据 context 错误情况决定退出码
+             }
+         }
+        //loader.load();
     }
 
     public HugeGraphLoader(String[] args) {
@@ -701,15 +701,22 @@ public final class HugeGraphLoader {
             CompletableFuture.allOf(loadTasks.toArray(new CompletableFuture[0]))
                              .join();
         } catch (CompletionException e) {
-            if (e.getCause() instanceof ParseException) {
-                throw (ParseException) e.getCause();
-            } else if (e.getCause() instanceof LoadException) {
-                throw (LoadException) e.getCause();
-            } else if (e.getCause() != null) {
-                throw new RuntimeException(e.getCause());
+            Throwable cause = e.getCause();
+            if (cause instanceof ParseException) {
+                throw (ParseException) cause;
+            } else if (cause instanceof LoadException) {
+                throw (LoadException) cause;
+            } else if (cause != null) {
+                if (cause instanceof RuntimeException) {
+                    throw (RuntimeException) cause;
+                } else {
+                    throw new RuntimeException(cause);
+                }
             } else {
                 throw e;
             }
+        } catch (Throwable t) {
+            throw t;
         } finally {
             // 关闭 service
             this.loadService.shutdown();

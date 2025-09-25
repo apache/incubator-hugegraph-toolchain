@@ -531,7 +531,7 @@ public class FileLoadTest extends LoadTest {
         };
         // Invalid mapping file
         Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
+            new HugeGraphLoader(args);
         });
     }
 
@@ -732,7 +732,7 @@ public class FileLoadTest extends LoadTest {
         };
         // Invalid mapping file
         Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
+            new HugeGraphLoader(args);
         });
     }
 
@@ -1052,7 +1052,7 @@ public class FileLoadTest extends LoadTest {
         };
         // Invalid mapping file
         Assert.assertThrows(LoadException.class, () -> {
-            HugeGraphLoader.main(args);
+            new HugeGraphLoader(args);
         });
     }
 
@@ -2021,7 +2021,7 @@ public class FileLoadTest extends LoadTest {
         };
         // Invalid Enum value when parse json
         Assert.assertThrows(Exception.class, () -> {
-            HugeGraphLoader.main(args);
+            new HugeGraphLoader(args);
         });
     }
 
