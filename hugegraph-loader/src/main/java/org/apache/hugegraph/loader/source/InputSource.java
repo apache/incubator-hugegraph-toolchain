@@ -32,4 +32,10 @@ public interface InputSource extends Checkable {
     String charset();
 
     FileSource asFileSource();
+
+    // input source 是否区分大小写
+    // 默认区分大小写，只当输入为 parquet、orc 格式时为 false
+    default boolean headerCaseSensitive() {
+        return true;
+    }
 }

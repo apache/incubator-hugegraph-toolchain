@@ -17,11 +17,15 @@
 
 package org.apache.hugegraph.loader.progress;
 
-import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.hugegraph.util.InsertionOrderUtil;
 
 import org.apache.hugegraph.loader.mapping.InputStruct;
+import org.apache.hugegraph.loader.reader.Readable;
 import org.apache.hugegraph.loader.source.SourceType;
-import org.apache.hugegraph.util.InsertionOrderUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -30,41 +34,47 @@ public final class InputProgress {
     @JsonProperty("type")
     private final SourceType type;
     @JsonProperty("loaded_items")
-    private final Set<InputItemProgress> loadedItems;
-    @JsonProperty("loading_item")
-    private InputItemProgress loadingItem;
-
-    private final transient Set<InputItemProgress> loadingItems;
+    private final Map<String, InputItemProgress> loadedItems;
+    @JsonProperty("loading_items")
+    private Map<String, InputItemProgress> loadingItems;
 
     @JsonCreator
     public InputProgress(@JsonProperty("type") SourceType type,
                          @JsonProperty("loaded_items")
-                         Set<InputItemProgress> loadedItems,
-                         @JsonProperty("loading_item")
-                         InputItemProgress loadingItem) {
+                         Map<String, InputItemProgress> loadedItems,
+                         @JsonProperty("loading_items")
+                         Map<String, InputItemProgress> loadingItems) {
         this.type = type;
         this.loadedItems = loadedItems;
-        this.loadingItem = loadingItem;
-        this.loadingItems = InsertionOrderUtil.newSet();
+        this.loadingItems = loadingItems;
     }
 
     public InputProgress(InputStruct struct) {
         this.type = struct.input().type();
-        this.loadedItems = InsertionOrderUtil.newSet();
-        this.loadingItem = null;
-        this.loadingItems = InsertionOrderUtil.newSet();
+        this.loadedItems = Collections.synchronizedMap(
+                InsertionOrderUtil.newMap());
+        this.loadingItems = new ConcurrentHashMap<>();
     }
 
-    public Set<InputItemProgress> loadedItems() {
+    public synchronized Map<String, InputItemProgress> loadedItems() {
         return this.loadedItems;
     }
 
-    public InputItemProgress loadingItem() {
-        return this.loadingItem;
+    public synchronized Map<String, InputItemProgress> loadingItems() {
+        return this.loadingItems;
     }
 
-    public InputItemProgress matchLoadedItem(InputItemProgress inputItem) {
-        for (InputItemProgress item : this.loadedItems) {
+    public synchronized InputItemProgress loadedItem(String name) {
+        return this.loadedItems.get(name);
+    }
+
+    public InputItemProgress loadingItem(String name) {
+        return this.loadingItems.get(name);
+    }
+
+    public synchronized InputItemProgress matchLoadedItem(InputItemProgress
+                                                                  inputItem) {
+        for (InputItemProgress item : this.loadedItems.values()) {
             if (item.equals(inputItem)) {
                 return item;
             }
@@ -72,45 +82,47 @@ public final class InputProgress {
         return null;
     }
 
-    public InputItemProgress matchLoadingItem(InputItemProgress inputItem) {
-        if (this.loadingItem != null && this.loadingItem.equals(inputItem)) {
-            return this.loadingItem;
+    public synchronized InputItemProgress matchLoadingItem(InputItemProgress
+                                                                   inputItem) {
+        for (InputItemProgress item : this.loadingItems.values()) {
+            if (item.equals(inputItem)) {
+                return item;
+            }
         }
         return null;
     }
 
-    public void addLoadedItem(InputItemProgress inputItemProgress) {
-        this.loadedItems.add(inputItemProgress);
+    public synchronized void addLoadedItem(
+            String name, InputItemProgress inputItemProgress) {
+        this.loadedItems.put(name,  inputItemProgress);
     }
 
-    public void addLoadingItem(InputItemProgress inputItemProgress) {
-        if (this.loadingItem != null) {
-            this.loadingItems.add(this.loadingItem);
+    public synchronized void addLoadingItem(
+            String name, InputItemProgress inputItemProgress) {
+        this.loadingItems.put(name, inputItemProgress);
+    }
+
+    public synchronized void markLoaded(Readable readable, boolean markAll) {
+        if (!markAll) {
+            return;
         }
-        this.loadingItem = inputItemProgress;
-    }
-
-    public long loadingOffset() {
-        return this.loadingItem == null ? 0L : this.loadingItem.offset();
-    }
-
-    public void markLoaded(boolean markAll) {
+        if (readable != null) {
+            String name = readable.name();
+            InputItemProgress item = this.loadingItems.remove(name);
+            if (item != null) {
+                this.loadedItems.put(name, item);
+            }
+            return;
+        }
         if (!this.loadingItems.isEmpty()) {
-            this.loadedItems.addAll(this.loadingItems);
+            this.loadedItems.putAll(this.loadingItems);
             this.loadingItems.clear();
         }
-        if (markAll && this.loadingItem != null) {
-            this.loadedItems.add(this.loadingItem);
-            this.loadingItem = null;
-        }
     }
 
-    public void confirmOffset() {
-        for (InputItemProgress item : this.loadingItems) {
+    public synchronized void confirmOffset() {
+        for (InputItemProgress item : this.loadingItems.values()) {
             item.confirmOffset();
-        }
-        if (this.loadingItem != null) {
-            this.loadingItem.confirmOffset();
         }
     }
 }
