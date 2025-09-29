@@ -140,11 +140,14 @@ public class LoadMapping implements Checkable {
                                             failureFile.headerFile);
                 }
                 List<String> header = JsonUtil.convertList(json, String.class);
-                source.header(header.toArray(new String[]{}));
+                source.header(header.toArray(new String[] {}));
             }
             // Set failure data path
             source.path(failureFile.dataFile.getAbsolutePath());
-            source.skippedLine().regex(Constants.SKIPPED_LINE_REGEX);
+
+            // Do Not Set SkiptLine 2022-01-14, 'regex match' waste cpu;
+            // source.skippedLine().regex(Constants.SKIPPED_LINE_REGEX);
+
             struct.input(source);
             // Add to target structs
             targetStructs.add(struct);

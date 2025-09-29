@@ -38,6 +38,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hugegraph.loader.exception.ParseException;
+import org.apache.hugegraph.loader.progress.InputProgress;
 import org.apache.hugegraph.loader.task.GlobalExecutorManager;
 import org.apache.hugegraph.loader.task.ParseTaskBuilder;
 import org.apache.hugegraph.loader.task.ParseTaskBuilder.ParseTask;
@@ -119,16 +120,16 @@ public final class HugeGraphLoader {
             return; // 不再抛出，直接返回
         }
 
-         try {
-             loader.load();
-         } finally {
-             loader.shutdown();  // 确保释放资源
-             GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
-             if (!loader.context.noError()) {
-                 System.exit(1); // 根据 context 错误情况决定退出码
-             }
-         }
-        //loader.load();
+         //try {
+         //    loader.load();
+         //} finally {
+         //    loader.shutdown();  // 确保释放资源
+         //    GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
+         //    if (!loader.context.noError()) {
+         //        System.exit(1); // 根据 context 错误情况决定退出码
+         //    }
+         //}
+        loader.load();
     }
 
     public HugeGraphLoader(String[] args) {
@@ -719,6 +720,7 @@ public final class HugeGraphLoader {
             throw t;
         } finally {
             // 关闭 service
+            cleanupEmptyProgress();
             this.loadService.shutdown();
             LOG.info("load end");
         }
@@ -776,34 +778,17 @@ public final class HugeGraphLoader {
             if (reachedMaxReadLines) {
                 finished = true;
             }
-            //if (lines.size() >= batchSize ||
-            //    // 5s 内强制提交，主要影响 kafka 数据源
-            //    (lines.size() > 0 &&
-            //            System.currentTimeMillis() > batchStartTime + 5000) ||
-            //    finished) {
-            //    List<ParseTask> tasks = taskBuilder.build(lines);
-            //    for (ParseTask task : tasks) {
-            //        this.executeParseTask(struct, task.mapping(), task);
-            //    }
-            //    // Confirm offset to avoid lost records
-            //    reader.confirmOffset();
-            //    this.context.newProgress().markLoaded(struct, reader, finished);
-            //
-            //    this.handleParseFailure();
-            //    if (reachedMaxReadLines) {
-            //        LOG.warn("Read lines exceed limit, stopped loading tasks");
-            //        this.context.stopLoading();
-            //    }
-            //    lines = new ArrayList<>(batchSize);
-            //    batchStartTime = System.currentTimeMillis();
-            //}
-            if (lines.size() >= batchSize || finished) {
-                List<ParseTaskBuilder.ParseTask> tasks = taskBuilder.build(lines);
-                for (ParseTaskBuilder.ParseTask task : tasks) {
+            if (lines.size() >= batchSize ||
+                // 5s 内强制提交，主要影响 kafka 数据源
+                (lines.size() > 0 &&
+                        System.currentTimeMillis() > batchStartTime + 5000) ||
+                finished) {
+                List<ParseTask> tasks = taskBuilder.build(lines);
+                for (ParseTask task : tasks) {
                     this.executeParseTask(struct, task.mapping(), task);
                 }
                 // Confirm offset to avoid lost records
-                //reader.confirmOffset();
+                reader.confirmOffset();
                 this.context.newProgress().markLoaded(struct, reader, finished);
 
                 this.handleParseFailure();
@@ -812,7 +797,24 @@ public final class HugeGraphLoader {
                     this.context.stopLoading();
                 }
                 lines = new ArrayList<>(batchSize);
+                batchStartTime = System.currentTimeMillis();
             }
+            //if (lines.size() >= batchSize || finished) {
+            //    List<ParseTaskBuilder.ParseTask> tasks = taskBuilder.build(lines);
+            //    for (ParseTaskBuilder.ParseTask task : tasks) {
+            //        this.executeParseTask(struct, task.mapping(), task);
+            //    }
+            //    // Confirm offset to avoid lost records
+            //    //reader.confirmOffset();
+            //    this.context.newProgress().markLoaded(struct, reader, finished);
+            //
+            //    this.handleParseFailure();
+            //    if (reachedMaxReadLines) {
+            //        LOG.warn("Read lines exceed limit, stopped loading tasks");
+            //        this.context.stopLoading();
+            //    }
+            //    lines = new ArrayList<>(batchSize);
+            //}
         }
 
         metrics.stopInFlight();
@@ -925,6 +927,11 @@ public final class HugeGraphLoader {
                 this.context.close();
             }
         }
+    }
+
+    private void cleanupEmptyProgress() {
+        Map<String, InputProgress> inputProgressMap = this.context.newProgress().inputProgress();
+        inputProgressMap.entrySet().removeIf(entry -> entry.getValue().loadedItems().isEmpty());
     }
 
     private static class SplitInputStructs {
