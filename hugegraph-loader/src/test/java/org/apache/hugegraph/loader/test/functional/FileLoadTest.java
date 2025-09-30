@@ -2556,8 +2556,8 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        Assert.assertThrows(ParseException.class, () -> {
-            HugeGraphLoader.main(args);
+        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
+            authmain(args);
         }, e -> {
             String msgSuffix = "check whether the headers or field_mapping " +
                                "are configured correctly";

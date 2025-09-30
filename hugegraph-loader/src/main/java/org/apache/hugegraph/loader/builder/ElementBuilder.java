@@ -60,6 +60,7 @@ import org.apache.hugegraph.structure.schema.VertexLabel;
 //import org.apache.hugegraph.util.collection.JniLongSet;
 //import org.apache.hugegraph.util.collection.JniSetLoader;
 import java.util.HashSet;
+
 import com.google.common.collect.ImmutableList;
 
 public abstract class ElementBuilder<GE extends GraphElement> {
@@ -82,7 +83,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     //static {
     //    JniSetLoader.loadLibrary();
     //}
-
 
     public ElementBuilder(LoadContext context, InputStruct struct) {
         this.struct = struct;
@@ -197,7 +197,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         return false;
     }
 
-
     /**
      * Retain only the key-value pairs needed by the current vertex or edge
      */
@@ -297,7 +296,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     private void customizeId(VertexLabel vertexLabel, Vertex vertex,
                              String idField, Object idValue) {
         ShortIdConfig shortIdConfig = this.context.options().getShortIdConfig(vertexLabel.name());
-        if (idField == null && shortIdConfig != null && shortIdConfig.getPrimaryKeyField() != null) {
+        if (idField == null && shortIdConfig != null &&
+            shortIdConfig.getPrimaryKeyField() != null) {
             return;
         }
         E.checkArgumentNotNull(idField, "The vertex id field can't be null");
@@ -305,7 +305,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                                         " can't be null", idField);
         IdStrategy idStrategy = vertexLabel.idStrategy();
         if (shortIdConfig != null) {
-            DataType type = this.context.options().getShortIdConfig(vertexLabel.name()).getIdFieldType();
+            DataType type =
+                    this.context.options().getShortIdConfig(vertexLabel.name()).getIdFieldType();
             if (type.isText()) {
                 idStrategy = IdStrategy.CUSTOMIZE_STRING;
             } else if (type.isUUID()) {
@@ -423,8 +424,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     // private static LongBitSet longSet =new LongBitSet(LongBitSet
     // .MAX_NUM_BITS);
 
-
-    public static void close(LoadContext context){
+    public static void close(LoadContext context) {
         //if (context.options().usePrefilter){
         //    bytesSet.close();
         //    longSet.close();
@@ -433,7 +433,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     }
 
     public abstract class VertexKVPairs {
-
 
         public final VertexLabel vertexLabel;
         // General properties
@@ -463,7 +462,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         public List<Object> splitField(String key, Object value) {
             return DataTypeUtil.splitField(key, value, struct.input());
         }
-
 
         public boolean verifyVertex(VertexLabel vertexLabel, Object id) {
             if (usePrefilter) {

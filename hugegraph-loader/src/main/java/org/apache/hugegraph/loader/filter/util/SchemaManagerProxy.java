@@ -30,20 +30,22 @@ import org.apache.hugegraph.structure.schema.VertexLabel;
 public class SchemaManagerProxy extends SchemaManager {
 
     private LoadOptions options;
-    public SchemaManagerProxy(RestClient client, String graphSpace, String graph, LoadOptions options) {
+
+    public SchemaManagerProxy(RestClient client, String graphSpace, String graph,
+                              LoadOptions options) {
         super(client, graphSpace, graph);
         this.options = options;
     }
 
-    public static void proxy(HugeClient client, LoadOptions options){
+    public static void proxy(HugeClient client, LoadOptions options) {
         try {
             Field clientField = HugeClient.class.getDeclaredField("client");
             clientField.setAccessible(true);
             RestClient restClient = (RestClient) (clientField.get(client));
-            SchemaManager schemaManager  = new SchemaManagerProxy(restClient,
-                                                                  client.getGraphSpaceName(),
-                                                                  client.getGraphName(),
-                                                                  options);
+            SchemaManager schemaManager = new SchemaManagerProxy(restClient,
+                                                                 client.getGraphSpaceName(),
+                                                                 client.getGraphName(),
+                                                                 options);
             Field schemaField = HugeClient.class.getDeclaredField("schema");
             schemaField.setAccessible(true);
             schemaField.set(client, schemaManager);

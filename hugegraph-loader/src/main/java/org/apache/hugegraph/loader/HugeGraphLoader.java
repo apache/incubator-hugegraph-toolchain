@@ -82,8 +82,8 @@ import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.Log;
 import org.apache.hugegraph.util.JsonUtil;
-import com.google.common.collect.ImmutableList;
 
+import com.google.common.collect.ImmutableList;
 
 public final class HugeGraphLoader {
 
@@ -94,14 +94,16 @@ public final class HugeGraphLoader {
     private final TaskManager manager;
     private final LoadOptions options;
 
-        // load 任务执行线程池
+    // load 任务执行线程池
     private ExecutorService loadService;
 
     public static class InputTaskItem {
+
         public final InputReader reader;
         public final InputStruct struct;
         public final int structIndex;
         public final int seqNumber;
+
         public InputTaskItem(InputStruct struct, InputReader reader,
                              int structIndex, int seq) {
             this.struct = struct;
@@ -271,26 +273,27 @@ public final class HugeGraphLoader {
             }
 
             if (!options.shorterIDConfigs.isEmpty()) {
-                for (ShortIdConfig config : options.shorterIDConfigs){
+                for (ShortIdConfig config : options.shorterIDConfigs) {
                     PropertyKey propertyKey = client.schema().propertyKey(config.getIdFieldName())
-                                                             .ifNotExist()
-                                                             .dataType(config.getIdFieldType())
-                                                             .build();
+                                                    .ifNotExist()
+                                                    .dataType(config.getIdFieldType())
+                                                    .build();
                     client.schema().addPropertyKey(propertyKey);
                 }
                 groovyExecutor.execute(script, client);
                 List<VertexLabel> vertexLabels = client.schema().getVertexLabels();
-                for (VertexLabel vertexLabel: vertexLabels) {
+                for (VertexLabel vertexLabel : vertexLabels) {
                     ShortIdConfig config;
-                    if ((config = options.getShortIdConfig(vertexLabel.name())) != null){
+                    if ((config = options.getShortIdConfig(vertexLabel.name())) != null) {
                         config.setLabelID(vertexLabel.id());
                         IndexLabel indexLabel = client.schema()
-                                .indexLabel(config.getVertexLabel() + "By" + config.getIdFieldName())
-                                .onV(config.getVertexLabel())
-                                .by(config.getIdFieldName())
-                                .secondary()
-                                .ifNotExist()
-                                .build();
+                                                      .indexLabel(config.getVertexLabel() + "By" +
+                                                                  config.getIdFieldName())
+                                                      .onV(config.getVertexLabel())
+                                                      .by(config.getIdFieldName())
+                                                      .secondary()
+                                                      .ifNotExist()
+                                                      .build();
                         client.schema().addIndexLabel(indexLabel);
                     }
                 }
@@ -330,12 +333,13 @@ public final class HugeGraphLoader {
 
     /**
      * create schema like graphdb when source is graphdb;
+     *
      * @param graphSource
      */
     private void createGraphSourceSchema(GraphSource graphSource) {
 
         try (HugeClient sourceClient = graphSource.createHugeClient();
-            // TODO support direct mode
+             // TODO support direct mode
              HugeClient client = HugeClientHolder.create(this.options, false)) {
 
             createGraphSourceVertexLabel(sourceClient, client, graphSource);
@@ -391,7 +395,6 @@ public final class HugeGraphLoader {
                 }
             }
         }
-
 
         Map<String, GraphSource.IgnoredLabelDes> mapIgnoredVertices
                 = new HashMap<>();
@@ -526,7 +529,6 @@ public final class HugeGraphLoader {
             Set<String> sourceIndexFields =
                     new HashSet(indexLabel.indexFields());
 
-
             if (baseType.equals(HugeType.VERTEX_LABEL) &&
                 existedVertexLabels.contains(baseValue)) {
                 // Create Vertex Index
@@ -610,8 +612,8 @@ public final class HugeGraphLoader {
 
                 InputReader reader = InputReader.create(struct.input());
                 List<InputReader> readerList = reader.multiReaders() ?
-                        reader.split() :
-                        ImmutableList.of(reader);
+                                               reader.split() :
+                                               ImmutableList.of(reader);
 
                 LOG.info("total {} found in '{}'", readerList.size(), struct);
                 tasks.ensureCapacity(tasks.size() + readerList.size());
@@ -619,7 +621,7 @@ public final class HugeGraphLoader {
                 for (InputReader r : readerList) {
                     if (curFile >= this.context.options().startFile &&
                         (this.context.options().endFile == -1 ||
-                            curFile < this.context.options().endFile )) {
+                         curFile < this.context.options().endFile)) {
                         // Load data from current input mapping
                         tasks.add(new InputTaskItem(struct, r, seq, curIndex));
                     } else {
@@ -629,7 +631,7 @@ public final class HugeGraphLoader {
                     curFile += 1;
                 }
                 if (this.context.options().endFile != -1 &&
-                        curFile >= this.context.options().endFile) {
+                    curFile >= this.context.options().endFile) {
                     break;
                 }
             } catch (InitException e) {
@@ -659,15 +661,15 @@ public final class HugeGraphLoader {
         if (structs.size() == 0) {
             return;
         }
-        if (parallelCount <= 0 ) {
+        if (parallelCount <= 0) {
             parallelCount = structs.size();
         }
 
         boolean scatter = this.context.options().scatterSources;
 
         LOG.info("{} threads for loading {} structs, from {} to {} in {} mode",
-                parallelCount, structs.size(), this.context.options().startFile,
-                this.context.options().endFile,
+                 parallelCount, structs.size(), this.context.options().startFile,
+                 this.context.options().endFile,
                  scatter ? "scatter" : "sequencial");
 
         this.loadService = ExecutorUtil.newFixedThreadPool(parallelCount,
@@ -677,7 +679,7 @@ public final class HugeGraphLoader {
 
         List<CompletableFuture<Void>> loadTasks = new ArrayList<>();
 
-        for (InputTaskItem item : taskItems ) {
+        for (InputTaskItem item : taskItems) {
             // Init reader
             item.reader.init(this.context, item.struct);
             // Load data from current input mapping
@@ -719,14 +721,14 @@ public final class HugeGraphLoader {
     private CompletableFuture<Void> asyncLoadStruct(
             InputStruct struct, InputReader reader, ExecutorService service) {
         return CompletableFuture.runAsync(() -> {
-                try {
-                    this.loadStruct(struct, reader);
-                } catch (Throwable t) {
-                    throw t;
-                } finally {
-                    reader.close();
-                }
-            }, service);
+            try {
+                this.loadStruct(struct, reader);
+            } catch (Throwable t) {
+                throw t;
+            } finally {
+                reader.close();
+            }
+        }, service);
     }
 
     /**
@@ -743,7 +745,7 @@ public final class HugeGraphLoader {
         List<Line> lines = new ArrayList<>(batchSize);
         long batchStartTime = System.currentTimeMillis();
 
-        for (boolean finished = false; !finished;) {
+        for (boolean finished = false; !finished; ) {
             if (this.context.stopped()) {
                 break;
             }
@@ -771,7 +773,7 @@ public final class HugeGraphLoader {
             if (lines.size() >= batchSize ||
                 // 5s 内强制提交，主要影响 kafka 数据源
                 (lines.size() > 0 &&
-                        System.currentTimeMillis() > batchStartTime + 5000) ||
+                 System.currentTimeMillis() > batchStartTime + 5000) ||
                 finished) {
                 List<ParseTask> tasks = taskBuilder.build(lines);
                 for (ParseTask task : tasks) {

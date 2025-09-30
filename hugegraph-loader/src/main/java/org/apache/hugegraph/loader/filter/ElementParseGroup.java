@@ -24,13 +24,14 @@ import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.structure.GraphElement;
 
 public class ElementParseGroup {
+
     List<ElementParser> parser;
 
-    private ElementParseGroup(){
+    private ElementParseGroup() {
         parser = new ArrayList<>();
     }
 
-    public static ElementParseGroup create(LoadOptions options){
+    public static ElementParseGroup create(LoadOptions options) {
         ElementParseGroup group = new ElementParseGroup();
         if (options.vertexEdgeLimit != -1L) {
             group.addFilter(new ElementLimitFilter(options.vertexEdgeLimit));
@@ -41,18 +42,18 @@ public class ElementParseGroup {
         return group;
     }
 
-    void addFilter(ElementParser filter){
+    void addFilter(ElementParser filter) {
         parser.add(filter);
     }
 
-    void removeFilter(ElementParser filter){
+    void removeFilter(ElementParser filter) {
         parser.remove(filter);
     }
 
-    public boolean filter(GraphElement element){
+    public boolean filter(GraphElement element) {
         for (ElementParser parser : parser) {
             boolean r = parser.parse(element);
-            if (!r){
+            if (!r) {
                 return false;
             }
         }

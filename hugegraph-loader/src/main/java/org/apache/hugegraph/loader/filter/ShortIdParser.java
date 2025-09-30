@@ -36,6 +36,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 // import org.apache.hugegraph.util.collection.JniBytes2BytesMap;
 
 public class ShortIdParser implements ElementParser {
+
     private Map<String, String> labels;
 
     private Map<byte[], byte[]> map;
@@ -48,7 +49,7 @@ public class ShortIdParser implements ElementParser {
 
     private Map<String, ShortIdConfig> configs;
 
-    public ShortIdParser(LoadOptions options){
+    public ShortIdParser(LoadOptions options) {
         this.options = options;
         this.labels = new HashMap<>();
         this.configs = convertShortIdConfigs();
@@ -60,7 +61,7 @@ public class ShortIdParser implements ElementParser {
 
     public Map<String, ShortIdConfig> convertShortIdConfigs() {
         Map<String, ShortIdConfig> map = new HashMap<>();
-        for(ShortIdConfig config : options.shorterIDConfigs) {
+        for (ShortIdConfig config : options.shorterIDConfigs) {
             map.put(config.getVertexLabel(), config);
             labels.put(config.getVertexLabel(), config.getVertexLabel());
         }
@@ -74,7 +75,7 @@ public class ShortIdParser implements ElementParser {
             String label;
             if ((label = labels.get(edge.sourceLabel())) != null) {
                 ShortIdConfig config = configs.get(edge.sourceLabel());
-                edge.sourceId(getVertexNewId(label, idToBytes(config,  edge.sourceId())));
+                edge.sourceId(getVertexNewId(label, idToBytes(config, edge.sourceId())));
             }
             if ((label = labels.get(edge.targetLabel())) != null) {
                 ShortIdConfig config = configs.get(edge.targetLabel());
@@ -86,7 +87,7 @@ public class ShortIdParser implements ElementParser {
                 ShortIdConfig config = configs.get(vertex.label());
                 String idField = config.getIdFieldName();
                 Object originId = vertex.id();
-                if (originId == null){
+                if (originId == null) {
                     originId = vertex.property(config.getPrimaryKeyField());
                 }
                 vertex.property(idField, originId);
@@ -102,8 +103,8 @@ public class ShortIdParser implements ElementParser {
         byte[] key = oldId;
         byte[] value = map.get(key);
         if (value == null) {
-            synchronized(this){
-                if (!map.containsKey(key)){
+            synchronized (this) {
+                if (!map.containsKey(key)) {
                     /* gen id */
                     int id = newID();
                     /* save id */
@@ -142,7 +143,7 @@ public class ShortIdParser implements ElementParser {
     }
 
     public static byte[] longToBytes(long x) {
-        return new byte[] {
+        return new byte[]{
                 (byte) (x >>> 56),
                 (byte) (x >>> 48),
                 (byte) (x >>> 40),

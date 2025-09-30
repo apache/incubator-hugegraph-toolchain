@@ -31,6 +31,7 @@ import org.parboiled.common.Preconditions;
 import org.slf4j.Logger;
 
 public class GlobalExecutorManager {
+
     private static final Logger LOG = Log.logger(GlobalExecutorManager.class);
 
     private static final int CPUS = Runtime.getRuntime().availableProcessors();
@@ -58,7 +59,7 @@ public class GlobalExecutorManager {
     public static void shutdown(int timeout) {
         EXECUTORS.forEach((name, executor) -> {
             if (executor.isShutdown()) {
-                return ;
+                return;
             }
 
             try {
@@ -70,7 +71,7 @@ public class GlobalExecutorManager {
             } finally {
                 if (!executor.isTerminated()) {
                     LOG.error(String.format("The unfinished tasks will be " +
-                              "cancelled in executor (%s)", name));
+                                            "cancelled in executor (%s)", name));
                 }
                 executor.shutdownNow();
             }

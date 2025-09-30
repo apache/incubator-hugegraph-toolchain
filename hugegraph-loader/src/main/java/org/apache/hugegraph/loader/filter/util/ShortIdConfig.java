@@ -19,9 +19,11 @@ package org.apache.hugegraph.loader.filter.util;
 
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.structure.constant.DataType;
+
 import com.beust.jcommander.IStringConverter;
 
 public class ShortIdConfig {
+
     private String vertexLabel;
     private String idFieldName;
     private DataType idFieldType;
@@ -58,6 +60,7 @@ public class ShortIdConfig {
     }
 
     public static class ShortIdConfigConverter implements IStringConverter<ShortIdConfig> {
+
         @Override
         public ShortIdConfig convert(String s) {
             String[] sp = s.split(":");
@@ -67,35 +70,35 @@ public class ShortIdConfig {
             String a = DataType.BYTE.name();
             switch (sp[2]) {
                 case "boolean":
-                config.idFieldType = DataType.BOOLEAN;
-                break;
+                    config.idFieldType = DataType.BOOLEAN;
+                    break;
                 case "byte":
-                config.idFieldType = DataType.BYTE;
-                break;
+                    config.idFieldType = DataType.BYTE;
+                    break;
                 case "int":
-                config.idFieldType = DataType.INT;
-                break;
+                    config.idFieldType = DataType.INT;
+                    break;
                 case "long":
-                config.idFieldType = DataType.LONG;
-                break;
+                    config.idFieldType = DataType.LONG;
+                    break;
                 case "float":
-                config.idFieldType = DataType.FLOAT;
-                break;
+                    config.idFieldType = DataType.FLOAT;
+                    break;
                 case "double":
-                config.idFieldType = DataType.DOUBLE;
-                break;
+                    config.idFieldType = DataType.DOUBLE;
+                    break;
                 case "text":
-                config.idFieldType = DataType.TEXT;
-                break;
+                    config.idFieldType = DataType.TEXT;
+                    break;
                 case "blob":
-                config.idFieldType = DataType.BLOB;
-                break;
+                    config.idFieldType = DataType.BLOB;
+                    break;
                 case "date":
-                config.idFieldType = DataType.DATE;
-                break;
+                    config.idFieldType = DataType.DATE;
+                    break;
                 case "uuid":
-                config.idFieldType = DataType.UUID;
-                break;
+                    config.idFieldType = DataType.UUID;
+                    break;
                 default:
                     throw new LoadException("unknow type " + sp[2]);
             }
