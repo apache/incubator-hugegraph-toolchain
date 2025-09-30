@@ -471,7 +471,7 @@ public class FileLoadTest extends LoadTest {
     public void testUnmatchedEncodingCharset() {
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop，中文，328");
+                     "lop,中文,328");
 
         String[] args = new String[]{
                 "-f", structPath("unmatched_encoding_charset/struct.json"),
@@ -495,7 +495,7 @@ public class FileLoadTest extends LoadTest {
     public void testMatchedEncodingCharset() {
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop，中文，328");
+                     "lop,中文,328");
 
         String[] args = new String[]{
                 "-f", structPath("matched_encoding_charset/struct.json"),
@@ -567,7 +567,7 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop，中文，328");
+                     "lop,中文,328");
         ioUtil.write("edge_use.json",
                      "{\"person_name\": \"marko\", \"software_name\": " +
                      "\"lop\", \"feel\": [\"so so\", \"good\", \"good\"]}");
@@ -743,7 +743,7 @@ public class FileLoadTest extends LoadTest {
                      "marko,29,Beijing");
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
-                     "lop，中文，328");
+                     "lop,中文,328");
         ioUtil.write("edge_use.json",
                      "{\"person_name\": \"marko\", \"software_name\": " +
                      "\"lop\", \"time\": [\"20171210\", \"20180101\"]}");
