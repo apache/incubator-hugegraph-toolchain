@@ -756,7 +756,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        authmain(args);
 
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
@@ -2251,6 +2251,7 @@ public class FileLoadTest extends LoadTest {
         };
         HugeGraphLoader loader = new HugeGraphLoader(args);
         loader.load();
+        loader.shutdown();
         LoadContext context = Whitebox.getInternalState(loader, "context");
 
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -2286,8 +2287,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "false"
         };
         // No exception throw, but error line still exist
-        HugeGraphLoader.main(args);
-        Thread.sleep(1000);
+        loader = new HugeGraphLoader(args);
+        loader.load();
+        loader.shutdown();
 
         // Reload with modification
         File structDir = FileUtils.getFile(structPath(
@@ -2316,7 +2318,9 @@ public class FileLoadTest extends LoadTest {
         FileUtils.writeLines(knowsFailureFile, failureLines, false);
 
         // No exception throw, and error line doesn't exist
-        HugeGraphLoader.main(args);
+        loader = new HugeGraphLoader(args);
+        loader.load();
+        loader.shutdown();
 
         edges = CLIENT.graph().listEdges();
         Assert.assertEquals(2, edges.size());
