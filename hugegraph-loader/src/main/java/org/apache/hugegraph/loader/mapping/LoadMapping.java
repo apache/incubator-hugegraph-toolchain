@@ -30,17 +30,16 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.util.E;
 
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadOptions;
+import org.apache.hugegraph.loader.source.file.FileSource;
 import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.loader.util.LoadUtil;
 import org.apache.hugegraph.loader.util.MappingUtil;
-import org.apache.hugegraph.loader.source.file.FileSource;
-import org.apache.hugegraph.util.E;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -52,12 +51,6 @@ public class LoadMapping implements Checkable {
     private String version;
     @JsonProperty("structs")
     private List<InputStruct> structs;
-    @JsonProperty("backendStoreInfo")
-    private BackendStoreInfo backendStoreInfo;
-
-    public BackendStoreInfo getBackendStoreInfo() {
-        return backendStoreInfo;
-    }
 
     public static LoadMapping of(String filePath) {
         File file = FileUtils.getFile(filePath);
@@ -80,17 +73,10 @@ public class LoadMapping implements Checkable {
         return mapping;
     }
 
+    @JsonCreator
     public LoadMapping(@JsonProperty("structs") List<InputStruct> structs) {
         this.version = Constants.V2_STRUCT_VERSION;
         this.structs = structs;
-    }
-
-    @JsonCreator
-    public LoadMapping(@JsonProperty("structs") List<InputStruct> structs,
-                       @JsonProperty("backendStoreInfo") BackendStoreInfo backendStoreInfo) {
-        this.version = Constants.V2_STRUCT_VERSION;
-        this.structs = structs;
-        this.backendStoreInfo = backendStoreInfo;
     }
 
     @Override
@@ -145,8 +131,8 @@ public class LoadMapping implements Checkable {
             // Set failure data path
             source.path(failureFile.dataFile.getAbsolutePath());
 
-            // Do Not Set SkiptLine 2022-01-14, 'regex match' waste cpu;
-            // source.skippedLine().regex(Constants.SKIPPED_LINE_REGEX);
+            //Do Not Set SkiptLine 2022-01-14, 'regex match' waste cpu;
+            //source.skippedLine().regex(Constants.SKIPPED_LINE_REGEX);
 
             struct.input(source);
             // Add to target structs
@@ -188,8 +174,8 @@ public class LoadMapping implements Checkable {
                 return struct;
             }
         }
-        throw new IllegalArgumentException(String.format("There is no input struct with id '%s'",
-                                                         id));
+        throw new IllegalArgumentException(String.format(
+                "There is no input struct with id '%s'", id));
     }
 
     private static class FailureFile {

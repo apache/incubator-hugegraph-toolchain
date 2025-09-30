@@ -94,7 +94,7 @@ public class FileSource extends AbstractSource {
                                 extraDateFormats.isEmpty() ?
                                 ImmutableList.of() : extraDateFormats;
         this.timeZone = timeZone != null ? timeZone : Constants.TIME_ZONE;
-        this.skippedLine = skippedLine;
+        this.skippedLine = skippedLine != null ? skippedLine : new SkippedLine();
         this.compression = compression != null ? compression : Compression.NONE;
         this.batchSize = batchSize != null ? batchSize : 500;
 

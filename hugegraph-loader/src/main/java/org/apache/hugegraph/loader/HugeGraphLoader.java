@@ -119,16 +119,6 @@ public final class HugeGraphLoader {
             Printer.printError("Failed to start loading", e);
             return; // 不再抛出，直接返回
         }
-
-         //try {
-         //    loader.load();
-         //} finally {
-         //    loader.shutdown();  // 确保释放资源
-         //    GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
-         //    if (!loader.context.noError()) {
-         //        System.exit(1); // 根据 context 错误情况决定退出码
-         //    }
-         //}
         loader.load();
     }
 

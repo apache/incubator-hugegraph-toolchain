@@ -129,9 +129,9 @@ public class HugeGraphSparkLoader implements Serializable {
         LoadMapping mapping = LoadMapping.of(this.loadOptions.file);
         List<InputStruct> structs = mapping.structs();
         boolean sinkType = this.loadOptions.sinkType;
-        if (!sinkType) {
-            this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
-        }
+        //if (!sinkType) {
+        //    this.loadOptions.copyBackendStoreInfo(mapping.getBackendStoreInfo());
+        //}
 
         SparkConf conf = new SparkConf();
         registerKryoClasses(conf);

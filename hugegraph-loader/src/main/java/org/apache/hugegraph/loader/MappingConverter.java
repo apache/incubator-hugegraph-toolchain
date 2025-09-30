@@ -21,6 +21,7 @@ import java.io.File;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.loader.util.MappingUtil;
 import org.slf4j.Logger;
 
