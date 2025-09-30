@@ -19,20 +19,14 @@ package org.apache.hugegraph.loader.source.hdfs;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hugegraph.util.E;
 
 import org.apache.hugegraph.loader.source.SourceType;
-import org.apache.hugegraph.loader.source.file.Compression;
-import org.apache.hugegraph.loader.source.file.DirFilter;
-import org.apache.hugegraph.loader.source.file.FileFilter;
-import org.apache.hugegraph.loader.source.file.FileFormat;
 import org.apache.hugegraph.loader.source.file.FileSource;
-import org.apache.hugegraph.loader.source.file.SkippedLine;
-import com.fasterxml.jackson.annotation.JsonCreator;
+import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class HDFSSource extends FileSource {
@@ -43,23 +37,6 @@ public class HDFSSource extends FileSource {
     private String hdfsSitePath;
     @JsonProperty("kerberos_config")
     private KerberosConfig kerberosConfig;
-
-    @JsonCreator
-    public HDFSSource(@JsonProperty("path") String path,
-                      @JsonProperty("dir_filter") DirFilter dirFilter,
-                      @JsonProperty("filter") FileFilter filter,
-                      @JsonProperty("format") FileFormat format,
-                      @JsonProperty("delimiter") String delimiter,
-                      @JsonProperty("date_format") String dateFormat,
-                      @JsonProperty("extra_date_formats")
-                      List<String> extraDateFormats,
-                      @JsonProperty("time_zone") String timeZone,
-                      @JsonProperty("skipped_line") SkippedLine skippedLine,
-                      @JsonProperty("compression") Compression compression,
-                      @JsonProperty("batch_size") Integer batchSize) {
-        super(path, dirFilter, filter, format, delimiter, dateFormat,
-              extraDateFormats, timeZone, skippedLine, compression, batchSize);
-    }
 
     @Override
     public SourceType type() {
