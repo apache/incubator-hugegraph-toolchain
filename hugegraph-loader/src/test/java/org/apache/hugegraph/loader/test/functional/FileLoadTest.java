@@ -2557,7 +2557,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            HugeGraphLoader loader = new HugeGraphLoader(args);
+            loader.load();
+            loader.shutdown();
         }, e -> {
             String msgSuffix = "check whether the headers or field_mapping " +
                                "are configured correctly";
@@ -2567,7 +2569,6 @@ public class FileLoadTest extends LoadTest {
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
 
-        // sometimes good sometimes not
         Assert.assertEquals(7, vertices.size());
         Assert.assertEquals(0, edges.size());
     }
