@@ -244,7 +244,7 @@ public final class HugeGraphLoader {
 
         try {
             LOG.info("Prepare to clear the data of graph '{}'", options.graph);
-            client.graphs().clearGraph(options.graph, "graph all cleared");
+            client.graphs().clearGraph(options.graph, "I'm sure to delete all data");
             LOG.info("The graph '{}' has been cleared successfully",
                      options.graph);
             options.timeout = requestTimeout;

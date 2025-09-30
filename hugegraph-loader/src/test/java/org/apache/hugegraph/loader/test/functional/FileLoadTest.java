@@ -254,7 +254,9 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            HugeGraphLoader.main(args1);
+            HugeGraphLoader loader = new HugeGraphLoader(args1);
+            loader.load();
+            loader.shutdown();
         }, (e) -> {
             String msg = e.getMessage();
             Assert.assertTrue(msg.startsWith("Failed to convert value"));
@@ -270,8 +272,9 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args2);
-
+        HugeGraphLoader loader = new HugeGraphLoader(args2);
+        loader.load();
+        loader.shutdown();
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
         client.close();
@@ -1128,7 +1131,7 @@ public class FileLoadTest extends LoadTest {
     @Test
     public void testMappingIgnoreNullValueColumns() {
         ioUtil.write("vertex_person.csv",
-                     "姓名，年龄，城市",
+                     "姓名,年龄,城市",
                      "marko,NULL,--",
                      "vadas,-,Hongkong",
                      "josh,30,null");
