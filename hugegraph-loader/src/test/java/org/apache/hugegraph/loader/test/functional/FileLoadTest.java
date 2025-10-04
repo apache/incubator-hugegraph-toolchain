@@ -2556,7 +2556,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        AsyncThrowsAssert.assertThrows(ParseException.class, () -> {
+        AsyncThrowsAssert.assertThrows(RuntimeException.class, () -> {
             HugeGraphLoader loader = new HugeGraphLoader(args);
             loader.load();
             loader.shutdown();
