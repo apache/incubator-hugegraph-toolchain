@@ -81,8 +81,8 @@ public class HDFSFileReader extends FileReader {
         } catch (IOException e) {
             throw new LoadException("Failed to create HDFS file system", e);
         }
-        Path path = new Path(source.path());
-        this.checkExist(path);
+        //Path path = new Path(source.path());
+        //this.checkExist(path);
     }
 
     public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -150,7 +150,7 @@ public class HDFSFileReader extends FileReader {
 
     public void close() {
         super.close();
-        closeFileSystem(this.hdfs);
+        //closeFileSystem(this.hdfs);
     }
 
     public void closeFileSystem(FileSystem fileSystem) {
