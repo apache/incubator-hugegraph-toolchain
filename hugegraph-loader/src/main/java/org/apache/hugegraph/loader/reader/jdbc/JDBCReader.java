@@ -32,7 +32,7 @@ import org.apache.hugegraph.loader.source.jdbc.JDBCSource;
 public class JDBCReader extends AbstractReader {
 
     private final JDBCSource source;
-    private Fetcher fetcher ;
+    private Fetcher fetcher;
 
     private List<Line> batch;
     private int offsetInBatch;

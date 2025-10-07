@@ -144,14 +144,14 @@ public class ShortIdParser implements ElementParser {
 
     public static byte[] longToBytes(long x) {
         return new byte[]{
-                (byte) (x >>> 56),
-                (byte) (x >>> 48),
-                (byte) (x >>> 40),
-                (byte) (x >>> 32),
-                (byte) (x >>> 24),
-                (byte) (x >>> 16),
-                (byte) (x >>> 8),
-                (byte) x};
+            (byte) (x >>> 56),
+            (byte) (x >>> 48),
+            (byte) (x >>> 40),
+            (byte) (x >>> 32),
+            (byte) (x >>> 24),
+            (byte) (x >>> 16),
+            (byte) (x >>> 8),
+            (byte) x};
     }
 
     public static long bytesToLong(byte[] bytes) {

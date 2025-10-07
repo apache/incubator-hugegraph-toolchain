@@ -89,7 +89,8 @@ public final class LoadOptions implements Cloneable {
 
     @Parameter(names = {"-g", "--graph"}, 
                arity = 1,
-               description = "The name of the graph to load into, if not specified, hugegraph will be used")
+               description = "The name of the graph to load into, " +
+                    "if not specified, hugegraph will be used")
     public String graph = "hugegraph";
 
     @Parameter(names = {"--create-graph"}, required = false, arity = 1,
@@ -176,7 +177,7 @@ public final class LoadOptions implements Cloneable {
                description = "The number of lines in each submit")
     public int batchSize = 500;
 
-        @Parameter(names = {"--parallel-count"}, arity = 1,
+    @Parameter(names = {"--parallel-count"}, arity = 1,
             description = "The number of parallel read pipelines")
     public int parallelCount = 1;
 
@@ -260,7 +261,8 @@ public final class LoadOptions implements Cloneable {
                description = "Whether the hugegraph-loader work in test mode")
     public boolean testMode = false;
 
-    @Parameter(names = {"-help", "--help"}, help = true, description = "Print usage of HugeGraphLoader")
+    @Parameter(names = {"-help", "--help"}, help = true, description =
+            "Print usage of HugeGraphLoader")
     public boolean help;
 
     @Parameter(names = {"--use-prefilter"}, required = false, arity = 1,
@@ -395,8 +397,8 @@ public final class LoadOptions implements Cloneable {
         return options;
     }
 
-    public ShortIdConfig getShortIdConfig(String vertexLabel){
-        for(ShortIdConfig config: shorterIDConfigs) {
+    public ShortIdConfig getShortIdConfig(String vertexLabel) {
+        for (ShortIdConfig config: shorterIDConfigs) {
             if (config.getVertexLabel().equals(vertexLabel)) {
                 return config;
             }

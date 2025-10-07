@@ -63,7 +63,7 @@ public abstract class Fetcher {
         } catch (ClassNotFoundException e) {
             throw new LoadException("Invalid driver class '%s'", e, driverName);
         }
-        return DriverManager.getConnection(url ,
+        return DriverManager.getConnection(url,
                 username,
                 password);
     }

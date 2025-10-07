@@ -30,7 +30,6 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
@@ -152,8 +151,8 @@ public final class FailLogger {
             Set<Integer> writedLines = new HashSet<>();
             HashFunction hashFunc = Hashing.murmur3_32();
             for (String tipsLine, dataLine;
-                 (tipsLine = reader.readLine()) != null &&
-                 (dataLine = reader.readLine()) != null;) {
+                     (tipsLine = reader.readLine()) != null &&
+                     (dataLine = reader.readLine()) != null;) {
                 /*
                  * Hash data line to remove duplicate lines
                  * Misjudgment may occur, but the probability is extremely low

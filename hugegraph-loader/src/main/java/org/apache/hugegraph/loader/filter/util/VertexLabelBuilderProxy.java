@@ -22,7 +22,7 @@ import org.apache.hugegraph.loader.executor.LoadOptions;
 import org.apache.hugegraph.structure.constant.IdStrategy;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 
-public class VertexLabelBuilderProxy implements VertexLabel.Builder{
+public class VertexLabelBuilderProxy implements VertexLabel.Builder {
 
     private VertexLabel.BuilderImpl builder;
 
@@ -30,7 +30,7 @@ public class VertexLabelBuilderProxy implements VertexLabel.Builder{
     public VertexLabelBuilderProxy(String name, SchemaManager manager, LoadOptions options) {
         this.builder = new VertexLabel.BuilderImpl(name, manager);
         for (ShortIdConfig config : options.shorterIDConfigs) {
-            if (config.getVertexLabel().equals(name)){
+            if (config.getVertexLabel().equals(name)) {
                 this.config = config;
                 break;
             }

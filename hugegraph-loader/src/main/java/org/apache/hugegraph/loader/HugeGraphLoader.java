@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -76,10 +75,7 @@ import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.loader.source.SourceType;
 import org.apache.hugegraph.loader.source.graph.GraphSource;
 import org.apache.hugegraph.structure.constant.HugeType;
-import org.apache.hugegraph.structure.schema.EdgeLabel;
-import org.apache.hugegraph.structure.schema.IndexLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
-import org.apache.hugegraph.structure.schema.VertexLabel;
 import org.apache.hugegraph.util.Log;
 import org.apache.hugegraph.util.JsonUtil;
 
@@ -412,7 +408,7 @@ public final class HugeGraphLoader {
 
                 if (des.getProperties() != null) {
                     des.getProperties()
-                       .forEach((p) -> vertexLabel.properties().remove(p));
+                        .forEach((p) -> vertexLabel.properties().remove(p));
                 }
             }
 
@@ -489,7 +485,7 @@ public final class HugeGraphLoader {
 
                 if (des.getProperties() != null) {
                     des.getProperties()
-                       .forEach((p) -> edgeLabel.properties().remove(p));
+                        .forEach((p) -> edgeLabel.properties().remove(p));
                 }
             }
 

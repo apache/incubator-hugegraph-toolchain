@@ -28,7 +28,7 @@ import org.apache.hugegraph.loader.mapping.InputStruct;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 
-public class NopEdgeBuilder extends ElementBuilder<Edge>{
+public class NopEdgeBuilder extends ElementBuilder<Edge> {
 
     public NopEdgeBuilder(LoadContext context, InputStruct struct) {
         super(context, struct);

@@ -63,7 +63,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
             this.targetLabel = new VertexLabel("~general");
             this.sourceLabel.idStrategy(IdStrategy.CUSTOMIZE_STRING);
             this.targetLabel.idStrategy(IdStrategy.CUSTOMIZE_STRING);
-        }else {
+        } else {
             this.sourceLabel = this.getVertexLabel(this.edgeLabel.sourceLabel());
             this.targetLabel = this.getVertexLabel(this.edgeLabel.targetLabel());
         }

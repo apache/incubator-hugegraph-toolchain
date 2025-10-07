@@ -54,8 +54,8 @@ public class ElementLimitFilter implements ElementParser {
             v.addAndGet(1);
             return v;
         });
-        return counter.addAndGet(edge.sourceId()) <= limit
-                && counter.addAndGet(edge.targetId()) <= limit;
+        return counter.addAndGet(edge.sourceId()) <= limit &&
+               counter.addAndGet(edge.targetId()) <= limit;
     }
 
     class LruCounter<K> {

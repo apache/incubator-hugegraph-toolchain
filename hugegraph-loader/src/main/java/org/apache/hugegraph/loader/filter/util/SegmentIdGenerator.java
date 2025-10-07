@@ -23,7 +23,7 @@ public class SegmentIdGenerator {
 
     private volatile int currentId = -1;
 
-    public class Context{
+    public class Context {
         public int maxId = 0;
         public int lastId = 0;
 

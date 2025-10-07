@@ -29,7 +29,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
 
-public class NopVertexBuilder extends ElementBuilder<Vertex>{
+public class NopVertexBuilder extends ElementBuilder<Vertex> {
 
     public NopVertexBuilder(LoadContext context, InputStruct struct) {
         super(context, struct);

@@ -116,7 +116,7 @@ public final class ParseTaskBuilder {
                         records = new ArrayList<>(batchSize);
                     }
                     for (GraphElement element : elements) {
-                        if (this.context.filterGroup().filter(element)){
+                        if (this.context.filterGroup().filter(element)) {
                             records.add(new Record(line.rawLine(), element));
                             count++;
                         }

@@ -18,7 +18,6 @@
 package org.apache.hugegraph.loader.executor;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

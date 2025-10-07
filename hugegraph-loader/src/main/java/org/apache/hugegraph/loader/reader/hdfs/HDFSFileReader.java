@@ -33,7 +33,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.security.UserGroupInformation;
 
 import org.apache.hugegraph.loader.constant.Constants;
@@ -63,7 +62,7 @@ public class HDFSFileReader extends FileReader {
     private final FileSystem hdfs;
     private final Configuration conf;
 
-        /**
+    /**
      * 只支持单集群
      */
     private static boolean hasLogin = false;
@@ -91,7 +90,7 @@ public class HDFSFileReader extends FileReader {
 
     private void enableKerberos(HDFSSource source) throws IOException {
         KerberosConfig kerberosConfig = source.kerberosConfig();
-        if (kerberosConfig != null && kerberosConfig.enable() ) {
+        if (kerberosConfig != null && kerberosConfig.enable()) {
             System.setProperty("java.security.krb5.conf",
                                kerberosConfig.krb5Conf());
             UserGroupInformation.setConfiguration(this.conf);
