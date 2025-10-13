@@ -57,8 +57,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
         this.edgeLabel = this.getEdgeLabel(this.mapping.label());
         this.nonNullKeys = this.nonNullableKeys(this.edgeLabel);
         if (this.edgeLabel.edgeLabelType().general()) {
-            // 如果是创建 general 类型的边，loader 无法获取两端顶点的 vertexLabel 信息
-            // 因此两端顶点类型的 IdStrategy 统一设定为 CUSTOMIZE_STRING
+            // the IdStrategy of both ends is uniformly set to CUSTOMIZE_STRING
             this.sourceLabel = new VertexLabel("~general");
             this.targetLabel = new VertexLabel("~general");
             this.sourceLabel.idStrategy(IdStrategy.CUSTOMIZE_STRING);

@@ -108,7 +108,11 @@ public class ShortIdParser implements ElementParser {
                     /* gen id */
                     int id = newID();
                     /* save id */
-                    map.put(stringToBytes(label + oldId), longToBytes(id));
+                    byte[] labelBytes = label.getBytes(StandardCharsets.UTF_8);
+                    byte[] combined = new byte[labelBytes.length + oldId.length];
+                    System.arraycopy(labelBytes, 0, combined, 0, labelBytes.length);
+                    System.arraycopy(oldId, 0, combined, labelBytes.length, oldId.length);
+                    map.put(combined, longToBytes(id));
                     return id;
                 } else {
                     value = map.get(key);

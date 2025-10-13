@@ -56,9 +56,7 @@ import org.apache.hugegraph.structure.schema.EdgeLabel;
 import org.apache.hugegraph.structure.schema.PropertyKey;
 import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.structure.schema.VertexLabel;
-//import org.apache.hugegraph.util.collection.JniBytesSet;
-//import org.apache.hugegraph.util.collection.JniLongSet;
-//import org.apache.hugegraph.util.collection.JniSetLoader;
+
 import java.util.HashSet;
 
 import com.google.common.collect.ImmutableList;
@@ -73,16 +71,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
     private final ByteBuffer buffer;
     private LoadContext context;
     private boolean usePrefilter;
-    private static final int PARTITION_BITS = 5;
-    private static final int CAPACITY_BITS = 10;
-    //private static JniBytesSe bytesSet;
-    //private static JniLongSet longSet;
     private static HashSet<byte[]> bytesSet;
     private static HashSet<Long> longSet;
-
-    //static {
-    //    JniSetLoader.loadLibrary();
-    //}
 
     public ElementBuilder(LoadContext context, InputStruct struct) {
         this.struct = struct;
@@ -94,10 +84,8 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         if (longSet == null) {
             synchronized (ElementBuilder.class) {
                 if (longSet == null) {
-                    //longSet = new JniLongSet(PARTITION_BITS, CAPACITY_BITS);
-                    //bytesSet = new JniBytesSet(PARTITION_BITS, CAPACITY_BITS);
-                    longSet = new HashSet<>(PARTITION_BITS, CAPACITY_BITS);
-                    bytesSet = new HashSet<>(PARTITION_BITS, CAPACITY_BITS);
+                    longSet = new HashSet<>();
+                    bytesSet = new HashSet<>();
                 }
             }
         }
@@ -174,7 +162,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         return false;
     }
 
-    protected boolean isIgnoreddField(String fieldName) {
+    protected boolean isIgnoredField(String fieldName) {
         ElementMapping mapping = this.mapping();
         Set<String> ignoredFields = mapping.ignoredFields();
 
@@ -208,7 +196,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         if (!isSelectedField(fieldName)) {
             return false;
         }
-        if (isIgnoreddField(fieldName)) {
+        if (isIgnoredField(fieldName)) {
             return false;
         }
 
@@ -262,7 +250,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             Collection<String> missed = CollectionUtils.subtract(requiredKeys,
                                                                  keys);
             E.checkArgument(false, "All non-null property keys %s of '%s' " +
-                                   "must be setted, but missed keys %s",
+                                   "must be set, but missed keys %s",
                             requiredKeys, this.schemaLabel().name(), missed);
         }
     }
@@ -419,17 +407,6 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             return pkValueStr.isEmpty();
         }
         return false;
-    }
-
-    // private static LongBitSet longSet =new LongBitSet(LongBitSet
-    // .MAX_NUM_BITS);
-
-    public static void close(LoadContext context) {
-        //if (context.options().usePrefilter){
-        //    bytesSet.close();
-        //    longSet.close();
-        //}
-
     }
 
     public abstract class VertexKVPairs {
@@ -705,7 +682,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             }
             List<String> primaryKeys = this.vertexLabel.primaryKeys();
             E.checkArgument(ListUtils.isEqualList(this.pkNames, primaryKeys),
-                            "Make sure the the primary key fields %s are " +
+                            "Make sure the primary key fields %s are " +
                             "not empty, or check whether the headers or " +
                             "field_mapping are configured correctly",
                             primaryKeys);
