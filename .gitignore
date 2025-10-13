@@ -85,6 +85,7 @@ output/
 tree.txt
 *.versionsBackup
 .flattened-pom.xml
+hugegraph-loader/assembly/travis/conf/hugegraph.truststore
 
 # eclipse ignore
 .settings/

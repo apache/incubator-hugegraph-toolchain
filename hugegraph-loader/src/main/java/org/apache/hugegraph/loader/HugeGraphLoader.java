@@ -90,7 +90,6 @@ public final class HugeGraphLoader {
     private final TaskManager manager;
     private final LoadOptions options;
 
-    // load 任务执行线程池
     private ExecutorService loadService;
 
     public static class InputTaskItem {
@@ -115,9 +114,15 @@ public final class HugeGraphLoader {
             loader = new HugeGraphLoader(args);
         } catch (Throwable e) {
             Printer.printError("Failed to start loading", e);
-            return; // 不再抛出，直接返回
+            return;
         }
-        loader.load();
+
+        try {
+            loader.load();
+        } finally {
+            loader.shutdown();
+            GlobalExecutorManager.shutdown(loader.options.shutdownTimeout);
+        }
     }
 
     public HugeGraphLoader(String[] args) {
@@ -126,7 +131,7 @@ public final class HugeGraphLoader {
 
     public HugeGraphLoader(LoadOptions options) {
         this(options, LoadMapping.of(options.file));
-        // 设置并发度
+    // Set concurrency
         GlobalExecutorManager.setBatchThreadCount(options.batchInsertThreads);
         GlobalExecutorManager.setSingleThreadCount(options.singleInsertThreads);
     }
@@ -168,8 +173,8 @@ public final class HugeGraphLoader {
     }
 
     private void setGraphMode() {
-        // 设置图的 Mode
-        // 如果存在 Graph 数据源，则所有 Input 必须都是 Graph 数据源
+    // Set graph mode
+    // If there is a Graph data source, all Inputs must be Graph data sources
         Supplier<Stream<InputSource>> inputsSupplier =
                 () -> this.mapping.structs().stream().filter(struct -> !struct.skip())
                                   .map(InputStruct::input);
@@ -218,13 +223,12 @@ public final class HugeGraphLoader {
 
             RuntimeException e = LoadUtil.targetRuntimeException(t);
             Printer.printError("Failed to load", e);
-            e.printStackTrace();
+            LOG.error("Load failed with exception", e);
 
             throw e;
         }
 
-        // 任务执行成功
-        return true;
+        return this.context.noError();
     }
 
     public void shutdown() {
@@ -353,7 +357,7 @@ public final class HugeGraphLoader {
         sourceClient.assignGraph(graphSource.getGraphSpace(),
                                  graphSource.getGraph());
 
-        // 创建 Vertex Schema
+    // Create Vertex Schema
         List<VertexLabel> vertexLabels = new ArrayList<>();
         if (graphSource.getSelectedVertices() != null) {
             List<String> selectedVertexLabels =
@@ -431,7 +435,7 @@ public final class HugeGraphLoader {
     private void createGraphSourceEdgeLabel(HugeClient sourceClient,
                                             HugeClient targetClient,
                                             GraphSource graphSource) {
-        // 创建 Edge Schema
+    // Create Edge Schema
         List<EdgeLabel> edgeLabels = new ArrayList<>();
         if (graphSource.getSelectedEdges() != null) {
             List<String> selectedEdgeLabels =
@@ -637,16 +641,8 @@ public final class HugeGraphLoader {
         }
         // sort by seqNumber to allow scatter loading from different sources
         if (scatter) {
-            tasks.sort(new Comparator<InputTaskItem>() {
-                @Override
-                public int compare(InputTaskItem o1, InputTaskItem o2) {
-                    if (o1.structIndex == o2.structIndex) {
-                        return o1.seqNumber - o2.seqNumber;
-                    } else {
-                        return o1.structIndex - o2.structIndex;
-                    }
-                }
-            });
+            tasks.sort(Comparator.comparingInt((InputTaskItem o) -> o.structIndex)
+                     .thenComparingInt(o -> o.seqNumber));
         }
 
         return tasks;
@@ -666,7 +662,7 @@ public final class HugeGraphLoader {
         LOG.info("{} threads for loading {} structs, from {} to {} in {} mode",
                  parallelCount, structs.size(), this.context.options().startFile,
                  this.context.options().endFile,
-                 scatter ? "scatter" : "sequencial");
+                 scatter ? "scatter" : "sequential");
 
         this.loadService = ExecutorUtil.newFixedThreadPool(parallelCount,
                                                            "loader");
@@ -707,7 +703,7 @@ public final class HugeGraphLoader {
         } catch (Throwable t) {
             throw t;
         } finally {
-            // 关闭 service
+            // Shutdown service
             cleanupEmptyProgress();
             this.loadService.shutdown();
             LOG.info("load end");
@@ -749,7 +745,7 @@ public final class HugeGraphLoader {
                 // Read next line from data source
                 if (reader.hasNext()) {
                     Line next = reader.next();
-                    // 如果数据源为 kafka，存在获取数据为 null 的情况
+                    // If the data source is kafka, there may be cases where the fetched data is null
                     if (next != null) {
                         lines.add(next);
                         metrics.increaseReadSuccess();
@@ -767,7 +763,7 @@ public final class HugeGraphLoader {
                 finished = true;
             }
             if (lines.size() >= batchSize ||
-                // 5s 内强制提交，主要影响 kafka 数据源
+                // Force commit within 5s, mainly affects kafka data source
                 (lines.size() > 0 &&
                  System.currentTimeMillis() > batchStartTime + 5000) ||
                 finished) {
