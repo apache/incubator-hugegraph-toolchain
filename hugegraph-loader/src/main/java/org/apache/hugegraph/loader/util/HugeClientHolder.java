@@ -45,9 +45,9 @@ public final class HugeClientHolder {
     }
 
     /**
-     * 创建Client客户端
+     * Create Client client
      * @param options
-     * @param useDirect 标识options.direct参数是否启用
+     * @param useDirect indicates whether options.direct parameter is enabled
      * @return
      */
     public static HugeClient create(LoadOptions options, boolean useDirect) {

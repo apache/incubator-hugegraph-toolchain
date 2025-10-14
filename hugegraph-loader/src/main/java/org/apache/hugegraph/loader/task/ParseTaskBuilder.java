@@ -58,7 +58,7 @@ public final class ParseTaskBuilder {
         this.builders = new ArrayList<>();
 
         if (SourceType.GRAPH.equals(struct.input().type())) {
-            // 当数据源为 HugeGraph 时，不做任何转换。
+            // When the data source is HugeGraph, no transformation is performed.
             this.builders.add(new NopVertexBuilder(this.context, struct));
             this.builders.add(new NopEdgeBuilder(this.context, struct));
         } else {

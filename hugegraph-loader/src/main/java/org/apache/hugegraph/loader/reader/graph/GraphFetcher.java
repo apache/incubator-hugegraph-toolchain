@@ -60,8 +60,8 @@ public class GraphFetcher implements Iterator<GraphElement> {
     }
 
     /**
-     * 按照批次查询数据
-     * @return 如数据为空，返回空数组
+     * Query data in batches
+     * @return if data is empty, return empty array
      */
     private List<GraphElement> queryBatch() {
         List<GraphElement> elements = new ArrayList<>();
@@ -82,7 +82,7 @@ public class GraphFetcher implements Iterator<GraphElement> {
 
         elements.stream().forEach(e -> this.ignoreProperties(e));
 
-        // 判断当前fetch是否已经结束
+        // Determine if the current fetch has ended
         if (elements.size() < batchSize) {
             this.done = true;
         }

@@ -101,7 +101,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
     protected abstract boolean isIdField(String fieldName);
 
-    // builder 是否区分 header 大小写
+    // Whether builder distinguishes header case sensitivity
     protected boolean headerCaseSensitive() {
         return this.struct.input().headerCaseSensitive();
     }
@@ -208,7 +208,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
             return true;
         }
 
-        // 当 filedValue 为空，且 schema 允许为空
+        // When fieldValue is empty and schema allows null
         if (fieldValue == null && nullableKeys.contains(mappedKey)) {
             return false;
         }
@@ -768,7 +768,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
         @Override
         public void extractFromEdge(String[] names, Object[] values,
                                     int[] fieldIndexes) {
-            // pass OLAP 属性针对点
+            // pass OLAP properties for vertices
         }
 
         @Override

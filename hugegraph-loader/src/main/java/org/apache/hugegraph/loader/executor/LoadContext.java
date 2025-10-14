@@ -58,7 +58,7 @@ public final class LoadContext implements Cloneable {
     private final Map<String, FailLogger> loggers;
 
     private final HugeClient client;
-    // 非直连模式的 client
+    // Non-direct mode client
     private final HugeClient indirectClient;
     private final SchemaCache schemaCache;
     private final ElementParseGroup parseGroup;
@@ -76,7 +76,7 @@ public final class LoadContext implements Cloneable {
         this.loggers = new ConcurrentHashMap<>();
         this.client = HugeClientHolder.create(options);
         if (this.options.direct) {
-            // options 实现了 ShallowClone
+            // options implements ShallowClone
             LoadOptions indirectOptions = (LoadOptions) options.clone();
             indirectOptions.direct = false;
             this.indirectClient = HugeClientHolder.create(indirectOptions);

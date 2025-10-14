@@ -253,7 +253,7 @@ public final class HugeGraphLoader {
         } catch (Throwable t) {
             throw t;
         } finally {
-            options.timeout = requestTimeout;  // 放在 finally 块中
+            options.timeout = requestTimeout;
         }
     }
 

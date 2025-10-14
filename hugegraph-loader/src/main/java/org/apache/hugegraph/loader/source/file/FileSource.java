@@ -55,11 +55,11 @@ public class FileSource extends AbstractSource {
     private Compression compression;
     @JsonProperty("batch_size")
     private int batchSize;
-    // 只针对单文件起作用
+    // Only works for single files
     @JsonProperty("split_count")
     private int splitCount;
 
-    // header 是否需要区分大小写
+    // Whether header needs to be case-sensitive
     private final boolean headerCaseSensitive;
 
     public FileSource() {
@@ -98,7 +98,7 @@ public class FileSource extends AbstractSource {
         this.compression = compression != null ? compression : Compression.NONE;
         this.batchSize = batchSize != null ? batchSize : 500;
 
-        // 当输入为orc/parquet，header不区分大小写
+        // When input is orc/parquet, header is case-insensitive
         if (Compression.ORC.equals(this.compression()) ||
             Compression.PARQUET.equals(this.compression())) {
             headerCaseSensitive = false;

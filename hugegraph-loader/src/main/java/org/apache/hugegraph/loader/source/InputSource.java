@@ -33,8 +33,8 @@ public interface InputSource extends Checkable {
 
     FileSource asFileSource();
 
-    // input source 是否区分大小写
-    // 默认区分大小写，只当输入为 parquet、orc 格式时为 false
+    // Whether input source is case-sensitive
+    // Case-sensitive by default, only false when input is parquet, orc format
     default boolean headerCaseSensitive() {
         return true;
     }

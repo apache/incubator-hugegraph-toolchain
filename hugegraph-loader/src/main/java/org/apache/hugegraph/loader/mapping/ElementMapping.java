@@ -149,7 +149,7 @@ public abstract class ElementMapping implements Checkable {
             String mappingName = this.mappingFields.get(fieldName);
             return mappingName != null ? mappingName : fieldName;
         } else {
-            // header name 不区分大小写
+            // header name is case-insensitive
             for (Map.Entry<String, String> entry:
                     this.mappingFields.entrySet()) {
                 if (entry.getKey().equalsIgnoreCase(fieldName)) {

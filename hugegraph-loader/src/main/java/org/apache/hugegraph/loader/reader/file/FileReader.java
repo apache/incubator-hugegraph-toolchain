@@ -170,7 +170,7 @@ public abstract class FileReader extends AbstractReader {
             LOG.warn("Failed to close reader for {} with exception {}",
                      this.source, e);
         } finally {
-            // 强制释放占用资源
+            // Force release occupied resources
             this.fetcher = null;
         }
     }

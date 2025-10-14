@@ -57,7 +57,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     @Override
     public List<Vertex> build(String[] names, Object[] values) {
         VertexKVPairs kvPairs = null;
-        // 如果是 Vertex OLAP 属性，则需要 VertexOlapKVPairs 解析
+        // If it's Vertex OLAP properties, VertexOlapKVPairs parsing is needed
         if (this.verifyOlapVertexBuilder()) {
             kvPairs = new VertexOlapKVPairs(vertexLabel);
         } else {
@@ -90,7 +90,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     }
 
     private void checkIdField() {
-        // OLAP 属性解析 不需要进行判断
+        // OLAP property parsing does not require judgment
         if (this.verifyOlapVertexBuilder()) {
             return;
         }
@@ -113,7 +113,7 @@ public class VertexBuilder extends ElementBuilder<Vertex> {
     }
 
     /**
-     * 确认是否 是 OLAP 属性
+     * Confirm whether it is OLAP property
      * @return
      */
     public boolean verifyOlapVertexBuilder() {

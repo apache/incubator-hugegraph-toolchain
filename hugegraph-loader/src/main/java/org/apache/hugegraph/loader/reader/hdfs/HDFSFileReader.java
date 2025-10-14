@@ -63,7 +63,7 @@ public class HDFSFileReader extends FileReader {
     private final Configuration conf;
 
     /**
-     * 只支持单集群
+     * Only supports single cluster
      */
     private static boolean hasLogin = false;
 
