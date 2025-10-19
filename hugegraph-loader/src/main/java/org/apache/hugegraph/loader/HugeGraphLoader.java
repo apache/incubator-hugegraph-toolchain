@@ -131,7 +131,7 @@ public final class HugeGraphLoader {
 
     public HugeGraphLoader(LoadOptions options) {
         this(options, LoadMapping.of(options.file));
-    // Set concurrency
+        // Set concurrency
         GlobalExecutorManager.setBatchThreadCount(options.batchInsertThreads);
         GlobalExecutorManager.setSingleThreadCount(options.singleInsertThreads);
     }
@@ -158,23 +158,23 @@ public final class HugeGraphLoader {
     private void checkGraphExists() {
         HugeClient client = this.context.indirectClient();
         String targetGraph = this.options.graph;
-        if (this.options.createGraph) {
-            if (!client.graphs().listGraph().contains(targetGraph)) {
-                Map<String, String> conf = new HashMap<>();
-                conf.put("store", targetGraph);
-                conf.put("backend", "hstore");
-                conf.put("serializer", "binary");
-                conf.put("task.scheduler_type", "distributed");
-                conf.put("nickname", targetGraph);
-                client.graphs().createGraph(targetGraph, JsonUtil.toJson(conf));
-                LOG.info("Create graph " + targetGraph + " ......");
-            }
+        if (this.options.createGraph
+            && !client.graphs().listGraph().contains(targetGraph)) {
+            Map<String, String> conf = new HashMap<>();
+            conf.put("store", targetGraph);
+            conf.put("backend", "hstore");
+            conf.put("serializer", "binary");
+            conf.put("task.scheduler_type", "distributed");
+            conf.put("nickname", targetGraph);
+
+            client.graphs().createGraph(targetGraph, JsonUtil.toJson(conf));
+            LOG.info("Create graph " + targetGraph + " ......");
         }
     }
 
     private void setGraphMode() {
-    // Set graph mode
-    // If there is a Graph data source, all Inputs must be Graph data sources
+        // Set graph mode
+        // If there is a Graph data source, all Inputs must be Graph data sources
         Supplier<Stream<InputSource>> inputsSupplier =
                 () -> this.mapping.structs().stream().filter(struct -> !struct.skip())
                                   .map(InputStruct::input);
@@ -183,7 +183,6 @@ public final class HugeGraphLoader {
             if (!inputsSupplier.get().allMatch(input -> SourceType.GRAPH.equals(input.type()))) {
                 throw new LoadException("All inputs must be of Graph Type");
             }
-
             this.context().setRestoreMode();
         } else if (this.options.restore) {
             this.context().setRestoreMode();
@@ -341,13 +340,10 @@ public final class HugeGraphLoader {
     private void createGraphSourceSchema(GraphSource graphSource) {
 
         try (HugeClient sourceClient = graphSource.createHugeClient();
-             // TODO support direct mode
              HugeClient client = HugeClientHolder.create(this.options, false)) {
 
             createGraphSourceVertexLabel(sourceClient, client, graphSource);
-
             createGraphSourceEdgeLabel(sourceClient, client, graphSource);
-
             createGraphSourceIndexLabel(sourceClient, client, graphSource);
         }
     }
@@ -359,7 +355,7 @@ public final class HugeGraphLoader {
         sourceClient.assignGraph(graphSource.getGraphSpace(),
                                  graphSource.getGraph());
 
-    // Create Vertex Schema
+        // Create Vertex Schema
         List<VertexLabel> vertexLabels = new ArrayList<>();
         if (graphSource.getSelectedVertices() != null) {
             List<String> selectedVertexLabels =
@@ -437,7 +433,7 @@ public final class HugeGraphLoader {
     private void createGraphSourceEdgeLabel(HugeClient sourceClient,
                                             HugeClient targetClient,
                                             GraphSource graphSource) {
-    // Create Edge Schema
+        // Create Edge Schema
         List<EdgeLabel> edgeLabels = new ArrayList<>();
         if (graphSource.getSelectedEdges() != null) {
             List<String> selectedEdgeLabels =
@@ -785,22 +781,6 @@ public final class HugeGraphLoader {
                 lines = new ArrayList<>(batchSize);
                 batchStartTime = System.currentTimeMillis();
             }
-            //if (lines.size() >= batchSize || finished) {
-            //    List<ParseTaskBuilder.ParseTask> tasks = taskBuilder.build(lines);
-            //    for (ParseTaskBuilder.ParseTask task : tasks) {
-            //        this.executeParseTask(struct, task.mapping(), task);
-            //    }
-            //    // Confirm offset to avoid lost records
-            //    //reader.confirmOffset();
-            //    this.context.newProgress().markLoaded(struct, reader, finished);
-            //
-            //    this.handleParseFailure();
-            //    if (reachedMaxReadLines) {
-            //        LOG.warn("Read lines exceed limit, stopped loading tasks");
-            //        this.context.stopLoading();
-            //    }
-            //    lines = new ArrayList<>(batchSize);
-            //}
         }
 
         metrics.stopInFlight();
