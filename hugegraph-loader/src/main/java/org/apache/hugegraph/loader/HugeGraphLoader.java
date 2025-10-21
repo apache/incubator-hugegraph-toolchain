@@ -90,8 +90,6 @@ public final class HugeGraphLoader {
     private final TaskManager manager;
     private final LoadOptions options;
 
-    private ExecutorService loadService;
-
     public static class InputTaskItem {
 
         public final InputReader reader;
@@ -162,9 +160,9 @@ public final class HugeGraphLoader {
             && !client.graphs().listGraph().contains(targetGraph)) {
             Map<String, String> conf = new HashMap<>();
             conf.put("store", targetGraph);
-            conf.put("backend", "hstore");
-            conf.put("serializer", "binary");
-            conf.put("task.scheduler_type", "distributed");
+            conf.put("backend", this.options.backend);
+            conf.put("serializer", this.options.serializer);
+            conf.put("task.scheduler_type", this.options.schedulerType);
             conf.put("nickname", targetGraph);
 
             client.graphs().createGraph(targetGraph, JsonUtil.toJson(conf));
@@ -248,9 +246,9 @@ public final class HugeGraphLoader {
             client.graphs().clearGraph(options.graph, "I'm sure to delete all data");
             LOG.info("The graph '{}' has been cleared successfully",
                      options.graph);
-            options.timeout = requestTimeout;
-        } catch (Throwable t) {
-            throw t;
+        } catch (Exception e) {
+            LOG.error("Failed to clear data for graph '{}': {}", options.graph, e.getMessage(), e);
+            throw e;
         } finally {
             options.timeout = requestTimeout;
         }
@@ -597,6 +595,7 @@ public final class HugeGraphLoader {
     private List<InputTaskItem> prepareTaskItems(List<InputStruct> structs,
                                                  boolean scatter) {
         ArrayList<InputTaskItem> tasks = new ArrayList<>();
+        ArrayList<InputReader> readers = new ArrayList<>();
         int curFile = 0;
         int curIndex = 0;
         for (InputStruct struct : structs) {
@@ -612,6 +611,7 @@ public final class HugeGraphLoader {
                 List<InputReader> readerList = reader.multiReaders() ?
                                                reader.split() :
                                                ImmutableList.of(reader);
+                readers.addAll(readerList);
 
                 LOG.info("total {} found in '{}'", readerList.size(), struct);
                 tasks.ensureCapacity(tasks.size() + readerList.size());
@@ -634,6 +634,19 @@ public final class HugeGraphLoader {
                 }
             } catch (InitException e) {
                 throw new LoadException("Failed to init input reader", e);
+            } finally {
+                Set<InputReader> usedReaders = tasks.stream()
+                                                    .map(item -> item.reader)
+                                                    .collect(Collectors.toSet());
+                for (InputReader r : readers) {
+                    if (!usedReaders.contains(r)) {
+                        try {
+                            r.close();
+                        } catch (Exception ex) {
+                            LOG.warn("Failed to close reader: {}", ex.getMessage());
+                        }
+                    }
+                }
             }
             curIndex += 1;
         }
@@ -652,7 +665,7 @@ public final class HugeGraphLoader {
             return;
         }
         if (parallelCount <= 0) {
-            parallelCount = structs.size();
+            parallelCount = Math.min(structs.size(), Runtime.getRuntime().availableProcessors() * 2);
         }
 
         boolean scatter = this.context.options().scatterSources;
@@ -662,12 +675,16 @@ public final class HugeGraphLoader {
                  this.context.options().endFile,
                  scatter ? "scatter" : "sequential");
 
-        this.loadService = ExecutorUtil.newFixedThreadPool(parallelCount,
-                                                           "loader");
+        ExecutorService loadService = ExecutorUtil.newFixedThreadPool(parallelCount,
+                                                                      "loader");
 
         List<InputTaskItem> taskItems = prepareTaskItems(structs, scatter);
-
         List<CompletableFuture<Void>> loadTasks = new ArrayList<>();
+
+        if (taskItems.isEmpty()) {
+            LOG.info("No tasks to execute after filtering");
+            return;
+        }
 
         for (InputTaskItem item : taskItems) {
             // Init reader
@@ -675,7 +692,7 @@ public final class HugeGraphLoader {
             // Load data from current input mapping
             loadTasks.add(
                     this.asyncLoadStruct(item.struct, item.reader,
-                                         this.loadService));
+                                         loadService));
         }
 
         LOG.info("waiting for loading finish {}", loadTasks.size());
@@ -703,7 +720,7 @@ public final class HugeGraphLoader {
         } finally {
             // Shutdown service
             cleanupEmptyProgress();
-            this.loadService.shutdown();
+            loadService.shutdown();
             LOG.info("load end");
         }
     }

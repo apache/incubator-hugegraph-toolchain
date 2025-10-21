@@ -317,6 +317,18 @@ public final class LoadOptions implements Cloneable {
                description = "graph mode set RESTORING")
     public boolean restore = false;
 
+    @Parameter(names = {"--backend"}, arity = 1,
+               description = "The backend store type when creating graph if not exists")
+    public String backend = "hstore";
+
+    @Parameter(names = {"--serializer"}, arity = 1,
+               description = "The serializer type when creating graph if not exists")
+    public String serializer = "binary";
+
+    @Parameter(names = {"--scheduler-type"}, arity = 1,
+               description = "The task scheduler type (when creating graph if not exists")
+    public String schedulerType = "distributed";
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";
