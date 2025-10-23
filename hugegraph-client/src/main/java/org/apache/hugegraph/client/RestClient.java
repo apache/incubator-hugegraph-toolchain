@@ -49,7 +49,7 @@ public class RestClient extends AbstractRestClient {
     private Version apiVersion = null;
     @Setter
     @Getter
-    private boolean supportGs = false;
+    private boolean supportGs = true;
 
     public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);
