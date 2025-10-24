@@ -148,7 +148,7 @@ public final class FailLogger {
              OutputStream os = new FileOutputStream(dedupFile);
              Writer ow = new OutputStreamWriter(os, charset);
              BufferedWriter writer = new BufferedWriter(ow)) {
-            Set<Integer> writedLines = new HashSet<>();
+            Set<Integer> writtenLines = new HashSet<>();
             HashFunction hashFunc = Hashing.murmur3_32();
             for (String tipsLine, dataLine;
                      (tipsLine = reader.readLine()) != null &&
@@ -158,13 +158,13 @@ public final class FailLogger {
                  * Misjudgment may occur, but the probability is extremely low
                  */
                 int hash = hashFunc.hashString(dataLine, charset).asInt();
-                if (!writedLines.contains(hash)) {
+                if (!writtenLines.contains(hash)) {
                     writer.write(tipsLine);
                     writer.newLine();
                     writer.write(dataLine);
                     writer.newLine();
-                    // Save the hash value of writed line
-                    writedLines.add(hash);
+                    // Save the hash value of written line
+                    writtenLines.add(hash);
                 }
             }
         } catch (IOException e) {

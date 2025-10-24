@@ -47,13 +47,13 @@ public class GraphFetcher implements Iterator<GraphElement> {
 
     public GraphFetcher(HugeClient client, String label,
                         Map<String, Object> queryProperties, int batchSize,
-                        boolean isVertex, List<String> ignoredProerties) {
+                        boolean isVertex, List<String> ignoredProperties) {
         this.client = client;
         this.label = label;
         this.queryProperties = queryProperties;
         this.batchSize = batchSize;
         this.isVertex = isVertex;
-        this.ignoredProperties = ignoredProerties;
+        this.ignoredProperties = ignoredProperties;
 
         this.offset = 0;
         this.done = false;

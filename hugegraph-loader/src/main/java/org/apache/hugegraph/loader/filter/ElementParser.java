@@ -22,7 +22,7 @@ import org.apache.hugegraph.structure.GraphElement;
 public interface ElementParser {
 
     /*
-    * Returns false if the element shoud be removed.
+    * Returns false if the element should be removed.
     * parse element: remove modify etc.
     *
     * Params:

@@ -646,7 +646,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
 
                 if (this.headerCaseSensitive) {
                     if (primaryKeys.contains(key)) {
-                        // Don't put priamry key/values into general properties
+                        // Don't put primary key/values into general properties
                         int index = primaryKeys.indexOf(key);
                         Object pkValue = mappingValue(fieldName, fieldValue);
                         this.pkValues[index] = pkValue;
@@ -657,7 +657,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 } else {
                     String lowerCaseKey = key.toLowerCase();
                     if (lowerCasePrimaryKeys.contains(lowerCaseKey)) {
-                        // Don't put priamry key/values into general properties
+                        // Don't put primary key/values into general properties
                         int index = lowerCasePrimaryKeys.indexOf(lowerCaseKey);
                         Object pkValue = mappingValue(fieldName, fieldValue);
                         this.pkValues[index] = pkValue;
@@ -810,7 +810,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
          */
         private String pkName;
         /*
-         * The primary values(splited and mapped)
+         * The primary values(split and mapped)
          * like: m|v -> [marko,vadas]
          */
         private List<Object> pkValues;
@@ -837,7 +837,7 @@ public abstract class ElementBuilder<GE extends GraphElement> {
                 }
                 String key = mappingField(fieldName);
                 if (!handledPk && primaryKeys.contains(key)) {
-                    // Don't put priamry key/values into general properties
+                    // Don't put primary key/values into general properties
                     List<Object> rawPkValues = splitField(fieldName,
                                                           fieldValue);
                     this.pkValues = rawPkValues.stream().map(rawPkValue -> {

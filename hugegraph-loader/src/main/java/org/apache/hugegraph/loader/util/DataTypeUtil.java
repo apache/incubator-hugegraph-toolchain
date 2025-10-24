@@ -85,7 +85,7 @@ public final class DataTypeUtil {
     public static List<Object> splitField(String key, Object rawColumnValue,
                                           InputSource source) {
         E.checkArgument(rawColumnValue != null,
-                        "The value to be splitted can't be null");
+                        "The value to be split can't be null");
         if (rawColumnValue instanceof Collection) {
             return (List<Object>) rawColumnValue;
         }
@@ -98,7 +98,7 @@ public final class DataTypeUtil {
         if (rawValue instanceof Number) {
             return ((Number) rawValue).longValue();
         } else if (rawValue instanceof String) {
-            // trim() is a little time consuming
+            // trim() is a little time-consuming
             return parseLong(((String) rawValue).trim());
         }
         throw new IllegalArgumentException(String.format(

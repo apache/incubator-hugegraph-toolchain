@@ -45,10 +45,10 @@ public final class HugeClientHolder {
     }
 
     /**
-     * Create Client client
-     * @param options
-     * @param useDirect indicates whether options.direct parameter is enabled
-     * @return
+     * Creates and returns a HugeClient instance based on the provided options.
+     * @param options the configuration options for the HugeClient
+     * @param useDirect indicates whether the direct connection option is enabled
+     * @return a HugeClient instance
      */
     public static HugeClient create(LoadOptions options, boolean useDirect) {
 
