@@ -23,7 +23,7 @@ import org.apache.hugegraph.structure.graph.Vertex;
 
 public class Result {
 
-    private Object object;
+    private final Object object;
 
     public Result(Object object) {
         this.object = object;

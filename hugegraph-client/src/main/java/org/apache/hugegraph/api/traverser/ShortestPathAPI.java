@@ -18,19 +18,17 @@
 package org.apache.hugegraph.api.traverser;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
-import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.traverser.PathOfVertices;
 
 public class ShortestPathAPI extends TraversersAPI {
 
-    public ShortestPathAPI(RestClient client,  String graphSpace, String graph) {
+    public ShortestPathAPI(RestClient client, String graphSpace, String graph) {
         super(client, graphSpace, graph);
     }
 

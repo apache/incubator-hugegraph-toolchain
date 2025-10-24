@@ -24,7 +24,7 @@ import org.apache.hugegraph.client.RestClient;
 
 public class MetricsManager {
 
-    private MetricsAPI metricsAPI;
+    private final MetricsAPI metricsAPI;
 
     public MetricsManager(RestClient client) {
         this.metricsAPI = new MetricsAPI(client);

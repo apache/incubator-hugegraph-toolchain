@@ -34,7 +34,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public class KneighborApiTest extends TraverserApiTest {
@@ -80,7 +79,6 @@ public class KneighborApiTest extends TraverserApiTest {
         builder.steps().direction(Direction.BOTH);
         builder.maxDepth(1);
         builder.withVertex(true);
-        ;
         KneighborRequest request = builder.build();
 
         Kneighbor kneighborResult = kneighborAPI.post(request);

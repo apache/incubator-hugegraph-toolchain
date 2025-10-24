@@ -31,7 +31,7 @@ public class TaskCache {
 
     private static final Task FAKE_TASK = new Task();
 
-    private Map<TaskAPI, Map<Long, Task>> taskTable;
+    private final Map<TaskAPI, Map<Long, Task>> taskTable;
     private ScheduledExecutorService service;
 
     private static final TaskCache INSTANCE = new TaskCache();
@@ -95,7 +95,7 @@ public class TaskCache {
 
     private void asyncQueryTask() {
         for (Map.Entry<TaskAPI, Map<Long, Task>> query :
-             this.taskTable.entrySet()) {
+                this.taskTable.entrySet()) {
             TaskAPI api = query.getKey();
             Map<Long, Task> targets = query.getValue();
             if (targets == null || targets.isEmpty()) {

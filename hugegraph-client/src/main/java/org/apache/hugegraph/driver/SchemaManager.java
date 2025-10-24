@@ -36,12 +36,12 @@ import org.apache.hugegraph.structure.schema.VertexLabel;
 
 public class SchemaManager {
 
-    private PropertyKeyAPI propertyKeyAPI;
-    private VertexLabelAPI vertexLabelAPI;
-    private EdgeLabelAPI edgeLabelAPI;
-    private IndexLabelAPI indexLabelAPI;
-    private SchemaAPI schemaAPI;
-    private TaskAPI taskAPI;
+    private final PropertyKeyAPI propertyKeyAPI;
+    private final VertexLabelAPI vertexLabelAPI;
+    private final EdgeLabelAPI edgeLabelAPI;
+    private final IndexLabelAPI indexLabelAPI;
+    private final SchemaAPI schemaAPI;
+    private final TaskAPI taskAPI;
 
     public SchemaManager(RestClient client, String graphSpace, String graph) {
         this.propertyKeyAPI = new PropertyKeyAPI(client, graphSpace, graph);
@@ -110,7 +110,7 @@ public class SchemaManager {
 
     public PropertyKey addPropertyKey(PropertyKey propertyKey, long seconds) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .create(propertyKey);
+                .create(propertyKey);
         if (task.taskId() != 0L) {
             this.taskAPI.waitUntilTaskSuccess(task.taskId(), seconds);
         }
@@ -119,7 +119,7 @@ public class SchemaManager {
 
     public long addPropertyKeyAsync(PropertyKey propertyKey) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .create(propertyKey);
+                .create(propertyKey);
         return task.taskId();
     }
 
@@ -142,7 +142,7 @@ public class SchemaManager {
 
     public PropertyKey clearPropertyKey(PropertyKey propertyKey, long seconds) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .clear(propertyKey);
+                .clear(propertyKey);
         if (task.taskId() != 0L) {
             this.taskAPI.waitUntilTaskSuccess(task.taskId(), seconds);
         }
@@ -151,7 +151,7 @@ public class SchemaManager {
 
     public long clearPropertyKeyAsync(PropertyKey propertyKey) {
         PropertyKey.PropertyKeyWithTask task = this.propertyKeyAPI
-                                                   .clear(propertyKey);
+                .clear(propertyKey);
         return task.taskId();
     }
 
@@ -261,7 +261,7 @@ public class SchemaManager {
 
     public IndexLabel addIndexLabel(IndexLabel indexLabel, long seconds) {
         IndexLabel.IndexLabelWithTask cil = this.indexLabelAPI
-                                                .create(indexLabel);
+                .create(indexLabel);
         if (cil.taskId() != 0L) {
             this.taskAPI.waitUntilTaskSuccess(cil.taskId(), seconds);
         }
@@ -270,7 +270,7 @@ public class SchemaManager {
 
     public long addIndexLabelAsync(IndexLabel indexLabel) {
         IndexLabel.IndexLabelWithTask cil = this.indexLabelAPI
-                                                .create(indexLabel);
+                .create(indexLabel);
         return cil.taskId();
     }
 

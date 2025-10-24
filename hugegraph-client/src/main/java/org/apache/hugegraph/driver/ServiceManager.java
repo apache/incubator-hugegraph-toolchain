@@ -26,8 +26,9 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.space.OLTPService;
 
 public class ServiceManager {
-    private ServiceAPI serviceAPI;
-    private ConfigAPI configAPI;
+
+    private final ServiceAPI serviceAPI;
+    private final ConfigAPI configAPI;
 
     public ServiceManager(RestClient client, String graphSpace) {
         this.serviceAPI = new ServiceAPI(client, graphSpace);
@@ -66,7 +67,7 @@ public class ServiceManager {
 
     public OLTPService updateService(OLTPService service) {
         if (service.checkIsK8s()) {
-                // Only update config
+            // Only update config
             this.configAPI.update(service.getName(), service.getConfigs());
             // Delete and recreate service
             this.delService(service.getName(),
@@ -90,18 +91,15 @@ public class ServiceManager {
 
     /**
      * Check if service modification requires k8s pod restart by comparing
+     *
      * @param service
      * @return
      */
     public boolean checkIfReloadK8sService(OLTPService service) {
         OLTPService curService = getService(service.getName());
-        if (service.getCount() != curService.getCount() ||
-                service.getCpuLimit() != curService.getCpuLimit() ||
-                service.getMemoryLimit() != curService.getMemoryLimit()) {
-
-            return true;
-        }
-        return false;
+        return service.getCount() != curService.getCount() ||
+               service.getCpuLimit() != curService.getCpuLimit() ||
+               service.getMemoryLimit() != curService.getMemoryLimit();
     }
 
     public List<String> configOptinList() {

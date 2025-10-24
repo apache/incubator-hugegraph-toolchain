@@ -147,8 +147,8 @@ public class PropertyKey extends SchemaElement {
 
     public static class BuilderImpl implements Builder {
 
-        private PropertyKey propertyKey;
-        private SchemaManager manager;
+        private final PropertyKey propertyKey;
+        private final SchemaManager manager;
         private String oldName;
 
         public BuilderImpl(String name, SchemaManager manager) {

@@ -23,9 +23,10 @@ import org.apache.hugegraph.api.ip.WhiteIpListAPI;
 import java.util.Map;
 
 public class WhiteIpListManager {
-    private WhiteIpListAPI whiteIpListAPI;
 
-    public  WhiteIpListManager (RestClient client){
+    private final WhiteIpListAPI whiteIpListAPI;
+
+    public WhiteIpListManager(RestClient client) {
         this.whiteIpListAPI = new WhiteIpListAPI(client);
     }
 

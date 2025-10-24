@@ -32,8 +32,8 @@ import java.util.Map;
 public class ComputerDisAPI extends API {
 
     private static final String PATH = "graphspaces/%s/graphs/%s/jobs/computerdis";
-    private String graphSpace;
-    private String graph;
+    private final String graphSpace;
+    private final String graph;
     public static final String TASKS = "tasks";
     public static final String TASK_ID = "task_id";
 

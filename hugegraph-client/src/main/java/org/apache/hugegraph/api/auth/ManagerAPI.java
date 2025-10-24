@@ -17,17 +17,16 @@
 
 package org.apache.hugegraph.api.auth;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.hugegraph.client.RestClient;
-import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.structure.auth.AuthElement;
-import org.apache.hugegraph.structure.auth.HugePermission;
-import org.apache.hugegraph.structure.auth.UserManager;
-import org.apache.hugegraph.structure.constant.HugeType;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.rest.RestResult;
+import org.apache.hugegraph.structure.auth.HugePermission;
+import org.apache.hugegraph.structure.auth.UserManager;
+import org.apache.hugegraph.structure.constant.HugeType;
 
 public class ManagerAPI extends AuthAPI {
 
@@ -67,7 +66,7 @@ public class ManagerAPI extends AuthAPI {
 
         String path = this.path() + PATH_SPLITOR + "check";
         RestResult result = this.client.get(path, params);
-        
+
         return (boolean) result.readObject(Map.class).getOrDefault("check", false);
     }
 

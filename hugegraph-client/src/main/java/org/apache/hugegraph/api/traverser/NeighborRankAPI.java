@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.hugegraph.rest.RestResult;
-import org.apache.hugegraph.util.E;
-
 import org.apache.hugegraph.client.RestClient;
+import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
+import org.apache.hugegraph.util.E;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class NeighborRankAPI extends TraversersAPI {
@@ -77,8 +77,8 @@ public class NeighborRankAPI extends TraversersAPI {
 
         public static class Builder {
 
-            private Request request;
-            private List<Step.Builder> stepBuilders;
+            private final Request request;
+            private final List<Step.Builder> stepBuilders;
 
             private Builder() {
                 this.request = new Request();
@@ -87,7 +87,7 @@ public class NeighborRankAPI extends TraversersAPI {
 
             public Builder source(Object source) {
                 E.checkArgument(source != null, "The label of request " +
-                                "for neighbor rank can't be null");
+                                                "for neighbor rank can't be null");
                 this.request.source = source;
                 return this;
             }
@@ -140,7 +140,7 @@ public class NeighborRankAPI extends TraversersAPI {
                 this.direction = null;
                 this.labels = new ArrayList<>();
                 this.degree = Traverser.DEFAULT_MAX_DEGREE;
-                this.top = (int) Traverser.DEFAULT_PATHS_LIMIT;
+                this.top = Traverser.DEFAULT_PATHS_LIMIT;
             }
 
             @Override
@@ -152,7 +152,7 @@ public class NeighborRankAPI extends TraversersAPI {
 
             public static class Builder {
 
-                private Step step;
+                private final Step step;
 
                 private Builder() {
                     this.step = new Step();

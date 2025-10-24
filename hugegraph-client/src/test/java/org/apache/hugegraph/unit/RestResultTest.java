@@ -101,7 +101,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertEquals(result.headers(), new RestHeaders());
+        Assert.assertEquals(new RestHeaders(), result.headers());
 
         PropertyKey propertyKey = result.readObject(PropertyKey.class);
 
@@ -135,7 +135,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertEquals(result.headers(), new RestHeaders());
+        Assert.assertEquals(new RestHeaders(), result.headers());
 
         List<PropertyKey> propertyKeys = result.readList("propertykeys", PropertyKey.class);
         Assert.assertEquals(2, propertyKeys.size());
@@ -170,7 +170,7 @@ public class RestResultTest extends BaseUnitTest {
         Mockito.when(this.mockResponse.body().string()).thenReturn(json);
         RestResult result = new RestResult(this.mockResponse);
         Assert.assertEquals(200, result.status());
-        Assert.assertEquals(result.headers(), new RestHeaders());
+        Assert.assertEquals(new RestHeaders(), result.headers());
 
         VertexLabel vertexLabel = result.readObject(VertexLabel.class);
 

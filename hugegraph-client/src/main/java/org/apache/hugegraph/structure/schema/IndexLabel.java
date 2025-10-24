@@ -129,8 +129,8 @@ public class IndexLabel extends SchemaElement {
 
     public static class BuilderImpl implements Builder {
 
-        private IndexLabel indexLabel;
-        private SchemaManager manager;
+        private final IndexLabel indexLabel;
+        private final SchemaManager manager;
 
         public BuilderImpl(String name, SchemaManager manager) {
             this.indexLabel = new IndexLabel(name);

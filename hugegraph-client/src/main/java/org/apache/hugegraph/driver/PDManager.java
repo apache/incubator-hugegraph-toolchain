@@ -24,7 +24,9 @@ import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.space.PDNodeInfo;
 
 public class PDManager {
-    private PDAPI pdAPI;
+
+    private final PDAPI pdAPI;
+
     public PDManager(RestClient client) {
         this.pdAPI = new PDAPI(client);
     }

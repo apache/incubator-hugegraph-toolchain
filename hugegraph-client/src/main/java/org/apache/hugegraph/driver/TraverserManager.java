@@ -28,6 +28,7 @@ import org.apache.hugegraph.api.traverser.CountAPI;
 import org.apache.hugegraph.api.traverser.CrosspointsAPI;
 import org.apache.hugegraph.api.traverser.CustomizedCrosspointsAPI;
 import org.apache.hugegraph.api.traverser.CustomizedPathsAPI;
+import org.apache.hugegraph.api.traverser.EdgeExistenceAPI;
 import org.apache.hugegraph.api.traverser.EdgesAPI;
 import org.apache.hugegraph.api.traverser.EgonetAPI;
 import org.apache.hugegraph.api.traverser.FusiformSimilarityAPI;
@@ -46,17 +47,15 @@ import org.apache.hugegraph.api.traverser.SameNeighborsBatchAPI;
 import org.apache.hugegraph.api.traverser.ShortestPathAPI;
 import org.apache.hugegraph.api.traverser.SingleSourceShortestPathAPI;
 import org.apache.hugegraph.api.traverser.TemplatePathsAPI;
+import org.apache.hugegraph.api.traverser.VariablesAPI;
 import org.apache.hugegraph.api.traverser.VerticesAPI;
 import org.apache.hugegraph.api.traverser.WeightedShortestPathAPI;
-import org.apache.hugegraph.api.traverser.EdgeExistenceAPI;
-import org.apache.hugegraph.api.traverser.VariablesAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.constant.Direction;
 import org.apache.hugegraph.structure.constant.Traverser;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Edges;
 import org.apache.hugegraph.structure.graph.GraphIterator;
-import org.apache.hugegraph.structure.graph.Path;
 import org.apache.hugegraph.structure.graph.Shard;
 import org.apache.hugegraph.structure.graph.Vertex;
 import org.apache.hugegraph.structure.graph.Vertices;
@@ -80,7 +79,6 @@ import org.apache.hugegraph.structure.traverser.PathWithMeasure;
 import org.apache.hugegraph.structure.traverser.PathsRequest;
 import org.apache.hugegraph.structure.traverser.PathsWithVertices;
 import org.apache.hugegraph.structure.traverser.Prediction;
-import org.apache.hugegraph.structure.traverser.Ranks;
 import org.apache.hugegraph.structure.traverser.RanksWithMeasure;
 import org.apache.hugegraph.structure.traverser.SameNeighbors;
 import org.apache.hugegraph.structure.traverser.SameNeighborsBatch;
@@ -333,14 +331,14 @@ public class TraverserManager {
                                              String label, String weight,
                                              long degree, long skipDegree,
                                              long capacity, boolean withVertex, boolean withEdge) {
-        return this.weightedShortestPathAPI.get(sourceId, targetId,direction,
+        return this.weightedShortestPathAPI.get(sourceId, targetId, direction,
                                                 label, weight, degree,
                                                 skipDegree, capacity,
                                                 withVertex, withEdge);
     }
 
     public PathsWithVertices multiNodeShortestPath(
-                             MultiNodeShortestPathRequest request) {
+            MultiNodeShortestPathRequest request) {
         return this.multiNodeShortestPathAPI.post(request);
     }
 
@@ -577,7 +575,7 @@ public class TraverserManager {
     public Vertices variables(Shard shard) {
         Vertices vertices = this.variables(shard, null, 0L);
         E.checkState(vertices.page() == null,
-                "Can't contains page when not in paging");
+                     "Can't contains page when not in paging");
         return vertices;
     }
 
@@ -588,7 +586,7 @@ public class TraverserManager {
 
     public Vertices variables(Shard shard, String page, long pageLimit) {
         E.checkArgument(page == null || pageLimit >= 0,
-                "Page limit must be >= 0 when page is not null");
+                        "Page limit must be >= 0 when page is not null");
         Vertices vertices = this.variablesAPI.scan(shard, page, pageLimit);
 
         for (Vertex vertex : vertices.results()) {
@@ -599,7 +597,7 @@ public class TraverserManager {
 
     public Vertices kvStores(Shard shard, String page, long pageLimit) {
         E.checkArgument(page == null || pageLimit >= 0,
-                "Page limit must be >= 0 when page is not null");
+                        "Page limit must be >= 0 when page is not null");
         Vertices vertices = this.kvStoreAPI.scan(shard, page, pageLimit);
 
         for (Vertex vertex : vertices.results()) {

@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class ComputerManager {
 
-    private ComputerDisAPI computerDisAPI;
+    private final ComputerDisAPI computerDisAPI;
 
     public ComputerManager(RestClient client, String graphSpace, String graph) {
         this.computerDisAPI = new ComputerDisAPI(client, graphSpace, graph);
