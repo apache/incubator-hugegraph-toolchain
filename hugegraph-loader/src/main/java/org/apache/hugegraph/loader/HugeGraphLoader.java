@@ -44,6 +44,7 @@ import org.apache.hugegraph.loader.task.ParseTaskBuilder.ParseTask;
 import org.apache.hugegraph.loader.task.TaskManager;
 import org.apache.hugegraph.loader.util.HugeClientHolder;
 import org.apache.hugegraph.loader.util.LoadUtil;
+import org.apache.hugegraph.structure.schema.SchemaLabel;
 import org.apache.hugegraph.util.ExecutorUtil;
 import org.apache.hugegraph.loader.util.Printer;
 import org.apache.hugegraph.structure.schema.EdgeLabel;
@@ -336,13 +337,61 @@ public final class HugeGraphLoader {
      * @param graphSource
      */
     private void createGraphSourceSchema(GraphSource graphSource) {
-
         try (HugeClient sourceClient = graphSource.createHugeClient();
              HugeClient client = HugeClientHolder.create(this.options, false)) {
-
             createGraphSourceVertexLabel(sourceClient, client, graphSource);
             createGraphSourceEdgeLabel(sourceClient, client, graphSource);
             createGraphSourceIndexLabel(sourceClient, client, graphSource);
+        } catch (Exception e) {
+            LOG.error("Failed to create graph source schema for {}: {}",
+                      graphSource.getGraph(), e.getMessage(), e);
+            throw new LoadException("Schema creation failed", e);
+        }
+    }
+
+    // handles labels (can be used for both VertexLabel and EdgeLabel)
+    private void createGraphSourceLabels(
+            HugeClient sourceClient,
+            HugeClient targetClient,
+            List<? extends SchemaLabel> labels, // VertexLabel or EdgeLabel
+            Map<String, GraphSource.SeletedLabelDes> selectedMap,
+            Map<String, GraphSource.IgnoredLabelDes> ignoredMap,
+            boolean isVertex) {
+
+        for (SchemaLabel label : labels) {
+            if (ignoredMap.containsKey(label.name())) {
+                GraphSource.IgnoredLabelDes des
+                        = ignoredMap.get(label.name());
+
+                if (des.getProperties() != null) {
+                    des.getProperties()
+                       .forEach((p) -> label.properties().remove(p));
+                }
+            }
+
+            Set<String> existedPKs =
+                    targetClient.schema().getPropertyKeys().stream()
+                                .map(pk -> pk.name()).collect(Collectors.toSet());
+
+            for (String pkName : label.properties()) {
+                PropertyKey pk = sourceClient.schema()
+                                             .getPropertyKey(pkName);
+                if (!existedPKs.contains(pk.name())) {
+                    targetClient.schema().addPropertyKey(pk);
+                }
+            }
+
+            if (isVertex) {
+                if (!(label instanceof VertexLabel)) {
+                    throw new IllegalArgumentException("Expected VertexLabel but got " + label.getClass());
+                }
+                targetClient.schema().addVertexLabel((VertexLabel) label);
+            } else {
+                if (!(label instanceof EdgeLabel)) {
+                    throw new IllegalArgumentException("Expected EdgeLabel but got " + label.getClass());
+                }
+                targetClient.schema().addEdgeLabel((EdgeLabel) label);
+            }
         }
     }
 
@@ -401,31 +450,8 @@ public final class HugeGraphLoader {
             }
         }
 
-        for (VertexLabel vertexLabel : vertexLabels) {
-            if (mapIgnoredVertices.containsKey(vertexLabel.name())) {
-                GraphSource.IgnoredLabelDes des
-                        = mapIgnoredVertices.get(vertexLabel.name());
-
-                if (des.getProperties() != null) {
-                    des.getProperties()
-                        .forEach((p) -> vertexLabel.properties().remove(p));
-                }
-            }
-
-            Set<String> existedPKs =
-                    targetClient.schema().getPropertyKeys().stream()
-                                .map(pk -> pk.name()).collect(Collectors.toSet());
-
-            for (String pkName : vertexLabel.properties()) {
-                PropertyKey pk = sourceClient.schema()
-                                             .getPropertyKey(pkName);
-                if (!existedPKs.contains(pk.name())) {
-                    targetClient.schema().addPropertyKey(pk);
-                }
-            }
-
-            targetClient.schema().addVertexLabel(vertexLabel);
-        }
+        createGraphSourceLabels(sourceClient, targetClient, vertexLabels, mapSelectedVertices,
+                                mapIgnoredVertices, true);
     }
 
     private void createGraphSourceEdgeLabel(HugeClient sourceClient,
@@ -478,31 +504,8 @@ public final class HugeGraphLoader {
             }
         }
 
-        for (EdgeLabel edgeLabel : edgeLabels) {
-            if (mapIgnoredEdges.containsKey(edgeLabel.name())) {
-                GraphSource.IgnoredLabelDes des
-                        = mapIgnoredEdges.get(edgeLabel.name());
-
-                if (des.getProperties() != null) {
-                    des.getProperties()
-                        .forEach((p) -> edgeLabel.properties().remove(p));
-                }
-            }
-
-            Set<String> existedPKs =
-                    targetClient.schema().getPropertyKeys().stream()
-                                .map(pk -> pk.name()).collect(Collectors.toSet());
-
-            for (String pkName : edgeLabel.properties()) {
-                PropertyKey pk = sourceClient.schema()
-                                             .getPropertyKey(pkName);
-                if (!existedPKs.contains(pk.name())) {
-                    targetClient.schema().addPropertyKey(pk);
-                }
-            }
-
-            targetClient.schema().addEdgeLabel(edgeLabel);
-        }
+        createGraphSourceLabels(sourceClient, targetClient, edgeLabels, mapSelectedEdges,
+                                mapIgnoredEdges, false);
     }
 
     private void createGraphSourceIndexLabel(HugeClient sourceClient,
