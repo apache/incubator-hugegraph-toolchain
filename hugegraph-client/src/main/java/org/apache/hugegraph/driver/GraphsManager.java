@@ -143,7 +143,6 @@ public class GraphsManager {
         return this.graphsAPI.readMode(graph);
     }
 
-
     public String clone(String graph, Map<String, Object> body) {
         return this.graphsAPI.clone(graph, body);
     }
