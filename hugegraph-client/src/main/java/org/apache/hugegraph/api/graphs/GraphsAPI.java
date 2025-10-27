@@ -222,7 +222,7 @@ public class GraphsAPI extends API {
         // will be encoded to "%2F". So use "graph_read_mode" here, although
         // inaccurate.
         if (graphSpace == null) {
-            this.client.put(joinPath(this.path(), graph, MODE), null, readMode);
+            this.client.put(joinPath(this.path(), graph, GRAPH_READ_MODE), null, readMode);
             return;
         }
         this.client.put(joinPath(this.path(), graphSpace, graph, GRAPH_READ_MODE), null, readMode);

@@ -146,5 +146,4 @@ public class GraphsManager {
     public String clone(String graph, Map<String, Object> body) {
         return this.graphsAPI.clone(graph, body);
     }
-
 }

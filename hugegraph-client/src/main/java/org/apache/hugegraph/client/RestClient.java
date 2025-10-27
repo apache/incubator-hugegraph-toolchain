@@ -44,14 +44,13 @@ public class RestClient extends AbstractRestClient {
     @Getter
     @Setter
     private boolean supportGs;
+    private Version apiVersion = null;
 
     static {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
         RestResult.registerModule(module);
     }
-
-    private Version apiVersion = null;
 
     public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);
