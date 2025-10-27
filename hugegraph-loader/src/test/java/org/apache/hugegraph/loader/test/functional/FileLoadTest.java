@@ -2033,7 +2033,7 @@ public class FileLoadTest extends LoadTest {
            throws IOException, InterruptedException {
         ioUtil.write("vertex_person.csv",
                      "name,age,city",
-                     "marko，应该是数字，Beijing",
+                     "marko,应该是数字,Beijing",
                      "vadas,27,Hongkong",
                      "josh,32,Beijing",
                      "peter,35,Shanghai",
@@ -2041,7 +2041,7 @@ public class FileLoadTest extends LoadTest {
         ioUtil.write("vertex_software.csv", GBK,
                      "name,lang,price",
                      "office,C#,999",
-                     "lop,java，应该是数字",
+                     "lop,java,应该是数字",
                      "ripple,java,199");
 
         // 1st time
@@ -2096,7 +2096,7 @@ public class FileLoadTest extends LoadTest {
         List<String> personFailureLines = FileUtils.readLines(personFailureFile,
                                                               Constants.CHARSET);
         Assert.assertEquals(2, personFailureLines.size());
-        Assert.assertEquals("marko，应该是数字，Beijing",
+        Assert.assertEquals("marko,应该是数字,Beijing",
                             personFailureLines.get(1));
 
         // 2nd time, incremental-mode
@@ -2159,14 +2159,14 @@ public class FileLoadTest extends LoadTest {
         personFailureLines = FileUtils.readLines(personFailureFile,
                                                  Constants.CHARSET);
         Assert.assertEquals(2, personFailureLines.size());
-        Assert.assertEquals("marko，应该是数字，Beijing",
+        Assert.assertEquals("marko,应该是数字,Beijing",
                             personFailureLines.get(1));
 
         File softwareFailureFile = files[2];
         List<String> softwareFailureLines = FileUtils.readLines(
                                             softwareFailureFile, GBK);
         Assert.assertEquals(2, softwareFailureLines.size());
-        Assert.assertEquals("lop,java，应该是数字", softwareFailureLines.get(1));
+        Assert.assertEquals("lop,java,应该是数字", softwareFailureLines.get(1));
 
         // TODO: Change only one line first, and make the second line go wrong
         // modify person and software failure file

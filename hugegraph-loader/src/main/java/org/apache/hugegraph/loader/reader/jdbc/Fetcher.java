@@ -68,8 +68,6 @@ public abstract class Fetcher {
                 password);
     }
 
-    ;
-
     abstract String[] readHeader() throws SQLException;
 
     abstract void readPrimaryKey() throws SQLException;

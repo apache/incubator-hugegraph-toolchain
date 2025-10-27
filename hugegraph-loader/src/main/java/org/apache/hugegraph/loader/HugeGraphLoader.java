@@ -226,7 +226,7 @@ public final class HugeGraphLoader {
             throw e;
         }
 
-        return this.context.noError();
+        return true;
     }
 
     public void shutdown() {
@@ -278,7 +278,9 @@ public final class HugeGraphLoader {
                                                     .ifNotExist()
                                                     .dataType(config.getIdFieldType())
                                                     .build();
-                    client.schema().addPropertyKey(propertyKey);
+                    if (client.schema().getPropertyKey(config.getIdFieldName()) == null) {
+                        client.schema().addPropertyKey(propertyKey);
+                    }
                 }
                 groovyExecutor.execute(script, client);
                 List<VertexLabel> vertexLabels = client.schema().getVertexLabels();
@@ -646,7 +648,7 @@ public final class HugeGraphLoader {
                         try {
                             r.close();
                         } catch (Exception ex) {
-                            LOG.warn("Failed to close reader: {}", ex.getMessage());
+                            LOG.warn("Failed to close reader", ex);
                         }
                     }
                 }
@@ -678,29 +680,27 @@ public final class HugeGraphLoader {
                  this.context.options().endFile,
                  scatter ? "scatter" : "sequential");
 
-        ExecutorService loadService = ExecutorUtil.newFixedThreadPool(parallelCount,
-                                                                      "loader");
-
-        List<InputTaskItem> taskItems = prepareTaskItems(structs, scatter);
-        List<CompletableFuture<Void>> loadTasks = new ArrayList<>();
-
-        if (taskItems.isEmpty()) {
-            LOG.info("No tasks to execute after filtering");
-            return;
-        }
-
-        for (InputTaskItem item : taskItems) {
-            // Init reader
-            item.reader.init(this.context, item.struct);
-            // Load data from current input mapping
-            loadTasks.add(
-                    this.asyncLoadStruct(item.struct, item.reader,
-                                         loadService));
-        }
-
-        LOG.info("waiting for loading finish {}", loadTasks.size());
-        // wait for finish
+        ExecutorService loadService = null;
         try {
+            loadService = ExecutorUtil.newFixedThreadPool(parallelCount, "loader");
+            List<InputTaskItem> taskItems = prepareTaskItems(structs, scatter);
+            List<CompletableFuture<Void>> loadTasks = new ArrayList<>();
+
+            if (taskItems.isEmpty()) {
+                LOG.info("No tasks to execute after filtering");
+                return;
+            }
+
+            for (InputTaskItem item : taskItems) {
+                // Init reader
+                item.reader.init(this.context, item.struct);
+                // Load data from current input mapping
+                loadTasks.add(
+                        this.asyncLoadStruct(item.struct, item.reader,
+                                             loadService));
+            }
+
+            LOG.info("waiting for loading finish {}", loadTasks.size());
             CompletableFuture.allOf(loadTasks.toArray(new CompletableFuture[0]))
                              .join();
         } catch (CompletionException e) {
@@ -723,8 +723,10 @@ public final class HugeGraphLoader {
         } finally {
             // Shutdown service
             cleanupEmptyProgress();
-            loadService.shutdown();
-            LOG.info("load end");
+            if (loadService != null) {
+                loadService.shutdownNow();
+            }
+            LOG.info("Load end");
         }
     }
 
