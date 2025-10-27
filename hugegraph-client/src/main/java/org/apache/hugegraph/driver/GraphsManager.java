@@ -94,6 +94,10 @@ public class GraphsManager {
         this.graphsAPI.clear(graph, message);
     }
 
+    public void clearGraph(String graphSpace, String graph, String message) {
+        this.graphsAPI.clear(graphSpace, graph, message);
+    }
+
     public void update(String graph, String nickname) {
         this.graphsAPI.update(graph, nickname);
     }
