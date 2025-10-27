@@ -40,7 +40,9 @@ import lombok.Setter;
 public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
-    private final String version = new VersionManager(this).getCoreVersion();;
+    private String version;
+    @Setter
+    private boolean supportGs;
 
     static {
         SimpleModule module = new SimpleModule();
@@ -49,9 +51,6 @@ public class RestClient extends AbstractRestClient {
     }
 
     private Version apiVersion = null;
-    @Setter
-    @Getter
-    private boolean supportGs = VersionUtil.gte(version, "1.7.0");
 
     public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);

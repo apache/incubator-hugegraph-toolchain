@@ -198,9 +198,7 @@ public class GraphsAPI extends API {
     }
 
     public void mode(String graph, GraphMode mode) {
-        // NOTE: Must provide id for PUT. If you use "graph/mode", "/" will
-        // be encoded to "%2F". So use "mode" here, although inaccurate.
-        this.client.put(joinPath(this.path(), graph, MODE), null, mode);
+        mode(null, graph, mode);
     }
 
     public void mode(String graphSpace, String graph, GraphMode mode) {
@@ -212,6 +210,11 @@ public class GraphsAPI extends API {
         }
         this.client.put(joinPath(this.path(), graphSpace, graph, MODE), null, mode);
     }
+
+    public void readMode(String graph, GraphReadMode readMode) {
+        readMode(null, graph, readMode);
+    }
+
 
     public void readMode(String graphSpace, String graph, GraphReadMode readMode) {
         this.client.checkApiVersion("0.59", "graph read mode");
@@ -225,15 +228,16 @@ public class GraphsAPI extends API {
         this.client.put(joinPath(this.path(), graphSpace, graph, GRAPH_READ_MODE), null, readMode);
     }
 
-    public void readMode(String graph, GraphReadMode readMode) {
-        this.client.checkApiVersion("0.59", "graph read mode");
-        // NOTE: Must provide id for PUT. If you use "graph/graph_read_mode", "/"
-        // will be encoded to "%2F". So use "graph_read_mode" here, although
-        // inaccurate.
-        this.client.put(joinPath(this.path(), graph, GRAPH_READ_MODE), null, readMode);
-    }
-
-    private <T extends Enum<T>> T getEnumMode(String graphSpace, String graph,
+    /**
+     * Get graph mode value from server response
+     *
+     * @param graphSpace the graph space name, null for non-graphspace mode
+     * @param graph the graph name
+     * @param modeKey the mode key in response (MODE or GRAPH_READ_MODE)
+     * @param enumClass the enum class type
+     * @return the mode enum value
+     */
+    private <T extends Enum<T>> T getModeValue(String graphSpace, String graph,
                                               String modeKey, Class<T> enumClass) {
         String path = (graphSpace != null)
                       ? joinPath(this.path(), graphSpace, graph)
@@ -257,21 +261,20 @@ public class GraphsAPI extends API {
     }
 
     public GraphMode mode(String graphSpace, String graph) {
-        return getEnumMode(graphSpace, graph, MODE, GraphMode.class);
+        return getModeValue(graphSpace, graph, MODE, GraphMode.class);
     }
 
     public GraphMode mode(String graph) {
-        return getEnumMode(null, graph, MODE, GraphMode.class);
+        return mode(null, graph);
     }
 
     public GraphReadMode readMode(String graphSpace, String graph) {
         this.client.checkApiVersion("0.59", "graph read mode");
-        return getEnumMode(graphSpace, graph, GRAPH_READ_MODE, GraphReadMode.class);
+        return getModeValue(graphSpace, graph, GRAPH_READ_MODE, GraphReadMode.class);
     }
 
     public GraphReadMode readMode(String graph) {
-        this.client.checkApiVersion("0.59", "graph read mode");
-        return getEnumMode(null, graph, GRAPH_READ_MODE, GraphReadMode.class);
+        return readMode(null, graph);
     }
 
     public String clone(String graph, Map<String, Object> body) {
