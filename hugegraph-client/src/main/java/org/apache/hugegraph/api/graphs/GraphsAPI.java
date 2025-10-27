@@ -205,7 +205,7 @@ public class GraphsAPI extends API {
         // NOTE: Must provide id for PUT. If you use "graph/mode", "/" will
         // be encoded to "%2F". So use "mode" here, although inaccurate.
         if (graphSpace == null) {
-            mode(graph, mode);
+            this.client.put(joinPath(this.path(), graph, MODE), null, mode);
             return;
         }
         this.client.put(joinPath(this.path(), graphSpace, graph, MODE), null, mode);
@@ -222,7 +222,7 @@ public class GraphsAPI extends API {
         // will be encoded to "%2F". So use "graph_read_mode" here, although
         // inaccurate.
         if (graphSpace == null) {
-            readMode(graph, readMode);
+            this.client.put(joinPath(this.path(), graph, MODE), null, readMode);
             return;
         }
         this.client.put(joinPath(this.path(), graphSpace, graph, GRAPH_READ_MODE), null, readMode);
