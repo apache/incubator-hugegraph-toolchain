@@ -41,6 +41,7 @@ public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
     private String version;
+    @Getter
     @Setter
     private boolean supportGs;
 
