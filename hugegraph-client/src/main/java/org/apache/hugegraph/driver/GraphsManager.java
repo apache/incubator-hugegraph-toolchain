@@ -115,28 +115,28 @@ public class GraphsManager {
         this.graphsAPI.mode(graph, mode);
     }
 
-    public void mode(String graph, String graphSpace, GraphMode mode) {
-        this.graphsAPI.mode(graph, graphSpace, mode);
+    public void mode(String graphSpace, String graph, GraphMode mode) {
+        this.graphsAPI.mode(graphSpace, graph, mode);
     }
 
     public GraphMode mode(String graph) {
         return this.graphsAPI.mode(graph);
     }
 
-    public GraphMode mode(String graph, String graphSpace) {
-        return this.graphsAPI.mode(graph, graphSpace);
+    public GraphMode mode(String graphSpace, String graph) {
+        return this.graphsAPI.mode(graphSpace, graph);
     }
 
-    public void readMode(String graph, String graphSpace, GraphReadMode readMode) {
-        this.graphsAPI.readMode(graph, graphSpace, readMode);
+    public void readMode(String graphSpace, String graph, GraphReadMode readMode) {
+        this.graphsAPI.readMode(graphSpace, graph, readMode);
     }
 
     public void readMode(String graph, GraphReadMode readMode) {
         this.graphsAPI.readMode(graph, readMode);
     }
 
-    public GraphReadMode readMode(String graph, String graphSpace) {
-        return this.graphsAPI.readMode(graph, graphSpace);
+    public GraphReadMode readMode(String graphSpace, String graph) {
+        return this.graphsAPI.readMode(graphSpace, graph);
     }
 
     public GraphReadMode readMode(String graph) {
