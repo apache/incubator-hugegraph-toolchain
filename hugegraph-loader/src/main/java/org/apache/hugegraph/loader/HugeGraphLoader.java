@@ -113,6 +113,7 @@ public final class HugeGraphLoader {
             loader = new HugeGraphLoader(args);
         } catch (Throwable e) {
             Printer.printError("Failed to start loading", e);
+            System.exit(1);
             return;
         }
 
@@ -178,12 +179,14 @@ public final class HugeGraphLoader {
                 () -> this.mapping.structs().stream().filter(struct -> !struct.skip())
                                   .map(InputStruct::input);
 
-        if (inputsSupplier.get().anyMatch(input -> SourceType.GRAPH.equals(input.type()))) {
-            if (!inputsSupplier.get().allMatch(input -> SourceType.GRAPH.equals(input.type()))) {
-                throw new LoadException("All inputs must be of Graph Type");
-            }
-            this.context().setRestoreMode();
-        } else if (this.options.restore) {
+        boolean allMatch = inputsSupplier.get().allMatch(input -> SourceType.GRAPH.equals(input.type()));
+        boolean anyMatch = inputsSupplier.get().anyMatch(input -> SourceType.GRAPH.equals(input.type()));
+
+        if (anyMatch && !allMatch) {
+            throw new LoadException("All inputs must be of Graph Type");
+        }
+
+        if (allMatch || this.options.restore) {
             this.context().setRestoreMode();
         } else {
             this.context().setLoadingMode();
@@ -219,11 +222,7 @@ public final class HugeGraphLoader {
                 LOG.warn(logMessage);
             }
 
-            RuntimeException e = LoadUtil.targetRuntimeException(t);
-            Printer.printError("Failed to load", e);
-            LOG.error("Load failed with exception", e);
-
-            throw e;
+            throw LoadUtil.targetRuntimeException(t);
         }
 
         return true;
@@ -354,7 +353,7 @@ public final class HugeGraphLoader {
             HugeClient sourceClient,
             HugeClient targetClient,
             List<? extends SchemaLabel> labels, // VertexLabel or EdgeLabel
-            Map<String, GraphSource.SeletedLabelDes> selectedMap,
+            Map<String, GraphSource.SelectedLabelDes> selectedMap,
             Map<String, GraphSource.IgnoredLabelDes> ignoredMap,
             boolean isVertex) {
 
@@ -419,10 +418,10 @@ public final class HugeGraphLoader {
             vertexLabels = sourceClient.schema().getVertexLabels();
         }
 
-        Map<String, GraphSource.SeletedLabelDes> mapSelectedVertices
+        Map<String, GraphSource.SelectedLabelDes> mapSelectedVertices
                 = new HashMap<>();
         if (graphSource.getSelectedVertices() != null) {
-            for (GraphSource.SeletedLabelDes des :
+            for (GraphSource.SelectedLabelDes des :
                     graphSource.getSelectedVertices()) {
                 mapSelectedVertices.put(des.getLabel(), des);
             }
@@ -474,10 +473,10 @@ public final class HugeGraphLoader {
             edgeLabels = sourceClient.schema().getEdgeLabels();
         }
 
-        Map<String, GraphSource.SeletedLabelDes> mapSelectedEdges
+        Map<String, GraphSource.SelectedLabelDes> mapSelectedEdges
                 = new HashMap<>();
         if (graphSource.getSelectedEdges() != null) {
-            for (GraphSource.SeletedLabelDes des :
+            for (GraphSource.SelectedLabelDes des :
                     graphSource.getSelectedEdges()) {
                 mapSelectedEdges.put(des.getLabel(), des);
             }

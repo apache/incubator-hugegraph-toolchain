@@ -99,7 +99,7 @@ public class GraphReader extends AbstractReader {
         // Do with Vertex
         // 1. Get All Selected Vertex
         if (this.source.getSelectedVertices() != null) {
-            for (GraphSource.SeletedLabelDes selected :
+            for (GraphSource.SelectedLabelDes selected :
                     this.source.getSelectedVertices()) {
 
                 selectedVertices.put(selected.getLabel(), null);
@@ -141,7 +141,7 @@ public class GraphReader extends AbstractReader {
         // Do with edges
         // 1. Get All Selected Edges
         if (this.source.getSelectedEdges() != null) {
-            for (GraphSource.SeletedLabelDes selected :
+            for (GraphSource.SelectedLabelDes selected :
                     this.source.getSelectedEdges()) {
                 selectedEdges.put(selected.getLabel(), null);
                 if (selected.getQuery() != null && selected.getQuery().size() > 0) {

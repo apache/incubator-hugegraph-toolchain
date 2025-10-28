@@ -152,7 +152,7 @@ public final class HugeClientHolder {
         List<String> urls = clientFactory.getAutoURLs(options.cluster,
                                                       options.graphSpace, null);
 
-        E.checkState(CollectionUtils.isNotEmpty(urls), "No avaliable service!");
+        E.checkState(CollectionUtils.isNotEmpty(urls), "No available service!");
 
         int r = (int) Math.floor(Math.random() * urls.size());
         String url = urls.get(r);

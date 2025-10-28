@@ -46,7 +46,7 @@ public class EdgeBuilder extends ElementBuilder<Edge> {
     private final VertexLabel sourceLabel;
     private final VertexLabel targetLabel;
     private final Collection<String> nonNullKeys;
-    // Used to optimize access performace
+    // Used to optimize access performance
     private VertexIdsIndex vertexIdsIndex;
     private String[] lastNames;
 

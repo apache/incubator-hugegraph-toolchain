@@ -56,13 +56,13 @@ public class GraphSource extends AbstractSource {
     private String password;
 
     @JsonProperty("selected_vertices")
-    private List<SeletedLabelDes> selectedVertices;
+    private List<SelectedLabelDes> selectedVertices;
 
     @JsonProperty("ignored_vertices")
     private List<IgnoredLabelDes> ignoredVertices;
 
     @JsonProperty("selected_edges")
-    private List<SeletedLabelDes> selectedEdges;
+    private List<SelectedLabelDes> selectedEdges;
 
     @JsonProperty("ignored_edges")
     private List<IgnoredLabelDes> ignoredEdges;
@@ -97,7 +97,7 @@ public class GraphSource extends AbstractSource {
     }
 
     @Data
-    public static class SeletedLabelDes {
+    public static class SelectedLabelDes {
         @JsonProperty("query")
         private Map<String, Object> query;
 

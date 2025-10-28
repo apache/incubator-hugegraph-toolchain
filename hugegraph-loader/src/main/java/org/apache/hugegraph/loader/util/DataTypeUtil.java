@@ -63,7 +63,7 @@ public final class DataTypeUtil {
     public static Object convert(Object value, PropertyKey propertyKey,
                                  InputSource source) {
         E.checkArgumentNotNull(value, "The value of Property(%s) to be " +
-                                      "converted. can't be null", propertyKey.name());
+                                      "converted can't be null", propertyKey.name());
 
         String key = propertyKey.name();
         DataType dataType = propertyKey.dataType();
