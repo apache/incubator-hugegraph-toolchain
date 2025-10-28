@@ -278,9 +278,7 @@ public final class HugeGraphLoader {
                                                     .ifNotExist()
                                                     .dataType(config.getIdFieldType())
                                                     .build();
-                    if (client.schema().getPropertyKey(config.getIdFieldName()) == null) {
-                        client.schema().addPropertyKey(propertyKey);
-                    }
+                    client.schema().addPropertyKey(propertyKey);
                 }
                 groovyExecutor.execute(script, client);
                 List<VertexLabel> vertexLabels = client.schema().getVertexLabels();
