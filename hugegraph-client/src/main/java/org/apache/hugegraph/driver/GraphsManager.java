@@ -94,6 +94,10 @@ public class GraphsManager {
         this.graphsAPI.clear(graph, message);
     }
 
+    public void clearGraph(String graphSpace, String graph, String message) {
+        this.graphsAPI.clear(graphSpace, graph, message);
+    }
+
     public void update(String graph, String nickname) {
         this.graphsAPI.update(graph, nickname);
     }
@@ -115,12 +119,28 @@ public class GraphsManager {
         this.graphsAPI.mode(graph, mode);
     }
 
+    public void mode(String graphSpace, String graph, GraphMode mode) {
+        this.graphsAPI.mode(graphSpace, graph, mode);
+    }
+
     public GraphMode mode(String graph) {
         return this.graphsAPI.mode(graph);
     }
 
+    public GraphMode mode(String graphSpace, String graph) {
+        return this.graphsAPI.mode(graphSpace, graph);
+    }
+
+    public void readMode(String graphSpace, String graph, GraphReadMode readMode) {
+        this.graphsAPI.readMode(graphSpace, graph, readMode);
+    }
+
     public void readMode(String graph, GraphReadMode readMode) {
         this.graphsAPI.readMode(graph, readMode);
+    }
+
+    public GraphReadMode readMode(String graphSpace, String graph) {
+        return this.graphsAPI.readMode(graphSpace, graph);
     }
 
     public GraphReadMode readMode(String graph) {
