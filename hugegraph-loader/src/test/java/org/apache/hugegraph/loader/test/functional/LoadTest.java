@@ -20,12 +20,15 @@ package org.apache.hugegraph.loader.test.functional;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.hugegraph.driver.HugeClient;
+import org.apache.hugegraph.loader.HugeGraphLoader;
 import org.apache.hugegraph.structure.constant.T;
 import org.apache.hugegraph.structure.graph.Edge;
 import org.apache.hugegraph.structure.graph.Vertex;
@@ -45,7 +48,9 @@ public class LoadTest {
     protected static final String HTTPS_PROTOCOL = "https";
     protected static final String TRUST_STORE_PATH = "assembly/travis/conf/hugegraph.truststore";
     protected static final String FILE_URL = CommonUtil.PREFIX + "hugegraph.truststore";
-    protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH).build();
+    protected static final HugeClient CLIENT = HugeClient.builder(URL, GRAPH)
+                                                         .configUser("admin", "pa")
+                                                         .build();
 
     public static String configPath(String fileName) {
         return Paths.get(CONFIG_PATH_PREFIX, fileName).toString();
@@ -139,5 +144,16 @@ public class LoadTest {
         long actualTimeStamp = actualDF.parse(actualDate).getTime();
 
         Assert.assertEquals(expectTimeStamp, actualTimeStamp);
+    }
+
+    public static void authmain(String[] args) {
+        ArrayList list = new ArrayList(Arrays.asList(args));
+        list.add("--username");
+        list.add("admin");
+        list.add("--password");
+        list.add("admin");
+        args = (String[]) list.toArray(new String[list.size()]);
+
+        HugeGraphLoader.main(args);
     }
 }

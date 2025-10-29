@@ -18,20 +18,54 @@
 package org.apache.hugegraph.loader.util;
 
 import java.nio.file.Paths;
+import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hugegraph.rest.ClientException;
+import org.apache.hugegraph.util.E;
+import org.apache.hugegraph.util.Log;
+import org.slf4j.Logger;
+
 import org.apache.hugegraph.driver.HugeClient;
 import org.apache.hugegraph.driver.HugeClientBuilder;
+import org.apache.hugegraph.driver.factory.PDHugeClientFactory;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.exception.LoadException;
 import org.apache.hugegraph.loader.executor.LoadOptions;
-import org.apache.hugegraph.rest.ClientException;
-import org.apache.hugegraph.util.E;
+// import org.apache.hugegraph.loader.fake.FakeHugeClient;
 
 public final class HugeClientHolder {
 
+    public static final Logger LOG = Log.logger(HugeClientHolder.class);
+
     public static HugeClient create(LoadOptions options) {
+        return create(options, true);
+    }
+
+    /**
+     * Creates and returns a HugeClient instance based on the provided options.
+     * @param options the configuration options for the HugeClient
+     * @param useDirect indicates whether the direct connection option is enabled
+     * @return a HugeClient instance
+     */
+    public static HugeClient create(LoadOptions options, boolean useDirect) {
+
+        // if (useDirect && options.direct) {
+        //     HugeClientBuilder builder = HugeClient.builder(options.pdPeers,
+        //                                                    options.graphSpace,
+        //                                                    options.graph);
+
+        //     // use FakeHugeClient to connect to pd-store directly.
+        //     LOG.info("create FakeHugeClient with pd address {}",
+        //              options.pdPeers);
+        //     return FakeHugeClient.getInstance(builder, options);
+        // }
+
+        if (StringUtils.isNotEmpty(options.pdPeers)) {
+            pickHostFromMeta(options);
+        }
         boolean useHttps = options.protocol != null &&
                            options.protocol.equals(LoadOptions.HTTPS_SCHEMA);
         String address = options.host + ":" + options.port;
@@ -47,11 +81,14 @@ public final class HugeClientHolder {
                           options.username : options.graph;
         HugeClientBuilder builder;
         try {
-            builder = HugeClient.builder(address, options.graph)
-                                .configUser(username, options.token)
+            builder = HugeClient.builder(address, options.graphSpace,
+                                         options.graph)
                                 .configTimeout(options.timeout)
+                                .configToken(options.token)
+                                .configUser(username, options.password)
                                 .configPool(options.maxConnections,
                                             options.maxConnectionsPerRoute);
+
             if (useHttps) {
                 String trustFile;
                 if (options.trustStoreFile == null) {
@@ -60,7 +97,8 @@ public final class HugeClientHolder {
                                     "The system property 'loader.home.path' " +
                                     "can't be null or empty when enable " +
                                     "https protocol");
-                    trustFile = Paths.get(homePath, Constants.TRUST_STORE_PATH).toString();
+                    trustFile = Paths.get(homePath, Constants.TRUST_STORE_FILE)
+                                     .toString();
                 } else {
                     trustFile = options.trustStoreFile;
                 }
@@ -105,5 +143,32 @@ public final class HugeClientHolder {
             }
             throw e;
         }
+    }
+
+    protected static void pickHostFromMeta(LoadOptions options) {
+        PDHugeClientFactory clientFactory =
+                new PDHugeClientFactory(options.pdPeers, options.routeType);
+
+        List<String> urls = clientFactory.getAutoURLs(options.cluster,
+                                                      options.graphSpace, null);
+
+        E.checkState(CollectionUtils.isNotEmpty(urls), "No available service!");
+
+        int r = (int) Math.floor(Math.random() * urls.size());
+        String url = urls.get(r);
+
+        UrlParseUtil.Host hostInfo = UrlParseUtil.parseHost(url);
+
+        E.checkState(StringUtils.isNotEmpty(hostInfo.getHost()),
+                     "Parse url ({}) from pd meta error", url);
+
+        options.host = hostInfo.getHost();
+        options.port = hostInfo.getPort();
+
+        if (StringUtils.isNotEmpty(hostInfo.getScheme())) {
+            options.protocol = hostInfo.getScheme();
+        }
+
+        clientFactory.close();
     }
 }

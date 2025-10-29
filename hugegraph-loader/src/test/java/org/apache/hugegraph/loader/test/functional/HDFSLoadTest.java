@@ -75,15 +75,15 @@ public class HDFSLoadTest extends FileLoadTest {
     @Test
     public void testHDFSWithFilePrefix() {
         ioUtil.write("vertex_person_0.csv",
-                "name,age,city",
-                "marko,29,Beijing");
+                     "name,age,city",
+                     "marko,29,Beijing");
 
         ioUtil.write("vertex_person_1.csv",
-                "name,age,city",
-                "vadas,27,Hongkong",
-                "josh,32,Beijing",
-                "peter,35,Shanghai",
-                "\"li,nary\",26,\"Wu,han\"");
+                     "name,age,city",
+                     "vadas,27,Hongkong",
+                     "josh,32,Beijing",
+                     "peter,35,Shanghai",
+                     "\"li,nary\",26,\"Wu,han\"");
 
         String[] args = new String[]{
                 "-f", structPath("hdfs_file_with_prefix/struct.json"),
@@ -145,7 +145,7 @@ public class HDFSLoadTest extends FileLoadTest {
             HugeGraphLoader loader = new HugeGraphLoader(args);
             loader.load();
         }, e -> {
-            String message = "An exception occurred while checking HDFS path";
+            String message = "Failed to init";
             Assert.assertTrue(e.getMessage().contains(message));
         });
     }

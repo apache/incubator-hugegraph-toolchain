@@ -158,7 +158,9 @@ public class KafkaLoadTest extends LoadTest {
         };
 
         Assert.assertThrows(SerializeException.class, () -> {
-            HugeGraphLoader.main(args);
+            HugeGraphLoader loader = new HugeGraphLoader(args);
+            loader.load();
+            loader.shutdown();
         });
     }
 

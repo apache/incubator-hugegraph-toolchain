@@ -17,7 +17,6 @@
 
 package org.apache.hugegraph.loader.mapping;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,19 +24,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hugegraph.util.E;
+
 import org.apache.hugegraph.loader.constant.Checkable;
 import org.apache.hugegraph.loader.constant.Constants;
 import org.apache.hugegraph.loader.constant.ElemType;
 import org.apache.hugegraph.loader.source.InputSource;
 import org.apache.hugegraph.structure.graph.UpdateStrategy;
-import org.apache.hugegraph.util.E;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.collect.ImmutableSet;
 
 @JsonPropertyOrder({"label", "skip"})
-public abstract class ElementMapping implements Checkable, Serializable {
+public abstract class ElementMapping implements Checkable {
 
     @JsonProperty("label")
     private String label;
@@ -55,8 +54,6 @@ public abstract class ElementMapping implements Checkable, Serializable {
     private Set<Object> nullValues;
     @JsonProperty("update_strategies")
     private Map<String, UpdateStrategy> updateStrategies;
-    @JsonProperty("batch_size")
-    private long batchSize;
 
     public ElementMapping() {
         this.skip = false;
@@ -66,7 +63,6 @@ public abstract class ElementMapping implements Checkable, Serializable {
         this.ignoredFields = new HashSet<>();
         this.nullValues = ImmutableSet.of(Constants.EMPTY_STR);
         this.updateStrategies = new HashMap<>();
-        this.batchSize = 500;
     }
 
     public abstract ElemType type();
@@ -98,23 +94,23 @@ public abstract class ElementMapping implements Checkable, Serializable {
         }
         List<String> header = Arrays.asList(source.header());
         if (!this.selectedFields.isEmpty()) {
-            E.checkArgument(new HashSet<>(header).containsAll(this.selectedFields),
+            E.checkArgument(header.containsAll(this.selectedFields),
                             "The all keys %s of selected must be existed " +
                             "in header %s", this.selectedFields, header);
         }
         if (!this.ignoredFields.isEmpty()) {
-            E.checkArgument(new HashSet<>(header).containsAll(this.ignoredFields),
+            E.checkArgument(header.containsAll(this.ignoredFields),
                             "The all keys %s of ignored must be existed " +
                             "in header %s", this.ignoredFields, header);
         }
         if (!this.mappingFields.isEmpty()) {
-            E.checkArgument(new HashSet<>(header).containsAll(this.mappingFields.keySet()),
+            E.checkArgument(header.containsAll(this.mappingFields.keySet()),
                             "The all keys %s of field_mapping must be " +
                             "existed in header",
                             this.mappingFields.keySet(), header);
         }
         if (!this.mappingValues.isEmpty()) {
-            E.checkArgument(new HashSet<>(header).containsAll(this.mappingValues.keySet()),
+            E.checkArgument(header.containsAll(this.mappingValues.keySet()),
                             "The all keys %s of value_mapping must be " +
                             "existed in header",
                             this.mappingValues.keySet(), header);
@@ -145,12 +141,24 @@ public abstract class ElementMapping implements Checkable, Serializable {
         this.mappingFields = mappingFields;
     }
 
-    public String mappingField(String fieldName) {
+    public String mappingField(String fieldName, boolean caseSensitive) {
         if (this.mappingFields.isEmpty()) {
             return fieldName;
         }
-        String mappingName = this.mappingFields.get(fieldName);
-        return mappingName != null ? mappingName : fieldName;
+        if (caseSensitive) {
+            String mappingName = this.mappingFields.get(fieldName);
+            return mappingName != null ? mappingName : fieldName;
+        } else {
+            // header name is case-insensitive
+            for (Map.Entry<String, String> entry:
+                    this.mappingFields.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(fieldName)) {
+                    return entry.getValue();
+                }
+            }
+
+            return fieldName;
+        }
     }
 
     public Map<String, Map<String, Object>> mappingValues() {
@@ -161,23 +169,38 @@ public abstract class ElementMapping implements Checkable, Serializable {
         this.mappingValues = mappingValues;
     }
 
-    public Object mappingValue(String fieldName, String rawValue) {
+    public Object mappingValue(String fieldName, String rawValue,
+                               boolean caseSensitive) {
         if (this.mappingValues.isEmpty()) {
             return rawValue;
         }
         Object mappingValue = rawValue;
-        Map<String, Object> values = this.mappingValues.get(fieldName);
-        if (values != null) {
-            Object value = values.get(rawValue);
-            if (value != null) {
-                mappingValue = value;
+
+        if (caseSensitive) {
+            Map<String, Object> values = this.mappingValues.get(fieldName);
+            if (values != null) {
+                Object value = values.get(rawValue);
+                if (value != null) {
+                    mappingValue = value;
+                }
+            }
+        } else {
+            for (Map.Entry<String, Map<String, Object>> entry:
+                    this.mappingValues.entrySet()) {
+                if (entry.getKey().toLowerCase()
+                         .equals(fieldName.toLowerCase())) {
+                    Map<String, Object> values = entry.getValue();
+                    if (values != null) {
+                        Object value = values.get(rawValue);
+                        if (value != null) {
+                            mappingValue = value;
+                            break;
+                        }
+                    }
+                }
             }
         }
         return mappingValue;
-    }
-
-    public long batchSize() {
-        return this.batchSize;
     }
 
     public Set<String> selectedFields() {
