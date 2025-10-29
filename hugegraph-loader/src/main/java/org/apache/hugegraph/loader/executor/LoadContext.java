@@ -157,8 +157,9 @@ public final class LoadContext implements Cloneable {
 
     public void setLoadingMode() {
         String graph = this.client.graph().graph();
+        String graphSpace = this.client.graph().graphSpace();
         try {
-            this.client.graphs().mode(graph, GraphMode.LOADING);
+            this.client.graphs().mode(graphSpace, graph, GraphMode.LOADING);
         } catch (ServerException e) {
             if (e.getMessage().contains("Can not deserialize value of type")) {
                 LOG.warn("HugeGraphServer doesn't support loading mode");
@@ -170,8 +171,9 @@ public final class LoadContext implements Cloneable {
 
     public void setRestoreMode() {
         String graph = this.client.graph().graph();
+        String graphSpace = this.client.graph().graphSpace();
         try {
-            this.client.graphs().mode(graph, GraphMode.RESTORING);
+            this.client.graphs().mode(graphSpace, graph, GraphMode.RESTORING);
         } catch (ServerException e) {
             if (e.getMessage().contains("Can not deserialize value of type")) {
                 LOG.warn("HugeGraphServer doesn't support loading mode");
@@ -184,9 +186,10 @@ public final class LoadContext implements Cloneable {
     public void unsetLoadingMode() {
         try {
             String graph = this.client.graph().graph();
-            GraphMode mode = this.client.graphs().mode(graph);
+            String graphSpace = this.client.graph().graphSpace();
+            GraphMode mode = this.client.graphs().mode(graphSpace, graph);
             if (mode.loading()) {
-                this.client.graphs().mode(graph, GraphMode.NONE);
+                this.client.graphs().mode(graphSpace, graph, GraphMode.NONE);
             }
         } catch (Exception e) {
             throw new LoadException("Failed to unset mode %s for server",

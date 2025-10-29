@@ -151,7 +151,7 @@ public class LoadTest {
         list.add("--username");
         list.add("admin");
         list.add("--password");
-        list.add("admin");
+        list.add("pa");
         args = (String[]) list.toArray(new String[list.size()]);
 
         HugeGraphLoader.main(args);
