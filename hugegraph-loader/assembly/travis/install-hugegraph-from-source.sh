@@ -41,10 +41,10 @@ mkdir ${HTTPS_SERVER_DIR}
 cp -r apache-hugegraph-*/. ${HTTPS_SERVER_DIR}
 cd "$(find apache-hugegraph-* | head -1)"
 # start HugeGraphServer with http protocol
-bin/init-store.sh || exit 1
 sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
 sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
-bin/start-hugegraph.sh || exit 1
+echo -e "pa" | bin/init-store.sh
+bin/start-hugegraph.sh
 
 #cd ../${HTTPS_SERVER_DIR}
 #REST_SERVER_CONFIG="conf/rest-server.properties"
