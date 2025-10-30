@@ -46,15 +46,17 @@ sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
 echo -e "pa" | bin/init-store.sh
 bin/start-hugegraph.sh
 
-#cd ../${HTTPS_SERVER_DIR}
-#REST_SERVER_CONFIG="conf/rest-server.properties"
-#GREMLIN_SERVER_CONFIG="conf/gremlin-server.yaml"
-#sed -i "s?http://127.0.0.1:8080?https://127.0.0.1:8443?g" "$REST_SERVER_CONFIG"
-#sed -i "s/rpc.server_port=8091/rpc.server_port=8092/g" "$REST_SERVER_CONFIG"
-#sed -i "s/#port: 8182/port: 8282/g" "$GREMLIN_SERVER_CONFIG"
-#echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
-#
-## start HugeGraphServer with https protocol
-#bin/init-store.sh
-#bin/start-hugegraph.sh
-#cd ../
+cd ../${HTTPS_SERVER_DIR}
+REST_SERVER_CONFIG="conf/rest-server.properties"
+GREMLIN_SERVER_CONFIG="conf/gremlin-server.yaml"
+sed -i "s?http://127.0.0.1:8080?https://127.0.0.1:8443?g" "$REST_SERVER_CONFIG"
+sed -i "s/rpc.server_port=8091/rpc.server_port=8092/g" "$REST_SERVER_CONFIG"
+sed -i "s/#port: 8182/port: 8282/g" "$GREMLIN_SERVER_CONFIG"
+echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
+
+# start HugeGraphServer with https protocol
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
+sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
+echo -e "pa" | bin/init-store.sh
+bin/start-hugegraph.sh
+cd ../
