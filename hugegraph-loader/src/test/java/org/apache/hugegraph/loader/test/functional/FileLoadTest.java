@@ -229,6 +229,8 @@ public class FileLoadTest extends LoadTest {
         options.host = Constants.HTTP_PREFIX + SERVER;
         options.port = PORT;
         options.graph = GRAPH;
+        options.username = "admin";
+        options.password = "pa";
         HugeClient client = HugeClientHolder.create(options);
         SchemaManager schema = client.schema();
         schema.propertyKey("name").asText().ifNotExist().create();
@@ -246,15 +248,16 @@ public class FileLoadTest extends LoadTest {
                      "josh,32,Beijing",
                      "peter,35,Shanghai",
                      "\"li,nary\",26,\"Wu,han\"");
-        String[] args1 = new String[]{
+        List<String> argsList1 = new ArrayList<>(Arrays.asList(
                 "-f", structPath("clear_schema_before_load/struct.json"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
+        ));
+        argsList1.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
         Assert.assertThrows(ParseException.class, () -> {
-            HugeGraphLoader loader = new HugeGraphLoader(args1);
+            HugeGraphLoader loader = new HugeGraphLoader(argsList1.toArray(new String[0]));
             loader.load();
             loader.shutdown();
         }, (e) -> {
@@ -263,7 +266,7 @@ public class FileLoadTest extends LoadTest {
             Assert.assertTrue(msg.endsWith("to Number"));
         });
 
-        String[] args2 = new String[]{
+        List<String> argsList2 = new ArrayList<>(Arrays.asList(
                 "-f", structPath("clear_schema_before_load/struct.json"),
                 "-s", configPath("clear_schema_before_load/schema.groovy"),
                 "-g", GRAPH,
@@ -271,8 +274,9 @@ public class FileLoadTest extends LoadTest {
                 "--clear-all-data", "true",
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
-        HugeGraphLoader loader = new HugeGraphLoader(args2);
+        ));
+        argsList2.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+        HugeGraphLoader loader = new HugeGraphLoader(argsList2.toArray(new String[0]));
         loader.load();
         loader.shutdown();
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -2045,7 +2049,7 @@ public class FileLoadTest extends LoadTest {
                      "ripple,java,199");
 
         // 1st time
-        String[] args = new String[] {
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
                 "-s",
@@ -2055,8 +2059,10 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "1",
                 "--test-mode", "false"
-        };
-        HugeGraphLoader loader = new HugeGraphLoader(args);
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
+        HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
         loader.load();
         loader.shutdown();
         LoadContext context = Whitebox.getInternalState(loader, "context");
@@ -2100,7 +2106,7 @@ public class FileLoadTest extends LoadTest {
                             personFailureLines.get(1));
 
         // 2nd time, incremental-mode
-        args = new String[]{
+        argsList = new ArrayList<>(Arrays.asList(
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
                 "-g", GRAPH,
@@ -2110,8 +2116,10 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
-        };
-        loader = new HugeGraphLoader(args);
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
+        loader = new HugeGraphLoader(argsList.toArray(new String[0]));
         loader.load();
         loader.shutdown();
         context = Whitebox.getInternalState(loader, "context");
@@ -2179,7 +2187,7 @@ public class FileLoadTest extends LoadTest {
         FileUtils.writeLines(softwareFailureFile, softwareFailureLines, false);
 
         // 3rd time, --failure-mode
-        args = new String[]{
+        argsList = new ArrayList<>(Arrays.asList(
                 "-f",
                 structPath("incremental_mode_and_load_failure/struct.json"),
                 "-g", GRAPH,
@@ -2189,8 +2197,9 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "2",
                 "--test-mode", "false"
-        };
-        loader = new HugeGraphLoader(args);
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+        loader = new HugeGraphLoader(argsList.toArray(new String[0]));
         loader.load();
         loader.shutdown();
         context = Whitebox.getInternalState(loader, "context");
@@ -2243,7 +2252,7 @@ public class FileLoadTest extends LoadTest {
                      "\"vadas1\", \"date\": \"2013-02-20 13:00:00\"," +
                      "\"weight\": 1.0}");
 
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("reload_json_failure_files/struct.json"),
                 "-s", configPath("reload_json_failure_files/schema.groovy"),
                 "-g", GRAPH,
@@ -2251,8 +2260,12 @@ public class FileLoadTest extends LoadTest {
                 "--check-vertex", "true",
                 "--batch-insert-threads", "2",
                 "--test-mode", "false"
-        };
-        HugeGraphLoader loader = new HugeGraphLoader(args);
+        ));
+
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+
+        HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
+
         loader.load();
         loader.shutdown();
         LoadContext context = Whitebox.getInternalState(loader, "context");
@@ -2280,7 +2293,7 @@ public class FileLoadTest extends LoadTest {
         });
 
         // Load failure data without modification
-        args = new String[]{
+        argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("reload_json_failure_files/struct.json"),
                 "-g", GRAPH,
                 "-h", SERVER,
@@ -2288,9 +2301,9 @@ public class FileLoadTest extends LoadTest {
                 "--check-vertex", "true",
                 "--batch-insert-threads", "2",
                 "--test-mode", "false"
-        };
-        // No exception throw, but error line still exist
-        loader = new HugeGraphLoader(args);
+        ));
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
+        loader = new HugeGraphLoader(argsList.toArray(new String[0]));
         loader.load();
         loader.shutdown();
 
@@ -2321,7 +2334,7 @@ public class FileLoadTest extends LoadTest {
         FileUtils.writeLines(knowsFailureFile, failureLines, false);
 
         // No exception throw, and error line doesn't exist
-        loader = new HugeGraphLoader(args);
+        loader = new HugeGraphLoader(argsList.toArray(new String[0]));
         loader.load();
         loader.shutdown();
 
@@ -2548,16 +2561,18 @@ public class FileLoadTest extends LoadTest {
                      "josh,ripple,20171210,1.0",
                      "peter,lop,20170324,0.2");
 
-        String[] args = new String[]{
+        List<String> argsList = new ArrayList<>(Arrays.asList(
                 "-f", structPath("source_or_target_pk_value_null/struct.json"),
                 "-s", configPath("source_or_target_pk_value_null/schema.groovy"),
                 "-g", GRAPH,
                 "-h", SERVER,
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
-        };
+        ));
+
+        argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
         AsyncThrowsAssert.assertThrows(RuntimeException.class, () -> {
-            HugeGraphLoader loader = new HugeGraphLoader(args);
+            HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
             loader.load();
             loader.shutdown();
         }, e -> {

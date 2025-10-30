@@ -167,7 +167,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        authmain(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -195,7 +195,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        authmain(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -219,7 +219,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        authmain(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -252,7 +252,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        authmain(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
@@ -281,7 +281,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        authmain(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
