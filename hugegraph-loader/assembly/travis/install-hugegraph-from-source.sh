@@ -44,7 +44,7 @@ cd "$(find apache-hugegraph-* | head -1)"
 sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
 sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
 sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
-bin/init-store.sh || exit 1
+echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
 
 cd ../${HTTPS_SERVER_DIR}
@@ -59,6 +59,6 @@ echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
 sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
 sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
 sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
-bin/init-store.sh
+echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh
 cd ../
