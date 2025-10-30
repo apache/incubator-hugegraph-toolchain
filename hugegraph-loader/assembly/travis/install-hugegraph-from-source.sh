@@ -56,5 +56,7 @@ echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
 
 # start HugeGraphServer with https protocol
 bin/init-store.sh
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
+sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
 bin/start-hugegraph.sh
 cd ../
