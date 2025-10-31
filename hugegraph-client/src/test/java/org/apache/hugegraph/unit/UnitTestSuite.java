@@ -30,7 +30,8 @@ import org.junit.runners.Suite;
         IndexLabelTest.class,
         CommonUtilTest.class,
         IdUtilTest.class,
-        SplicingIdGeneratorTest.class
+        SplicingIdGeneratorTest.class,
+        JsonUtilTest.class
 })
 public class UnitTestSuite {
 }
