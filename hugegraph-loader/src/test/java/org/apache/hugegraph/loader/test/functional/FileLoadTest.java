@@ -2261,11 +2261,8 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "false"
         ));
-
         argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
-
         HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
-
         loader.load();
         loader.shutdown();
         LoadContext context = Whitebox.getInternalState(loader, "context");

@@ -200,8 +200,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-
-       authmain(args);
+        authmain(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());

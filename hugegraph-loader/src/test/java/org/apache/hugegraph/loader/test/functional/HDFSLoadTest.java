@@ -125,7 +125,6 @@ public class HDFSLoadTest extends FileLoadTest {
         ));
         argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
 
-
         Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
             loader.load();
@@ -151,7 +150,6 @@ public class HDFSLoadTest extends FileLoadTest {
                 "--test-mode", "true"
         ));
         argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
-
 
         Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
@@ -181,7 +179,6 @@ public class HDFSLoadTest extends FileLoadTest {
                 "--test-mode", "true"
         ));
         argsList.addAll(Arrays.asList("--username", "admin", "--password", "pa"));
-
 
         Assert.assertThrows(LoadException.class, () -> {
             HugeGraphLoader loader = new HugeGraphLoader(argsList.toArray(new String[0]));
