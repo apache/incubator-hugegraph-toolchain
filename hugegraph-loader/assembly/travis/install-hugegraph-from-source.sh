@@ -40,7 +40,6 @@ mkdir ${HTTPS_SERVER_DIR}
 # TODO: lack incubator after apache package release (update it later)
 cp -r apache-hugegraph-*/. ${HTTPS_SERVER_DIR}
 cd "$(find apache-hugegraph-* | head -1)"
-
 # start HugeGraphServer with http protocol
 sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
 sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
