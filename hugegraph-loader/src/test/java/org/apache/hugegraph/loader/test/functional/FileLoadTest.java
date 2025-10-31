@@ -3098,6 +3098,7 @@ public class FileLoadTest extends LoadTest {
         HugeClient httpsClient = null;
         try {
             httpsClient = HugeClient.builder(HTTPS_URL, GRAPH)
+                                    .configUser("admin", "pa")
                                     .configSSL(TRUST_STORE_PATH, "hugegraph")
                                     .build();
             List<Vertex> vertices = httpsClient.graph().listVertices();
@@ -3135,7 +3136,8 @@ public class FileLoadTest extends LoadTest {
         options.protocol = HTTPS_PROTOCOL;
         options.trustStoreFile = TRUST_STORE_PATH;
         options.trustStoreToken = "hugegraph";
-
+        options.username = "admin";
+        options.password = "pa";
         HugeClient httpsClient = null;
         try {
             httpsClient = HugeClientHolder.create(options);
