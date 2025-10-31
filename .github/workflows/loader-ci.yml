@@ -27,7 +27,7 @@ jobs:
       TRAVIS_DIR: hugegraph-loader/assembly/travis
       STATIC_DIR: hugegraph-loader/assembly/static
       # TODO: replace it with the (latest - n) commit id (n >= 15)
-      # hugegraph commit date: 2024-12-09
+      # hugegraph commit date: 2025-10-30
       COMMIT_ID: 5b3d295
       DB_USER: root
       DB_PASS: root
@@ -43,13 +43,13 @@ jobs:
           fetch-depth: 2
 
       - name: Install JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.JAVA_VERSION }}
           distribution: 'adopt'
 
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -81,7 +81,7 @@ jobs:
           mvn test -P kafka
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: target/jacoco.xml
