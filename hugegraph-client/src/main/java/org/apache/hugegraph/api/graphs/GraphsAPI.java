@@ -136,14 +136,8 @@ public class GraphsAPI extends API {
     }
 
     public void clear(String graph, String message) {
-        clear(null, graph, message);
-    }
-
-    public void clear(String graphSpace, String graph, String message) {
-        String path = (graphSpace == null)
-                      ? joinPath(this.path(), graph, CLEAR)
-                      : joinPath(this.path(), graphSpace, graph, CLEAR);
-        this.client.delete(path, ImmutableMap.of(CONFIRM_MESSAGE, message));
+        this.client.delete(joinPath(this.path(), graph, CLEAR),
+                           ImmutableMap.of(CONFIRM_MESSAGE, message));
     }
 
     public Map<String, String> update(String name, String nickname) {
@@ -204,83 +198,49 @@ public class GraphsAPI extends API {
     }
 
     public void mode(String graph, GraphMode mode) {
-        mode(null, graph, mode);
-    }
-
-    public void mode(String graphSpace, String graph, GraphMode mode) {
         // NOTE: Must provide id for PUT. If you use "graph/mode", "/" will
         // be encoded to "%2F". So use "mode" here, although inaccurate.
-        if (graphSpace == null) {
-            this.client.put(joinPath(this.path(), graph, MODE), null, mode);
-            return;
+        this.client.put(joinPath(this.path(), graph, MODE), null, mode);
+    }
+
+    public GraphMode mode(String graph) {
+        RestResult result = this.client.get(joinPath(this.path(), graph), MODE);
+        @SuppressWarnings("unchecked")
+        Map<String, String> mode = result.readObject(Map.class);
+        String value = mode.get(MODE);
+        if (value == null) {
+            throw new InvalidResponseException("Invalid response, expect 'mode' in response");
         }
-        this.client.put(joinPath(this.path(), graphSpace, graph, MODE), null, mode);
+        try {
+            return GraphMode.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidResponseException("Invalid GraphMode value '%s'", value);
+        }
     }
 
     public void readMode(String graph, GraphReadMode readMode) {
-        readMode(null, graph, readMode);
-    }
-
-
-    public void readMode(String graphSpace, String graph, GraphReadMode readMode) {
         this.client.checkApiVersion("0.59", "graph read mode");
         // NOTE: Must provide id for PUT. If you use "graph/graph_read_mode", "/"
         // will be encoded to "%2F". So use "graph_read_mode" here, although
         // inaccurate.
-        if (graphSpace == null) {
-            this.client.put(joinPath(this.path(), graph, GRAPH_READ_MODE), null, readMode);
-            return;
-        }
-        this.client.put(joinPath(this.path(), graphSpace, graph, GRAPH_READ_MODE), null, readMode);
-    }
-
-    /**
-     * Get graph mode value from server response
-     *
-     * @param graphSpace the graph space name, null for non-graphspace mode
-     * @param graph the graph name
-     * @param modeKey the mode key in response (MODE or GRAPH_READ_MODE)
-     * @param enumClass the enum class type
-     * @return the mode enum value
-     */
-    private <T extends Enum<T>> T getModeValue(String graphSpace, String graph,
-                                              String modeKey, Class<T> enumClass) {
-        String path = (graphSpace != null)
-                      ? joinPath(this.path(), graphSpace, graph)
-                      : joinPath(this.path(), graph);
-
-        RestResult result = this.client.get(path, modeKey);
-        @SuppressWarnings("unchecked")
-        Map<String, String> map = result.readObject(Map.class);
-        String value = map.get(modeKey);
-
-        if (value == null) {
-            throw new InvalidResponseException(
-                    "Invalid response, expect '%s' in response", modeKey);
-        }
-        try {
-            return Enum.valueOf(enumClass, value);
-        } catch (IllegalArgumentException e) {
-            throw new InvalidResponseException(
-                    "Invalid %s value '%s'", enumClass.getSimpleName(), value);
-        }
-    }
-
-    public GraphMode mode(String graphSpace, String graph) {
-        return getModeValue(graphSpace, graph, MODE, GraphMode.class);
-    }
-
-    public GraphMode mode(String graph) {
-        return mode(null, graph);
-    }
-
-    public GraphReadMode readMode(String graphSpace, String graph) {
-        this.client.checkApiVersion("0.59", "graph read mode");
-        return getModeValue(graphSpace, graph, GRAPH_READ_MODE, GraphReadMode.class);
+        this.client.put(joinPath(this.path(), graph, GRAPH_READ_MODE), null, readMode);
     }
 
     public GraphReadMode readMode(String graph) {
-        return readMode(null, graph);
+        this.client.checkApiVersion("0.59", "graph read mode");
+        RestResult result = this.client.get(joinPath(this.path(), graph), GRAPH_READ_MODE);
+        @SuppressWarnings("unchecked")
+        Map<String, String> readMode = result.readObject(Map.class);
+        String value = readMode.get(GRAPH_READ_MODE);
+        if (value == null) {
+            throw new InvalidResponseException("Invalid response, expect 'graph_read_mode' " +
+                                               "in response");
+        }
+        try {
+            return GraphReadMode.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidResponseException("Invalid GraphReadMode value '%s'", value);
+        }
     }
 
     public String clone(String graph, Map<String, Object> body) {

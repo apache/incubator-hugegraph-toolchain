@@ -146,12 +146,31 @@ public class LoadTest {
         Assert.assertEquals(expectTimeStamp, actualTimeStamp);
     }
 
-    public static void authmain(String[] args) {
-        ArrayList list = new ArrayList(Arrays.asList(args));
+    /**
+     * Entry point for running the HugeGraphLoader with authentication parameters.
+     * This method appends authentication arguments (username and password) to the
+     * provided command-line arguments and then invokes {@link HugeGraphLoader#main(String[])}
+     * to start the data loading process.
+     * Specifically, it appends:
+     * --username admin
+     * --password pa
+     * to the end of the original argument list before delegating to HugeGraphLoader.
+     * <p>
+     * <b>Note:</b> The password "pa" is a simplified test password used only for testing purposes.
+     * It is a placeholder and <b>must be changed</b> in production environments to a secure value.
+     * The choice of "pa" is arbitrary and intended to facilitate automated testing.
+     * @param args the original command-line arguments passed to the program.
+     *             These arguments are extended with authentication information
+     *             before being passed to {@code HugeGraphLoader.main()}.
+     *
+     * @see HugeGraphLoader#main(String[])
+     */
+    public static void loadWithAuth(String[] args) {
+        ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
         list.add("--username");
         list.add("admin");
         list.add("--password");
-        list.add("admin");
+        list.add("pa");
         args = (String[]) list.toArray(new String[list.size()]);
 
         HugeGraphLoader.main(args);
