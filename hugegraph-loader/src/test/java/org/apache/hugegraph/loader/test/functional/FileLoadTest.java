@@ -2580,7 +2580,6 @@ public class FileLoadTest extends LoadTest {
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
-
         Assert.assertEquals(7, vertices.size());
         Assert.assertEquals(0, edges.size());
     }
