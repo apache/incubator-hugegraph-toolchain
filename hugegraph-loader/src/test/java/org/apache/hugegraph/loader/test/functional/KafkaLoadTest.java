@@ -88,7 +88,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -117,7 +117,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        authmain(args);
+        loadWithAuth(args);
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
         Assert.assertEquals(7, vertices.size());
@@ -139,7 +139,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -180,7 +180,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
 
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -200,7 +200,7 @@ public class KafkaLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());

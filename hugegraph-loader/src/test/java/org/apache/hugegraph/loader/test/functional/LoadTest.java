@@ -165,7 +165,7 @@ public class LoadTest {
      *
      * @see HugeGraphLoader#main(String[])
      */
-    public static void authmain(String[] args) {
+    public static void loadWithAuth(String[] args) {
         ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
         list.add("--username");
         list.add("admin");

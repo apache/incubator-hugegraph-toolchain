@@ -102,7 +102,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2"
         };
 
-        authmain(args);
+        loadWithAuth(args);
 
         List<PropertyKey> propertyKeys = CLIENT.schema().getPropertyKeys();
         propertyKeys.forEach(pkey -> {
@@ -172,7 +172,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -219,7 +219,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
     }
 
@@ -316,7 +316,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -348,7 +348,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -377,7 +377,7 @@ public class FileLoadTest extends LoadTest {
         };
         // Bytes encoded in utf-8 exceed 128
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
     }
 
@@ -399,7 +399,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
@@ -423,7 +423,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
     }
 
@@ -442,7 +442,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -463,7 +463,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -488,7 +488,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -512,7 +512,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -557,7 +557,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         }, (e) -> {
             Assert.assertTrue(e.getMessage().contains("Parse line '' error"));
         });
@@ -587,7 +587,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
@@ -615,7 +615,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
@@ -648,7 +648,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
@@ -681,7 +681,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -711,7 +711,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -763,7 +763,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
@@ -797,7 +797,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(4, vertices.size());
@@ -825,7 +825,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(8, vertices.size());
@@ -848,7 +848,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -870,7 +870,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -892,7 +892,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -913,7 +913,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -939,7 +939,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
@@ -960,7 +960,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
@@ -979,7 +979,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
@@ -1007,7 +1007,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1032,7 +1032,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1077,7 +1077,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1100,7 +1100,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
@@ -1121,7 +1121,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
@@ -1147,7 +1147,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
@@ -1179,7 +1179,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
     }
 
@@ -1199,7 +1199,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1220,7 +1220,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1243,7 +1243,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1259,7 +1259,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(0, vertices.size());
@@ -1276,7 +1276,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(0, vertices.size());
@@ -1295,7 +1295,7 @@ public class FileLoadTest extends LoadTest {
         };
 
         Assert.assertThrows(LoadException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
     }
 
@@ -1334,7 +1334,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
@@ -1354,7 +1354,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1375,7 +1375,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -1398,7 +1398,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1423,7 +1423,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1448,7 +1448,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1480,7 +1480,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1519,7 +1519,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1553,7 +1553,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -1582,7 +1582,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1608,7 +1608,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(LoadException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
     }
 
@@ -1630,7 +1630,7 @@ public class FileLoadTest extends LoadTest {
                 "-h", SERVER,
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -1650,7 +1650,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1670,7 +1670,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1690,7 +1690,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1710,7 +1710,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1730,7 +1730,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1750,7 +1750,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1773,7 +1773,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1793,7 +1793,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1813,7 +1813,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1833,7 +1833,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -1856,7 +1856,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "3"
         };
-        authmain(args);
+        loadWithAuth(args);
     }
 
     @Test
@@ -1875,7 +1875,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--max-parse-errors", "1"
         };
-        authmain(args);
+        loadWithAuth(args);
     }
 
     @Test
@@ -1895,7 +1895,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--check-vertex", "false"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -1933,7 +1933,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--check-vertex", "false"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -1974,7 +1974,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         });
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
@@ -2001,7 +2001,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--check-vertex", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Edge> edges = CLIENT.graph().listEdges();
 
@@ -2366,7 +2366,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -2418,7 +2418,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(1, vertices.size());
@@ -2460,7 +2460,7 @@ public class FileLoadTest extends LoadTest {
                                          "src/test/resources/parquet_compress_file/vertex_person.parquet");
             hdfsUtil.copy(path, "hdfs://localhost:8020/files/vertex_person.parquet");
         }
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(5, vertices.size());
@@ -2486,7 +2486,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -2527,7 +2527,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         }, e -> {
             String msgSuffix = "check whether the headers or field_mapping " +
                                "are configured correctly";
@@ -2600,7 +2600,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
@@ -2634,7 +2634,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -2661,7 +2661,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(3, vertices.size());
@@ -2684,7 +2684,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(1, edges.size());
@@ -2707,7 +2707,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(6, vertices.size());
@@ -2731,7 +2731,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(10, vertices.size());
@@ -2764,7 +2764,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(10, vertices.size());
@@ -2795,7 +2795,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(10, vertices.size());
@@ -2828,7 +2828,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(10, vertices.size());
@@ -2861,7 +2861,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         }, e -> {
             String msg = "In case unfold is true, just supported " +
                          "a single primary key";
@@ -2893,7 +2893,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
     }
 
     @Test
@@ -2917,7 +2917,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -2949,7 +2949,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -2980,7 +2980,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -3012,7 +3012,7 @@ public class FileLoadTest extends LoadTest {
                 "--test-mode", "true"
         };
         Assert.assertThrows(ParseException.class, () -> {
-            authmain(args);
+            loadWithAuth(args);
         }, e -> {
             String msg = "The elements number of source and target must be: " +
                          "1 to n, n to 1, n to n";
@@ -3049,7 +3049,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(4, vertices.size());
@@ -3063,7 +3063,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(6, vertices.size());
@@ -3088,7 +3088,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         HugeClient httpsClient = null;
         try {
@@ -3122,7 +3122,7 @@ public class FileLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        authmain(args);
+        loadWithAuth(args);
 
         LoadOptions options = new LoadOptions();
         options.host = SERVER;
