@@ -2577,7 +2577,6 @@ public class FileLoadTest extends LoadTest {
                                "are configured correctly";
             Assert.assertTrue(e.getMessage().endsWith(msgSuffix));
         });
-
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
         Assert.assertEquals(7, vertices.size());
