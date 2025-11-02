@@ -212,7 +212,7 @@
             <!--            TODO X FIX HERE-->
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-            <version>1.5.0</version>
+            <version>1.7.0</version>
 <!--            <version>4.0.0-SNAPSHOT</version>-->
             <exclusions>
                 <exclusion>
