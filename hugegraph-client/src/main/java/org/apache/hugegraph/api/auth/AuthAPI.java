@@ -23,7 +23,7 @@ import org.apache.hugegraph.structure.auth.AuthElement;
 
 public abstract class AuthAPI extends API {
 
-    private static final String PATH = "graphs/%s/auth/%s";
+    private static final String PATH = "graphspaces/%s/graphs/%s/auth/%s";
 
     public AuthAPI(RestClient client, String graph) {
         super(client);

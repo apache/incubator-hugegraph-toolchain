@@ -26,7 +26,8 @@ jobs:
       TRAVIS_DIR: hugegraph-tools/assembly/travis
       # TODO: could we use one param to unify it? or use a action template (could use one ci file)
       # TODO: replace it with the (latest - n) commit id (n >= 15)
-      COMMIT_ID: 29ecc0
+      # hugegraph commit date: 2025-10-30
+      COMMIT_ID: 5b3d295
     strategy:
       matrix:
         JAVA_VERSION: [ '11' ]
