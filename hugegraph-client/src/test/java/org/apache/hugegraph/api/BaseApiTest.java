@@ -61,6 +61,7 @@ public class BaseApiTest extends BaseClientTest {
 
     protected static RestClient initClient() {
         client = new RestClient(BASE_URL, USERNAME, PASSWORD, TIMEOUT);
+        client.setSupportGs(true);
         return client;
     }
 
