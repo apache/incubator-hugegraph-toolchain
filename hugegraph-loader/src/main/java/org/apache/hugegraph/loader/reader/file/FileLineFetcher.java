@@ -84,6 +84,7 @@ public class FileLineFetcher extends LineFetcher {
 
     @Override
     public void resetReader() {
+        LOG.debug("resetReader called, reader reset to null, offset={}", this.offset());
         this.reader = null;
     }
 
@@ -100,6 +101,7 @@ public class FileLineFetcher extends LineFetcher {
     public String[] readHeader(List<Readable> readables) {
         String[] header = null;
         for (Readable readable : readables) {
+            LOG.debug("try to read header from {}", readable.name());
             this.openReader(readable);
             assert this.reader != null;
             try {
@@ -213,7 +215,10 @@ public class FileLineFetcher extends LineFetcher {
     }
 
     private boolean needSkipLine(String line) {
-        return this.source().skippedLine().matches(line);
+        if (this.source().skippedLine() != null) {
+            return this.source().skippedLine().matches(line);
+        }
+        return false;
     }
 
     /**

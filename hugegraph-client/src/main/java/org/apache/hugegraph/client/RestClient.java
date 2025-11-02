@@ -19,6 +19,7 @@ package org.apache.hugegraph.client;
 
 import java.util.Map;
 
+import org.apache.hugegraph.driver.VersionManager;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.AbstractRestClient;
 import org.apache.hugegraph.rest.ClientException;
@@ -39,17 +40,17 @@ import lombok.Setter;
 public class RestClient extends AbstractRestClient {
 
     private static final int SECOND = 1000;
+    private String version;
+    @Getter
+    @Setter
+    private boolean supportGs;
+    private Version apiVersion = null;
 
     static {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Path.class, new PathDeserializer());
         RestResult.registerModule(module);
     }
-
-    private Version apiVersion = null;
-    @Setter
-    @Getter
-    private boolean supportGs = false;
 
     public RestClient(String url, String username, String password, int timeout) {
         super(url, username, password, timeout * SECOND);

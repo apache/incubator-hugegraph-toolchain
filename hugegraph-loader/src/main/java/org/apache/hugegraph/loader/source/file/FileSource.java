@@ -17,21 +17,26 @@
 
 package org.apache.hugegraph.loader.source.file;
 
-import org.apache.hugegraph.loader.constant.Constants;
-import org.apache.hugegraph.loader.util.DateUtil;
-import org.apache.hugegraph.loader.source.AbstractSource;
-import org.apache.hugegraph.loader.source.SourceType;
+import java.util.List;
+
 import org.apache.hugegraph.util.E;
 
+import org.apache.hugegraph.loader.constant.Constants;
+import org.apache.hugegraph.loader.source.AbstractSource;
+import org.apache.hugegraph.loader.source.SourceType;
+import org.apache.hugegraph.loader.util.DateUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.google.common.collect.ImmutableList;
 
 @JsonPropertyOrder({"type", "path", "file_filter"})
 public class FileSource extends AbstractSource {
 
     @JsonProperty("path")
     private String path;
+    @JsonProperty("dir_filter")
+    private DirFilter dirFilter;
     @JsonProperty("file_filter")
     private FileFilter filter;
     @JsonProperty("format")
@@ -40,6 +45,8 @@ public class FileSource extends AbstractSource {
     private String delimiter;
     @JsonProperty("date_format")
     private String dateFormat;
+    @JsonProperty("extra_date_formats")
+    private List<String> extraDateFormats;
     @JsonProperty("time_zone")
     private String timeZone;
     @JsonProperty("skipped_line")
@@ -48,35 +55,56 @@ public class FileSource extends AbstractSource {
     private Compression compression;
     @JsonProperty("batch_size")
     private int batchSize;
+    // Only works for single files
+    @JsonProperty("split_count")
+    private int splitCount;
+
+    // Whether header needs to be case-sensitive
+    private final boolean headerCaseSensitive;
 
     public FileSource() {
-        this(null, new FileFilter(), FileFormat.CSV, Constants.COMMA_STR,
-             Constants.DATE_FORMAT, Constants.TIME_ZONE, new SkippedLine(),
-             Compression.NONE, 500);
+        this(null, new DirFilter(), new FileFilter(), FileFormat.CSV,
+             Constants.COMMA_STR, Constants.DATE_FORMAT,
+             ImmutableList.of(), Constants.TIME_ZONE,
+             new SkippedLine(), Compression.NONE, 500);
     }
 
     @JsonCreator
     public FileSource(@JsonProperty("path") String path,
+                      @JsonProperty("dir_filter") DirFilter dirFilter,
                       @JsonProperty("filter") FileFilter filter,
                       @JsonProperty("format") FileFormat format,
                       @JsonProperty("delimiter") String delimiter,
                       @JsonProperty("date_format") String dateFormat,
+                      @JsonProperty("extra_date_formats")
+                      List<String> extraDateFormats,
                       @JsonProperty("time_zone") String timeZone,
                       @JsonProperty("skipped_line") SkippedLine skippedLine,
                       @JsonProperty("compression") Compression compression,
                       @JsonProperty("batch_size") Integer batchSize) {
         this.path = path;
+        this.dirFilter = dirFilter != null ? dirFilter : new DirFilter();
         this.filter = filter != null ? filter : new FileFilter();
         this.format = format != null ? format : FileFormat.CSV;
         this.delimiter = delimiter != null ?
                          delimiter : this.format.delimiter();
         this.dateFormat = dateFormat != null ?
                           dateFormat : Constants.DATE_FORMAT;
+        this.extraDateFormats = extraDateFormats == null ||
+                                extraDateFormats.isEmpty() ?
+                                ImmutableList.of() : extraDateFormats;
         this.timeZone = timeZone != null ? timeZone : Constants.TIME_ZONE;
-        this.skippedLine = skippedLine != null ?
-                           skippedLine : new SkippedLine();
+        this.skippedLine = skippedLine != null ? skippedLine : new SkippedLine();
         this.compression = compression != null ? compression : Compression.NONE;
         this.batchSize = batchSize != null ? batchSize : 500;
+
+        // When input is orc/parquet, header is case-insensitive
+        if (Compression.ORC.equals(this.compression()) ||
+            Compression.PARQUET.equals(this.compression())) {
+            headerCaseSensitive = false;
+        } else {
+            headerCaseSensitive = true;
+        }
     }
 
     @Override
@@ -113,6 +141,14 @@ public class FileSource extends AbstractSource {
         this.path = path;
     }
 
+    public DirFilter dirFilter() {
+        return this.dirFilter;
+    }
+
+    public void setDirFilter(DirFilter dirFilter) {
+        this.dirFilter = dirFilter;
+    }
+
     public FileFilter filter() {
         return this.filter;
     }
@@ -143,6 +179,14 @@ public class FileSource extends AbstractSource {
 
     public void dateFormat(String dateFormat) {
         this.dateFormat = dateFormat;
+    }
+
+    public List<String> extraDateFormats() {
+        return this.extraDateFormats;
+    }
+
+    public void extraDateFormats(List<String> extraDateFormats) {
+        this.extraDateFormats = extraDateFormats;
     }
 
     public String timeZone() {
@@ -177,6 +221,10 @@ public class FileSource extends AbstractSource {
         this.batchSize = batchSize;
     }
 
+    public int splitCount() {
+        return this.splitCount;
+    }
+
     @Override
     public FileSource asFileSource() {
         FileSource source = new FileSource();
@@ -184,10 +232,12 @@ public class FileSource extends AbstractSource {
         source.charset(this.charset());
         source.listFormat(this.listFormat());
         source.path = this.path;
+        source.dirFilter = this.dirFilter;
         source.filter = this.filter;
         source.format = this.format;
         source.delimiter = this.delimiter;
         source.dateFormat = this.dateFormat;
+        source.extraDateFormats = this.extraDateFormats;
         source.skippedLine = this.skippedLine;
         source.compression = this.compression;
         return source;
@@ -196,5 +246,10 @@ public class FileSource extends AbstractSource {
     @Override
     public String toString() {
         return String.format("%s(%s)", this.type(), this.path());
+    }
+
+    @Override
+    public boolean headerCaseSensitive() {
+        return headerCaseSensitive;
     }
 }

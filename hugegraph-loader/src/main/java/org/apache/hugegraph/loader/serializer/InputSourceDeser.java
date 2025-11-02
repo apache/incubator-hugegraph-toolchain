@@ -19,6 +19,7 @@ package org.apache.hugegraph.loader.serializer;
 
 import java.io.IOException;
 
+import org.apache.hugegraph.loader.source.graph.GraphSource;
 import org.apache.hugegraph.loader.source.kafka.KafkaSource;
 import org.apache.hugegraph.loader.util.JsonUtil;
 import org.apache.hugegraph.loader.source.InputSource;
@@ -69,6 +70,8 @@ public class InputSourceDeser extends JsonDeserializer<InputSource> {
                 return JsonUtil.convert(node, JDBCSource.class);
             case KAFKA:
                 return JsonUtil.convert(node, KafkaSource.class);
+            case GRAPH:
+                return JsonUtil.convert(node, GraphSource.class);
             default:
                 throw new AssertionError(String.format("Unsupported input source '%s'", type));
         }
