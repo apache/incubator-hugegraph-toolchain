@@ -148,7 +148,7 @@ public class HugeClient implements Closeable {
         this.checkServerApiVersion();
 
         this.graphs = new GraphsManager(client, graphSpace);
-        this.auth = new AuthManager(client, graph);
+        this.auth = new AuthManager(client, graphSpace, graph);
         this.metrics = new MetricsManager(client);
         this.graphSpace = new GraphSpaceManager(client);
         this.schemaTemplageManager = new SchemaTemplateManager(client, graphSpace);

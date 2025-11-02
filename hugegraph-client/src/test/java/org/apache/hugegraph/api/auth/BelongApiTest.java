@@ -42,7 +42,7 @@ public class BelongApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        api = new BelongAPI(initClient(), GRAPH);
+        api = new BelongAPI(initClient(), GRAPHSPACE, GRAPH);
 
         UserApiTest.init();
         GroupApiTest.init();

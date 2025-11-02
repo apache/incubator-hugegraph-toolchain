@@ -30,8 +30,8 @@ import org.apache.hugegraph.structure.constant.HugeType;
 
 public class ManagerAPI extends AuthAPI {
 
-    public ManagerAPI(RestClient client, String graph) {
-        super(client, graph);
+    public ManagerAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     public UserManager create(UserManager userManager) {
