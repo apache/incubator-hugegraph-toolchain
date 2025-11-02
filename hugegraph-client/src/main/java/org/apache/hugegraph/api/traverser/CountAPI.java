@@ -22,14 +22,15 @@ import java.util.Map;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
 import org.apache.hugegraph.structure.traverser.CountRequest;
+import org.apache.hugegraph.structure.traverser.CountResponse;
 import org.apache.hugegraph.util.E;
 
 public class CountAPI extends TraversersAPI {
 
     private static final String COUNT = "count";
 
-    public CountAPI(RestClient client, String graph) {
-        super(client, graph);
+    public CountAPI(RestClient client,  String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -37,13 +38,24 @@ public class CountAPI extends TraversersAPI {
         return "count";
     }
 
-    public long post(CountRequest request) {
+    public CountResponse post(CountRequest request) {
         this.client.checkApiVersion("0.55", "count");
         RestResult result = this.client.post(this.path(), request);
-        @SuppressWarnings("unchecked")
-        Map<String, Number> countMap = result.readObject(Map.class);
-        E.checkState(countMap.containsKey(COUNT),
-                     "The result doesn't have key '%s'", COUNT);
-        return countMap.get(COUNT).longValue();
+        // old version response doesn't have key 'countMap'
+        if (!result.content().contains("countMap")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Number> countMap = result.readObject(Map.class);
+            E.checkState(countMap.containsKey(COUNT),
+                         "The result doesn't have key '%s'", COUNT);
+            CountResponse resp = new CountResponse();
+            resp.setCountMap(countMap);
+            return resp;
+        } else {
+            @SuppressWarnings("unchecked")
+            CountResponse resp = result.readObject(CountResponse.class);
+            E.checkState(resp.countMap().containsKey(COUNT),
+                         "The result doesn't have key '%s'", COUNT);
+            return resp;
+        }
     }
 }

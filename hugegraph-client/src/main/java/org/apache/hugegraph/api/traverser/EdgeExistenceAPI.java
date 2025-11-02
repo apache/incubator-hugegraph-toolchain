@@ -30,8 +30,8 @@ import java.util.Map;
 
 public class EdgeExistenceAPI extends TraversersAPI {
 
-    public EdgeExistenceAPI(RestClient client, String graph) {
-        super(client, graph);
+    public EdgeExistenceAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override

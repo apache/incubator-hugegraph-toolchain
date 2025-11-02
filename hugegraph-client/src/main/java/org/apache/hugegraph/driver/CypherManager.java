@@ -18,25 +18,42 @@
 package org.apache.hugegraph.driver;
 
 import org.apache.hugegraph.api.gremlin.CypherAPI;
+import org.apache.hugegraph.api.job.CypherJobAPI;
+import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.structure.gremlin.Response;
 import org.apache.hugegraph.structure.gremlin.ResultSet;
-import org.apache.hugegraph.client.RestClient;
 
 public class CypherManager {
 
     private final GraphManager graphManager;
+    private final CypherJobAPI cypherJobAPI;
+    private final String graphSpace;
+    private final String graph;
+
     private final CypherAPI cypherAPI;
 
-    public CypherManager(RestClient client, String graph,
+    public CypherManager(RestClient client, String graphSpace, String graph,
                          GraphManager graphManager) {
         this.graphManager = graphManager;
-        this.cypherAPI = new CypherAPI(client, graph);
+        this.cypherAPI = new CypherAPI(client);
+        this.cypherJobAPI = new CypherJobAPI(client, graphSpace, graph);
+        this.graphSpace = graphSpace;
+        this.graph = graph;
+    }
+
+    public ResultSet cypher(String cypher) {
+        return execute(cypher);
     }
 
     public ResultSet execute(String cypher) {
-        Response response = this.cypherAPI.post(cypher);
+        Response response = this.cypherAPI.post(this.graphSpace, this.graph, cypher);
         response.graphManager(this.graphManager);
         // TODO: Can add some checks later
         return response.result();
     }
+
+    public long executeAsTask(String cypher) {
+        return this.cypherJobAPI.execute(cypher);
+    }
+
 }

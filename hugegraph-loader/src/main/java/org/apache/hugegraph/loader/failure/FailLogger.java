@@ -20,6 +20,8 @@ package org.apache.hugegraph.loader.failure;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -28,7 +30,6 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
@@ -138,30 +139,32 @@ public final class FailLogger {
 
     private void removeDupLines() {
         Charset charset = Charset.forName(this.struct.input().charset());
-        File dedupFile = new File(this.file.getAbsolutePath() + Constants.DEDUP_SUFFIX);
-        try (InputStream is = Files.newInputStream(this.file.toPath());
+        File dedupFile = new File(this.file.getAbsolutePath() +
+                                   Constants.DEDUP_SUFFIX);
+        try (InputStream is = new FileInputStream(this.file);
              Reader ir = new InputStreamReader(is, charset);
              BufferedReader reader = new BufferedReader(ir);
              // upper is input, below is output
-             OutputStream os = Files.newOutputStream(dedupFile.toPath());
+             OutputStream os = new FileOutputStream(dedupFile);
              Writer ow = new OutputStreamWriter(os, charset);
              BufferedWriter writer = new BufferedWriter(ow)) {
-            Set<Integer> wroteLines = new HashSet<>();
+            Set<Integer> writtenLines = new HashSet<>();
             HashFunction hashFunc = Hashing.murmur3_32();
-            for (String tipsLine, dataLine; (tipsLine = reader.readLine()) != null &&
-                                            (dataLine = reader.readLine()) != null; ) {
+            for (String tipsLine, dataLine;
+                     (tipsLine = reader.readLine()) != null &&
+                     (dataLine = reader.readLine()) != null;) {
                 /*
                  * Hash data line to remove duplicate lines
                  * Misjudgment may occur, but the probability is extremely low
                  */
                 int hash = hashFunc.hashString(dataLine, charset).asInt();
-                if (!wroteLines.contains(hash)) {
+                if (!writtenLines.contains(hash)) {
                     writer.write(tipsLine);
                     writer.newLine();
                     writer.write(dataLine);
                     writer.newLine();
-                    // Save the hash value of wrote line
-                    wroteLines.add(hash);
+                    // Save the hash value of written line
+                    writtenLines.add(hash);
                 }
             }
         } catch (IOException e) {

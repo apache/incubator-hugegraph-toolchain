@@ -20,6 +20,7 @@ package org.apache.hugegraph.api.schema;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.hugegraph.api.API;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.exception.NotSupportException;
@@ -28,19 +29,41 @@ import org.apache.hugegraph.structure.SchemaElement;
 
 public class SchemaAPI extends API {
 
-    private static final String PATH = "graphs/%s/%s";
+    private static final String PATH = "graphspaces/%s/graphs/%s/%s";
 
-    public SchemaAPI(RestClient client, String graph) {
+    public SchemaAPI(RestClient client, String graphSpace, String graph) {
         super(client);
-        this.path(PATH, graph, this.type());
+        this.path(PATH, graphSpace, graph, this.type());
     }
 
-    @SuppressWarnings("unchecked")
     public Map<String, List<SchemaElement>> list() {
+        return this.listJson();
+    }
+
+    public Map<String, String> listGroovy() {
         if (this.client.apiVersionLt("0.66")) {
             throw new NotSupportException("schema get api");
         }
-        RestResult result = this.client.get(this.path());
+        RestResult result = this.client.get(this.path(), ImmutableMap.of(
+                "format", "groovy"));
+        return result.readObject(Map.class);
+    }
+
+    public Map<String, Object> listGroovy(String format, boolean attachIdFlag) {
+        if (this.client.apiVersionLt("0.66")) {
+            throw new NotSupportException("schema get api");
+        }
+        RestResult result = this.client.get(this.path(), ImmutableMap.of(
+                "format", format, "attachidflag", attachIdFlag));
+        return result.readObject(Map.class);
+    }
+
+    public Map<String, List<SchemaElement>> listJson() {
+        if (this.client.apiVersionLt("0.66")) {
+            throw new NotSupportException("schema get api");
+        }
+        RestResult result = this.client.get(this.path(), ImmutableMap.of(
+                "format", "json"));
         return result.readObject(Map.class);
     }
 

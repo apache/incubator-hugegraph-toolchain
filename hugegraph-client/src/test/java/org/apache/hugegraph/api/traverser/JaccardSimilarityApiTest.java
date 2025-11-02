@@ -17,6 +17,7 @@
 
 package org.apache.hugegraph.api.traverser;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.hugegraph.structure.constant.Direction;
@@ -77,57 +78,69 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
 
     @Test
     public void testJaccardSimilarity() {
-        double jaccard = jaccardSimilarityAPI.get(1, 2, Direction.BOTH,
-                                                  null, -1);
+        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2,
+                                                         Direction.BOTH,
+                                                         null, -1);
+        double jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(0.5D, jaccard, Double.MIN_VALUE);
     }
 
     @Test
     public void testJaccardSimilarityWithDirection() {
-        double jaccard = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
-                                                  null, -1);
+        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
+                                                      null, -1);
+        double jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(0.5, jaccard, Double.MIN_VALUE);
 
-        jaccard = jaccardSimilarityAPI.get(1, 2, Direction.IN,
-                                           null, -1);
+        res = jaccardSimilarityAPI.get(1, 2, Direction.IN,
+                                         null, -1);
+        jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(0.5, jaccard, Double.MIN_VALUE);
     }
 
     @Test
     public void testJaccardSimilarityWithLabel() {
-        double jaccard = jaccardSimilarityAPI.get(1, 2, Direction.BOTH,
+        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2, Direction.BOTH,
                                                   "link", -1);
+        double jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(0.3333333333333333D, jaccard, Double.MIN_VALUE);
 
-        jaccard = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
+        res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
                                            "link", -1);
+        jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(0.3333333333333333D, jaccard, Double.MIN_VALUE);
 
-        jaccard = jaccardSimilarityAPI.get(1, 2, Direction.IN,
-                                           "link", -1);
+        res = jaccardSimilarityAPI.get(1, 2, Direction.IN,
+                                         "link", -1);
+        jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(0.3333333333333333D, jaccard, Double.MIN_VALUE);
 
-        jaccard = jaccardSimilarityAPI.get(1, 2, Direction.BOTH,
-                                           "relateTo", -1);
+        res = jaccardSimilarityAPI.get(1, 2, Direction.BOTH,
+                                         "relateTo", -1);
+        jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(1.0D, jaccard, Double.MIN_VALUE);
 
-        jaccard = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
-                                           "relateTo", -1);
+        res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
+                                         "relateTo", -1);
+        jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(1.0D, jaccard, Double.MIN_VALUE);
 
-        jaccard = jaccardSimilarityAPI.get(1, 2, Direction.IN,
-                                           "relateTo", -1);
+        res = jaccardSimilarityAPI.get(1, 2, Direction.IN,
+                                         "relateTo", -1);
+        jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(1.0D, jaccard, Double.MIN_VALUE);
     }
 
     @Test
     public void testJaccardSimilarityWithDegree() {
-        double jaccard = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
+        JaccardSimilarity res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
                                                   null, 6);
+        double jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(0.5D, jaccard, Double.MIN_VALUE);
 
-        jaccard = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
-                                           null, 1);
+        res = jaccardSimilarityAPI.get(1, 2, Direction.OUT,
+                                         null, 1);
+        jaccard = (Double) res.getJaccardSimilarity();
         Assert.assertEquals(1D, jaccard, Double.MIN_VALUE);
     }
 
@@ -138,7 +151,9 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.vertex(4);
         builder.step().direction(Direction.BOTH);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
+        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
+        Map<Object, Double> results =
+                (Map<Object, Double>) res.getJaccardSimilarity();
 
         Assert.assertEquals(9, results.size());
         Set<Object> expected = ImmutableSet.of("1", "2", "3", "5", "6",
@@ -164,7 +179,9 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.step().direction(Direction.BOTH);
         builder.top(5);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
+        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
+        Map<Object, Double> results =
+                (Map<Object, Double>) res.getJaccardSimilarity();
 
         Assert.assertEquals(5, results.size());
         Set<Object> expected = ImmutableSet.of("3", "5", "6", "7", "8");
@@ -184,7 +201,9 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.vertex(4);
         builder.step().direction(Direction.BOTH).labels("link");
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
+        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
+        Map<Object, Double> results =
+                (Map<Object, Double>) res.getJaccardSimilarity();
 
         Assert.assertEquals(7, results.size());
         Set<Object> expected = ImmutableSet.of("3", "7", "8", "9",
@@ -207,7 +226,9 @@ public class JaccardSimilarityApiTest extends TraverserApiTest {
         builder.vertex(4);
         builder.step().direction(Direction.OUT);
         SingleSourceJaccardSimilarityRequest request = builder.build();
-        JaccardSimilarity results = jaccardSimilarityAPI.post(request);
+        JaccardSimilarity res = jaccardSimilarityAPI.post(request);
+        Map<Object, Double> results =
+                (Map<Object, Double>) res.getJaccardSimilarity();
 
         Assert.assertEquals(6, results.size());
         Set<Object> expected = ImmutableSet.of("1", "2", "3",

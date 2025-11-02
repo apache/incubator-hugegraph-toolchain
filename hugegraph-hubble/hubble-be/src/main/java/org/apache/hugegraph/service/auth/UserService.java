@@ -52,8 +52,8 @@ public class UserService extends AuthService{
 
     public static final String CREATE_SUCCESS = "successfully created";
 
-    @Autowired
-    BelongService belongService;
+    //@Autowired
+    //BelongService belongService;
 
     @Autowired
     ManagerService managerService;

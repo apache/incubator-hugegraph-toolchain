@@ -42,8 +42,9 @@ public class GremlinRequest {
     }
 
     public static class Builder {
-        private GremlinRequest request;
-        private GremlinManager manager;
+
+        private final GremlinRequest request;
+        private final GremlinManager manager;
 
         public Builder(String gremlin, GremlinManager executor) {
             this.request = new GremlinRequest(gremlin);

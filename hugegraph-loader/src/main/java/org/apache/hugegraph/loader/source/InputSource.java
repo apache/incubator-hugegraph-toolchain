@@ -32,4 +32,10 @@ public interface InputSource extends Checkable {
     String charset();
 
     FileSource asFileSource();
+
+    // Whether input source is case-sensitive
+    // Case-sensitive by default, only false when input is parquet, orc format
+    default boolean headerCaseSensitive() {
+        return true;
+    }
 }

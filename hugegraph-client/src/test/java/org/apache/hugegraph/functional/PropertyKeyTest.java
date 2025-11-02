@@ -36,7 +36,7 @@ public class PropertyKeyTest extends BaseFuncTest {
 
     @Before
     public void setup() {
-
+        super.setup();
     }
 
     @After

@@ -112,7 +112,7 @@
             <!--            TODO X FIX HERE-->
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-common</artifactId>
-            <version>1.3.0</version>
+            <version>1.5.0</version>
 <!--            <version>1.0.01</version>-->
             <exclusions>
                 <exclusion>
@@ -212,8 +212,8 @@
             <!--            TODO X FIX HERE-->
             <groupId>org.apache.hugegraph</groupId>
             <artifactId>hugegraph-client</artifactId>
-<!--            <version>1.5.0</version>-->
-            <version>4.0.0-SNAPSHOT</version>
+            <version>1.7.0</version>
+<!--            <version>4.0.0-SNAPSHOT</version>-->
             <exclusions>
                 <exclusion>
                     <groupId>com.baidu.hugegraph</groupId>
@@ -264,7 +264,7 @@
             <version>4.2</version>
             <scope>compile</scope>
         </dependency>
-        <!-- TODO X Evaluate the adding of dependency (common, protobuf, exclusion on hive,jakarta)-->
+        <!-- TODO X Evaluate the adding of dependency (common, protobuf,okhttp3from common exclusion on hive,jakarta)-->
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
             <artifactId>jersey-hk2</artifactId>
@@ -343,6 +343,12 @@
                     <artifactId>protobuf-java</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.12.0</version>
         </dependency>
     </dependencies>
 

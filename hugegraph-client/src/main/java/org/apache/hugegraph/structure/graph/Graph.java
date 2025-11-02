@@ -94,7 +94,7 @@ public class Graph {
     public static class HugeVertex {
 
         private Vertex vertex;
-        private List<HugeEdge> edges;
+        private final List<HugeEdge> edges;
 
         public HugeVertex(Vertex v) {
             this.vertex = v;
@@ -126,7 +126,7 @@ public class Graph {
 
     public static class HugeEdge {
 
-        private Edge edge;
+        private final Edge edge;
         private HugeVertex source;
         private HugeVertex target;
 

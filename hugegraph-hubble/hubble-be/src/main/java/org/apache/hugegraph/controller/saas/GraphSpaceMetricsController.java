@@ -33,7 +33,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import org.apache.hugegraph.client.api.graph.GraphMetricsAPI;
+import org.apache.hugegraph.api.graph.GraphMetricsAPI;
+// TODO fix import
+//import org.apache.hugegraph.client.api.graph.GraphMetricsAPI;
 import org.apache.hugegraph.common.Constant;
 import org.apache.hugegraph.controller.BaseController;
 import org.apache.hugegraph.driver.HugeClient;

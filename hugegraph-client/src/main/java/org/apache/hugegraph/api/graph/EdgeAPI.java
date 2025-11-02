@@ -35,8 +35,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class EdgeAPI extends GraphAPI {
 
-    public EdgeAPI(RestClient client, String graph) {
-        super(client, graph);
+    public EdgeAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -67,6 +67,12 @@ public class EdgeAPI extends GraphAPI {
         RestHeaders headers = new RestHeaders().add(RestHeaders.CONTENT_ENCODING, BATCH_ENCODING);
         RestResult result = this.client.put(this.batchPath(), null, request, headers);
         return result.readList(this.type(), Edge.class);
+    }
+
+    public Edge update(String edgeid, Edge edge) {
+        Map<String, Object> params = ImmutableMap.of("action", "append");
+        RestResult result = this.client.put(this.path(), edgeid, edge, params);
+        return result.readObject(Edge.class);
     }
 
     public Edge append(Edge edge) {

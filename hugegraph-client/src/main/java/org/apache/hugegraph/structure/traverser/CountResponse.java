@@ -15,20 +15,27 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.executor;
+package org.apache.hugegraph.structure.traverser;
 
-import org.apache.hugegraph.loader.builder.SchemaCache;
+import java.util.Map;
 
-public class ComputerLoadOptions extends LoadOptions {
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    private final SchemaCache schemaCache;
+import lombok.Setter;
 
-    public ComputerLoadOptions(SchemaCache schemaCache) {
-        super();
-        this.schemaCache = schemaCache;
+public class CountResponse {
+
+    @JsonProperty
+    @Setter
+    private Map<String, Number> countMap;
+    @JsonProperty
+    private Map<String, Object> measure;
+
+    public Map<String, Number> countMap() {
+        return this.countMap;
     }
 
-    public SchemaCache schemaCache() {
-        return this.schemaCache;
+    public Map<String, Object> measure() {
+        return this.measure;
     }
 }

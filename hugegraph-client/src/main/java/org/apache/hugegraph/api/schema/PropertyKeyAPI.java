@@ -34,8 +34,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class PropertyKeyAPI extends SchemaElementAPI {
 
-    public PropertyKeyAPI(RestClient client, String graph) {
-        super(client, graph);
+    public PropertyKeyAPI(RestClient client, String graphSpace, String graph) {
+        super(client, graphSpace, graph);
     }
 
     @Override
@@ -66,6 +66,14 @@ public class PropertyKeyAPI extends SchemaElementAPI {
         Object pkey = this.checkCreateOrUpdate(propertyKey);
         RestResult result = this.client.put(this.path(), id, pkey, params);
         return result.readObject(PropertyKey.PropertyKeyWithTask.class);
+    }
+
+    public PropertyKey update(String oldPk, PropertyKey newPk) {
+        String id = oldPk;
+        Map<String, Object> params = ImmutableMap.of("action", "update");
+        Object pkey = this.checkCreateOrUpdate(newPk);
+        RestResult result = this.client.put(this.path(), id, pkey, params);
+        return result.readObject(PropertyKey.class);
     }
 
     public PropertyKey.PropertyKeyWithTask clear(PropertyKey propertyKey) {

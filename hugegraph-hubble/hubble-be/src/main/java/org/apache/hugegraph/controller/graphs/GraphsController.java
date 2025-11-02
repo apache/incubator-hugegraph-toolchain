@@ -266,7 +266,7 @@ public class GraphsController extends BaseController {
         this.graphsService.update(this.authClient(graphspace, null),
                 nickname, graph);
     }
-
+    // TODO message may noe be passed through fe, check correctness
     @DeleteMapping("{graph}")
     public void delete(@PathVariable("graphspace") String graphspace,
                        @PathVariable("graph") String graph,

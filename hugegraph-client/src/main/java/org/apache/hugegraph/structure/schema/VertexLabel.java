@@ -59,8 +59,16 @@ public class VertexLabel extends SchemaLabel {
         return this.idStrategy;
     }
 
+    public void idStrategy(IdStrategy idStrategy) {
+        this.idStrategy = idStrategy;
+    }
+
     public List<String> primaryKeys() {
         return this.primaryKeys;
+    }
+
+    public void primaryKeys(List<String> primaryKeys) {
+        this.primaryKeys = primaryKeys;
     }
 
     public long ttl() {
@@ -115,12 +123,14 @@ public class VertexLabel extends SchemaLabel {
         Builder userdata(String key, Object val);
 
         Builder ifNotExist();
+
+        Builder id(long id);
     }
 
     public static class BuilderImpl implements Builder {
 
-        private VertexLabel vertexLabel;
-        private SchemaManager manager;
+        private final VertexLabel vertexLabel;
+        private final SchemaManager manager;
 
         public BuilderImpl(String name, SchemaManager manager) {
             this.vertexLabel = new VertexLabel(name);
@@ -248,6 +258,12 @@ public class VertexLabel extends SchemaLabel {
         @Override
         public Builder ifNotExist() {
             this.vertexLabel.checkExist = false;
+            return this;
+        }
+
+        @Override
+        public Builder id(long id) {
+            this.vertexLabel.id = id;
             return this;
         }
 

@@ -37,6 +37,20 @@ public abstract class API {
         this.path = null;
     }
 
+    protected static void checkOffset(long value) {
+        E.checkArgument(value >= 0, "Offset must be >= 0, but got: %s", value);
+    }
+
+    protected static void checkLimit(long value, String name) {
+        E.checkArgument(value > 0 || value == NO_LIMIT,
+                        "%s must be > 0 or == %s, but got: %s",
+                        name, NO_LIMIT, value);
+    }
+
+    protected static String joinPath(String... paths) {
+        return String.join(PATH_SPLITOR, paths);
+    }
+
     public String path() {
         E.checkState(this.path != null, "Path can't be null");
         return this.path;
@@ -51,14 +65,4 @@ public abstract class API {
     }
 
     protected abstract String type();
-
-    protected static void checkOffset(long value) {
-        E.checkArgument(value >= 0, "Offset must be >= 0, but got: %s", value);
-    }
-
-    protected static void checkLimit(long value, String name) {
-        E.checkArgument(value > 0 || value == NO_LIMIT,
-                        "%s must be > 0 or == %s, but got: %s",
-                        name, NO_LIMIT, value);
-    }
 }

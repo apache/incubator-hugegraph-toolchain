@@ -1,287 +1,654 @@
 {
-  "data-analyze": {
-    "category": {
-      "gremlin-analyze": "Gremlin 分析",
-      "algorithm-analyze": "算法分析"
-    },
-    "manipulations": {
-      "execution": "执行",
-      "favorite": "收藏",
-      "reset": "重置"
-    },
-    "algorithm-list": {
-      "title": "算法目录",
-      "loop-detection": "环路检测",
-      "focus-detection": "交点检测",
-      "shortest-path": "最短路径",
-      "shortest-path-all": "全最短路径",
-      "all-path": "全部路径",
-      "neighbor-rank-recommendation": "Neighbor Rank推荐算法",
-      "model-similarity": "模型相似度算法",
-      "real-time-recommendation": "实时推荐",
-      "k-step-neighbor": "k步邻居",
-      "k-hop": "k跳算法",
-      "custom-path": "自定义路径",
-      "custom-intersection-detection": "自定义交点检测",
-      "radiographic-inspection": "射线检测",
-      "common-neighbor": "共同邻居",
-      "weighted-shortest-path": "带权最短路径",
-      "single-source-weighted-path": "单源带权路径",
-      "jaccard-similarity": "Jaccard相似度",
-      "personal-rank-recommendation": "Personal Rank推荐算法"
-    },
-    "algorithm-forms": {
-      "loop-detection": {
-        "options": {
-          "source": "起点ID:",
-          "direction": "方向:",
-          "max_depth": "最大步数:",
-          "label": "边类型:",
-          "max_degree": "最大度数:",
-          "source_in_ring": "环路包含起点:",
-          "limit": "返回可达路径最大值:",
-          "capacity": "访问顶点最大值:"
+    "data-analyze": {
+        "category": {
+            "gremlin-analyze": "Gremlin analysis",
+            "algorithm-analyze": "Algorithm analysis"
         },
-        "pre-value": "全部",
-        "placeholder": {
-          "input-source-id": "请输入起点ID",
-          "input-integer": "请填写大于等于0的整数",
-          "input-positive-integer": "请填写大于0的整数",
-          "no-edge-types": "无边类型"
+        "manipulations": {
+            "execution": "implement",
+            "favorite": "collect",
+            "reset": "Repossess"
         },
         "hint": {
-          "max-depth": "为保证性能，建议不超过10步，推荐5步",
-          "skip-degree": "填写查询过程中需要跳过的顶点的最小的边数目，即当顶点的边数目大于超级顶点度数时，跳过该顶点，可用于规避超级点"
+            "graph-disabled": "This figure is not available"
         },
-        "validations": {
-          "no-empty": "该项不能为空",
-          "integer-only": "请填写大于等于0的整数",
-          "postive-integer-only": "请填写大于0的整数"
+        "algorithm-list": {
+            "title": "Algorithm directory",
+            "loop-detection": "Ring detection",
+            "focus-detection": "Intersection detection",
+            "shortest-path": "Minimum path",
+            "shortest-path-all": "The shortest path",
+            "all-path": "All paths",
+            "model-similarity": "Model similarity algorithm",
+            "neighbor-rank": "Neighbor Rank recommendation algorithm",
+            "k-step-neighbor": "K -step neighbor",
+            "k-hop": "K jump algorithm",
+            "custom-path": "Custom path",
+            "radiographic-inspection": "Ray detection",
+            "same-neighbor": "Co -neighbor",
+            "weighted-shortest-path": "The shortest path with power",
+            "single-source-weighted-shortest-path": "The shortest path of single source band power",
+            "jaccard": "Jaccard similarity",
+            "personal-rank": "Personal Rank recommendation algorithm"
+        },
+        "algorithm-forms": {
+            "loop-detection": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "source_in_ring": "The ring contains the starting point:",
+                    "limit": "Back to the maximum value of the path:",
+                    "capacity": "The maximum value of the access to the vertex:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "focus-detection": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "target": "End ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "capacity": "The maximum value of the access to the vertex:",
+                    "limit": "The maximum value of the return point:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-target-id": "Please enter the end ID",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "shortest-path": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "target": "End ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "skip_degree": "Super vertex degree:",
+                    "capacity": "The maximum value of the access to the vertex:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-target-id": "Please enter the end ID",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-integer": "Please fill in an integer that is greater than or equal to 0, and defaults to 0",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex",
+                    "skip-degree": "Fill in the minimum number of edges that need to be skipped during the query process, that is, when the number of edges of the vertex is greater than the super -vertex degree, skipping this vertex can be used to avoid the super point"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0",
+                    "integer-only": "Please fill in an integer more than or equal to 0",
+                    "postive-integer-only": "Please fill in an integer greater than 0"
+                }
+            },
+            "shortest-path-all": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "target": "End ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "capacity": "The maximum value of the access to the vertex:",
+                    "skip_degree": "Super vertex degree:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-target-id": "Please enter the end ID",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "input-integer": "Please fill in an integer that is greater than or equal to 0, and defaults to 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex",
+                    "skip-degree": "Fill in the minimum number of edges that need to be skipped during the query process, that is, when the number of edges of the vertex is greater than the super -vertex degree, skipping this vertex can be used to avoid the super point"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "integer-only": "Please fill in an integer more than or equal to 0",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "all-path": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "target": "End ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "capacity": "The maximum value of the access to the vertex:",
+                    "limit": "The maximum value of the return path:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-target-id": "Please enter the end ID",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "model-similarity": {
+                "options": {
+                    "method": "Starting point selection method:",
+                    "source": "Starting point ID:",
+                    "vertex-type": "Sperture type:",
+                    "vertex-property": "Speak attributes and values:",
+                    "direction": "direction:",
+                    "least_neighbor": "Number of neighbors:",
+                    "similarity": "Similarity:",
+                    "label": "Border type:",
+                    "max_similar": "The highest degree of similarity:",
+                    "least_similar": "The minimum number of the model is similar:",
+                    "property_filter": "Attribute filtering:",
+                    "least_property_number": "Number of minimum attribute values:",
+                    "max_degree": "The maximum degree:",
+                    "capacity": "The maximum value of the access to the vertex:",
+                    "skip_degree": "Back to the highest value of the vertex:",
+                    "limit": "The maximum value of the return result:",
+                    "return_common_connection": "Return to the common point of association:",
+                    "return_complete_info": "Return to the vertex complete information:"
+                },
+                "radio-value": {
+                    "specific-id": "Specify ID",
+                    "filtered-type-property": "Filter type attribute"
+                },
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID, multiple IDs are separated by comma",
+                    "input-vertex-type": "Please select vertex type",
+                    "select-vertex-property": "Please select vertex attributes",
+                    "input-vertex-property": "Multi -attribute value is separated by comma",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "input-integer": "Please fill in an integer more than or equal to 0",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "input-integer-gt-1": "Please fill in an integer greater than 1",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0",
+                    "input-filtered-property": "Please select the attribute you need to filter",
+                    "no-properties": "No attribute",
+                    "no-vertex-type": "No -free type",
+                    "similarity": "Please enter the number of (0-1]"
+                },
+                "hint": {
+                    "vertex_type_or_property": "Sperture type/vertex attribute to at least one item",
+                    "least_property_number": "The number of attribute filtering and minimum attribute values ​​must be used together; after setting, the effect is: when the starting point is similar to that of the value of a certain attribute value of the minimum attribute value, the starting point and its shuttle shape will be returned.Similar point",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex",
+                    "least_neighbor": "The number of neighbors is less than the current setting value, then it is thought that there is no shuttle similar point from the starting point",
+                    "similarity": "The proportion of the number of neighbors that starts from the starting point to the \"Similar Point\" of the \"shuttle -shaped\"",
+                    "max_similar": "The number of TOP with the highest degree of similarity in the shuttle point of the starting point, 0 means all",
+                    "return_common_connection": "Whether to return the starting point and its \"shuttle -shaped similar point\" in the middle point"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "no-edge-typs": "Infinite type",
+                    "integer-only": "Please fill in an integer more than or equal to 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "integer-gt-1": "Please fill in an integer greater than 1",
+                    "similarity": "Please enter the number of (0-1]",
+                    "no-gt-1000": "This value cannot be greater than equal to 1000"
+                },
+                "add": "Add to",
+                "delete": "delete",
+                "pre-value": "all"
+            },
+            "neighbor-rank": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "alpha": "alpha:",
+                    "direction": "direction:",
+                    "capacity": "The maximum value of the access to the vertex:",
+                    "label": "Border type:",
+                    "degree": "The maximum degree:",
+                    "top": "Top n: each layer retain weight top n:",
+                    "steps": "steps:"
+                },
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-integer-lt-1000": "Please fill in an integer greater than or equal to 0, less than 1000, and default to 100",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "range": "Scope (0-1]"
+                },
+                "hint": {
+                    "top": "In each layer, there are n results with only the highest weight of the rights in the result",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "no-edge-typs": "Infinite type",
+                    "range": "Please fill in the value greater than 0 and less than equal to 1",
+                    "integer-only-lt-1000": "Please fill in an integer with an integer greater than equal to 0 less than 1000",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                },
+                "pre-value": "all",
+                "add-new-rule": "Add rules"
+            },
+            "k-step-neighbor": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "limit": "Back to the highest value of the vertex:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "k-hop": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "nearest": "The shortest path:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "capacity": "The maximum value of access to the vertex during traversal:",
+                    "limit": "Back to the highest value of the vertex:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex",
+                    "shortest-path": "After turning on, check the shortest path of the starting point of the starting point is the vertex of the DEPTH step. After the closure, you will query the vertex of the starting point of the starting point of the DEPTH step."
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "custom-path": {
+                "options": {
+                    "method": "Starting point selection method:",
+                    "source": "Starting point ID:",
+                    "vertex-type": "Sperture type:",
+                    "vertex-property": "Speeton attribute:",
+                    "sort_by": "Path weight sorting:",
+                    "capacity": "The maximum value of access to the vertex during traversal:",
+                    "limit": "Back to the highest value of the vertex:",
+                    "direction": "direction:",
+                    "labels": "Border type:",
+                    "properties": "Border attribute:",
+                    "weight_by": "Calculate the edge weight according to the attribute:",
+                    "degree": "The maximum degree:",
+                    "sample": "Sample value:",
+                    "steps": "steps:"
+                },
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID, multiple IDs are separated by comma",
+                    "select-vertex-type": "Please select vertex type",
+                    "select-vertex-property": "Please select vertex attributes",
+                    "input-multiple-properties": "Multi -attribute value is separated by comma",
+                    "input-integer": "Please fill in an integer more than or equal to 0",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "input-positive-integer-or-negative-one-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "input-property": "Please enter the edge attribute",
+                    "input-number": "Please enter the floating point number",
+                    "select-edge-type": "Please select the side type",
+                    "select-edge-property": "Please select the edge attribute",
+                    "select-property": "Please select the attribute",
+                    "no-vertex-type": "No -free type",
+                    "no-vertex-property": "Non -point attribute",
+                    "no-edge-type": "Infinite type",
+                    "no-edge-property": "Infinite attribute",
+                    "no-properties": "No attribute"
+                },
+                "hint": {
+                    "top": "In each layer, there are n results with only the highest weight of the rights in the result",
+                    "vertex_type_or_property": "Sperture type/vertex attribute to at least one item"
+                },
+                "radio-value": {
+                    "specific-id": "Specify ID",
+                    "filtered-type-property": "Filter type attribute",
+                    "none": "Not sort",
+                    "ascend": "Sequence",
+                    "descend": "Order"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "no-edge-typs": "Infinite type",
+                    "range": "Please fill in the value greater than 0 and less than equal to 1",
+                    "integer-only": "Please fill in an integer more than or equal to 0",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0",
+                    "input-number": "Please enter the floating point number"
+                },
+                "custom-weight": "Customized rights value",
+                "add": "Add to",
+                "delete": "delete",
+                "add-new-rule": "Add rules"
+            },
+            "radiographic-inspection": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "direction": "direction:",
+                    "max_depth": "Maximum step:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "capacity": "The maximum value of access to the vertex during traversal:",
+                    "limit": "Back to the maximum value of the non -ring road path:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "same-neighbor": {
+                "options": {
+                    "vertex": "Speed ​​1:",
+                    "other": "Sperture 2:",
+                    "direction": "direction:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "limit": "Back to the maximum value of the joint neighbor:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the vertex ID",
+                    "input-other-id": "Please enter the ID different from vertex 1",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0",
+                    "no-same-value-with-other": "Can't be the same as Sperture 2",
+                    "no-same-value-with-vertex": "Can't be the same as Sperture 1"
+                }
+            },
+            "weighted-shortest-path": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "target": "End ID:",
+                    "direction": "direction:",
+                    "weight": "Holding attributes:",
+                    "with_vertex": "Return to the vertex complete information:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "skip_degree": "The degree of the jump point:",
+                    "capacity": "The maximum value of access to the vertex during traversal:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-target-id": "Please enter the end ID",
+                    "input-integer": "Please fill in an integer more than or equal to 0",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "select-property": "Please select the attribute",
+                    "input-positive-integer": "Please fill in an integer greater than 0, default to 0",
+                    "no-property": "No attribute value to digital type attributes",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "skip-degree": "When the number of edges of the vertex is greater than the filling value, skip the current vertic",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "integer-only": "Please fill in an integer more than or equal to 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0",
+                    "postive-integer-only": "Please fill in an integer greater than 0"
+                }
+            },
+            "single-source-weighted-shortest-path": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "direction": "direction:",
+                    "weight": "Holding attributes:",
+                    "with_vertex": "Return to the vertex complete information:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:",
+                    "skip_degree": "The degree of the jump point:",
+                    "capacity": "The maximum value of access to the vertex during traversal:",
+                    "limit": "Back to the vertex/shortest path maximum value:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-integer": "Please fill in an integer that is greater than or equal to 0, and defaults to 0",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-capacity": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, and default to 10",
+                    "no-property": "If you do not fill in the weight of 1.0",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "skip-degree": "When the number of edges of the vertex is greater than the filling value, skip the current vertic",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "integer-only": "Please fill in an integer more than or equal to 0",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                }
+            },
+            "jaccard": {
+                "options": {
+                    "vertex": "Speed ​​1:",
+                    "other": "Sperture 2:",
+                    "direction": "direction:",
+                    "label": "Border type:",
+                    "max_degree": "The maximum degree:"
+                },
+                "pre-value": "all",
+                "placeholder": {
+                    "input-source-id": "Please enter the vertex ID",
+                    "input-other-id": "Please enter the ID different from vertex 1",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "input-positive-integer-or-negative-one-max-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "no-edge-types": "Infinite type"
+                },
+                "hint": {
+                    "max-depth": "In order to ensure performance, it is recommended not to exceed 10 steps. Recommend 5 steps",
+                    "max-degree": "During the query, the maximum number of edges of a single vertex"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0",
+                    "no-same-value-with-other": "Can't be the same as Sperture 2",
+                    "no-same-value-with-vertex": "Can't be the same as Sperture 1"
+                }
+            },
+            "personal-rank": {
+                "options": {
+                    "source": "Starting point ID:",
+                    "alpha": "alpha:",
+                    "max_depth": "Number of iteration:",
+                    "with_label": "Back results screening:",
+                    "label": "Border type:",
+                    "degree": "The maximum degree:",
+                    "limit": "Back to the highest value of the vertex:",
+                    "sorted": "Return results sorting:"
+                },
+                "with-label-radio-value": {
+                    "same_label": "Same type vertex",
+                    "other_label": "Different types of vertices",
+                    "both_label": "All type vertices"
+                },
+                "placeholder": {
+                    "input-source-id": "Please enter the starting point ID",
+                    "input-positive-integer-or-negative-one-degree": "Please fill in an integer of -1 or greater than 0, the default is 10000",
+                    "input-positive-integer-or-negative-one-limit": "Please fill in an integer of -1 or greater than 0, the default is 10000,000",
+                    "select-edge": "Please select the side type",
+                    "input-positive-integer": "Please fill in an integer greater than 0",
+                    "alpha": "Please enter the number of (0-1]",
+                    "max_depth": "Please enter the number of (0-50]"
+                },
+                "hint": {
+                    "degree": "During the query, the maximum number of edges of a single vertex",
+                    "with-label": "Depending on whether it is the same as the starting point type, screen the return result",
+                    "sorted": "Choose to open, then arrange the order, choose the level, but not sort"
+                },
+                "validations": {
+                    "no-empty": "This item cannot be empty",
+                    "no-edge-typs": "Infinite type",
+                    "alpha-range": "Please fill in the value greater than 0 and less than equal to 1",
+                    "depth-range": "Please fill in the value of greater than 0 and less than equal to 50",
+                    "postive-integer-only": "Please fill in an integer greater than 0",
+                    "positive-integer-or-negative-one-only": "Please fill in an integer of -1 or greater than 0"
+                },
+                "pre-value": "all",
+                "add-new-rule": "Add rules"
+            },
+            "api-name-mapping": {
+                "rings": "Ring detection",
+                "crosspoints": "Intersection detection",
+                "shortpath": "Minimum path",
+                "allshortpath": "The shortest path",
+                "paths": "All paths",
+                "fsimilarity": "Model similarity algorithm",
+                "neighborrank": "Neighbor Rank recommendation algorithm",
+                "kneighbor": "K -step neighbor",
+                "kout": "K jump algorithm",
+                "customizedpaths": "Custom path",
+                "rays": "Ray detection",
+                "sameneighbors": "Co -neighbor",
+                "weightedshortpath": "The shortest path with power",
+                "singleshortpath": "The shortest path of single source band power",
+                "jaccardsimilarity": "Jaccard similarity",
+                "personalrank": "Personal Rank recommendation algorithm"
+            }
+        },
+        "exec-logs": {
+            "table-title": {
+                "time": "time",
+                "type": "Execute type",
+                "content": "Execute content",
+                "status": "state",
+                "duration": "time consuming",
+                "manipulation": "operate"
+            },
+            "type": {
+                "GREMLIN": "Gremlin query",
+                "GREMLIN_ASYNC": "GREMLIN task",
+                "ALGORITHM": "Algorithm query"
+            },
+            "status": {
+                "success": "success",
+                "async-success": "Successful submission",
+                "running": "In operation",
+                "failed": "fail",
+                "async-failed": "Submit failure"
+            }
         }
-      },
-      "focus-detection": {
-        "options": {
-          "source": "起点ID:",
-          "target": "终点ID:",
-          "direction": "方向:",
-          "max_depth": "最大步数:",
-          "label": "边类型:",
-          "max_degree": "最大度数:",
-          "limit": "访问顶点最大值:",
-          "capacity": "返回交点最大值:"
-        },
-        "pre-value": "全部",
-        "placeholder": {
-          "input-source-id": "请输入起点ID",
-          "input-target-id": "请输入终点ID",
-          "input-integer": "请填写大于等于0的整数",
-          "input-positive-integer": "请填写大于0的整数",
-          "no-edge-types": "无边类型"
-        },
-        "hint": {
-          "max-depth": "为保证性能，建议不超过10步，推荐5步",
-          "skip-degree": "填写查询过程中需要跳过的顶点的最小的边数目，即当顶点的边数目大于超级顶点度数时，跳过该顶点，可用于规避超级点"
-        },
-        "validations": {
-          "no-empty": "该项不能为空",
-          "integer-only": "请填写大于等于0的整数",
-          "postive-integer-only": "请填写大于0的整数"
-        }
-      },
-      "shortest-path": {
-        "options": {
-          "source": "起点ID:",
-          "target": "终点ID:",
-          "direction": "方向:",
-          "max_depth": "最大步数:",
-          "maxDepth": "最大步数:",
-          "label": "边类型:",
-          "max_degree": "最大度数:",
-          "maxDegree": "最大度数:",
-          "skip_degree": "超级顶点度数:",
-          "skipDegree": "超级顶点度数:",
-          "capacity": "访问顶点最大值:"
-        },
-        "pre-value": "全部",
-        "placeholder": {
-          "input-source-id": "请输入起点ID",
-          "input-target-id": "请输入终点ID",
-          "input-integer": "请填写大于等于0的整数",
-          "input-positive-integer": "请填写大于0的整数",
-          "no-edge-types": "无边类型"
-        },
-        "hint": {
-          "max-depth": "为保证性能，建议不超过10步，推荐5步",
-          "skip-degree": "填写查询过程中需要跳过的顶点的最小的边数目，即当顶点的边数目大于超级顶点度数时，跳过该顶点，可用于规避超级点"
-        },
-        "validations": {
-          "no-empty": "该项不能为空",
-          "integer-only": "请填写大于等于0的整数",
-          "postive-integer-only": "请填写大于0的整数"
-        }
-      },
-      "shortest-path-all": {
-        "options": {
-          "source": "起点ID:",
-          "target": "终点ID:",
-          "direction": "方向:",
-          "max_depth": "最大步数:",
-          "label": "边类型:",
-          "max_degree": "最大度数:",
-          "capacity": "访问顶点最大值:",
-          "skip_degree": "超级顶点度数:"
-        },
-        "pre-value": "全部",
-        "placeholder": {
-          "input-source-id": "请输入起点ID",
-          "input-target-id": "请输入终点ID",
-          "input-integer": "请填写大于等于0的整数",
-          "input-positive-integer": "请填写大于0的整数",
-          "no-edge-types": "无边类型"
-        },
-        "hint": {
-          "max-depth": "为保证性能，建议不超过10步，推荐5步",
-          "skip-degree": "填写查询过程中需要跳过的顶点的最小的边数目，即当顶点的边数目大于超级顶点度数时，跳过该顶点，可用于规避超级点"
-        },
-        "validations": {
-          "no-empty": "该项不能为空",
-          "integer-only": "请填写大于等于0的整数",
-          "postive-integer-only": "请填写大于0的整数"
-        }
-      },
-      "all-path": {
-        "options": {
-          "source": "起点ID:",
-          "target": "终点ID:",
-          "direction": "方向:",
-          "max_depth": "最大步数:",
-          "label": "边类型:",
-          "max_degree": "最大度数:",
-          "capacity": "访问顶点最大值:",
-          "limit": "返回路径最大值:"
-        },
-        "pre-value": "全部",
-        "placeholder": {
-          "input-source-id": "请输入起点ID",
-          "input-target-id": "请输入终点ID",
-          "input-integer": "请填写大于等于0的整数",
-          "input-positive-integer": "请填写大于0的整数",
-          "no-edge-types": "无边类型"
-        },
-        "hint": {
-          "max-depth": "为保证性能，建议不超过10步，推荐5步",
-          "skip-degree": "填写查询过程中需要跳过的顶点的最小的边数目，即当顶点的边数目大于超级顶点度数时，跳过该顶点，可用于规避超级点"
-        },
-        "validations": {
-          "no-empty": "该项不能为空",
-          "integer-only": "请填写大于等于0的整数",
-          "postive-integer-only": "请填写大于0的整数"
-        }
-      },
-      "model-similarity": {
-        "options": {
-          "method": "起点选择方式:",
-          "source": "起点ID:",
-          "vertex-type": "顶点类型",
-          "vertex-property": "顶点属性",
-          "direction": "方向:",
-          "least_neighbor": "最少邻居数:",
-          "similarity": "相似度:",
-          "label": "边类型:",
-          "max_similar": "相似度最高个数:",
-          "least_similar": "梭形相似点最小个数:",
-          "property_filter": "属性过滤:",
-          "least_property_number": "最小属性值个数:",
-          "max_degree": "最大度数:",
-          "capacity": "访问顶点最大值:",
-          "skip_degree": "返回顶点最大值:",
-          "limit": "返回结果最大值:",
-          "return_common_connection": "返回共同关联点:",
-          "return_complete_info": "返回顶点完整信息:"
-        },
-        "radio-value": {
-          "specific-id": "指定ID",
-          "filtered-type-property": "筛选类型属性"
-        },
-        "placeholder": {
-          "input-source-id": "请输入起点ID",
-          "input-vertex-type": "请选择顶点类型",
-          "input-vertex-property": "请选择顶点属性",
-          "input-integer": "请填写大于等于0的整数",
-          "input-positive-integer": "请填写大于0的整数",
-          "input-integer-gt-1": "请填写大于1的整数",
-          "input-filtered-property": "请选择需要过滤的属性",
-          "no-properties": "无属性",
-          "no-vertex-type": "无顶点类型"
-        },
-        "hint": {
-          "least_property_number": "属性过滤和最小属性值个数需一起使用；设置后效果为：当起点跟其所有的梭形相似点某个属性的值大于等于最小属性值个数时，才会返回该起点及其梭形相似点",
-          "least_neighbor": "邻居数少于当前设定值，则认为起点没有梭形相似点",
-          "similarity": "起点与\"梭形相似点\"的共同邻居数目占起点的全部邻居数目的比例",
-          "max_similar": "返回起点的梭形相似点中相似度最高的top个数，0表示全部",
-          "return_common_connection": "是否返回起点及其\"梭形相似点\"共同关联的中间点"
-        },
-        "validations": {
-          "no-empty": "该项不能为空",
-          "no-edge-typs": "无边类型",
-          "integer-only": "请填写大于等于0的整数",
-          "positive-integer-only": "请填写大于0的整数",
-          "integer-gt-1": "请填写大于1的整数"
-        },
-        "pre-value": "全部"
-      },
-      "neighbor-rank": {
-        "options": {
-          "source": "起点ID:",
-          "alpha": "Alpha",
-          "direction": "方向:",
-          "capacity": "访问顶点最大值:",
-          "label": "边类型:",
-          "degree": "最大度数:",
-          "top": "每层保留权重Top N:"
-        },
-        "placeholder": {
-          "input-source-id": "请输入起点ID",
-          "input-integer": "请填写大于等于0的整数",
-          "input-positive-integer": "请填写大于0的整数",
-          "range": "范围(0-1]"
-        },
-        "hint": {
-          "top": "在结果中每一层只保留权重最高的N个结果"
-        },
-        "validations": {
-          "no-empty": "该项不能为空",
-          "no-edge-typs": "无边类型",
-          "range": "请填写大于0且小于等于1的数值",
-          "integer-only": "请填写大于等于0的整数",
-          "postive-integer-only": "请填写大于0的整数",
-          "input-chars": "规则不能其它重复"
-        },
-        "pre-value": "全部",
-        "add-new-rule": "添加规则"
-      }
-    },
-    "exec-logs": {
-      "table-title": {
-        "time": "时间",
-        "type": "执行类型",
-        "content": "执行内容",
-        "status": "状态",
-        "duration": "耗时",
-        "manipulation": "操作"
-      },
-      "type": {
-        "GREMLIN": "GREMLIN 查询",
-        "GREMLIN_ASYNC": "GREMLIN 任务",
-        "ALGORITHM": "算法查询"
-      },
-      "status": {
-        "success": "成功",
-        "async-success": "提交成功",
-        "running": "运行中",
-        "failed": "失败",
-        "async-failed": "提交失败"
-      }
     }
-  }
 }

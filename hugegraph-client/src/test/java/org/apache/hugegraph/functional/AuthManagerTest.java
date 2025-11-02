@@ -38,6 +38,7 @@ import org.apache.hugegraph.structure.auth.User.UserRole;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
@@ -47,6 +48,7 @@ public class AuthManagerTest extends BaseFuncTest {
     @Override
     @Before
     public void setup() {
+        super.setup();
     }
 
     @Override

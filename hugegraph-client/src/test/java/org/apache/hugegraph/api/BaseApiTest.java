@@ -74,20 +74,19 @@ public class BaseApiTest extends BaseClientTest {
         versionAPI = new VersionAPI(client);
         client.apiVersion(VersionUtil.Version.of(versionAPI.get().get("api")));
 
-        graphsAPI = new GraphsAPI(client);
+        graphsAPI = new GraphsAPI(client, GRAPHSPACE);
+        propertyKeyAPI = new PropertyKeyAPI(client, GRAPHSPACE, GRAPH);
+        vertexLabelAPI = new VertexLabelAPI(client, GRAPHSPACE, GRAPH);
+        edgeLabelAPI = new EdgeLabelAPI(client, GRAPHSPACE, GRAPH);
+        indexLabelAPI = new IndexLabelAPI(client, GRAPHSPACE, GRAPH);
+        schemaAPI = new SchemaAPI(client, GRAPHSPACE, GRAPH);
 
-        propertyKeyAPI = new PropertyKeyAPI(client, GRAPH);
-        vertexLabelAPI = new VertexLabelAPI(client, GRAPH);
-        edgeLabelAPI = new EdgeLabelAPI(client, GRAPH);
-        indexLabelAPI = new IndexLabelAPI(client, GRAPH);
-        schemaAPI = new SchemaAPI(client, GRAPH);
+        vertexAPI = new VertexAPI(client, GRAPHSPACE, GRAPH);
+        edgeAPI = new EdgeAPI(client, GRAPHSPACE, GRAPH);
 
-        vertexAPI = new VertexAPI(client, GRAPH);
-        edgeAPI = new EdgeAPI(client, GRAPH);
-
-        variablesAPI = new VariablesAPI(client, GRAPH);
-        taskAPI = new TaskAPI(client, GRAPH);
-        rebuildAPI = new RebuildAPI(client, GRAPH);
+        variablesAPI = new VariablesAPI(client, GRAPHSPACE, GRAPH);
+        taskAPI = new TaskAPI(client, GRAPHSPACE, GRAPH);
+        rebuildAPI = new RebuildAPI(client, GRAPHSPACE, GRAPH);
     }
 
     @AfterClass
@@ -99,10 +98,6 @@ public class BaseApiTest extends BaseClientTest {
         client = null;
 
         BaseClientTest.clear();
-    }
-
-    protected RestClient client() {
-        return client;
     }
 
     protected static void clearData() {
@@ -158,5 +153,9 @@ public class BaseApiTest extends BaseClientTest {
             return;
         }
         taskAPI.waitUntilTaskSuccess(taskId, timeout);
+    }
+
+    protected RestClient client() {
+        return client;
     }
 }

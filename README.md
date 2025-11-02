@@ -6,6 +6,7 @@
 [![Build Status](https://github.com/apache/hugegraph-toolchain/actions/workflows/hubble-ci.yml/badge.svg)](https://github.com/apache/hugegraph-toolchain/actions/workflows/hubble-ci.yml)
 [![Build Status](https://github.com/apache/hugegraph-toolchain/actions/workflows/tools-ci.yml/badge.svg)](https://github.com/apache/hugegraph-toolchain/actions/workflows/tools-ci.yml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.apache.hugegraph/hugegraph-client/badge.svg)](https://mvnrepository.com/artifact/org.apache.hugegraph/hugegraph-client)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/apache/hugegraph-toolchain)
 
 `hugegraph-toolchain` is the integration project contains a series of utilities for [HugeGraph](https://github.com/apache/hugegraph), 
 it includes 5+ main modules.
@@ -17,6 +18,7 @@ it includes 5+ main modules.
 - [hugegraph-tools](./hugegraph-tools): Command line tool for deploying, managing and backing-up/restoring graphs from HugeGraph.
 - [hugegraph-client](./hugegraph-client): A Java-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc.
 - [hugegraph-client-go](./hugegraph-client-go): A Go-written client for HugeGraph, providing `RESTful` APIs for accessing graph vertex/edge/schema/gremlin/variables and traversals etc. (WIP)
+- [hugegraph-spark-connector](./hugegraph-spark-connector): A Spark connector for reading & writing HugeGraph data in Spark standard format.
 
 ## Usage
 
@@ -33,15 +35,22 @@ You could use import the dependencies in `maven` like this:
   <dependency>
        <groupId>org.apache.hugegraph</groupId>
        <artifactId>hugegraph-client</artifactId>
-       <version>1.3.0</version>
+       <version>1.5.0</version>
   </dependency>
   
   <dependency>
        <groupId>org.apache.hugegraph</groupId>
        <artifactId>hugegraph-loader</artifactId>
-       <version>1.3.0</version>
+       <version>1.5.0</version>
   </dependency>
 ```
+
+And here are links of other **HugeGraph** component/repositories:
+1. [hugegraph](https://github.com/apache/hugegraph) (**[pd](https://github.com/apache/hugegraph/tree/master/hugegraph-pd)/[store](https://github.com/apache/hugegraph/tree/master/hugegraph-store)/[server](https://github.com/apache/hugegraph/tree/master/hugegraph-server)/[commons](https://github.com/apache/hugegraph/tree/master/hugegraph-commons)**)
+2. [hugegraph-computer](https://github.com/apache/hugegraph-computer) (integrated **graph computing** system)
+3. [hugegraph-ai](https://github.com/apache/incubator-hugegraph-ai) (integrated **Graph AI/LLM/KG** system)
+4. [hugegraph-website](https://github.com/apache/hugegraph-doc) (**doc & website** code)
+
 
 ## Doc
 
@@ -49,7 +58,7 @@ The [project homepage](https://hugegraph.apache.org/docs/quickstart/) contains m
 
 ## License
 
-hugegraph-toolchain is licensed under [Apache 2.0](https://github.com/apache/incubator-hugegraph-toolchain/blob/master/LICENSE) License.
+hugegraph-toolchain is licensed under [Apache 2.0](https://github.com/apache/hugegraph-toolchain/blob/master/LICENSE) License.
 
 ## Contributing
 
@@ -57,15 +66,15 @@ hugegraph-toolchain is licensed under [Apache 2.0](https://github.com/apache/inc
 - Note: It's recommended to use [GitHub Desktop](https://desktop.github.com/) to greatly simplify the PR and commit process.
 - Thank you to all the people who already contributed to HugeGraph!
 
-[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-toolchain)](https://github.com/apache/incubator-hugegraph-toolchain/graphs/contributors)
+[![contributors graph](https://contrib.rocks/image?repo=apache/hugegraph-toolchain)](https://github.com/apache/hugegraph-toolchain/graphs/contributors)
 
 ### Contact Us
 
 ---
 
- - [GitHub Issues](https://github.com/apache/incubator-hugegraph-toolchain/issues): Feedback on usage issues and functional requirements (quick response)
+ - [GitHub Issues](https://github.com/apache/hugegraph-toolchain/issues): Feedback on usage issues and functional requirements (quick response)
  - Feedback Email: [dev@hugegraph.apache.org](mailto:dev@hugegraph.apache.org) ([subscriber](https://hugegraph.apache.org/docs/contribution-guidelines/subscribe/) only)
  - WeChat public account: Apache HugeGraph, welcome to scan this QR code to follow us.
 
- <img src="https://raw.githubusercontent.com/apache/incubator-hugegraph-doc/master/assets/images/wechat.png" alt="QR png" width="350"/>
+ <img src="https://raw.githubusercontent.com/apache/hugegraph-doc/master/assets/images/wechat.png" alt="QR png" width="350"/>
 

@@ -26,12 +26,12 @@ import org.apache.hugegraph.client.RestClient;
 
 public class JobManager {
 
-    private RebuildAPI rebuildAPI;
-    private TaskAPI taskAPI;
+    private final RebuildAPI rebuildAPI;
+    private final TaskAPI taskAPI;
 
-    public JobManager(RestClient client, String graph) {
-        this.rebuildAPI = new RebuildAPI(client, graph);
-        this.taskAPI = new TaskAPI(client, graph);
+    public JobManager(RestClient client, String graphSpace, String graph) {
+        this.rebuildAPI = new RebuildAPI(client, graphSpace, graph);
+        this.taskAPI = new TaskAPI(client, graphSpace, graph);
     }
 
     public void rebuild(VertexLabel vertexLabel) {

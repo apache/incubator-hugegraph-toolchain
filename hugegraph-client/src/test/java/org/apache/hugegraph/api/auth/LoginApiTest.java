@@ -26,6 +26,7 @@ import org.apache.hugegraph.structure.auth.User;
 import org.apache.hugegraph.testutil.Assert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class LoginApiTest extends AuthApiTest {
@@ -54,7 +55,8 @@ public class LoginApiTest extends AuthApiTest {
     public void testLogin() {
         Login login = new Login();
         login.name("user1");
-        login.password("p1");
+        login.password("password1");
+        login.expire(10080);
         Assert.assertThrows(ServerException.class, () -> {
             loginAPI.login(login);
         }, e -> {
@@ -64,7 +66,7 @@ public class LoginApiTest extends AuthApiTest {
 
         User user1 = new User();
         user1.name("user1");
-        user1.password("p1");
+        user1.password("password1");
         userAPI.create(user1);
 
         LoginResult result = loginAPI.login(login);
