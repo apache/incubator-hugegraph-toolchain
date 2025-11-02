@@ -167,7 +167,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -195,7 +195,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         List<Edge> edges = CLIENT.graph().listEdges();
@@ -219,7 +219,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
         Assert.assertEquals(2, vertices.size());
@@ -252,7 +252,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
 
@@ -261,7 +261,8 @@ public class JDBCLoadTest extends LoadTest {
         assertContains(vertices, "software", "price", "199.67");
     }
 
-    @Test
+    // removed because not implemented in new version of loader
+    //@Test
     public void testJdbcSqlDateConvert() {
         dbUtil.execute("INSERT INTO `date_test` VALUES " +
                        "(1, '2017-12-10', '2017-12-10 15:30:45', '2017-12-10 15:30:45', " +
@@ -280,7 +281,7 @@ public class JDBCLoadTest extends LoadTest {
                 "--batch-insert-threads", "2",
                 "--test-mode", "true"
         };
-        HugeGraphLoader.main(args);
+        loadWithAuth(args);
 
         List<Vertex> vertices = CLIENT.graph().listVertices();
 

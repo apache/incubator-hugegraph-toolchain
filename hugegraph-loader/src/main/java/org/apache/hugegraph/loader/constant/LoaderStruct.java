@@ -15,20 +15,12 @@
  * under the License.
  */
 
-package org.apache.hugegraph.loader.executor;
+package org.apache.hugegraph.loader.constant;
 
-import org.apache.hugegraph.loader.builder.SchemaCache;
+public class LoaderStruct {
 
-public class ComputerLoadOptions extends LoadOptions {
-
-    private final SchemaCache schemaCache;
-
-    public ComputerLoadOptions(SchemaCache schemaCache) {
-        super();
-        this.schemaCache = schemaCache;
-    }
-
-    public SchemaCache schemaCache() {
-        return this.schemaCache;
-    }
+    /**
+     * Identifies Vertex OLAP property parsing
+     */
+    public static final String OLAP_VERTEX_ID = "__OLAP_VERTEX_ID__";
 }

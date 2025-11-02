@@ -18,7 +18,9 @@
 package org.apache.hugegraph.loader.executor;
 
 import java.io.File;
-import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.hugegraph.loader.util.LoadUtil;
@@ -27,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import org.apache.hugegraph.loader.constant.Constants;
+import org.apache.hugegraph.loader.filter.util.ShortIdConfig;
 import org.apache.hugegraph.util.E;
 import org.apache.hugegraph.util.Log;
 import com.beust.jcommander.IParameterValidator;
@@ -35,7 +38,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
 
-public class LoadOptions implements Serializable {
+public final class LoadOptions implements Cloneable {
 
     private static final Logger LOG = Log.logger(LoadOptions.class);
 
@@ -54,15 +57,45 @@ public class LoadOptions implements Serializable {
                description = "The schema file path which to create manually")
     public String schema;
 
-    @Parameter(names = {"-gs", "--graphspace"}, 
-               arity = 1,
-               description = "The graphspace value, if not specified, DEFAULT will be used")
-    public String graphspace = "DEFAULT";
+    @Parameter(names = {"--pd-peers"}, required = false, arity = 1,
+            description = "The pd addrs, like 127.0.0.1:8686,127.0.0.1:8687")
+    public String pdPeers;
+
+    @Parameter(names = {"--pd-token"}, required = false, arity = 1,
+               description = "The token for accessing to pd service")
+    public String pdToken;
+
+    @Parameter(names = {"--meta-endpoints"}, required = false, arity = 1,
+               description = "The meta end point addrs (schema store addr), " +
+                             "like 127.0.0.1:8686, 127.0.0.1:8687")
+    public String metaEndPoints;
+
+    @Parameter(names = {"--direct"}, required = false, arity = 1,
+            description = "Whether connect to HStore directly.")
+    public boolean direct = false;
+
+    @Parameter(names = {"--route-type"}, required = false, arity = 1,
+            description = "Used to select service url; [NODE_PORT(default), " +
+                    "DDS, BOTH]")
+    public String routeType = "NODE_PORT";
+
+    @Parameter(names = {"--cluster"}, required = false, arity = 1,
+            description = "The cluster of the graph to load into")
+    public String cluster = "hg";
+
+    @Parameter(names = {"--graphspace"}, required = false, arity = 1,
+            description = "The graphspace of the graph to load into")
+    public String graphSpace = "DEFAULT";
 
     @Parameter(names = {"-g", "--graph"}, 
                arity = 1,
-               description = "The name of the graph to load into, if not specified, hugegraph will be used")
+               description = "The name of the graph to load into, " +
+                    "if not specified, hugegraph will be used")
     public String graph = "hugegraph";
+
+    @Parameter(names = {"--create-graph"}, required = false, arity = 1,
+               description = "Whether to create graph if not exists")
+    public boolean createGraph = false;
 
     @Parameter(names = {"-h", "-i", "--host"}, arity = 1,
                validateWith = {UrlValidator.class},
@@ -75,8 +108,12 @@ public class LoadOptions implements Serializable {
     public int port = 8080;
 
     @Parameter(names = {"--username"}, arity = 1,
-               description = "The username of graph for authentication")
+            description = "The username of graph for authentication")
     public String username = null;
+
+    @Parameter(names = {"--password"}, arity = 1,
+            description = "The password of graph for authentication")
+    public String password = null;
 
     @Parameter(names = {"--protocol"}, arity = 1,
                validateWith = {ProtocolValidator.class},
@@ -139,6 +176,22 @@ public class LoadOptions implements Serializable {
                validateWith = {PositiveValidator.class},
                description = "The number of lines in each submit")
     public int batchSize = 500;
+
+    @Parameter(names = {"--parallel-count"}, arity = 1,
+            description = "The number of parallel read pipelines")
+    public int parallelCount = 1;
+
+    @Parameter(names = {"--start-file"}, arity = 1,
+            description = "start file index for partial loading")
+    public int startFile = 0;
+
+    @Parameter(names = {"--end-file"}, arity = 1,
+            description = "end file index for partial loading")
+    public int endFile = -1;
+
+    @Parameter(names = {"--scatter-sources"}, arity = 1,
+            description = "scatter multiple sources for io optimize")
+    public boolean scatterSources = false;
 
     @Parameter(names = {"--cdc-flush-interval"}, arity = 1,
                description = "The flush interval for flink cdc")
@@ -208,8 +261,23 @@ public class LoadOptions implements Serializable {
                description = "Whether the hugegraph-loader work in test mode")
     public boolean testMode = false;
 
-    @Parameter(names = {"-help", "--help"}, help = true, description = "Print usage of HugeGraphLoader")
+    @Parameter(names = {"-help", "--help"}, help = true, description =
+            "Print usage of HugeGraphLoader")
     public boolean help;
+
+    @Parameter(names = {"--use-prefilter"}, required = false, arity = 1,
+               description = "Whether filter vertex in advance.")
+    public boolean usePrefilter = false;
+
+    @Parameter(names = "--short-id",
+               description = "Mapping customized ID to shorter ID.",
+               converter = ShortIdConfig.ShortIdConfigConverter.class)
+    public List<ShortIdConfig> shorterIDConfigs = new ArrayList<>();
+
+    @Parameter(names = {"--vertex-edge-limit"}, arity = 1,
+            validateWith = {PositiveValidator.class},
+            description = "The maximum number of vertex's edges.")
+    public long vertexEdgeLimit = -1L;
 
     @Parameter(names = {"--sink-type"}, arity = 1,
                description = "Sink to different storage")
@@ -245,6 +313,22 @@ public class LoadOptions implements Serializable {
                description = "HBase zookeeper parent")
     public String hbaseZKParent;
 
+    @Parameter(names = {"--restore"}, arity = 1,
+               description = "graph mode set RESTORING")
+    public boolean restore = false;
+
+    @Parameter(names = {"--backend"}, arity = 1,
+               description = "The backend store type when creating graph if not exists")
+    public String backend = "hstore";
+
+    @Parameter(names = {"--serializer"}, arity = 1,
+               description = "The serializer type when creating graph if not exists")
+    public String serializer = "binary";
+
+    @Parameter(names = {"--scheduler-type"}, arity = 1,
+               description = "The task scheduler type (when creating graph if not exists")
+    public String schedulerType = "distributed";
+
     public String workModeString() {
         if (this.incrementalMode) {
             return "INCREMENTAL MODE";
@@ -252,6 +336,20 @@ public class LoadOptions implements Serializable {
             return "FAILURE MODE";
         } else {
             return "NORMAL MODE";
+        }
+    }
+
+    public void dumpParams() {
+        LOG.info("loader parameters:");
+        Field[] fields = LoadOptions.class.getDeclaredFields();
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Parameter.class)) {
+                try {
+                    LOG.info("    {}={}", field.getName(), field.get(this));
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -309,6 +407,15 @@ public class LoadOptions implements Serializable {
             options.maxInsertErrors = Constants.NO_LIMIT;
         }
         return options;
+    }
+
+    public ShortIdConfig getShortIdConfig(String vertexLabel) {
+        for (ShortIdConfig config: shorterIDConfigs) {
+            if (config.getVertexLabel().equals(vertexLabel)) {
+                return config;
+            }
+        }
+        return null;
     }
 
     public void copyBackendStoreInfo (BackendStoreInfo backendStoreInfo) {
@@ -386,5 +493,9 @@ public class LoadOptions implements Serializable {
                                                            "but got '%s'", name, value));
             }
         }
+    }
+
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }
