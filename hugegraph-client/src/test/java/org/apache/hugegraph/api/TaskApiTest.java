@@ -209,8 +209,7 @@ public class TaskApiTest extends BaseApiTest {
         schema().vertexLabel("man").useAutomaticId().ifNotExist().create();
 
         String groovy = "for (int i = 0; i < 10; i++) {" +
-                        "hugegraph.addVertex(T.label, 'man');" +
-                        "hugegraph.tx().commit();" +
+                        "g.addV('man').iterate();" +
                         "}";
         // Insert 10 records in sync mode
         GremlinRequest request = new GremlinRequest(groovy);
@@ -229,11 +228,10 @@ public class TaskApiTest extends BaseApiTest {
          * The asyn task scripts need to be able to handle interrupts,
          * otherwise they cannot be cancelled
          */
-        groovy = "for (int i = 0; i < 10; i++) {" +
-                 "    hugegraph.addVertex(T.label, 'man');" +
-                 "    hugegraph.tx().commit();" +
+        groovy = "for (int i = 0; i < 100; i++) {" +
+                 "    g.addV('man').iterate();" +
                  "    try {" +
-                 "        sleep(1000);" +
+                 "        sleep(500);" +
                  "    } catch (InterruptedException e) {" +
                  "        break;" +
                  "    }" +
@@ -241,21 +239,13 @@ public class TaskApiTest extends BaseApiTest {
         request = new GremlinRequest(groovy);
         long taskId = gremlin().executeAsTask(request);
 
-        groovy = "g.V()";
-        request = new GremlinRequest(groovy);
-        // Wait async task running
-        while (true) {
-            resultSet = gremlin().execute(request);
-            if (resultSet.size() > 0) {
-                break;
-            } else {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
-            }
+        // Wait a moment for task to start
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException ignored) {
         }
-        // Cancel async task
+        
+        // Cancel async task immediately after it starts
         Task task = taskAPI.cancel(taskId);
         Assert.assertTrue(task.cancelling());
 
@@ -268,8 +258,10 @@ public class TaskApiTest extends BaseApiTest {
         task = taskAPI.get(taskId);
         Assert.assertTrue(task.cancelled());
 
+        groovy = "g.V().hasLabel('man').count()";
+        request = new GremlinRequest(groovy);
         resultSet = gremlin().execute(request);
-        Assert.assertTrue(resultSet.size() < 10);
+        Assert.assertTrue(resultSet.iterator().next().getLong() < 100);
     }
 
     @Test
