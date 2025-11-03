@@ -128,7 +128,8 @@ public class BaseApiTest extends BaseClientTest {
         vertexLabelAPI.list().forEach(vertexLabel -> {
             vlTaskIds.add(vertexLabelAPI.delete(vertexLabel.name()));
         });
-        vlTaskIds.forEach(BaseApiTest::waitUntilTaskCompleted);
+        // Vertex label deletion may take longer, use extended timeout
+        vlTaskIds.forEach(taskId -> waitUntilTaskCompleted(taskId, 30));
 
         List<Long> pkTaskIds = new ArrayList<>();
         propertyKeyAPI.list().forEach(propertyKey -> {

@@ -47,6 +47,10 @@ sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
 echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
 
+# Wait for server to initialize
+echo "Waiting 5 seconds for HugeGraph server to initialize..."
+sleep 5
+
 cd ../${HTTPS_SERVER_DIR}
 REST_SERVER_CONFIG="conf/rest-server.properties"
 GREMLIN_SERVER_CONFIG="conf/gremlin-server.yaml"

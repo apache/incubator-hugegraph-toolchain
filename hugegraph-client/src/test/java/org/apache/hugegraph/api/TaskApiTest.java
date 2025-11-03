@@ -46,7 +46,19 @@ public class TaskApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        taskAPI.list(null, -1).forEach(task -> taskAPI.delete(task.id()));
+        taskAPI.list(null, -1).forEach(task -> {
+            // Cancel running/cancelling tasks before deletion
+            if (!task.completed()) {
+                try {
+                    taskAPI.cancel(task.id());
+                    // Wait for cancellation to complete
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                    // Ignore if already completed or cancellation fails
+                }
+            }
+            taskAPI.delete(task.id());
+        });
     }
 
     @Test
@@ -208,11 +220,16 @@ public class TaskApiTest extends BaseApiTest {
     public void testCancel() {
         schema().vertexLabel("man").useAutomaticId().ifNotExist().create();
 
-        String groovy = "for (int i = 0; i < 10; i++) {" +
-                        "g.addV('man').iterate();" +
-                        "}";
-        // Insert 10 records in sync mode
+        // Clean up any existing 'man' vertices from previous tests
+        String groovy = "g.V().hasLabel('man').drop()";
         GremlinRequest request = new GremlinRequest(groovy);
+        gremlin().execute(request);
+
+        groovy = "for (int i = 0; i < 10; i++) {" +
+                 "g.addV('man').iterate();" +
+                 "}";
+        // Insert 10 records in sync mode
+        request = new GremlinRequest(groovy);
         gremlin().execute(request);
         // Verify insertion takes effect
         groovy = "g.V()";

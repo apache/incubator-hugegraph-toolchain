@@ -38,7 +38,19 @@ public class JobApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        taskAPI.list(null, -1).forEach(task -> taskAPI.delete(task.id()));
+        taskAPI.list(null, -1).forEach(task -> {
+            // Cancel running/cancelling tasks before deletion
+            if (!task.completed()) {
+                try {
+                    taskAPI.cancel(task.id());
+                    // Wait for cancellation to complete
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                    // Ignore if already completed or cancellation fails
+                }
+            }
+            taskAPI.delete(task.id());
+        });
     }
 
     @Test
