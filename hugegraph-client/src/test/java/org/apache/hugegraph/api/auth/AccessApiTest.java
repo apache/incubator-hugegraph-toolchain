@@ -50,8 +50,8 @@ public class AccessApiTest extends AuthApiTest {
 
     @AfterClass
     public static void clear() {
-        List<Access> accesss = api.list(null, null, -1);
-        for (Access access : accesss) {
+        List<Access> accesses = api.list(null, null, -1);
+        for (Access access : accesses) {
             api.delete(access.id());
         }
 

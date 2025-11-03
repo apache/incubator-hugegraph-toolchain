@@ -140,9 +140,9 @@ public class GraphsAPI extends API {
     }
 
     public void clear(String graphSpace, String graph, String message) {
-        String path = (graphSpace == null)
-                      ? joinPath(this.path(), graph, CLEAR)
-                      : joinPath(this.path(), graphSpace, graph, CLEAR);
+        String path = (graphSpace == null) ?
+                      joinPath(this.path(), graph, CLEAR) :
+                      joinPath(this.path(), graphSpace, graph, CLEAR);
         this.client.delete(path, ImmutableMap.of(CONFIRM_MESSAGE, message));
     }
 
@@ -221,7 +221,6 @@ public class GraphsAPI extends API {
         readMode(null, graph, readMode);
     }
 
-
     public void readMode(String graphSpace, String graph, GraphReadMode readMode) {
         this.client.checkApiVersion("0.59", "graph read mode");
         // NOTE: Must provide id for PUT. If you use "graph/graph_read_mode", "/"
@@ -245,9 +244,9 @@ public class GraphsAPI extends API {
      */
     private <T extends Enum<T>> T getModeValue(String graphSpace, String graph,
                                               String modeKey, Class<T> enumClass) {
-        String path = (graphSpace != null)
-                      ? joinPath(this.path(), graphSpace, graph)
-                      : joinPath(this.path(), graph);
+        String path = (graphSpace != null) ?
+                      joinPath(this.path(), graphSpace, graph) :
+                      joinPath(this.path(), graph);
 
         RestResult result = this.client.get(path, modeKey);
         @SuppressWarnings("unchecked")

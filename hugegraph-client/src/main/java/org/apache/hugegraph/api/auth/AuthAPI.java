@@ -40,11 +40,6 @@ public abstract class AuthAPI extends API {
     }
 
     public static String formatRelationId(Object id) {
-        if (id == null) {
-            return null;
-        } else if (id instanceof AuthElement) {
-            id = ((AuthElement) id).id();
-        }
-        return String.valueOf(id);
+        return formatEntityId(id);
     }
 }
