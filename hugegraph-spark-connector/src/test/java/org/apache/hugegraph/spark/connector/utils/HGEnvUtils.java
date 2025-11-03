@@ -33,7 +33,7 @@ public class HGEnvUtils {
     public static void createEnv() {
 
         hugeClient =
-                HugeClient.builder(DEFAULT_URL, DEFAULT_GRAPHSPACE, DEFAULT_GRAPH)
+                HugeClient.builder(DEFAULT_URL, DEFAULT_GRAPH)
                           .configUser("admin", "pa").build();
 
         hugeClient.graphs().clearGraph(DEFAULT_GRAPH, "I'm sure to delete all data");
