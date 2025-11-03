@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableMap;
 public class HugeClientHttpsTest extends BaseFuncTest {
 
     private static final String BASE_URL = "https://127.0.0.1:8443";
+    private static final String GRAPHSPACE = "DEFAULT";
     private static final String GRAPH = "hugegraph";
     private static final String USERNAME = "admin";
     private static final String PASSWORD = "pa";

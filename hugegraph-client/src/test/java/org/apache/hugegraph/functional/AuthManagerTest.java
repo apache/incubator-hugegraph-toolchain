@@ -150,9 +150,9 @@ public class AuthManagerTest extends BaseFuncTest {
         Assert.assertEquals(newProjects, projects);
 
         UserRole role = auth().getUserRole(user);
-        String r = "{\"roles\":{\"hugegraph\":" +
-                   "{\"READ\":[{\"type\":\"TASK\",\"label\":\"*\",\"properties\":null}]," +
-                   "\"EXECUTE\":[{\"type\":\"GREMLIN\",\"label\":\"*\",\"properties\":null}]}}}";
+        String r = "{\"roles\":{\"DEFAULT\":{\"hugegraph\":" +
+                   "{\"READ\":{\"TASK\":[{\"type\":\"TASK\",\"label\":\"*\",\"properties\":null}]}," +
+                   "\"EXECUTE\":{\"GREMLIN\":[{\"type\":\"GREMLIN\",\"label\":\"*\",\"properties\":null}]}}}}}";
         Assert.assertEquals(r, role.toString());
 
         Login login = new Login();
