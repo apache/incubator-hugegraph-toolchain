@@ -72,6 +72,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
     @Test
     public void testHttpsClientWithConnectionPoolNoUserParam() {
         client = HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                           .configUser(USERNAME, PASSWORD)
                            .configConnectTimeout(3)
                            .configReadTimeout(10)
                            .configPool(MAX_CONNS, MAX_CONNS_PER_ROUTE)
@@ -132,6 +133,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
     public void testHttpsClientBuilderWithConnectionPoolNoParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                      .configUser(USERNAME, PASSWORD)
                       .configUrl(null)
                       .configGraph(null)
                       .configSSL("", "")
@@ -146,6 +148,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
     public void testHttpsClientBuilderWithConnectionPoolNoGraphParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                      .configUser(USERNAME, PASSWORD)
                       .configGraph(null)
                       .configSSL("", "")
                       .build();
@@ -159,6 +162,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
     public void testHttpsClientBuilderWithConnectionPoolZeroIdleTimeParam() {
         Assert.assertThrows(IllegalArgumentException.class, () -> {
             HugeClient.builder(BASE_URL, GRAPHSPACE, GRAPH)
+                      .configUser(USERNAME, PASSWORD)
                       .configIdleTime(0)
                       .build();
         }, e -> {
