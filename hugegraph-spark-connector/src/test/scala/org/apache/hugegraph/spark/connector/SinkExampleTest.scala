@@ -79,6 +79,8 @@ class SinkExampleTest {
       .option("host", DEFAULT_HOST)
       .option("port", DEFAULT_PORT)
       .option("graph", DEFAULT_GRAPH)
+      .option("username", "admin")
+      .option("password", "pa")
       .option("data-type", "vertex")
       .option("label", "person")
       .option("id", "name")
