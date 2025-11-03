@@ -26,6 +26,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Belong extends AuthElement {
 
+    @JsonProperty(value = "graphspace", access = JsonProperty.Access.READ_ONLY)
+    protected String graphSpace;
     @JsonProperty("user")
     protected Object user;
     @JsonProperty("group")
@@ -34,7 +36,7 @@ public class Belong extends AuthElement {
     protected Object role;
     @JsonProperty("belong_description")
     protected String description;
-    @JsonProperty("link")
+    @JsonProperty(value = "link", access = JsonProperty.Access.READ_ONLY)
     protected String link;
 
     @JsonProperty("belong_create")
@@ -64,6 +66,14 @@ public class Belong extends AuthElement {
     @Override
     public String creator() {
         return this.creator;
+    }
+
+    public String graphSpace() {
+        return this.graphSpace;
+    }
+
+    public void graphSpace(String graphSpace) {
+        this.graphSpace = graphSpace;
     }
 
     public String link() {
