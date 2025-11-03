@@ -41,7 +41,10 @@ mkdir ${HTTPS_SERVER_DIR}
 cp -r apache-hugegraph-*/. ${HTTPS_SERVER_DIR}
 cd "$(find apache-hugegraph-* | head -1)"
 # start HugeGraphServer with http protocol
-bin/init-store.sh || exit 1
+sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
+sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
+echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh || exit 1
 
 cd ../${HTTPS_SERVER_DIR}
@@ -53,6 +56,9 @@ sed -i "s/#port: 8182/port: 8282/g" "$GREMLIN_SERVER_CONFIG"
 echo "gremlinserver.url=http://127.0.0.1:8282" >> ${REST_SERVER_CONFIG}
 
 # start HugeGraphServer with https protocol
-bin/init-store.sh
+sed -i 's|gremlin.graph=org.apache.hugegraph.HugeFactory|gremlin.graph=org.apache.hugegraph.auth.HugeFactoryAuthProxy|' conf/graphs/hugegraph.properties
+sed -i 's|#auth.authenticator=.*|auth.authenticator=org.apache.hugegraph.auth.StandardAuthenticator|' conf/rest-server.properties
+sed -i 's|#auth.admin_pa=.*|auth.admin_pa=pa|' conf/rest-server.properties
+echo -e "pa" | bin/init-store.sh || exit 1
 bin/start-hugegraph.sh
 cd ../
