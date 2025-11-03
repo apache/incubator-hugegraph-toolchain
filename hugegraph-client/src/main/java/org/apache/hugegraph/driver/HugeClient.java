@@ -254,6 +254,7 @@ public class HugeClient implements Closeable {
         return pdManager;
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     public HStoreManager hStoreManager() {
         return hStoreManager;
     }

@@ -162,7 +162,6 @@ public class PDHugeClientFactory {
         return urls;
     }
 
-
     public List<String> getURLs(String cluster, String graphSpace,
                                 String service) {
 
@@ -186,7 +185,6 @@ public class PDHugeClientFactory {
                            .build();
 
         NodeInfos nodeInfos = client.getNodeInfos(query);
-
 
         List<String> urls = nodeInfos.getInfoList().stream()
                                      .map(nodeInfo -> nodeInfo.getAddress())

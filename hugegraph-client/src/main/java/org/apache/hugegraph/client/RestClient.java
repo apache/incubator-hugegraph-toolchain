@@ -19,7 +19,6 @@ package org.apache.hugegraph.client;
 
 import java.util.Map;
 
-import org.apache.hugegraph.driver.VersionManager;
 import org.apache.hugegraph.exception.ServerException;
 import org.apache.hugegraph.rest.AbstractRestClient;
 import org.apache.hugegraph.rest.ClientException;

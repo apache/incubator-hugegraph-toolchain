@@ -91,7 +91,6 @@ public class User extends AuthElement {
         return this.nickname;
     }
 
-
     public void nickname(String nickname) {
         this.nickname = nickname;
     }
@@ -147,6 +146,7 @@ public class User extends AuthElement {
     public String department(String department) {
         return this.department = department;
     }
+
     public void description(String description) {
         this.description = description;
     }

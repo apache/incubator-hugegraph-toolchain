@@ -80,8 +80,7 @@ public class ManagerAPI extends AuthAPI {
             params.put("graph", graph);
         }
         RestResult result = this.client.get(path, params);
-        return (boolean) result.readObject(Map.class).getOrDefault("check",
-                                                                   false);
+        return (boolean) result.readObject(Map.class).getOrDefault("check", false);
     }
 
     @Override

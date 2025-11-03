@@ -89,7 +89,7 @@ public class GraphMetricsAPI extends API {
 
         // convert json to Map<String, TypeCount>
         Map<String, Object> elementCounts = resp.readObject(Map.class);
-        for(Map.Entry<String, Object> entry : elementCounts.entrySet()) {
+        for (Map.Entry<String, Object> entry : elementCounts.entrySet()) {
             String strDate = entry.getKey();
             Object elementCountMap = entry.getValue();
             ElementCount elementCount =
@@ -138,7 +138,7 @@ public class GraphMetricsAPI extends API {
 
         // convert json to Map<String, TypeCount>
         Map<String, Object> typeCounts = resp.readObject(Map.class);
-        for(Map.Entry<String, Object> entry : typeCounts.entrySet()) {
+        for (Map.Entry<String, Object> entry : typeCounts.entrySet()) {
             String strDate = entry.getKey();
             Object typeCountMap = entry.getValue();
             TypeCount typeCount =
