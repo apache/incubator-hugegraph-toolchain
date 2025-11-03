@@ -17,10 +17,13 @@
 
 package org.apache.hugegraph.structure.auth;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hugegraph.structure.constant.HugeType;
 
@@ -40,7 +43,7 @@ public class Target extends AuthElement {
     @JsonProperty("target_description")
     protected String description;
     @JsonProperty("target_resources")
-    protected List<HugeResource> resources;
+    protected Map<String, List<HugeResource>> resources;
 
     @JsonProperty("target_create")
     @JsonFormat(pattern = DATE_FORMAT)
@@ -112,24 +115,47 @@ public class Target extends AuthElement {
     }
 
     public HugeResource resource() {
-        if (this.resources == null || this.resources.size() != 1) {
+        if (this.resources == null || this.resources.isEmpty()) {
             return null;
         }
-        return this.resources.get(0);
+        if (this.resources.size() != 1) {
+            return null;
+        }
+        Map.Entry<String, List<HugeResource>> entry = this.resources.entrySet().iterator().next();
+        List<HugeResource> list = entry.getValue();
+        if (list == null || list.size() != 1) {
+            return null;
+        }
+        return list.get(0);
     }
 
-    public List<HugeResource> resources() {
+    public Map<String, List<HugeResource>> resources() {
         if (this.resources == null) {
             return null;
         }
-        return Collections.unmodifiableList(this.resources);
+        return Collections.unmodifiableMap(this.resources);
     }
 
-    public void resources(List<HugeResource> resources) {
+    public void resources(Map<String, List<HugeResource>> resources) {
         this.resources = resources;
     }
 
+    public void resources(List<HugeResource> resources) {
+        if (resources == null) {
+            this.resources = null;
+            return;
+        }
+        Map<String, List<HugeResource>> map = new HashMap<>();
+        map.put("DEFAULT", new ArrayList<>(resources));
+        this.resources = map;
+    }
+
     public void resources(HugeResource... resources) {
-        this.resources = Arrays.asList(resources);
+        if (resources == null) {
+            this.resources = null;
+            return;
+        }
+        List<HugeResource> list = Arrays.asList(resources);
+        resources(list);
     }
 }
