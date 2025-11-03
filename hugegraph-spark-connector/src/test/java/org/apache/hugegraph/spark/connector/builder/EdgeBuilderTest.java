@@ -87,7 +87,8 @@ public class EdgeBuilderTest {
         Map<String, String> configs = new HashMap<>();
         configs.put("host", HGEnvUtils.DEFAULT_HOST);
         configs.put("port", HGEnvUtils.DEFAULT_PORT);
-
+        configs.put("username", "admin");
+        configs.put("token", "pa");
         configs.put("data-type", "edge");
         configs.put("label", "created");
         configs.put("source-name", "v1-name");
