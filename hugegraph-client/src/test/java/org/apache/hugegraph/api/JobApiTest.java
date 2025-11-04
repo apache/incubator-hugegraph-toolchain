@@ -38,7 +38,7 @@ public class JobApiTest extends BaseApiTest {
 
     @After
     public void teardown() throws Exception {
-        taskAPI.list(null, -1).forEach(task -> taskAPI.delete(task.id()));
+        cleanupTasks();
     }
 
     @Test

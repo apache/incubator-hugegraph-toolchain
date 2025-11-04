@@ -17,7 +17,6 @@
 
 package org.apache.hugegraph.api.traverser;
 
-
 import org.apache.hugegraph.api.graph.GraphAPI;
 import org.apache.hugegraph.client.RestClient;
 import org.apache.hugegraph.rest.RestResult;
