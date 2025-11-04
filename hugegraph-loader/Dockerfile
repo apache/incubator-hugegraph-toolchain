@@ -30,7 +30,7 @@ RUN set -x \
     && echo "$(ls)" \
     && mvn clean package $MAVEN_ARGS -DskipTests
 
-FROM openjdk:11-slim
+FROM eclipse-temurin:11-jre-slim
 
 COPY --from=build /pkg/hugegraph-loader/apache-hugegraph-loader-incubating-*/ /loader
 WORKDIR /loader/

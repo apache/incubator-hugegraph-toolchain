@@ -35,7 +35,7 @@ RUN set -x \
     && cd /pkg/hugegraph-hubble/ \
     && mvn package $MAVEN_ARGS -e -B -ntp -DskipTests -Dmaven.javadoc.skip=true
 
-FROM openjdk:11-slim
+FROM eclipse-temurin:11-jre-slim
 
 COPY --from=build /pkg/hugegraph-hubble/apache-hugegraph-hubble-incubating-*/ /hubble
 WORKDIR /hubble/
