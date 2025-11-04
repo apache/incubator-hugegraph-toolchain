@@ -60,16 +60,16 @@ public class AuthManager {
     private final ManagerAPI managerAPI;
 
     public AuthManager(RestClient client, String graphSpace, String graph) {
-        this.targetAPI = new TargetAPI(client, graphSpace, graph);
-        this.groupAPI = new GroupAPI(client, graphSpace, graph);
-        this.userAPI = new UserAPI(client, graphSpace, graph);
-        this.accessAPI = new AccessAPI(client, graphSpace, graph);
-        this.belongAPI = new BelongAPI(client, graphSpace, graph);
-        this.projectAPI = new ProjectAPI(client, graphSpace, graph);
-        this.loginAPI = new LoginAPI(client, graphSpace, graph);
-        this.logoutAPI = new LogoutAPI(client, graphSpace, graph);
-        this.tokenAPI = new TokenAPI(client, graphSpace, graph);
-        this.managerAPI = new ManagerAPI(client, graphSpace, graph);
+        this.targetAPI = new TargetAPI(client, graphSpace);
+        this.groupAPI = new GroupAPI(client, graphSpace);
+        this.userAPI = new UserAPI(client, graphSpace);
+        this.accessAPI = new AccessAPI(client, graphSpace);
+        this.belongAPI = new BelongAPI(client, graphSpace);
+        this.projectAPI = new ProjectAPI(client, graphSpace);
+        this.loginAPI = new LoginAPI(client, graphSpace);
+        this.logoutAPI = new LogoutAPI(client, graphSpace);
+        this.tokenAPI = new TokenAPI(client, graphSpace);
+        this.managerAPI = new ManagerAPI(client, graphSpace);
     }
 
     public List<Target> listTargets() {

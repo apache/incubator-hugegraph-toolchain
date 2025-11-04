@@ -24,8 +24,8 @@ import org.apache.hugegraph.structure.constant.HugeType;
 
 public class TokenAPI extends AuthAPI {
 
-    public TokenAPI(RestClient client, String graphSpace, String graph) {
-        super(client, graphSpace, graph);
+    public TokenAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override

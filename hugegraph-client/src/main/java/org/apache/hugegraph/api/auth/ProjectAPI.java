@@ -33,8 +33,8 @@ public class ProjectAPI extends AuthAPI {
     private static final String ACTION_ADD_GRAPH = "add_graph";
     private static final String ACTION_REMOVE_GRAPH = "remove_graph";
 
-    public ProjectAPI(RestClient client, String graphSpace, String graph) {
-        super(client, graphSpace, graph);
+    public ProjectAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override

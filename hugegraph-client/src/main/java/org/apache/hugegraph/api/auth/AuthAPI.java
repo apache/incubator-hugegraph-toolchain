@@ -23,11 +23,11 @@ import org.apache.hugegraph.structure.auth.AuthElement;
 
 public abstract class AuthAPI extends API {
 
-    private static final String PATH = "graphspaces/%s/graphs/%s/auth/%s";
+    private static final String PATH = "graphspaces/%s/auth/%s";
 
-    public AuthAPI(RestClient client, String graphSpace, String graph) {
+    public AuthAPI(RestClient client, String graphSpace) {
         super(client);
-        this.path(PATH, graphSpace, graph, this.type());
+        this.path(PATH, graphSpace, this.type());
     }
 
     public static String formatEntityId(Object id) {

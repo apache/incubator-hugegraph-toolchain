@@ -30,8 +30,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class UserAPI extends AuthAPI {
 
-    public UserAPI(RestClient client, String graphSpace, String graph) {
-        super(client, graphSpace, graph);
+    public UserAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override

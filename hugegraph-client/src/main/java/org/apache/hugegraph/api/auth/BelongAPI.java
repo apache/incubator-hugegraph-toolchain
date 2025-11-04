@@ -28,8 +28,8 @@ import org.apache.hugegraph.structure.constant.HugeType;
 
 public class BelongAPI extends AuthAPI {
 
-    public BelongAPI(RestClient client, String graphSpace, String graph) {
-        super(client, graphSpace, graph);
+    public BelongAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override

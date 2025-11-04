@@ -35,8 +35,8 @@ public class LoginApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        loginAPI = new LoginAPI(initClient(), GRAPHSPACE, GRAPH);
-        userAPI = new UserAPI(initClient(), GRAPHSPACE, GRAPH);
+        loginAPI = new LoginAPI(initClient(), GRAPHSPACE);
+        userAPI = new UserAPI(initClient(), GRAPHSPACE);
     }
 
     @AfterClass

@@ -42,7 +42,7 @@ public class AccessApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        api = new AccessAPI(initClient(), GRAPHSPACE, GRAPH);
+        api = new AccessAPI(initClient(), GRAPHSPACE);
 
         TargetApiTest.init();
         GroupApiTest.init();
