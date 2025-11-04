@@ -68,7 +68,7 @@ public class AuthManager {
         this.belongAPI = new BelongAPI(client, graphSpace);
         this.loginAPI = new LoginAPI(client);
         this.logoutAPI = new LogoutAPI(client);
-        this.tokenAPI = new TokenAPI(client, graphSpace);
+        this.tokenAPI = new TokenAPI(client);
         this.managerAPI = new ManagerAPI(client, graphSpace);
     }
 

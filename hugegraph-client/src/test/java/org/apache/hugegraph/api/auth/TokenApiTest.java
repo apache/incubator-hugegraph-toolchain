@@ -40,7 +40,7 @@ public class TokenApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        tokenAPI = new TokenAPI(initClient(), GRAPHSPACE);
+        tokenAPI = new TokenAPI(initClient());
         logoutAPI = new LogoutAPI(initClient());
         loginAPI = new LoginAPI(initClient());
         userAPI = new UserAPI(initClient(), GRAPHSPACE);
