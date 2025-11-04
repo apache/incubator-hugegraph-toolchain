@@ -38,8 +38,8 @@ public class LogoutApiTest extends AuthApiTest {
 
     @BeforeClass
     public static void init() {
-        logoutAPI = new LogoutAPI(initClient(), GRAPHSPACE);
-        loginAPI = new LoginAPI(initClient(), GRAPHSPACE);
+        logoutAPI = new LogoutAPI(initClient());
+        loginAPI = new LoginAPI(initClient());
         userAPI = new UserAPI(initClient(), GRAPHSPACE);
     }
 

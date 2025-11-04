@@ -50,7 +50,7 @@ public class HugeClientHttpsTest extends BaseFuncTest {
 
     @Before
     public void initBaseFuncTest() {
-        CommonUtil.downloadFileByUrl(CommonUtil.PREFIX + "hugegraph.truststore", TRUST_STORE_PATH);
+
     }
 
     @After

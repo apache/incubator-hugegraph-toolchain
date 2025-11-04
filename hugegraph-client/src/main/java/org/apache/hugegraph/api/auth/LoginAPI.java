@@ -25,8 +25,8 @@ import org.apache.hugegraph.structure.constant.HugeType;
 
 public class LoginAPI extends AuthAPI {
 
-    public LoginAPI(RestClient client, String graphSpace) {
-        super(client, graphSpace);
+    public LoginAPI(RestClient client) {
+        super(client);
     }
 
     @Override

@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class LogoutAPI extends AuthAPI {
 
-    public LogoutAPI(RestClient client, String graphSpace) {
-        super(client, graphSpace);
+    public LogoutAPI(RestClient client) {
+        super(client);
     }
 
     @Override

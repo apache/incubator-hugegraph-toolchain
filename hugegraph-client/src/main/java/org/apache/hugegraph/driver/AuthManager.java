@@ -61,13 +61,13 @@ public class AuthManager {
 
     public AuthManager(RestClient client, String graphSpace, String graph) {
         this.targetAPI = new TargetAPI(client, graphSpace);
-        this.groupAPI = new GroupAPI(client, graphSpace);
+        this.groupAPI = new GroupAPI(client);
         this.userAPI = new UserAPI(client, graphSpace);
         this.accessAPI = new AccessAPI(client, graphSpace);
-        this.belongAPI = new BelongAPI(client, graphSpace);
         this.projectAPI = new ProjectAPI(client, graphSpace);
-        this.loginAPI = new LoginAPI(client, graphSpace);
-        this.logoutAPI = new LogoutAPI(client, graphSpace);
+        this.belongAPI = new BelongAPI(client, graphSpace);
+        this.loginAPI = new LoginAPI(client);
+        this.logoutAPI = new LogoutAPI(client);
         this.tokenAPI = new TokenAPI(client, graphSpace);
         this.managerAPI = new ManagerAPI(client, graphSpace);
     }
