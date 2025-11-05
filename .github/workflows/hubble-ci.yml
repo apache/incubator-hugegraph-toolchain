@@ -56,6 +56,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Set up Node.js 18.20.8
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.20.8'
+
       # we also should cache python & yarn & downloads to avoid useless work
       - name: Cache Maven packages
         uses: actions/cache@v3

@@ -76,8 +76,5 @@
     "eslint": "^8.19.0",
     "eslint-plugin-react": "^7.30.1",
     "resize-observer-polyfill": "^1.5.1"
-  },
-  "resolutions": {
-    "pretty-format": "^28.1.3"
   }
 }
