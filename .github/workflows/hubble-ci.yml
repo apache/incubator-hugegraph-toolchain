@@ -94,7 +94,16 @@ jobs:
           mvn -e compile -Dmaven.javadoc.skip=true -ntp
 
       - name: Prepare env and service
+        env:
+          CI: false
         run: |
+          echo "=== Environment Info ==="
+          node -v
+          yarn -v
+          echo "NODE_OPTIONS: $NODE_OPTIONS"
+          echo "CI: $CI"
+          free -h || true
+          echo "======================="
           
           python -m pip install -r ${TRAVIS_DIR}/requirements.txt
           cd hugegraph-hubble

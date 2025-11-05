@@ -111,6 +111,10 @@
                         </goals>
                         <configuration>
                             <arguments>build</arguments>
+                            <environmentVariables>
+                                <CI>false</CI>
+                                <NODE_OPTIONS>--max-old-space-size=4096</NODE_OPTIONS>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                 </executions>
