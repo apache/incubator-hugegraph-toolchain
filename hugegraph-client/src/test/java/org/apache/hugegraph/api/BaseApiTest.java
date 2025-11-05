@@ -171,8 +171,4 @@ public class BaseApiTest extends BaseClientTest {
     protected RestClient client() {
         return client;
     }
-
-    protected RestClient client() {
-        return client;
-    }
 }
