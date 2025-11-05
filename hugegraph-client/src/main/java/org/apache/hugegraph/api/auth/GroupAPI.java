@@ -29,8 +29,8 @@ import com.google.common.collect.ImmutableMap;
 
 public class GroupAPI extends AuthAPI {
 
-    public GroupAPI(RestClient client, String graph) {
-        super(client, graph);
+    public GroupAPI(RestClient client) {
+        super(client);
     }
 
     @Override

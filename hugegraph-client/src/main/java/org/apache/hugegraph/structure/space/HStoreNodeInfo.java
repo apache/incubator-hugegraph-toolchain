@@ -74,10 +74,12 @@ public class HStoreNodeInfo {
         this.address = address;
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     public List<HStorePartitionInfo> hStorePartitionInfoList() {
         return hStorePartitionInfoList;
     }
 
+    @SuppressWarnings("checkstyle:MethodName")
     public void hStorePartitionInfoList(
             List<HStorePartitionInfo> hStorePartitionInfoList) {
         this.hStorePartitionInfoList = hStorePartitionInfoList;

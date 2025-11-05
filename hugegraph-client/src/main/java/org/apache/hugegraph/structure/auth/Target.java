@@ -17,15 +17,17 @@
 
 package org.apache.hugegraph.structure.auth;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hugegraph.structure.constant.HugeType;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 public class Target extends AuthElement {
 
@@ -39,8 +41,9 @@ public class Target extends AuthElement {
     protected String url;
     @JsonProperty("target_description")
     protected String description;
+    // Always stored as List<Map> for compatibility with server
     @JsonProperty("target_resources")
-    protected List<HugeResource> resources;
+    protected Object resources;
 
     @JsonProperty("target_create")
     @JsonFormat(pattern = DATE_FORMAT)
@@ -111,25 +114,90 @@ public class Target extends AuthElement {
         this.description = description;
     }
 
-    public HugeResource resource() {
-        if (this.resources == null || this.resources.size() != 1) {
-            return null;
-        }
-        return this.resources.get(0);
-    }
-
-    public List<HugeResource> resources() {
+    /**
+     * Get resources
+     * Returns null if resources is not set or invalid format
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> resourcesList() {
         if (this.resources == null) {
             return null;
         }
-        return Collections.unmodifiableList(this.resources);
+        if (this.resources instanceof List) {
+            return (List<Map<String, Object>>) this.resources;
+        }
+        return null;
     }
 
-    public void resources(List<HugeResource> resources) {
+    /**
+     * Get resources as Map (for convenient reading)
+     * Server response: {"GREMLIN": [{"type":"GREMLIN", "label":"*", "properties":null}]}
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, List<HugeResource>> resources() {
+        if (this.resources == null) {
+            return null;
+        }
+        // This should not happen in normal cases as JsonSetter converts Map to List
+        if (this.resources instanceof Map) {
+            return (Map<String, List<HugeResource>>) this.resources;
+        }
+        return null;
+    }
+
+    /**
+     * Handle Map format from server response and convert to List format
+     * Server returns: {"GREMLIN": [{"type":"GREMLIN", "label":"*", "properties":null}]}
+     */
+    @JsonSetter("target_resources")
+    @SuppressWarnings("unchecked")
+    protected void setResourcesFromJson(Object value) {
+        if (value == null) {
+            this.resources = null;
+            return;
+        }
+        // If server returns Map format, convert to List format
+        if (value instanceof Map) {
+            Map<String, List<Map<String, Object>>> map =
+                    (Map<String, List<Map<String, Object>>>) value;
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (List<Map<String, Object>> resList : map.values()) {
+                list.addAll(resList);
+            }
+            this.resources = list;
+        } else {
+            this.resources = value;
+        }
+    }
+
+    /**
+     * Set resources as List (client request format)
+     * Client sends: [{"type":"GREMLIN", "label":"*", "properties":null}]
+     */
+    public void resources(List<Map<String, Object>> resources) {
         this.resources = resources;
     }
 
-    public void resources(HugeResource... resources) {
-        this.resources = Arrays.asList(resources);
+    /**
+     * Set resources as Map (for convenient usage)
+     * Will be converted to List format when sending to server
+     */
+    public void resources(Map<String, List<HugeResource>> resources) {
+        // Convert Map to List for server API
+        if (resources == null) {
+            this.resources = null;
+            return;
+        }
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (List<HugeResource> resList : resources.values()) {
+            for (HugeResource res : resList) {
+                Map<String, Object> resMap = new HashMap<>();
+                resMap.put("type", res.resourceType().toString());
+                resMap.put("label", res.label());
+                resMap.put("properties", res.properties());
+                list.add(resMap);
+            }
+        }
+        this.resources = list;
     }
 }

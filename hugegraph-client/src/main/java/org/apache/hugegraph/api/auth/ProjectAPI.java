@@ -33,8 +33,8 @@ public class ProjectAPI extends AuthAPI {
     private static final String ACTION_ADD_GRAPH = "add_graph";
     private static final String ACTION_REMOVE_GRAPH = "remove_graph";
 
-    public ProjectAPI(RestClient client, String graph) {
-        super(client, graph);
+    public ProjectAPI(RestClient client, String graphSpace) {
+        super(client, graphSpace);
     }
 
     @Override
@@ -75,8 +75,7 @@ public class ProjectAPI extends AuthAPI {
         RestResult result = this.client.put(this.path(),
                                             formatEntityId(projectId),
                                             project,
-                                            ImmutableMap.of("action",
-                                                            ACTION_ADD_GRAPH));
+                                            ImmutableMap.of("action", ACTION_ADD_GRAPH));
         return result.readObject(Project.class);
     }
 
@@ -86,8 +85,7 @@ public class ProjectAPI extends AuthAPI {
         RestResult result = this.client.put(this.path(),
                                             formatEntityId(projectId),
                                             project,
-                                            ImmutableMap.of("action",
-                                                            ACTION_REMOVE_GRAPH));
+                                            ImmutableMap.of("action", ACTION_REMOVE_GRAPH));
         return result.readObject(Project.class);
     }
 }

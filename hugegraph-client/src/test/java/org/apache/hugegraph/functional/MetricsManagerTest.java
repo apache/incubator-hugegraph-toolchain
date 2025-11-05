@@ -38,9 +38,9 @@ public class MetricsManagerTest extends BaseFuncTest {
     @Test
     public void testBackendMetrics() {
         Map<String, Map<String, Object>> results = metrics().backend();
-        Assert.assertEquals(ImmutableSet.of("hugegraph"), results.keySet());
+        Assert.assertEquals(ImmutableSet.of("DEFAULT-hugegraph"), results.keySet());
 
-        Map<String, Object> graphResults = metrics().backend("hugegraph");
+        Map<String, Object> graphResults = metrics().backend("DEFAULT-hugegraph");
         Assert.assertFalse(graphResults.isEmpty());
     }
 
